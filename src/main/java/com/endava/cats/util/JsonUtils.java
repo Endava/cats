@@ -254,14 +254,14 @@ public abstract class JsonUtils {
             JsonNode n1 = SIMPLE_OBJECT_MAPPER.readTree(json1);
             JsonNode n2 = SIMPLE_OBJECT_MAPPER.readTree(json2);
             return n1.equals(n2); // object key order does NOT matter
-        } catch (Exception e1) {
+        } catch (Exception _) {
             try {
                 String j1 = StringEscapeUtils.unescapeJson(json1).replaceAll("(^[\"'])|([\"']$)", "");
                 String j2 = StringEscapeUtils.unescapeJson(json2).replaceAll("(^[\"'])|([\"']$)", "");
                 JsonNode n1 = SIMPLE_OBJECT_MAPPER.readTree(j1);
                 JsonNode n2 = SIMPLE_OBJECT_MAPPER.readTree(j2);
                 return n1.equals(n2);
-            } catch (Exception e2) {
+            } catch (Exception _) {
                 return json1.equalsIgnoreCase(json2);
             }
         }

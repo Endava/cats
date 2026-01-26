@@ -58,8 +58,7 @@ class LatitudeGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String latitude = (String) result;
             double lat = Double.parseDouble(latitude);
             Assertions.assertThat(lat).isBetween(-90.0, 90.0);
@@ -96,16 +95,14 @@ class LatitudeGeneratorTest {
         void shouldProvideAlmostValidValue() {
             String almostValid = generator.getAlmostValidValue();
 
-            Assertions.assertThat(almostValid).isNotNull();
-            Assertions.assertThat(almostValid).isEqualTo("90.000001");
+            Assertions.assertThat(almostValid).isNotNull().isEqualTo("90.000001");
         }
 
         @Test
         void shouldProvideTotallyWrongValue() {
             String totallyWrong = generator.getTotallyWrongValue();
 
-            Assertions.assertThat(totallyWrong).isNotNull();
-            Assertions.assertThat(totallyWrong).isEqualTo("200.0");
+            Assertions.assertThat(totallyWrong).isNotNull().isEqualTo("200.0");
         }
     }
 

@@ -58,8 +58,7 @@ class VINGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String vin = (String) result;
             Assertions.assertThat(vin).hasSize(17);
         }
@@ -70,8 +69,7 @@ class VINGeneratorTest {
             Object result = generator.generate(schema);
 
             String vin = (String) result;
-            Assertions.assertThat(vin).matches("[A-HJ-NPR-Z0-9]{17}");
-            Assertions.assertThat(vin).doesNotContain("I", "O", "Q");
+            Assertions.assertThat(vin).matches("[A-HJ-NPR-Z0-9]{17}").doesNotContain("I", "O", "Q");
         }
 
         @Test
@@ -105,16 +103,14 @@ class VINGeneratorTest {
         void shouldProvideAlmostValidValue() {
             String almostValid = generator.getAlmostValidValue();
 
-            Assertions.assertThat(almostValid).isNotNull();
-            Assertions.assertThat(almostValid).hasSize(17);
+            Assertions.assertThat(almostValid).isNotNull().hasSize(17);
         }
 
         @Test
         void shouldProvideTotallyWrongValue() {
             String totallyWrong = generator.getTotallyWrongValue();
 
-            Assertions.assertThat(totallyWrong).isNotNull();
-            Assertions.assertThat(totallyWrong).isNotEmpty();
+            Assertions.assertThat(totallyWrong).isNotNull().isNotEmpty();
         }
     }
 

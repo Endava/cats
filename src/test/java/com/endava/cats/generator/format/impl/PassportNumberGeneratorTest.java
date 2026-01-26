@@ -58,46 +58,22 @@ class PassportNumberGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String passport = (String) result;
             Assertions.assertThat(passport).isNotEmpty();
         }
 
-        @Test
-        void shouldGenerateUSPassportMatchingPattern() {
+        @ParameterizedTest
+        @CsvSource({"^\\d{9}$,\\d{9}", "^[A-Z]{2}\\d{7}$,[A-Z]{2}\\d{7}", "^C[A-Z0-9]{8}$,C[A-Z0-9]{8}"})
+        void shouldGeneratePassportMatchingPattern(String source, String match) {
             Schema<String> schema = new Schema<>();
-            schema.setPattern("^\\d{9}$");
+            schema.setPattern(source);
 
             Object result = generator.generate(schema);
 
             Assertions.assertThat(result).isNotNull();
             String passport = (String) result;
-            Assertions.assertThat(passport).matches("\\d{9}");
-        }
-
-        @Test
-        void shouldGenerateUSNewPassportMatchingPattern() {
-            Schema<String> schema = new Schema<>();
-            schema.setPattern("^[A-Z]{2}\\d{7}$");
-
-            Object result = generator.generate(schema);
-
-            Assertions.assertThat(result).isNotNull();
-            String passport = (String) result;
-            Assertions.assertThat(passport).matches("[A-Z]{2}\\d{7}");
-        }
-
-        @Test
-        void shouldGenerateGermanPassportMatchingPattern() {
-            Schema<String> schema = new Schema<>();
-            schema.setPattern("^C[A-Z0-9]{8}$");
-
-            Object result = generator.generate(schema);
-
-            Assertions.assertThat(result).isNotNull();
-            String passport = (String) result;
-            Assertions.assertThat(passport).matches("C[A-Z0-9]{8}");
+            Assertions.assertThat(passport).matches(match);
         }
 
         @Test

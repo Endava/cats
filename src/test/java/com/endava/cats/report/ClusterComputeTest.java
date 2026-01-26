@@ -5,6 +5,7 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -19,6 +20,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @QuarkusTest
 class ClusterComputeTest {
+
+    @BeforeEach
+    void setUp() {
+        CatsRandom.initRandom(0);
+    }
 
     @Test
     void testCreateClustersWithDifferentResultReasons() {
@@ -180,6 +186,136 @@ class ClusterComputeTest {
                         2
                 )
         );
+    }
+
+    @Test
+    void testCreateClustersWithLargeNumberOfSimilarErrors() {
+        List<CatsTestCaseSummary> testCases = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
+            testCases.add(createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/" + i));
+        }
+
+        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
+
+        assertThat(clusters).hasSize(1);
+        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
+        assertThat(clusterList).hasSize(1);
+        assertThat(clusterList.getFirst().get("paths")).isInstanceOf(List.class);
+    }
+
+    @Test
+    void testCreateClustersWithMultiplePatternGroups() {
+        List<CatsTestCaseSummary> testCases = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            testCases.add(createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/" + i));
+        }
+        for (int i = 0; i < 10; i++) {
+            testCases.add(createTestCaseSummary(404, "Not Found", "error", "Warning: Resource unavailable for id " + i));
+        }
+        for (int i = 0; i < 10; i++) {
+            testCases.add(createTestCaseSummary(404, "Not Found", "error", "Exception: Database connection timeout after " + i + " seconds"));
+        }
+
+        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
+
+        assertThat(clusters).hasSize(1);
+        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
+        assertThat(clusterList).hasSizeGreaterThanOrEqualTo(3);
+    }
+
+    @Test
+    void testCreateClustersWithVeryLongErrorMessages() {
+        String longError1 = "Error: " + "A".repeat(300) + " occurred at line 123";
+        String longError2 = "Error: " + "A".repeat(300) + " occurred at line 456";
+        String longError3 = "Error: " + "B".repeat(300) + " occurred at line 789";
+
+        List<CatsTestCaseSummary> testCases = List.of(
+                createTestCaseSummary(500, "Server Error", "error", longError1),
+                createTestCaseSummary(500, "Server Error", "error", longError2),
+                createTestCaseSummary(500, "Server Error", "error", longError3)
+        );
+
+        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
+
+        assertThat(clusters).hasSize(1);
+        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
+        assertThat(clusterList).hasSizeGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    void testCreateClustersWithSingleTestCaseInGroup() {
+        List<CatsTestCaseSummary> testCases = List.of(
+                createTestCaseSummary(404, "Not Found", "error", "Error: Unique error message")
+        );
+
+        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
+
+        assertThat(clusters).hasSize(1);
+        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
+        assertThat(clusterList).hasSize(1);
+    }
+
+    @Test
+    void testCreateClustersWithEmptyResponseBodies() {
+        List<CatsTestCaseSummary> testCases = List.of(
+                createTestCaseSummary(404, "Not Found", "error", ""),
+                createTestCaseSummary(404, "Not Found", "error", ""),
+                createTestCaseSummary(404, "Not Found", "error", "   ")
+        );
+
+        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
+
+        assertThat(clusters).hasSize(1);
+        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
+        assertThat(clusterList).hasSize(1);
+    }
+
+    @Test
+    void testCreateClustersWithMixedEmptyAndNonEmptyResponses() {
+        List<CatsTestCaseSummary> testCases = List.of(
+                createTestCaseSummary(404, "Not Found", "error", "Error: File not found"),
+                createTestCaseSummary(404, "Not Found", "error", ""),
+                createTestCaseSummary(404, "Not Found", "error", null),
+                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at different location")
+        );
+
+        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
+
+        assertThat(clusters).hasSize(1);
+        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
+        assertThat(clusterList).hasSizeGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    void testCreateClustersWithDifferentPathsSameError() {
+        List<CatsTestCaseSummary> testCases = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            CatsTestCaseSummary tc = createTestCaseSummary(404, "Not Found", "error", "Error: Resource not found");
+            testCases.add(tc);
+        }
+
+        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
+
+        assertThat(clusters).hasSize(1);
+        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
+        assertThat(clusterList).hasSize(1);
+        Map<String, Object> cluster = clusterList.getFirst();
+        List<Map<String, Object>> paths = (List<Map<String, Object>>) cluster.get("paths");
+        assertThat(paths).isNotEmpty();
+    }
+
+    @Test
+    void testCreateClustersWithComparisonTrackerGrowth() {
+        List<CatsTestCaseSummary> testCases = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            testCases.add(createTestCaseSummary(404, "Not Found", "error", "Error type " + (i % 5) + ": details " + i));
+        }
+
+        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
+
+        assertThat(clusters).hasSize(1);
+        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
+        assertThat(clusterList).isNotEmpty();
     }
 
     private static CatsTestCaseSummary createTestCaseSummary(int httpResponseCode, String resultReason, String result, String responseBody) {

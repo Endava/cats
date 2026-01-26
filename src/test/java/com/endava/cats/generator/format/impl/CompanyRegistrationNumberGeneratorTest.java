@@ -59,57 +59,22 @@ class CompanyRegistrationNumberGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
         }
 
-        @Test
-        void shouldGenerateCompanyNumberMatchingPattern() {
+        @ParameterizedTest
+        @CsvSource({"^[A-Z]{2}\\d{6}$,[A-Z]{2}\\d{6}", "^HRB \\d{5}$,HRB \\d{5}", "^\\d{9}$,\\d{9}", "^J\\d{2}/\\d{4}/\\d{4}$,J\\d{2}/\\d{4}/\\d{4}"})
+        void shouldGenerateCompanyNumberMatchingPattern(String sourceRegex, String matchesRegex) {
             Schema<String> schema = new Schema<>();
-            schema.setPattern("^[A-Z]{2}\\d{6}$");
+            schema.setPattern(sourceRegex);
 
             Object result = generator.generate(schema);
 
             Assertions.assertThat(result).isNotNull();
             String companyNumber = (String) result;
-            Assertions.assertThat(companyNumber).matches("[A-Z]{2}\\d{6}");
+            Assertions.assertThat(companyNumber).matches(matchesRegex);
         }
 
-        @Test
-        void shouldGenerateGermanFormat() {
-            Schema<String> schema = new Schema<>();
-            schema.setPattern("^HRB \\d{5}$");
-
-            Object result = generator.generate(schema);
-
-            Assertions.assertThat(result).isNotNull();
-            String companyNumber = (String) result;
-            Assertions.assertThat(companyNumber).matches("HRB \\d{5}");
-        }
-
-        @Test
-        void shouldGenerateFrenchFormat() {
-            Schema<String> schema = new Schema<>();
-            schema.setPattern("^\\d{9}$");
-
-            Object result = generator.generate(schema);
-
-            Assertions.assertThat(result).isNotNull();
-            String companyNumber = (String) result;
-            Assertions.assertThat(companyNumber).matches("\\d{9}");
-        }
-
-        @Test
-        void shouldGenerateRomanianFormat() {
-            Schema<String> schema = new Schema<>();
-            schema.setPattern("^J\\d{2}/\\d{4}/\\d{4}$");
-
-            Object result = generator.generate(schema);
-
-            Assertions.assertThat(result).isNotNull();
-            String companyNumber = (String) result;
-            Assertions.assertThat(companyNumber).matches("J\\d{2}/\\d{4}/\\d{4}");
-        }
 
         @Test
         void shouldReturnNullWhenPatternDoesNotMatch() {

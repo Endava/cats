@@ -58,46 +58,22 @@ class LicensePlateGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String plate = (String) result;
             Assertions.assertThat(plate).isNotEmpty();
         }
 
-        @Test
-        void shouldGenerateUSPlateMatchingPattern() {
+        @ParameterizedTest
+        @CsvSource({"^\\d{3}-[A-Z]{3}$,\\d{3}-[A-Z]{3}", "^[A-Z]{2}\\d{2} [A-Z]{3}$,[A-Z]{2}\\d{2} [A-Z]{3}", "^[A-Z]{2}-\\d{3}-[A-Z]{2}$,[A-Z]{2}-\\d{3}-[A-Z]{2}"})
+        void shouldGeneratePlateMatchingPattern(String source, String match) {
             Schema<String> schema = new Schema<>();
-            schema.setPattern("^\\d{3}-[A-Z]{3}$");
+            schema.setPattern(source);
 
             Object result = generator.generate(schema);
 
             Assertions.assertThat(result).isNotNull();
             String plate = (String) result;
-            Assertions.assertThat(plate).matches("\\d{3}-[A-Z]{3}");
-        }
-
-        @Test
-        void shouldGenerateUKPlateMatchingPattern() {
-            Schema<String> schema = new Schema<>();
-            schema.setPattern("^[A-Z]{2}\\d{2} [A-Z]{3}$");
-
-            Object result = generator.generate(schema);
-
-            Assertions.assertThat(result).isNotNull();
-            String plate = (String) result;
-            Assertions.assertThat(plate).matches("[A-Z]{2}\\d{2} [A-Z]{3}");
-        }
-
-        @Test
-        void shouldGenerateFrenchPlateMatchingPattern() {
-            Schema<String> schema = new Schema<>();
-            schema.setPattern("^[A-Z]{2}-\\d{3}-[A-Z]{2}$");
-
-            Object result = generator.generate(schema);
-
-            Assertions.assertThat(result).isNotNull();
-            String plate = (String) result;
-            Assertions.assertThat(plate).matches("[A-Z]{2}-\\d{3}-[A-Z]{2}");
+            Assertions.assertThat(plate).matches(match);
         }
 
         @Test

@@ -9,4 +9,8 @@ public final class HttpHeaders {
     public static final String USER_AGENT = "User-Agent";
     public static final String CONTENT_LENGTH = "Content-Length";
     public static final String TRANSFER_ENCODING = "Transfer-Encoding";
+
+    private HttpHeaders() {
+        //ntd
+    }
 }

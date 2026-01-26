@@ -2,6 +2,8 @@ package com.endava.cats.util.external;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.nio.charset.StandardCharsets;
 
@@ -115,26 +117,21 @@ class MediaTypeTest {
         assertThat(result).isSameAs(mediaType);
     }
 
-    @Test
-    void shouldReturnEmptyCharsetWhenNotPresent() {
-        MediaType mediaType = MediaType.parse("application/json");
+    @ParameterizedTest
+    @CsvSource({"application/json", "application/json; charset=invalid", "text/plain; charset="})
+    void shouldReturnEmptyCharset(String mediaTypeText) {
+        MediaType mediaType = MediaType.parse(mediaTypeText);
 
         assertThat(mediaType.charset()).isEmpty();
     }
 
-    @Test
-    void shouldReturnEmptyCharsetWhenInvalid() {
-        MediaType mediaType = MediaType.parse("application/json; charset=invalid");
-
-        assertThat(mediaType.charset()).isEmpty();
-    }
 
     @Test
     void shouldConvertToString() {
         MediaType mediaType = MediaType.create("application", "json")
                 .withCharset(StandardCharsets.UTF_8);
 
-        assertThat(mediaType.toString()).isEqualTo("application/json; charset=utf-8");
+        assertThat(mediaType).hasToString("application/json; charset=utf-8");
     }
 
     @Test
@@ -151,7 +148,7 @@ class MediaTypeTest {
         MediaType mt2 = MediaType.parse("application/json; charset=utf-8");
 
         assertThat(mt1).isEqualTo(mt2);
-        assertThat(mt1.hashCode()).isEqualTo(mt2.hashCode());
+        assertThat(mt1).hasSameHashCodeAs(mt2);
     }
 
     @Test
@@ -254,13 +251,6 @@ class MediaTypeTest {
         MediaType mediaType = MediaType.parse("text/plain; invalid; charset=utf-8");
 
         assertThat(mediaType.parameters()).containsEntry("charset", "utf-8");
-    }
-
-    @Test
-    void shouldReturnEmptyCharsetForBlank() {
-        MediaType mediaType = MediaType.parse("text/plain; charset=");
-
-        assertThat(mediaType.charset()).isEmpty();
     }
 
     @Test

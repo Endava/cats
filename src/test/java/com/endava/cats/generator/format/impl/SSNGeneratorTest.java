@@ -62,8 +62,7 @@ class SSNGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String ssn = (String) result;
             Assertions.assertThat(ssn).isNotEmpty();
         }
@@ -156,16 +155,14 @@ class SSNGeneratorTest {
         void shouldProvideAlmostValidValue() {
             String almostValid = generator.getAlmostValidValue();
 
-            Assertions.assertThat(almostValid).isNotNull();
-            Assertions.assertThat(almostValid).isNotEmpty();
+            Assertions.assertThat(almostValid).isNotNull().isNotEmpty();
         }
 
         @Test
         void shouldProvideTotallyWrongValue() {
             String totallyWrong = generator.getTotallyWrongValue();
 
-            Assertions.assertThat(totallyWrong).isNotNull();
-            Assertions.assertThat(totallyWrong).isNotEmpty();
+            Assertions.assertThat(totallyWrong).isNotNull().isNotEmpty();
         }
 
         @Test

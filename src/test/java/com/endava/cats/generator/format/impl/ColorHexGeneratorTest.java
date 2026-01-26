@@ -60,8 +60,7 @@ class ColorHexGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String color = (String) result;
             Assertions.assertThat(color).matches("#[0-9A-F]{6}");
         }
@@ -97,16 +96,14 @@ class ColorHexGeneratorTest {
         void shouldProvideAlmostValidValue() {
             String almostValid = generator.getAlmostValidValue();
 
-            Assertions.assertThat(almostValid).isNotNull();
-            Assertions.assertThat(almostValid).isEqualTo("#GGGGGG");
+            Assertions.assertThat(almostValid).isNotNull().isEqualTo("#GGGGGG");
         }
 
         @Test
         void shouldProvideTotallyWrongValue() {
             String totallyWrong = generator.getTotallyWrongValue();
 
-            Assertions.assertThat(totallyWrong).isNotNull();
-            Assertions.assertThat(totallyWrong).isEqualTo("blue");
+            Assertions.assertThat(totallyWrong).isNotNull().isEqualTo("blue");
         }
     }
 

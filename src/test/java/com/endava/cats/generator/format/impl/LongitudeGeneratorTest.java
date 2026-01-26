@@ -58,8 +58,7 @@ class LongitudeGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String longitude = (String) result;
             double lon = Double.parseDouble(longitude);
             Assertions.assertThat(lon).isBetween(-180.0, 180.0);
@@ -96,16 +95,14 @@ class LongitudeGeneratorTest {
         void shouldProvideAlmostValidValue() {
             String almostValid = generator.getAlmostValidValue();
 
-            Assertions.assertThat(almostValid).isNotNull();
-            Assertions.assertThat(almostValid).isEqualTo("180.000001");
+            Assertions.assertThat(almostValid).isNotNull().isEqualTo("180.000001");
         }
 
         @Test
         void shouldProvideTotallyWrongValue() {
             String totallyWrong = generator.getTotallyWrongValue();
 
-            Assertions.assertThat(totallyWrong).isNotNull();
-            Assertions.assertThat(totallyWrong).isEqualTo("400.0");
+            Assertions.assertThat(totallyWrong).isNotNull().isEqualTo("400.0");
         }
     }
 

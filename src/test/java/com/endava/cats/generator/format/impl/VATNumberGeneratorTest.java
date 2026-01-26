@@ -60,11 +60,9 @@ class VATNumberGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String vat = (String) result;
-            Assertions.assertThat(vat).isNotEmpty();
-            Assertions.assertThat(vat).hasSizeGreaterThanOrEqualTo(10);
+            Assertions.assertThat(vat).isNotEmpty().hasSizeGreaterThanOrEqualTo(10);
         }
 
         @Test
@@ -107,16 +105,14 @@ class VATNumberGeneratorTest {
         void shouldProvideAlmostValidValue() {
             String almostValid = generator.getAlmostValidValue();
 
-            Assertions.assertThat(almostValid).isNotNull();
-            Assertions.assertThat(almostValid).isEqualTo("GB12345678");
+            Assertions.assertThat(almostValid).isNotNull().isEqualTo("GB12345678");
         }
 
         @Test
         void shouldProvideTotallyWrongValue() {
             String totallyWrong = generator.getTotallyWrongValue();
 
-            Assertions.assertThat(totallyWrong).isNotNull();
-            Assertions.assertThat(totallyWrong).isEqualTo("XX000000000");
+            Assertions.assertThat(totallyWrong).isNotNull().isEqualTo("XX000000000");
         }
     }
 

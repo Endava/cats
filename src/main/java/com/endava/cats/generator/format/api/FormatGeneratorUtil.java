@@ -117,7 +117,7 @@ public final class FormatGeneratorUtil {
      * @return random number
      */
     public static int randomNumber(int digits) {
-        int min = (int) Math.pow(10, digits - 1);
+        int min = (int) Math.pow(10, digits - 1d);
         int max = (int) Math.pow(10, digits);
         return randomInRange(min, max);
     }

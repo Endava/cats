@@ -36,10 +36,6 @@ public class ModelUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(ModelUtils.class);
     private static final String X_PARENT = "x-parent";
 
-    public static boolean isDisallowAdditionalPropertiesIfNotPresent() {
-        return true;
-    }
-
     /**
      * Return the list of unused schemas in the 'components/schemas' section of an openAPI specification
      *
@@ -51,7 +47,7 @@ public class ModelUtils {
         Map<String, List<String>> tmpChildrenMap;
         try {
             tmpChildrenMap = getChildrenMap(openAPI);
-        } catch (NullPointerException npe) {
+        } catch (NullPointerException _) {
             // in rare cases, such as a spec document with only one top-level oneOf schema and multiple referenced schemas,
             // the stream used in getChildrenMap will raise an NPE. Rather than modify getChildrenMap which is used by getAllUsedSchemas,
             // we'll catch here as a workaround for this edge case.
@@ -59,7 +55,7 @@ public class ModelUtils {
         }
 
         childrenMap = tmpChildrenMap;
-        List<String> unusedSchemas = new ArrayList<String>();
+        List<String> unusedSchemas = new ArrayList<>();
 
         if (openAPI != null) {
             Map<String, Schema> schemas = getSchemas(openAPI);
@@ -329,11 +325,7 @@ public class ModelUtils {
         }
 
         // has allOf
-        if (schema.getAllOf() != null) {
-            return true;
-        }
-
-        return false;
+        return schema.getAllOf() != null;
     }
 
     /**
@@ -377,18 +369,18 @@ public class ModelUtils {
 
         // additionalProperties explicitly set to false
         if ((schema.getAdditionalProperties() instanceof Boolean && Boolean.FALSE.equals(schema.getAdditionalProperties())) ||
-                (schema.getAdditionalProperties() instanceof Schema && Boolean.FALSE.equals(((Schema) schema.getAdditionalProperties()).getBooleanSchemaValue()))
+                (schema.getAdditionalProperties() instanceof Schema addSchema && Boolean.FALSE.equals(addSchema.getBooleanSchemaValue()))
         ) {
             return false;
         }
 
         if (schema instanceof JsonSchema) { // 3.1 spec
             return ((schema.getAdditionalProperties() instanceof Schema) ||
-                    (schema.getAdditionalProperties() instanceof Boolean && (Boolean) schema.getAdditionalProperties()));
+                    (schema.getAdditionalProperties() instanceof Boolean booleanAdd && booleanAdd));
         } else { // 3.0 or 2.x spec
             return (schema instanceof MapSchema) ||
                     (schema.getAdditionalProperties() instanceof Schema) ||
-                    (schema.getAdditionalProperties() instanceof Boolean && (Boolean) schema.getAdditionalProperties());
+                    (schema.getAdditionalProperties() instanceof Boolean booleanAdd && booleanAdd);
         }
     }
 
@@ -600,13 +592,7 @@ public class ModelUtils {
             // additional properties are allowed or not.
             //
             // The original behavior was to assume additionalProperties had been set to false.
-            if (isDisallowAdditionalPropertiesIfNotPresent()) {
-                // If the 'additionalProperties' keyword is not present in a OAS schema,
-                // interpret as if the 'additionalProperties' keyword had been set to false.
-                // This is NOT compliant with the JSON schema specification. It is the original
-                // 'openapi-generator' behavior.
-                return null;
-            }
+            return null;
             /*
             // The disallowAdditionalPropertiesIfNotPresent CLI option has been set to true,
             // but for now that only works with OAS 3.0 documents.
@@ -625,7 +611,7 @@ public class ModelUtils {
             }
             */
         }
-        if (addProps == null || (addProps instanceof Boolean booleanProps && booleanProps)) {
+        if (addProps instanceof Boolean booleanProps && booleanProps) {
             // Return an empty schema as the properties can take on any type per
             // the spec. See
             // https://github.com/OpenAPITools/openapi-generator/issues/9282 for
@@ -658,11 +644,11 @@ public class ModelUtils {
 
         Map<String, List<Entry<String, Schema>>> groupedByParent = allSchemas.entrySet().stream()
                 .filter(entry -> isComposedSchema(entry.getValue()))
-                .filter(entry -> getParentName((Schema) entry.getValue(), allSchemas) != null)
-                .collect(Collectors.groupingBy(entry -> getParentName((Schema) entry.getValue(), allSchemas)));
+                .filter(entry -> getParentName(entry.getValue(), allSchemas) != null)
+                .collect(Collectors.groupingBy(entry -> getParentName(entry.getValue(), allSchemas)));
 
         return groupedByParent.entrySet().stream()
-                .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue().stream().map(e -> e.getKey()).collect(Collectors.toList())));
+                .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().stream().map(Entry::getKey).toList()));
     }
 
     /**
@@ -725,7 +711,7 @@ public class ModelUtils {
                     if (s == null) {
                         LOGGER.error("Failed to obtain schema from {}", parentName);
                         parentNameCandidates.add("UNKNOWN_PARENT_NAME");
-                    } else if (hasOrInheritsDiscriminator(s, allSchemas, new ArrayList<Schema>())) {
+                    } else if (hasOrInheritsDiscriminator(s, allSchemas, new ArrayList<>())) {
                         // discriminator.propertyName is used or x-parent is used
                         parentNameCandidates.add(parentName);
                     }
@@ -828,13 +814,9 @@ public class ModelUtils {
      * @return true if the schema contains allOf but no properties/oneOf/anyOf defined.
      */
     public static boolean isAllOf(Schema schema) {
-        if (hasAllOf(schema) && (schema.getProperties() == null || schema.getProperties().isEmpty()) &&
+        return hasAllOf(schema) && (schema.getProperties() == null || schema.getProperties().isEmpty()) &&
                 (schema.getOneOf() == null || schema.getOneOf().isEmpty()) &&
-                (schema.getAnyOf() == null || schema.getAnyOf().isEmpty())) {
-            return true;
-        }
-
-        return false;
+                (schema.getAnyOf() == null || schema.getAnyOf().isEmpty());
     }
 
     /**
@@ -845,11 +827,7 @@ public class ModelUtils {
      * @return true if allOf is not empty
      */
     public static boolean hasAllOf(Schema schema) {
-        if (schema != null && schema.getAllOf() != null && !schema.getAllOf().isEmpty()) {
-            return true;
-        }
-
-        return false;
+        return schema != null && schema.getAllOf() != null && !schema.getAllOf().isEmpty();
     }
 
     /**
@@ -877,13 +855,9 @@ public class ModelUtils {
             return false;
         }
 
-        if (hasOneOf(schema) && (schema.getProperties() == null || schema.getProperties().isEmpty()) &&
+        return hasOneOf(schema) && (schema.getProperties() == null || schema.getProperties().isEmpty()) &&
                 (schema.getAllOf() == null || schema.getAllOf().isEmpty()) &&
-                (schema.getAnyOf() == null || schema.getAnyOf().isEmpty())) {
-            return true;
-        }
-
-        return false;
+                (schema.getAnyOf() == null || schema.getAnyOf().isEmpty());
     }
 
     /**
@@ -894,11 +868,7 @@ public class ModelUtils {
      * @return true if allOf is not empty
      */
     public static boolean hasOneOf(Schema schema) {
-        if (schema != null && schema.getOneOf() != null && !schema.getOneOf().isEmpty()) {
-            return true;
-        }
-
-        return false;
+        return schema != null && schema.getOneOf() != null && !schema.getOneOf().isEmpty();
     }
 
     /**
@@ -913,13 +883,9 @@ public class ModelUtils {
             return false;
         }
 
-        if (hasAnyOf(schema) && (schema.getProperties() == null || schema.getProperties().isEmpty()) &&
+        return hasAnyOf(schema) && (schema.getProperties() == null || schema.getProperties().isEmpty()) &&
                 (schema.getAllOf() == null || schema.getAllOf().isEmpty()) &&
-                (schema.getOneOf() == null || schema.getOneOf().isEmpty())) {
-            return true;
-        }
-
-        return false;
+                (schema.getOneOf() == null || schema.getOneOf().isEmpty());
     }
 
     /**
@@ -930,11 +896,7 @@ public class ModelUtils {
      * @return true if anyOf is not empty
      */
     public static boolean hasAnyOf(Schema schema) {
-        if (schema != null && schema.getAnyOf() != null && !schema.getAnyOf().isEmpty()) {
-            return true;
-        }
-
-        return false;
+        return schema != null && schema.getAnyOf() != null && !schema.getAnyOf().isEmpty();
     }
 
     /**

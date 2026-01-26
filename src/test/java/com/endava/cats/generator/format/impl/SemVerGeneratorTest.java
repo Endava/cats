@@ -59,8 +59,7 @@ class SemVerGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String semver = (String) result;
             Assertions.assertThat(semver).matches("\\d+\\.\\d+\\.\\d+");
         }
@@ -96,16 +95,14 @@ class SemVerGeneratorTest {
         void shouldProvideAlmostValidValue() {
             String almostValid = generator.getAlmostValidValue();
 
-            Assertions.assertThat(almostValid).isNotNull();
-            Assertions.assertThat(almostValid).isEqualTo("1.2");
+            Assertions.assertThat(almostValid).isNotNull().isEqualTo("1.2");
         }
 
         @Test
         void shouldProvideTotallyWrongValue() {
             String totallyWrong = generator.getTotallyWrongValue();
 
-            Assertions.assertThat(totallyWrong).isNotNull();
-            Assertions.assertThat(totallyWrong).isEqualTo("v1.2.3.4.5");
+            Assertions.assertThat(totallyWrong).isNotNull().isEqualTo("v1.2.3.4.5");
         }
     }
 

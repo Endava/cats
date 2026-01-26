@@ -59,8 +59,7 @@ class MedicalRecordNumberGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String mrn = (String) result;
             Assertions.assertThat(mrn).matches("\\d{3}-\\d{6}");
         }

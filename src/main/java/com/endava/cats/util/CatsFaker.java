@@ -344,7 +344,6 @@ public class CatsFaker {
         public String name() {
             Map<String, Object> companyData = (Map<String, Object>) data.get("company");
             List<String> suffixes = (List<String>) companyData.get("suffix");
-            NameFaker nameFaker = new NameFaker();
             return nameFaker.lastName() + " " + randomElement(suffixes);
         }
 

@@ -59,8 +59,7 @@ class MACAddressGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String mac = (String) result;
             Assertions.assertThat(mac).matches("([0-9A-F]{2}:){5}[0-9A-F]{2}");
         }
@@ -96,16 +95,14 @@ class MACAddressGeneratorTest {
         void shouldProvideAlmostValidValue() {
             String almostValid = generator.getAlmostValidValue();
 
-            Assertions.assertThat(almostValid).isNotNull();
-            Assertions.assertThat(almostValid).isEqualTo("00:1A:2B:3C:4D");
+            Assertions.assertThat(almostValid).isNotNull().isEqualTo("00:1A:2B:3C:4D");
         }
 
         @Test
         void shouldProvideTotallyWrongValue() {
             String totallyWrong = generator.getTotallyWrongValue();
 
-            Assertions.assertThat(totallyWrong).isNotNull();
-            Assertions.assertThat(totallyWrong).isEqualTo("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ");
+            Assertions.assertThat(totallyWrong).isNotNull().isEqualTo("ZZ:ZZ:ZZ:ZZ:ZZ:ZZ");
         }
     }
 

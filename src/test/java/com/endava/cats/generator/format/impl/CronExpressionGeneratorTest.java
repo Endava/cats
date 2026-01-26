@@ -58,8 +58,7 @@ class CronExpressionGeneratorTest {
             Schema<String> schema = new Schema<>();
             Object result = generator.generate(schema);
 
-            Assertions.assertThat(result).isNotNull();
-            Assertions.assertThat(result).isInstanceOf(String.class);
+            Assertions.assertThat(result).isNotNull().isInstanceOf(String.class);
             String cron = (String) result;
             Assertions.assertThat(cron).isNotEmpty();
             Assertions.assertThat(cron.split(" ")).hasSizeGreaterThanOrEqualTo(5);
