@@ -147,8 +147,7 @@ class MediaTypeTest {
         MediaType mt1 = MediaType.parse("application/json; charset=utf-8");
         MediaType mt2 = MediaType.parse("application/json; charset=utf-8");
 
-        assertThat(mt1).isEqualTo(mt2);
-        assertThat(mt1).hasSameHashCodeAs(mt2);
+        assertThat(mt1).isEqualTo(mt2).hasSameHashCodeAs(mt2);
     }
 
     @Test
