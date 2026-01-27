@@ -195,10 +195,10 @@ public class FilterArguments {
     @CommandLine.Option(
             names = "--mode",
             description = "Fuzzer selection mode. Available values:%n" +
-                    "  ALL       - Run all fuzzers (default).%n" +
-                    "  NEGATIVE  - Run only negative test scenarios (fuzzers expecting 4XX responses: " +
+                    "  @|bold ALL|@       - Run all fuzzers (default).%n" +
+                    "  @|bold NEGATIVE|@  - Run only negative test scenarios (fuzzers expecting 4XX responses: " +
                     "validation, invalid values, authentication, etc). Excludes happy path fuzzers and linters.%n" +
-                    "  POSITIVE  - Run only positive test scenarios (fuzzers expecting 2XX responses: " +
+                    "  @|bold POSITIVE|@   - Run only positive test scenarios (fuzzers expecting 2XX responses: " +
                     "happy path, valid examples, default values). Excludes validation error fuzzers and linters.",
             defaultValue = "ALL",
             showDefaultValue = CommandLine.Help.Visibility.ALWAYS
