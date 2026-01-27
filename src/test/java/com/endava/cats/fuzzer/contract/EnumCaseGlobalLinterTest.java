@@ -1,16 +1,11 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.NamingArguments;
-import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.handler.api.SchemaLocation;
 import com.endava.cats.openapi.handler.collector.EnumCollector;
-import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -32,8 +27,12 @@ class EnumCaseGlobalLinterTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestReportsGenerator.class),
-                Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
+        testCaseListener = Mockito.mock(TestCaseListener.class);
+        Mockito.doAnswer(invocation -> {
+            Runnable testLogic = invocation.getArgument(2);
+            testLogic.run();
+            return null;
+        }).when(testCaseListener).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         enumCollector = Mockito.mock(EnumCollector.class);
         enumCaseGlobalLinter = new EnumCaseGlobalLinter(testCaseListener, namingArguments, enumCollector);
     }
@@ -47,6 +46,7 @@ class EnumCaseGlobalLinterTest {
     @Test
     void shouldReturnRunKey() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
         enumCaseGlobalLinter.fuzz(data); // Indirectly tests runKey
         Assertions.assertThat(enumCaseGlobalLinter.getContext().runKeyProvider().apply(data))
                 .isEqualTo("global-enum-case-linter");
@@ -77,6 +77,7 @@ class EnumCaseGlobalLinterTest {
     @Test
     void shouldExecuteTestListener() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
         Map<SchemaLocation, List<String>> mockEnums = Map.of(
                 new SchemaLocation(null, null, null, null), List.of("ENUM_VALUE")
         );

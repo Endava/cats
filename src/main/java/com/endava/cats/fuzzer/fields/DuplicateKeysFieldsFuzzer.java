@@ -121,6 +121,11 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
         testCaseListener.addExpectedResult(logger,
                 "Service should return a [{}] response", ResponseCodeFamilyPredefined.FOURXX.asString());
 
+        if (!testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX)) {
+            testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
+            return;
+        }
+
         CatsResponse response = serviceCaller.call(buildServiceData(data, duplicatedPayload));
         testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
     }

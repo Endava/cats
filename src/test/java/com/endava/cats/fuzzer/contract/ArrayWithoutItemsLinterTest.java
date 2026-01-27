@@ -1,11 +1,7 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.args.IgnoreArguments;
-import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -27,8 +23,12 @@ class ArrayWithoutItemsLinterTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = Mockito.spy(new TestCaseListener(null, Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestReportsGenerator.class),
-                Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
+        testCaseListener = Mockito.mock(TestCaseListener.class);
+        Mockito.doAnswer(invocation -> {
+            Runnable testLogic = invocation.getArgument(2);
+            testLogic.run();
+            return null;
+        }).when(testCaseListener).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         linter = new ArrayWithoutItemsLinter(testCaseListener);
     }
 

@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
@@ -79,6 +80,7 @@ public class TestCaseListener {
     private final CatsGlobalContext globalContext;
     private final IgnoreArguments ignoreArguments;
     private final ReportingArguments reportingArguments;
+    private final FilterArguments filterArguments;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
 
@@ -97,16 +99,18 @@ public class TestCaseListener {
      * @param catsGlobalContext    the global context for Cats
      * @param er                   the listener for execution statistics
      * @param testReportsGenerator the generator for test reports
-     * @param filterArguments      the arguments for filtering test cases
+     * @param ignoreArguments      the arguments for ignoring test cases
      * @param reportingArguments   the arguments for reporting test cases
+     * @param filterArguments      the arguments for filtering fuzzers
      * @throws NoSuchElementException if no matching exporter is found for the specified report format
      */
-    public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er, TestReportsGenerator testReportsGenerator, IgnoreArguments filterArguments, ReportingArguments reportingArguments) {
+    public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er, TestReportsGenerator testReportsGenerator, IgnoreArguments ignoreArguments, ReportingArguments reportingArguments, FilterArguments filterArguments) {
         this.executionStatisticsListener = er;
         this.testReportsGenerator = testReportsGenerator;
-        this.ignoreArguments = filterArguments;
+        this.ignoreArguments = ignoreArguments;
         this.globalContext = catsGlobalContext;
         this.reportingArguments = reportingArguments;
+        this.filterArguments = filterArguments;
     }
 
     private static String replaceBrackets(String message, Object... params) {
@@ -233,6 +237,50 @@ public class TestCaseListener {
     public void addExpectedResult(PrettyLogger logger, String expectedResult, Object... params) {
         logger.note(expectedResult, params);
         currentTestCase().setExpectedResult(replaceBrackets(expectedResult, params));
+    }
+
+    /**
+     * Determines if fuzzer execution should continue based on the expected response code.
+     * This method is used to filter fuzzers when --only4xxFuzzers or --only2xxFuzzers is enabled.
+     * <p>
+     * When filtering is active, this method will skip execution if the expected response code
+     * doesn't match the filter criteria and log the reason for skipping.
+     * </p>
+     *
+     * @param logger               the logger to use for skip messages
+     * @param expectedResponseCode the expected response code family for the current test
+     * @return true if execution should continue, false to skip the test
+     */
+    public boolean shouldContinueExecution(PrettyLogger logger, ResponseCodeFamily expectedResponseCode) {
+        if (!filterArguments.isOnly4xxFuzzers() && !filterArguments.isOnly2xxFuzzers()) {
+            return true;
+        }
+        if (expectedResponseCode == null) {
+            return true; // No filtering if response code is unknown
+        }
+
+        boolean matches = false;
+        String filterType = null;
+
+        if (filterArguments.isOnly4xxFuzzers()) {
+            filterType = "4XX";
+            matches = expectedResponseCode.allowedResponseCodes().stream()
+                    .anyMatch(allowedCode -> ResponseCodeFamily.matchAsCodeOrRange(allowedCode, "4XX"));
+        }
+
+        if (filterArguments.isOnly2xxFuzzers()) {
+            filterType = "2XX";
+            matches = expectedResponseCode.allowedResponseCodes().stream()
+                    .anyMatch(allowedCode -> ResponseCodeFamily.matchAsCodeOrRange(allowedCode, "2XX"));
+        }
+
+        if (!matches) {
+            logger.skip("Skipping test - expected response code {} does not match {} (--only{}Fuzzers enabled)",
+                    expectedResponseCode.allowedResponseCodes(), filterType, filterType.toLowerCase(Locale.ROOT));
+            return false;
+        }
+
+        return true;
     }
 
     /**

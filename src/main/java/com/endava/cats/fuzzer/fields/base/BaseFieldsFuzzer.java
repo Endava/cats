@@ -110,6 +110,11 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
 
             testCaseListener.addExpectedResult(logger, "Should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
 
+            if (!testCaseListener.shouldContinueExecution(logger, expectedResponseCodeBasedOnConstraints)) {
+                testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
+                return;
+            }
+
             CatsResponse response = serviceCaller.call(serviceData);
 
             testCaseListener.reportResult(logger, data, response, expectedResponseCodeBasedOnConstraints, this.shouldMatchResponseSchema(data), this.shouldMatchContentType(data));

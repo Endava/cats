@@ -70,6 +70,11 @@ public class HeadersIteratorExecutor {
                             testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
                                     expectedResponseCode != null ? expectedResponseCode.asString() : "a response that doesn't match" + matchArguments.getMatchString());
 
+                            if (!testCaseListener.shouldContinueExecution(context.getLogger(), expectedResponseCode)) {
+                                testCaseListener.skipTest(context.getLogger(), "Test skipped due to response code filtering");
+                                return;
+                            }
+
                             ServiceData serviceData = ServiceData.builder()
                                     .relativePath(context.getFuzzingData().getPath())
                                     .contractPath(context.getFuzzingData().getContractPath())

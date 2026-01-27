@@ -186,6 +186,22 @@ public class FilterArguments {
             description = "Path to custom profile configuration file (YAML)")
     private Path customProfileFile;
 
+    @CommandLine.Option(
+            names = {"--negativeOnly"},
+            description = "Run only fuzzers that expect 4XX responses (validation and error testing scenarios). " +
+                    "This includes fuzzers testing required fields, invalid values, authentication, etc. " +
+                    "Excludes happy path fuzzers and linters.")
+    @Getter
+    private boolean only4xxFuzzers;
+
+    @CommandLine.Option(
+            names = {"--positiveOnly"},
+            description = "Run only fuzzers that expect 2XX responses (happy path and valid data scenarios). " +
+                    "This includes happy path fuzzers, valid examples, and default values. " +
+                    "Excludes validation error fuzzers and linters.")
+    @Getter
+    private boolean only2xxFuzzers;
+
     @Setter
     private TotalCountType totalCountType = TotalCountType.FUZZERS;
 

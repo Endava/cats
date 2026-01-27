@@ -1,5 +1,6 @@
 package com.endava.cats.report;
 
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
@@ -52,6 +53,7 @@ class TestCaseListenerTest {
     ExecutionStatisticsListener executionStatisticsListener;
     IgnoreArguments ignoreArguments;
     ReportingArguments reportingArguments;
+    FilterArguments filterArguments;
     @Inject
     CatsGlobalContext catsGlobalContext;
     @Inject
@@ -71,7 +73,8 @@ class TestCaseListenerTest {
         Mockito.when(reportingArguments.getReportFormat()).thenReturn(List.of(ReportingArguments.ReportFormat.HTML_JS));
         executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
-        testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, testReportsGenerator, ignoreArguments, reportingArguments);
+        filterArguments = Mockito.mock(FilterArguments.class);
+        testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, testReportsGenerator, ignoreArguments, reportingArguments, filterArguments);
         catsGlobalContext.getDiscriminators().clear();
         catsGlobalContext.getFuzzersConfiguration().clear();
     }
@@ -877,5 +880,96 @@ class TestCaseListenerTest {
             testCaseListener.addExpectedResult(logger, "Should return {}", "2XX");
             runnable.run();
         }, FuzzingData.builder().build());
+    }
+
+    @Test
+    void shouldContinueExecutionWhenNoFilteringEnabled() {
+        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(false);
+        Mockito.when(filterArguments.isOnly2xxFuzzers()).thenReturn(false);
+
+        boolean result = testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX);
+
+        Assertions.assertThat(result).isTrue();
+        Mockito.verify(logger, Mockito.never()).skip(Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldContinueExecutionWhenExpectedCodeIsNull() {
+        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(true);
+
+        boolean result = testCaseListener.shouldContinueExecution(logger, null);
+
+        Assertions.assertThat(result).isTrue();
+        Mockito.verify(logger, Mockito.never()).skip(Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldContinueExecutionWhen4xxFilterEnabledAnd4xxExpected() {
+        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(true);
+        Mockito.when(filterArguments.isOnly2xxFuzzers()).thenReturn(false);
+
+        boolean result = testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX);
+
+        Assertions.assertThat(result).isTrue();
+        Mockito.verify(logger, Mockito.never()).skip(Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldSkipExecutionWhen4xxFilterEnabledAnd2xxExpected() {
+        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(true);
+        Mockito.when(filterArguments.isOnly2xxFuzzers()).thenReturn(false);
+
+        boolean result = testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.TWOXX);
+
+        Assertions.assertThat(result).isFalse();
+        Mockito.verify(logger).skip("Skipping test - expected response code {} does not match {} (--only{}Fuzzers enabled)", 
+                ResponseCodeFamilyPredefined.TWOXX.allowedResponseCodes(), "4XX", "4xx");
+    }
+
+    @Test
+    void shouldContinueExecutionWhen2xxFilterEnabledAnd2xxExpected() {
+        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(false);
+        Mockito.when(filterArguments.isOnly2xxFuzzers()).thenReturn(true);
+
+        boolean result = testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.TWOXX);
+
+        Assertions.assertThat(result).isTrue();
+        Mockito.verify(logger, Mockito.never()).skip(Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldSkipExecutionWhen2xxFilterEnabledAnd4xxExpected() {
+        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(false);
+        Mockito.when(filterArguments.isOnly2xxFuzzers()).thenReturn(true);
+
+        boolean result = testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX);
+
+        Assertions.assertThat(result).isFalse();
+        Mockito.verify(logger).skip("Skipping test - expected response code {} does not match {} (--only{}Fuzzers enabled)", 
+                ResponseCodeFamilyPredefined.FOURXX.allowedResponseCodes(), "2XX", "2xx");
+    }
+
+    @Test
+    void shouldContinueExecutionWhen4xxFilterEnabledAndSpecific4xxExpected() {
+        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(true);
+        Mockito.when(filterArguments.isOnly2xxFuzzers()).thenReturn(false);
+        ResponseCodeFamily fourZeroFour = new ResponseCodeFamilyDynamic(List.of("404"));
+
+        boolean result = testCaseListener.shouldContinueExecution(logger, fourZeroFour);
+
+        Assertions.assertThat(result).isTrue();
+        Mockito.verify(logger, Mockito.never()).skip(Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldSkipExecutionWhen4xxFilterEnabledAnd5xxExpected() {
+        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(true);
+        Mockito.when(filterArguments.isOnly2xxFuzzers()).thenReturn(false);
+
+        boolean result = testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FIVEXX);
+
+        Assertions.assertThat(result).isFalse();
+        Mockito.verify(logger).skip("Skipping test - expected response code {} does not match {} (--only{}Fuzzers enabled)", 
+                ResponseCodeFamilyPredefined.FIVEXX.allowedResponseCodes(), "4XX", "4xx");
     }
 }

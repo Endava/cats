@@ -1,12 +1,7 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.args.IgnoreArguments;
-import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -26,8 +21,12 @@ class UniqueOperationIdsLinterTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestReportsGenerator.class),
-                Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
+        testCaseListener = Mockito.mock(TestCaseListener.class);
+        Mockito.doAnswer(invocation -> {
+            Runnable testLogic = invocation.getArgument(2);
+            testLogic.run();
+            return null;
+        }).when(testCaseListener).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         uniqueOperationIdsLinterFuzzer = new UniqueOperationIdsLinter(testCaseListener);
     }
 

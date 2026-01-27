@@ -284,6 +284,12 @@ public class TemplateFuzzer implements Fuzzer {
     private void process(FuzzingData data, CatsRequest catsRequest, String targetField, Object fuzzedValue, String fuzzDescription) {
         testCaseListener.addScenario(logger, "Replace request field, header or path/query param [{}], with [{}]", targetField, fuzzDescription);
         testCaseListener.addExpectedResult(logger, "Should get a response that doesn't match given arguments");
+        
+        if (!testCaseListener.shouldContinueExecution(logger, null)) {
+            testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
+            return;
+        }
+        
         testCaseListener.addRequest(catsRequest);
         testCaseListener.addPath(catsRequest.getUrl());
         testCaseListener.addContractPath(data.getContractPath());

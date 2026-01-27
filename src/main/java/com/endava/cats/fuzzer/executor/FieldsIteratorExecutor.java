@@ -108,6 +108,11 @@ public class FieldsIteratorExecutor {
         testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
                 context.getExpectedResponseCode() != null ? context.getExpectedResponseCode().asString() : "a response that doesn't match" + matchArguments.getMatchString());
 
+        if (!testCaseListener.shouldContinueExecution(context.getLogger(), context.getExpectedResponseCode())) {
+            testCaseListener.skipTest(context.getLogger(), "Test skipped due to response code filtering");
+            return;
+        }
+
         FuzzingResult fuzzingResult = this.getFuzzingResult(context, fuzzedField, strategy);
 
         CatsResponse response = serviceCaller.call(

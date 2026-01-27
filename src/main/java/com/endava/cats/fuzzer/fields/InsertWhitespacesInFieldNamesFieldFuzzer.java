@@ -59,6 +59,11 @@ public class InsertWhitespacesInFieldNamesFieldFuzzer implements Fuzzer {
         testCaseListener.addScenario(logger, "Insert random whitespaces in the field name [{}]", field);
         testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", ResponseCodeFamilyPredefined.FOURXX);
 
+        if (!testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX)) {
+            testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
+            return;
+        }
+
         String fuzzedJson = JsonUtils.insertCharactersInFieldKey(data.getPayload(), field, randomWhitespace);
 
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())

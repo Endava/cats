@@ -105,7 +105,9 @@ public class CustomFuzzerUtil {
                     .toList();
 
             ResponseCodeFamily expectedResponseCodeFamily = new ResponseCodeFamilyDynamic(expectedResponseCodeAsList);
-            this.startCustomTest(testName, currentPathValues, expectedResponseCodeFamily);
+            if (!this.startCustomTest(testName, currentPathValues, expectedResponseCodeFamily)) {
+                continue;
+            }
 
             String payloadWithCustomValuesReplaced = this.getJsonWithCustomValuesFromFile(data, currentPathValues);
             payloadWithCustomValuesReplaced = CatsUtil.setAdditionalPropertiesToPayload(currentPathValues, payloadWithCustomValuesReplaced);
@@ -278,10 +280,11 @@ public class CustomFuzzerUtil {
     }
 
 
-    private void startCustomTest(String testName, Map<String, Object> currentPathValues, ResponseCodeFamily expectedResponseCode) {
+    private boolean startCustomTest(String testName, Map<String, Object> currentPathValues, ResponseCodeFamily expectedResponseCode) {
         String testScenario = this.getTestScenario(testName, currentPathValues);
         testCaseListener.addScenario(log, "Scenario: {}", testScenario);
         testCaseListener.addExpectedResult(log, "Should return {}", expectedResponseCode.allowedResponseCodes());
+        return testCaseListener.shouldContinueExecution(log, expectedResponseCode);
     }
 
     /**

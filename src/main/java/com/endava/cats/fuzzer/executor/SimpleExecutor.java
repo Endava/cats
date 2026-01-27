@@ -56,6 +56,11 @@ public class SimpleExecutor {
             testCaseListener.addScenario(context.getLogger(), context.getScenario());
             testCaseListener.addExpectedResult(context.getLogger(), "Should return {}" + context.getExpectedResult(), context.getExpectedSpecificResponseCode());
 
+            if (!testCaseListener.shouldContinueExecution(context.getLogger(), context.getExpectedResponseCode())) {
+                testCaseListener.skipTest(context.getLogger(), "Test skipped due to response code filtering");
+                return;
+            }
+
             CatsResponse response = serviceCaller.call(
                     ServiceData.builder()
                             .relativePath(context.getPath())

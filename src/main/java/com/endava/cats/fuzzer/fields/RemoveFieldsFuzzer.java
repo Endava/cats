@@ -5,6 +5,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
@@ -89,7 +90,13 @@ public class RemoveFieldsFuzzer implements Fuzzer {
             testCaseListener.addScenario(logger, "Remove the following fields from request: {}", subset);
 
             boolean hasRequiredFieldsRemove = this.hasRequiredFieldsRemove(required, subset);
+            ResponseCodeFamily expectedResponseCode = ResponseCodeFamilyPredefined.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove);
             testCaseListener.addExpectedResult(logger, "Should return [{}] response code as required fields [{}] removed", ResponseCodeFamilyPredefined.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove));
+
+            if (!testCaseListener.shouldContinueExecution(logger, expectedResponseCode)) {
+                testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
+                return;
+            }
 
             CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                     .payload(finalJsonPayload).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contractPath(data.getContractPath())

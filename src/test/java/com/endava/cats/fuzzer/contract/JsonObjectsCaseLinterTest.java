@@ -1,15 +1,10 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -33,8 +28,12 @@ class JsonObjectsCaseLinterTest {
     void setup() {
         ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
-        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestReportsGenerator.class),
-                Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
+        testCaseListener = Mockito.mock(TestCaseListener.class);
+        Mockito.doAnswer(invocation -> {
+            Runnable testLogic = invocation.getArgument(2);
+            testLogic.run();
+            return null;
+        }).when(testCaseListener).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         jsonObjectsCaseLinterFuzzer = new JsonObjectsCaseLinter(testCaseListener, processingArguments, namingArguments);
         ReflectionTestUtils.setField(namingArguments, "jsonPropertiesNaming", NamingArguments.Naming.CAMEL);
         ReflectionTestUtils.setField(namingArguments, "jsonObjectsNaming", NamingArguments.Naming.PASCAL);
