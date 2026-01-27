@@ -252,35 +252,28 @@ public class TestCaseListener {
      * @return true if execution should continue, false to skip the test
      */
     public boolean shouldContinueExecution(PrettyLogger logger, ResponseCodeFamily expectedResponseCode) {
+        // no filtering enabled
         if (!filterArguments.isOnly4xxFuzzers() && !filterArguments.isOnly2xxFuzzers()) {
             return true;
         }
+
+        // can't decide -> don't filter
         if (expectedResponseCode == null) {
-            return true; // No filtering if response code is unknown
+            return true;
         }
 
-        boolean matches = false;
-        String filterType = null;
-
-        if (filterArguments.isOnly4xxFuzzers()) {
-            filterType = "4XX";
-            matches = expectedResponseCode.allowedResponseCodes().stream()
-                    .anyMatch(allowedCode -> ResponseCodeFamily.matchAsCodeOrRange(allowedCode, "4XX"));
-        }
-
-        if (filterArguments.isOnly2xxFuzzers()) {
-            filterType = "2XX";
-            matches = expectedResponseCode.allowedResponseCodes().stream()
-                    .anyMatch(allowedCode -> ResponseCodeFamily.matchAsCodeOrRange(allowedCode, "2XX"));
-        }
+        String filterType = filterArguments.isOnly2xxFuzzers() ? "2XX" : "4XX";
+        boolean matches = expectedResponseCode.allowedResponseCodes().stream()
+                .anyMatch(code -> ResponseCodeFamily.matchAsCodeOrRange(code, filterType));
 
         if (!matches) {
-            logger.skip("Skipping test - expected response code {} does not match {} (--only{}Fuzzers enabled)",
-                    expectedResponseCode.allowedResponseCodes(), filterType, filterType.toLowerCase(Locale.ROOT));
-            return false;
+            logger.skip("Skipping test - expected response code {} does not match {} (--{}Only enabled)",
+                    expectedResponseCode.allowedResponseCodes(),
+                    filterType,
+                    filterArguments.isOnly2xxFuzzers() ? "positive" : "negative");
         }
 
-        return true;
+        return matches;
     }
 
     /**

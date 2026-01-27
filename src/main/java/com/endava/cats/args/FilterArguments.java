@@ -59,6 +59,12 @@ public class FilterArguments {
         ALL
     }
 
+    enum Mode {
+        ALL,
+        NEGATIVE,
+        POSITIVE
+    }
+
     /* local caches to avoid recompute */
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> SECOND_PHASE_FUZZERS_TO_BE_RUN = new ArrayList<>();
@@ -187,26 +193,42 @@ public class FilterArguments {
     private Path customProfileFile;
 
     @CommandLine.Option(
-            names = {"--negativeOnly"},
-            description = "Run only fuzzers that expect 4XX responses (validation and error testing scenarios). " +
-                    "This includes fuzzers testing required fields, invalid values, authentication, etc. " +
-                    "Excludes happy path fuzzers and linters.")
-    @Getter
-    private boolean only4xxFuzzers;
-
-    @CommandLine.Option(
-            names = {"--positiveOnly"},
-            description = "Run only fuzzers that expect 2XX responses (happy path and valid data scenarios). " +
-                    "This includes happy path fuzzers, valid examples, and default values. " +
-                    "Excludes validation error fuzzers and linters.")
-    @Getter
-    private boolean only2xxFuzzers;
+            names = "--mode",
+            description = "Fuzzer selection mode. Available values:%n" +
+                    "  ALL       - Run all fuzzers (default).%n" +
+                    "  NEGATIVE  - Run only negative test scenarios (fuzzers expecting 4XX responses: " +
+                    "validation, invalid values, authentication, etc). Excludes happy path fuzzers and linters.%n" +
+                    "  POSITIVE  - Run only positive test scenarios (fuzzers expecting 2XX responses: " +
+                    "happy path, valid examples, default values). Excludes validation error fuzzers and linters.",
+            defaultValue = "ALL",
+            showDefaultValue = CommandLine.Help.Visibility.ALWAYS
+    )
+    private Mode mode;
 
     @Setter
     private TotalCountType totalCountType = TotalCountType.FUZZERS;
 
     private Map<String, List<String>> skipPathFuzzers = new HashMap<>();
     private Map<String, Map<String, List<String>>> skipFuzzersForExtensionMap = new HashMap<>();
+
+
+    /**
+     * Returns if CATS should run only the negative fuzzers.
+     *
+     * @return true if CATS should run only the negative fuzzers, false otherwise
+     */
+    public boolean isOnly4xxFuzzers() {
+        return mode == Mode.NEGATIVE;
+    }
+
+    /**
+     * Returns if CATS should run only the positive fuzzers.
+     *
+     * @return true if CATS should run only the positive fuzzers, false otherwise
+     */
+    public boolean isOnly2xxFuzzers() {
+        return mode == Mode.POSITIVE;
+    }
 
     /**
      * Gets the list of fields to skip during processing. If the list is not set, an empty list is returned.

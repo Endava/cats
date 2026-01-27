@@ -922,8 +922,8 @@ class TestCaseListenerTest {
         boolean result = testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.TWOXX);
 
         Assertions.assertThat(result).isFalse();
-        Mockito.verify(logger).skip("Skipping test - expected response code {} does not match {} (--only{}Fuzzers enabled)", 
-                ResponseCodeFamilyPredefined.TWOXX.allowedResponseCodes(), "4XX", "4xx");
+        Mockito.verify(logger).skip("Skipping test - expected response code {} does not match {} (--{}Only enabled)",
+                ResponseCodeFamilyPredefined.TWOXX.allowedResponseCodes(), "4XX", "negative");
     }
 
     @Test
@@ -945,8 +945,8 @@ class TestCaseListenerTest {
         boolean result = testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX);
 
         Assertions.assertThat(result).isFalse();
-        Mockito.verify(logger).skip("Skipping test - expected response code {} does not match {} (--only{}Fuzzers enabled)", 
-                ResponseCodeFamilyPredefined.FOURXX.allowedResponseCodes(), "2XX", "2xx");
+        Mockito.verify(logger).skip("Skipping test - expected response code {} does not match {} (--{}Only enabled)",
+                ResponseCodeFamilyPredefined.FOURXX.allowedResponseCodes(), "2XX", "positive");
     }
 
     @Test
@@ -969,7 +969,7 @@ class TestCaseListenerTest {
         boolean result = testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FIVEXX);
 
         Assertions.assertThat(result).isFalse();
-        Mockito.verify(logger).skip("Skipping test - expected response code {} does not match {} (--only{}Fuzzers enabled)", 
-                ResponseCodeFamilyPredefined.FIVEXX.allowedResponseCodes(), "4XX", "4xx");
+        Mockito.verify(logger).skip("Skipping test - expected response code {} does not match {} (--{}Only enabled)",
+                ResponseCodeFamilyPredefined.FIVEXX.allowedResponseCodes(), "4XX", "negative");
     }
 }
