@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +22,6 @@ class DuplicateKeysFieldsFuzzerTest {
     private SimpleExecutor simpleExecutor;
     private DuplicateKeysFieldsFuzzer duplicateKeysFieldsFuzzer;
     private FuzzingData data;
-    private CatsResponse catsResponse;
 
     @BeforeEach
     void setup() {
@@ -41,39 +39,20 @@ class DuplicateKeysFieldsFuzzerTest {
         Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
     }
 
-    @Test
-    void shouldSkipFieldExceedingDepthLimit() {
-        setup(HttpMethod.POST);
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("field#nested#too#deep"));
+    @ParameterizedTest
+    @CsvSource({"field#nested#too#deep,0", "nonexistentField,0", "field,1"})
+    void shouldRunWithDifferentFields(String field, int expectedExecutions) {
+        setupData();
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton(field));
 
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
-    }
-
-    @Test
-    void shouldSkipFieldNotInPayload() {
-        setup(HttpMethod.POST);
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("nonexistentField"));
-
-        duplicateKeysFieldsFuzzer.fuzz(data);
-
-        Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
-    }
-
-    @Test
-    void shouldExecuteFieldDuplication() {
-        setup(HttpMethod.POST);
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("field"));
-
-        duplicateKeysFieldsFuzzer.fuzz(data);
-
-        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(expectedExecutions)).execute(Mockito.any());
     }
 
     @Test
     void shouldHandleErrorDuringPayloadDuplication() {
-        setup(HttpMethod.POST);
+        setupData();
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("field"));
         Mockito.when(data.getPayload()).thenReturn("invalidJson");
 
@@ -91,7 +70,7 @@ class DuplicateKeysFieldsFuzzerTest {
             "{\"data\":{\"items\":[{\"id\":1},{\"id\":2}]}}|data#items",
             "{\"field-with-dash\":\"value\"}|field-with-dash"}, delimiter = '|')
     void shouldHandleNestedObjectDuplication(String payload, String field) {
-        setup(HttpMethod.POST);
+        setupData();
         Mockito.when(data.getPayload()).thenReturn(payload);
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton(field));
 
@@ -102,7 +81,7 @@ class DuplicateKeysFieldsFuzzerTest {
 
     @Test
     void shouldHandleMultipleFieldsWithLimit() {
-        setup(HttpMethod.POST);
+        setupData();
         Mockito.when(data.getPayload()).thenReturn("{\"field1\":\"value1\",\"field2\":\"value2\",\"field3\":\"value3\"}");
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("field1", "field2", "field3"));
 
@@ -112,13 +91,12 @@ class DuplicateKeysFieldsFuzzerTest {
     }
 
 
-    private void setup(HttpMethod method) {
-        catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
+    private void setupData() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getPath()).thenReturn("path1");
-        Mockito.when(data.getMethod()).thenReturn(method);
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
         Mockito.when(data.getPayload()).thenReturn("{\"field\":\"value\"}");
         Mockito.when(data.getResponses()).thenReturn(responses);
         Mockito.when(data.getResponseCodes()).thenReturn(Collections.singleton("200"));

@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
@@ -27,7 +26,6 @@ class NewFieldsFuzzerTest {
     private NewFieldsFuzzer newFieldsFuzzer;
 
     private FuzzingData data;
-    private CatsResponse catsResponse;
 
     @BeforeEach
     void setup() {
@@ -109,7 +107,6 @@ class NewFieldsFuzzerTest {
     }
 
     private void setup(HttpMethod method) {
-        catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         data = FuzzingData.builder().path("path1").method(method).payload("{'field':'oldValue'}").

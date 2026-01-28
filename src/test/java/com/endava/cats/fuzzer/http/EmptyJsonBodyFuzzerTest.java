@@ -58,6 +58,7 @@ class EmptyJsonBodyFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
 
         emptyJsonBodyFuzzer.fuzz(data);
+        emptyJsonBodyFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(responseCodeFamily), Mockito.anyBoolean(), Mockito.eq(true));
     }
 
