@@ -4,14 +4,11 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -31,8 +28,7 @@ import java.util.stream.Collectors;
 @FieldFuzzer
 public class RemoveFieldsFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(RemoveFieldsFuzzer.class);
-    private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
+    private final SimpleExecutor simpleExecutor;
     private final FilterArguments filterArguments;
     private final ProcessingArguments processingArguments;
 
@@ -40,14 +36,12 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     /**
      * Creates a new RemoveFieldsFuzzer instance.
      *
-     * @param sc the service caller
-     * @param lr the test case listener
-     * @param fa filter arguments
-     * @param pa to get the number of max fields to remove at once
+     * @param simpleExecutor the simple executor
+     * @param fa             filter arguments
+     * @param pa             to get the number of max fields to remove at once
      */
-    public RemoveFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, FilterArguments fa, ProcessingArguments pa) {
-        this.serviceCaller = sc;
-        this.testCaseListener = lr;
+    public RemoveFieldsFuzzer(SimpleExecutor simpleExecutor, FilterArguments fa, ProcessingArguments pa) {
+        this.simpleExecutor = simpleExecutor;
         this.filterArguments = fa;
         this.processingArguments = pa;
     }
@@ -60,7 +54,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         for (Set<String> subset : sets) {
             Set<String> finalSubset = this.removeIfSkipped(subset);
             if (!finalSubset.isEmpty()) {
-                testCaseListener.createAndExecuteTest(logger, this, () -> process(data, data.getAllRequiredFields(), finalSubset), data);
+                process(data, data.getAllRequiredFields(), finalSubset);
             }
         }
     }
@@ -87,23 +81,20 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         String finalJsonPayload = this.getFuzzedJsonWithFieldsRemove(data.getPayload(), subset);
 
         if (!JsonUtils.equalAsJson(finalJsonPayload, data.getPayload())) {
-            testCaseListener.addScenario(logger, "Remove the following fields from request: {}", subset);
-
             boolean hasRequiredFieldsRemove = this.hasRequiredFieldsRemove(required, subset);
-            ResponseCodeFamily expectedResponseCode = ResponseCodeFamilyPredefined.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove);
-            testCaseListener.addExpectedResult(logger, "Should return [{}] response code as required fields [{}] removed", ResponseCodeFamilyPredefined.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove));
+            Object[] expectedWording = ResponseCodeFamilyPredefined.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove);
 
-            if (!testCaseListener.shouldContinueExecution(logger, expectedResponseCode)) {
-                testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
-                return;
-            }
-
-            CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                    .payload(finalJsonPayload).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contractPath(data.getContractPath())
-                    .contentType(data.getFirstRequestContentType()).pathParamsPayload(data.getPathParamsPayload()).build());
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
+            simpleExecutor.execute(SimpleExecutorContext.builder()
+                    .logger(logger)
+                    .fuzzer(this)
+                    .fuzzingData(data)
+                    .payload(finalJsonPayload)
+                    .expectedResponseCode(ResponseCodeFamilyPredefined.from(String.valueOf(expectedWording[0])))
+                    .scenario("Remove the following fields from request: " + subset.toString())
+                    .expectedResult(String.format(" as required fields %s removed", expectedWording[1]))
+                    .build());
         } else {
-            testCaseListener.skipTest(logger, "Field is from a different ANY_OF or ONE_OF payload");
+            logger.skip("Field is from a different ANY_OF or ONE_OF payload. Skipping test");
         }
     }
 

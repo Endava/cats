@@ -1,22 +1,15 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilterArguments;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.report.TestReportsGenerator;
-import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectSpy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,18 +20,15 @@ import java.util.Set;
 @QuarkusTest
 class DuplicateKeysFieldsFuzzerTest {
 
-    @InjectSpy
-    private TestCaseListener testCaseListener;
-    private ServiceCaller serviceCaller;
+    private SimpleExecutor simpleExecutor;
     private DuplicateKeysFieldsFuzzer duplicateKeysFieldsFuzzer;
     private FuzzingData data;
     private CatsResponse catsResponse;
 
     @BeforeEach
     void setup() {
-        serviceCaller = Mockito.mock(ServiceCaller.class);
-        duplicateKeysFieldsFuzzer = new DuplicateKeysFieldsFuzzer(serviceCaller, testCaseListener);
-        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
+        simpleExecutor = Mockito.mock(SimpleExecutor.class);
+        duplicateKeysFieldsFuzzer = new DuplicateKeysFieldsFuzzer(simpleExecutor);
     }
 
     @Test
@@ -48,7 +38,7 @@ class DuplicateKeysFieldsFuzzerTest {
 
         duplicateKeysFieldsFuzzer.fuzz(emptyPayloadData);
 
-        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
     }
 
     @Test
@@ -58,7 +48,7 @@ class DuplicateKeysFieldsFuzzerTest {
 
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
     }
 
     @Test
@@ -68,7 +58,7 @@ class DuplicateKeysFieldsFuzzerTest {
 
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
     }
 
     @Test
@@ -78,7 +68,7 @@ class DuplicateKeysFieldsFuzzerTest {
 
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
     }
 
     @Test
@@ -89,7 +79,7 @@ class DuplicateKeysFieldsFuzzerTest {
 
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
     }
 
     @ParameterizedTest
@@ -107,7 +97,7 @@ class DuplicateKeysFieldsFuzzerTest {
 
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
     }
 
     @Test
@@ -118,23 +108,9 @@ class DuplicateKeysFieldsFuzzerTest {
 
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+        Mockito.verify(simpleExecutor, Mockito.times(3)).execute(Mockito.any());
     }
 
-    @Test
-    void shouldSkipTestWhen2xxFilterEnabledAndExpects4xx() {
-        FilterArguments filterArguments = Mockito.mock(FilterArguments.class);
-        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(false);
-        Mockito.when(filterArguments.isOnly2xxFuzzers()).thenReturn(true);
-        ReflectionTestUtils.setField(testCaseListener, "filterArguments", filterArguments);
-        
-        setup(HttpMethod.POST);
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("field"));
-        duplicateKeysFieldsFuzzer.fuzz(data);
-        
-        Mockito.verify(testCaseListener).skipTest(Mockito.any(PrettyLogger.class), Mockito.eq("Test skipped due to response code filtering"));
-        Mockito.verify(serviceCaller, Mockito.never()).call(Mockito.any());
-    }
 
     private void setup(HttpMethod method) {
         catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
@@ -147,6 +123,5 @@ class DuplicateKeysFieldsFuzzerTest {
         Mockito.when(data.getResponses()).thenReturn(responses);
         Mockito.when(data.getResponseCodes()).thenReturn(Collections.singleton("200"));
 
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
     }
 }

@@ -2,14 +2,12 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
@@ -29,29 +27,23 @@ import static com.endava.cats.util.CatsDSLWords.NEW_FIELD;
 @FieldFuzzer
 public class NewFieldsFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(NewFieldsFuzzer.class);
-    private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
+    private final SimpleExecutor simpleExecutor;
+
 
     /**
      * Creates a new NewFieldsFuzzer instance.
      *
-     * @param sc the service caller
-     * @param lr the test case listener
+     * @param simpleExecutor the simple executor
      */
-    public NewFieldsFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        this.serviceCaller = sc;
-        this.testCaseListener = lr;
+    public NewFieldsFuzzer(SimpleExecutor simpleExecutor) {
+        this.simpleExecutor = simpleExecutor;
     }
 
     @Override
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(logger, this, () -> process(data), data);
-    }
-
-    private void process(FuzzingData data) {
         String fuzzedJson = this.addNewField(data);
         if (JsonUtils.equalAsJson(fuzzedJson, data.getPayload())) {
-            testCaseListener.skipTest(logger, "Could not fuzz the payload");
+            logger.skip("Could not add new field to the payload. Skipping fuzzing");
             return;
         }
 
@@ -59,19 +51,15 @@ public class NewFieldsFuzzer implements Fuzzer {
         if (HttpMethod.requiresBody(data.getMethod())) {
             expectedResultCode = ResponseCodeFamilyPredefined.FOURXX;
         }
-        testCaseListener.addScenario(logger, "Add new field inside the request: name [{}], value [{}]. All other details are similar to a happy flow", NEW_FIELD, NEW_FIELD);
-        testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", expectedResultCode.asString());
 
-        if (!testCaseListener.shouldContinueExecution(logger, expectedResultCode)) {
-            testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
-            return;
-        }
-
-        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(fuzzedJson).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contractPath(data.getContractPath())
-                .contentType(data.getFirstRequestContentType()).pathParamsPayload(data.getPathParamsPayload())
+        simpleExecutor.execute(SimpleExecutorContext.builder()
+                .logger(logger)
+                .fuzzer(this)
+                .fuzzingData(data)
+                .payload(fuzzedJson)
+                .expectedResponseCode(expectedResultCode)
+                .scenario("Add new field inside the request: name [" + NEW_FIELD + "], value [" + NEW_FIELD + "]. All other details are similar to a happy flow")
                 .build());
-        testCaseListener.reportResult(logger, data, response, expectedResultCode);
     }
 
     String addNewField(FuzzingData data) {

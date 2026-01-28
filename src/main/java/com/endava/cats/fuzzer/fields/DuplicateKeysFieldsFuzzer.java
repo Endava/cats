@@ -2,13 +2,11 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
@@ -40,12 +38,10 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
     private static final int MAX_FIELD_DEPTH = 5;
     private static final int MAX_MUTATIONS_PER_REQUEST = 100;
 
-    private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
+    private final SimpleExecutor simpleExecutor;
 
-    public DuplicateKeysFieldsFuzzer(ServiceCaller serviceCaller, TestCaseListener testCaseListener) {
-        this.serviceCaller = serviceCaller;
-        this.testCaseListener = testCaseListener;
+    public DuplicateKeysFieldsFuzzer(SimpleExecutor simpleExecutor) {
+        this.simpleExecutor = simpleExecutor;
     }
 
     @Override
@@ -92,12 +88,7 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
             return;
         }
 
-        testCaseListener.createAndExecuteTest(
-                logger,
-                this,
-                () -> runDuplicationTestCase(data, field, duplicatedPayload.get()),
-                data
-        );
+        runDuplicationTestCase(data, field, duplicatedPayload.get());
     }
 
     private Optional<String> createDuplicatedPayload(String originalPayload, String fieldPath) {
@@ -116,34 +107,18 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
     }
 
     private void runDuplicationTestCase(FuzzingData data, String field, String duplicatedPayload) {
-        testCaseListener.addScenario(logger,
-                "Duplicate key [{}] in parent object with second value [{}]", field, DUPLICATE_VALUE);
-        testCaseListener.addExpectedResult(logger,
-                "Service should return a [{}] response", ResponseCodeFamilyPredefined.FOURXX.asString());
-
-        if (!testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX)) {
-            testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
-            return;
-        }
-
-        CatsResponse response = serviceCaller.call(buildServiceData(data, duplicatedPayload));
-        testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
-    }
-
-    private ServiceData buildServiceData(FuzzingData data, String payload) {
-        return ServiceData.builder()
-                .relativePath(data.getPath())
-                .headers(data.getHeaders())
-                .payload(payload)
-                .queryParams(data.getQueryParams())
-                .httpMethod(data.getMethod())
-                .contractPath(data.getContractPath())
+        simpleExecutor.execute(SimpleExecutorContext.builder()
+                .logger(logger)
+                .fuzzer(this)
+                .fuzzingData(data)
+                .payload(duplicatedPayload)
+                .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                .scenario("Duplicate key [" + field + "] in parent object with second value [" + DUPLICATE_VALUE + "]")
                 .replaceRefData(false)
-                .contentType(data.getFirstRequestContentType())
-                .pathParamsPayload(data.getPathParamsPayload())
                 .validJson(false)
-                .build();
+                .build());
     }
+
 
     /**
      * Recursively renders JSON while duplicating the target key when the path matches.

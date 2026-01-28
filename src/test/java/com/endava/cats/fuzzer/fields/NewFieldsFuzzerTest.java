@@ -1,24 +1,17 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilterArguments;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
-import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,9 +22,7 @@ import static com.endava.cats.util.CatsDSLWords.NEW_FIELD;
 
 @QuarkusTest
 class NewFieldsFuzzerTest {
-    @InjectSpy
-    private TestCaseListener testCaseListener;
-    private ServiceCaller serviceCaller;
+    private SimpleExecutor simpleExecutor;
 
     private NewFieldsFuzzer newFieldsFuzzer;
 
@@ -40,16 +31,15 @@ class NewFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        serviceCaller = Mockito.mock(ServiceCaller.class);
-        newFieldsFuzzer = new NewFieldsFuzzer(serviceCaller, testCaseListener);
-        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
+        simpleExecutor = Mockito.mock(SimpleExecutor.class);
+        newFieldsFuzzer = new NewFieldsFuzzer(simpleExecutor);
     }
 
     @Test
     void shouldRunForEmptyPayload() {
         newFieldsFuzzer.fuzz(Mockito.mock(FuzzingData.class));
 
-        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(simpleExecutor).execute(Mockito.any());
     }
 
     @Test
@@ -63,7 +53,7 @@ class NewFieldsFuzzerTest {
         setup(HttpMethod.POST);
         newFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
     }
 
     @Test
@@ -71,7 +61,7 @@ class NewFieldsFuzzerTest {
         setup(HttpMethod.GET);
         newFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
+        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
     }
 
     @Test
@@ -106,7 +96,7 @@ class NewFieldsFuzzerTest {
         data = FuzzingData.builder().payload(payload).reqSchema(new StringSchema()).build();
         newFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+        Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
     }
 
     @Test
@@ -115,35 +105,7 @@ class NewFieldsFuzzerTest {
         data = FuzzingData.builder().payload(payload).reqSchema(new StringSchema()).build();
         newFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
-    }
-
-    @Test
-    void shouldSkipTestWhen4xxFilterEnabledAndExpects2xx() {
-        FilterArguments filterArguments = Mockito.mock(FilterArguments.class);
-        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(true);
-        Mockito.when(filterArguments.isOnly2xxFuzzers()).thenReturn(false);
-        ReflectionTestUtils.setField(testCaseListener, "filterArguments", filterArguments);
-        
-        setup(HttpMethod.GET);
-        newFieldsFuzzer.fuzz(data);
-        
-        Mockito.verify(testCaseListener).skipTest(Mockito.any(PrettyLogger.class), Mockito.eq("Test skipped due to response code filtering"));
-        Mockito.verify(serviceCaller, Mockito.never()).call(Mockito.any());
-    }
-
-    @Test
-    void shouldSkipTestWhen2xxFilterEnabledAndExpects4xx() {
-        FilterArguments filterArguments = Mockito.mock(FilterArguments.class);
-        Mockito.when(filterArguments.isOnly4xxFuzzers()).thenReturn(false);
-        Mockito.when(filterArguments.isOnly2xxFuzzers()).thenReturn(true);
-        ReflectionTestUtils.setField(testCaseListener, "filterArguments", filterArguments);
-        
-        setup(HttpMethod.POST);
-        newFieldsFuzzer.fuzz(data);
-        
-        Mockito.verify(testCaseListener).skipTest(Mockito.any(PrettyLogger.class), Mockito.eq("Test skipped due to response code filtering"));
-        Mockito.verify(serviceCaller, Mockito.never()).call(Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
     }
 
     private void setup(HttpMethod method) {
@@ -153,7 +115,5 @@ class NewFieldsFuzzerTest {
         data = FuzzingData.builder().path("path1").method(method).payload("{'field':'oldValue'}").
                 responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema())
                 .requestContentTypes(List.of("application/json")).build();
-
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
     }
 }

@@ -1,26 +1,20 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.report.TestReportsGenerator;
+import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Set;
 
 @QuarkusTest
 class InsertWhitespacesInFieldNamesFieldFuzzerTest {
-    @InjectSpy
-    private TestCaseListener testCaseListener;
-    private ServiceCaller serviceCaller;
+    private SimpleExecutor simpleExecutor;
 
     private InsertWhitespacesInFieldNamesFieldFuzzer insertWhitespacesInFieldNamesFieldFuzzer;
 
@@ -28,16 +22,16 @@ class InsertWhitespacesInFieldNamesFieldFuzzerTest {
 
     @BeforeEach
     void setup() {
-        serviceCaller = Mockito.mock(ServiceCaller.class);
-        insertWhitespacesInFieldNamesFieldFuzzer = new InsertWhitespacesInFieldNamesFieldFuzzer(serviceCaller, testCaseListener);
-        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
+        CatsRandom.initRandom(0);
+        simpleExecutor = Mockito.mock(SimpleExecutor.class);
+        insertWhitespacesInFieldNamesFieldFuzzer = new InsertWhitespacesInFieldNamesFieldFuzzer(simpleExecutor);
     }
 
     @Test
     void shouldNotRunForEmptyPayload() {
         insertWhitespacesInFieldNamesFieldFuzzer.fuzz(Mockito.mock(FuzzingData.class));
 
-        Mockito.verifyNoInteractions(testCaseListener);
+        Mockito.verifyNoInteractions(simpleExecutor);
     }
 
     @Test
@@ -47,19 +41,17 @@ class InsertWhitespacesInFieldNamesFieldFuzzerTest {
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("field2"));
         insertWhitespacesInFieldNamesFieldFuzzer.fuzz(data);
 
-        Mockito.verifyNoInteractions(testCaseListener);
+        Mockito.verifyNoInteractions(simpleExecutor);
     }
 
     @Test
     void shouldRunWhenFieldInPayload() {
-        catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getPayload()).thenReturn("{\"field1\": \"value1\"}");
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("field1"));
         insertWhitespacesInFieldNamesFieldFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+        Mockito.verify(simpleExecutor).execute(Mockito.any());
     }
 
     @Test

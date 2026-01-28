@@ -2,14 +2,12 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
@@ -26,18 +24,15 @@ import java.util.stream.Collectors;
 @FieldFuzzer
 public class ZeroWidthCharsInNamesFieldsFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ZeroWidthCharsInNamesFieldsFuzzer.class);
-    private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
+    private final SimpleExecutor simpleExecutor;
 
     /**
      * Creates a new ZeroWidthCharsInNamesFieldsFuzzer instance.
      *
-     * @param sc the service caller
-     * @param lr the test case listener
+     * @param simpleExecutor the simple executor
      */
-    public ZeroWidthCharsInNamesFieldsFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        this.serviceCaller = sc;
-        this.testCaseListener = lr;
+    public ZeroWidthCharsInNamesFieldsFuzzer(SimpleExecutor simpleExecutor) {
+        this.simpleExecutor = simpleExecutor;
     }
 
     @Override
@@ -52,7 +47,7 @@ public class ZeroWidthCharsInNamesFieldsFuzzer implements Fuzzer {
                     .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
                     .limit(5)
                     .collect(Collectors.toSet())) {
-                testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzValue), data);
+                process(data, fuzzedField, fuzzValue);
             }
         }
     }
@@ -60,20 +55,14 @@ public class ZeroWidthCharsInNamesFieldsFuzzer implements Fuzzer {
     private void process(FuzzingData data, String fuzzedField, String fuzzValue) {
         String fuzzedPayload = getFuzzedPayload(data, fuzzedField, fuzzValue);
 
-        testCaseListener.addScenario(logger, "Insert zero-width chars in field names: field [{}], char [{}]. All other details are similar to a happy flow",
-                fuzzedField, FuzzingStrategy.formatValue(fuzzValue));
-        testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", ResponseCodeFamilyPredefined.FOURXX.asString());
-
-        if (!testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX)) {
-            testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
-            return;
-        }
-
-        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(fuzzedPayload).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contractPath(data.getContractPath())
-                .contentType(data.getFirstRequestContentType()).pathParamsPayload(data.getPathParamsPayload())
+        simpleExecutor.execute(SimpleExecutorContext.builder()
+                .logger(logger)
+                .fuzzer(this)
+                .fuzzingData(data)
+                .payload(fuzzedPayload)
+                .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                .scenario("Insert zero-width chars in field names: field [" + fuzzedField + "], char [" + FuzzingStrategy.formatValue(fuzzValue) + "]. All other details are similar to a happy flow")
                 .build());
-        testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
     }
 
     private static @NotNull String getFuzzedPayload(FuzzingData data, String fuzzedField, String fuzzValue) {

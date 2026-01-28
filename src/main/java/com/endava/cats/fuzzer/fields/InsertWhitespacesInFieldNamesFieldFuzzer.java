@@ -2,14 +2,12 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -23,18 +21,15 @@ import java.util.Set;
 @Singleton
 public class InsertWhitespacesInFieldNamesFieldFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(InsertWhitespacesInFieldNamesFieldFuzzer.class);
-    private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
+    private final SimpleExecutor simpleExecutor;
 
     /**
      * Creates a new InsertWhitespacesInFieldNamesFieldFuzzer instance.
      *
-     * @param sc the service caller
-     * @param lr the test case listener
+     * @param simpleExecutor the simple executor
      */
-    public InsertWhitespacesInFieldNamesFieldFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        this.serviceCaller = sc;
-        this.testCaseListener = lr;
+    public InsertWhitespacesInFieldNamesFieldFuzzer(SimpleExecutor simpleExecutor) {
+        this.simpleExecutor = simpleExecutor;
     }
 
     @Override
@@ -50,27 +45,22 @@ public class InsertWhitespacesInFieldNamesFieldFuzzer implements Fuzzer {
         for (String field : allFieldsByHttpMethod) {
             logger.debug("Fuzzing field {}, inserting {}", field, randomWhitespace);
             if (JsonUtils.isFieldInJson(data.getPayload(), field)) {
-                testCaseListener.createAndExecuteTest(logger, this, () -> process(data, field, randomWhitespace), data);
+                process(data, field, randomWhitespace);
             }
         }
     }
 
     private void process(FuzzingData data, String field, String randomWhitespace) {
-        testCaseListener.addScenario(logger, "Insert random whitespaces in the field name [{}]", field);
-        testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", ResponseCodeFamilyPredefined.FOURXX);
-
-        if (!testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX)) {
-            testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
-            return;
-        }
-
         String fuzzedJson = JsonUtils.insertCharactersInFieldKey(data.getPayload(), field, randomWhitespace);
 
-        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(fuzzedJson).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contractPath(data.getContractPath())
-                .contentType(data.getFirstRequestContentType()).pathParamsPayload(data.getPathParamsPayload())
+        simpleExecutor.execute(SimpleExecutorContext.builder()
+                .logger(logger)
+                .fuzzer(this)
+                .fuzzingData(data)
+                .payload(fuzzedJson)
+                .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                .scenario("Insert random whitespaces in the field name [" + field + "]")
                 .build());
-        testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
     }
 
     @Override
