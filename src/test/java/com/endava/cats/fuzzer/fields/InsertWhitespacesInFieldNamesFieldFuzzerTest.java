@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
@@ -17,9 +16,7 @@ class InsertWhitespacesInFieldNamesFieldFuzzerTest {
     private SimpleExecutor simpleExecutor;
 
     private InsertWhitespacesInFieldNamesFieldFuzzer insertWhitespacesInFieldNamesFieldFuzzer;
-
-    private CatsResponse catsResponse;
-
+    
     @BeforeEach
     void setup() {
         CatsRandom.initRandom(0);

@@ -4,7 +4,6 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -28,7 +27,6 @@ class RemoveFieldsFuzzerTest {
     private RemoveFieldsFuzzer removeFieldsFuzzer;
 
     private FuzzingData data;
-    private CatsResponse catsResponse;
 
     @BeforeEach
     void setup() {
@@ -73,7 +71,6 @@ class RemoveFieldsFuzzerTest {
     }
 
     private void setup(String payload) {
-        catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         Schema schema = new ObjectSchema();

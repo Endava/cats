@@ -33,10 +33,11 @@ public class CatsHeader {
         this.format = param.getSchema().getFormat();
     }
 
-    private CatsHeader(String name, String value, Boolean required) {
+    private CatsHeader(String name, String value, Boolean required, String format) {
         this.name = name;
         this.required = required != null && required;
         this.value = value;
+        this.format = format;
     }
 
     /**
@@ -58,7 +59,7 @@ public class CatsHeader {
      * @return a new CatsHeader object
      */
     public static CatsHeader from(String name, String value, Boolean required, String format) {
-        return new CatsHeader(name, value, required);
+        return new CatsHeader(name, value, required, format);
     }
 
     /**
