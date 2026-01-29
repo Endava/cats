@@ -733,7 +733,7 @@ public class FuzzingDataFactory {
                         headers.add(CatsHeader.fromHeaderParameter(param));
                     } catch (IllegalArgumentException _) {
                         globalContext.recordError("A valid string could not be generated for the header '" + param.getName() + "' using the pattern '" + param.getSchema().getPattern() + "'. Please consider either changing the pattern or simplifying it.");
-                        headers.add(CatsHeader.from(param.getName(), OpenAPIModelGeneratorV2.DEFAULT_STRING_WHEN_GENERATION_FAILS, param.getRequired()));
+                        headers.add(CatsHeader.from(param.getName(), OpenAPIModelGeneratorV2.DEFAULT_STRING_WHEN_GENERATION_FAILS, param.getRequired(), Optional.ofNullable(param.getSchema()).map(Schema::getFormat).orElse(null)));
                     }
                 }
             }

@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzerContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 
@@ -30,7 +31,10 @@ public class EmptyStringsInHeadersFuzzer extends BaseHeadersFuzzer {
     public BaseHeadersFuzzerContext createFuzzerContext() {
         return BaseHeadersFuzzerContext.builder()
                 .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamilyPredefined.FOURXX)
-                .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamilyPredefined.TWOXX)
+                .expectedHttpForOptionalHeadersProducer(header -> {
+                    boolean shouldBe4xx = !header.isRequired() && StringUtils.isNotBlank(header.getFormat());
+                    return shouldBe4xx ? ResponseCodeFamilyPredefined.FOURXX_TWOXX : ResponseCodeFamilyPredefined.TWOXX;
+                })
                 .typeOfDataSentToTheService("empty values")
                 .fuzzStrategy(Collections.singletonList(FuzzingStrategy.replace().withData("")))
                 .build();

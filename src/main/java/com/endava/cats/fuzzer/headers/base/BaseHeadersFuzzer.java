@@ -33,7 +33,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
                 HeadersIteratorExecutorContext.builder()
                         .fuzzer(this)
                         .logger(logger)
-                        .expectedResponseCodeForOptionalHeaders(context.getExpectedHttpForOptionalHeadersFuzzed())
+                        .expectedResponseCodeForOptionalHeadersProducer(context.getExpectedHttpForOptionalHeadersFuzzed())
                         .expectedResponseCodeForRequiredHeaders(context.getExpectedHttpCodeForRequiredHeadersFuzzed())
                         .fuzzValueProducer(context::getFuzzStrategy)
                         .scenario("Send [%s] in headers.".formatted(context.getTypeOfDataSentToTheService()))

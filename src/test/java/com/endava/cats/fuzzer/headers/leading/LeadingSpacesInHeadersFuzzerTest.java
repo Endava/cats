@@ -19,7 +19,7 @@ class LeadingSpacesInHeadersFuzzerTest {
     @Test
     void shouldExpect2xxForOptionalAndRequiredHeaders() {
         Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpForOptionalHeadersFuzzed().apply(null)).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
     }
 
     @Test

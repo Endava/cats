@@ -24,11 +24,13 @@ public class CatsHeader {
     private final boolean required;
     private final String name;
     private String value;
+    private String format;
 
     private CatsHeader(Parameter param) {
         this.name = param.getName();
         this.required = param.getRequired() != null && param.getRequired();
         this.value = this.generateValue(param.getSchema());
+        this.format = param.getSchema().getFormat();
     }
 
     private CatsHeader(String name, String value, Boolean required) {
@@ -55,7 +57,7 @@ public class CatsHeader {
      * @param required whether the header is required or not
      * @return a new CatsHeader object
      */
-    public static CatsHeader from(String name, String value, Boolean required) {
+    public static CatsHeader from(String name, String value, Boolean required, String format) {
         return new CatsHeader(name, value, required);
     }
 
@@ -88,7 +90,7 @@ public class CatsHeader {
      * @return a copy of the current header
      */
     public CatsHeader copy() {
-        return CatsHeader.builder().name(this.name).required(this.required).value(this.value).build();
+        return CatsHeader.builder().name(this.name).required(this.required).value(this.value).format(this.format).build();
     }
 
     private String generateValue(Schema schema) {

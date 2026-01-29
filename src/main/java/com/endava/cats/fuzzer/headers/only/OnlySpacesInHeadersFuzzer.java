@@ -8,6 +8,7 @@ import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Fuzzer that sends only spaces in headers.
@@ -29,7 +30,10 @@ public class OnlySpacesInHeadersFuzzer extends BaseHeadersFuzzer {
     public BaseHeadersFuzzerContext createFuzzerContext() {
         return BaseHeadersFuzzerContext.builder()
                 .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamilyPredefined.FOURXX)
-                .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamilyPredefined.TWOXX)
+                .expectedHttpForOptionalHeadersProducer(header -> {
+                    boolean shouldBe4xx = !header.isRequired() && StringUtils.isNotBlank(header.getFormat());
+                    return shouldBe4xx ? ResponseCodeFamilyPredefined.FOURXX_TWOXX : ResponseCodeFamilyPredefined.TWOXX;
+                })
                 .typeOfDataSentToTheService("values replaced by spaces")
                 .fuzzStrategy(UnicodeGenerator.getSpacesHeaders()
                         .stream().map(value -> FuzzingStrategy.replace().withData(value)).toList())

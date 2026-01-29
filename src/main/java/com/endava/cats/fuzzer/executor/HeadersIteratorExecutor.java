@@ -13,6 +13,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,8 +64,7 @@ public class HeadersIteratorExecutor {
                     header.withValue(String.valueOf(fuzzingStrategy.process(previousHeaderValue)));
                     try {
                         testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> {
-                            boolean isRequiredHeaderFuzzed = clonedHeaders.stream().filter(CatsHeader::isRequired).toList().contains(header);
-                            ResponseCodeFamily expectedResponseCode = this.getExpectedResultCode(isRequiredHeaderFuzzed, context);
+                            ResponseCodeFamily expectedResponseCode = this.getExpectedResultCode(header, context);
 
                             testCaseListener.addScenario(context.getLogger(), context.getScenario() + "  Current header [{}] [{}]", header.getName(), fuzzingStrategy);
                             testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
@@ -109,8 +109,9 @@ public class HeadersIteratorExecutor {
         }
     }
 
-    ResponseCodeFamily getExpectedResultCode(boolean required, HeadersIteratorExecutorContext context) {
-        return required ? context.getExpectedResponseCodeForRequiredHeaders() : context.getExpectedResponseCodeForOptionalHeaders();
+    ResponseCodeFamily getExpectedResultCode(CatsHeader catsHeader, HeadersIteratorExecutorContext context) {
+        return catsHeader.isRequired() ? context.getExpectedResponseCodeForRequiredHeaders() :
+                Optional.ofNullable(context.getExpectedResponseCodeForOptionalHeadersProducer()).orElse(_ -> null).apply(catsHeader);
     }
 
     private Set<CatsHeader> getHeadersWithoutAuthHeaders(HeadersIteratorExecutorContext context) {

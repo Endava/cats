@@ -1,11 +1,14 @@
 package com.endava.cats.fuzzer.headers.base;
 
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.strategy.FuzzingStrategy;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Holds context information for headers fuzzing.
@@ -31,6 +34,12 @@ public class BaseHeadersFuzzerContext {
     private final List<FuzzingStrategy> fuzzStrategy;
 
     /**
+     * Function that returns the expected HTTP code for optional headers fuzzing.
+     */
+    private final Function<CatsHeader, ResponseCodeFamily> expectedHttpForOptionalHeadersProducer;
+
+
+    /**
      * There is a special case when we send Control Chars in Headers and an error (due to HTTP RFC specs)
      * is returned by the app server itself, not the application. In this case we don't want to check
      * if there is even a response body as the error page/response is served by the server, not the application layer.
@@ -46,4 +55,14 @@ public class BaseHeadersFuzzerContext {
      */
     @Builder.Default
     private final boolean matchResponseContentType = true;
+
+    /**
+     * Returns the expected HTTP code for optional headers fuzzing.
+     *
+     * @return the computed response code family
+     */
+    public Function<CatsHeader, ResponseCodeFamily> getExpectedHttpForOptionalHeadersFuzzed() {
+        return Objects.requireNonNullElseGet(expectedHttpForOptionalHeadersProducer,
+                () -> _ -> expectedHttpForOptionalHeadersFuzzed);
+    }
 }
