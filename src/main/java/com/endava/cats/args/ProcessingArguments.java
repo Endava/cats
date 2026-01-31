@@ -102,9 +102,9 @@ public class ProcessingArguments {
     private boolean healthCheck;
 
     @Setter
-    @CommandLine.Option(names = {"--allowLeadingZeroInNumbers"}, negatable = true, defaultValue = "true", fallbackValue = "true",
-            description = "When set to @|bold true|@, the PrefixNumbersWithZeroFieldsFuzzer will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean allowLeadingZeroInNumbers = true;
+    @CommandLine.Option(names = {"--strictTypes"}, negatable = true, defaultValue = "true", fallbackValue = "true",
+            description = "When set to @|bold true|@, the Type Coercion Fuzzers will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean strictTypes = true;
 
     @Setter
     @CommandLine.Option(names = {"--limitXxxOfCombinations"},

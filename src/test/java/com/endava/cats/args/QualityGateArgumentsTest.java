@@ -136,11 +136,27 @@ class QualityGateArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"errors=5", "invalid<5", "errors<abc"})
+    @CsvSource({"errors=5", "invalid<5", "errors<abc", "errors<", "<5", "errors<<5"})
     void shouldHandleInvalidQualityGate(String gate) {
         ReflectionTestUtils.setField(qualityGateArguments, "qualityGate", gate);
 
         // Should not fail on invalid format (logs warning)
+        Assertions.assertThat(qualityGateArguments.shouldFailBuild(10, 0)).isFalse();
+    }
+
+    @Test
+    void shouldHandleUnknownMetricInQualityGate() {
+        ReflectionTestUtils.setField(qualityGateArguments, "qualityGate", "unknownmetric<5");
+
+        // Should not fail on unknown metric (logs warning)
+        Assertions.assertThat(qualityGateArguments.shouldFailBuild(10, 0)).isFalse();
+    }
+
+    @Test
+    void shouldHandleInvalidOperatorInQualityGate() {
+        ReflectionTestUtils.setField(qualityGateArguments, "qualityGate", "errors=5");
+
+        // Should not fail on invalid operator (logs warning)
         Assertions.assertThat(qualityGateArguments.shouldFailBuild(10, 0)).isFalse();
     }
 

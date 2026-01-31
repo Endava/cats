@@ -65,7 +65,7 @@ class ProfileLoaderTest {
             Set<String> availableProfiles = profileLoader.getAvailableProfiles();
 
             Assertions.assertThat(availableProfiles)
-                    .containsExactlyInAnyOrder("security", "quick", "compliance", "ci", "full", "health-check");
+                    .containsExactlyInAnyOrder("type-coercion", "security", "quick", "compliance", "ci", "full", "health-check");
         }
 
         @Test

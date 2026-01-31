@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 @QuarkusTest
-class PrefixNumbersWithZeroFieldsFuzzerTest {
-    private PrefixNumbersWithZeroFieldsFuzzer prefixNumbersWithZeroFieldsFuzzer;
+class LeadingZerosInNumericFieldsFuzzerTest {
+    private LeadingZerosInNumericFieldsFuzzer leadingZerosInNumericFieldsFuzzer;
     private ServiceCaller serviceCaller;
     private ProcessingArguments processingArguments;
     @InjectSpy
@@ -39,21 +39,32 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         processingArguments = Mockito.mock(ProcessingArguments.class);
-        Mockito.when(processingArguments.isAllowLeadingZeroInNumbers()).thenReturn(true); // default behavior
+        Mockito.when(processingArguments.isStrictTypes()).thenReturn(true);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        prefixNumbersWithZeroFieldsFuzzer = new PrefixNumbersWithZeroFieldsFuzzer(simpleExecutor, processingArguments);
+        leadingZerosInNumericFieldsFuzzer = new LeadingZerosInNumericFieldsFuzzer(simpleExecutor, processingArguments);
     }
 
     @Test
     void shouldHaveDescription() {
-        Assertions.assertThat(prefixNumbersWithZeroFieldsFuzzer.description()).isNotBlank();
-        Assertions.assertThat(prefixNumbersWithZeroFieldsFuzzer.description()).containsIgnoringCase("leading zeros");
+        Assertions.assertThat(leadingZerosInNumericFieldsFuzzer.description()).isNotBlank();
+        Assertions.assertThat(leadingZerosInNumericFieldsFuzzer.description()).containsIgnoringCase("zero-prefixed");
+    }
+
+    @Test
+    void shouldHaveTypes() {
+        Assertions.assertThat(leadingZerosInNumericFieldsFuzzer.getOriginalType()).isEqualTo("number");
+        Assertions.assertThat(leadingZerosInNumericFieldsFuzzer.getFuzzedType()).isEqualTo("zero-prefixed number");
+    }
+
+    @Test
+    void shouldPrefixValuesWithZero() {
+        Assertions.assertThat(leadingZerosInNumericFieldsFuzzer.getFuzzedValues("3")).containsOnly("03", "003", "0003");
     }
 
     @Test
     void shouldHaveToString() {
-        Assertions.assertThat(prefixNumbersWithZeroFieldsFuzzer).hasToString(prefixNumbersWithZeroFieldsFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(leadingZerosInNumericFieldsFuzzer).hasToString(leadingZerosInNumericFieldsFuzzer.getClass().getSimpleName());
     }
 
     @ParameterizedTest
@@ -61,7 +72,7 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
     void shouldNotRunWithEmptyPayload(String payload) {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getPayload()).thenReturn(payload);
-        prefixNumbersWithZeroFieldsFuzzer.fuzz(data);
+        leadingZerosInNumericFieldsFuzzer.fuzz(data);
         Mockito.verifyNoInteractions(serviceCaller);
     }
 
@@ -76,7 +87,7 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
         Mockito.when(data.getPayload()).thenReturn("{\"name\": \"test\", \"description\": \"desc\"}");
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
 
-        prefixNumbersWithZeroFieldsFuzzer.fuzz(data);
+        leadingZerosInNumericFieldsFuzzer.fuzz(data);
         Mockito.verifyNoInteractions(serviceCaller);
     }
 
@@ -96,11 +107,11 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(200).build());
 
-        prefixNumbersWithZeroFieldsFuzzer.fuzz(data);
+        leadingZerosInNumericFieldsFuzzer.fuzz(data);
 
         // 3 prefixes (0, 00, 000) for 1 numeric field = 3 calls
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
@@ -119,11 +130,11 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(200).build());
 
-        prefixNumbersWithZeroFieldsFuzzer.fuzz(data);
+        leadingZerosInNumericFieldsFuzzer.fuzz(data);
 
         // 3 prefixes for 1 numeric field = 3 calls
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
@@ -143,16 +154,16 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(200).build());
 
-        prefixNumbersWithZeroFieldsFuzzer.fuzz(data);
+        leadingZerosInNumericFieldsFuzzer.fuzz(data);
 
         // 3 prefixes for 2 numeric fields = 6 calls
         Mockito.verify(testCaseListener, Mockito.times(6)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
     void shouldSkipForHttpMethods() {
-        Assertions.assertThat(prefixNumbersWithZeroFieldsFuzzer.skipForHttpMethods())
+        Assertions.assertThat(leadingZerosInNumericFieldsFuzzer.skipForHttpMethods())
                 .containsOnly(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
     }
 
@@ -173,11 +184,11 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(200).build());
 
-        prefixNumbersWithZeroFieldsFuzzer.fuzz(data);
+        leadingZerosInNumericFieldsFuzzer.fuzz(data);
 
         // Only age field should be fuzzed (3 prefixes), count is not in payload
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
@@ -195,18 +206,18 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(200).build());
 
-        prefixNumbersWithZeroFieldsFuzzer.fuzz(data);
+        leadingZerosInNumericFieldsFuzzer.fuzz(data);
 
         // 3 prefixes for 1 nested numeric field = 3 calls
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
     void shouldExpect4xxWhenLeadingZerosNotAllowed() {
-        Mockito.when(processingArguments.isAllowLeadingZeroInNumbers()).thenReturn(false);
+        Mockito.when(processingArguments.isStrictTypes()).thenReturn(false);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        prefixNumbersWithZeroFieldsFuzzer = new PrefixNumbersWithZeroFieldsFuzzer(simpleExecutor, processingArguments);
+        leadingZerosInNumericFieldsFuzzer = new LeadingZerosInNumericFieldsFuzzer(simpleExecutor, processingArguments);
 
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("age", new IntegerSchema());
@@ -221,18 +232,18 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(400).build());
 
-        prefixNumbersWithZeroFieldsFuzzer.fuzz(data);
+        leadingZerosInNumericFieldsFuzzer.fuzz(data);
 
         // 3 prefixes for 1 numeric field = 3 calls, expecting 4XX
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
     void shouldExpect2xxWhenLeadingZerosAllowed() {
-        Mockito.when(processingArguments.isAllowLeadingZeroInNumbers()).thenReturn(true);
+        Mockito.when(processingArguments.isStrictTypes()).thenReturn(false);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        prefixNumbersWithZeroFieldsFuzzer = new PrefixNumbersWithZeroFieldsFuzzer(simpleExecutor, processingArguments);
+        leadingZerosInNumericFieldsFuzzer = new LeadingZerosInNumericFieldsFuzzer(simpleExecutor, processingArguments);
 
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("price", new NumberSchema());
@@ -247,7 +258,7 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(200).build());
 
-        prefixNumbersWithZeroFieldsFuzzer.fuzz(data);
+        leadingZerosInNumericFieldsFuzzer.fuzz(data);
 
         // 3 prefixes for 1 numeric field = 3 calls, expecting 2XX
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(
@@ -256,9 +267,9 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
 
     @Test
     void shouldHandleBothIntegerAndNumberFieldsWithDifferentSettings() {
-        Mockito.when(processingArguments.isAllowLeadingZeroInNumbers()).thenReturn(false);
+        Mockito.when(processingArguments.isStrictTypes()).thenReturn(false);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        prefixNumbersWithZeroFieldsFuzzer = new PrefixNumbersWithZeroFieldsFuzzer(simpleExecutor, processingArguments);
+        leadingZerosInNumericFieldsFuzzer = new LeadingZerosInNumericFieldsFuzzer(simpleExecutor, processingArguments);
 
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("age", new IntegerSchema());
@@ -274,10 +285,10 @@ class PrefixNumbersWithZeroFieldsFuzzerTest {
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(400).build());
 
-        prefixNumbersWithZeroFieldsFuzzer.fuzz(data);
+        leadingZerosInNumericFieldsFuzzer.fuzz(data);
 
         // 3 prefixes for 2 numeric fields = 6 calls, expecting 4XX
         Mockito.verify(testCaseListener, Mockito.times(6)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 }

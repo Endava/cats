@@ -56,6 +56,7 @@ public class NumberGenerator {
         return min + CatsRandom.instance().nextLong(max - min);
     }
 
+
     /**
      * Generates a left boundary integer value lower than schema's min value.
      *

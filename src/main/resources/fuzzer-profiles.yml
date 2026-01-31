@@ -2,6 +2,24 @@
 # Built-in profiles for common testing scenarios
 
 profiles:
+  # ============================================
+  # TYPE COERCION PROFILE
+  # Focus: Type coercion issues (e.g. sending strings as numbers)
+  # ============================================
+  type-coercion:
+    description: "Type coercion-focused fuzzers targeting issues where types are coerced automatically by frameworks/libraries"
+    fuzzers:
+      - CoercionBooleanStringInBooleanFields
+      - CoercionBooleanValuesInStringFields
+      - CoercionEnumNumericOrdinalFields
+      - CoercionEpochNumberInDateTimeFields
+      - CoercionLeadingZerosInNumericFields
+      - CoercionNumericBooleansInBooleanFields
+      - CoercionNumericStringsInNumericFields
+      - CoercionNumericValuesInStringFields
+      - CoercionScientificNotationStringsInDecimalFields
+      - CoercionSingleElementArrayToScalarFields
+      - CoercionWhitespacePaddedNumericFields
 
   # ============================================
   # SECURITY PROFILE

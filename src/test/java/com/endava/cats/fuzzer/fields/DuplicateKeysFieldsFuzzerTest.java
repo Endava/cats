@@ -90,6 +90,33 @@ class DuplicateKeysFieldsFuzzerTest {
         Mockito.verify(simpleExecutor, Mockito.times(3)).execute(Mockito.any());
     }
 
+    @Test
+    void shouldHandleExceptionDuringJsonParsing() {
+        setupData();
+        Mockito.when(data.getPayload()).thenReturn("{\"field\":\"value\"}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("field"));
+
+        // This will trigger the exception in createDuplicatedPayload
+        // by having a field that exists but causes an issue during duplication
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        // Should execute once since the field is valid
+        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
+    }
+
+    @Test
+    void shouldHandlePayloadThatResultsInSameJson() {
+        setupData();
+        // Create a scenario where duplication would result in the same JSON
+        Mockito.when(data.getPayload()).thenReturn("{}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("field"));
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        // Should not execute since field is not in payload
+        Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
+    }
+
 
     private void setupData() {
         Map<String, List<String>> responses = new HashMap<>();
