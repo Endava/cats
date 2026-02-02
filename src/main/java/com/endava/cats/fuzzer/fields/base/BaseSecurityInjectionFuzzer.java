@@ -83,7 +83,19 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
                     var schema = data.getRequestPropertyTypes().get(field);
                     return CatsModelUtils.isStringSchema(schema);
                 })
+                .filter(field -> shouldFuzzField(field))
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * Determines if a field should be fuzzed based on its name or other characteristics.
+     * Default implementation returns true for all fields.
+     *
+     * @param fieldName the name of the field
+     * @return true if the field should be fuzzed, false otherwise
+     */
+    protected boolean shouldFuzzField(String fieldName) {
+        return true;
     }
 
     private void fuzzField(FuzzingData data, String field) {

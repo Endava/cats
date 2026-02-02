@@ -138,7 +138,7 @@ class SecurityInjectionFuzzerTest {
 
         static Stream<Arguments> sqlInjectionScenarios() {
             return Stream.of(
-                    Arguments.of("UNION SELECT with schema", 200, 
+                    Arguments.of("UNION SELECT with schema", 200,
                             "1 UNION SELECT table_name, column_name FROM information_schema.columns WHERE table_schema='public'",
                             "SQL injection", true),
                     Arguments.of("UNION SELECT with error", 200,
@@ -167,8 +167,8 @@ class SecurityInjectionFuzzerTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource("sqlInjectionScenarios")
-        void shouldHandleSqlInjectionScenarios(String scenario, int responseCode, String responseBody, 
-                                                 String expectedMessageFragment, boolean shouldBeError) {
+        void shouldHandleSqlInjectionScenarios(String scenario, int responseCode, String responseBody,
+                                               String expectedMessageFragment, boolean shouldBeError) {
             Map<String, Schema> reqTypes = new HashMap<>();
             reqTypes.put("username", new StringSchema());
 
@@ -190,7 +190,7 @@ class SecurityInjectionFuzzerTest {
 
             if (shouldBeError) {
                 Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
-                        Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment), 
+                        Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment),
                         Mockito.anyString(), Mockito.any());
             } else {
                 Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
@@ -309,7 +309,7 @@ class SecurityInjectionFuzzerTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource("noSqlInjectionScenarios")
         void shouldHandleNoSqlInjectionScenarios(String scenario, int responseCode, String responseBody,
-                                                   String expectedMessageFragment, boolean shouldBeError) {
+                                                 String expectedMessageFragment, boolean shouldBeError) {
             Map<String, Schema> reqTypes = new HashMap<>();
             reqTypes.put("query", new StringSchema());
 
@@ -395,7 +395,7 @@ class SecurityInjectionFuzzerTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource("commandInjectionScenarios")
         void shouldHandleCommandInjectionScenarios(String scenario, int responseCode, String responseBody,
-                                                     String expectedMessageFragment, boolean shouldBeError) {
+                                                   String expectedMessageFragment, boolean shouldBeError) {
             Map<String, Schema> reqTypes = new HashMap<>();
             reqTypes.put("filename", new StringSchema());
 
@@ -484,8 +484,8 @@ class SecurityInjectionFuzzerTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource("xssInjectionScenarios")
         void shouldHandleXssInjectionScenarios(String scenario, int responseCode, String responseBody,
-                                                 String expectedMessageFragment, boolean shouldBeWarnOrError,
-                                                 boolean shouldBeWarn) {
+                                               String expectedMessageFragment, boolean shouldBeWarnOrError,
+                                               boolean shouldBeWarn) {
             Map<String, Schema> reqTypes = new HashMap<>();
             reqTypes.put("description", new StringSchema());
 
@@ -515,6 +515,309 @@ class SecurityInjectionFuzzerTest {
                             Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment),
                             Mockito.anyString(), Mockito.any());
                 }
+            } else {
+                Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                        Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment), Mockito.any());
+            }
+        }
+    }
+
+    @Nested
+    @QuarkusTest
+    class LdapInjectionFuzzerTest {
+        private LdapInjectionInStringFieldsFuzzer ldapFuzzer;
+
+        @BeforeEach
+        void setup() {
+            ldapFuzzer = new LdapInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+        }
+
+        @Test
+        void shouldHaveDescription() {
+            Assertions.assertThat(ldapFuzzer.description()).containsIgnoringCase("LDAP");
+        }
+
+        @Test
+        void shouldReturnAllInjectionTypes() {
+            Assertions.assertThat(ldapFuzzer.getAllInjectionPayloads()).hasSizeGreaterThan(5);
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+                "username,true",
+                "user_id,true",
+                "dn,true",
+                "my_cn,true",
+                "uuid,true",
+                "filterQuery,true",
+                "address,false",
+                "city,false",
+                "email,true"
+        })
+        void shouldFuzzFieldBasedOnName(String fieldName, boolean shouldFuzz) {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put(fieldName, new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of(fieldName));
+            Mockito.when(data.getPayload()).thenReturn("{\"" + fieldName + "\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(400).build());
+
+            ldapFuzzer.fuzz(data);
+
+            if (shouldFuzz) {
+                Mockito.verify(serviceCaller, Mockito.atLeastOnce()).call(Mockito.any());
+            } else {
+                Mockito.verifyNoInteractions(serviceCaller);
+            }
+        }
+
+        static Stream<Arguments> ldapInjectionScenarios() {
+            return Stream.of(
+                    Arguments.of("LDAP Error", 200,
+                            "some content... javax.naming.NameNotFoundException ...",
+                            "LDAP injection", true),
+                    Arguments.of("Directory Services Error", 200,
+                            "Active Directory error occurred",
+                            "LDAP injection", true),
+                    Arguments.of("Clean response", 200,
+                            "{\"status\": \"ok\"}",
+                            "accepted", false),
+                    Arguments.of("4xx rejection", 400,
+                            "Bad Request",
+                            "rejected", false),
+                    Arguments.of("5xx error", 500,
+                            "Internal Server Error",
+                            "Server error", true)
+            );
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource("ldapInjectionScenarios")
+        void shouldHandleLdapInjectionScenarios(String scenario, int responseCode, String responseBody,
+                                                String expectedMessageFragment, boolean shouldBeError) {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("username", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("username"));
+            Mockito.when(data.getPayload()).thenReturn("{\"username\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(responseCode)
+                            .body(responseBody)
+                            .build());
+
+            ldapFuzzer.fuzz(data);
+
+            if (shouldBeError) {
+                Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                        Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment),
+                        Mockito.anyString(), Mockito.any());
+            } else {
+                Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                        Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment), Mockito.any());
+            }
+        }
+    }
+
+    @Nested
+    @QuarkusTest
+    class XxeInjectionFuzzerTest {
+        private XxeInjectionInStringFieldsFuzzer xxeFuzzer;
+
+        @BeforeEach
+        void setup() {
+            xxeFuzzer = new XxeInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+        }
+
+        @Test
+        void shouldHaveDescription() {
+            Assertions.assertThat(xxeFuzzer.description()).containsIgnoringCase("XXE");
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+                "xmlBody,true",
+                "content,true",
+                "userData,true",
+                "payload,true",
+                "name,false",
+                "address,false"
+        })
+        void shouldFuzzFieldBasedOnName(String fieldName, boolean shouldFuzz) {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put(fieldName, new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of(fieldName));
+            Mockito.when(data.getPayload()).thenReturn("{\"" + fieldName + "\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(400).build());
+
+            xxeFuzzer.fuzz(data);
+
+            if (shouldFuzz) {
+                Mockito.verify(serviceCaller, Mockito.atLeastOnce()).call(Mockito.any());
+            } else {
+                Mockito.verifyNoInteractions(serviceCaller);
+            }
+        }
+
+        static Stream<Arguments> xxeInjectionScenarios() {
+            return Stream.of(
+                    Arguments.of("Passwd file", 200,
+                            "root:x:0:0:root:/root:/bin/bash",
+                            "XXE vulnerability", true),
+                    Arguments.of("Win ini", 200,
+                            "[mci extensions]",
+                            "XXE vulnerability", true),
+                    Arguments.of("XML Parse Error", 200,
+                            "saxparseexception",
+                            "XXE vulnerability", true),
+                    Arguments.of("Clean response", 200,
+                            "{\"status\": \"ok\"}",
+                            "accepted", false),
+                    Arguments.of("4xx rejection", 400,
+                            "Bad Request",
+                            "rejected", false),
+                    Arguments.of("5xx error", 500,
+                            "Internal Server Error",
+                            "Server error", true)
+            );
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource("xxeInjectionScenarios")
+        void shouldHandleXxeInjectionScenarios(String scenario, int responseCode, String responseBody,
+                                               String expectedMessageFragment, boolean shouldBeError) {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("xmlBody", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("xmlBody"));
+            Mockito.when(data.getPayload()).thenReturn("{\"xmlBody\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(responseCode)
+                            .body(responseBody)
+                            .build());
+
+            xxeFuzzer.fuzz(data);
+
+            if (shouldBeError) {
+                Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                        Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment),
+                        Mockito.anyString(), Mockito.any());
+            } else {
+                Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                        Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment), Mockito.any());
+            }
+        }
+    }
+
+    @Nested
+    @QuarkusTest
+    class SstiInjectionFuzzerTest {
+        private SstiInjectionInStringFieldsFuzzer sstiFuzzer;
+
+        @BeforeEach
+        void setup() {
+            sstiFuzzer = new SstiInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+        }
+
+        @Test
+        void shouldHaveDescription() {
+            Assertions.assertThat(sstiFuzzer.description()).containsIgnoringCase("SSTI");
+        }
+
+        @Test
+        void shouldFuzzAnyStringField() {
+            String fieldName = "anyField";
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put(fieldName, new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of(fieldName));
+            Mockito.when(data.getPayload()).thenReturn("{\"" + fieldName + "\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(400).build());
+
+            sstiFuzzer.fuzz(data);
+
+            Mockito.verify(serviceCaller, Mockito.atLeastOnce()).call(Mockito.any());
+        }
+
+        static Stream<Arguments> sstiInjectionScenarios() {
+            return Stream.of(
+                    Arguments.of("Calculation Result 8051", 200,
+                            "Value is 8051",
+                            "Potential SSTI", true),
+                    Arguments.of("Template Error", 200,
+                            "Freemarker parsing error...",
+                            "SSTI injection error", true),
+                    Arguments.of("Clean response", 200,
+                            "{\"status\": \"ok\"}",
+                            "accepted", false),
+                    Arguments.of("4xx rejection", 400,
+                            "Bad Request",
+                            "rejected", false),
+                    Arguments.of("5xx error", 500,
+                            "Internal Server Error",
+                            "Server error", true)
+            );
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource("sstiInjectionScenarios")
+        void shouldHandleSstiInjectionScenarios(String scenario, int responseCode, String responseBody,
+                                                String expectedMessageFragment, boolean shouldBeError) {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("template", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("template"));
+            Mockito.when(data.getPayload()).thenReturn("{\"template\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(responseCode)
+                            .body(responseBody)
+                            .build());
+
+            sstiFuzzer.fuzz(data);
+
+            if (shouldBeError) {
+                Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                        Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment),
+                        Mockito.anyString(), Mockito.any());
             } else {
                 Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
                         Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment), Mockito.any());

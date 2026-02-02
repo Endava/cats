@@ -33,7 +33,7 @@ public abstract class BaseTypeCoercionFuzzer implements Fuzzer {
      * @param simpleExecutor      the executor used to run the fuzz logic
      * @param processingArguments the processing arguments
      */
-    public BaseTypeCoercionFuzzer(SimpleExecutor simpleExecutor, ProcessingArguments processingArguments) {
+    protected BaseTypeCoercionFuzzer(SimpleExecutor simpleExecutor, ProcessingArguments processingArguments) {
         this.simpleExecutor = simpleExecutor;
         this.processingArguments = processingArguments;
     }

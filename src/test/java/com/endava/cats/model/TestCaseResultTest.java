@@ -287,8 +287,8 @@ class TestCaseResultTest {
             );
 
             // Then
-            Assertions.assertThat(result1).isEqualTo(result2);
-            Assertions.assertThat(result1.hashCode()).isEqualTo(result2.hashCode());
+            Assertions.assertThat(result1).isEqualTo(result2)
+                    .hasSameHashCodeAs(result2);
         }
 
         @Test

@@ -31,6 +31,9 @@ profiles:
       # Injection Attacks
       - SqlInjectionInStringFields
       - NoSqlInjectionInStringFields
+      - LdapInjectionInStringFields
+      - XxeInjectionInStringFields
+      - SstiInjectionInStringFields
       - CommandInjectionInStringFields
       - XssInjectionInStringFields
       - SSRFInUrlFields
@@ -186,6 +189,9 @@ profiles:
       # API10:2023 - Unsafe Consumption of APIs
       - SqlInjectionInStringFields
       - NoSqlInjectionInStringFields
+      - LdapInjectionInStringFields
+      - XxeInjectionInStringFields
+      - SstiInjectionInStringFields
       - CommandInjectionInStringFields
       - XssInjectionInStringFields
 
