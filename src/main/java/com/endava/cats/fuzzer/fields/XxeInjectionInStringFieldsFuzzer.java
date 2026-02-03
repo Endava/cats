@@ -195,10 +195,11 @@ public class XxeInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
         if (response.length() < 100) {
             return false;
         }
+        String responseLower = response.toLowerCase(Locale.ROOT);
 
         String[] patterns = {"lol", "aaa", "test", "xxx"};
         for (String pattern : patterns) {
-            int count = countOccurrences(response.toLowerCase(), pattern);
+            int count = countOccurrences(responseLower, pattern);
             if (count > 20) {
                 return true;
             }

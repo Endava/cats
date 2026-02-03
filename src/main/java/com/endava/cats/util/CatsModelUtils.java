@@ -322,6 +322,14 @@ public abstract class CatsModelUtils {
         return ModelUtils.isOneOf(schema);
     }
 
+    public static boolean hasOneOf(Schema schema) {
+        return ModelUtils.hasOneOf(schema);
+    }
+
+    public static boolean hasAnyOf(Schema schema) {
+        return ModelUtils.hasAnyOf(schema);
+    }
+
     public static boolean isAllOf(Schema schema) {
         return ModelUtils.isAllOf(schema);
     }

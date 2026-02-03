@@ -198,8 +198,8 @@ public class SstiInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
     private boolean hasReflectedPayloadWithTemplateIndicators(String body) {
         String bodyLower = body.toLowerCase(Locale.ROOT);
 
-        boolean hasCalcExpr = bodyLower.contains(CALC_EXPR.toLowerCase()) ||
-                bodyLower.contains(ALT_CALC_EXPR.toLowerCase());
+        boolean hasCalcExpr = bodyLower.contains(CALC_EXPR.toLowerCase(Locale.ROOT)) ||
+                bodyLower.contains(ALT_CALC_EXPR.toLowerCase(Locale.ROOT));
 
         if (hasCalcExpr) {
             for (String keyword : SSTI_ERROR_KEYWORDS) {

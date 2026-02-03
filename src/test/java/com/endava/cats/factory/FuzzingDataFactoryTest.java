@@ -11,6 +11,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -60,6 +61,7 @@ class FuzzingDataFactoryTest {
 
     @BeforeEach
     void setup() {
+        CatsRandom.initRandom(0);
         filesArguments = Mockito.mock(FilesArguments.class);
         processingArguments = Mockito.mock(ProcessingArguments.class);
         filterArguments = Mockito.mock(FilterArguments.class);

@@ -316,14 +316,14 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
      * This helps reduce false positives.
      */
     private boolean appearsInErrorContext(String body, String keyword) {
-        int index = body.toLowerCase().indexOf(keyword);
+        int index = body.toLowerCase(Locale.ROOT).indexOf(keyword);
         if (index == -1) {
             return false;
         }
 
         int start = Math.max(0, index - 50);
         int end = Math.min(body.length(), index + keyword.length() + 50);
-        String context = body.substring(start, end).toLowerCase();
+        String context = body.substring(start, end).toLowerCase(Locale.ROOT);
 
         String[] errorContextWords = {
                 "error", "exception", "failed", "failure", "invalid",

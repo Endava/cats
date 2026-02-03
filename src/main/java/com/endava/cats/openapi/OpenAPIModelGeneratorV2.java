@@ -313,7 +313,13 @@ public class OpenAPIModelGeneratorV2 {
 
         recordRequestSchema(currentProperty, schema);
 
-        if (schema.getProperties() != null && !schema.getProperties().isEmpty()) {
+        boolean hasOneOfOrAnyOf = CatsModelUtils.hasOneOf(schema) || CatsModelUtils.hasAnyOf(schema);
+        boolean hasPropertiesAndComposed = (schema.getProperties() != null && !schema.getProperties().isEmpty()) && hasOneOfOrAnyOf;
+
+        List<Map<String, Object>> parentPropertyExamples = new ArrayList<>();
+        if (hasPropertiesAndComposed) {
+            parentPropertyExamples = traverseSchemaProperties(schema, name, true); // skip discriminator
+        } else if (schema.getProperties() != null && !schema.getProperties().isEmpty()) {
             examples.addAll(traverseSchemaProperties(schema, name));
         }
 
@@ -322,9 +328,25 @@ public class OpenAPIModelGeneratorV2 {
             examples = combineExampleLists(examples, allOfExamples);
         }
 
-        if (CatsModelUtils.isAnyOf(schema) || CatsModelUtils.isOneOf(schema)) {
+        if (hasOneOfOrAnyOf) {
             List<Map<String, Object>> oneOfAnyOfExamples = resolveAnyOfOneOfSchemaProperties(name, schema);
-            examples = combineExampleLists(examples, oneOfAnyOfExamples);
+
+            if (!parentPropertyExamples.isEmpty()) {
+                List<Map<String, Object>> mergedExamples = new ArrayList<>();
+                for (Map<String, Object> oneOfExample : oneOfAnyOfExamples) {
+                    for (Map<String, Object> parentExample : parentPropertyExamples) {
+                        Map<String, Object> merged = new HashMap<>(oneOfExample);
+
+                        for (Map.Entry<String, Object> entry : parentExample.entrySet()) {
+                            merged.putIfAbsent(entry.getKey(), entry.getValue());
+                        }
+                        mergedExamples.add(merged);
+                    }
+                }
+                examples = combineExampleLists(examples, mergedExamples);
+            } else {
+                examples = combineExampleLists(examples, oneOfAnyOfExamples);
+            }
         }
 
         if (CatsModelUtils.isArraySchema(schema)) {
@@ -357,7 +379,11 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private List<Map<String, Object>> traverseSchemaProperties(Schema schema, String currentSchemaName) {
-        logger.trace("traverseSchemaProperties for schema {}", currentSchemaName);
+        return traverseSchemaProperties(schema, currentSchemaName, false);
+    }
+
+    private List<Map<String, Object>> traverseSchemaProperties(Schema schema, String currentSchemaName, boolean skipDiscriminator) {
+        logger.trace("traverseSchemaProperties for schema {}, skipDiscriminator: {}", currentSchemaName, skipDiscriminator);
         List<Map<String, Object>> examples = new ArrayList<>();
 
         Set<Map.Entry<String, Schema>> properties = schema.getProperties().entrySet();
@@ -371,6 +397,14 @@ public class OpenAPIModelGeneratorV2 {
             if (currentPropertiesDepth > totalDepth) {
                 continue;
             }
+
+            // Skip discriminator property if requested (when parent has oneOf/anyOf)
+            if (skipDiscriminator && schema.getDiscriminator() != null &&
+                    schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName)) {
+                currentPropertiesDepth--;
+                continue;
+            }
+
             List<Object> propertyExamples;
             if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName)) {
                 propertyExamples = List.of(matchToEnumOrEmpty(currentSchemaName, property, propertyName));
@@ -622,6 +656,30 @@ public class OpenAPIModelGeneratorV2 {
 
     private Object matchToEnumOrEmpty(String name, Schema innerSchema, String propertyName) {
         Schema resolveInnerSchema = Optional.ofNullable(globalContext.getSchemaFromReference(innerSchema.get$ref())).orElse(innerSchema);
+
+        // First, try to find the discriminator value using the mapping (schema name -> enum value)
+        String resultFromMapping = globalContext.getDiscriminators()
+                .stream()
+                .filter(discriminator -> discriminator.getPropertyName().equalsIgnoreCase(propertyName) && discriminator.getMapping() != null)
+                .findFirst()
+                .map(discriminator -> {
+                    // Find the enum value that maps to this schema name
+                    return discriminator.getMapping().entrySet().stream()
+                            .filter(entry -> {
+                                String schemaRef = entry.getValue();
+                                String schemaName = CatsModelUtils.getSimpleRef(schemaRef);
+                                return schemaName.equalsIgnoreCase(name);
+                            })
+                            .map(Map.Entry::getKey)
+                            .findFirst()
+                            .orElse("");
+                })
+                .orElse("");
+
+        if (!resultFromMapping.isEmpty()) {
+            return resultFromMapping;
+        }
+
         String result = Optional.ofNullable(resolveInnerSchema.getEnum())
                 .orElse(List.of(""))
                 .stream()
