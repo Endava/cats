@@ -10,6 +10,7 @@ import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.JsonUtils;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -42,6 +43,9 @@ public class BidirectionalOverrideFieldsFuzzer extends BaseReplaceFieldsFuzzer {
         BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer = (schema, field) -> {
             String original = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), field));
 
+            if (StringUtils.isBlank(original)) {
+                return List.of(RLO);
+            }
             /* Variant 1 – prepend RLO to reverse entire string visually. */
             String v1 = RLO + original;
 
