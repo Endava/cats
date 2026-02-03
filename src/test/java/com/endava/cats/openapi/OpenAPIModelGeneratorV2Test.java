@@ -196,9 +196,7 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(examples).hasSize(2);
 
         String firstExample = examples.getFirst();
-        Assertions.assertThat(firstExample).contains("\"kind\"");
-        Assertions.assertThat(firstExample).contains("\"value\"");
-        Assertions.assertThat(firstExample).contains("\"bubulel\"");
+        Assertions.assertThat(firstExample).contains("\"kind\"").contains("\"value\"").contains("\"bubulel\"");
 
         String kindValue = JsonUtils.getVariableFromJson(firstExample, "$.kind").toString();
         Assertions.assertThat(kindValue).isNotEmpty().isNotEqualTo("");
@@ -207,9 +205,7 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(bubulel1).isNotEmpty();
 
         String secondExample = examples.get(1);
-        Assertions.assertThat(secondExample).contains("\"kind\"");
-        Assertions.assertThat(secondExample).contains("\"value\"");
-        Assertions.assertThat(secondExample).contains("\"bubulel\"");
+        Assertions.assertThat(secondExample).contains("\"kind\"").contains("\"value\"").contains("\"bubulel\"");
 
         String kindValue2 = JsonUtils.getVariableFromJson(secondExample, "$.kind").toString();
         Assertions.assertThat(kindValue2).isNotEmpty().isNotEqualTo("");

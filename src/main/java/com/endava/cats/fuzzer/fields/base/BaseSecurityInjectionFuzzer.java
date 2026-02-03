@@ -83,7 +83,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
                     var schema = data.getRequestPropertyTypes().get(field);
                     return CatsModelUtils.isStringSchema(schema);
                 })
-                .filter(field -> shouldFuzzField(field))
+                .filter(this::shouldFuzzField)
                 .collect(Collectors.toSet());
     }
 

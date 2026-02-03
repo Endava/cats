@@ -329,24 +329,7 @@ public class OpenAPIModelGeneratorV2 {
         }
 
         if (hasOneOfOrAnyOf) {
-            List<Map<String, Object>> oneOfAnyOfExamples = resolveAnyOfOneOfSchemaProperties(name, schema);
-
-            if (!parentPropertyExamples.isEmpty()) {
-                List<Map<String, Object>> mergedExamples = new ArrayList<>();
-                for (Map<String, Object> oneOfExample : oneOfAnyOfExamples) {
-                    for (Map<String, Object> parentExample : parentPropertyExamples) {
-                        Map<String, Object> merged = new HashMap<>(oneOfExample);
-
-                        for (Map.Entry<String, Object> entry : parentExample.entrySet()) {
-                            merged.putIfAbsent(entry.getKey(), entry.getValue());
-                        }
-                        mergedExamples.add(merged);
-                    }
-                }
-                examples = combineExampleLists(examples, mergedExamples);
-            } else {
-                examples = combineExampleLists(examples, oneOfAnyOfExamples);
-            }
+            examples = handleAnyOrOneOf(name, schema, parentPropertyExamples, examples);
         }
 
         if (CatsModelUtils.isArraySchema(schema)) {
@@ -366,6 +349,28 @@ public class OpenAPIModelGeneratorV2 {
 
         examplesCache.put(cacheKey, examples);
 
+        return examples;
+    }
+
+    private List<Map<String, Object>> handleAnyOrOneOf(String name, Schema schema, List<Map<String, Object>> parentPropertyExamples, List<Map<String, Object>> examples) {
+        List<Map<String, Object>> oneOfAnyOfExamples = resolveAnyOfOneOfSchemaProperties(name, schema);
+
+        if (!parentPropertyExamples.isEmpty()) {
+            List<Map<String, Object>> mergedExamples = new ArrayList<>();
+            for (Map<String, Object> oneOfExample : oneOfAnyOfExamples) {
+                for (Map<String, Object> parentExample : parentPropertyExamples) {
+                    Map<String, Object> merged = new HashMap<>(oneOfExample);
+
+                    for (Map.Entry<String, Object> entry : parentExample.entrySet()) {
+                        merged.putIfAbsent(entry.getKey(), entry.getValue());
+                    }
+                    mergedExamples.add(merged);
+                }
+            }
+            examples = combineExampleLists(examples, mergedExamples);
+        } else {
+            examples = combineExampleLists(examples, oneOfAnyOfExamples);
+        }
         return examples;
     }
 
@@ -662,18 +667,17 @@ public class OpenAPIModelGeneratorV2 {
                 .stream()
                 .filter(discriminator -> discriminator.getPropertyName().equalsIgnoreCase(propertyName) && discriminator.getMapping() != null)
                 .findFirst()
-                .map(discriminator -> {
-                    // Find the enum value that maps to this schema name
-                    return discriminator.getMapping().entrySet().stream()
-                            .filter(entry -> {
-                                String schemaRef = entry.getValue();
-                                String schemaName = CatsModelUtils.getSimpleRef(schemaRef);
-                                return schemaName.equalsIgnoreCase(name);
-                            })
-                            .map(Map.Entry::getKey)
-                            .findFirst()
-                            .orElse("");
-                })
+                .map(discriminator ->
+                        // Find the enum value that maps to this schema name
+                        discriminator.getMapping().entrySet().stream()
+                                .filter(entry -> {
+                                    String schemaRef = entry.getValue();
+                                    String schemaName = CatsModelUtils.getSimpleRef(schemaRef);
+                                    return schemaName.equalsIgnoreCase(name);
+                                })
+                                .map(Map.Entry::getKey)
+                                .findFirst()
+                                .orElse(""))
                 .orElse("");
 
         if (!resultFromMapping.isEmpty()) {

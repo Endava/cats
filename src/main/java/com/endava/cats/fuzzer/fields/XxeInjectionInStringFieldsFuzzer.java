@@ -175,13 +175,11 @@ public class XxeInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             }
         }
 
-        if (responseBody.length() > 100000) {
-            if (containsRepeatedPatterns(responseBody)) {
-                return InjectionDetectionResult.vulnerable(
-                        "Potential XXE DoS vulnerability detected",
-                        "Response is unusually large with repeated patterns, suggesting entity expansion attack succeeded"
-                );
-            }
+        if (responseBody.length() > 100000 && containsRepeatedPatterns(responseBody)) {
+            return InjectionDetectionResult.vulnerable(
+                    "Potential XXE DoS vulnerability detected",
+                    "Response is unusually large with repeated patterns, suggesting entity expansion attack succeeded"
+            );
         }
 
         return InjectionDetectionResult.notVulnerable();

@@ -20,7 +20,7 @@ import java.util.Locale;
 @Singleton
 @FieldFuzzer
 public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzzer {
-    private final static List<String> FIELDS = List.of("user", "name", "login", "username", "email", "mail", "dn", "cn", "uid", "filter",
+    private static final List<String> FIELDS = List.of("user", "name", "login", "username", "email", "mail", "dn", "cn", "uid", "filter",
             "search", "query", "account", "member", "group", "ou", "organization", "dept", "department");
 
     private static final List<String> TOP_PAYLOADS = List.of(
@@ -255,13 +255,11 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         String responseLower = responseBody.toLowerCase(Locale.ROOT);
 
         for (String keyword : LDAP_ERROR_KEYWORDS) {
-            if (responseLower.contains(keyword)) {
-                if (appearsInErrorContext(responseBody, keyword)) {
-                    return InjectionDetectionResult.vulnerable(
-                            "LDAP injection vulnerability detected",
-                            "Response contains LDAP error message: '" + keyword + "'"
-                    );
-                }
+            if (responseLower.contains(keyword) && appearsInErrorContext(responseBody, keyword)) {
+                return InjectionDetectionResult.vulnerable(
+                        "LDAP injection vulnerability detected",
+                        "Response contains LDAP error message: '" + keyword + "'"
+                );
             }
         }
 
