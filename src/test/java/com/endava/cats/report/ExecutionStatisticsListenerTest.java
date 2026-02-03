@@ -166,4 +166,25 @@ class ExecutionStatisticsListenerTest {
 
         Assertions.assertThat(topPaths).isEmpty();
     }
+
+    @Test
+    void shouldTrackSkippedFromReporting() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        listener.increaseSkippedFromReporting("/path1");
+        listener.increaseSkippedFromReporting("/path2");
+        listener.increaseSuccess("/path1");
+
+        Assertions.assertThat(listener.getTotalRequests()).isEqualTo(3);
+        Assertions.assertThat(listener.getSkippedFromReporting()).isEqualTo(2);
+        Assertions.assertThat(listener.getAll()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldReturnZeroForTotalRequestsWhenNoneTracked() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+
+        Assertions.assertThat(listener.getTotalRequests()).isZero();
+        Assertions.assertThat(listener.getSkippedFromReporting()).isZero();
+    }
+
 }

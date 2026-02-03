@@ -549,6 +549,7 @@ public class TestCaseListener {
             reportError(logger, CatsResultFactory.createErrorLeaksDetectedInResponse(detectedKeyWords));
         } else if (ignoreArguments.isSkipReportingForWarnings()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
+            executionStatisticsListener.increaseSkippedFromReporting(testCase.getContractPath());
             this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForWarnings is enabled"));
             this.recordResult(message, params, SKIP_REPORTING, logger);
         } else if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
@@ -558,6 +559,7 @@ public class TestCaseListener {
             this.recordResult(message, params, Level.WARN.toString().toLowerCase(Locale.ROOT), logger);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
+            executionStatisticsListener.increaseSkippedFromReporting(testCase.getContractPath());
             this.skipTest(logger, replaceBrackets("Some response elements were marked as ignored and --skipReportingForIgnoredCodes is enabled."));
             this.recordResult(message, params, SKIP_REPORTING, logger);
         } else {
@@ -621,7 +623,6 @@ public class TestCaseListener {
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
 
-
         if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())
                 || isException(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
@@ -632,6 +633,7 @@ public class TestCaseListener {
             logAndRecordError(logger, result.message(), testCase.getErrorLeaks().toArray(), testCase, catsResponse);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
+            executionStatisticsListener.increaseSkippedFromReporting(testCase.getContractPath());
             this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
             this.recordResult(message, params, SKIP_REPORTING, logger);
         } else {
@@ -720,10 +722,12 @@ public class TestCaseListener {
             reportError(logger, CatsResultFactory.createErrorLeaksDetectedInResponse(detectedKeyWords));
         } else if (ignoreArguments.isSkipReportingForSuccess()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
+            executionStatisticsListener.increaseSkippedFromReporting(testCase.getContractPath());
             this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForSuccess is enabled"));
             this.recordResult(message, params, SKIP_REPORTING, logger);
         } else if (ignoreArguments.isIgnoredResponse(catsResponse) && ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
+            executionStatisticsListener.increaseSkippedFromReporting(testCase.getContractPath());
             this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
             this.recordResult(message, params, SKIP_REPORTING, logger);
         } else if (catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())) {

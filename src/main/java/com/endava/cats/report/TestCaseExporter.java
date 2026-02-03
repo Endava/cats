@@ -267,16 +267,36 @@ public abstract class TestCaseExporter {
      * It also provides a message with a link to the generated report if available.
      */
     public void printExecutionDetails() {
-        String catsFinished = AnsiUtils.blue("CATS finished in {}. Total requests {}. ");
-        String passed = AnsiUtils.boldGreen("✔ Passed {}, ");
-        String warnings = AnsiUtils.boldYellow("⚠ warnings: {}, ");
-        String errors = AnsiUtils.boldRed("‼ errors: {}");
-        String check = AnsiUtils.blue(String.format("You can open the report here: %s ", reportingPath.toUri() + getSummaryReportTitle()));
-        String finalMessage = catsFinished + passed + warnings + errors;
         String duration = Duration.ofMillis(System.currentTimeMillis() - t0).toString().toLowerCase(Locale.ROOT).substring(2);
+        long totalRequests = executionStatisticsListener.getTotalRequests();
+        long skippedFromReporting = executionStatisticsListener.getSkippedFromReporting();
+        long reportedResults = executionStatisticsListener.getAll();
 
         ConsoleUtils.emptyLine();
-        logger.complete(finalMessage, duration, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
+
+        // Print main execution summary
+        if (skippedFromReporting > 0) {
+            // When skip arguments are used, show detailed breakdown
+            String catsFinished = AnsiUtils.blue("CATS finished in {}. ");
+            String totalRequestsMsg = AnsiUtils.blue("Total requests: {}, ");
+            String skippedMsg = AnsiUtils.blue("skipped from reporting: {}, ");
+            String reportedMsg = AnsiUtils.blue("reported: {}. ");
+            String passed = AnsiUtils.boldGreen("✔ Passed {}, ");
+            String warnings = AnsiUtils.boldYellow("⚠ warnings: {}, ");
+            String errors = AnsiUtils.boldRed("‼ errors: {}");
+            String finalMessage = catsFinished + totalRequestsMsg + skippedMsg + reportedMsg + passed + warnings + errors;
+            logger.complete(finalMessage, duration, totalRequests, skippedFromReporting, reportedResults,
+                    executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors());
+        } else {
+            // When no skip arguments are used, show traditional format
+            String catsFinished = AnsiUtils.blue("CATS finished in {}. Total requests {}. ");
+            String passed = AnsiUtils.boldGreen("✔ Passed {}, ");
+            String warnings = AnsiUtils.boldYellow("⚠ warnings: {}, ");
+            String errors = AnsiUtils.boldRed("‼ errors: {}");
+            String finalMessage = catsFinished + passed + warnings + errors;
+            logger.complete(finalMessage, duration, totalRequests, executionStatisticsListener.getSuccess(),
+                    executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors());
+        }
 
         // Print quality gate result
         boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
@@ -286,6 +306,7 @@ public abstract class TestCaseExporter {
         String qualityGateDescription = AnsiUtils.blue(" [{}]");
         logger.complete(qualityGateStatus + qualityGateDescription, qualityGateArguments.getQualityGateDescription());
 
+        String check = AnsiUtils.blue(String.format("You can open the report here: %s ", reportingPath.toUri() + getSummaryReportTitle()));
         logger.complete(check);
     }
 
