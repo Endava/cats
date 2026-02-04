@@ -158,4 +158,51 @@ public abstract class WordUtils {
                 .filter(response::contains)
                 .toList();
     }
+
+    /**
+     * Detects the casing of a string based on its format.
+     *
+     * @param sample The string to detect the casing of.
+     * @return The detected casing as a string.
+     */
+    public static String detectCasingFromString(String sample) {
+        if (sample.contains("_") && sample.equals(sample.toUpperCase(Locale.ROOT))) {
+            return "UPPER_SNAKE_CASE";
+        } else if (sample.contains("_") && sample.equals(sample.toLowerCase(Locale.ROOT))) {
+            return "lower_snake_case";
+        } else if (sample.contains("-")) {
+            return "kebab-case";
+        } else if (Character.isLowerCase(sample.charAt(0)) && sample.matches(".*[A-Z].*")) {
+            return "camelCase";
+        } else if (Character.isUpperCase(sample.charAt(0)) && sample.matches(".*[a-z].*")) {
+            return "PascalCase";
+        } else if (sample.equals(sample.toLowerCase(Locale.ROOT))) {
+            return "lowercase";
+        }
+        return "UPPER_SNAKE_CASE"; // default
+    }
+
+    /**
+     * Coverts a string to the detected casing convention.
+     *
+     * @param name             the string to convert
+     * @param casingConvention the casing to convert to
+     * @return the converted string
+     */
+    public static String convertToDetectedCasing(String name, String casingConvention) {
+        return switch (casingConvention) {
+            case "lower_snake_case" -> name.replaceAll("([a-z])([A-Z])", "$1_$2")
+                    .replaceAll("([A-Z])([A-Z][a-z])", "$1_$2")
+                    .toLowerCase(Locale.ROOT);
+            case "kebab-case" -> name.replaceAll("([a-z])([A-Z])", "$1-$2")
+                    .replaceAll("([A-Z])([A-Z][a-z])", "$1-$2")
+                    .toLowerCase(Locale.ROOT);
+            case "camelCase" -> Character.toLowerCase(name.charAt(0)) + name.substring(1);
+            case "PascalCase" -> name;
+            case "lowercase" -> name.toLowerCase(Locale.ROOT);
+            default -> name.replaceAll("([a-z])([A-Z])", "$1_$2")
+                    .replaceAll("([A-Z])([A-Z][a-z])", "$1_$2")
+                    .toUpperCase(Locale.ROOT);
+        };
+    }
 }

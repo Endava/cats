@@ -8,6 +8,7 @@ import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
@@ -434,6 +435,19 @@ public class OpenAPIModelGeneratorV2 {
         keepOriginalSchema(propertyName, schema);
         mergeRequiredProperties(schema.getAllOf());
 
+        // Check if any parent schema in allOf has a discriminator
+        String discriminatorPropertyName = null;
+        for (Object allOfSchemaObj : schema.getAllOf()) {
+            Schema allOfSchema = (Schema) allOfSchemaObj;
+            Schema resolvedSchema = allOfSchema.get$ref() != null
+                    ? globalContext.getSchemaFromReference(allOfSchema.get$ref())
+                    : allOfSchema;
+            if (resolvedSchema != null && resolvedSchema.getDiscriminator() != null) {
+                discriminatorPropertyName = resolvedSchema.getDiscriminator().getPropertyName();
+                break;
+            }
+        }
+
         List<Schema> schemas = schema.getAllOf().stream().filter(iteratingSchema -> !isNullSchema((Schema<?>) iteratingSchema)).toList();
         for (Schema subSchema : schemas) {
             List<Map<String, Object>> subExamples = generateExamplesForSchema(propertyName, subSchema);
@@ -456,6 +470,35 @@ public class OpenAPIModelGeneratorV2 {
             examples.addAll(interimExamples.stream()
                     .limit(Math.min(interimExamples.size(), LIMIT_OF_EXAMPLES))
                     .toList());
+        }
+
+        // If a discriminator was found, ensure it's populated with the correct value
+        if (discriminatorPropertyName != null && !examples.isEmpty()) {
+            // Detect casing convention and convert schema name accordingly
+            Schema parentWithDiscriminator = null;
+            for (Object allOfSchemaObj : schema.getAllOf()) {
+                Schema allOfSchema = (Schema) allOfSchemaObj;
+                Schema resolvedSchema = allOfSchema.get$ref() != null
+                        ? globalContext.getSchemaFromReference(allOfSchema.get$ref())
+                        : allOfSchema;
+                if (resolvedSchema != null && resolvedSchema.getDiscriminator() != null) {
+                    parentWithDiscriminator = resolvedSchema;
+                    break;
+                }
+            }
+
+            String detectedCasing = parentWithDiscriminator != null
+                    ? detectCasingConvention(parentWithDiscriminator, discriminatorPropertyName)
+                    : "UPPER_SNAKE_CASE";
+            String discriminatorValue = WordUtils.convertToDetectedCasing(propertyName, detectedCasing);
+
+            for (Map<String, Object> example : examples) {
+                // Only set if not already set or if it's empty
+                Object currentValue = example.get(discriminatorPropertyName);
+                if (currentValue == null || currentValue.toString().isEmpty()) {
+                    example.put(discriminatorPropertyName, discriminatorValue);
+                }
+            }
         }
 
         return examples;
@@ -693,7 +736,7 @@ public class OpenAPIModelGeneratorV2 {
                 .orElse("")
                 .toString();
         if (result.isEmpty()) {
-            return globalContext.getDiscriminators()
+            result = globalContext.getDiscriminators()
                     .stream()
                     .filter(discriminator -> discriminator.getPropertyName().equalsIgnoreCase(propertyName) && discriminator.getMapping() != null)
                     .findFirst()
@@ -702,8 +745,35 @@ public class OpenAPIModelGeneratorV2 {
                     .findFirst()
                     .orElse("");
         }
+
+        // If still empty, try to infer from schema name (for allOf pattern without explicit mapping)
+        // Detect casing convention from enum values or existing discriminator mappings
+        if (result.isEmpty() && name != null) {
+            String detectedCasing = detectCasingConvention(resolveInnerSchema, propertyName);
+            result = WordUtils.convertToDetectedCasing(name, detectedCasing);
+        }
+
         return result;
     }
+
+    private String detectCasingConvention(Schema schema, String propertyName) {
+        // Try to detect from enum values first
+        List<Object> enumValues = Optional.ofNullable(schema.getEnum()).orElse(List.of());
+        if (!enumValues.isEmpty()) {
+            String firstEnum = enumValues.get(0).toString();
+            return WordUtils.detectCasingFromString(firstEnum);
+        }
+
+        // Try to detect from discriminator mappings
+        Optional<String> mappingValue = globalContext.getDiscriminators()
+                .stream()
+                .filter(discriminator -> discriminator.getPropertyName().equalsIgnoreCase(propertyName) && discriminator.getMapping() != null)
+                .findFirst()
+                .flatMap(discriminator -> discriminator.getMapping().keySet().stream().findFirst());
+
+        return mappingValue.map(WordUtils::detectCasingFromString).orElse("UPPER_SNAKE_CASE");
+    }
+
 
     /**
      * Keep the original schema in the global context for future reference. This is useful when using cross path references

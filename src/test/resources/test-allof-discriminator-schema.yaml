@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  title: Test AllOf with Discriminator Parent
+  version: 1.0.0
+paths:
+  /test:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpressionNode'
+      responses:
+        '200':
+          description: Success
+components:
+  schemas:
+    AtomicValue:
+      type: object
+      discriminator:
+        propertyName: kind
+      properties:
+        kind:
+          type: string
+      required:
+        - kind
+
+    DecimalValue:
+      allOf:
+        - $ref: "#/components/schemas/AtomicValue"
+        - type: object
+          properties:
+            value:
+              type: string
+              pattern: "^-?\\d+(\\.\\d+)?$"
+      required:
+        - value
+
+    IntValue:
+      allOf:
+        - $ref: "#/components/schemas/AtomicValue"
+        - type: object
+          properties:
+            value:
+              type: integer
+              format: int32
+      required:
+        - value
+
+    StringValue:
+      allOf:
+        - $ref: "#/components/schemas/AtomicValue"
+        - type: object
+          properties:
+            value:
+              type: string
+      required:
+        - value
+
+    ExpressionNode:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - AND
+            - OR
+            - NOT
+            - ATOMIC
+        conditionType:
+          type: string
+        operator:
+          type: string
+        value:
+          oneOf:
+            - $ref: "#/components/schemas/DecimalValue"
+            - $ref: "#/components/schemas/IntValue"
+            - $ref: "#/components/schemas/StringValue"
+      required:
+        - type

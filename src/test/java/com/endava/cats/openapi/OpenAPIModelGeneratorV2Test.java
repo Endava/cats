@@ -214,6 +214,31 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(bubulel2).isNotEmpty();
     }
 
+    @Test
+    void shouldGenerateAllOfWithDiscriminatorParent() throws Exception {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+        OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/test-allof-discriminator-schema.yaml")), null, options).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        globalContext.getSchemaMap().putAll(schemas);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
+
+        // Generate examples for DecimalValue directly to verify discriminator is populated
+        List<String> decimalExamples = generator.generate("DecimalValue");
+        
+        Assertions.assertThat(decimalExamples).isNotEmpty();
+        String decimalExample = decimalExamples.getFirst();
+        
+        // Verify DecimalValue has kind field populated with correct discriminator value
+        Assertions.assertThat(decimalExample).contains("\"kind\"");
+        Object kindValue = JsonUtils.getVariableFromJson(decimalExample, "$.kind");
+        Assertions.assertThat(kindValue).isNotNull();
+        Assertions.assertThat(kindValue.toString()).isNotEmpty().isNotEqualTo("")
+                .isEqualTo("DECIMAL_VALUE");
+    }
+
     private OpenAPIModelGeneratorV2 setupPayloadGenerator() throws IOException {
         OpenAPIParser openAPIV3Parser = new OpenAPIParser();
         ParseOptions options = new ParseOptions();
