@@ -32,11 +32,14 @@ public class SwapDiscriminatorValuesFieldsFuzzer extends BaseReplaceFieldsFuzzer
 
     @Override
     public BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext getContext(FuzzingData data) {
+        Predicate<String> isFieldInJson = field -> JsonUtils.isFieldInJson(data.getPayload(), field);
+        Predicate<String> isFieldDiscriminator = catsGlobalContext::isDiscriminator;
+
         return BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext.builder()
                 .replaceWhat("discriminator")
                 .replaceWith("swapped values")
                 .skipMessage("Fuzzer only runs for discriminator fields")
-                .fieldFilter(catsGlobalContext::isDiscriminator)
+                .fieldFilter(isFieldDiscriminator.and(isFieldInJson))
                 .fuzzValueProducer((schema, field) -> {
                     String oldValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), field));
                     return catsGlobalContext.getDiscriminatorValues().getOrDefault(field, Set.of()).stream()
