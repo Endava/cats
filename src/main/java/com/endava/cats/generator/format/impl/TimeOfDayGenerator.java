@@ -25,7 +25,7 @@ public class TimeOfDayGenerator implements ValidDataFormatGenerator, OpenAPIForm
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return PropertySanitizer.sanitize(propertyName).endsWith("time") &&
-                !"time".equalsIgnoreCase(format);
+                !"time".equalsIgnoreCase(format) && !"date-time".equalsIgnoreCase(format);
     }
 
     @Override

@@ -13,8 +13,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +44,14 @@ public class MiniDslParser implements Parser {
             Map.entry("java.time.Instant", java.time.Instant.class),
             Map.entry("java.time.Duration", java.time.Duration.class),
             Map.entry("java.time.Period", java.time.Period.class),
+            Map.entry("java.time.ZoneOffset", java.time.ZoneOffset.class),
+            Map.entry("java.time.format.DateTimeFormatter", java.time.format.DateTimeFormatter.class),
+            Map.entry("java.time.LocalTime", java.time.LocalTime.class),
+            Map.entry("java.time.ZoneId", java.time.ZoneId.class),
+            Map.entry("java.time.temporal.ChronoUnit", java.time.temporal.ChronoUnit.class),
+
+            Map.entry("java.util.Base64", java.util.Base64.class),
+            Map.entry("java.util.Locale", java.util.Locale.class),
 
             // Numbers
             Map.entry("java.math.BigDecimal", BigDecimal.class),
@@ -351,23 +357,27 @@ public class MiniDslParser implements Parser {
 
         while (rest.startsWith(".")) {
             rest = rest.substring(1).trim();
-            String method = readIdentifier(rest);
-            rest = rest.substring(method.length()).trim();
+            String identifier = readIdentifier(rest);
+            rest = rest.substring(identifier.length()).trim();
 
-            if (!rest.startsWith("(")) {
-                throw new IllegalArgumentException("Expected '(' after " + method);
-            }
+            if (rest.startsWith("(")) {
+                int argsEnd = findMatchingParen(rest, 0);
+                String argsInside = rest.substring(1, argsEnd).trim();
+                rest = rest.substring(argsEnd + 1).trim();
 
-            int argsEnd = findMatchingParen(rest, 0);
-            String argsInside = rest.substring(1, argsEnd).trim();
-            rest = rest.substring(argsEnd + 1).trim();
+                Object[] args = parseArgs(argsInside, ctx);
 
-            Object[] args = parseArgs(argsInside, ctx);
-
-            if (current instanceof Class<?> cls) {
-                current = invokeStaticAllowed(cls, method, args);
+                if (current instanceof Class<?> cls) {
+                    current = invokeStaticAllowed(cls, identifier, args);
+                } else {
+                    current = invokeAnyAllowed(current, identifier, args);
+                }
             } else {
-                current = invokeAnyAllowed(current, method, args);
+                if (current instanceof Class<?> cls) {
+                    current = accessFieldOrConstant(cls, identifier);
+                } else {
+                    throw new IllegalArgumentException("Field access only supported on Class types");
+                }
             }
         }
 
@@ -406,12 +416,35 @@ public class MiniDslParser implements Parser {
             return String.valueOf(target);
         }
 
-        if (target instanceof String || target instanceof OffsetDateTime || target instanceof LocalDate) {
+        if (isAllowedInstanceType(target)) {
             Method m = findBestMethod(target.getClass(), method, false, args);
             return m.invoke(target, coerceArgs(m.getParameterTypes(), args));
         }
 
         throw new SecurityException("Instance calls not allowed on: " + target.getClass().getName());
+    }
+
+    private boolean isAllowedInstanceType(Object target) {
+        return target instanceof CharSequence
+                || target instanceof Number
+                || target instanceof java.time.temporal.Temporal
+                || target instanceof java.time.ZoneId
+                || target instanceof java.time.format.DateTimeFormatter
+                || target instanceof java.util.Base64.Encoder
+                || target instanceof java.util.Base64.Decoder
+                || target instanceof java.util.Locale;
+    }
+
+    private Object accessFieldOrConstant(Class<?> cls, String fieldName) {
+        try {
+            java.lang.reflect.Field field = cls.getField(fieldName);
+            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                throw new SecurityException("Only static fields allowed: " + fieldName);
+            }
+            return field.get(null);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new IllegalArgumentException("Field not found or not accessible: " + cls.getName() + "." + fieldName);
+        }
     }
 
     private Method findBestMethod(Class<?> cls, String name, boolean wantStatic, Object[] args) {

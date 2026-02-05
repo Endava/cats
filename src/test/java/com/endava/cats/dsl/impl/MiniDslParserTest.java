@@ -373,6 +373,7 @@ class MiniDslParserTest {
             String result = parser.parse("\"\"", context);
 
             assertThat(result).isEmpty();
+            System.out.println(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(java.time.Instant.now().atOffset(java.time.ZoneOffset.UTC)));
         }
     }
 
@@ -1145,6 +1146,38 @@ class MiniDslParserTest {
             String result = parser.parse("${prefix}-${request.id}", context);
 
             assertThat(result).isEqualTo("TEST-456");
+        }
+
+        @Test
+        @DisplayName("Should handle field access on DateTimeFormatter")
+        void shouldHandleFieldAccessOnDateTimeFormatter() {
+            String result = parser.parse("T(java.time.format.DateTimeFormatter).ISO_OFFSET_DATE_TIME.toString()", context);
+
+            assertThat(result).isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("Should handle nested T() expressions in method arguments")
+        void shouldHandleNestedTExpressionsInMethodArguments() {
+            String result = parser.parse("T(java.time.format.DateTimeFormatter).ISO_OFFSET_DATE_TIME.format(T(java.time.Instant).now().atOffset(T(java.time.ZoneOffset).UTC))", context);
+
+            assertThat(result).isNotEmpty().matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z");
+        }
+
+        @Test
+        @DisplayName("Should handle ZoneOffset UTC constant")
+        void shouldHandleZoneOffsetUtcConstant() {
+            String result = parser.parse("T(java.time.ZoneOffset).UTC.toString()", context);
+
+            assertThat(result).isEqualTo("Z");
+        }
+
+        @Test
+        @DisplayName("Should handle Instant with atOffset")
+        void shouldHandleInstantWithAtOffset() {
+            String result = parser.parse("T(java.time.Instant).now().atOffset(T(java.time.ZoneOffset).UTC).toString()", context);
+
+            assertThat(result).isNotEmpty().contains("Z");
         }
     }
 }
