@@ -48,7 +48,7 @@
         <json-path.version>2.10.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.31.0</quarkus.platform.version>
+        <quarkus.platform.version>3.32.0</quarkus.platform.version>
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
         <compiler-plugin.version>3.14.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -77,13 +77,13 @@
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <kotlin-reflect.version>2.1.20</kotlin-reflect.version>
         <jackson.version>2.21.0</jackson.version>
-        <pitest-maven.version>1.22.0</pitest-maven.version>
+        <pitest-maven.version>1.22.1</pitest-maven.version>
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
         <snakeyaml-engine.version>3.0.1</snakeyaml-engine.version>
         <jackson-core.version>3.0.4</jackson-core.version>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
-        <swagger-parser-v2.version>2.1.37</swagger-parser-v2.version>
+        <swagger-parser-v2.version>2.1.38</swagger-parser-v2.version>
     </properties>
     <dependencyManagement>
         <dependencies>

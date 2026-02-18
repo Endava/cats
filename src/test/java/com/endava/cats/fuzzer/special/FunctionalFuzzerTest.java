@@ -88,7 +88,7 @@ class FunctionalFuzzerTest {
         Mockito.verify(spyFunctionalFuzzer, Mockito.never()).processCustomFuzzerFile(data);
         Assertions.assertThat(functionalFuzzer.description()).isNotNull();
         Assertions.assertThat(functionalFuzzer).hasToString(functionalFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(functionalFuzzer.requiredKeywords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.HTTP_METHOD);
+        Assertions.assertThat(functionalFuzzer.requiredKeywords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.HTTP_METHOD);
     }
 
     @Test
