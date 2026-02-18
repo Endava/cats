@@ -442,7 +442,7 @@ public class MiniDslParser implements Parser {
                 throw new SecurityException("Only static fields allowed: " + fieldName);
             }
             return field.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
+        } catch (NoSuchFieldException | IllegalAccessException _) {
             throw new IllegalArgumentException("Field not found or not accessible: " + cls.getName() + "." + fieldName);
         }
     }

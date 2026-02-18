@@ -14,7 +14,7 @@ public abstract class CatsDSLWords {
     /**
      * Reserved word used in CATS DSL files to describe the test case being run.
      */
-    public static final String DESCRIPTION = "description";
+    public static final String DESCRIPTION = "scenario";
 
     /**
      * Reserved word used in CATS DSL files to verify a boolean expression.

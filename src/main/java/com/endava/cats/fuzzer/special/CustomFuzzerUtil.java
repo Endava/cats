@@ -271,9 +271,9 @@ public class CustomFuzzerUtil {
     }
 
     private String getTestScenario(String testName, Map<String, Object> currentPathValues) {
-        String description = WordUtils.nullOrValueOf(currentPathValues.get(DESCRIPTION));
-        if (StringUtils.isNotBlank(description)) {
-            return description;
+        String scenario = this.getScenarioOrDescription(currentPathValues);
+        if (StringUtils.isNotBlank(scenario)) {
+            return scenario;
         }
 
         return "send request with custom values supplied. Test key [" + testName + "]";
@@ -285,6 +285,19 @@ public class CustomFuzzerUtil {
         testCaseListener.addScenario(log, "Scenario: {}", testScenario);
         testCaseListener.addExpectedResult(log, "Should return {}", expectedResponseCode.allowedResponseCodes());
         return testCaseListener.shouldContinueExecution(log, expectedResponseCode);
+    }
+
+    public String getScenarioOrDescription(Map<String, Object> currentPathValues) {
+        String scenario = WordUtils.nullOrValueOf(currentPathValues.get(DESCRIPTION));
+        if (StringUtils.isNotBlank(scenario)) {
+            return scenario;
+        }
+        String description = WordUtils.nullOrValueOf(currentPathValues.get("description"));
+        if (StringUtils.isNotBlank(description)) {
+            return description;
+        }
+
+        return null;
     }
 
     /**

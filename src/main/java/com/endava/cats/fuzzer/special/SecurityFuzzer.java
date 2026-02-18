@@ -127,7 +127,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
             individualTestConfigClone.put(targetField, nastyStrings);
-            individualTestConfigClone.put(CatsDSLWords.DESCRIPTION, individualTestConfig.get(CatsDSLWords.DESCRIPTION) + ", field [" + targetField + "]");
+            individualTestConfigClone.put(CatsDSLWords.DESCRIPTION, customFuzzerUtil.getScenarioOrDescription(individualTestConfig) + ", field [" + targetField + "]");
             individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS);
             individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS_TYPES);
             individualTestConfigClone.remove(CatsDSLWords.STRINGS_FILE);
@@ -175,6 +175,6 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
     @Override
     public List<String> requiredKeywords() {
-        return List.of(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.HTTP_METHOD);
+        return List.of(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.HTTP_METHOD);
     }
 }
