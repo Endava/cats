@@ -74,7 +74,7 @@ public class TestCaseListener {
     private static final List<String> CONTENT_TYPE_DONT_MATCH_SCHEMA = List.of("application/csv", "application/pdf");
     final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
-    private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
+    private static final String SEPARATOR = ConsoleUtils.CONSOLE_SEPARATOR;
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestReportsGenerator testReportsGenerator;
     private final CatsGlobalContext globalContext;

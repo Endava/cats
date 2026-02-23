@@ -93,6 +93,8 @@ public class ServiceCaller {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
+    private static final int MAX_IDLE_CONNECTIONS = 10;
+    private static final int KEEP_ALIVE_MINUTES = 15;
     private final FilesArguments filesArguments;
     private final TestCaseListener testCaseListener;
     private final AuthArguments authArguments;
@@ -145,7 +147,7 @@ public class ServiceCaller {
                     .connectTimeout(apiArguments.getConnectionTimeout(), TimeUnit.SECONDS)
                     .readTimeout(apiArguments.getReadTimeout(), TimeUnit.SECONDS)
                     .writeTimeout(apiArguments.getWriteTimeout(), TimeUnit.SECONDS)
-                    .connectionPool(new ConnectionPool(10, 15, TimeUnit.MINUTES))
+                    .connectionPool(new ConnectionPool(MAX_IDLE_CONNECTIONS, KEEP_ALIVE_MINUTES, TimeUnit.MINUTES))
                     .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
                     .retryOnConnectionFailure(true)
                     .protocols(processingArguments.isHttp2PriorKnowledge() ? List.of(Protocol.H2_PRIOR_KNOWLEDGE) : List.of(Protocol.HTTP_2, Protocol.HTTP_1_1))

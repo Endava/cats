@@ -21,6 +21,14 @@ public abstract class ConsoleUtils {
 
     private static final Pattern ANSI_REMOVE_PATTERN = Pattern.compile("\u001B\\[[;\\d]*m");
     public static final String SEPARATOR = "  ";
+    /**
+     * The padding value subtracted from the terminal width when building the console separator line.
+     */
+    public static final int SEPARATOR_PADDING = 22;
+    /**
+     * A separator line made of dashes, spanning the console width minus {@link #SEPARATOR_PADDING}.
+     */
+    public static final String CONSOLE_SEPARATOR = "-".repeat(getConsoleColumns(SEPARATOR_PADDING));
 
     /**
      * Get the width of the terminal.

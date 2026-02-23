@@ -117,7 +117,7 @@ import java.util.stream.Collectors;
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, AutoCloseable {
 
     private final PrettyLogger logger;
-    private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
+    private static final String SEPARATOR = ConsoleUtils.CONSOLE_SEPARATOR;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Inject
