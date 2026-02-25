@@ -658,18 +658,18 @@ class SecurityInjectionFuzzerTest {
                     
                     // Authentication bypass detection
                     Arguments.of("Login successful indicator", 200,
-                            "{\"status\":\"login successful\",\"token\":\"abc123\"}",
+                            "{\"status\":\"login successful\",\"details\":\"cn=admin,dc=example,dc=com\"}",
                             "Potential LDAP authentication bypass", true),
                     Arguments.of("Authentication successful", 200,
-                            "authentication successful - welcome admin",
+                            "authentication successful - welcome admin cn=admin,dc=example,dc=com",
                             "Potential LDAP authentication bypass", true),
                     Arguments.of("Session created indicator", 200,
-                            "session created successfully, access granted",
+                            "session created successfully, access granted cn=admin,dc=example,dc=com",
                             "Potential LDAP authentication bypass", true),
                     Arguments.of("Authorized access", 200,
-                            "User authorized, logged in successfully",
+                            "User authorized, logged in successfully cn=admin,dc=example,dc=com",
                             "Potential LDAP authentication bypass", true),
-                    
+
                     // LDIF structure detection - these responses have enough attributes to trigger multiple attributes detection first
                     // Note: The multiple attributes check (4+ indicators) runs before LDIF structure check
                     Arguments.of("LDIF with dn and attributes", 200,
@@ -678,18 +678,18 @@ class SecurityInjectionFuzzerTest {
                     Arguments.of("LDIF with changetype", 200,
                             "objectclass: person\nchangetype: add\ndn: cn=test\ncn: test\nuid: test",
                             "Potential LDAP injection detected", true),
-                    
+
                     // Large response with multiple user indicators
                     Arguments.of("Large response with user patterns", 200,
                             generateLargeResponseWithUserPatterns(),
                             "Potential LDAP injection", true),
-                    
+
                     // Error context validation (should not trigger without error context)
                     Arguments.of("LDAP keyword without error context", 200,
                             "{\"javax.naming.directory\":\"field_value\"}",
                             "accepted", false),
                     Arguments.of("Has 5 success indicators (cn=, uid=, mail=, cn=admin, uid=admin)", 200,
-                            "cn=admin uid=admin mail=admin@test.com",
+                            "distinguishedName=cn=admin,ou=users,dc=example,dc=com cn=admin uid=admin mail=admin@test.com memberOf=admins",
                             "Potential LDAP injection", true),
                     Arguments.of("Clean response", 200,
                             "{\"status\": \"ok\"}",

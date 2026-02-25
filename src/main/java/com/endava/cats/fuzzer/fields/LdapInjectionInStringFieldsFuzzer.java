@@ -11,11 +11,19 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Fuzzer that sends LDAP injection payloads in string fields.
  * LDAP injection can lead to authentication bypass, unauthorized data access,
  * and privilege escalation in applications using LDAP for authentication/authorization.
+ * <p>
+ * This improved drop-in version keeps original behaviour but:
+ * - Uses an LDAP-focused evidence scoring approach (reduces false positives).
+ * - Avoids generic "token" substring as an auth-success indicator.
+ * - Uses lightweight structural checks (LDIF, DN patterns, JSON keys, inline attributes).
+ * - Keeps strong error-keyword detection as an immediate vuln signal.
  */
 @Singleton
 @FieldFuzzer
@@ -218,6 +226,9 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             "objectclass:"
     );
 
+    private static final Pattern DN_KEY_LINE = Pattern.compile("(?m)^(dn|cn|uid|ou|dc)\\s*:\\s*.+$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern JWT_LIKE = Pattern.compile("\\bey[a-z0-9_-]{10,}\\.[a-z0-9_-]+\\.[a-z0-9_-]+\\b", Pattern.CASE_INSENSITIVE);
+
     public LdapInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, SecurityFuzzerArguments securityFuzzerArguments) {
         super(simpleExecutor, testCaseListener, securityFuzzerArguments);
     }
@@ -251,7 +262,7 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
 
     @Override
     protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data) {
-        String responseBody = response.getBody();
+        String responseBody = safe(response.getBody());
         String responseLower = responseBody.toLowerCase(Locale.ROOT);
 
         for (String keyword : LDAP_ERROR_KEYWORDS) {
@@ -263,35 +274,60 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             }
         }
 
-        int successCount = 0;
-        StringBuilder foundIndicators = new StringBuilder();
-
-        for (String indicator : LDAP_SUCCESS_INDICATORS) {
-            if (responseLower.contains(indicator)) {
-                successCount++;
-                if (!foundIndicators.isEmpty()) {
-                    foundIndicators.append(", ");
-                }
-                foundIndicators.append(indicator);
-            }
+        if (isLikelyTokenResponse(responseLower) && !hasLdapMarkers(responseLower, responseBody)) {
+            return InjectionDetectionResult.notVulnerable();
         }
 
-        if (successCount >= 4) {
-            return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP injection detected",
-                    "Response contains multiple LDAP directory attributes (" + successCount + " indicators: " +
-                            foundIndicators + "), suggesting filter injection may have returned unauthorized directory data"
-            );
-        }
-
-        if (detectAuthenticationBypass(responseLower)) {
-            return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP authentication bypass detected",
-                    "Response suggests successful authentication with wildcard or injection payload"
-            );
-        }
+        int score = 0;
+        StringBuilder contributing = new StringBuilder();
 
         if (hasLdifStructure(responseBody)) {
+            score += 6;
+            appendContribution(contributing, "LDIF structure");
+        }
+
+        if (hasDnKeyLines(responseLower)) {
+            score += 4;
+            appendContribution(contributing, "DN/key-style lines");
+        }
+
+        int inlineAttrCount = countInlineAttributes(responseLower);
+        if (inlineAttrCount >= 3) {
+            score += 4;
+            appendContribution(contributing, "multiple inline DN attributes (" + inlineAttrCount + ")");
+        } else if (inlineAttrCount == 2) {
+            score += 2;
+            appendContribution(contributing, "two inline DN attributes");
+        }
+
+        if (hasJsonLikeLdapKeys(responseLower)) {
+            score += 3;
+            appendContribution(contributing, "JSON LDAP keys");
+        }
+
+        if (containsMultipleUserIndicators(responseLower)) {
+            score += 3;
+            appendContribution(contributing, "multiple user-like structures");
+        }
+
+        if (score > 0 && hasLdapSuccessPhrase(responseLower)) {
+            score += 1;
+            appendContribution(contributing, "success phrase present");
+        }
+
+        if (responseBody.length() > 50000 && containsMultipleUserIndicators(responseLower)) {
+            score += 3;
+            appendContribution(contributing, "very large LDAP-like response");
+        }
+
+        if (score >= 6) {
+            return InjectionDetectionResult.vulnerable(
+                    "Potential LDAP injection detected",
+                    "Evidence score=" + score + " (" + contributing.toString() + ") suggesting LDAP data leakage or filter injection"
+            );
+        }
+
+        if (hasLdifStructure(responseBody) && !isLikelyTokenResponse(responseLower)) {
             return InjectionDetectionResult.vulnerable(
                     "Potential LDAP data extraction detected",
                     "Response contains LDIF-like structure suggesting directory data dump"
@@ -306,7 +342,41 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             );
         }
 
+        int explicitIndicators = 0;
+        StringBuilder foundIndicators = new StringBuilder();
+        for (String indicator : LDAP_SUCCESS_INDICATORS) {
+            if (responseLower.contains(indicator)) {
+                explicitIndicators++;
+                if (!foundIndicators.isEmpty()) {
+                    foundIndicators.append(", ");
+                }
+                foundIndicators.append(indicator);
+            }
+        }
+
+        if (explicitIndicators >= 6) {
+            return InjectionDetectionResult.vulnerable(
+                    "Potential LDAP injection detected",
+                    "Response contains multiple LDAP directory attributes (" + explicitIndicators + " indicators: " +
+                            foundIndicators + "), suggesting filter injection may have returned unauthorized directory data"
+            );
+        }
+
+        if (score > 0 && detectAuthenticationBypass(responseLower)) {
+            return InjectionDetectionResult.vulnerable(
+                    "Potential LDAP authentication bypass detected",
+                    "Response suggests authentication-related success combined with LDAP evidence"
+            );
+        }
+
         return InjectionDetectionResult.notVulnerable();
+    }
+
+    private void appendContribution(StringBuilder sb, String part) {
+        if (!sb.isEmpty()) {
+            sb.append(", ");
+        }
+        sb.append(part);
     }
 
     /**
@@ -344,7 +414,7 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
      * LDIF is a text format for representing LDAP directory data.
      */
     private boolean hasLdifStructure(String body) {
-        String lower = body.toLowerCase(Locale.ROOT);
+        String lower = safe(body);
 
         boolean hasDn = lower.contains("dn:");
         boolean hasObjectClass = lower.contains("objectclass:");
@@ -362,6 +432,18 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         }
 
         return (hasDn && attributeCount >= 3) || (hasObjectClass && hasChangeType);
+    }
+
+    private boolean hasDnKeyLines(String lower) {
+        if (lower == null || lower.isEmpty()) {
+            return false;
+        }
+        Matcher m = DN_KEY_LINE.matcher(lower);
+        return m.find();
+    }
+
+    private boolean hasLdapMarkers(String responseLower, String originalBody) {
+        return hasLdifStructure(originalBody) || hasDnKeyLines(responseLower) || countInlineAttributes(responseLower) >= 2 || hasJsonLikeLdapKeys(responseLower);
     }
 
     /**
@@ -384,15 +466,30 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
     }
 
     /**
+     * Counts inline attribute patterns like cn=, uid=, dc= irrespective of format.
+     */
+    private int countInlineAttributes(String lower) {
+        if (lower == null || lower.isEmpty()) {
+            return 0;
+        }
+        int cnt = 0;
+        cnt += countPattern(lower, "cn=");
+        cnt += countPattern(lower, "uid=");
+        cnt += countPattern(lower, "ou=");
+        cnt += countPattern(lower, "dc=");
+        cnt += countPattern(lower, "samaccountname");
+        return cnt;
+    }
+
+    /**
      * Detects if the response indicates successful authentication/authorization
      * that wouldn't normally occur with the injected payload.
-     *
+     * <p>
+     * NOTE: This is LDAP fuzzer-specific; we avoid generic "token" checks because
+     * many systems return tokens unrelated to LDAP injection (Vault, CSRF, JWTs).
+     * Only return true if LDAP evidence exists and success phrases appear.
      */
     private boolean detectAuthenticationBypass(String responseLower) {
-        if (looksLikeVaultTokenPayload(responseLower)) {
-            return false;
-        }
-
         String[] successIndicators = {
                 "login successful",
                 "authentication successful",
@@ -409,22 +506,53 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             }
         }
 
-        return false;
+        return JWT_LIKE.matcher(responseLower).find() && hasLdapMarkers(responseLower, responseLower);
     }
 
     /**
-     * Best-effort detection of Vault-style token responses to avoid false positives.
-     * This is intentionally lightweight: we only match very characteristic fields.
+     * Best-effort detection of generic token/auth payloads to avoid false positives.
+     * This is intentionally generic (protocol-like), not product-specific.
      */
-    private boolean looksLikeVaultTokenPayload(String responseLower) {
-        return responseLower.contains("\"client_token\"")
-                || responseLower.contains("\"lease_duration\"")
-                || responseLower.contains("\"renewable\"")
-                || responseLower.contains("\"wrap_info\"")
-                || (responseLower.contains("\"auth\"") && responseLower.contains("\"policies\""));
+    private boolean isLikelyTokenResponse(String responseLower) {
+        if (responseLower == null || responseLower.isEmpty()) {
+            return false;
+        }
+
+        int tokenish = 0;
+        String[] tokenKeys = {
+                "\"access_token\"", "\"refresh_token\"", "\"id_token\"", "\"token_type\"", "\"expires_in\"",
+                "\"client_token\"", "\"auth_token\"", "\"csrf_token\"", "\"jwt\"", "\"accessToken\"", "\"refreshToken\""
+        };
+        for (String k : tokenKeys) {
+            if (responseLower.contains(k)) tokenish++;
+        }
+
+        if (JWT_LIKE.matcher(responseLower).find()) {
+            tokenish++;
+        }
+
+        return tokenish >= 2 && !hasLdapMarkers(responseLower, responseLower);
+    }
+
+    /**
+     * cheap check for JSON responses containing LDAP-style keys (quoted keys)
+     */
+    private boolean hasJsonLikeLdapKeys(String lower) {
+        if (lower == null || lower.isEmpty()) {
+            return false;
+        }
+        int found = 0;
+        String[] jsonKeyCandidates = {"\"distinguishedname\"", "\"distinguished_name\"", "\"cn\"", "\"uid\"", "\"samaccountname\"", "\"memberof\"", "\"objectclass\"", "\"mail\"", "\"dn\""};
+        for (String k : jsonKeyCandidates) {
+            if (lower.contains(k)) found++;
+        }
+        return found >= 2;
     }
 
     private int countPattern(String text, String pattern) {
+        if (text == null || text.isEmpty() || pattern == null || pattern.isEmpty()) {
+            return 0;
+        }
         int count = 0;
         int index = 0;
         while ((index = text.indexOf(pattern, index)) != -1) {
@@ -432,5 +560,30 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             index += pattern.length();
         }
         return count;
+    }
+
+    private boolean hasLdapSuccessPhrase(String lower) {
+        if (lower == null || lower.isEmpty()) {
+            return false;
+        }
+        String[] successIndicators = {
+                "login successful",
+                "authentication successful",
+                "welcome",
+                "logged in",
+                "session created",
+                "authorized",
+                "access granted"
+        };
+        for (String s : successIndicators) {
+            if (lower.contains(s)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String safe(String s) {
+        return s == null ? "" : s;
     }
 }
