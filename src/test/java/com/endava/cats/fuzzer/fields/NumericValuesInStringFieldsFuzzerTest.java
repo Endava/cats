@@ -214,7 +214,7 @@ class NumericValuesInStringFieldsFuzzerTest {
 
         // 8 numeric values for 1 string field = 8 calls, expecting 4XX
         Mockito.verify(testCaseListener, Mockito.times(8)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
@@ -240,6 +240,6 @@ class NumericValuesInStringFieldsFuzzerTest {
 
         // 8 numeric values for 1 string field = 8 calls, expecting 2XX
         Mockito.verify(testCaseListener, Mockito.times(8)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 }

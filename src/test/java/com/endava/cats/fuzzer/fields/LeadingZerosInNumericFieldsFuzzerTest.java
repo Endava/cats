@@ -236,7 +236,7 @@ class LeadingZerosInNumericFieldsFuzzerTest {
 
         // 3 prefixes for 1 numeric field = 3 calls, expecting 4XX
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
@@ -262,7 +262,7 @@ class LeadingZerosInNumericFieldsFuzzerTest {
 
         // 3 prefixes for 1 numeric field = 3 calls, expecting 2XX
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
@@ -289,6 +289,6 @@ class LeadingZerosInNumericFieldsFuzzerTest {
 
         // 3 prefixes for 2 numeric fields = 6 calls, expecting 4XX
         Mockito.verify(testCaseListener, Mockito.times(6)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 }

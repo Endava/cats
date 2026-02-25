@@ -386,15 +386,19 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
     /**
      * Detects if the response indicates successful authentication/authorization
      * that wouldn't normally occur with the injected payload.
+     *
      */
     private boolean detectAuthenticationBypass(String responseLower) {
+        if (looksLikeVaultTokenPayload(responseLower)) {
+            return false;
+        }
+
         String[] successIndicators = {
                 "login successful",
                 "authentication successful",
                 "welcome",
                 "logged in",
                 "session created",
-                "token",
                 "authorized",
                 "access granted"
         };
@@ -406,6 +410,18 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         }
 
         return false;
+    }
+
+    /**
+     * Best-effort detection of Vault-style token responses to avoid false positives.
+     * This is intentionally lightweight: we only match very characteristic fields.
+     */
+    private boolean looksLikeVaultTokenPayload(String responseLower) {
+        return responseLower.contains("\"client_token\"")
+                || responseLower.contains("\"lease_duration\"")
+                || responseLower.contains("\"renewable\"")
+                || responseLower.contains("\"wrap_info\"")
+                || (responseLower.contains("\"auth\"") && responseLower.contains("\"policies\""));
     }
 
     private int countPattern(String text, String pattern) {

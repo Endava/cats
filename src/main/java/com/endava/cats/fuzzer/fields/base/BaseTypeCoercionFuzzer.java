@@ -79,7 +79,7 @@ public abstract class BaseTypeCoercionFuzzer implements Fuzzer {
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
                             .expectedResponseCode(processingArguments.isStrictTypes() ?
-                                    ResponseCodeFamilyPredefined.FOURXX : ResponseCodeFamilyPredefined.TWOXX)
+                                    ResponseCodeFamilyPredefined.FOURXX : ResponseCodeFamilyPredefined.FOURXX_TWOXX)
                             .fuzzingData(data)
                             .logger(logger)
                             .scenario("Send %s fields encoded as %s: field [%s], fuzzed value [%s], original [%s]. This tests type validation and potential type coercion issues."

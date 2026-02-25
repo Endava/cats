@@ -212,7 +212,7 @@ class EpochNumberInDateTimeFieldsFuzzerTest {
 
         // 2 epoch values for 1 date-time field = 2 calls, expecting 4XX
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
@@ -238,6 +238,6 @@ class EpochNumberInDateTimeFieldsFuzzerTest {
 
         // 2 epoch values for 1 date-time field = 2 calls, expecting 2XX
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 }

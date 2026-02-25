@@ -213,7 +213,7 @@ class BooleanStringInBooleanFieldsFuzzerTest {
 
         // 1 string value for 1 boolean field = 1 call, expecting 4XX
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
@@ -239,6 +239,6 @@ class BooleanStringInBooleanFieldsFuzzerTest {
 
         // 1 string value for 1 boolean field = 1 call, expecting 2XX
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 }

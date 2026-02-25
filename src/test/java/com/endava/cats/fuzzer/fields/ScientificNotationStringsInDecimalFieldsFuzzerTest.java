@@ -213,7 +213,7 @@ class ScientificNotationStringsInDecimalFieldsFuzzerTest {
 
         // 7 scientific notation values for 1 number field = 7 calls, expecting 4XX
         Mockito.verify(testCaseListener, Mockito.times(7)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 
     @Test
@@ -239,6 +239,6 @@ class ScientificNotationStringsInDecimalFieldsFuzzerTest {
 
         // 7 scientific notation values for 1 number field = 7 calls, expecting 2XX
         Mockito.verify(testCaseListener, Mockito.times(7)).reportResult(
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 }
