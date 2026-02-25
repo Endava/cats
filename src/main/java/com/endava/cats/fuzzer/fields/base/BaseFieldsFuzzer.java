@@ -19,9 +19,14 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
@@ -192,14 +197,58 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     private boolean isFuzzedValueMatchingPattern(Object fieldValue, FuzzingData data, String fuzzedField) {
         if (this.shouldCheckForFuzzedValueMatchingPattern()) {
             Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-            if (fieldSchema.getPattern() == null || CatsModelUtils.isByteArraySchema(fieldSchema)) {
+            if (CatsModelUtils.isByteArraySchema(fieldSchema)) {
                 return true;
             }
-            Pattern pattern = Pattern.compile(fieldSchema.getPattern());
 
-            return fieldValue == null || pattern.matcher(this.sanitizeString(fieldValue)).matches();
+            if (fieldSchema.getPattern() != null) {
+                Pattern pattern = Pattern.compile(fieldSchema.getPattern());
+                return fieldValue == null || pattern.matcher(this.sanitizeString(fieldValue)).matches();
+            }
+
+            return fieldValue == null || isValueMatchingFormat(fieldSchema, this.sanitizeString(fieldValue));
         }
         return true;
+    }
+
+    private boolean isValueMatchingFormat(Schema<?> fieldSchema, String sanitizedValue) {
+        String format = fieldSchema.getFormat();
+        if (format == null) {
+            return true;
+        }
+        return switch (format) {
+            case "date" -> isValidDate(sanitizedValue);
+            case "date-time" -> isValidDateTime(sanitizedValue);
+            case "uuid" -> isValidUuid(sanitizedValue);
+            default -> true;
+        };
+    }
+
+    private static boolean isValidDate(String value) {
+        try {
+            LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+
+    private static boolean isValidDateTime(String value) {
+        try {
+            OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+
+    private static boolean isValidUuid(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     /**
