@@ -458,6 +458,16 @@ class MiniDslParserTest {
         }
 
         @Test
+        @DisplayName("Should resolve value from request JSON")
+        void shouldResolveValueFromPathJson() {
+            context.put(Parser.PATH, "{\"name\":\"John\",\"age\":30}");
+
+            String result = parser.parse("path.name", context);
+
+            assertThat(result).isEqualTo("John");
+        }
+
+        @Test
         @DisplayName("Should resolve value from response JSON")
         void shouldResolveValueFromResponseJson() {
             context.put(Parser.RESPONSE, "{\"status\":\"success\",\"code\":200}");

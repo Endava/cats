@@ -226,12 +226,16 @@ public class MiniDslParser implements Parser {
 
         String requestJson = firstNonNull(ctx.get(Parser.REQUEST), ctx.get("request"));
         String responseJson = firstNonNull(ctx.get(Parser.RESPONSE), ctx.get("response"));
+        String pathJson = firstNonNull(ctx.get(Parser.PATH), ctx.get("path"));
 
         if (key.startsWith("request.")) {
             return readJsonPath(requestJson, "$." + key.substring("request.".length()));
         }
         if (key.startsWith("response.")) {
             return readJsonPath(responseJson, "$." + key.substring("response.".length()));
+        }
+        if (key.startsWith("path.")) {
+            return readJsonPath(pathJson, "$." + key.substring("path.".length()));
         }
 
         Object fromResp = readJsonPath(responseJson, "$." + key);

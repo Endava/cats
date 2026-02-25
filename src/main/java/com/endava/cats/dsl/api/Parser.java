@@ -15,6 +15,11 @@ public interface Parser {
      * Holds the name for the response object.
      */
     String RESPONSE = "response";
+
+    /**
+     * Holds the name for the path object.
+     */
+    String PATH = "path";
     /**
      * Holds the name for the auth script name variable.
      */

@@ -119,11 +119,11 @@ public class CustomFuzzerUtil {
 
             String servicePath = this.replacePathVariablesWithCustomValues(data, currentPathValues);
             String pathParamsPayloadWithCustomValues = this.getPathParamsPayloadWithCustomValues(data.getPathParamsPayload(), currentPathValues);
-            CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(servicePath).replaceRefData(false).httpMethod(data.getMethod())
+            CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).replaceRefData(false).httpMethod(data.getMethod())
                     .headers(headers).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).contractPath(data.getContractPath())
                     .contentType(data.getFirstRequestContentType()).pathParamsPayload(pathParamsPayloadWithCustomValues).build());
 
-            this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced);
+            this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced, pathParamsPayloadWithCustomValues);
 
             String verify = WordUtils.nullOrValueOf(currentPathValues.get(VERIFY));
 
@@ -156,7 +156,7 @@ public class CustomFuzzerUtil {
         return 1;
     }
 
-    private void setOutputVariables(Map<String, Object> currentPathValues, CatsResponse response, String request) {
+    private void setOutputVariables(Map<String, Object> currentPathValues, CatsResponse response, String request, String pathParamsPayload) {
         Object output = currentPathValues.get(OUTPUT);
 
         /* add all variables first; resolve any variables requiring request access, resolve response variables and merge all in the end.*/
@@ -164,20 +164,41 @@ public class CustomFuzzerUtil {
         if (output != null) {
             Map<String, String> variablesFromYaml = this.parseYmlEntryIntoMap(String.valueOf(output));
             this.variables.putAll(variablesFromYaml);
+            this.variables.putAll(matchVariablesFromPath(pathParamsPayload));
             Map<String, String> requestVariables = matchVariablesFromRequest(request);
             this.variables.putAll(matchVariablesWithTheResponse(response, variablesFromYaml, Map.Entry::getValue));
             this.variables.putAll(requestVariables);
 
-            log.note("The following OUTPUT variables were identified {}", variables);
+            log.debug("The following OUTPUT variables were identified {}", variables);
         }
+    }
+
+    private Map<String, String> matchVariablesFromPath(String pathParamsPayload) {
+        return variables.entrySet().stream()
+                .filter(entry -> isPathVariable(entry.getValue()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> CatsDSLParser.parseAndGetResult(entry.getValue(), Map.of(Parser.PATH, pathParamsPayload))))
+                .entrySet()
+                .stream()
+                .filter(entry -> !JsonUtils.isNotSet(entry.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private Map<String, String> matchVariablesFromRequest(String request) {
         return variables.entrySet().stream()
-                .filter(entry -> entry.getValue().startsWith("$request"))
+                .filter(entry -> isRequestVariable(entry.getValue()))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         entry -> CatsDSLParser.parseAndGetResult(entry.getValue(), Map.of(Parser.REQUEST, request))));
+    }
+
+    private boolean isRequestVariable(String variableValue) {
+        return variableValue.startsWith("$request");
+    }
+
+    private boolean isPathVariable(String variableValue) {
+        return variableValue.startsWith("$path");
     }
 
     private void checkVerifiesAndReport(FuzzingData data, String request, CatsResponse response, String verify, ResponseCodeFamily expectedResponseCode) {
@@ -185,11 +206,11 @@ public class CustomFuzzerUtil {
         Map<String, String> responseValues = this.matchVariablesWithTheResponse(response, verifies, Map.Entry::getKey);
         log.debug("Parameters to verify: {}", verifies);
         log.debug("Parameters matched to response: {}", responseValues);
-        if (responseValues.entrySet().stream().anyMatch(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))) {
+        if (responseValues.entrySet().stream().anyMatch(entry -> JsonUtils.isNotSet(entry.getValue()))) {
             log.error("Test failed! There are Verify parameters which were not present in the response!");
 
             testCaseListener.reportResultError(log, data, "Verify parameters not present in response", "The following Verify parameters were not present in the response: {}",
-                    responseValues.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))
+                    responseValues.entrySet().stream().filter(entry -> JsonUtils.isNotSet(entry.getValue()))
                             .map(Map.Entry::getKey).toList());
         } else {
             StringBuilder errorMessages = new StringBuilder();
@@ -250,6 +271,7 @@ public class CustomFuzzerUtil {
         Map<String, String> result = new HashMap<>();
 
         result.putAll(variablesMap.entrySet().stream()
+                .filter(entry -> !isRequestVariable(entry.getValue()) && !isPathVariable(entry.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         entry -> String.valueOf(JsonUtils.getVariableFromJson(response.getBody(), mappingFunction.apply(entry))))
                 ));
@@ -322,7 +344,7 @@ public class CustomFuzzerUtil {
             if (this.isCatsRemove(entry)) {
                 payload = JsonUtils.deleteNode(payload, entry.getKey());
             } else if (this.isNotAReservedWord(entry.getKey())) {
-                payload = this.replaceElementWithCustomValue(entry, payload);
+                payload = this.replaceElementWithCustomValue(entry, payload, "{}");
             }
         }
 
@@ -343,7 +365,7 @@ public class CustomFuzzerUtil {
         String result = pathParamsPayload;
         for (Map.Entry<String, Object> entry : currentPathValues.entrySet()) {
             if (this.isNotAReservedWord(entry.getKey()) && !this.isCatsRemove(entry)) {
-                result = this.replaceElementWithCustomValue(entry, result);
+                result = this.replaceElementWithCustomValue(entry, result, pathParamsPayload);
             }
         }
 
@@ -399,7 +421,7 @@ public class CustomFuzzerUtil {
     private boolean wasOneOfSelectionReplaced(String oneOfSelection, FuzzingData data) {
         String[] oneOfArray = oneOfSelection.replace("{", "").replace("}", "").split("=", -1);
 
-        String updatedJson = this.replaceElementWithCustomValue(new AbstractMap.SimpleEntry<>(oneOfArray[0], oneOfArray[1]), data.getPayload());
+        String updatedJson = this.replaceElementWithCustomValue(new AbstractMap.SimpleEntry<>(oneOfArray[0], oneOfArray[1]), data.getPayload(), "{}");
         return JsonUtils.equalAsJson(data.getPayload(), updatedJson);
     }
 
@@ -445,6 +467,8 @@ public class CustomFuzzerUtil {
                 String valueToReplaceWith = String.valueOf(entry.getValue());
                 if (this.isVariable(valueToReplaceWith)) {
                     valueToReplaceWith = variables.getOrDefault(this.getVariableName(valueToReplaceWith), NOT_SET);
+                } else {
+                    valueToReplaceWith = CatsDSLParser.parseAndGetResult(valueToReplaceWith, Map.of());
                 }
                 newPath = newPath.replace("{" + entry.getKey() + "}", valueToReplaceWith);
             }
@@ -456,9 +480,10 @@ public class CustomFuzzerUtil {
         return !RESERVED_WORDS.contains(key);
     }
 
-    private String replaceElementWithCustomValue(Map.Entry<String, Object> keyValue, String payload) {
+    private String replaceElementWithCustomValue(Map.Entry<String, Object> keyValue, String payload, String pathPayload) {
         Map<String, String> contextForParser = new HashMap<>();
         contextForParser.put(Parser.REQUEST, payload);
+        contextForParser.put(Parser.PATH, pathPayload);
         contextForParser.putAll(variables);
 
         Object toReplace = this.getPropertyValueToReplaceInBody(keyValue);
