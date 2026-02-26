@@ -357,7 +357,7 @@ class FunctionalFuzzerTest {
     }
 
     @Test
-    void shouldLoadGlobalVariablesAndRemoveFromDetails() throws Exception {
+    void shouldLoadGlobalVariablesAndRemoveFromDetails() {
         Map<String, Map<String, Object>> details = new HashMap<>();
         details.put("cats-global-vars", new HashMap<>(Map.of("testVar", "T(java.lang.String).valueOf(\"computed\")")));
         details.put("/some/path", new HashMap<>(Map.of("test1", Map.of("expectedResponseCode", "200", "httpMethod", "POST"))));

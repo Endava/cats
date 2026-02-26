@@ -6,6 +6,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.cornutum.regexpgen.RandomGen;
 import org.cornutum.regexpgen.random.RandomBoundsGen;
 
+import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -181,7 +182,7 @@ public abstract class CatsRandom {
      * @return a random email address in the format xxx@cats.io
      */
     public static String email() {
-        return alphabetic(10).toLowerCase() + "@cats.io";
+        return alphabetic(10).toLowerCase(Locale.ROOT) + "@cats.io";
     }
 
     private static int randomLength(int minInclusive, int maxExclusive) {

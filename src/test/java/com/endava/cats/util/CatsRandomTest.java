@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.Random;
 
@@ -93,6 +95,54 @@ class CatsRandomTest {
             String result2 = CatsRandom.alphanumeric(10);
 
             assertThat(result1).isEqualTo(result2);
+        }
+    }
+
+    @Nested
+    @DisplayName("Next Range Generation Tests")
+    class NextRangeTests {
+
+        @ParameterizedTest
+        @CsvSource({
+                "5,10",
+                "0,0",
+                "3,3",
+                "1,2"
+        })
+        @DisplayName("Should generate random string within range or equal bounds")
+        void shouldGenerateRandomStringWithinRange(int min, int max) {
+            String result = CatsRandom.next(min, max);
+
+            if (min == max) {
+                assertThat(result).hasSize(min);
+            } else {
+                assertThat(result.length()).isBetween(min, max - 1);
+            }
+        }
+
+        @Test
+        @DisplayName("Should generate deterministic random string within range with same seed")
+        void shouldGenerateDeterministicRandomStringWithinRange() {
+            CatsRandom.initRandom(42L);
+            String result1 = CatsRandom.next(5, 10);
+
+            CatsRandom.initRandom(42L);
+            String result2 = CatsRandom.next(5, 10);
+
+            assertThat(result1).isEqualTo(result2);
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+                "10,5,Start value must be smaller or equal to end value.",
+                "-1,5,Both range values must be non-negative.",
+                "-5,-1,Both range values must be non-negative."
+        })
+        @DisplayName("Should throw exception for invalid ranges")
+        void shouldThrowExceptionForInvalidRanges(int min, int max, String message) {
+            assertThatThrownBy(() -> CatsRandom.next(min, max))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage(message);
         }
     }
 

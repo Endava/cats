@@ -760,7 +760,7 @@ public class OpenAPIModelGeneratorV2 {
         // Try to detect from enum values first
         List<Object> enumValues = Optional.ofNullable(schema.getEnum()).orElse(List.of());
         if (!enumValues.isEmpty()) {
-            String firstEnum = enumValues.get(0).toString();
+            String firstEnum = enumValues.getFirst().toString();
             return WordUtils.detectCasingFromString(firstEnum);
         }
 

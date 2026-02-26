@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -445,11 +446,11 @@ public class FuzzingDataFactory {
         if (parameter.get$ref() != null) {
             Parameter resolved = (Parameter) globalContext.getObjectFromPathsReference(parameter.get$ref());
             if (resolved != null) {
-                return (resolved.getName() + "|" + resolved.getIn()).toLowerCase();
+                return (resolved.getName() + "|" + resolved.getIn()).toLowerCase(Locale.ROOT);
             }
-            return parameter.get$ref().toLowerCase();
+            return parameter.get$ref().toLowerCase(Locale.ROOT);
         }
-        return (parameter.getName() + "|" + parameter.getIn()).toLowerCase();
+        return (parameter.getName() + "|" + parameter.getIn()).toLowerCase(Locale.ROOT);
     }
 
     Set<Object> extractExamples(MediaType mediaType) {

@@ -5,6 +5,8 @@ import com.endava.cats.util.CatsRandom;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -36,8 +38,8 @@ public class ShorthandFunctionParser implements Parser {
             "alphabetic", args -> args.length == 1 ? CatsRandom.alphabetic(args[0]) : CatsRandom.alphabetic(args[0], args[1]),
             "numeric", args -> args.length == 1 ? CatsRandom.numeric(args[0]) : CatsRandom.numeric(args[0], args[1]),
             "ascii", args -> args.length == 1 ? CatsRandom.ascii(args[0]) : CatsRandom.ascii(args[0], args[1]),
-            "todayplus", args -> LocalDate.now().plusDays(args[0]).toString(),
-            "todayminus", args -> LocalDate.now().minusDays(args[0]).toString()
+            "todayplus", args -> LocalDate.now(ZoneOffset.UTC).plusDays(args[0]).toString(),
+            "todayminus", args -> LocalDate.now(ZoneOffset.UTC).minusDays(args[0]).toString()
     );
 
     private static final Map<String, String> NO_ARG_FUNCTIONS = Map.of(
@@ -71,7 +73,7 @@ public class ShorthandFunctionParser implements Parser {
     }
 
     private String evaluateNoArgFunction(String inner) {
-        String key = inner.toLowerCase();
+        String key = inner.toLowerCase(Locale.ROOT);
         if (!NO_ARG_FUNCTIONS.containsKey(key)) {
             return null;
         }
@@ -91,7 +93,7 @@ public class ShorthandFunctionParser implements Parser {
             return originalExpression;
         }
 
-        String funcName = inner.substring(0, parenOpen).trim().toLowerCase();
+        String funcName = inner.substring(0, parenOpen).trim().toLowerCase(Locale.ROOT);
         String argsStr = inner.substring(parenOpen + 1, inner.length() - 1).trim();
 
         Function<int[], String> function = PARAMETERIZED_FUNCTIONS.get(funcName);
@@ -102,7 +104,7 @@ public class ShorthandFunctionParser implements Parser {
         try {
             int[] args = parseIntArgs(argsStr);
             return function.apply(args);
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             return originalExpression;
         }
     }

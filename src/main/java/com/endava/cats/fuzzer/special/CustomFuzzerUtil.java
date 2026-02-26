@@ -136,7 +136,6 @@ public class CustomFuzzerUtil {
                 headers = getHeadersWithFuzzing(arrayOfHeaders, currentPathValues, i);
             }
 
-            String servicePath = this.replacePathVariablesWithCustomValues(data, currentPathValues);
             String pathParamsPayloadWithCustomValues = this.getPathParamsPayloadWithCustomValues(data.getPathParamsPayload(), currentPathValues);
             CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).replaceRefData(false).httpMethod(data.getMethod())
                     .headers(headers).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).contractPath(data.getContractPath())
@@ -480,22 +479,6 @@ public class CustomFuzzerUtil {
 
         return Collections.singletonList(testCase.entrySet()
                 .stream().collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll));
-    }
-
-    private String replacePathVariablesWithCustomValues(FuzzingData data, Map<String, Object> currentPathValues) {
-        String newPath = data.getPath();
-        if (HttpMethod.requiresBody(data.getMethod())) {
-            for (Map.Entry<String, Object> entry : currentPathValues.entrySet()) {
-                String valueToReplaceWith = String.valueOf(entry.getValue());
-                if (this.isVariable(valueToReplaceWith)) {
-                    valueToReplaceWith = variables.getOrDefault(this.getVariableName(valueToReplaceWith), NOT_SET);
-                } else {
-                    valueToReplaceWith = CatsDSLParser.parseAndGetResult(valueToReplaceWith, Map.of());
-                }
-                newPath = newPath.replace("{" + entry.getKey() + "}", valueToReplaceWith);
-            }
-        }
-        return newPath;
     }
 
     private boolean isNotAReservedWord(String key) {
