@@ -1,7 +1,9 @@
 package com.endava.cats.dsl;
 
+import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -12,6 +14,11 @@ import java.util.Map;
 
 @QuarkusTest
 class CatsDSLParserTest {
+
+    @BeforeAll
+    static void init() {
+        CatsRandom.initRandom(42L);
+    }
 
     public static final String JSON = """
             {
@@ -87,7 +94,25 @@ class CatsDSLParserTest {
     @ParameterizedTest
     @CsvSource({"2023-02-02,2023-02-02", "${variable}-02-02,2023-02-02"})
     void shouldParseDateStringAsDate(String input, String parsedOutput) {
-        String actual = CatsDSLParser.parseAndGetResult(input, Map.of("name", "john", "variable","2023"));
+        String actual = CatsDSLParser.parseAndGetResult(input, Map.of("name", "john", "variable", "2023"));
         Assertions.assertThat(actual).isEqualTo(parsedOutput);
+    }
+
+    @Test
+    void shouldParseShorthandNumeric() {
+        String actual = CatsDSLParser.parseAndGetResult("#(numeric(16))", Map.of());
+        Assertions.assertThat(actual).hasSize(16).matches("[0-9]+");
+    }
+
+    @Test
+    void shouldParseShorthandUuid() {
+        String actual = CatsDSLParser.parseAndGetResult("#(uuid)", Map.of());
+        Assertions.assertThat(actual).matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+    }
+
+    @Test
+    void shouldParseShorthandEmail() {
+        String actual = CatsDSLParser.parseAndGetResult("#(email)", Map.of());
+        Assertions.assertThat(actual).matches("[a-z]{10}@cats\\.io");
     }
 }

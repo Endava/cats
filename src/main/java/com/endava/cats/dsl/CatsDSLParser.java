@@ -5,6 +5,7 @@ import com.endava.cats.dsl.impl.AuthScriptProviderParser;
 import com.endava.cats.dsl.impl.EnvVariableParser;
 import com.endava.cats.dsl.impl.MiniDslParser;
 import com.endava.cats.dsl.impl.NoOpParser;
+import com.endava.cats.dsl.impl.ShorthandFunctionParser;
 
 import java.util.Map;
 import java.util.Objects;
@@ -22,7 +23,8 @@ public class CatsDSLParser {
             "$path", SPRING_EL_PARSER,
             "T(", SPRING_EL_PARSER,
             "${", SPRING_EL_PARSER,
-            "auth_script", new AuthScriptProviderParser());
+            "auth_script", new AuthScriptProviderParser(),
+            "#(", new ShorthandFunctionParser());
     private static final Pattern SPRING_EL_PLACEHOLDER = Pattern.compile("\\$\\{([^}]*)}");
 
     private CatsDSLParser() {

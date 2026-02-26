@@ -68,6 +68,17 @@ public abstract class CatsRandom {
     }
 
     /**
+     * Generates a random alphanumeric string with length between minLengthInclusive and maxLengthExclusive.
+     *
+     * @param minLengthInclusive min length of the string
+     * @param maxLengthExclusive max length of the string
+     * @return a random alphanumeric string
+     */
+    public static String alphanumeric(int minLengthInclusive, int maxLengthExclusive) {
+        return alphanumeric(randomLength(minLengthInclusive, maxLengthExclusive));
+    }
+
+    /**
      * Generates a random string of the specified length with alphabetic characters.
      *
      * @param count the length of the string to generate
@@ -75,6 +86,17 @@ public abstract class CatsRandom {
      */
     public static String alphabetic(int count) {
         return RandomStringUtils.random(count, 0, 0, true, false, null, instance());
+    }
+
+    /**
+     * Generates a random alphabetic string with length between minLengthInclusive and maxLengthExclusive.
+     *
+     * @param minLengthInclusive min length of the string
+     * @param maxLengthExclusive max length of the string
+     * @return a random alphabetic string
+     */
+    public static String alphabetic(int minLengthInclusive, int maxLengthExclusive) {
+        return alphabetic(randomLength(minLengthInclusive, maxLengthExclusive));
     }
 
     /**
@@ -122,6 +144,17 @@ public abstract class CatsRandom {
     }
 
     /**
+     * Generates a random ascii string with length between minLengthInclusive and maxLengthExclusive.
+     *
+     * @param minLengthInclusive min length of the string
+     * @param maxLengthExclusive max length of the string
+     * @return a random ascii string
+     */
+    public static String ascii(int minLengthInclusive, int maxLengthExclusive) {
+        return ascii(randomLength(minLengthInclusive, maxLengthExclusive));
+    }
+
+    /**
      * Generates a random string of the specified length with random characters.
      *
      * @param count the length of the string to generate
@@ -131,6 +164,38 @@ public abstract class CatsRandom {
         return RandomStringUtils.random(count, 0, 0, false, false, null, instance());
     }
 
+    /**
+     * Generates a random string with length between minLengthInclusive and maxLengthExclusive.
+     *
+     * @param minLengthInclusive min length of the string
+     * @param maxLengthExclusive max length of the string
+     * @return a random string
+     */
+    public static String next(int minLengthInclusive, int maxLengthExclusive) {
+        return next(randomLength(minLengthInclusive, maxLengthExclusive));
+    }
+
+    /**
+     * Generates a random email address.
+     *
+     * @return a random email address in the format xxx@cats.io
+     */
+    public static String email() {
+        return alphabetic(10).toLowerCase() + "@cats.io";
+    }
+
+    private static int randomLength(int minInclusive, int maxExclusive) {
+        if (maxExclusive < minInclusive) {
+            throw new IllegalArgumentException("Start value must be smaller or equal to end value.");
+        }
+        if (minInclusive < 0) {
+            throw new IllegalArgumentException("Both range values must be non-negative.");
+        }
+        if (minInclusive == maxExclusive) {
+            return minInclusive;
+        }
+        return minInclusive + instance().nextInt(maxExclusive - minInclusive);
+    }
 
     private static long randomSeed() {
         return ThreadLocalRandom.current().nextLong();

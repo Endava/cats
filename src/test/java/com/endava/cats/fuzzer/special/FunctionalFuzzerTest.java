@@ -1,8 +1,10 @@
 package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -35,6 +37,7 @@ import java.util.Map;
 class FunctionalFuzzerTest {
     @InjectSpy
     private TestCaseListener testCaseListener;
+    private CatsGlobalContext catsGlobalContext;
     private FilesArguments filesArguments;
     private ServiceCaller serviceCaller;
     private CustomFuzzerUtil customFuzzerUtil;
@@ -42,11 +45,14 @@ class FunctionalFuzzerTest {
 
     @BeforeEach
     void setup() {
+        catsGlobalContext = Mockito.mock(CatsGlobalContext.class);
+        Mockito.when(catsGlobalContext.getCatsConfiguration()).thenReturn(Mockito.mock(CatsConfiguration.class));
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = new FilesArguments();
         customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, testCaseListener);
         functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil, Mockito.mock(TestCaseListener.class));
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
+        ReflectionTestUtils.setField(testCaseListener, "globalContext", catsGlobalContext);
     }
 
     @Test

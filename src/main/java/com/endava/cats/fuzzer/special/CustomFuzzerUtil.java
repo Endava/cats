@@ -239,7 +239,7 @@ public class CustomFuzzerUtil {
                 String parsedVerifyValue = this.getVerifyValue(request, response, value);
 
                 if (parsedVerifyValue == null && value.startsWith("$")) {
-                    errorMessages.append(String.format("Could not resolve Verify parameter [%s] with value [%s]. ", key, value));
+                    errorMessages.append(String.format("Could not resolve verify parameter [%s] with value [%s]. ", key, value));
                 } else if (parsedVerifyValue != null) {
                     Matcher verifyMatcher = Pattern.compile(parsedVerifyValue).matcher(valueToCheck);
                     if (!verifyMatcher.matches()) {
@@ -294,7 +294,6 @@ public class CustomFuzzerUtil {
         Map<String, String> result = new HashMap<>();
 
         result.putAll(variablesMap.entrySet().stream()
-                .filter(entry -> !isRequestVariable(entry.getValue()) && !isPathVariable(entry.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         entry -> String.valueOf(JsonUtils.getVariableFromJson(response.getBody(), mappingFunction.apply(entry))))
                 ));
