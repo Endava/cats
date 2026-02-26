@@ -45,14 +45,14 @@
         <sonar-maven-plugin.version>5.5.0.6356</sonar-maven-plugin.version>
         <pretty-logger.version>1.16</pretty-logger.version>
         <compiler.version>0.9.14</compiler.version>
-        <json-path.version>2.10.0</json-path.version>
+        <json-path.version>3.0.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.32.0</quarkus.platform.version>
-        <surefire-plugin.version>3.5.4</surefire-plugin.version>
-        <compiler-plugin.version>3.14.1</compiler-plugin.version>
+        <quarkus.platform.version>3.32.1</quarkus.platform.version>
+        <surefire-plugin.version>3.5.5</surefire-plugin.version>
+        <compiler-plugin.version>3.15.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <spring.version>7.0.2</spring.version>
+        <spring.version>7.0.5</spring.version>
         <assertj-core.version>4.0.0-M1</assertj-core.version>
         <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
@@ -62,7 +62,7 @@
         <json-smart.version>2.6.0</json-smart.version>
         <jettison.version>1.5.4</jettison.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-        <snakeyaml.version>2.5</snakeyaml.version>
+        <snakeyaml.version>2.6</snakeyaml.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
@@ -76,11 +76,11 @@
         <regexp-gen.version>3.0.0</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <kotlin-reflect.version>2.1.20</kotlin-reflect.version>
-        <jackson.version>2.21.0</jackson.version>
+        <jackson.version>2.21.1</jackson.version>
         <pitest-maven.version>1.22.1</pitest-maven.version>
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
         <snakeyaml-engine.version>3.0.1</snakeyaml-engine.version>
-        <jackson-core.version>3.0.4</jackson-core.version>
+        <jackson-core.version>3.1.0</jackson-core.version>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
         <swagger-parser-v2.version>2.1.38</swagger-parser-v2.version>
@@ -297,7 +297,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.9.0</version>
+                <version>0.10.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
