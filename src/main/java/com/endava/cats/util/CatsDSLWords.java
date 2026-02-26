@@ -91,6 +91,10 @@ public abstract class CatsDSLWords {
      * Reserved word used in CATS DSL files to specify request body as target.
      */
     public static final String CATS_BODY_FUZZ = "http_body";
+    /**
+     * Reserved word used in CATS DSL files to specify global variables that are evaluated at the beginning of the run.
+     */
+    public static final String CATS_GLOBAL_VARS = "cats-global-vars";
 
     /**
      * Returns a list with all the reserved words used by the SpecialFuzzers.

@@ -74,6 +74,7 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
      * rather than the order defined by the OpenAPI contract.
      */
     public void executeCustomFuzzerTests() {
+        customFuzzerUtil.loadGlobalVariables(filesArguments.getCustomFuzzerDetails());
         logger.debug("Executing {} functional tests.", executions.size());
         Collections.sort(executions);
 

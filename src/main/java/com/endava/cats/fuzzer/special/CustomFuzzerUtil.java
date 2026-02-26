@@ -80,6 +80,25 @@ public class CustomFuzzerUtil {
 
 
     /**
+     * Parses the {@code cats-global-vars} entry from the custom fuzzer file details, evaluates each dynamic value
+     * using {@link CatsDSLParser}, and stores the results in the global variables map.
+     * The {@code cats-global-vars} entry is removed from the details map after processing so that it is not treated as an API path.
+     *
+     * @param customFuzzerDetails the map of custom fuzzer file details loaded from the YAML file
+     */
+    public void loadGlobalVariables(Map<String, Map<String, Object>> customFuzzerDetails) {
+        Map<String, Object> globalVars = customFuzzerDetails.remove(CatsDSLWords.CATS_GLOBAL_VARS);
+        if (globalVars != null) {
+            for (Map.Entry<String, Object> entry : globalVars.entrySet()) {
+                String evaluatedValue = CatsDSLParser.parseAndGetResult(String.valueOf(entry.getValue()), variables);
+                variables.put(entry.getKey(), evaluatedValue);
+                log.debug("Global variable [{}] evaluated to [{}]", entry.getKey(), evaluatedValue);
+            }
+            log.info("Loaded {} global variables: {}", globalVars.size(), variables.keySet());
+        }
+    }
+
+    /**
      * Processes and executes fuzzing tests based on the provided FuzzingData, test name, and current path values.
      *
      * <p>This method determines the number of iterations for test execution based on headers and performs
@@ -219,9 +238,13 @@ public class CustomFuzzerUtil {
                 String valueToCheck = responseValues.get(key);
                 String parsedVerifyValue = this.getVerifyValue(request, response, value);
 
-                Matcher verifyMatcher = Pattern.compile(parsedVerifyValue).matcher(valueToCheck);
-                if (!verifyMatcher.matches()) {
-                    errorMessages.append(String.format("Parameter [%s] with value [%s] not matching [%s]. ", key, valueToCheck, parsedVerifyValue));
+                if (parsedVerifyValue == null && value.startsWith("$")) {
+                    errorMessages.append(String.format("Could not resolve Verify parameter [%s] with value [%s]. ", key, value));
+                } else if (parsedVerifyValue != null) {
+                    Matcher verifyMatcher = Pattern.compile(parsedVerifyValue).matcher(valueToCheck);
+                    if (!verifyMatcher.matches()) {
+                        errorMessages.append(String.format("Parameter [%s] with value [%s] not matching [%s]. ", key, valueToCheck, parsedVerifyValue));
+                    }
                 }
             });
 

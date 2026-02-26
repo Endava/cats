@@ -1,0 +1,11 @@
+cats-global-vars:
+  myVar: T(java.lang.String).valueOf("globalValue")
+  staticVar: simpleValue
+/pets/{id}/move:
+  test_1:
+    description: Test with global vars
+    pet: ${myVar}
+    expectedResponseCode: 200
+    httpMethod: POST
+    output:
+      resp: code

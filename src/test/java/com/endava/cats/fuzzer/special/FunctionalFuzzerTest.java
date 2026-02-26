@@ -339,6 +339,41 @@ class FunctionalFuzzerTest {
     }
 
     @Test
+    void shouldLoadGlobalVariablesFromCustomFuzzerFile() throws Exception {
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-global-vars.yml", "{\"code\": \"200\"}");
+
+        filesArguments.loadCustomFuzzerFile();
+        functionalFuzzer.fuzz(data);
+        functionalFuzzer.executeCustomFuzzerTests();
+
+        Map<String, String> variables = customFuzzerUtil.getVariables();
+        Assertions.assertThat(variables).containsEntry("myVar", "globalValue").containsEntry("staticVar", "simpleValue");
+    }
+
+    @Test
+    void shouldLoadGlobalVariablesAndRemoveFromDetails() throws Exception {
+        Map<String, Map<String, Object>> details = new HashMap<>();
+        details.put("cats-global-vars", new HashMap<>(Map.of("testVar", "T(java.lang.String).valueOf(\"computed\")")));
+        details.put("/some/path", new HashMap<>(Map.of("test1", Map.of("expectedResponseCode", "200", "httpMethod", "POST"))));
+
+        customFuzzerUtil.loadGlobalVariables(details);
+
+        Assertions.assertThat(customFuzzerUtil.getVariables()).containsEntry("testVar", "computed");
+        Assertions.assertThat(details).doesNotContainKey("cats-global-vars").containsKey("/some/path");
+    }
+
+    @Test
+    void shouldHandleNullGlobalVarsGracefully() {
+        Map<String, Map<String, Object>> details = new HashMap<>();
+        details.put("/some/path", new HashMap<>(Map.of("test1", "value")));
+
+        customFuzzerUtil.loadGlobalVariables(details);
+
+        Assertions.assertThat(customFuzzerUtil.getVariables()).isEmpty();
+        Assertions.assertThat(details).containsKey("/some/path");
+    }
+
+    @Test
     void shouldNotReplaceReservedWordsInPathParamsPayload() {
         String originalPathParamsPayload = "{\"id\":\"123\", \"queryParam\":\"generatedValue\"}";
 
