@@ -239,6 +239,41 @@ class OpenAPIModelGeneratorV2Test {
                 .isEqualTo("DECIMAL_VALUE");
     }
 
+    @Test
+    void shouldGenerateOneOfDiscriminatorAsObjectNotString() throws Exception {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+        OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/test-expression-node-schema.yaml")), null, options).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        globalContext.getSchemaMap().putAll(schemas);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
+
+        List<String> examples = generator.generate("TheRequest");
+        
+        Assertions.assertThat(examples).isNotEmpty();
+        
+        List<String> examplesWithValue = examples.stream()
+                .filter(ex -> ex.contains("\"value\""))
+                .toList();
+        
+        Assertions.assertThat(examplesWithValue).isNotEmpty();
+        
+        // Verify that value is an object with kind property, not a simple string
+        for (String example : examplesWithValue) {
+            Object valueObj = JsonUtils.getVariableFromJson(example, "$.expression.value");
+            
+            // Value should be an object (Map), not a string
+            Assertions.assertThat(valueObj).isInstanceOf(Map.class);
+            
+            // The object should have a kind field
+            Object kindValue = JsonUtils.getVariableFromJson(example, "$.expression.value.kind");
+            Assertions.assertThat(kindValue).isNotNull();
+            Assertions.assertThat(kindValue.toString()).isIn("STRING_VALUE", "DECIMAL_VALUE", "INT_VALUE");
+        }
+    }
+
     private OpenAPIModelGeneratorV2 setupPayloadGenerator() throws IOException {
         OpenAPIParser openAPIV3Parser = new OpenAPIParser();
         ParseOptions options = new ParseOptions();

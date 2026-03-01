@@ -538,15 +538,18 @@ public class OpenAPIModelGeneratorV2 {
         mapDiscriminator(schema, Optional.ofNullable(schema.getAnyOf()).orElse(schema.getOneOf()));
         List<Map<String, Object>> examples = new ArrayList<>();
         List<Schema> schemas = CatsModelUtils.getInterfaces(schema).stream().filter(iteratingSchema -> !isNullSchema(iteratingSchema)).toList();
-        String previousPropertyName = propertyName;
 
         for (Schema subSchema : schemas) {
-            propertyName = previousPropertyName;
             if (hasValidRef(subSchema)) {
                 Schema resolved = globalContext.getSchemaFromReference(subSchema.get$ref());
                 if (resolved != null) {
-                    propertyName = CatsModelUtils.getSimpleRefUsingOAT(subSchema.get$ref());
-                    examples.addAll(generateExamplesForSchema(propertyName, resolved));
+                    String schemaName = CatsModelUtils.getSimpleRefUsingOAT(subSchema.get$ref());
+                    List<Map<String, Object>> variantExamples = generateExamplesForSchema(schemaName, resolved);
+                    for (Map<String, Object> variantExample : variantExamples) {
+                        Map<String, Object> wrappedExample = new HashMap<>();
+                        wrappedExample.put(propertyName, variantExample.getOrDefault(schemaName, variantExample));
+                        examples.add(wrappedExample);
+                    }
                 }
             } else {
                 examples.addAll(generateExamplesForSchema(propertyName, subSchema));

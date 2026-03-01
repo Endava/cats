@@ -1,0 +1,118 @@
+openapi: 3.0.0
+info:
+  title: Expression Node Test
+  version: 1.0.0
+paths:
+  /test:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TheRequest'
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    TheRequest:
+      type: object
+      required:
+        - expression
+        - name
+      properties:
+        expression:
+          $ref: "#/components/schemas/Node"
+        name:
+          type: string
+        active:
+          type: boolean
+
+    Node:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: "#/components/schemas/Type"
+        operator:
+          $ref: "#/components/schemas/Operator"
+        value:
+          $ref: "#/components/schemas/AtomicValue"
+        expressions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Node"
+
+    AtomicValue:
+      properties:
+        kind:
+          $ref: "#/components/schemas/AtomicValueKind"
+      oneOf:
+        - $ref: "#/components/schemas/StringValue"
+        - $ref: "#/components/schemas/DecimalValue"
+        - $ref: "#/components/schemas/IntValue"
+      discriminator:
+        propertyName: kind
+        mapping:
+          STRING_VALUE: "#/components/schemas/StringValue"
+          DECIMAL_VALUE: "#/components/schemas/DecimalValue"
+          INT_VALUE: "#/components/schemas/IntValue"
+
+    AtomicValueKind:
+      type: string
+      enum:
+        - STRING_VALUE
+        - DECIMAL_VALUE
+        - INT_VALUE
+
+    StringValue:
+      type: object
+      required:
+        - kind
+        - value
+      properties:
+        kind:
+          $ref: "#/components/schemas/AtomicValueKind"
+        value:
+          type: string
+
+    DecimalValue:
+      type: object
+      required:
+        - kind
+        - value
+      properties:
+        kind:
+          $ref: "#/components/schemas/AtomicValueKind"
+        value:
+          type: string
+          pattern: '^-?\d+(\.\d+)?$'
+
+    IntValue:
+      type: object
+      required:
+        - kind
+        - value
+      properties:
+        kind:
+          $ref: "#/components/schemas/AtomicValueKind"
+        value:
+          type: integer
+
+    Type:
+      type: string
+      enum:
+        - ATOMIC
+        - AND
+        - OR
+        - NOT
+
+    Operator:
+      type: string
+      enum:
+        - EQ
+        - NOT_EQ
+        - GT
+        - LT
