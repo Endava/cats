@@ -415,6 +415,7 @@ public class CustomFuzzerUtil {
         boolean isEntryValid = missingKeywords.isEmpty();
 
         if (isEntryValid && isValidOneOf) {
+            log.debug("Valid entry, running tests");
             this.pathsWithInputVariables.put(data.getContractPath(), (Map<String, Object>) value);
             List<Map<String, Object>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value, data.getPayload());
             for (Map<String, Object> testCase : individualTestCases) {
@@ -434,6 +435,7 @@ public class CustomFuzzerUtil {
         String oneOfSelection = String.valueOf(currentPathValues.get(ONE_OF_SELECTION));
 
         if (!"null".equalsIgnoreCase(oneOfSelection)) {
+            log.debug("oneOfSelection {}", oneOfSelection);
             return wasOneOfSelectionReplaced(oneOfSelection, data);
         }
         return true;

@@ -430,7 +430,7 @@ public class FuzzingDataFactory {
         }
 
         Set<String> operationParamKeys = operationParams.stream()
-                .map(p -> parameterKey(p))
+                .map(this::parameterKey)
                 .collect(Collectors.toSet());
 
         List<Parameter> merged = new ArrayList<>(operationParams);

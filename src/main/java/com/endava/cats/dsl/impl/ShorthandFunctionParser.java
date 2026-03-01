@@ -81,8 +81,8 @@ public class ShorthandFunctionParser implements Parser {
         return switch (key) {
             case "uuid" -> UUID.randomUUID().toString();
             case "email" -> CatsRandom.email();
-            case "now" -> OffsetDateTime.now().toString();
-            case "today" -> LocalDate.now().toString();
+            case "now" -> OffsetDateTime.now(ZoneOffset.UTC).toString();
+            case "today" -> LocalDate.now(ZoneOffset.UTC).toString();
             default -> null;
         };
     }
@@ -110,7 +110,7 @@ public class ShorthandFunctionParser implements Parser {
     }
 
     private int[] parseIntArgs(String argsStr) {
-        String[] parts = argsStr.split(",");
+        String[] parts = argsStr.split(",", -1);
         int[] result = new int[parts.length];
         for (int i = 0; i < parts.length; i++) {
             result[i] = Integer.parseInt(parts[i].trim());

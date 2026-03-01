@@ -143,11 +143,6 @@ public class ReportingArguments {
         }
         PrettyLogger.enableLevels(getAsPrettyLevelList(this.onlyLog).toArray(new PrettyLevel[0]));
         PrettyLogger.disableLevels(getAsPrettyLevelList(this.skipLogs).toArray(new PrettyLevel[0]));
-
-        /*if no input is supplied, by default note and skip are not logged*/
-        if (this.skipLogs == null && this.onlyLog == null) {
-            PrettyLogger.disableLevels(getAsPrettyLevelList(List.of("note", "skip")).toArray(new PrettyLevel[0]));
-        }
     }
 
     /**
