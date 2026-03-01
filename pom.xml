@@ -80,7 +80,7 @@
         <pitest-maven.version>1.22.1</pitest-maven.version>
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
         <snakeyaml-engine.version>3.0.1</snakeyaml-engine.version>
-        <jackson-core.version>3.0.4</jackson-core.version>
+        <jackson-core.version>3.1.0</jackson-core.version>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
         <swagger-parser-v2.version>2.1.38</swagger-parser-v2.version>
