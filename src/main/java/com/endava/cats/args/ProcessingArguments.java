@@ -173,15 +173,23 @@ public class ProcessingArguments {
     }
 
     /**
+     * Resolves an example flag by returning the global {@code --useExamples} override when set,
+     * or the specific flag value otherwise.
+     *
+     * @param specificFlag the flag for a specific examples category
+     * @return the resolved boolean value
+     */
+    private boolean resolveFlag(boolean specificFlag) {
+        return useExamples != null ? useExamples : specificFlag;
+    }
+
+    /**
      * Returns if usage of request body examples is enabled. This applies for examples set at media-type level in the requestBody: element.
      *
      * @return true if usage of request body examples is enabled, false otherwise
      */
     public boolean isUseRequestBodyExamples() {
-        if (useExamples != null) {
-            return useExamples;
-        }
-        return useRequestBodyExamples;
+        return resolveFlag(useRequestBodyExamples);
     }
 
     /**
@@ -190,10 +198,7 @@ public class ProcessingArguments {
      * @return true if usage of response body examples is enabled, false otherwise
      */
     public boolean isUseResponseBodyExamples() {
-        if (useExamples != null) {
-            return useExamples;
-        }
-        return useResponseBodyExamples;
+        return resolveFlag(useResponseBodyExamples);
     }
 
     /**
@@ -202,10 +207,7 @@ public class ProcessingArguments {
      * @return true if usage of schema examples is enabled, false otherwise
      */
     public boolean isUseSchemaExamples() {
-        if (useExamples != null) {
-            return useExamples;
-        }
-        return useSchemaExamples;
+        return resolveFlag(useSchemaExamples);
     }
 
     /**
@@ -214,10 +216,7 @@ public class ProcessingArguments {
      * @return true if usage of property examples is enabled, false otherwise
      */
     public boolean isUsePropertyExamples() {
-        if (useExamples != null) {
-            return useExamples;
-        }
-        return usePropertyExamples;
+        return resolveFlag(usePropertyExamples);
     }
 
     /**
