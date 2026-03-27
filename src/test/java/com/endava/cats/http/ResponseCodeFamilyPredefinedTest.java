@@ -78,7 +78,7 @@ class ResponseCodeFamilyPredefinedTest {
     void shouldBeValid4xxNFAllowedCodes() {
         Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX_NF_AND_VALIDATION.asString()).isEqualTo("4XX");
         Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX_NF_AND_VALIDATION.getStartingDigit()).isEqualTo("4");
-        Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX_NF_AND_VALIDATION.allowedResponseCodes()).containsOnly("404", "400", "422");
+        Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX_NF_AND_VALIDATION.allowedResponseCodes()).containsOnly("404", "400", "405", "422");
     }
 
     @Test

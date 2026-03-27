@@ -103,7 +103,7 @@ public enum ResponseCodeFamilyPredefined implements ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return List.of("404", "400", "422");
+            return List.of("404", "400", "405", "422");
         }
     },
     /**
