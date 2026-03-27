@@ -42,6 +42,8 @@ class OpenAPIModelGeneratorV2Test {
     @BeforeEach
     void setup() {
         CatsRandom.initRandom(0);
+        globalContext.getSchemaMap().clear();
+        globalContext.getDiscriminators().clear();
     }
 
     @Test
@@ -225,18 +227,130 @@ class OpenAPIModelGeneratorV2Test {
         globalContext.getSchemaMap().putAll(schemas);
         OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
 
-        // Generate examples for DecimalValue directly to verify discriminator is populated
         List<String> decimalExamples = generator.generate("DecimalValue");
-        
+
         Assertions.assertThat(decimalExamples).isNotEmpty();
         String decimalExample = decimalExamples.getFirst();
-        
-        // Verify DecimalValue has kind field populated with correct discriminator value
+
         Assertions.assertThat(decimalExample).contains("\"kind\"");
         Object kindValue = JsonUtils.getVariableFromJson(decimalExample, "$.kind");
         Assertions.assertThat(kindValue).isNotNull();
         Assertions.assertThat(kindValue.toString()).isNotEmpty().isNotEqualTo("")
                 .isEqualTo("DECIMAL_VALUE");
+    }
+
+    @Test
+    void shouldGenerateAllOfWithDiscriminatorParentUsingUpperSnakeCaseCasing() throws Exception {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+        OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/test-allof-discriminator-schema.yaml")), null, options).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        globalContext.getSchemaMap().putAll(schemas);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2, "UPPER_SNAKE_CASE");
+
+        List<String> decimalExamples = generator.generate("DecimalValue");
+
+        Assertions.assertThat(decimalExamples).isNotEmpty();
+        Object kindValue = JsonUtils.getVariableFromJson(decimalExamples.getFirst(), "$.kind");
+        Assertions.assertThat(kindValue).isNotNull();
+        Assertions.assertThat(kindValue.toString()).isEqualTo("DECIMAL_VALUE");
+    }
+
+    @Test
+    void shouldGenerateAllOfWithDiscriminatorParentUsingPascalCaseCasing() throws Exception {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+        OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/test-allof-discriminator-schema.yaml")), null, options).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        globalContext.getSchemaMap().putAll(schemas);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2, "PascalCase");
+
+        List<String> decimalExamples = generator.generate("DecimalValue");
+
+        Assertions.assertThat(decimalExamples).isNotEmpty();
+        Object kindValue = JsonUtils.getVariableFromJson(decimalExamples.getFirst(), "$.kind");
+        Assertions.assertThat(kindValue).isNotNull();
+        Assertions.assertThat(kindValue.toString()).isEqualTo("DecimalValue");
+    }
+
+    @Test
+    void shouldGenerateAllOfWithDiscriminatorParentUsingCamelCaseCasing() throws Exception {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+        OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/test-allof-discriminator-schema.yaml")), null, options).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        globalContext.getSchemaMap().putAll(schemas);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2, "camelCase");
+
+        List<String> decimalExamples = generator.generate("DecimalValue");
+
+        Assertions.assertThat(decimalExamples).isNotEmpty();
+        Object kindValue = JsonUtils.getVariableFromJson(decimalExamples.getFirst(), "$.kind");
+        Assertions.assertThat(kindValue).isNotNull();
+        Assertions.assertThat(kindValue.toString()).isEqualTo("decimalValue");
+    }
+
+    @Test
+    void shouldGenerateAllOfWithDiscriminatorParentUsingLowerSnakeCaseCasing() throws Exception {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+        OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/test-allof-discriminator-schema.yaml")), null, options).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        globalContext.getSchemaMap().putAll(schemas);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2, "lower_snake_case");
+
+        List<String> decimalExamples = generator.generate("DecimalValue");
+
+        Assertions.assertThat(decimalExamples).isNotEmpty();
+        Object kindValue = JsonUtils.getVariableFromJson(decimalExamples.getFirst(), "$.kind");
+        Assertions.assertThat(kindValue).isNotNull();
+        Assertions.assertThat(kindValue.toString()).isEqualTo("decimal_value");
+    }
+
+    @Test
+    void shouldGenerateAllOfWithDiscriminatorParentUsingKebabCaseCasing() throws Exception {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+        OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/test-allof-discriminator-schema.yaml")), null, options).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        globalContext.getSchemaMap().putAll(schemas);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2, "kebab-case");
+
+        List<String> decimalExamples = generator.generate("DecimalValue");
+
+        Assertions.assertThat(decimalExamples).isNotEmpty();
+        Object kindValue = JsonUtils.getVariableFromJson(decimalExamples.getFirst(), "$.kind");
+        Assertions.assertThat(kindValue).isNotNull();
+        Assertions.assertThat(kindValue.toString()).isEqualTo("decimal-value");
+    }
+
+    @Test
+    void shouldGenerateAllOfWithDiscriminatorParentUsingLowercaseCasing() throws Exception {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+        OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/test-allof-discriminator-schema.yaml")), null, options).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        globalContext.getSchemaMap().putAll(schemas);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2, "lowercase");
+
+        List<String> decimalExamples = generator.generate("DecimalValue");
+
+        Assertions.assertThat(decimalExamples).isNotEmpty();
+        Object kindValue = JsonUtils.getVariableFromJson(decimalExamples.getFirst(), "$.kind");
+        Assertions.assertThat(kindValue).isNotNull();
+        Assertions.assertThat(kindValue.toString()).isEqualTo("decimalvalue");
     }
 
     @Test

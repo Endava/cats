@@ -134,6 +134,11 @@ public class ProcessingArguments {
             description = "The seed to be used for random number generation. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private long seed;
 
+    @Setter
+    @CommandLine.Option(names = {"--discriminatorCasing"},
+            description = "The casing convention used for discriminator values when no explicit enum or mapping is defined. Supported values: @|bold PascalCase|@, @|bold camelCase|@, @|bold UPPER_SNAKE_CASE|@, @|bold lower_snake_case|@, @|bold kebab-case|@, @|bold lowercase|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private String discriminatorCasing = "UPPER_SNAKE_CASE";
+
     /**
      * Checks if the payload matches any of the supplied --oneOfSelection or --anyOfSelection argument
      *

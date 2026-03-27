@@ -14,6 +14,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
 import jakarta.inject.Inject;
+import org.jspecify.annotations.NonNull;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -103,6 +104,10 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "The seed to be used for random number generation. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private long seed;
 
+    @CommandLine.Option(names = {"--discriminatorCasing"},
+            description = "The casing convention used for discriminator values when no explicit enum or mapping is defined. Supported values: @|bold PascalCase|@, @|bold camelCase|@, @|bold UPPER_SNAKE_CASE|@, @|bold lower_snake_case|@, @|bold kebab-case|@, @|bold lowercase|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private String discriminatorCasing = "UPPER_SNAKE_CASE";
+
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
@@ -120,26 +125,7 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
 
         try {
-            CommandContext context = new CommandContext();
-
-            // Set fuzzer type based on file content
-            if (this.isFunctionalFuzzerFile()) {
-                context.setFuzzerType(FuzzerTypes.FUNCTIONAL);
-                context.setCustomFuzzerFile(file);
-            } else {
-                context.setFuzzerType(FuzzerTypes.SECURITY);
-                context.setSecurityFuzzerFile(file);
-            }
-
-            // Set other context properties
-            context.setHeadersFile(headersFile);
-            context.setHeadersMap(headersMap);
-            context.setCreateRefData(createRefData);
-            context.setRefDataFile(refDataFile);
-            context.setQueryFile(queryFile);
-            context.setContentType(contentType);
-            context.setXxxOfSelections(xxxOfSelections);
-            context.setSeed(seed);
+            CommandContext context = createCommandContext();
 
             // Execute with context
             catsCommand.runWithContext(context);
@@ -147,6 +133,31 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
             logger.debug("Exception while processing file!", e);
             logger.error("Something went wrong while processing input file: {}. The file might not exist or is not reachable. Error message: {}", file, e.getMessage());
         }
+    }
+
+    private @NonNull CommandContext createCommandContext() throws IOException {
+        CommandContext context = new CommandContext();
+
+        // Set fuzzer type based on file content
+        if (this.isFunctionalFuzzerFile()) {
+            context.setFuzzerType(FuzzerTypes.FUNCTIONAL);
+            context.setCustomFuzzerFile(file);
+        } else {
+            context.setFuzzerType(FuzzerTypes.SECURITY);
+            context.setSecurityFuzzerFile(file);
+        }
+
+        // Set other context properties
+        context.setHeadersFile(headersFile);
+        context.setHeadersMap(headersMap);
+        context.setCreateRefData(createRefData);
+        context.setRefDataFile(refDataFile);
+        context.setQueryFile(queryFile);
+        context.setContentType(contentType);
+        context.setXxxOfSelections(xxxOfSelections);
+        context.setDiscriminatorCasing(discriminatorCasing);
+        context.setSeed(seed);
+        return context;
     }
 
     private boolean isFunctionalFuzzerFile() throws IOException {

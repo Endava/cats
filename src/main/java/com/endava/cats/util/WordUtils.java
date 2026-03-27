@@ -190,6 +190,12 @@ public abstract class WordUtils {
      * @return the converted string
      */
     public static String convertToDetectedCasing(String name, String casingConvention) {
+        if (name == null) {
+            return null;
+        }
+        if (casingConvention == null) {
+            return name;
+        }
         return switch (casingConvention) {
             case "lower_snake_case" -> name.replaceAll("([a-z])([A-Z])", "$1_$2")
                     .replaceAll("([A-Z])([A-Z][a-z])", "$1_$2")

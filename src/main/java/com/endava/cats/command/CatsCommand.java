@@ -228,6 +228,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         context.getQueryFile().ifPresent(filesArguments::setQueryFile);
         context.getContentType().ifPresent(processingArguments::setContentType);
         context.getXxxOfSelections().ifPresent(processingArguments::setXxxOfSelections);
+        context.getDiscriminatorCasing().ifPresent(processingArguments::setDiscriminatorCasing);
         context.getSeed().ifPresent(processingArguments::setSeed);
         context.getPaths().ifPresent(filterArguments::setPaths);
         context.getHttpMethods().ifPresent(methods -> filterArguments.setHttpMethods(methods));

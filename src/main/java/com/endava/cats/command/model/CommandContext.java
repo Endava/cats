@@ -133,6 +133,14 @@ public class CommandContext {
         set("xxxOfSelections", selections);
     }
 
+    public void setDiscriminatorCasing(String discriminatorCasing) {
+        set("discriminatorCasing", discriminatorCasing);
+    }
+
+    public Optional<String> getDiscriminatorCasing() {
+        return get("discriminatorCasing", String.class);
+    }
+
     @SuppressWarnings("unchecked")
     public Optional<Map<String, String>> getXxxOfSelections() {
         return Optional.ofNullable(properties.get("xxxOfSelections"))

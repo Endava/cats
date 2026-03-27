@@ -36,14 +36,16 @@ class WordUtilsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({
+    @CsvSource(value = {
             "someURLValue,lower_snake_case,some_url_value",
             "someURLValue,kebab-case,some-url-value",
             "PascalCase,camelCase,pascalCase",
             "PascalCase,PascalCase,PascalCase",
             "MiXeD,lowercase,mixed",
-            "someURLValue,unknown,SOME_URL_VALUE"
-    })
+            "someURLValue,unknown,SOME_URL_VALUE",
+            "null,null,null",
+            "name,null,name"
+    }, nullValues = "null")
     void shouldConvertToDetectedCasing(String name, String casingConvention, String expected) {
         Assertions.assertThat(WordUtils.convertToDetectedCasing(name, casingConvention)).isEqualTo(expected);
     }
