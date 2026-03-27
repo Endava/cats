@@ -18,6 +18,7 @@ import com.endava.cats.util.OpenApiUtils;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -160,13 +161,14 @@ public class FuzzingDataFactory {
 
             if ((isPathParam || isQueryParam) && filesArguments.isNotUrlParam(parameter.getName()) && StringUtils.isNotBlank(parameter.getName())) {
                 String newParameterName = parameter.getName() + "|" + parameter.getIn();
-                parameter.setSchema(Optional.ofNullable(parameter.getSchema()).orElse(new Schema<>()));
-                parameter.getSchema().setName(newParameterName);
+                Schema<?> originalSchema = Optional.ofNullable(parameter.getSchema()).orElse(new Schema<>());
+                Schema<?> schemaCopy = Json.mapper().convertValue(originalSchema, Schema.class);
+                schemaCopy.setName(newParameterName);
 
-                syntheticSchema.addProperty(parameter.getName(), parameter.getSchema());
-                if (parameter.getSchema().getExample() == null) {
-                    parameter.getSchema().setExample(parameter.getExample());
-                }
+                Object effectiveExample = schemaCopy.getExample() != null ? schemaCopy.getExample() : parameter.getExample();
+                schemaCopy.setExample(effectiveExample);
+
+                syntheticSchema.addProperty(parameter.getName(), schemaCopy);
                 if (parameter.getRequired() != null && parameter.getRequired()) {
                     required.add(parameter.getName());
                 }

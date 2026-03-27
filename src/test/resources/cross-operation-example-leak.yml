@@ -1,0 +1,64 @@
+openapi: 3.0.3
+info:
+  title: Cross-operation example leak regression test
+  version: 1.0.0
+paths:
+  /api/products:
+    post:
+      operationId: createProducts
+      summary: POST products
+      parameters:
+        - name: include
+          in: query
+          example: images,variantParameters,allCategories,flags
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '201':
+          description: Created
+    get:
+      operationId: listProducts
+      summary: GET products
+      parameters:
+        - name: include
+          in: query
+          example: images
+          schema:
+            type: string
+        - name: supplierGuid
+          in: query
+          example: 16a67ec6-d957-11e0-b04f-57a43310b768
+          schema:
+            type: string
+        - name: brandName
+          in: query
+          example: AcmeBrand
+          schema:
+            type: string
+        - name: changeTimeFrom
+          in: query
+          example: 2017-02-28T17:04:47+0100
+          schema:
+            type: string
+        - name: page
+          in: query
+          example: 3
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    ProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: MyProduct
