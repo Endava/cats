@@ -606,6 +606,7 @@ class FilterArgumentsTest {
         OpenAPI openApi = Mockito.mock(OpenAPI.class);
         Paths paths = Mockito.mock(Paths.class);
         Mockito.when(paths.containsKey("/non-existent-path")).thenReturn(false);
+        Mockito.when(paths.keySet()).thenReturn(Set.of("/api/pets", "/api/dogs"));
         Mockito.when(openApi.getPaths()).thenReturn(paths);
         Assertions.assertThatThrownBy(() -> filterArguments.validateValidPaths(openApi))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -614,12 +615,37 @@ class FilterArgumentsTest {
 
     @Test
     void shouldNotThrowExceptionWhenPathExists() {
-        filterArguments.setPaths(List.of("/non-existent-path"));
+        filterArguments.setPaths(List.of("/api/pets"));
         OpenAPI openApi = Mockito.mock(OpenAPI.class);
         Paths paths = Mockito.mock(Paths.class);
-        Mockito.when(paths.containsKey("/non-existent-path")).thenReturn(true);
+        Mockito.when(paths.containsKey("/api/pets")).thenReturn(true);
+        Mockito.when(paths.keySet()).thenReturn(Set.of("/api/pets"));
         Mockito.when(openApi.getPaths()).thenReturn(paths);
         Assertions.assertThatNoException().isThrownBy(() -> filterArguments.validateValidPaths(openApi));
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenWildcardPathMatchesContractPaths() {
+        filterArguments.setPaths(List.of("/api/pets*"));
+        OpenAPI openApi = Mockito.mock(OpenAPI.class);
+        Paths paths = Mockito.mock(Paths.class);
+        Mockito.when(paths.keySet()).thenReturn(Set.of("/api/pets", "/api/pets/{petId}", "/api/dogs"));
+        Mockito.when(paths.containsKey("/api/pets")).thenReturn(true);
+        Mockito.when(paths.containsKey("/api/pets/{petId}")).thenReturn(true);
+        Mockito.when(openApi.getPaths()).thenReturn(paths);
+        Assertions.assertThatNoException().isThrownBy(() -> filterArguments.validateValidPaths(openApi));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenWildcardPathMatchesNothingInContract() {
+        filterArguments.setPaths(List.of("/api/xyz*"));
+        OpenAPI openApi = Mockito.mock(OpenAPI.class);
+        Paths paths = Mockito.mock(Paths.class);
+        Mockito.when(paths.keySet()).thenReturn(Set.of("/api/pets", "/api/dogs"));
+        Mockito.when(openApi.getPaths()).thenReturn(paths);
+        Assertions.assertThatThrownBy(() -> filterArguments.validateValidPaths(openApi))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("No paths available to run. Use 'cats list -p -c api.yml' to list available paths");
     }
 
     @Test
