@@ -198,4 +198,25 @@ class MassAssignmentFuzzerTest {
                 Mockito.any(), Mockito.any(), Mockito.contains("Mass Assignment payload rejected"),
                 Mockito.any());
     }
+
+    @Test
+    void shouldHandlePrimitiveArrayPayload() {
+        FuzzingData fuzzData = Mockito.mock(FuzzingData.class);
+        Mockito.when(fuzzData.getAllFieldsByHttpMethod()).thenReturn(Set.of());
+        Mockito.when(fuzzData.getPayload()).thenReturn("[\"SCCO3894467106\", \"SCCO3894467106\"]");
+        Mockito.when(fuzzData.getRequestPropertyTypes()).thenReturn(new HashMap<>());
+        Mockito.when(fuzzData.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(fuzzData.getHeaders()).thenReturn(Set.of());
+        Mockito.when(fuzzData.getFirstRequestContentType()).thenReturn("application/json");
+
+        Mockito.when(caller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder()
+                        .responseCode(400)
+                        .body("Bad Request")
+                        .build());
+
+        fuzzer.fuzz(fuzzData);
+
+        Mockito.verify(caller, Mockito.atLeast(1)).call(Mockito.any());
+    }
 }

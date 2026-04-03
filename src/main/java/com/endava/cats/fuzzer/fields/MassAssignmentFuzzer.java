@@ -169,10 +169,17 @@ public class MassAssignmentFuzzer implements Fuzzer {
         if (jsonElement instanceof JsonObject jsonObject) {
             addFieldToJsonObject(jsonObject, fieldName, fieldValue);
         } else if (jsonElement instanceof JsonArray jsonArray) {
+            boolean hasObjectElements = false;
             for (JsonElement element : jsonArray) {
                 if (element instanceof JsonObject jsonObject) {
                     addFieldToJsonObject(jsonObject, fieldName, fieldValue);
+                    hasObjectElements = true;
                 }
+            }
+            if (!hasObjectElements) {
+                JsonObject injectedObject = new JsonObject();
+                addFieldToJsonObject(injectedObject, fieldName, fieldValue);
+                jsonArray.add(injectedObject);
             }
         }
 
