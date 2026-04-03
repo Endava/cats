@@ -10,7 +10,6 @@ import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.DateSchema;
 import io.swagger.v3.oas.models.media.DateTimeSchema;
 import io.swagger.v3.oas.models.media.IntegerSchema;
-import io.swagger.v3.oas.models.media.JsonSchema;
 import io.swagger.v3.oas.models.media.MapSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -151,11 +150,9 @@ public abstract class CatsModelUtils {
         if (schema == null) {
             return false;
         }
-        if (schema instanceof JsonSchema jsonSchema) {
-            return Optional.ofNullable(jsonSchema.getTypes())
-                    .orElse(Set.of())
-                    .stream()
-                    .anyMatch(type -> type.equalsIgnoreCase(typeToTest));
+        Set<String> types = schema.getTypes();
+        if (types != null && !types.isEmpty()) {
+            return types.stream().anyMatch(type -> type.equalsIgnoreCase(typeToTest));
         }
 
         return typeToTest.equalsIgnoreCase(schema.getType());

@@ -162,7 +162,7 @@ public class FuzzingDataFactory {
             if ((isPathParam || isQueryParam) && filesArguments.isNotUrlParam(parameter.getName()) && StringUtils.isNotBlank(parameter.getName())) {
                 String newParameterName = parameter.getName() + "|" + parameter.getIn();
                 Schema<?> originalSchema = Optional.ofNullable(parameter.getSchema()).orElse(new Schema<>());
-                Schema<?> schemaCopy = Json.mapper().convertValue(originalSchema, Schema.class);
+                Schema<?> schemaCopy = copySchema(originalSchema);
                 schemaCopy.setName(newParameterName);
 
                 Object effectiveExample = schemaCopy.getExample() != null ? schemaCopy.getExample() : parameter.getExample();
@@ -176,6 +176,22 @@ public class FuzzingDataFactory {
         }
         syntheticSchema.setRequired(required);
         return syntheticSchema;
+    }
+
+    /**
+     * Creates a copy of a Schema preserving the original class type.
+     * This is needed because {@code Json.mapper().convertValue(schema, Schema.class)} converts
+     * OpenAPI 3.1 JsonSchema instances (which store type in {@code types} Set) into ObjectSchema,
+     * losing the original type information.
+     */
+    @SuppressWarnings("unchecked")
+    private static Schema<?> copySchema(Schema<?> originalSchema) {
+        Schema<?> schemaCopy = Json.mapper().convertValue(originalSchema, Schema.class);
+        Set<String> originalTypes = originalSchema.getTypes();
+        if (originalTypes != null && !originalTypes.isEmpty()) {
+            schemaCopy.setTypes(new HashSet<>(originalTypes));
+        }
+        return schemaCopy;
     }
 
     List<Parameter> getResolvedParameters(List<Parameter> operationParameters) {

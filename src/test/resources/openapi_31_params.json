@@ -1,0 +1,85 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Custom API Project",
+    "description": "Expose stuff",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Customers",
+      "description": "Manage customer information"
+    }
+  ],
+  "paths": {
+    "/customers/{customerId}/orders": {
+      "get": {
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Get orders for customer",
+        "description": "Returns the list of orders for the specified customer.",
+        "operationId": "getOrdersForCustomer",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "description": "An external reference for the customer",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "minLength": 3,
+              "pattern": "[A-Za-z0-9_-]+"
+            }
+          },
+          {
+            "name": "CorrelationId",
+            "in": "header",
+            "description": "It allows traceability in a distributed environment",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with list of orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

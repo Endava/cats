@@ -1161,6 +1161,17 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldGenerateValuesForPathParamsInJsonContract() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/customers/{customerId}/orders", "src/test/resources/openapi_31_params.json");
+        Assertions.assertThat(dataList).isNotEmpty();
+        FuzzingData getData = dataList.stream().filter(fd -> fd.getMethod() == HttpMethod.GET).findFirst().orElseThrow();
+        String payload = getData.getPayload();
+        Object customerId = JsonUtils.getVariableFromJson(payload, "$.customerId");
+        Assertions.assertThat(customerId).isNotNull();
+        Assertions.assertThat(customerId.toString()).isNotEqualTo("NOT_SET").isNotEmpty();
+    }
+
+    @Test
     void shouldExtractMultiLevelExamples() {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode exampleMapObject = objectMapper.createObjectNode();
