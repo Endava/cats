@@ -132,6 +132,41 @@ class FunctionalFuzzerTest {
         Assertions.assertThat(jsonRemoved).doesNotContain("field1", "value1").contains("field2", "value2");
     }
 
+    @Test
+    void shouldRemoveCatsRemoveFieldsWhenValueIsAList() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("""
+                    {"field1":["item1","item2"], "field2":"value2"}
+                """);
+        Map<String, Object> customValues = new HashMap<>();
+        customValues.put("field1", List.of("cats_remove_field"));
+        String jsonRemoved = customFuzzerUtil.getJsonWithCustomValuesFromFile(data, customValues);
+
+        Assertions.assertThat(jsonRemoved).doesNotContain("field1", "item1", "item2").contains("field2", "value2");
+    }
+
+    @Test
+    void shouldRemoveCatsRemoveFieldsWhenFieldIsAnObject() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("""
+                    {"field1":{"nested":"value"}, "field2":"value2"}
+                """);
+        String jsonRemoved = customFuzzerUtil.getJsonWithCustomValuesFromFile(data, Map.of("field1", "cats_remove_field"));
+
+        Assertions.assertThat(jsonRemoved).doesNotContain("field1", "nested").contains("field2", "value2");
+    }
+
+    @Test
+    void shouldRemoveCatsRemoveFieldsWhenFieldIsNested() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("""
+                    {"parent":{"child":"value", "sibling":"keep"}, "field2":"value2"}
+                """);
+        String jsonRemoved = customFuzzerUtil.getJsonWithCustomValuesFromFile(data, Map.of("parent#child", "cats_remove_field"));
+
+        Assertions.assertThat(jsonRemoved).doesNotContain("\"child\"").contains("sibling", "keep", "field2", "value2");
+    }
+
     private FuzzingData setupFuzzingData(CatsResponse catsResponse, String... customFieldValues) {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
