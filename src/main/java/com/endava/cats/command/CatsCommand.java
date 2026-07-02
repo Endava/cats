@@ -12,6 +12,7 @@ import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.command.model.CommandContext;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
@@ -195,6 +196,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     @Inject
     VersionChecker versionChecker;
+
+    @Inject
+    WfcAuthProvider wfcAuthProvider;
 
     @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
@@ -398,6 +402,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         logger.config("OpenAPI specs: {}", AnsiUtils.blue(apiArguments.getContract()));
         logger.config("API base url: {}", AnsiUtils.blue(apiArguments.getServer()));
         logger.config("Reporting path: {}", AnsiUtils.blue(reportingArguments.getOutputReportFolder()));
+        if (wfcAuthProvider.isEnabled()) {
+            logger.config("WFC Auth file: {}", AnsiUtils.blue(authArguments.getWfcAuthFile()));
+            logger.config("WFC Auth entry: {}", AnsiUtils.blue(wfcAuthProvider.getSelectedAuthenticationName()));
+        }
         logger.config("{} configured fuzzers out of {} total fuzzers",
                 AnsiUtils.blue(filterArguments.getFirstPhaseFuzzersForPath().size()),
                 AnsiUtils.blue(filterArguments.getTotalFuzzersOrLinters()));

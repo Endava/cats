@@ -1,0 +1,20 @@
+auth:
+  - name: cats
+    loginEndpointAuth:
+      payloadUserPwd:
+        username: cats
+        password: secret
+        usernameField: username
+        passwordField: password
+
+authTemplate:
+  loginEndpointAuth:
+    endpoint: /wfc-login
+    verb: POST
+    contentType: application/json
+    token:
+      extractFrom: body
+      extractSelector: /accessToken
+      sendIn: header
+      sendName: Authorization
+      sendTemplate: "Bearer {token}"

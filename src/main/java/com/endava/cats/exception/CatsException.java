@@ -4,6 +4,14 @@ package com.endava.cats.exception;
  * A custom runtime exception for Cats-related exceptions, extending {@link RuntimeException}.
  */
 public class CatsException extends RuntimeException {
+    /**
+     * Constructs a new {@code CatsException} with the specified detail message.
+     *
+     * @param message the detail message
+     */
+    public CatsException(String message) {
+        super(message);
+    }
 
     /**
      * Constructs a new {@code CatsException} with the specified cause.

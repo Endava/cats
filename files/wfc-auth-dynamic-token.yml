@@ -1,0 +1,20 @@
+# Based on WebFuzzing/Dataset auth/blogapi-auth.yaml
+auth:
+  - name: admin
+    loginEndpointAuth:
+      payloadRaw: "{\"usernameOrEmail\": \"admin\", \"password\": \"bar123\"}"
+  - name: user
+    loginEndpointAuth:
+      payloadRaw: "{\"usernameOrEmail\": \"user\", \"password\": \"bar123\"}"
+
+authTemplate:
+  loginEndpointAuth:
+    endpoint: /api/auth/signin
+    verb: POST
+    contentType: application/json
+    token:
+      extractFrom: body
+      extractSelector: /accessToken
+      sendName: Authorization
+      sendIn: header
+      sendTemplate: "Bearer {token}"

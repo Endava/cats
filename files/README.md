@@ -12,6 +12,28 @@ as well as path-specific headers using the `/pets:` entry.
 
 **Please note that headers must be sub-elements of `all` or specific paths.**
 
+## Web Fuzzing Commons Auth File
+
+CATS can read a Web Fuzzing Commons authentication file using the `--wfcAuth <FILE>` argument. If the file contains
+multiple authentication entries, select one with `--wfcAuthName <NAME>`. When no name is supplied, CATS uses the first
+entry in the `auth` list.
+
+The [wfc-auth.yml](./wfc-auth.yml) example shows both static authentication headers and a dynamic login flow that
+extracts a token from the login response and sends it as an authentication header.
+
+Additional examples based on the public Web Fuzzing Dataset auth files:
+
+* [wfc-auth-static-token.yml](./wfc-auth-static-token.yml) shows a fixed `Authorization` header.
+* [wfc-auth-dynamic-token.yml](./wfc-auth-dynamic-token.yml) shows a JSON login endpoint with token extraction from
+  the response body.
+* [wfc-auth-cookie.yml](./wfc-auth-cookie.yml) shows a form login endpoint that expects cookies.
+* [wfc-auth-external-token.yml](./wfc-auth-external-token.yml) shows a token login endpoint hosted outside the API
+  server using `externalEndpointURL`.
+
+WFC authentication material is applied as request credentials, not as business headers. Header fuzzers and
+authentication-bypass logic can therefore distinguish WFC auth headers such as `Authorization`, `Cookie` or custom
+token headers from the rest of the request headers.
+
 ## Reference Data File
 
 Supplying reference data is typically needed for more in-depth fuzzing. You can supply such a file using
@@ -84,7 +106,5 @@ leak. Example [errorLeaks.txt](./errorLeaks.txt) file contains some custom keywo
 
 By default, CATS runs paths in alphabetical order. You can override this behavior by providing a file with the desired
 order using the `--pathsRunOrder <FILE>` argument. An example file [pathsOrder.txt](./pathsOrder.txt).
-
-
 
 

@@ -1,0 +1,5 @@
+auth:
+  - name: static
+    fixedHeaders:
+      - name: X-Session-Token
+        value: static-secret

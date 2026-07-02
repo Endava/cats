@@ -1,0 +1,6 @@
+auth:
+  - name: mock
+    requireMockHandling: true
+    fixedHeaders:
+      - name: Authorization
+        value: Bearer mock

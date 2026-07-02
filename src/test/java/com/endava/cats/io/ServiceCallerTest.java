@@ -4,6 +4,7 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
@@ -50,6 +51,7 @@ class ServiceCallerTest {
     @Inject
     CatsGlobalContext catsGlobalContext;
     FilesArguments filesArguments;
+    WfcAuthProvider wfcAuthProvider;
     private ServiceCaller serviceCaller;
 
     @BeforeAll
@@ -71,6 +73,17 @@ class ServiceCallerTest {
         wireMockServer.stubFor(WireMock.head(WireMock.urlEqualTo("/pets/1")).willReturn(WireMock.aResponse()));
         wireMockServer.stubFor(WireMock.trace(WireMock.urlEqualTo("/pets/1")).willReturn(WireMock.aResponse()));
         wireMockServer.stubFor(WireMock.patch(WireMock.urlEqualTo("/pets")).willReturn(WireMock.aResponse()));
+        wireMockServer.stubFor(WireMock.post("/wfc-login").willReturn(WireMock.okJson("{\"accessToken\":\"wfc-token\"}")));
+        wireMockServer.stubFor(WireMock.post("/wfc-cookie-login").willReturn(WireMock.ok("{}").withHeader("Set-Cookie", "SESSION=wfc-session; Path=/; HttpOnly")));
+        wireMockServer.stubFor(WireMock.post("/wfc-query-login").willReturn(WireMock.okJson("{\"accessToken\":\"query-token\"}")));
+        wireMockServer.stubFor(WireMock.get(WireMock.urlPathEqualTo("/wfc-static")).withHeader("X-Session-Token", WireMock.equalTo("static-secret"))
+                .willReturn(WireMock.ok("{}")));
+        wireMockServer.stubFor(WireMock.get(WireMock.urlPathEqualTo("/wfc-token")).withHeader("Authorization", WireMock.equalTo("Bearer wfc-token"))
+                .willReturn(WireMock.ok("{}")));
+        wireMockServer.stubFor(WireMock.get(WireMock.urlPathEqualTo("/wfc-cookie")).withHeader("Cookie", WireMock.containing("SESSION=wfc-session"))
+                .willReturn(WireMock.ok("{}")));
+        wireMockServer.stubFor(WireMock.get(WireMock.urlPathEqualTo("/wfc-query")).withQueryParam("access_token", WireMock.equalTo("query-token"))
+                .willReturn(WireMock.ok("{}")));
     }
 
     @AfterAll
@@ -81,10 +94,13 @@ class ServiceCallerTest {
     @BeforeEach
     void setupEach() throws Exception {
         filesArguments = new FilesArguments();
+        wfcAuthProvider = new WfcAuthProvider(authArguments, apiArguments);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
-        serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments, apiArguments, processingArguments);
+        serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments, apiArguments, processingArguments, wfcAuthProvider);
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
+        ReflectionTestUtils.setField(authArguments, "wfcAuthFile", null);
+        ReflectionTestUtils.setField(authArguments, "wfcAuthName", null);
         ReflectionTestUtils.setField(filesArguments, "refDataFile", new File("src/test/resources/refFields.yml"));
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/headers.yml"));
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParamsEmpty.yml"));
@@ -411,6 +427,100 @@ class ServiceCallerTest {
         List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
         List<String> headerNames = headers.stream().map(KeyValuePair::getKey).toList();
         Assertions.assertThat(headerNames).doesNotContain("header", "catsFuzzedHeader").contains("simpleHeader", "jwt");
+    }
+
+    @Test
+    void shouldIdentifyCommonAuthenticationHeaders() {
+        Assertions.assertThat(serviceCaller.isAuthenticationHeader("Authorization")).isTrue();
+        Assertions.assertThat(serviceCaller.isAuthenticationHeader("X-Api-Key")).isTrue();
+        Assertions.assertThat(serviceCaller.isAuthenticationHeader("X-Token")).isTrue();
+        Assertions.assertThat(serviceCaller.isAuthenticationHeader("Cookie")).isTrue();
+        Assertions.assertThat(serviceCaller.isAuthenticationHeader("X-Correlation-Id")).isFalse();
+    }
+
+    @Test
+    void shouldApplyStaticWfcAuthHeaders() {
+        ReflectionTestUtils.setField(authArguments, "basicAuth", null);
+        ReflectionTestUtils.setField(authArguments, "wfcAuthFile", new File("src/test/resources/wfc-static-auth.yml"));
+
+        List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(ServiceData.builder()
+                .headers(Set.of())
+                .relativePath("/wfc-static")
+                .contractPath("/wfc-static")
+                .contentType("application/json")
+                .build());
+
+        Assertions.assertThat(headers).anySatisfy(header -> {
+            Assertions.assertThat(header.getKey()).isEqualTo("X-Session-Token");
+            Assertions.assertThat(header.getValue()).isEqualTo("static-secret");
+        });
+        Assertions.assertThat(serviceCaller.isAuthenticationHeader("X-Session-Token")).isTrue();
+        Assertions.assertThat(serviceCaller.getAuthenticationHeaderNames()).containsExactly("X-Session-Token");
+    }
+
+    @Test
+    void shouldApplyDynamicWfcTokenHeader() {
+        ReflectionTestUtils.setField(authArguments, "basicAuth", null);
+        ReflectionTestUtils.setField(authArguments, "wfcAuthFile", new File("src/test/resources/wfc-token-auth.yml"));
+
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder()
+                .relativePath("/wfc-token")
+                .contractPath("/wfc-token")
+                .payload("{}")
+                .httpMethod(HttpMethod.GET)
+                .headers(Set.of())
+                .contentType("application/json")
+                .build());
+
+        Assertions.assertThat(response.responseCodeAsString()).isEqualTo("200");
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/wfc-login"))
+                .withRequestBody(WireMock.equalToJson("{\"username\":\"cats\",\"password\":\"secret\"}")));
+        wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo("/wfc-token")).withHeader("Authorization", WireMock.equalTo("Bearer wfc-token")));
+    }
+
+    @Test
+    void shouldApplyDynamicWfcCookieHeader() {
+        ReflectionTestUtils.setField(authArguments, "basicAuth", null);
+        ReflectionTestUtils.setField(authArguments, "wfcAuthFile", new File("src/test/resources/wfc-cookie-auth.yml"));
+
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder()
+                .relativePath("/wfc-cookie")
+                .contractPath("/wfc-cookie")
+                .payload("{}")
+                .httpMethod(HttpMethod.GET)
+                .headers(Set.of())
+                .contentType("application/json")
+                .build());
+
+        Assertions.assertThat(response.responseCodeAsString()).isEqualTo("200");
+        wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo("/wfc-cookie")).withHeader("Cookie", WireMock.containing("SESSION=wfc-session")));
+    }
+
+    @Test
+    void shouldApplyDynamicWfcQueryToken() {
+        ReflectionTestUtils.setField(authArguments, "basicAuth", null);
+        ReflectionTestUtils.setField(authArguments, "wfcAuthFile", new File("src/test/resources/wfc-query-auth.yml"));
+
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder()
+                .relativePath("/wfc-query")
+                .contractPath("/wfc-query")
+                .payload("{}")
+                .httpMethod(HttpMethod.GET)
+                .headers(Set.of())
+                .contentType("application/json")
+                .build());
+
+        Assertions.assertThat(response.responseCodeAsString()).isEqualTo("200");
+        wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo("/wfc-query?access_token=query-token")));
     }
 
     @Test

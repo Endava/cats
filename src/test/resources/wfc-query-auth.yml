@@ -1,0 +1,15 @@
+auth:
+  - name: query-user
+    loginEndpointAuth:
+      payloadRaw: "{}"
+
+authTemplate:
+  loginEndpointAuth:
+    endpoint: /wfc-query-login
+    verb: POST
+    contentType: application/json
+    token:
+      extractFrom: body
+      extractSelector: /accessToken
+      sendIn: query
+      sendName: access_token

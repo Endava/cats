@@ -1,0 +1,25 @@
+authTemplate:
+  loginEndpointAuth:
+    endpoint: /login
+    verb: POST
+    contentType: application/json
+    payloadUserPwd:
+      usernameField: username
+      username: cats
+      passwordField: password
+      password: secret
+    token:
+      extractFrom: body
+      extractSelector: /accessToken
+      sendIn: header
+      sendName: Authorization
+      sendTemplate: Bearer {token}
+
+auth:
+  - name: static-api-key
+    fixedHeaders:
+      - name: X-API-Key
+        value: change-me
+
+  - name: login-bearer
+    loginEndpointAuth: {}

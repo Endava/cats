@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
+import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
@@ -13,10 +14,9 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,20 +27,22 @@ import java.util.stream.Stream;
 @Singleton
 @HttpFuzzer
 public class BypassAuthenticationFuzzer implements Fuzzer {
-    private static final List<String> AUTH_HEADERS = Arrays.asList("cookie", "authorization", "authorisation", "token", "jwt", "apikey", "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(BypassAuthenticationFuzzer.class);
     private final FilesArguments filesArguments;
     private final SimpleExecutor simpleExecutor;
+    private final ServiceCaller serviceCaller;
 
     /**
      * Creates a new BypassAuthenticationFuzzer instance.
      *
      * @param ce             the executor
      * @param filesArguments files arguments
+     * @param serviceCaller  service caller
      */
-    public BypassAuthenticationFuzzer(SimpleExecutor ce, FilesArguments filesArguments) {
+    public BypassAuthenticationFuzzer(SimpleExecutor ce, FilesArguments filesArguments, ServiceCaller serviceCaller) {
         this.simpleExecutor = ce;
         this.filesArguments = filesArguments;
+        this.serviceCaller = serviceCaller;
     }
 
     @Override
@@ -68,12 +70,13 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
         Set<String> authenticationHeadersInFile = filesArguments.getHeaders(data.getPath()).keySet()
                 .stream().filter(this::isAuthenticationHeader)
                 .collect(Collectors.toSet());
+        Set<String> authenticationHeadersFromWfc = Optional.ofNullable(serviceCaller.getAuthenticationHeaderNames()).orElse(Collections.emptySet());
 
-        return Stream.of(authenticationHeadersInContract, authenticationHeadersInFile).flatMap(Collection::stream).collect(Collectors.toSet());
+        return Stream.of(authenticationHeadersInContract, authenticationHeadersInFile, authenticationHeadersFromWfc).flatMap(Collection::stream).collect(Collectors.toSet());
     }
 
     private boolean isAuthenticationHeader(String header) {
-        return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase(Locale.ROOT).replaceAll("[-_]", "").contains(authHeader));
+        return serviceCaller.isAuthenticationHeader(header);
     }
 
     @Override

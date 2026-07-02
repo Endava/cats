@@ -1,0 +1,15 @@
+# Based on WebFuzzing/Dataset auth/webgoat-auth.yaml
+auth:
+  - name: user1
+    loginEndpointAuth:
+      payloadRaw: "username=testuser&password=testuser"
+  - name: user2
+    loginEndpointAuth:
+      payloadRaw: "username=testuser2&password=testuser"
+
+authTemplate:
+  loginEndpointAuth:
+    endpoint: /WebGoat/login
+    verb: POST
+    contentType: application/x-www-form-urlencoded
+    expectCookies: true

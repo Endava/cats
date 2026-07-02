@@ -1,0 +1,6 @@
+# Based on WebFuzzing/Dataset auth/pay-publicapi-auth.yaml
+auth:
+  - name: foo
+    fixedHeaders:
+      - name: Authorization
+        value: Bearer asdfghdasdjlguuolnga94upq3nrd2642sq7uel0oo

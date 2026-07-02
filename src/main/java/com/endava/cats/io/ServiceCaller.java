@@ -1,6 +1,7 @@
 package com.endava.cats.io;
 
 import com.endava.cats.annotations.DryRun;
+import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
@@ -91,14 +92,15 @@ public class ServiceCaller {
     private static final Object SUBSTITUTE_FOR_NULL = "SET_TO_NULL";
     private static final String CATS_HEADER_UUID = "X-Cats-Trace-Id";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ServiceCaller.class);
-    private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
-            "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
+    private static final List<String> AUTH_HEADERS = Arrays.asList("cookie", "authorization", "authorisation", "token", "jwt", "apikey",
+            "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
     private final FilesArguments filesArguments;
     private final TestCaseListener testCaseListener;
     private final AuthArguments authArguments;
     private final ApiArguments apiArguments;
     private final ProcessingArguments processingArguments;
     private final CatsGlobalContext catsGlobalContext;
+    private final WfcAuthProvider wfcAuthProvider;
     OkHttpClient okHttpClient;
 
     private RateLimiter rateLimiter;
@@ -114,13 +116,15 @@ public class ServiceCaller {
      * @param processingArguments The processing arguments.
      */
     @Inject
-    public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments) {
+    public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments,
+                         WfcAuthProvider wfcAuthProvider) {
         this.testCaseListener = lr;
         this.filesArguments = filesArguments;
         this.authArguments = authArguments;
         this.apiArguments = apiArguments;
         this.processingArguments = processingArguments;
         this.catsGlobalContext = context;
+        this.wfcAuthProvider = wfcAuthProvider;
     }
 
     /**
@@ -268,7 +272,7 @@ public class ServiceCaller {
         logger.debug("Decoded URL: {}", decodedUrl);
         if (!data.isReplaceUrlParams()) {
             String actualUrl = this.replacePathParams(decodedUrl, processedPayload, data);
-            return this.replaceRemovedParams(actualUrl);
+            return this.addWfcAuthQueryParams(this.replaceRemovedParams(actualUrl));
         }
 
         String url = this.getPathWithRefDataReplacedForHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
@@ -281,6 +285,7 @@ public class ServiceCaller {
         }
         url = this.addPathParamsIfNotReplaced(url, data.getPathParamsPayload());
         url = this.addAdditionalQueryParams(url, data.getRelativePath());
+        url = this.addWfcAuthQueryParams(url);
         logger.debug("Replaced URL: {}", url);
         return url;
     }
@@ -396,6 +401,7 @@ public class ServiceCaller {
 
         this.addMandatoryHeaders(data, headers);
         this.addSuppliedHeaders(data, headers);
+        this.addWfcAuthHeaders(headers);
         this.removeSkippedHeaders(data, headers);
         this.addBasicAuth(headers);
 
@@ -660,7 +666,26 @@ public class ServiceCaller {
      * @return true if the header is an authentication header, false otherwise
      */
     public boolean isAuthenticationHeader(String header) {
-        return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase(Locale.ROOT).contains(authHeader));
+        String normalizedHeader = header.toLowerCase(Locale.ROOT).replace("-", "").replace("_", "");
+        return AUTH_HEADERS.stream().anyMatch(normalizedHeader::contains) || wfcAuthProvider.isAuthenticationHeader(header);
+    }
+
+    /**
+     * Gets authentication headers added by runtime auth providers but not necessarily present in the OpenAPI contract or headers file.
+     *
+     * @return runtime authentication header names
+     */
+    public Set<String> getAuthenticationHeaderNames() {
+        return wfcAuthProvider.getAuthenticationHeaderNames();
+    }
+
+    private void addWfcAuthHeaders(List<KeyValuePair<String, Object>> headers) {
+        wfcAuthProvider.getHeaders(okHttpClient)
+                .forEach((name, value) -> replaceHeaderWithUserSuppliedHeader(headers, name, value));
+    }
+
+    private String addWfcAuthQueryParams(String url) {
+        return wfcAuthProvider.applyQueryParams(url, okHttpClient);
     }
 
     private void replaceHeaderIfNotFuzzed(List<KeyValuePair<String, Object>> headers, ServiceData data, Map.Entry<String, String> suppliedHeader) {

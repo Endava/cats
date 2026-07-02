@@ -1,0 +1,11 @@
+auth:
+  - name: cookie-user
+    loginEndpointAuth:
+      payloadRaw: "{}"
+
+authTemplate:
+  loginEndpointAuth:
+    endpoint: /wfc-cookie-login
+    verb: POST
+    contentType: application/json
+    expectCookies: true

@@ -1,6 +1,11 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.args.ApiArguments;
+import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.auth.wfc.WfcAuthProvider;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
@@ -34,13 +39,17 @@ class BypassAuthenticationFuzzerTest {
     private FilesArguments filesArguments;
     private SimpleExecutor simpleExecutor;
     private BypassAuthenticationFuzzer bypassAuthenticationFuzzer;
+    private WfcAuthProvider wfcAuthProvider;
 
     @BeforeEach
     void setup() {
         filesArguments = Mockito.mock(FilesArguments.class);
-        serviceCaller = Mockito.mock(ServiceCaller.class);
+        wfcAuthProvider = Mockito.mock(WfcAuthProvider.class);
+        Mockito.when(wfcAuthProvider.getAuthenticationHeaderNames()).thenReturn(Set.of());
+        serviceCaller = Mockito.spy(new ServiceCaller(Mockito.mock(CatsGlobalContext.class), testCaseListener, filesArguments, Mockito.mock(AuthArguments.class),
+                Mockito.mock(ApiArguments.class), Mockito.mock(ProcessingArguments.class), wfcAuthProvider));
         simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(simpleExecutor, filesArguments);
+        bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(simpleExecutor, filesArguments, serviceCaller);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
     }
 
@@ -62,7 +71,7 @@ class BypassAuthenticationFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("authorization").value("auth").build())).
                 responses(responses).path("test1").reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).responseCodes(Set.of("400")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+        Mockito.doReturn(catsResponse).when(serviceCaller).call(Mockito.any());
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
 
         bypassAuthenticationFuzzer.fuzz(data);
@@ -76,7 +85,7 @@ class BypassAuthenticationFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("authorization").value("auth").build())).
                 responses(responses).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).responseCodes(Set.of("400")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+        Mockito.doReturn(catsResponse).when(serviceCaller).call(Mockito.any());
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
 
         bypassAuthenticationFuzzer.fuzz(data);
@@ -114,6 +123,17 @@ class BypassAuthenticationFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>()).path("path1").reqSchema(new StringSchema()).build();
         Set<String> authHeaders = bypassAuthenticationFuzzer.getAuthenticationHeaderProvided(data);
         Assertions.assertThat(authHeaders).containsExactlyInAnyOrder("api-key", "authorization", "jwt");
+    }
+
+    @Test
+    void shouldProperlyIdentifyAuthHeadersFromWfc() {
+        Mockito.when(wfcAuthProvider.getAuthenticationHeaderNames()).thenReturn(Set.of("X-Session-Token"));
+
+        FuzzingData data = FuzzingData.builder().headers(new HashSet<>()).path("path1").reqSchema(new StringSchema()).build();
+
+        Set<String> authHeaders = bypassAuthenticationFuzzer.getAuthenticationHeaderProvided(data);
+
+        Assertions.assertThat(authHeaders).containsExactly("X-Session-Token");
     }
 
     private Map<String, Object> createCustomFuzzerFile() {

@@ -1,0 +1,20 @@
+# Based on WebFuzzing/Dataset auth/microcks-auth.yaml
+auth:
+  - name: "ADMIN_1"
+    loginEndpointAuth:
+      payloadRaw: "username=admin&password=microcks123&grant_type=password&client_id=microcks-serviceaccount&client_secret=ab54d329-e435-41ae-a900-ec6b3fe15c54"
+  - name: "ADMIN_2"
+    loginEndpointAuth:
+      payloadRaw: "username=admin2&password=microcks123&grant_type=password&client_id=microcks-serviceaccount&client_secret=ab54d329-e435-41ae-a900-ec6b3fe15c54"
+
+authTemplate:
+  loginEndpointAuth:
+    verb: POST
+    externalEndpointURL: "http://localhost:8081/realms/microcks/protocol/openid-connect/token"
+    contentType: application/x-www-form-urlencoded
+    token:
+      extractFrom: body
+      extractSelector: /access_token
+      sendName: Authorization
+      sendIn: header
+      sendTemplate: "Bearer {token}"

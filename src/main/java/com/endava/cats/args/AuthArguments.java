@@ -4,6 +4,7 @@ import jakarta.inject.Singleton;
 import lombok.Getter;
 import picocli.CommandLine;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
@@ -51,6 +52,14 @@ public class AuthArguments {
             description = "Amount of time in seconds after which to get new auth credentials")
     private int authRefreshInterval;
 
+    @CommandLine.Option(names = {"--wfcAuth"},
+            description = "A Web Fuzzing Commons authentication YAML/JSON file. CATS will resolve the selected auth entry and apply its headers, cookies or query params to requests.")
+    private File wfcAuthFile;
+
+    @CommandLine.Option(names = {"--wfcAuthName"},
+            description = "The name of the authentication entry to use from the Web Fuzzing Commons auth file. If omitted, CATS uses the first entry.")
+    private String wfcAuthName;
+
 
     /**
      * Checks if proxy details were supplied via the {@code --proxyXXX} arguments.
@@ -68,6 +77,15 @@ public class AuthArguments {
      */
     public boolean isBasicAuthSupplied() {
         return basicAuth != null;
+    }
+
+    /**
+     * Checks if a Web Fuzzing Commons auth file was supplied.
+     *
+     * @return true if WFC auth should be loaded, false otherwise
+     */
+    public boolean isWfcAuthSupplied() {
+        return wfcAuthFile != null;
     }
 
     /**
