@@ -176,7 +176,7 @@ public abstract class OpenApiUtils {
                     String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
                     schemaToAdd = schemas.get(schemaKey);
                 } else if (CatsModelUtils.isArraySchema(refSchema)) {
-                    ref = refSchema.getItems().get$ref();
+                    ref = CatsModelUtils.getSchemaItems(refSchema).get$ref();
                     refSchema.set$ref(ref);
                     schemaToAdd = refSchema;
                 }

@@ -82,6 +82,15 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldHandleArraySchemasWithEmptyOrMissingItems() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/issue165", "src/test/resources/issue165.yml");
+
+        Assertions.assertThat(dataList).hasSize(1);
+        Assertions.assertThat(dataList.getFirst().getPayload()).contains("QueryRestarted", "MissingItems");
+        Assertions.assertThat(dataList.getFirst().getResponses().get("200")).isNotEmpty();
+    }
+
+    @Test
     void shouldFilterOutXxxExamples() throws Exception {
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(20);
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
