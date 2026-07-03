@@ -14,7 +14,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -598,7 +597,7 @@ public class OpenAPIModelGeneratorV2 {
     private static Schema getArrayItemsOrDefault(Schema schema) {
         Schema items = schema.getItems();
         if (items == null) {
-            return new StringSchema().description("TODO default missing array inner type to string");
+            return new Schema<>().type("string").description("TODO default missing array inner type to string");
         }
         return items;
     }

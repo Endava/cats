@@ -2,6 +2,7 @@ package com.endava.cats.util;
 
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -139,14 +140,19 @@ public abstract class OpenApiUtils {
      * @return A map of schemas, where keys are schema names and values are corresponding Schema objects.
      */
     public static Map<String, Schema> getSchemas(OpenAPI openAPI, List<String> contentTypeList) {
-        Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas()).orElseGet(HashMap::new);
+        Components components = openAPI.getComponents();
+        Map<String, Schema> schemas = Optional.ofNullable(components)
+                .map(Components::getSchemas)
+                .orElseGet(HashMap::new);
 
         for (String contentType : contentTypeList) {
-            Optional.ofNullable(openAPI.getComponents().getRequestBodies())
+            Optional.ofNullable(components)
+                    .map(Components::getRequestBodies)
                     .orElseGet(Collections::emptyMap)
                     .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
         }
-        Optional.ofNullable(openAPI.getComponents().getResponses())
+        Optional.ofNullable(components)
+                .map(Components::getResponses)
                 .orElseGet(Collections::emptyMap)
                 .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), JsonUtils.JSON_WILDCARD));
 
