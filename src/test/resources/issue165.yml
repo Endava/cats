@@ -3,6 +3,17 @@ info:
   title: Issue 165
   version: 1.0.0
 paths:
+  /issue165-root:
+    post:
+      operationId: issue165Root
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+      responses:
+        '200':
+          description: ok
   /issue165:
     post:
       operationId: issue165

@@ -91,6 +91,24 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldNotMutateRootArraySchemaWithMissingItems() throws Exception {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/issue165.yml")), null, new ParseOptions()).getOpenAPI();
+        PathItem pathItem = openAPI.getPaths().get("/issue165-root");
+        Schema<?> rootSchema = pathItem.getPost().getRequestBody().getContent().get("application/json").getSchema();
+
+        catsGlobalContext.getSchemaMap().clear();
+        catsGlobalContext.getSchemaMap().putAll(OpenApiUtils.getSchemas(openAPI, List.of("application\\/.*\\+?json")));
+        catsGlobalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
+        catsGlobalContext.setOpenAPI(openAPI);
+        Mockito.when(filesArguments.isNotUrlParam(Mockito.anyString())).thenReturn(true);
+
+        fuzzingDataFactory.fromPathItem("/issue165-root", pathItem, openAPI);
+
+        Assertions.assertThat(rootSchema.getItems()).isNull();
+    }
+
+    @Test
     void shouldFilterOutXxxExamples() throws Exception {
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(20);
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
