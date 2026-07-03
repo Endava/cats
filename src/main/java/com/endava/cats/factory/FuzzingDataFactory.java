@@ -525,7 +525,8 @@ public class FuzzingDataFactory {
             String currentRequestSchema = mediaType.getSchema().get$ref();
 
             if (currentRequestSchema == null && CatsModelUtils.isArraySchema(mediaType.getSchema())) {
-                currentRequestSchema = mediaType.getSchema().getItems().get$ref();
+                Schema<?> items = mediaType.getSchema().getItems();
+                currentRequestSchema = items != null ? items.get$ref() : null;
             }
             if (currentRequestSchema != null) {
                 reqSchemas.add(CatsModelUtils.getSimpleRef(currentRequestSchema));
@@ -769,10 +770,11 @@ public class FuzzingDataFactory {
         String finalRef = refKey;
 
         if (CatsModelUtils.isArraySchema(respSchema)) {
-            if (respSchema.getItems().get$ref() == null) {
+            Schema<?> items = respSchema.getItems();
+            if (items == null || items.get$ref() == null) {
                 globalContext.putSchemaReference(refKey, respSchema);
             } else {
-                finalRef = respSchema.getItems().get$ref();
+                finalRef = items.get$ref();
             }
         } else {
             if (respSchema.get$ref() == null) {

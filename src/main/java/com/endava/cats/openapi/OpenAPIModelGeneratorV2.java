@@ -594,10 +594,18 @@ public class OpenAPIModelGeneratorV2 {
         return examples;
     }
 
+    private static Schema getArrayItemsOrDefault(Schema schema) {
+        Schema items = schema.getItems();
+        if (items == null) {
+            return new Schema<>().type("string").description("TODO default missing array inner type to string");
+        }
+        return items;
+    }
+
     private List<Map<String, Object>> resolveArraySchemaProperties(String propertyName, Schema schema) {
         logger.trace("resolveArraySchemaProperties for schema {}", propertyName);
         List<Map<String, Object>> examples = new ArrayList<>();
-        Schema itemSchema = CatsModelUtils.getSchemaItems(schema);
+        Schema itemSchema = getArrayItemsOrDefault(schema);
 
         List<Object> itemExamples = resolvePropertyToExamples(propertyName, itemSchema);
         int arraySize = getArrayLength(schema);
@@ -704,10 +712,16 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private void createExamplesArray(String propertyName, Schema property, List<Object> examples) {
+        Object arrayExample = extractExampleFromSchema(property, examplesFlags.usePropertyExamples());
+        if (arrayExample != null) {
+            examples.add(arrayExample);
+            return;
+        }
+
         if (Boolean.TRUE.equals(property.getUniqueItems())) {
             logger.trace("Creating unique items array for property {}", propertyName);
             int arraySize = getArrayLength(property);
-            Schema itemSchema = CatsModelUtils.getSchemaItems(property);
+            Schema itemSchema = getArrayItemsOrDefault(property);
             Set<Object> itemExamples = new HashSet<>();
             Object itemExample = resolvePropertyToExample(propertyName + ".items", itemSchema, false);
 
@@ -717,7 +731,7 @@ public class OpenAPIModelGeneratorV2 {
             }
             examples.add(itemExamples);
         } else {
-            Schema itemSchema = CatsModelUtils.getSchemaItems(property);
+            Schema itemSchema = getArrayItemsOrDefault(property);
             List<Object> itemExamples = resolvePropertyToExamples(propertyName + ".items", itemSchema);
             int arraySize = getArrayLength(property);
             examples.addAll(itemExamples.stream().map(innerExample -> Collections.nCopies(arraySize, innerExample)).toList());

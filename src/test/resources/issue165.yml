@@ -1,0 +1,40 @@
+openapi: 3.0.0
+info:
+  title: Issue 165
+  version: 1.0.0
+paths:
+  /issue165-root:
+    post:
+      operationId: issue165Root
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+      responses:
+        '200':
+          description: ok
+  /issue165:
+    post:
+      operationId: issue165
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                QueryRestarted:
+                  type: array
+                  maxItems: 0
+                  example: []
+                  items: {}
+                MissingItems:
+                  type: array
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
