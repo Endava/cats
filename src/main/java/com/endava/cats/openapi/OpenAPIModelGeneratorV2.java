@@ -704,7 +704,7 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private void createExamplesArray(String propertyName, Schema property, List<Object> examples) {
-        Object arrayExample = extractExampleFromSchema(property, examplesFlags.useSchemaExamples());
+        Object arrayExample = extractExampleFromSchema(property, examplesFlags.usePropertyExamples());
         if (arrayExample != null) {
             examples.add(arrayExample);
             return;
