@@ -704,6 +704,12 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private void createExamplesArray(String propertyName, Schema property, List<Object> examples) {
+        Object arrayExample = extractExampleFromSchema(property, examplesFlags.useSchemaExamples());
+        if (arrayExample != null) {
+            examples.add(arrayExample);
+            return;
+        }
+
         if (Boolean.TRUE.equals(property.getUniqueItems())) {
             logger.trace("Creating unique items array for property {}", propertyName);
             int arraySize = getArrayLength(property);
