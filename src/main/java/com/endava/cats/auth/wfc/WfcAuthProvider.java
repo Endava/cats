@@ -213,7 +213,7 @@ public class WfcAuthProvider {
 
         logger.note("Running WFC Auth login for entry {} at {}", auth.getName(), loginUrl);
         try (Response response = okHttpClient.newCall(request).execute()) {
-            String responseBody = response.body() == null ? "" : response.body().string();
+            String responseBody = response.body().string();
             if (!response.isSuccessful()) {
                 throw new CatsException("WFC Auth login failed for entry %s with HTTP %s and body %s".formatted(auth.getName(), response.code(), responseBody));
             }
