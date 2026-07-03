@@ -61,6 +61,19 @@ class FilesArgumentsTest {
         org.assertj.core.api.Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(expected);
     }
 
+
+    @Test
+    void shouldUrlEncodeSuppliedUrlParams() {
+        FilesArguments filesArguments = new FilesArguments();
+        ReflectionTestUtils.setField(filesArguments, "params", List.of("tenantId:special/chars&more"));
+        filesArguments.loadURLParams();
+
+        String url = "http://localhost:8080/tenants/{tenantId}";
+        String expected = "http://localhost:8080/tenants/special%2Fchars%26more";
+
+        org.assertj.core.api.Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(expected);
+    }
+
     @Test
     void shouldNotReplaceUrlWhenUrlParamsSuppliedButNotMatching() {
         FilesArguments filesArguments = new FilesArguments();

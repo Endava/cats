@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -306,7 +307,7 @@ public class FilesArguments {
             String[] urlParam = nameValueParam.split(":", -1);
             String pathVar = "{" + urlParam[name] + "}";
 
-            startingUrl = startingUrl.replace(pathVar, urlParam[value]);
+            startingUrl = startingUrl.replace(pathVar, URLEncoder.encode(urlParam[value], StandardCharsets.UTF_8));
         }
         return startingUrl;
     }

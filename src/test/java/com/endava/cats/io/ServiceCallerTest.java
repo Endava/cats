@@ -629,6 +629,19 @@ class ServiceCallerTest {
         Assertions.assertThat(result).endsWith("/configs/NOT_SET/tenants/NOT_SET");
     }
 
+
+    @ParameterizedTest
+    @CsvSource({"POST", "PUT", "PATCH"})
+    void shouldUrlEncodeRefDataPathParamsForBodyMethods(HttpMethod httpMethod) {
+        String url = "/tenants/{tenantId}";
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of(url, Map.of("tenantId", "special/chars&more")));
+
+        ServiceData data = ServiceData.builder().relativePath(url).payload("{123}").httpMethod(httpMethod).build();
+        String result = serviceCaller.constructUrl(data, "{}");
+
+        Assertions.assertThat(result).endsWith("/tenants/special%2Fchars%26more");
+    }
+
     @Test
     void shouldUrlEncodePathParamsForPostMethod() {
         String json = """
