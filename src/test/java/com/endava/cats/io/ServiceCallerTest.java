@@ -629,6 +629,19 @@ class ServiceCallerTest {
         Assertions.assertThat(result).endsWith("/configs/NOT_SET/tenants/NOT_SET");
     }
 
+
+    @ParameterizedTest
+    @CsvSource({"POST", "PUT", "PATCH"})
+    void shouldUrlEncodeRefDataPathParamsForBodyMethods(HttpMethod httpMethod) {
+        String url = "/tenants/{tenantId}";
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of(url, Map.of("tenantId", "special/chars&more")));
+
+        ServiceData data = ServiceData.builder().relativePath(url).payload("{123}").httpMethod(httpMethod).build();
+        String result = serviceCaller.constructUrl(data, "{}");
+
+        Assertions.assertThat(result).endsWith("/tenants/special%2Fchars%26more");
+    }
+
     @Test
     void shouldUrlEncodePathParamsForPostMethod() {
         String json = """
@@ -640,7 +653,7 @@ class ServiceCallerTest {
         String url = "/configs/{configId}/tenants/{tenantId}";
         ServiceData data = ServiceData.builder().relativePath(url).payload("{123}").pathParamsPayload(json).httpMethod(HttpMethod.POST).build();
         String result = serviceCaller.constructUrl(data, "{}");
-        Assertions.assertThat(result).endsWith("/configs/value+with+spaces/tenants/special%2Fchars%26more");
+        Assertions.assertThat(result).endsWith("/configs/value%20with%20spaces/tenants/special%2Fchars%26more");
     }
 
     @Test
@@ -679,7 +692,7 @@ class ServiceCallerTest {
                 """;
         String url = "http://localhost:8080/configs/{configId}/tenants/{tenantId}";
         String result = serviceCaller.addPathParamsIfNotReplaced(url, json);
-        Assertions.assertThat(result).isEqualTo("http://localhost:8080/configs/value+with+spaces/tenants/special%2Fchars%26more");
+        Assertions.assertThat(result).isEqualTo("http://localhost:8080/configs/value%20with%20spaces/tenants/special%2Fchars%26more");
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.endava.cats.args;
 
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.util.AnsiUtils;
+import com.endava.cats.util.CatsUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -306,7 +307,7 @@ public class FilesArguments {
             String[] urlParam = nameValueParam.split(":", -1);
             String pathVar = "{" + urlParam[name] + "}";
 
-            startingUrl = startingUrl.replace(pathVar, urlParam[value]);
+            startingUrl = startingUrl.replace(pathVar, CatsUtil.urlEncodePathSegment(urlParam[value]));
         }
         return startingUrl;
     }
