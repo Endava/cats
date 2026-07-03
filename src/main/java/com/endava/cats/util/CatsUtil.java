@@ -17,6 +17,7 @@ import org.jboss.logmanager.LogContext;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -397,6 +398,37 @@ public abstract class CatsUtil {
         }
 
         return encodedURL.replace("%7B", "{").replace("%7D", "}");
+    }
+
+    /**
+     * Percent-encodes a value for safe use as a single URL path segment.
+     *
+     * @param pathSegment the raw path segment value
+     * @return the encoded path segment value
+     */
+    public static String urlEncodePathSegment(String pathSegment) {
+        StringBuilder encoded = new StringBuilder();
+        for (byte value : pathSegment.getBytes(StandardCharsets.UTF_8)) {
+            int unsignedValue = value & 0xff;
+            if (isUnreservedUriCharacter(unsignedValue)) {
+                encoded.append((char) unsignedValue);
+            } else {
+                encoded.append('%');
+                String hex = Integer.toHexString(unsignedValue).toUpperCase(Locale.ROOT);
+                if (hex.length() == 1) {
+                    encoded.append('0');
+                }
+                encoded.append(hex);
+            }
+        }
+        return encoded.toString();
+    }
+
+    private static boolean isUnreservedUriCharacter(int value) {
+        return value >= 'A' && value <= 'Z'
+                || value >= 'a' && value <= 'z'
+                || value >= '0' && value <= '9'
+                || value == '-' || value == '.' || value == '_' || value == '~';
     }
 
     /**

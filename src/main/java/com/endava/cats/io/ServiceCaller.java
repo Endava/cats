@@ -53,7 +53,6 @@ import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -298,7 +297,7 @@ public class ServiceCaller {
 
         for (String pathVariable : pathVariables) {
             String pathValue = String.valueOf(JsonUtils.getVariableFromJson(pathParamsPayload, pathVariable));
-            url = url.replace("{" + pathVariable + "}", URLEncoder.encode(pathValue, StandardCharsets.UTF_8));
+            url = url.replace("{" + pathVariable + "}", CatsUtil.urlEncodePathSegment(pathValue));
         }
         return url;
     }
@@ -550,7 +549,7 @@ public class ServiceCaller {
                             String pathElementWithoutBrackets = pathElement.replace("{", "").replace("}", "");
                             Object pathElementValue = JsonUtils.getVariableFromJson(payloadAsJson, pathElementWithoutBrackets);
                             data.getPathParams().add(pathElementWithoutBrackets);
-                            return currentPath.replace(pathElement, URLEncoder.encode(String.valueOf(pathElementValue), StandardCharsets.UTF_8));
+                            return currentPath.replace(pathElement, CatsUtil.urlEncodePathSegment(String.valueOf(pathElementValue)));
                         });
     }
 
@@ -710,7 +709,7 @@ public class ServiceCaller {
 
         for (Map.Entry<String, Object> entry : currentPathRefData.entrySet()) {
             String valueToReplace = CatsDSLParser.parseAndGetResult(String.valueOf(entry.getValue()), Map.of());
-            currentUrl = currentUrl.replace("{" + entry.getKey() + "}", URLEncoder.encode(valueToReplace, StandardCharsets.UTF_8));
+            currentUrl = currentUrl.replace("{" + entry.getKey() + "}", CatsUtil.urlEncodePathSegment(valueToReplace));
             data.getPathParams().add(entry.getKey());
         }
 

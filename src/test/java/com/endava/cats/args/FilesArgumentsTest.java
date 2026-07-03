@@ -65,11 +65,11 @@ class FilesArgumentsTest {
     @Test
     void shouldUrlEncodeSuppliedUrlParams() {
         FilesArguments filesArguments = new FilesArguments();
-        ReflectionTestUtils.setField(filesArguments, "params", List.of("tenantId:special/chars&more"));
+        ReflectionTestUtils.setField(filesArguments, "params", List.of("tenantId:special chars/and&more"));
         filesArguments.loadURLParams();
 
         String url = "http://localhost:8080/tenants/{tenantId}";
-        String expected = "http://localhost:8080/tenants/special%2Fchars%26more";
+        String expected = "http://localhost:8080/tenants/special%20chars%2Fand%26more";
 
         org.assertj.core.api.Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(expected);
     }
