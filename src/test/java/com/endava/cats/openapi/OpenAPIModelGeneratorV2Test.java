@@ -280,8 +280,7 @@ class OpenAPIModelGeneratorV2Test {
 
         Object kindValue = JsonUtils.getVariableFromJson(decimalExamples.getFirst(), "$.kind");
 
-        Assertions.assertThat(kindValue).isNotNull();
-        Assertions.assertThat(kindValue).hasToString(expectedKind);
+        Assertions.assertThat(kindValue).isNotNull().hasToString(expectedKind);
     }
 
     @Test
