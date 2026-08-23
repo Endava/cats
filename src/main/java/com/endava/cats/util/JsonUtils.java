@@ -61,6 +61,8 @@ import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_ENUMS_US
  */
 public abstract class JsonUtils {
 
+    private static final String ITEMS_SUFFIX = ".items";
+
     public static final int SELF_REF_DEPTH_MULTIPLIER = 6;
 
     /**
@@ -504,19 +506,34 @@ public abstract class JsonUtils {
             return false;
         }
 
-        String[] tokens = Arrays.stream(currentProperty.split("[#_]", -1))
-                .filter(StringUtils::isNotBlank)
-                .toArray(String[]::new);
-        if (tokens.length < depth) {
+        List<String> levels = new ArrayList<>();
+        String previousLevel = null;
+
+        for (String rawSegment : currentProperty.split("#", -1)) {
+            if (StringUtils.isBlank(rawSegment)) {
+                continue;
+            }
+            String segment = rawSegment.toLowerCase();
+            boolean isItems = segment.endsWith(ITEMS_SUFFIX);
+            String level = isItems ? segment.substring(0, segment.length() - ITEMS_SUFFIX.length()) : segment;
+
+            /* an array contributes both "name" and "name.items" to the path;
+               that is a single nesting level, not two */
+            if (isItems && level.equals(previousLevel)) {
+                continue;
+            }
+            levels.add(level);
+            previousLevel = level;
+        }
+
+        if (levels.size() < depth) {
             return false;
         }
 
-        Map<String, Long> tokenCounts = Arrays.stream(tokens)
-                .map(String::toLowerCase)
-                .map(item -> item.replace(".items", ""))
+        Map<String, Long> levelCounts = levels.stream()
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-        return tokenCounts.values().stream().anyMatch(count -> count > depth);
+        return levelCounts.values().stream().anyMatch(count -> count > depth);
     }
 
     /**
