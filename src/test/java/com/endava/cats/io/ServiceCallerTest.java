@@ -754,6 +754,32 @@ class ServiceCallerTest {
         Assertions.assertThat(result).contains("version=v2");
     }
 
+    @ParameterizedTest
+    @CsvSource({"POST", "PUT", "PATCH"})
+    void shouldReplacePathParamsBeforeAddingQueryParamsForBodyMethods(HttpMethod httpMethod) {
+        String pathParamsPayload = """
+                {
+                    "custom_id": "abc1234567",
+                    "Installation_uuid": "89c6b16f-f6de-42d4-a09b-55a45509f02a",
+                    "filter": "active"
+                }
+                """;
+        String url = "/api/{custom_id}/xxx/{Installation_uuid}/reset";
+        ServiceData data = ServiceData.builder()
+                .relativePath(url)
+                .payload("{\"name\":\"test\"}")
+                .pathParamsPayload(pathParamsPayload)
+                .queryParams(Set.of("filter"))
+                .httpMethod(httpMethod)
+                .build();
+
+        String result = serviceCaller.constructUrl(data, "{}");
+
+        Assertions.assertThat(result)
+                .endsWith("/api/abc1234567/xxx/89c6b16f-f6de-42d4-a09b-55a45509f02a/reset?filter=active")
+                .doesNotContain("%7B", "%7D");
+    }
+
     @Test
     void shouldNotAddQueryParamsWhenEmptyQueryParamsSet() {
         String pathParamsPayload = """

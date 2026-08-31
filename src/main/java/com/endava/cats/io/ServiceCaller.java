@@ -290,10 +290,11 @@ public class ServiceCaller {
         if (!HttpMethod.requiresBody(data.getHttpMethod())) {
             url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
             url = this.addUriParams(processedPayload, data, url);
-        } else {
-            url = this.addQueryParamsFromPathParamsPayload(url, data);
         }
         url = this.addPathParamsIfNotReplaced(url, data.getPathParamsPayload());
+        if (HttpMethod.requiresBody(data.getHttpMethod())) {
+            url = this.addQueryParamsFromPathParamsPayload(url, data);
+        }
         url = this.addAdditionalQueryParams(url, data.getRelativePath());
         url = this.addWfcAuthQueryParams(url);
         logger.debug("Replaced URL: {}", url);
