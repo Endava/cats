@@ -6,6 +6,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.http.RandomResourcesFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -18,6 +19,8 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.tui.event.CatsExecutionEvent;
+import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
@@ -62,6 +65,7 @@ class TestCaseListenerTest {
     private PrettyLogger logger;
     private Fuzzer fuzzer;
     private TestReportsGenerator testReportsGenerator;
+    private CatsExecutionEventPublisher executionEventPublisher;
 
 
     @BeforeEach
@@ -74,7 +78,9 @@ class TestCaseListenerTest {
         executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
         filterArguments = Mockito.mock(FilterArguments.class);
-        testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, testReportsGenerator, ignoreArguments, reportingArguments, filterArguments);
+        executionEventPublisher = new CatsExecutionEventPublisher();
+        testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, testReportsGenerator,
+                ignoreArguments, reportingArguments, filterArguments, executionEventPublisher);
         catsGlobalContext.getDiscriminators().clear();
         catsGlobalContext.getFuzzersConfiguration().clear();
     }
@@ -91,6 +97,65 @@ class TestCaseListenerTest {
 
         Assertions.assertThat(testCaseListener.testCaseSummaryDetails.getFirst()).isNotNull();
         Mockito.verify(testReportsGenerator).writeTestCase(Mockito.any());
+    }
+
+    @Test
+    void shouldCancelAfterPersistingTheCurrentTestCase() {
+        Thread.currentThread().interrupt();
+        try {
+            Assertions.assertThatThrownBy(() -> testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            }, FuzzingData.builder().build())).isInstanceOf(CatsExecutionCancelledException.class);
+
+            Mockito.verify(testReportsGenerator).writeTestCase(Mockito.any());
+            Assertions.assertThat(testCaseListener.testCaseMap).isEmpty();
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    void shouldNotWriteRecordedErrorsToConsoleInTuiMode() {
+        CatsGlobalContext localContext = Mockito.mock(CatsGlobalContext.class);
+        ReportingArguments tuiArguments = Mockito.mock(ReportingArguments.class);
+        Mockito.when(tuiArguments.isTui()).thenReturn(true);
+        TestCaseListener listener = new TestCaseListener(localContext, executionStatisticsListener,
+                testReportsGenerator, ignoreArguments, tuiArguments, filterArguments, executionEventPublisher);
+
+        listener.endSession();
+
+        Mockito.verify(localContext, Mockito.never()).writeRecordedErrorsIfPresent();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).getExecutionsPerPath("N/A");
+    }
+
+    @Test
+    void shouldPreserveGlobalFuzzerStatisticsOutsideTuiSummaryMode() {
+        Mockito.when(reportingArguments.isTui()).thenReturn(false);
+        Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(false);
+
+        testCaseListener.endSession();
+
+        Mockito.verify(executionStatisticsListener).getExecutionsPerPath("N/A");
+    }
+
+    @Test
+    void givenAFunction_whenExecutingATestCase_thenACompletedTestEventIsPublished() {
+        List<CatsExecutionEvent> events = new ArrayList<>();
+        executionEventPublisher.subscribe(events::add);
+
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("GET").headers(List.of()).build());
+            testCaseListener.addResponse(CatsResponse.builder().responseCode(200).headers(List.of()).build());
+            testCaseListener.reportInfo(logger, "Success");
+        }, FuzzingData.builder().contractPath("/pets").method(HttpMethod.GET).build());
+
+        Assertions.assertThat(events).filteredOn(CatsExecutionEvent.TestCompleted.class::isInstance)
+                .singleElement()
+                .satisfies(event -> {
+                    CatsExecutionEvent.TestCompleted completed = (CatsExecutionEvent.TestCompleted) event;
+                    Assertions.assertThat(completed.test().contractPath()).isEqualTo("/pets");
+                    Assertions.assertThat(completed.test().request().httpMethod()).isEqualTo("GET");
+                    Assertions.assertThat(completed.test().response().responseCode()).isEqualTo(200);
+                });
     }
 
     @Test

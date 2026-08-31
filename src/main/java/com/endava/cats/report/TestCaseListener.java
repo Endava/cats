@@ -5,6 +5,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -17,6 +18,9 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.tui.event.CatsExecutionEvent;
+import com.endava.cats.tui.event.CatsExecutionEventPublisher;
+import com.endava.cats.tui.model.TestResultSnapshot;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
@@ -36,6 +40,7 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -81,6 +86,7 @@ public class TestCaseListener {
     private final IgnoreArguments ignoreArguments;
     private final ReportingArguments reportingArguments;
     private final FilterArguments filterArguments;
+    private final CatsExecutionEventPublisher executionEventPublisher;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
 
@@ -102,15 +108,20 @@ public class TestCaseListener {
      * @param ignoreArguments      the arguments for ignoring test cases
      * @param reportingArguments   the arguments for reporting test cases
      * @param filterArguments      the arguments for filtering fuzzers
+     * @param executionEventPublisher publisher for presentation-neutral execution events
      * @throws NoSuchElementException if no matching exporter is found for the specified report format
      */
-    public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er, TestReportsGenerator testReportsGenerator, IgnoreArguments ignoreArguments, ReportingArguments reportingArguments, FilterArguments filterArguments) {
+    public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er,
+                            TestReportsGenerator testReportsGenerator, IgnoreArguments ignoreArguments,
+                            ReportingArguments reportingArguments, FilterArguments filterArguments,
+                            CatsExecutionEventPublisher executionEventPublisher) {
         this.executionStatisticsListener = er;
         this.testReportsGenerator = testReportsGenerator;
         this.ignoreArguments = ignoreArguments;
         this.globalContext = catsGlobalContext;
         this.reportingArguments = reportingArguments;
         this.filterArguments = filterArguments;
+        this.executionEventPublisher = executionEventPublisher;
     }
 
     private static String replaceBrackets(String message, Object... params) {
@@ -135,6 +146,8 @@ public class TestCaseListener {
         MDC.put(FUZZER_KEY, ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()));
         MDC.put(CONTRACT_PATH, path);
         MDC.put(HTTP_METHOD, httpMethod);
+        executionEventPublisher.publish(new CatsExecutionEvent.FuzzerStarted(Instant.now(),
+                ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()), path, httpMethod));
         this.notifySummaryObservers(path);
     }
 
@@ -145,6 +158,8 @@ public class TestCaseListener {
      */
     public void afterFuzz(String path) {
         this.notifySummaryObservers(path);
+        executionEventPublisher.publish(new CatsExecutionEvent.FuzzerCompleted(Instant.now(),
+                MDC.get(FUZZER_KEY), path, MDC.get(HTTP_METHOD)));
 
         MDC.put(FUZZER, this.getKeyDefault());
         MDC.put(FUZZER_KEY, this.getKeyDefault());
@@ -358,10 +373,15 @@ public class TestCaseListener {
             recordResponseCode(currentTestCase);
         }
         keepExecutionDetails(currentTestCase);
+        if (executionEventPublisher.hasSubscribers()) {
+            executionEventPublisher.publish(new CatsExecutionEvent.TestCompleted(Instant.now(),
+                    TestResultSnapshot.from(currentTestCase, reportingArguments.getMaskedHeaders())));
+        }
         testCaseMap.remove(MDC.get(ID));
         MDC.remove(ID);
         MDC.put(ID_ANSI, this.getKeyDefault());
         logger.info(SEPARATOR);
+        CatsExecutionCancelledException.check();
     }
 
     private void recordResponseCode(CatsTestCase testCase) {
@@ -405,6 +425,9 @@ public class TestCaseListener {
     }
 
     private void renderGlobalFuzzersStatistics() {
+        if (reportingArguments.isTui()) {
+            return;
+        }
         long executions = executionStatisticsListener.getExecutionsPerPath("N/A");
         if (executions > 0) {
             String toRenderPreviousPath = "global" + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath("N/A");
@@ -413,6 +436,9 @@ public class TestCaseListener {
     }
 
     private void markPreviousPathAsDone() {
+        if (!reportingArguments.isSummaryInConsole()) {
+            return;
+        }
         String previousPath = runPerPathListener.peek();
         if (previousPath != null) {
             String toRenderPreviousPath = previousPath + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(previousPath);
@@ -441,7 +467,12 @@ public class TestCaseListener {
 
         String osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
 
-        ConsoleUtils.emptyLine();
+        executionEventPublisher.publish(new CatsExecutionEvent.SessionStarted(Instant.now(), appName, appVersion,
+                appBuildTime, osDetails));
+
+        if (!reportingArguments.isTui()) {
+            ConsoleUtils.emptyLine();
+        }
         logger.start("Starting {}-{}, build time {} UTC, platform {}",
                 AnsiUtils.green(appName),
                 AnsiUtils.green(appVersion),
@@ -500,7 +531,9 @@ public class TestCaseListener {
             testReportsGenerator.writeTopFuzzers(testCaseSummaryDetails);
             testReportsGenerator.writePerformanceReport(testCaseExecutionDetails);
             testReportsGenerator.printExecutionDetails();
-            writeRecordedErrorsIfPresent();
+            if (!reportingArguments.isTui()) {
+                writeRecordedErrorsIfPresent();
+            }
         } catch (Exception e) {
             logger.error("Error while ending sessions {}", e.getMessage());
         }
@@ -669,7 +702,7 @@ public class TestCaseListener {
      * @param catsResponse the CatsResponse object
      */
     private void renderProgress(CatsResponse catsResponse) {
-        if (reportingArguments.isPrintProgress()) {
+        if (reportingArguments.isPrintProgress() && !reportingArguments.isTui()) {
             ConsoleUtils.renderSameRowAndMoveToNextLine("+ " + catsResponse.getPath());
         }
     }

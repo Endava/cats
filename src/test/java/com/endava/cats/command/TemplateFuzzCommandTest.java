@@ -2,6 +2,7 @@ package com.endava.cats.command;
 
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
@@ -48,6 +49,21 @@ class TemplateFuzzCommandTest {
         Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
         ReflectionTestUtils.setField(templateFuzzCommand, "spec", spec);
         Assertions.assertThatThrownBy(() -> templateFuzzCommand.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("Missing required option --data=<data>");
+    }
+
+    @Test
+    void shouldRejectTuiInsteadOfSilentlySuppressingTemplateOutput() {
+        TemplateFuzzCommand command = new TemplateFuzzCommand();
+        ReportingArguments arguments = Mockito.mock(ReportingArguments.class);
+        CommandLine.Model.CommandSpec commandSpec = Mockito.mock(CommandLine.Model.CommandSpec.class);
+        Mockito.when(arguments.isTui()).thenReturn(true);
+        Mockito.when(commandSpec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
+        ReflectionTestUtils.setField(command, "reportingArguments", arguments);
+        ReflectionTestUtils.setField(command, "spec", commandSpec);
+
+        Assertions.assertThatThrownBy(command::run)
+                .isInstanceOf(CommandLine.ParameterException.class)
+                .hasMessageContaining("not supported by the template command");
     }
 
     @Test

@@ -52,6 +52,22 @@ Even more, you can leverage the fact that CATS generates request payloads dynami
   <img alt="CATS" width="100%" src="images/run_result.png"/>
 </div>
 
+## Terminal interface
+
+Use `--tui` on a normal fuzzing command to follow execution and inspect results without leaving the terminal:
+
+```shell
+cats --contract openapi.yml --server http://localhost:8080 --tui
+```
+
+The overview shows Paths, Run configuration, Response time, HTTP Response Codes, Success/Warnings/Errors, and Fuzzers run using the same terminology as the CLI and HTML report. The fuzzer table uses all available terminal rows; use `j`/`k` or Page Up/Page Down to browse it when the complete list does not fit. Press `2` for Execution Details, `3` for the Execution summary and Quality gate result, `4` for Execution Details by Result Reason, `5` for Paths included, or `6` for executed tests sorted by Response Time. Result Reason and Path rows open their matching tests with Enter.
+
+Use the arrow keys or `j`/`k` to select a test, and press Enter to inspect its request, response, result, trace, and replay command in a full-screen detail view. Press `/` in the test list to search test IDs, fuzzers, paths, scenarios, result reasons, methods, results, and response codes. `a`, `e`, `w`, `s`, and `i` filter all, error, warning, successful, and skipped results. Esc first clears an active search and otherwise returns to the previous screen; `1` opens the overview.
+
+Press `q` to leave the interface. During an active run this requests cancellation, finishes the current test where possible, preserves results already written, and exits with status `130`. After execution has finished, `q` exits normally.
+
+The TUI requires an interactive terminal of at least 80 columns by 24 rows and cannot be combined with `--dryRun`. It is available for OpenAPI-backed fuzzing commands; the standalone `template` command continues to use normal CLI output. The TUI retains the most recent 10,000 test details by default; use `--tuiMaxResults` to choose a different positive limit. Aggregate statistics continue to cover the complete run when older details are discarded.
+
 # Tutorials on how to use CATS
 
 This is a list of articles with step-by-step guides on how to use CATS:

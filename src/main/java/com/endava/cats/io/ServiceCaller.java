@@ -1,14 +1,15 @@
 package com.endava.cats.io;
 
 import com.endava.cats.annotations.DryRun;
-import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.api.Parser;
+import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.model.CatsRequest;
@@ -17,11 +18,11 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.RateLimiter;
 import com.endava.cats.util.HttpHeaders;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.util.RateLimiter;
 import com.endava.cats.util.WordUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -158,6 +159,15 @@ public class ServiceCaller {
         } catch (GeneralSecurityException | IOException e) {
             logger.warning("Failed to configure HTTP CLIENT: {}", e.getMessage());
             logger.debug("Stacktrace", e);
+        }
+    }
+
+    /**
+     * Cancels HTTP calls that are active or waiting in the client dispatcher.
+     */
+    public void cancelActiveCalls() {
+        if (okHttpClient != null) {
+            okHttpClient.dispatcher().cancelAll();
         }
     }
 
@@ -460,7 +470,7 @@ public class ServiceCaller {
      * @throws IOException If an I/O error occurs during the service call.
      */
     public CatsResponse callService(CatsRequest catsRequest, Set<String> fuzzedFields) throws IOException {
-        rateLimiter.acquire();
+        acquireRateLimitPermit();
         long startTime = System.currentTimeMillis();
         RequestBody requestBody = null;
         Headers.Builder headers = new Headers.Builder();
@@ -492,6 +502,12 @@ public class ServiceCaller {
 
             return catsResponse;
         }
+    }
+
+    private void acquireRateLimitPermit() {
+        CatsExecutionCancelledException.check();
+        rateLimiter.acquire();
+        CatsExecutionCancelledException.check();
     }
 
     private CatsResponse.CatsResponseBuilder populateCatsResponseFromHttpResponse(Response response) throws IOException {

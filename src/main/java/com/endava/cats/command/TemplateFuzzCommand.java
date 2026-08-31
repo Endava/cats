@@ -158,6 +158,10 @@ public class TemplateFuzzCommand implements Runnable {
 
     @Override
     public void run() {
+        if (reportingArguments.isTui()) {
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    "--tui is not supported by the template command; use an OpenAPI-backed fuzzing command");
+        }
         try {
             this.init();
             String payload = this.loadPayload();

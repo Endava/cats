@@ -17,16 +17,23 @@ import com.endava.cats.command.model.CommandContext;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.handler.api.SchemaWalker;
 import com.endava.cats.openapi.handler.index.SpecPositionIndex;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.tui.event.CatsExecutionEvent;
+import com.endava.cats.tui.event.CatsExecutionEventPublisher;
+import com.endava.cats.tui.CatsTuiLauncher;
+import com.endava.cats.tui.model.RunConfigurationSnapshot;
+import com.endava.cats.tui.model.RunSummarySnapshot;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
@@ -47,6 +54,7 @@ import picocli.CommandLine;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
@@ -94,7 +102,8 @@ import java.util.stream.Collectors;
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
         exitCodeList = {"@|bold  0|@:Successful program execution",
                 "@|bold 2|@:Usage error: user input for the command was incorrect",
-                "@|bold 1|@:Internal execution error: an exception occurred when executing command"},
+                "@|bold 1|@:Internal execution error: an exception occurred when executing command",
+                "@|bold 130|@:Execution cancelled from the terminal interface"},
         footerHeading = "%n@|bold,underline Examples:|@%n",
         footer = {"  Run CATS in blackbox mode and only report 500 http error codes:",
                 "    cats -c openapi.yml -s http://localhost:8080 -b -k",
@@ -117,6 +126,7 @@ import java.util.stream.Collectors;
         })
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, AutoCloseable {
 
+    static final int CANCELLED_EXIT_CODE = 130;
     private final PrettyLogger logger;
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -127,6 +137,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     FunctionalFuzzer functionalFuzzer;
     @Inject
     TestCaseListener testCaseListener;
+    @Inject
+    CatsExecutionEventPublisher executionEventPublisher;
+    @Inject
+    CatsTuiLauncher tuiLauncher;
+    @Inject
+    ServiceCaller serviceCaller;
 
     @CommandLine.Mixin
     ConfigOptions configOptions;
@@ -255,6 +271,37 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     @Override
     public void run() {
+        if (reportingArguments.isTui()) {
+            if (filterArguments.isDryRun()) {
+                System.err.println("--tui cannot be combined with --dryRun");
+                exitCodeDueToErrors = CommandLine.ExitCode.USAGE;
+                return;
+            }
+            if (reportingArguments.getTuiMaxResults() < 1) {
+                System.err.println("--tuiMaxResults must be greater than zero");
+                exitCodeDueToErrors = CommandLine.ExitCode.USAGE;
+                return;
+            }
+            reportingArguments.processLogData();
+            try {
+                if (tuiLauncher.run(this::executeSession, serviceCaller::cancelActiveCalls,
+                        reportingArguments.getTuiMaxResults())) {
+                    exitCodeDueToErrors = CANCELLED_EXIT_CODE;
+                }
+            } catch (RuntimeException e) {
+                System.err.println("Unable to run the CATS terminal interface: " + e.getMessage());
+                exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
+            } finally {
+                reportingArguments.restoreLogDataAfterTui();
+            }
+            return;
+        }
+        executeSession();
+    }
+
+    private void executeSession() {
+        String failureMessage = null;
+        boolean cancelled = false;
         try {
             Future<VersionChecker.CheckResult> newVersion = this.checkForNewVersion();
             testCaseListener.startSession();
@@ -262,13 +309,35 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             this.printSuggestions();
             this.printVersion(newVersion);
         } catch (InterruptedException _) {
-            Thread.currentThread().interrupt();
+            cancelled = true;
+            failureMessage = "Execution cancelled by user";
+            exitCodeDueToErrors = CANCELLED_EXIT_CODE;
+            Thread.interrupted();
+        } catch (CatsExecutionCancelledException e) {
+            cancelled = true;
+            failureMessage = e.getMessage();
+            exitCodeDueToErrors = CANCELLED_EXIT_CODE;
+            Thread.interrupted();
         } catch (CatsException | IOException | ExecutionException | IllegalArgumentException e) {
+            failureMessage = e.toString();
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
             logger.debug("Stacktrace: {}", e);
             exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
         } finally {
             testCaseListener.endSession();
+            if (executionEventPublisher.hasSubscribers()) {
+                if (cancelled) {
+                    executionEventPublisher.publish(new CatsExecutionEvent.SessionCancelled(Instant.now(), failureMessage));
+                } else if (failureMessage == null) {
+                    boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(
+                            executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
+                    executionEventPublisher.publish(new CatsExecutionEvent.SessionCompleted(Instant.now(),
+                            RunSummarySnapshot.from(executionStatisticsListener, qualityGatePassed,
+                                    qualityGateArguments.getQualityGateDescription())));
+                } else {
+                    executionEventPublisher.publish(new CatsExecutionEvent.SessionFailed(Instant.now(), failureMessage));
+                }
+            }
         }
     }
 
@@ -285,7 +354,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     private void doLogic() throws IOException {
         this.prepareRun();
+        CatsExecutionCancelledException.check();
         OpenAPI openAPI = this.createOpenAPI();
+        CatsExecutionCancelledException.check();
         this.checkOpenAPI(openAPI);
         apiArguments.validateValidServer(spec, openAPI);
         filterArguments.validateValidPaths(openAPI);
@@ -296,6 +367,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         this.initSchemaWalker(openAPI);
         testCaseListener.renderFuzzingHeader();
         this.startFuzzing(openAPI);
+        CatsExecutionCancelledException.check();
         this.executeCustomFuzzer();
     }
 
@@ -342,6 +414,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         }
         globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties(), catsConfiguration,
                 filesArguments.getErrorLeaksKeywordsList(), refs);
+        executionEventPublisher.publish(new CatsExecutionEvent.ConfigurationLoaded(Instant.now(),
+                RunConfigurationSnapshot.from(catsConfiguration)));
 
         logger.debug("Fuzzers custom configuration: {}", globalContext.getFuzzersConfiguration());
         logger.debug("Schemas: {}", globalContext.getSchemaMap().keySet());
@@ -351,6 +425,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         List<String> suppliedPaths = filterArguments.getPathsToRun(openAPI);
 
         for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI, filesArguments.getPathsOrder())) {
+            CatsExecutionCancelledException.check();
             if (suppliedPaths.contains(entry.getKey())) {
                 this.fuzzPath(entry, openAPI);
             } else {
@@ -373,8 +448,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
 
     private void executeCustomFuzzer() throws IOException {
+        CatsExecutionCancelledException.check();
         if (filterArguments.getSuppliedFuzzers().contains(FunctionalFuzzer.class.getSimpleName())) {
             functionalFuzzer.executeCustomFuzzerTests();
+            CatsExecutionCancelledException.check();
             functionalFuzzer.replaceRefData();
         }
     }
@@ -438,6 +515,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     private void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
+        executionEventPublisher.publish(new CatsExecutionEvent.PathStarted(Instant.now(), pathItemEntry.getKey()));
+        fuzzPathInternal(pathItemEntry, openAPI);
+        executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), pathItemEntry.getKey()));
+    }
+
+    private void fuzzPathInternal(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
         String ansiString = AnsiUtils.bold("Start fuzzing path {}");
         logger.start(ansiString, pathItemEntry.getKey());
@@ -469,12 +552,17 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         /*We only run the fuzzers supplied and exclude those that do not apply for certain HTTP methods*/
 
         for (Fuzzer fuzzer : configuredFuzzers) {
+            CatsExecutionCancelledException.check();
             List<FuzzingData> filteredData = this.filterFuzzingData(fuzzingDataListWithHttpMethodsFiltered, fuzzer);
-            filteredData.forEach(data -> runSingleFuzzer(fuzzer, data));
+            for (FuzzingData data : filteredData) {
+                CatsExecutionCancelledException.check();
+                runSingleFuzzer(fuzzer, data);
+            }
         }
     }
 
     private void runSingleFuzzer(Fuzzer fuzzer, FuzzingData data) {
+        CatsExecutionCancelledException.check();
         if (data.shouldSkipFuzzerForPath(fuzzer.toString())) {
             logger.skip("Skipping Fuzzer {} for path {} due to OpenAPI extension configuration",
                     AnsiUtils.yellow(fuzzer.toString()), data.getPath());
@@ -483,16 +571,20 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
         logFuzzerStart(fuzzer, data);
 
-        if (!(fuzzer instanceof FunctionalFuzzer)) {
+        boolean reportsFuzzerLifecycle = !(fuzzer instanceof FunctionalFuzzer);
+        if (reportsFuzzerLifecycle) {
             testCaseListener.beforeFuzz(fuzzer.getClass(), data.getContractPath(), data.getMethod().name());
         }
 
-        fuzzer.fuzz(data);
-
-        if (!(fuzzer instanceof FunctionalFuzzer)) {
-            testCaseListener.afterFuzz(data.getContractPath());
+        try {
+            fuzzer.fuzz(data);
+        } finally {
+            if (reportsFuzzerLifecycle) {
+                testCaseListener.afterFuzz(data.getContractPath());
+            }
         }
 
+        CatsExecutionCancelledException.check();
         logFuzzerEnd(fuzzer, data);
     }
 

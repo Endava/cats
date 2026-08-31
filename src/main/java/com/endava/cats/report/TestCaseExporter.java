@@ -181,7 +181,7 @@ public abstract class TestCaseExporter {
             return;
         }
         String redCross = AnsiUtils.red("✖");
-        ConsoleUtils.emptyLine();
+        emptyConsoleLine();
         logger.info("Errors by reason:");
         resultReasonCounts.forEach((reason, count) ->
                 logger.noFormat(" {} {}: {} errors", redCross, reason, count));
@@ -197,11 +197,13 @@ public abstract class TestCaseExporter {
         if (reportingArguments.isPrintExecutionStatistics()) {
             Map<String, List<CatsTestCaseExecutionSummary>> executionDetails = extractExecutionDetails(executionSummaries);
 
-            ConsoleUtils.renderHeader(" Execution time details ");
-            ConsoleUtils.emptyLine();
+            if (!reportingArguments.isTui()) {
+                ConsoleUtils.renderHeader(" Execution time details ");
+            }
+            emptyConsoleLine();
             executionDetails.forEach(this::writeExecutionTimesForPathAndHttpMethod);
         } else {
-            ConsoleUtils.emptyLine();
+            emptyConsoleLine();
             logger.info("Skip printing time execution statistics. You can use --printExecutionStatistics to enable this feature!");
         }
     }
@@ -247,7 +249,7 @@ public abstract class TestCaseExporter {
         logger.timer(AnsiUtils.yellow("Average response time: {}ms"), AnsiUtils.bold(NumberFormat.getInstance().format(timeExecutionDetails.getAverage())));
         logger.timer(AnsiUtils.red("Worst case response time: {}"), AnsiUtils.bold(timeExecutionDetails.getWorstCase().executionTimeString()));
         logger.timer(AnsiUtils.green("Best case response time: {}"), AnsiUtils.bold(timeExecutionDetails.getBestCase().executionTimeString()));
-        ConsoleUtils.emptyLine();
+        emptyConsoleLine();
 
         if (reportingArguments.isPrintDetailedExecutionStatistics()) {
             logger.timer("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
@@ -272,7 +274,7 @@ public abstract class TestCaseExporter {
         long skippedFromReporting = executionStatisticsListener.getSkippedFromReporting();
         long reportedResults = executionStatisticsListener.getAll();
 
-        ConsoleUtils.emptyLine();
+        emptyConsoleLine();
 
         // Print main execution summary
         if (skippedFromReporting > 0) {
@@ -461,7 +463,7 @@ public abstract class TestCaseExporter {
         if (topFuzzers.isEmpty()) {
             return;
         }
-        ConsoleUtils.emptyLine();
+        emptyConsoleLine();
         logger.info("Top 5 fuzzers with most errors:");
         for (Map.Entry<String, Long> fuzzer : topFuzzers) {
             logger.noFormat(" ◼ {} - {} errors", fuzzer.getKey(), fuzzer.getValue());
@@ -543,6 +545,12 @@ public abstract class TestCaseExporter {
      */
     protected boolean isJavascript() {
         return false;
+    }
+
+    private void emptyConsoleLine() {
+        if (!reportingArguments.isTui()) {
+            ConsoleUtils.emptyLine();
+        }
     }
 
     /**

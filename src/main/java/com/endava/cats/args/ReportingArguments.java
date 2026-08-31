@@ -62,6 +62,14 @@ public class ReportingArguments {
             description = "Make selected commands output to console in JSON format")
     private boolean jsonOutput;
 
+    @CommandLine.Option(names = {"--tui"},
+            description = "Run fuzzing in an interactive terminal interface")
+    private boolean tui;
+
+    @CommandLine.Option(names = {"--tuiMaxResults"}, defaultValue = "10000",
+            description = "Maximum number of recent test details retained by the terminal interface. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private int tuiMaxResults = 10_000;
+
     @CommandLine.Option(names = {"--checkUpdate"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "If true, it checks if there is a CATS update available and prints the release notes along with the download link. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean checkUpdate = true;
@@ -113,6 +121,22 @@ public class ReportingArguments {
      * Processes log data based on --verbosity.
      */
     public void processLogData() {
+        if (tui) {
+            PrettyLogger.disableLevels(PrettyLevel.values());
+            return;
+        }
+        if (verbosity == Verbosity.SUMMARY) {
+            prepareSummaryLogging();
+        } else {
+            prepareDetailedLogging();
+        }
+    }
+
+    /**
+     * Restores the logging configuration after the terminal interface releases the console.
+     * This matters when CATS is embedded and more than one command is executed in the same JVM.
+     */
+    public void restoreLogDataAfterTui() {
         if (verbosity == Verbosity.SUMMARY) {
             prepareSummaryLogging();
         } else {
@@ -149,7 +173,7 @@ public class ReportingArguments {
      * Enables additional logging typically needed to log statistical data after fuzzing is performed.
      */
     public void enableAdditionalLoggingIfSummary() {
-        if (this.isSummaryInConsole()) {
+        if (!tui && this.isSummaryInConsole()) {
             PrettyLogger.enableLevels(PrettyLevel.STAR, PrettyLevel.COMPLETE, PrettyLevel.NONE, PrettyLevel.INFO, PrettyLevel.TIMER, PrettyLevel.FATAL);
         }
     }
@@ -170,7 +194,7 @@ public class ReportingArguments {
      * @return true if --verbosity=SUMMARY, false otherwise
      */
     public boolean isSummaryInConsole() {
-        return verbosity == Verbosity.SUMMARY;
+        return !tui && verbosity == Verbosity.SUMMARY;
     }
 
     /**

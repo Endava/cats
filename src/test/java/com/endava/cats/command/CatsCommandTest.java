@@ -12,9 +12,11 @@ import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.contract.PathTagsLinter;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
+import com.endava.cats.tui.CatsTuiLauncher;
 import com.endava.cats.util.VersionChecker;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -22,6 +24,7 @@ import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
@@ -77,6 +80,50 @@ class CatsCommandTest {
         VersionChecker.CheckResult result = resultFuture.get();
         Assertions.assertThat(result.isNewVersion()).isTrue();
         Assertions.assertThat(result.getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void shouldReturnCancelledExitCodeWhenTuiStopsLiveExecution() {
+        CatsCommand command = new CatsCommand();
+        ReportingArguments tuiArguments = Mockito.mock(ReportingArguments.class);
+        CatsTuiLauncher launcher = Mockito.mock(CatsTuiLauncher.class);
+        ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
+        Mockito.when(tuiArguments.isTui()).thenReturn(true);
+        Mockito.when(tuiArguments.getTuiMaxResults()).thenReturn(10_000);
+        Mockito.when(launcher.run(Mockito.any(Runnable.class), Mockito.any(Runnable.class), Mockito.eq(10_000)))
+                .thenReturn(true);
+        ReflectionTestUtils.setField(command, "reportingArguments", tuiArguments);
+        ReflectionTestUtils.setField(command, "tuiLauncher", launcher);
+        ReflectionTestUtils.setField(command, "serviceCaller", serviceCaller);
+        ReflectionTestUtils.setField(command, "filterArguments", Mockito.mock(FilterArguments.class));
+
+        command.run();
+
+        Assertions.assertThat(command.getExitCode()).isEqualTo(CatsCommand.CANCELLED_EXIT_CODE);
+        ArgumentCaptor<Runnable> cancellationAction = ArgumentCaptor.forClass(Runnable.class);
+        Mockito.verify(launcher).run(Mockito.any(Runnable.class), cancellationAction.capture(), Mockito.eq(10_000));
+        cancellationAction.getValue().run();
+        Mockito.verify(serviceCaller).cancelActiveCalls();
+        Mockito.verify(tuiArguments).restoreLogDataAfterTui();
+    }
+
+    @Test
+    void shouldRejectDryRunWithTui() {
+        CatsCommand command = new CatsCommand();
+        ReportingArguments tuiArguments = Mockito.mock(ReportingArguments.class);
+        FilterArguments filters = Mockito.mock(FilterArguments.class);
+        CatsTuiLauncher launcher = Mockito.mock(CatsTuiLauncher.class);
+        Mockito.when(tuiArguments.isTui()).thenReturn(true);
+        Mockito.when(filters.isDryRun()).thenReturn(true);
+        ReflectionTestUtils.setField(command, "reportingArguments", tuiArguments);
+        ReflectionTestUtils.setField(command, "filterArguments", filters);
+        ReflectionTestUtils.setField(command, "tuiLauncher", launcher);
+
+        command.run();
+
+        Assertions.assertThat(command.getExitCode()).isEqualTo(CommandLine.ExitCode.USAGE);
+        Mockito.verifyNoInteractions(launcher);
+        Mockito.verify(tuiArguments, Mockito.never()).restoreLogDataAfterTui();
     }
 
     @Test
