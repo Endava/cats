@@ -82,6 +82,7 @@ public class HeadersIteratorExecutor {
                                     .payload(context.getFuzzingData().getPayload())
                                     .fuzzedHeader(header.getName())
                                     .queryParams(context.getFuzzingData().getQueryParams())
+                                    .queryParameterSerializations(context.getFuzzingData().getQueryParameterSerializations())
                                     .httpMethod(context.getFuzzingData().getMethod())
                                     .contentType(context.getFuzzingData().getFirstRequestContentType())
                                     .pathParamsPayload(context.getFuzzingData().getPathParamsPayload())

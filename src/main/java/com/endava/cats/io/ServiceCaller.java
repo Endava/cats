@@ -14,6 +14,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
@@ -326,7 +327,11 @@ public class ServiceCaller {
         for (String queryParam : queryParams) {
             Object paramValue = JsonUtils.getVariableFromJson(pathParamsPayload, queryParam);
             if (paramValue != null && !JsonUtils.NOT_SET.equals(String.valueOf(paramValue))) {
-                httpUrl.addQueryParameter(queryParam, String.valueOf(paramValue));
+                String serializedValue = JsonUtils.serialize(paramValue);
+                if (serializedValue != null) {
+                    buildQueryParameter(queryParam, JsonParser.parseString(serializedValue), data)
+                            .forEach(param -> httpUrl.addQueryParameter(param.getKey(), param.getValue()));
+                }
             }
         }
 
@@ -598,15 +603,43 @@ public class ServiceCaller {
             } else if (!data.getPathParams().contains(child.getKey()) || data.getQueryParams().contains(child.getKey()) || CatsDSLWords.isExtraField(child.getKey())) {
                 if (child.getValue().isJsonNull()) {
                     logger.debug("Not adding null query parameter {}", child.getKey());
-                } else if (child.getValue().isJsonArray()) {
-                    queryParams.add(new KeyValuePair<>(child.getKey(), child.getValue().toString().replace("[", "")
-                            .replace("]", "").replace("\"", "")));
                 } else {
-                    queryParams.add(new KeyValuePair<>(child.getKey(), child.getValue().getAsString()));
+                    queryParams.addAll(buildQueryParameter(child.getKey(), child.getValue(), data));
                 }
             }
         }
         return queryParams;
+    }
+
+    private List<KeyValuePair<String, String>> buildQueryParameter(String name, JsonElement value, ServiceData data) {
+        if (!value.isJsonArray()) {
+            return List.of(new KeyValuePair<>(name, value.getAsString()));
+        }
+
+        List<String> values = new ArrayList<>();
+        value.getAsJsonArray().forEach(item -> {
+            if (!item.isJsonNull()) {
+                values.add(item.isJsonPrimitive() ? item.getAsString() : item.toString());
+            }
+        });
+        if (values.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        QueryParameterSerialization serialization = Optional.ofNullable(data.getQueryParameterSerializations())
+                .orElseGet(Collections::emptyMap)
+                .getOrDefault(name, QueryParameterSerialization.defaults());
+
+        if (QueryParameterSerialization.FORM.equals(serialization.style()) && serialization.explode()) {
+            return values.stream().map(item -> new KeyValuePair<>(name, item)).toList();
+        }
+
+        String delimiter = switch (serialization.style()) {
+            case "spaceDelimited" -> " ";
+            case "pipeDelimited" -> "|";
+            default -> ",";
+        };
+        return List.of(new KeyValuePair<>(name, String.join(delimiter, values)));
     }
 
     /**

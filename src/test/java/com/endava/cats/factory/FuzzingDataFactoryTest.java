@@ -10,6 +10,7 @@ import com.endava.cats.model.CatsField;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
+import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.JsonUtils;
@@ -1381,6 +1382,25 @@ class FuzzingDataFactoryTest {
 
         List<Parameter> merged = fuzzingDataFactory.mergeParameters(pathItem, operation);
         Assertions.assertThat(merged).hasSize(2);
+    }
+
+    @Test
+    void shouldExtractQueryParameterSerializationWithOpenApiDefaults() {
+        Parameter defaultQueryParam = new Parameter().name("severity").in("query");
+        Parameter commaSeparatedQueryParam = new Parameter().name("status").in("query")
+                .style(Parameter.StyleEnum.FORM).explode(false);
+        Parameter spaceDelimitedQueryParam = new Parameter().name("tags").in("query")
+                .style(Parameter.StyleEnum.SPACEDELIMITED);
+        Parameter pathParam = new Parameter().name("id").in("path");
+
+        Map<String, QueryParameterSerialization> result = fuzzingDataFactory.extractQueryParameterSerializations(
+                List.of(defaultQueryParam, commaSeparatedQueryParam, spaceDelimitedQueryParam, pathParam));
+
+        Assertions.assertThat(result)
+                .containsEntry("severity", new QueryParameterSerialization("form", true))
+                .containsEntry("status", new QueryParameterSerialization("form", false))
+                .containsEntry("tags", new QueryParameterSerialization("spaceDelimited", false))
+                .doesNotContainKey("id");
     }
 
     @Test

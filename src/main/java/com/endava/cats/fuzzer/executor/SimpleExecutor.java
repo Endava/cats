@@ -68,6 +68,7 @@ public class SimpleExecutor {
                             .headers(context.getHeaders())
                             .payload(context.getPayload())
                             .queryParams(context.getFuzzingData().getQueryParams())
+                            .queryParameterSerializations(context.getFuzzingData().getQueryParameterSerializations())
                             .httpMethod(context.getHttpMethod())
                             .contentType(context.getFuzzingData().getFirstRequestContentType())
                             .replaceRefData(context.isReplaceRefData())

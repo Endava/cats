@@ -122,6 +122,7 @@ public class FieldsIteratorExecutor {
                         .headers(context.getFuzzingData().getHeaders())
                         .payload(fuzzingResult.json())
                         .queryParams(context.getFuzzingData().getQueryParams())
+                        .queryParameterSerializations(context.getFuzzingData().getQueryParameterSerializations())
                         .httpMethod(context.getFuzzingData().getMethod())
                         .contentType(context.getFuzzingData().getFirstRequestContentType())
                         .replaceRefData(context.isReplaceRefData())

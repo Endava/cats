@@ -2,6 +2,7 @@ package com.endava.cats.io;
 
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
+import com.endava.cats.model.QueryParameterSerialization;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
@@ -9,6 +10,7 @@ import lombok.Singular;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -49,6 +51,8 @@ public class ServiceData {
     private final Set<String> pathParams = new HashSet<>();
     @Builder.Default
     private final Set<String> queryParams = new HashSet<>();
+    @Builder.Default
+    private final Map<String, QueryParameterSerialization> queryParameterSerializations = Map.of();
 
     /**
      * Checks if the content type of the response is JSON.

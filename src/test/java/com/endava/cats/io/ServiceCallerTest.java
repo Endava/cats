@@ -9,6 +9,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.KeyValuePair;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -785,6 +786,41 @@ class ServiceCallerTest {
                 .build();
         String result = serviceCaller.constructUrl(data, "{}");
         Assertions.assertThat(result).doesNotContain("param=");
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+            "form;true;/items?severity=low&severity=high",
+            "form;false;/items?severity=low%2Chigh",
+            "spaceDelimited;false;/items?severity=low%20high",
+            "pipeDelimited;false;/items?severity=low%7Chigh"}, delimiter = ';')
+    void shouldSerializeArrayQueryParamsAccordingToOpenApiStyle(String style, boolean explode, String expectedPath) {
+        ServiceData data = ServiceData.builder()
+                .relativePath("/items")
+                .payload("{\"severity\":[\"low\",\"high\"]}")
+                .queryParams(Set.of("severity"))
+                .queryParameterSerializations(Map.of("severity", new QueryParameterSerialization(style, explode)))
+                .httpMethod(HttpMethod.GET)
+                .build();
+
+        String result = serviceCaller.constructUrl(data, data.getPayload());
+
+        Assertions.assertThat(result).endsWith(expectedPath);
+    }
+
+    @Test
+    void shouldUseOpenApiQueryDefaultsForArrayParamsOnBodyMethods() {
+        ServiceData data = ServiceData.builder()
+                .relativePath("/items")
+                .payload("{\"name\":\"test\"}")
+                .pathParamsPayload("{\"severity\":[\"low\",\"high\"]}")
+                .queryParams(Set.of("severity"))
+                .httpMethod(HttpMethod.POST)
+                .build();
+
+        String result = serviceCaller.constructUrl(data, data.getPayload());
+
+        Assertions.assertThat(result).endsWith("/items?severity=low&severity=high");
     }
 
     @Test

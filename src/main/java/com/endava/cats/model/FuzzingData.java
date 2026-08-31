@@ -50,6 +50,8 @@ public class FuzzingData {
     private final Map<String, Schema> requestPropertyTypes;
     private final List<String> requestContentTypes;
     private final Set<String> queryParams;
+    @Builder.Default
+    private final Map<String, QueryParameterSerialization> queryParameterSerializations = Collections.emptyMap();
     private final OpenAPI openApi;
     private final List<String> tags;
     private final String reqSchemaName;

@@ -9,6 +9,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
+import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsRandom;
@@ -136,6 +137,19 @@ public class FuzzingDataFactory {
             return Collections.emptySet();
         }
         return schema.getProperties().entrySet().stream().filter(entry -> entry.getValue().getName().endsWith("query")).map(Map.Entry::getKey).collect(Collectors.toSet());
+    }
+
+    Map<String, QueryParameterSerialization> extractQueryParameterSerializations(List<Parameter> parameters) {
+        return getResolvedParameters(parameters).stream()
+                .filter(parameter -> "query".equalsIgnoreCase(parameter.getIn()))
+                .collect(Collectors.toMap(Parameter::getName, parameter -> {
+                    String style = Optional.ofNullable(parameter.getStyle())
+                            .map(Parameter.StyleEnum::toString)
+                            .orElse(QueryParameterSerialization.FORM);
+                    boolean explode = Optional.ofNullable(parameter.getExplode())
+                            .orElse(QueryParameterSerialization.FORM.equals(style));
+                    return new QueryParameterSerialization(style, explode);
+                }));
     }
 
     /**
@@ -272,6 +286,8 @@ public class FuzzingDataFactory {
         //we need this in order to be able to generate path params if not supplied by the user
         String pathParamsExample = this.getRequestPayloadsSamples(null, paramsSchema.getKey()).examplePayloads().getFirst();
         Set<String> queryParams = this.extractQueryParams(paramsSchema.getValue());
+        Map<String, QueryParameterSerialization> queryParameterSerializations =
+                this.extractQueryParameterSerializations(mergeParameters(item, operation));
         logger.debug("Query params for path {}, method {}: {}", path, method, queryParams);
 
         Set<Object> examples = this.extractExamples(mediaType);
@@ -314,6 +330,7 @@ public class FuzzingDataFactory {
                             .responseHeaders(responseHeaders)
                             .pathParamsPayload(pathParamsExample)
                             .queryParams(queryParams)
+                            .queryParameterSerializations(queryParameterSerializations)
                             .build()).toList());
         }
 
@@ -382,6 +399,8 @@ public class FuzzingDataFactory {
 
         KeyValuePair<String, Schema<?>> syntheticSchema = createSyntheticSchemaForGet(item, operation);
         Set<String> queryParams = this.extractQueryParams(syntheticSchema.getValue());
+        Map<String, QueryParameterSerialization> queryParameterSerializations =
+                this.extractQueryParameterSerializations(mergeParameters(item, operation));
         logger.debug("Query params for path {}, method {}: {}", path, method, queryParams);
 
         GenerationResult generationResult = this.getRequestPayloadsSamples(null, syntheticSchema.getKey());
@@ -409,6 +428,7 @@ public class FuzzingDataFactory {
                         .requestPropertyTypes(generationResult.requestDataTypes())
                         .requestContentTypes(requestContentTypes)
                         .queryParams(queryParams)
+                        .queryParameterSerializations(queryParameterSerializations)
                         .openApi(openAPI)
                         .tags(operation.getTags())
                         .reqSchemaName(SYNTH_SCHEMA_NAME)
