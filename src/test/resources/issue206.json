@@ -1,0 +1,32 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Response example regression",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/probe": {
+      "get": {
+        "operationId": "probe",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "example": {"a": "schema-level-example"},
+                  "properties": {
+                    "a": {"type": "string"},
+                    "b": {"type": "string"}
+                  }
+                },
+                "example": {"a": "x"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

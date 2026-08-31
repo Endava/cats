@@ -1041,7 +1041,10 @@ public class TestCaseListener {
     }
 
     private List<String> getExpectedResponsesByResponseCode(CatsResponse response, FuzzingData data) {
-        Map<String, List<String>> responsesMap = Optional.ofNullable(data.getResponses()).orElse(Collections.emptyMap());
+        Map<String, List<String>> responseSchemas = Optional.ofNullable(data.getResponseSchemas()).orElse(Collections.emptyMap());
+        Map<String, List<String>> responsesMap = responseSchemas.isEmpty()
+                ? Optional.ofNullable(data.getResponses()).orElse(Collections.emptyMap())
+                : responseSchemas;
         List<String> responses = responsesMap.get(response.responseCodeAsString());
 
         if (CatsUtil.isEmpty(responses)) {

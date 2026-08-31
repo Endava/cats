@@ -552,6 +552,29 @@ class TestCaseListenerTest {
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [400] is documented and response body matches the corresponding schema.");
     }
 
+    @Test
+    void shouldMatchResponseSchemaInsteadOfPartialResponseExample() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        String responseBody = "{\"a\":\"x\",\"b\":\"y\"}";
+        Mockito.when(response.getBody()).thenReturn(responseBody);
+        Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString(responseBody));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("200", List.of("{\"a\":\"x\"}")));
+        Mockito.when(data.getResponseSchemas()).thenReturn(Map.of("200", List.of("{\"a\":\"generated\",\"b\":\"generated\"}")));
+        Mockito.when(response.responseCodeAsString()).thenReturn("200");
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("GET").build());
+            spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
+        }, FuzzingData.builder().build());
+
+        Mockito.verify(executionStatisticsListener).increaseSuccess(Mockito.any());
+        Mockito.verify(spyListener).reportInfo(logger,
+                "Response matches expected result. Response code [200] is documented and response body matches the corresponding schema.");
+    }
+
     @ParameterizedTest
     @CsvSource({"{}", "[]", "''", "' '"})
     void shouldReportInfoWhenResponseCode200IsExpectedAndResponseBodyIsEmpty(String body) {

@@ -45,6 +45,8 @@ public class FuzzingData {
     private final PathItem pathItem;
     private final Map<String, Schema> schemaMap;
     private final Map<String, List<String>> responses;
+    @Builder.Default
+    private final Map<String, List<String>> responseSchemas = Collections.emptyMap();
     private final Map<String, Schema> requestPropertyTypes;
     private final List<String> requestContentTypes;
     private final Set<String> queryParams;

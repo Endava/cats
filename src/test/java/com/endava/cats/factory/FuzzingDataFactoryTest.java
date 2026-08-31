@@ -259,6 +259,19 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldGenerateResponseSchemaShapeIndependentlyFromPartialResponseExample() throws Exception {
+        Mockito.when(processingArguments.isUseResponseBodyExamples()).thenReturn(true);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+
+        List<FuzzingData> data = setupFuzzingData("/probe", "src/test/resources/issue206.json");
+
+        Assertions.assertThat(data).hasSize(1);
+        FuzzingData fuzzingData = data.getFirst();
+        Assertions.assertThat(fuzzingData.getResponses().get("200").getFirst()).contains("a").doesNotContain("b");
+        Assertions.assertThat(fuzzingData.getResponseSchemas().get("200").getFirst()).contains("a", "b");
+    }
+
+    @Test
     void shouldUseExamplesWhenSchemaFlagEnabled() throws Exception {
         Mockito.when(processingArguments.getUseExamples()).thenReturn(false);
         Mockito.when(processingArguments.isUseSchemaExamples()).thenReturn(true);
