@@ -193,6 +193,31 @@ class JsonUtilsTest {
         Assertions.assertThat(JsonUtils.isCyclicReference(properties, 2)).isTrue();
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "related_projects#related_projects.items#related_project_id",
+            "related_teams#related_teams.items#related_team_id",
+            "color_palette#color_palette.items#color",
+            "user_settings#user_settings.items#user_setting_value",
+            "a_b#a_b.items#a_b_c"})
+    void shouldNotReturnCyclicWhenSnakeCaseLeafSharesAWordWithParentArray(String properties) {
+        Assertions.assertThat(JsonUtils.isCyclicReference(properties, 2)).isFalse();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "children#children.items#children#children.items#children#children.items",
+            "sub_items#sub_items.items#sub_items#sub_items.items#sub_items#sub_items.items"})
+    void shouldStillReturnCyclicForSelfReferencingArrays(String properties) {
+        Assertions.assertThat(JsonUtils.isCyclicReference(properties, 2)).isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"tree_node#tree_node#tree_node", "parent#child#parent#child#parent#child"})
+    void shouldStillReturnCyclicForSelfReferencingObjects(String properties) {
+        Assertions.assertThat(JsonUtils.isCyclicReference(properties, 2)).isTrue();
+    }
+
     @Test
     void shouldReturnJsonWhenValid() {
         String json = """
