@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -60,6 +62,7 @@ public class StringGenerator {
     private static final String[] TLDS = {".com", ".net", ".org", ".io"};
     private static final String[] URI_SCHEMES = {"http", "https", "ftp", "file"};
     private static final int TIMEOUT_MS = 200;
+    private static final long REGEX_MATCH_STACK_SIZE = 16L * 1024 * 1024;
 
     private static final List<String> SIMPLE_REGEXES = List.of("[A-Z]+", "[a-z]+", "[A-Za-z]+", "[0-9]+", "[A-Za-z0-9]+", "[A-Z0-9]+", "[a-z0-9]+", "\\w+", "[A-Za-z0-9_\\-#!]");
 
@@ -260,7 +263,7 @@ public class StringGenerator {
     public static String tryGenerateWithSimpleRegexes(String originalPattern, int min, int max, String cleanedPattern) {
         for (String simpleRegex : SIMPLE_REGEXES) {
             String generated = generateUsingRgxGenerator(new GeneratorParams(simpleRegex, min, max, simpleRegex));
-            if (generated.matches(originalPattern) || generated.matches(cleanedPattern)) {
+            if (matchesPattern(generated, originalPattern) || matchesPattern(generated, cleanedPattern)) {
                 LOGGER.debug("Generated value {} with simple regex matches original pattern {}", generated, originalPattern);
                 return generated;
             }
@@ -271,7 +274,7 @@ public class StringGenerator {
     public static String callGenerateTwice(Function<GeneratorParams, String> generator, GeneratorParams generatorParams) {
         try {
             String initialVersion = generator.apply(generatorParams);
-            if (initialVersion.matches(generatorParams.originalPattern())) {
+            if (matchesPattern(initialVersion, generatorParams.originalPattern())) {
                 LOGGER.debug("Generated value " + initialVersion + " matched " + generatorParams.originalPattern());
                 return initialVersion;
             }
@@ -283,7 +286,7 @@ public class StringGenerator {
             LOGGER.debug("Pattern with lookaheads removed {}", patternWithLookaheadsRemoved);
 
             String secondVersion = generator.apply(new GeneratorParams(patternWithLookaheadsRemoved, generatorParams.min, generatorParams.max, generatorParams.originalPattern()));
-            if (secondVersion.matches(generatorParams.originalPattern())) {
+            if (matchesPattern(secondVersion, generatorParams.originalPattern())) {
                 LOGGER.debug("Generated value with lookaheads removed " + secondVersion + " matched " + generatorParams.originalPattern());
                 return secondVersion;
             }
@@ -308,7 +311,7 @@ public class StringGenerator {
             }
             String generated = generator.generate(CatsRandom.regexpRandomGen(), min, max);
 
-            if (generated.matches(originalPattern)) {
+            if (matchesPattern(generated, originalPattern)) {
                 LOGGER.debug("Generated using REGEXP {} matches {}", generated, pattern);
                 return generated;
             }
@@ -331,13 +334,13 @@ public class StringGenerator {
             Pattern compiledPattern = Pattern.compile(pattern);
             String secondVersionBase = generateWithTimeout(compiledPattern, min, max);
 
-            if (secondVersionBase.matches(originalPattern)) {
+            if (matchesPattern(secondVersionBase, originalPattern)) {
                 LOGGER.debug("Generated using CATS generator {} and matches {}", secondVersionBase, pattern);
                 return secondVersionBase;
             }
             String generatedString = composeString(secondVersionBase, min, max);
 
-            if (generatedString.matches(originalPattern)) {
+            if (matchesPattern(generatedString, originalPattern)) {
                 LOGGER.debug("Generated using CATS generator {} and matches {}", generatedString, pattern);
                 return generatedString;
             }
@@ -383,18 +386,64 @@ public class StringGenerator {
             RgxGen rgxGen = RgxGen.parse(pattern);
             do {
                 generatedValue = rgxGen.generate(CatsRandom.instance());
-                if (matchesLength(pattern, min, max, generatedValue) && generatedValue.matches(originalPattern)) {
+                if (matchesLength(pattern, min, max, generatedValue) && matchesPattern(generatedValue, originalPattern)) {
                     return generatedValue;
                 }
                 generatedValue = composeString(generatedValue, min, max);
                 attempts++;
-            } while (attempts < MAX_ATTEMPTS_GENERATE && !generatedValue.matches(originalPattern));
+            } while (attempts < MAX_ATTEMPTS_GENERATE && !matchesPattern(generatedValue, originalPattern));
         } catch (Exception e) {
             LOGGER.debug("RGX generator failed, returning empty.", e);
             return ALPHANUMERIC_VALUE;
         }
         LOGGER.debug("Generated using RGX {}", generatedValue);
         return generatedValue;
+    }
+
+    /**
+     * Matches a generated value against a pattern while protecting the caller's stack from patterns
+     * whose backtracking depth grows with the input size. The larger-stack retry uses the same Java
+     * regex engine and therefore preserves the pattern's matching semantics.
+     *
+     * @param value   the value to match
+     * @param pattern the regular expression
+     * @return whether the value matches the pattern
+     */
+    static boolean matchesPattern(String value, String pattern) {
+        try {
+            return value.matches(pattern);
+        } catch (StackOverflowError _) {
+            LOGGER.debug("Regex matching exhausted the current thread stack; retrying on a larger stack");
+            return matchesPatternWithLargerStack(value, pattern);
+        }
+    }
+
+    private static boolean matchesPatternWithLargerStack(String value, String pattern) {
+        FutureTask<Boolean> match = new FutureTask<>(() -> value.matches(pattern));
+        Thread matcherThread = new Thread(null, match, "cats-regex-matcher", REGEX_MATCH_STACK_SIZE);
+        matcherThread.setDaemon(true);
+        matcherThread.start();
+
+        try {
+            return match.get();
+        } catch (InterruptedException _) {
+            match.cancel(true);
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof StackOverflowError) {
+                LOGGER.debug("Regex matching also exhausted the larger worker stack");
+                return false;
+            }
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (cause instanceof Error error) {
+                throw error;
+            }
+            throw new IllegalStateException("Could not match generated value against pattern", cause);
+        }
     }
 
     private static boolean matchesLength(String pattern, int min, int max, String generatedValue) {
