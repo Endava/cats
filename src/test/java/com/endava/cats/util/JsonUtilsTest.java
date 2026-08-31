@@ -4,11 +4,14 @@ import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @QuarkusTest
@@ -216,6 +219,19 @@ class JsonUtilsTest {
     @CsvSource({"tree_node#tree_node#tree_node", "parent#child#parent#child#parent#child"})
     void shouldStillReturnCyclicForSelfReferencingObjects(String properties) {
         Assertions.assertThat(JsonUtils.isCyclicReference(properties, 2)).isTrue();
+    }
+
+    @Test
+    @ResourceLock(Resources.LOCALE)
+    void shouldDetectCyclicReferencesIndependentlyOfDefaultLocale() {
+        Locale defaultLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+
+            Assertions.assertThat(JsonUtils.isCyclicReference("TITLE#title#TITLE", 2)).isTrue();
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
     }
 
     @Test

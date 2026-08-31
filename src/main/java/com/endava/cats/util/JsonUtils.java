@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -513,7 +514,7 @@ public abstract class JsonUtils {
             if (StringUtils.isBlank(rawSegment)) {
                 continue;
             }
-            String segment = rawSegment.toLowerCase();
+            String segment = rawSegment.toLowerCase(Locale.ROOT);
             boolean isItems = segment.endsWith(ITEMS_SUFFIX);
             String level = isItems ? segment.substring(0, segment.length() - ITEMS_SUFFIX.length()) : segment;
 
