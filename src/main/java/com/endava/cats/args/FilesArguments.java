@@ -274,10 +274,10 @@ public class FilesArguments {
      */
     public String getUrlParam(String urlParamName) {
         return this.getUrlParamsList().stream()
-                .filter(param -> param.startsWith(urlParamName))
+                .filter(param -> getUrlParamName(param).equals(urlParamName))
+                .map(FilesArguments::getUrlParamValue)
                 .findFirst()
-                .orElse(":")
-                .split(":", 2)[1];
+                .orElse("");
     }
 
     /**
@@ -289,7 +289,8 @@ public class FilesArguments {
     public boolean isNotUrlParam(String parameter) {
         return this.getUrlParamsList()
                 .stream()
-                .noneMatch(urlParam -> urlParam.startsWith(parameter));
+                .map(FilesArguments::getUrlParamName)
+                .noneMatch(parameter::equals);
     }
 
     /**
@@ -301,15 +302,21 @@ public class FilesArguments {
      */
     public String replacePathWithUrlParams(String startingUrl) {
         for (String nameValueParam : this.getUrlParamsList()) {
-            final int name = 0;
-            final int value = 1;
+            String pathVar = "{" + getUrlParamName(nameValueParam) + "}";
 
-            String[] urlParam = nameValueParam.split(":", -1);
-            String pathVar = "{" + urlParam[name] + "}";
-
-            startingUrl = startingUrl.replace(pathVar, CatsUtil.urlEncodePathSegment(urlParam[value]));
+            startingUrl = startingUrl.replace(pathVar, CatsUtil.urlEncodePathSegment(getUrlParamValue(nameValueParam)));
         }
         return startingUrl;
+    }
+
+    private static String getUrlParamName(String nameValueParam) {
+        int separatorIndex = nameValueParam.indexOf(':');
+        return separatorIndex < 0 ? nameValueParam : nameValueParam.substring(0, separatorIndex);
+    }
+
+    private static String getUrlParamValue(String nameValueParam) {
+        int separatorIndex = nameValueParam.indexOf(':');
+        return separatorIndex < 0 ? "" : nameValueParam.substring(separatorIndex + 1);
     }
 
     /**

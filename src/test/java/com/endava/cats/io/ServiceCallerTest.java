@@ -634,13 +634,54 @@ class ServiceCallerTest {
     @ParameterizedTest
     @CsvSource({"POST", "PUT", "PATCH"})
     void shouldUrlEncodeRefDataPathParamsForBodyMethods(HttpMethod httpMethod) {
-        String url = "/tenants/{tenantId}";
-        ReflectionTestUtils.setField(filesArguments, "refData", Map.of(url, Map.of("tenantId", "special/chars&more")));
+        String url = "/run/{schemaPath}";
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of(url, Map.of("schemaPath", "localhost:3000/swagger")));
 
         ServiceData data = ServiceData.builder().relativePath(url).payload("{123}").httpMethod(httpMethod).build();
         String result = serviceCaller.constructUrl(data, "{}");
 
-        Assertions.assertThat(result).endsWith("/tenants/special%2Fchars%26more");
+        Assertions.assertThat(result).endsWith("/run/localhost%3A3000%2Fswagger");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"POST", "PUT", "PATCH"})
+    void shouldUrlEncodeSuppliedPathParamsForBodyMethods(HttpMethod httpMethod) {
+        filesArguments.setParams(List.of("schemaPath:localhost:3000/swagger"));
+        filesArguments.loadURLParams();
+
+        ServiceData data = ServiceData.builder()
+                .relativePath("/run/{schemaPath}")
+                .payload("{123}")
+                .httpMethod(httpMethod)
+                .build();
+
+        String result = serviceCaller.constructUrl(data, "{}");
+
+        Assertions.assertThat(result).endsWith("/run/localhost%3A3000%2Fswagger");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"POST", "PUT", "PATCH"})
+    void shouldUrlEncodeGeneratedPathParamsBeforeAddingQueriesForBodyMethods(HttpMethod httpMethod) {
+        String pathParamsPayload = """
+                {
+                    "schemaPath": "localhost:3000/swagger",
+                    "filter": "active"
+                }
+                """;
+        ServiceData data = ServiceData.builder()
+                .relativePath("/run/{schemaPath}")
+                .payload("{123}")
+                .pathParamsPayload(pathParamsPayload)
+                .queryParams(Set.of("filter"))
+                .httpMethod(httpMethod)
+                .build();
+
+        String result = serviceCaller.constructUrl(data, "{}");
+
+        Assertions.assertThat(result)
+                .endsWith("/run/localhost%3A3000%2Fswagger?filter=active")
+                .doesNotContain("%7B", "%7D");
     }
 
     @Test

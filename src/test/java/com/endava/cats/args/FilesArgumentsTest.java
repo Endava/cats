@@ -75,6 +75,41 @@ class FilesArgumentsTest {
     }
 
     @Test
+    void shouldPreserveColonsWhenEncodingLegacyUrlParams() {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.setParams(List.of("schemaPath:localhost:3000/swagger"));
+        filesArguments.loadURLParams();
+
+        String result = filesArguments.replacePathWithUrlParams("http://localhost:3000/run/{schemaPath}");
+
+        org.assertj.core.api.Assertions.assertThat(result)
+                .isEqualTo("http://localhost:3000/run/localhost%3A3000%2Fswagger");
+    }
+
+    @Test
+    void shouldPreserveColonsWhenEncodingMapUrlParams() {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.setUrlParamsArguments(Map.of("schemaPath", "https://localhost:3000/swagger"));
+        filesArguments.loadURLParams();
+
+        String result = filesArguments.replacePathWithUrlParams("http://localhost:3000/run/{schemaPath}");
+
+        org.assertj.core.api.Assertions.assertThat(result)
+                .isEqualTo("http://localhost:3000/run/https%3A%2F%2Flocalhost%3A3000%2Fswagger");
+    }
+
+    @Test
+    void shouldMatchUrlParamNamesExactly() {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.setParams(List.of("identifier:wrong", "id:localhost:3000/swagger"));
+        filesArguments.loadURLParams();
+
+        org.assertj.core.api.Assertions.assertThat(filesArguments.getUrlParam("id"))
+                .isEqualTo("localhost:3000/swagger");
+        org.assertj.core.api.Assertions.assertThat(filesArguments.isNotUrlParam("ident")).isTrue();
+    }
+
+    @Test
     void shouldNotReplaceUrlWhenUrlParamsSuppliedButNotMatching() {
         FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "params", List.of("someOther:v1.0"));

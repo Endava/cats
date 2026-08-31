@@ -4,6 +4,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.AdditionalMatchers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -32,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class FunctionalFuzzerTest {
@@ -365,6 +368,46 @@ class FunctionalFuzzerTest {
                 .doesNotContain("generatedValue")
                 .doesNotContain("generatedAnother")
                 .contains("\"id\":\"123\"");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"POST", "PUT", "PATCH"})
+    void shouldPreserveColonAndSlashInFunctionalPathParams(HttpMethod httpMethod) {
+        String path = "/run/{schemaPath}";
+        Map<String, Object> testCase = new HashMap<>();
+        testCase.put("schemaPath", "localhost:3000/swagger");
+        testCase.put("expectedResponseCode", "200");
+        testCase.put("httpMethod", httpMethod.name());
+        Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
+        customFuzzerDetails.put(path, Map.of("issue_188", testCase));
+        ReflectionTestUtils.setField(filesArguments, "customFuzzerDetails", customFuzzerDetails);
+
+        FuzzingData data = FuzzingData.builder()
+                .contractPath(path)
+                .path(path)
+                .payload("{\"body\":\"value\"}")
+                .pathParamsPayload("{\"schemaPath\":\"generated\"}")
+                .responses(Map.of("200", List.of("response")))
+                .responseCodes(Set.of("200"))
+                .reqSchema(new StringSchema())
+                .method(httpMethod)
+                .headers(new HashSet<>())
+                .requestContentTypes(List.of("application/json"))
+                .responseContentTypes(Map.of("200", List.of("application/json")))
+                .build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder()
+                .responseCode(200)
+                .body("{}")
+                .responseContentType("application/json")
+                .build());
+
+        functionalFuzzer.fuzz(data);
+        functionalFuzzer.executeCustomFuzzerTests();
+
+        ArgumentCaptor<ServiceData> serviceDataCaptor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller).call(serviceDataCaptor.capture());
+        Assertions.assertThat(serviceDataCaptor.getValue().getPathParamsPayload())
+                .isEqualTo("{\"schemaPath\":\"localhost:3000/swagger\"}");
     }
 
     @Test
