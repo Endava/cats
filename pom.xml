@@ -41,28 +41,28 @@
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <maven-site-plugin.version>4.0.0-M16</maven-site-plugin.version>
         <maven-project-info-reports-plugin.version>3.9.0</maven-project-info-reports-plugin.version>
-        <spotbugs-maven-plugin.version>4.10.2.0</spotbugs-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.10.4.0</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>5.7.0.6970</sonar-maven-plugin.version>
         <pretty-logger.version>1.16</pretty-logger.version>
         <compiler.version>0.9.14</compiler.version>
         <json-path.version>3.0.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.37.1</quarkus.platform.version>
+        <quarkus.platform.version>3.39.1</quarkus.platform.version>
         <surefire-plugin.version>3.5.5</surefire-plugin.version>
         <compiler-plugin.version>3.15.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <spring.version>7.0.8</spring.version>
         <assertj-core.version>4.0.0-M1</assertj-core.version>
-        <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
+        <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
-        <json.version>20260522</json.version>
+        <json.version>20260814</json.version>
         <error-prone.version>2.41.0</error-prone.version>
-        <archunit-junit5.version>1.4.2</archunit-junit5.version>
+        <archunit-junit5.version>1.5.0</archunit-junit5.version>
         <json-smart.version>2.6.0</json-smart.version>
-        <jettison.version>1.5.6</jettison.version>
+        <jettison.version>1.5.7</jettison.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-        <snakeyaml.version>2.6</snakeyaml.version>
+        <snakeyaml.version>2.7</snakeyaml.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
@@ -70,21 +70,21 @@
         <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
         <okhttp.version>5.4.0-CATS</okhttp.version>
         <swagger.parser.version>2.1.46-CATS</swagger.parser.version>
-        <okio.version>3.17.0</okio.version>
+        <okio.version>3.18.1</okio.version>
         <wiremock.version>3.12.1</wiremock.version>
-        <wfc-commons.version>0.6.0</wfc-commons.version>
+        <wfc-commons.version>0.7.0</wfc-commons.version>
         <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
         <regexp-gen.version>3.0.0</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <kotlin-reflect.version>2.1.20</kotlin-reflect.version>
-        <jackson.version>2.22.0</jackson.version>
-        <pitest-maven.version>1.25.5</pitest-maven.version>
+        <jackson.version>2.22.2</jackson.version>
+        <pitest-maven.version>1.30.0</pitest-maven.version>
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
-        <snakeyaml-engine.version>3.0.1</snakeyaml-engine.version>
-        <jackson-core.version>3.2.0</jackson-core.version>
+        <snakeyaml-engine.version>3.1.1</snakeyaml-engine.version>
+        <jackson-core.version>3.2.2</jackson-core.version>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
-        <swagger-parser-v2.version>2.1.45</swagger-parser-v2.version>
+        <swagger-parser-v2.version>2.1.48</swagger-parser-v2.version>
         <tamboui.version>0.4.0</tamboui.version>
     </properties>
     <dependencyManagement>
@@ -168,7 +168,7 @@
                         <configuration>
                             <rules>
                                 <requireMavenVersion>
-                                    <version>[3.8.0,)</version>
+                                    <version>[3.9.0,)</version>
                                 </requireMavenVersion>
                             </rules>
                         </configuration>
@@ -306,7 +306,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.10.0</version>
+                <version>0.11.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
