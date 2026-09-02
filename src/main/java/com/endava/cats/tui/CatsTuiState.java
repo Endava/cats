@@ -116,10 +116,10 @@ final class CatsTuiState {
             case CatsExecutionEvent.FuzzerCompleted _ -> {
                 // The next fuzzer event replaces the current label.
             }
-            case CatsExecutionEvent.TestCompleted completed -> record(completed.test());
-            case CatsExecutionEvent.SessionCompleted completed -> {
-                summary = completed.summary();
-                finishedAt = completed.occurredAt();
+            case CatsExecutionEvent.TestCompleted(_, var test) -> register(test);
+            case CatsExecutionEvent.SessionCompleted(var occurredAt, var runSummary) -> {
+                summary = runSummary;
+                finishedAt = occurredAt;
                 running = false;
                 status = "Finished";
             }
@@ -215,7 +215,9 @@ final class CatsTuiState {
         }
         if (event.isDeleteBackward()) {
             if (!searchQuery.isEmpty()) {
-                searchQuery = searchQuery.substring(0, searchQuery.offsetByCodePoints(searchQuery.length(), -1));
+                int end = searchQuery.length();
+                int lastCodePointLength = Character.charCount(searchQuery.codePointBefore(end));
+                searchQuery = searchQuery.substring(0, end - lastCodePointLength);
                 refreshFilteredResults();
             }
             return EventResult.HANDLED;
@@ -247,7 +249,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isPageDown()) {
-            selectedIssueIndex = Math.min(Math.max(0, rows.size() - 1), selectedIssueIndex + aggregatePageSize());
+            selectedIssueIndex = Math.clamp(rows.size() - 1, 0, selectedIssueIndex + aggregatePageSize());
             syncSelection(issuesTableState, selectedIssueIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -270,7 +272,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isDown() || event.isCharIgnoreCase('j')) {
-            selectedPathIndex = Math.min(Math.max(0, rows.size() - 1), selectedPathIndex + 1);
+            selectedPathIndex = Math.clamp(rows.size() - 1, 0, selectedPathIndex + 1);
             syncSelection(pathsTableState, selectedPathIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -280,7 +282,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isPageDown()) {
-            selectedPathIndex = Math.min(Math.max(0, rows.size() - 1), selectedPathIndex + aggregatePageSize());
+            selectedPathIndex = Math.clamp(rows.size() - 1, 0, selectedPathIndex + aggregatePageSize());
             syncSelection(pathsTableState, selectedPathIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -303,7 +305,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isDown() || event.isCharIgnoreCase('j')) {
-            selectedSlowestIndex = Math.min(Math.max(0, rows.size() - 1), selectedSlowestIndex + 1);
+            selectedSlowestIndex = Math.clamp(rows.size() - 1, 0, selectedSlowestIndex + 1);
             syncSelection(slowestTableState, selectedSlowestIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -313,7 +315,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isPageDown()) {
-            selectedSlowestIndex = Math.min(Math.max(0, rows.size() - 1), selectedSlowestIndex + aggregatePageSize());
+            selectedSlowestIndex = Math.clamp(rows.size() - 1, 0, selectedSlowestIndex + aggregatePageSize());
             syncSelection(slowestTableState, selectedSlowestIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -433,7 +435,7 @@ final class CatsTuiState {
         return EventResult.UNHANDLED;
     }
 
-    private void record(TestResultSnapshot test) {
+    private void register(TestResultSnapshot test) {
         TestResultSnapshot previousSelection = selectedTest();
         observedTests++;
         if (results.size() == maximumRetainedResults) {
@@ -466,9 +468,9 @@ final class CatsTuiState {
             timedResults++;
             liveResponseCodes.merge(test.response().responseCode(), 1L, Long::sum);
         }
-        categories.computeIfAbsent(display(test.fuzzer()), _ -> new CategoryStatistics()).record(outcome, responseTime);
+        categories.computeIfAbsent(display(test.fuzzer()), _ -> new CategoryStatistics()).register(outcome, responseTime);
         String contractPath = display(test.contractPath());
-        paths.computeIfAbsent(contractPath, _ -> new CategoryStatistics()).record(outcome, responseTime);
+        paths.computeIfAbsent(contractPath, _ -> new CategoryStatistics()).register(outcome, responseTime);
         if ((outcome == ResultFilter.ERROR || outcome == ResultFilter.WARNING)
                 && test.resultReason() != null && !test.resultReason().isBlank()) {
             issues.computeIfAbsent(singleLine(test.resultReason()), _ -> new IssueStatistics())
@@ -591,7 +593,7 @@ final class CatsTuiState {
     }
 
     private void clampFuzzerOffset() {
-        fuzzerOffset = Math.min(fuzzerOffset, Math.max(0, fuzzerCount() - fuzzerPageSize(screen)));
+        fuzzerOffset = Math.clamp(fuzzerCount() - fuzzerPageSize(screen), 0, fuzzerOffset);
     }
 
     private int detailPageSize() {
@@ -679,8 +681,8 @@ final class CatsTuiState {
                         entry.getValue().errors, entry.getValue().warnings, entry.getValue().paths.size(),
                         entry.getValue().responseCodes.isEmpty() ? "n/a"
                                 : entry.getValue().responseCodes.entrySet().stream().sorted(Map.Entry.comparingByKey())
-                                        .map(code -> code.getKey() + ":" + code.getValue())
-                                        .collect(Collectors.joining(", "))))
+                                .map(code -> code.getKey() + ":" + code.getValue())
+                                .collect(Collectors.joining(", "))))
                 .sorted(Comparator.comparingLong(IssueStatisticsRow::total).reversed()
                         .thenComparing(IssueStatisticsRow::reason))
                 .toList();
@@ -1050,19 +1052,13 @@ final class CatsTuiState {
 
         static ResultFilter from(String result) {
             String normalized = String.valueOf(result).toLowerCase(Locale.ROOT).trim();
-            if (normalized.equals("error")) {
-                return ERROR;
-            }
-            if (normalized.equals("warn") || normalized.equals("warning")) {
-                return WARNING;
-            }
-            if (normalized.equals("success")) {
-                return SUCCESS;
-            }
-            if (normalized.equals("skipped") || normalized.equals("skip_reporting")) {
-                return SKIPPED;
-            }
-            return ALL;
+            return switch (normalized) {
+                case "error" -> ERROR;
+                case "warn", "warning" -> WARNING;
+                case "success" -> SUCCESS;
+                case "skipped", "skip_reporting" -> SKIPPED;
+                default -> ALL;
+            };
         }
     }
 
@@ -1109,7 +1105,7 @@ final class CatsTuiState {
         private long timed;
         private long totalResponseTime;
 
-        void record(ResultFilter outcome, long responseTime) {
+        void register(ResultFilter outcome, long responseTime) {
             total++;
             if (outcome == ResultFilter.ERROR) {
                 errors++;

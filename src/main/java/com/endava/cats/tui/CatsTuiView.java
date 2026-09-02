@@ -6,7 +6,9 @@ import dev.tamboui.style.Style;
 import dev.tamboui.text.Line;
 import dev.tamboui.text.Span;
 import dev.tamboui.text.Text;
+import dev.tamboui.toolkit.Toolkit;
 import dev.tamboui.toolkit.element.Element;
+import dev.tamboui.toolkit.element.StyledElement;
 import dev.tamboui.toolkit.elements.RichTextElement;
 import dev.tamboui.toolkit.elements.TableElement;
 import dev.tamboui.widgets.table.Cell;
@@ -260,10 +262,10 @@ final class CatsTuiView {
 
     private static Element terminalMessage(CatsTuiState state) {
         if ("Cancelled".equals(state.status())) {
-            return panel("Cancelled", lines(state.failureMessage(), element -> element.yellow()))
+            return panel("Cancelled", lines(state.failureMessage(), StyledElement::yellow))
                     .rounded().borderColor(Color.YELLOW).fill();
         }
-        return panel("Failure", lines(state.failureMessage(), element -> element.red()))
+        return panel("Failure", lines(state.failureMessage(), StyledElement::red))
                 .rounded().borderColor(Color.RED).fill();
     }
 
@@ -426,7 +428,7 @@ final class CatsTuiView {
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
         try {
             return digits.isEmpty() ? -1 : Integer.parseInt(digits);
-        } catch (NumberFormatException ignored) {
+        } catch (NumberFormatException _) {
             return -1;
         }
     }
@@ -437,6 +439,6 @@ final class CatsTuiView {
 
     private static Element lines(String value, UnaryOperator<dev.tamboui.toolkit.elements.TextElement> style) {
         List<String> values = value == null ? List.of("") : value.lines().toList();
-        return column(values.stream().map(CatsTuiState::singleLine).map(line -> text(line)).map(style).toArray(Element[]::new));
+        return column(values.stream().map(CatsTuiState::singleLine).map(Toolkit::text).map(style).toArray(Element[]::new));
     }
 }

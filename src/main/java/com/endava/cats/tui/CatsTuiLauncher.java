@@ -72,7 +72,7 @@ public class CatsTuiLauncher {
                 .tickRate(Duration.ofMillis(100))
                 .faultTolerant(true)
                 .build();
-             CatsExecutionEventPublisher.Subscription ignored = events.subscribe(eventQueue::offer)) {
+             CatsExecutionEventPublisher.Subscription _ = events.subscribe(eventQueue::offer)) {
             worker = Thread.ofVirtual().name("cats-fuzzing")
                     .start(() -> runExecution(execution, eventQueue, workerFailure));
             try {
