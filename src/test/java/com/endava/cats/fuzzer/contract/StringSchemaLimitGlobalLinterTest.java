@@ -83,4 +83,20 @@ class StringSchemaLimitGlobalLinterTest {
 
         Mockito.verify(testCaseListener, Mockito.times(1)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
+
+    @Test
+    void shouldValidateOnlyGlobalSchemasWithMaxLengthOrEnum() {
+        var context = stringSchemaLimitGlobalLinter.getContext();
+        SchemaLocation global = new SchemaLocation(null, null, "components.schemas.Pet.name", null);
+        SchemaLocation inline = new SchemaLocation("/pets", "POST", "paths./pets.name", null);
+
+        Assertions.assertThat(context.filter().test(global, Mockito.mock(FuzzingData.class))).isTrue();
+        Assertions.assertThat(context.filter().test(inline, Mockito.mock(FuzzingData.class))).isFalse();
+        Assertions.assertThat(context.validator().test(new Schema<>().maxLength(10))).isTrue();
+        Assertions.assertThat(context.validator().test(new Schema<>().maxLength(0))).isFalse();
+        Assertions.assertThat(context.validator().test(new Schema<>()._enum(java.util.List.of("cat")))).isTrue();
+        Assertions.assertThat(context.validator().test(new Schema<>())).isFalse();
+        Assertions.assertThat(context.format().apply(global, new Schema<>()))
+                .contains("components.schemas.Pet.name", "does not specify maxLength or enum");
+    }
 }

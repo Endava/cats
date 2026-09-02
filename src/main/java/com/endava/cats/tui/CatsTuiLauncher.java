@@ -34,7 +34,7 @@ public class CatsTuiLauncher {
     /**
      * Runs the supplied CATS execution in the TUI.
      *
-     * @param execution fuzzing lifecycle
+     * @param execution              fuzzing lifecycle
      * @param maximumRetainedResults maximum number of complete test details kept in memory
      * @return {@code true} when leaving the TUI cancelled a live execution
      */
@@ -47,8 +47,8 @@ public class CatsTuiLauncher {
      * Runs the supplied CATS execution in the TUI and invokes the cancellation action when the user
      * leaves the interface while execution is still active.
      *
-     * @param execution fuzzing lifecycle
-     * @param cancellationAction action that cancels blocking work owned by the execution
+     * @param execution              fuzzing lifecycle
+     * @param cancellationAction     action that cancels blocking work owned by the execution
      * @param maximumRetainedResults maximum number of complete test details kept in memory
      * @return {@code true} when leaving the TUI cancelled a live execution
      */
@@ -72,18 +72,18 @@ public class CatsTuiLauncher {
                 .tickRate(Duration.ofMillis(100))
                 .faultTolerant(true)
                 .build();
-             CatsExecutionEventPublisher.Subscription _ = events.subscribe(eventQueue::offer)) {
-            worker = Thread.ofVirtual().name("cats-fuzzing")
-                    .start(() -> runExecution(execution, eventQueue, workerFailure));
-            try {
-                runner.run(() -> {
-                    updateViewport(state, backend);
-                    state.drain(eventQueue);
-                    return CatsTuiView.render(state);
-                });
-            } finally {
-                cancellationRequested = requestStop(worker, cancellationAction);
-            }
+             var _ = events.subscribe(eventQueue::offer)) {
+                worker = Thread.ofVirtual().name("cats-fuzzing")
+                        .start(() -> runExecution(execution, eventQueue, workerFailure));
+                try {
+                    runner.run(() -> {
+                        updateViewport(state, backend);
+                        state.drain(eventQueue);
+                        return CatsTuiView.render(state);
+                    });
+                } finally {
+                    cancellationRequested = requestStop(worker, cancellationAction);
+                }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             terminalFailure = new IllegalStateException("TUI execution was interrupted", e);

@@ -329,9 +329,9 @@ public class StringGenerator {
         String originalPattern = generatorParams.originalPattern();
         int min = generatorParams.min;
         int max = generatorParams.max;
+        Pattern compiledPattern = Pattern.compile(pattern);
 
         for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
-            Pattern compiledPattern = Pattern.compile(pattern);
             String secondVersionBase = generateWithTimeout(compiledPattern, min, max);
 
             if (matchesPattern(secondVersionBase, originalPattern)) {

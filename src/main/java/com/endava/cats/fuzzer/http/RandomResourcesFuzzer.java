@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Iterates through path variables and sens random resource identifiers.
@@ -38,6 +39,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
     private final FilesArguments filesArguments;
     private final TestCaseListener testCaseListener;
     private static final int ITERATIONS = 10;
+    private static final Pattern CURLY_BRACES_PATTERN = Pattern.compile("[{}]");
 
     /**
      * Creates a new instance.
@@ -74,7 +76,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
                 Object generatedValue = generateNewValue();
                 path = path.replace(pathVar, String.valueOf(generatedValue));
             }
-            path = path.replaceAll("[{}]", "");
+            path = CURLY_BRACES_PATTERN.matcher(path).replaceAll("");
             paths.add(path);
         }
         for (String path : paths) {

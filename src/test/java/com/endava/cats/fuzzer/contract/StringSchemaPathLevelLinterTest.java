@@ -82,4 +82,23 @@ class StringSchemaPathLevelLinterTest {
 
         Mockito.verify(testCaseListener, Mockito.times(1)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
+
+    @Test
+    void shouldValidateOnlySchemasForTheCurrentPathAndMethod() {
+        var context = stringSchemaPathLevelLinter.getContext();
+        FuzzingData data = FuzzingData.builder().path("/pets").method(HttpMethod.POST).build();
+        SchemaLocation matching = new SchemaLocation("/PETS", "post", "paths./pets.name", null);
+        SchemaLocation otherMethod = new SchemaLocation("/pets", "GET", "paths./pets.name", null);
+        SchemaLocation global = new SchemaLocation(null, null, "components.schemas.Pet.name", null);
+
+        Assertions.assertThat(context.filter().test(matching, data)).isTrue();
+        Assertions.assertThat(context.filter().test(otherMethod, data)).isFalse();
+        Assertions.assertThat(context.filter().test(global, data)).isFalse();
+        Assertions.assertThat(context.validator().test(new Schema<>().maxLength(1))).isTrue();
+        Assertions.assertThat(context.validator().test(new Schema<>().maxLength(-1))).isFalse();
+        Assertions.assertThat(context.validator().test(new Schema<>()._enum(java.util.List.of("cat")))).isTrue();
+        Assertions.assertThat(context.validator().test(new Schema<>())).isFalse();
+        Assertions.assertThat(context.format().apply(matching, new Schema<>()))
+                .contains("paths./pets.name", "does not specify maxLength or enum");
+    }
 }

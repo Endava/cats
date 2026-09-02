@@ -4,17 +4,23 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @QuarkusTest
 class DuplicateKeysFieldsFuzzerTest {
@@ -115,6 +121,42 @@ class DuplicateKeysFieldsFuzzerTest {
 
         // Should not execute since field is not in payload
         Mockito.verify(simpleExecutor, Mockito.times(0)).execute(Mockito.any());
+    }
+
+    @Test
+    void shouldDuplicateFieldsInsideEveryArrayElement() {
+        Optional<String> duplicatedPayload = ReflectionTestUtils.invokeMethod(duplicateKeysFieldsFuzzer,
+                "createDuplicatedPayload", "{\"items\":[{\"id\":1},{\"id\":2}]}", "items#id");
+
+        Assertions.assertThat(duplicatedPayload)
+                .contains("{\"items\":[{\"id\":1,\"id\":\"catsFuzzyDup\"},{\"id\":2,\"id\":\"catsFuzzyDup\"}]}");
+    }
+
+    @Test
+    void shouldSkipFieldsDeeperThanTheSupportedLimit() {
+        setupData();
+        Mockito.when(data.getPayload()).thenReturn("{\"a\":{\"b\":{\"c\":{\"d\":{\"e\":{\"f\":1}}}}}}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("a#b#c#d#e#f"));
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verifyNoInteractions(simpleExecutor);
+    }
+
+    @Test
+    void shouldLimitTheNumberOfMutationsPerRequest() {
+        setupData();
+        LinkedHashSet<String> fields = IntStream.range(0, 105)
+                .mapToObj(index -> "field" + index)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        String payload = fields.stream().map(field -> "\"" + field + "\":1")
+                .collect(Collectors.joining(",", "{", "}"));
+        Mockito.when(data.getPayload()).thenReturn(payload);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(fields);
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(simpleExecutor, Mockito.times(100)).execute(Mockito.any());
     }
 
 

@@ -523,7 +523,7 @@ public class OpenAPIModelGeneratorV2 {
             }
 
             String detectedCasing = parentWithDiscriminator != null
-                    ? detectCasingConvention(parentWithDiscriminator, discriminatorPropertyName)
+                    ? detectCasingConvention(parentWithDiscriminator)
                     : this.discriminatorCasing;
             String discriminatorValue = WordUtils.convertToDetectedCasing(propertyName, detectedCasing);
 
@@ -801,7 +801,7 @@ public class OpenAPIModelGeneratorV2 {
         // If still empty, try to infer from schema name (for allOf pattern without explicit mapping)
         // Detect casing convention from enum values or existing discriminator mappings
         if (result.isEmpty() && name != null) {
-            String detectedCasing = detectCasingConvention(resolveInnerSchema, propertyName);
+            String detectedCasing = detectCasingConvention(resolveInnerSchema);
             result = WordUtils.convertToDetectedCasing(name, detectedCasing);
         }
 
@@ -809,7 +809,7 @@ public class OpenAPIModelGeneratorV2 {
         return result;
     }
 
-    private String detectCasingConvention(Schema schema, String propertyName) {
+    private String detectCasingConvention(Schema schema) {
         // Try to detect from enum values first
         List<Object> enumValues = Optional.ofNullable(schema.getEnum()).orElse(List.of());
         if (!enumValues.isEmpty()) {

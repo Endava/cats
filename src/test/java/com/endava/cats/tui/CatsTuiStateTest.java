@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @QuarkusTest
 class CatsTuiStateTest {
@@ -374,6 +375,133 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.currentFuzzer()).doesNotContain("\u0007", "\t");
         Assertions.assertThat(state.errors()).isZero();
         Assertions.assertThat(state.success()).isZero();
+    }
+
+    @Test
+    void shouldDrainQueuedEventsAndRejectAnInvalidRetentionLimit() {
+        Assertions.assertThatThrownBy(() -> new CatsTuiState(0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("greater than zero");
+
+        ConcurrentLinkedQueue<CatsExecutionEvent> events = new ConcurrentLinkedQueue<>();
+        events.offer(new CatsExecutionEvent.SessionStarted(NOW, "cats", "1", "today", "test"));
+        events.offer(new CatsExecutionEvent.FuzzerCompleted(NOW, "fuzzer", "/pets", "GET"));
+        events.offer(new CatsExecutionEvent.PathCompleted(NOW, "/pets"));
+        CatsTuiState state = new CatsTuiState();
+
+        state.drain(events);
+
+        Assertions.assertThat(events).isEmpty();
+        Assertions.assertThat(state.status()).isEqualTo("Loading configuration");
+        Assertions.assertThat(state.pathProgressLabel()).isEqualTo("1 / ? paths");
+        Assertions.assertThat(state.categorySummary()).isEqualTo("No completed tests yet");
+        Assertions.assertThat(state.responseCodeSummary()).isEqualTo("-");
+        Assertions.assertThat(state.elapsed()).isNotBlank();
+    }
+
+    @Test
+    void shouldHandleAllNavigationDirectionsAndBoundaries() {
+        CatsTuiState state = new CatsTuiState();
+        state.updateViewport(80, 24);
+        for (int index = 0; index < 20; index++) {
+            state.accept(new CatsExecutionEvent.TestCompleted(NOW,
+                    test("id-" + index, "error", 500, index + 1, "fuzzer-" + index,
+                            "/path-" + index, "issue-" + index, "scenario")));
+        }
+
+        state.handleKey(KeyEvent.ofChar('4'));
+        navigateAggregate(state);
+        state.handleKey(KeyEvent.ofKey(KeyCode.LEFT));
+        Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.OVERVIEW);
+
+        state.handleKey(KeyEvent.ofChar('5'));
+        navigateAggregate(state);
+        state.handleKey(KeyEvent.ofKey(KeyCode.ESCAPE));
+        Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.OVERVIEW);
+
+        state.handleKey(KeyEvent.ofChar('6'));
+        navigateAggregate(state);
+        state.handleKey(KeyEvent.ofKey(KeyCode.LEFT));
+        Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.OVERVIEW);
+
+        state.handleKey(KeyEvent.ofKey(KeyCode.DOWN));
+        state.handleKey(KeyEvent.ofKey(KeyCode.UP));
+        state.handleKey(KeyEvent.ofKey(KeyCode.PAGE_DOWN));
+        state.handleKey(KeyEvent.ofKey(KeyCode.PAGE_UP));
+        state.handleKey(KeyEvent.ofChar('j'));
+        state.handleKey(KeyEvent.ofChar('k'));
+        state.handleKey(KeyEvent.ofChar('3'));
+        state.handleKey(KeyEvent.ofKey(KeyCode.LEFT));
+        Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.OVERVIEW);
+    }
+
+    @Test
+    void shouldScrollDetailsAndKeepOffsetsInsideTheViewport() {
+        CatsTuiState state = new CatsTuiState();
+        state.updateViewport(20, 8);
+        state.accept(new CatsExecutionEvent.TestCompleted(NOW, test("1", "error", 500, 90)));
+        state.handleKey(KeyEvent.ofChar('2'));
+        state.handleKey(KeyEvent.ofKey(KeyCode.ENTER));
+
+        state.handleKey(KeyEvent.ofKey(KeyCode.PAGE_DOWN));
+        Assertions.assertThat(state.detailOffset()).isPositive();
+        state.handleKey(KeyEvent.ofKey(KeyCode.DOWN));
+        state.handleKey(KeyEvent.ofChar('j'));
+        state.handleKey(KeyEvent.ofKey(KeyCode.UP));
+        state.handleKey(KeyEvent.ofChar('k'));
+        state.handleKey(KeyEvent.ofKey(KeyCode.PAGE_UP));
+        state.updateViewport(200, 200);
+        Assertions.assertThat(state.detailOffset()).isZero();
+
+        state.handleKey(KeyEvent.ofKey(KeyCode.LEFT));
+        Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.RESULTS);
+    }
+
+    @Test
+    void shouldBoundSearchAndRenderNullOrBlankDetailValuesSafely() {
+        CatsTuiState state = new CatsTuiState();
+        TestResultSnapshot sparse = new TestResultSnapshot(null, null, "x".repeat(9) + "😺" + "y".repeat(30),
+                null, null, null, null, null, null, null, null, null, null, false,
+                new TestResultSnapshot.RequestSnapshot(null, null, null, null,
+                        List.of(new TestResultSnapshot.HeaderSnapshot(null, null))),
+                new TestResultSnapshot.ResponseSnapshot(0, null, 0, 0, 0, 0,
+                        null, " ", List.of(new TestResultSnapshot.HeaderSnapshot(null, null))), null);
+        state.updateViewport(20, 24);
+        state.accept(new CatsExecutionEvent.TestCompleted(NOW, sparse));
+        state.handleKey(KeyEvent.ofChar('2'));
+        state.handleKey(KeyEvent.ofChar('/'));
+        state.handleKey(KeyEvent.ofKey(KeyCode.BACKSPACE));
+        for (int index = 0; index < 121; index++) {
+            state.handleKey(KeyEvent.ofChar('x'));
+        }
+        Assertions.assertThat(state.searchQuery()).hasSize(120);
+        state.handleKey(KeyEvent.ofKey(KeyCode.ESCAPE));
+        state.handleKey(KeyEvent.ofKey(KeyCode.ENTER));
+        state.updateViewport(20, 200);
+
+        Assertions.assertThat(state.visibleDetailLines()).isNotEmpty()
+                .anyMatch(line -> line.contains("<empty>"));
+        Assertions.assertThat(state.visibleDetailLines().subList(0, 3))
+                .allMatch(line -> line.length() <= 20);
+        Assertions.assertThat(CatsTuiView.render(state)).isNotNull();
+        Assertions.assertThat(CatsTuiState.singleLine(null)).isEmpty();
+
+        CatsTuiState running = new CatsTuiState();
+        running.handleKey(KeyEvent.ofChar('Q'));
+        Assertions.assertThat(running.status()).isEqualTo("Cancellation requested");
+        running.accept(new CatsExecutionEvent.SessionCompleted(NOW, new RunSummarySnapshot(0, 0, 0, 0, 0,
+                0, 0, 0, 0, Map.of(), Map.of(), true, "done")));
+        running.handleKey(KeyEvent.ofChar('q'));
+        Assertions.assertThat(running.status()).isEqualTo("Finished");
+    }
+
+    private static void navigateAggregate(CatsTuiState state) {
+        state.handleKey(KeyEvent.ofKey(KeyCode.PAGE_DOWN));
+        state.handleKey(KeyEvent.ofKey(KeyCode.PAGE_UP));
+        state.handleKey(KeyEvent.ofKey(KeyCode.DOWN));
+        state.handleKey(KeyEvent.ofKey(KeyCode.UP));
+        state.handleKey(KeyEvent.ofChar('j'));
+        state.handleKey(KeyEvent.ofChar('k'));
     }
 
     private static TestResultSnapshot test(String result) {

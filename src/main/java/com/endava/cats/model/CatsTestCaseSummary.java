@@ -59,7 +59,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         String o2StringPart = o.id.replaceAll("\\d", "");
 
         if (o1StringPart.equalsIgnoreCase(o2StringPart)) {
-            return extractInt(this.id) - extractInt(o.id);
+            return Integer.compare(extractInt(this.id), extractInt(o.id));
         }
         return this.id.compareTo(o.id);
     }

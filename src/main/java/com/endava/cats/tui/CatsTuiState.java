@@ -123,15 +123,15 @@ final class CatsTuiState {
                 running = false;
                 status = "Finished";
             }
-            case CatsExecutionEvent.SessionCancelled cancelled -> {
-                failureMessage = cancelled.message();
-                finishedAt = cancelled.occurredAt();
+            case CatsExecutionEvent.SessionCancelled(var occurredAt, var message) -> {
+                failureMessage = message;
+                finishedAt = occurredAt;
                 running = false;
                 status = "Cancelled";
             }
-            case CatsExecutionEvent.SessionFailed failed -> {
-                failureMessage = failed.message();
-                finishedAt = failed.occurredAt();
+            case CatsExecutionEvent.SessionFailed(var occurredAt, var message) -> {
+                failureMessage = message;
+                finishedAt = occurredAt;
                 running = false;
                 status = "Failed";
             }
@@ -239,7 +239,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isDown() || event.isCharIgnoreCase('j')) {
-            selectedIssueIndex = Math.min(Math.max(0, rows.size() - 1), selectedIssueIndex + 1);
+            selectedIssueIndex = Math.clamp(rows.size() - 1L, 0, selectedIssueIndex + 1);
             syncSelection(issuesTableState, selectedIssueIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -249,7 +249,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isPageDown()) {
-            selectedIssueIndex = Math.clamp(rows.size() - 1, 0, selectedIssueIndex + aggregatePageSize());
+            selectedIssueIndex = Math.clamp(rows.size() - 1L, 0, selectedIssueIndex + aggregatePageSize());
             syncSelection(issuesTableState, selectedIssueIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -272,7 +272,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isDown() || event.isCharIgnoreCase('j')) {
-            selectedPathIndex = Math.clamp(rows.size() - 1, 0, selectedPathIndex + 1);
+            selectedPathIndex = Math.clamp(rows.size() - 1L, 0, selectedPathIndex + 1);
             syncSelection(pathsTableState, selectedPathIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -282,7 +282,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isPageDown()) {
-            selectedPathIndex = Math.clamp(rows.size() - 1, 0, selectedPathIndex + aggregatePageSize());
+            selectedPathIndex = Math.clamp(rows.size() - 1L, 0, selectedPathIndex + aggregatePageSize());
             syncSelection(pathsTableState, selectedPathIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -305,7 +305,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isDown() || event.isCharIgnoreCase('j')) {
-            selectedSlowestIndex = Math.clamp(rows.size() - 1, 0, selectedSlowestIndex + 1);
+            selectedSlowestIndex = Math.clamp(rows.size() - 1L, 0, selectedSlowestIndex + 1);
             syncSelection(slowestTableState, selectedSlowestIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -315,7 +315,7 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         if (event.isPageDown()) {
-            selectedSlowestIndex = Math.clamp(rows.size() - 1, 0, selectedSlowestIndex + aggregatePageSize());
+            selectedSlowestIndex = Math.clamp(rows.size() - 1L, 0, selectedSlowestIndex + aggregatePageSize());
             syncSelection(slowestTableState, selectedSlowestIndex, rows.size());
             return EventResult.HANDLED;
         }
@@ -474,7 +474,7 @@ final class CatsTuiState {
         if ((outcome == ResultFilter.ERROR || outcome == ResultFilter.WARNING)
                 && test.resultReason() != null && !test.resultReason().isBlank()) {
             issues.computeIfAbsent(singleLine(test.resultReason()), _ -> new IssueStatistics())
-                    .record(outcome, contractPath, test.response().responseCode());
+                    .register(outcome, contractPath, test.response().responseCode());
         }
         restoreSelection(previousSelection);
     }
@@ -843,13 +843,14 @@ final class CatsTuiState {
             return;
         }
         int lineWidth = Math.max(20, terminalColumns - 4);
-        for (int offset = 0; offset < value.length(); offset += lineWidth) {
+        int offset = 0;
+        while (offset < value.length()) {
             int end = Math.min(value.length(), offset + lineWidth);
             if (end < value.length() && Character.isHighSurrogate(value.charAt(end - 1))) {
                 end--;
             }
             lines.add(value.substring(offset, end));
-            offset = end - lineWidth;
+            offset = end;
         }
     }
 
@@ -1081,7 +1082,7 @@ final class CatsTuiState {
         private final Set<String> paths = new LinkedHashSet<>();
         private final Map<Integer, Long> responseCodes = new LinkedHashMap<>();
 
-        void record(ResultFilter outcome, String path, int responseCode) {
+        void register(ResultFilter outcome, String path, int responseCode) {
             total++;
             if (outcome == ResultFilter.ERROR) {
                 errors++;
