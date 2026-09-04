@@ -11,6 +11,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.SecurityFuzzerArguments;
+import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.command.model.CommandContext;
@@ -18,6 +19,8 @@ import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.exception.CatsExecutionCancelledException;
+import com.endava.cats.exception.CatsExecutionLimitReachedException;
+import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
@@ -143,6 +146,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     CatsTuiLauncher tuiLauncher;
     @Inject
     ServiceCaller serviceCaller;
+    @Inject
+    ExecutionStopController executionStopController;
 
     @CommandLine.Mixin
     ConfigOptions configOptions;
@@ -194,6 +199,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Quality Gate Options:|@%n", exclusive = false)
     QualityGateArguments qualityGateArguments;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Stop Options:|@%n", exclusive = false)
+    StopArguments stopArguments;
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
@@ -309,6 +318,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         try {
             Future<VersionChecker.CheckResult> newVersion = this.checkForNewVersion();
             testCaseListener.startSession();
+            executionStopController.startSession();
             this.doLogic();
             this.printSuggestions();
             this.printVersion(newVersion);
@@ -321,12 +331,15 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             cancelled = true;
             failureMessage = e.getMessage();
             exitCodeDueToErrors = CANCELLED_EXIT_CODE;
+        } catch (CatsExecutionLimitReachedException e) {
+            logger.complete(e.getMessage());
         } catch (CatsException | IOException | ExecutionException | IllegalArgumentException e) {
             failureMessage = e.toString();
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
             logger.debug("Stacktrace: {}", e);
             exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
         } finally {
+            executionStopController.finishSession();
             testCaseListener.endSession();
             if (executionEventPublisher.hasSubscribers()) {
                 if (cancelled) {

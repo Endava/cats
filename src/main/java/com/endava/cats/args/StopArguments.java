@@ -1,24 +1,37 @@
 package com.endava.cats.args;
 
 import jakarta.inject.Singleton;
+import lombok.Getter;
 import picocli.CommandLine;
 
+import java.util.Optional;
+
 /**
- * Holds arguments related to conditions that will cause continuous fuzzing to stop.
+ * Holds arguments related to conditions that will cause fuzzing to stop.
  */
 @Singleton
+@Getter
 public class StopArguments {
     @CommandLine.Option(names = {"--stopAfterTimeInSec", "--st"},
-            description = "Amount of time in seconds for how long the continuous fuzzing will run before stopping")
+            description = "Amount of time in seconds for how long fuzzing will run before stopping")
     private long stopAfterTimeInSec;
 
     @CommandLine.Option(names = {"--stopAfterErrors", "--se"},
-            description = "Number of errors after which the continuous fuzzing will stop running. Errors are defined as conditions matching the given match arguments")
+            description = "Number of errors after which fuzzing will stop. Errors are test results reported as errors")
     private long stopAfterErrors;
 
-    @CommandLine.Option(names = {"--stopAfterMutations", "--sm"},
-            description = "Number of mutations (test cases) after which the continuous fuzzing will stop running")
+    @CommandLine.Option(names = {"--stopAfterTests", "--stopAfterMutations", "--sm"},
+            description = "Number of test cases after which fuzzing will stop")
     private long stopAfterMutations;
+
+    /**
+     * The configured condition that caused execution to stop.
+     */
+    public enum StopCondition {
+        ERRORS,
+        TESTS,
+        TIME
+    }
 
     /**
      * Checks if any stopXXX argument was supplied and has a positive value.
@@ -39,12 +52,32 @@ public class StopArguments {
      * @return true if any of the stop criteria is met, false otherwise
      */
     public boolean shouldStop(long errors, long tests, long startTimeInMs) {
-        return isErrorThresholdTriggered(errors) || isNumberOfTestsThresholdTriggered(tests) ||
-                isTimeThresholdTriggered(startTimeInMs);
+        return triggeredCondition(errors, tests, startTimeInMs).isPresent();
+    }
+
+    /**
+     * Returns the first configured stop condition that has been reached.
+     *
+     * @param errors        the current number of errors
+     * @param tests         the number of executed tests
+     * @param startTimeInMs start time of the fuzzing session
+     * @return the reached condition, or empty when execution should continue
+     */
+    public Optional<StopCondition> triggeredCondition(long errors, long tests, long startTimeInMs) {
+        if (isErrorThresholdTriggered(errors)) {
+            return Optional.of(StopCondition.ERRORS);
+        }
+        if (isNumberOfTestsThresholdTriggered(tests)) {
+            return Optional.of(StopCondition.TESTS);
+        }
+        if (isTimeThresholdTriggered(startTimeInMs)) {
+            return Optional.of(StopCondition.TIME);
+        }
+        return Optional.empty();
     }
 
     private boolean isTimeThresholdTriggered(long startTimeInMs) {
-        if (stopAfterTimeInSec == 0) {
+        if (stopAfterTimeInSec <= 0) {
             return false;
         }
 
@@ -53,14 +86,14 @@ public class StopArguments {
     }
 
     private boolean isNumberOfTestsThresholdTriggered(long tests) {
-        if (stopAfterMutations == 0) {
+        if (stopAfterMutations <= 0) {
             return false;
         }
         return tests >= stopAfterMutations;
     }
 
     private boolean isErrorThresholdTriggered(long errors) {
-        if (stopAfterErrors == 0) {
+        if (stopAfterErrors <= 0) {
             return false;
         }
         return errors >= stopAfterErrors;

@@ -7,6 +7,8 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.exception.CatsExecutionCancelledException;
+import com.endava.cats.exception.CatsExecutionLimitReachedException;
+import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.http.RandomResourcesFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -66,6 +68,7 @@ class TestCaseListenerTest {
     private Fuzzer fuzzer;
     private TestReportsGenerator testReportsGenerator;
     private CatsExecutionEventPublisher executionEventPublisher;
+    private ExecutionStopController executionStopController;
 
 
     @BeforeEach
@@ -79,8 +82,9 @@ class TestCaseListenerTest {
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
         filterArguments = Mockito.mock(FilterArguments.class);
         executionEventPublisher = new CatsExecutionEventPublisher();
+        executionStopController = Mockito.mock(ExecutionStopController.class);
         testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, testReportsGenerator,
-                ignoreArguments, reportingArguments, filterArguments, executionEventPublisher);
+                ignoreArguments, reportingArguments, filterArguments, executionEventPublisher, executionStopController);
         catsGlobalContext.getDiscriminators().clear();
         catsGlobalContext.getFuzzersConfiguration().clear();
     }
@@ -97,6 +101,23 @@ class TestCaseListenerTest {
 
         Assertions.assertThat(testCaseListener.testCaseSummaryDetails.getFirst()).isNotNull();
         Mockito.verify(testReportsGenerator).writeTestCase(Mockito.any());
+        Mockito.verify(executionStopController).checkBeforeTest();
+        Mockito.verify(executionStopController).checkAfterTest();
+    }
+
+    @Test
+    void shouldApplyExecutionLimitAfterPersistingTheCurrentTestCase() {
+        CatsExecutionLimitReachedException limitReached =
+                new CatsExecutionLimitReachedException("Test limit reached");
+        Mockito.doThrow(limitReached).when(executionStopController).checkAfterTest();
+        Runnable execution = () -> testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+        }, FuzzingData.builder().build());
+
+        Assertions.assertThatThrownBy(execution::run)
+                .isSameAs(limitReached);
+
+        Mockito.verify(testReportsGenerator).writeTestCase(Mockito.any());
+        Assertions.assertThat(testCaseListener.testCaseMap).isEmpty();
     }
 
     @Test
@@ -123,7 +144,8 @@ class TestCaseListenerTest {
         ReportingArguments tuiArguments = Mockito.mock(ReportingArguments.class);
         Mockito.when(tuiArguments.isTui()).thenReturn(true);
         TestCaseListener listener = new TestCaseListener(localContext, executionStatisticsListener,
-                testReportsGenerator, ignoreArguments, tuiArguments, filterArguments, executionEventPublisher);
+                testReportsGenerator, ignoreArguments, tuiArguments, filterArguments, executionEventPublisher,
+                executionStopController);
 
         listener.endSession();
 

@@ -8,6 +8,8 @@ import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.exception.CatsExecutionLimitReachedException;
+import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.contract.PathTagsLinter;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
@@ -17,6 +19,8 @@ import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.tui.CatsTuiLauncher;
+import com.endava.cats.tui.event.CatsExecutionEvent;
+import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.util.VersionChecker;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -29,6 +33,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -124,6 +129,38 @@ class CatsCommandTest {
         Assertions.assertThat(command.getExitCode()).isEqualTo(CommandLine.ExitCode.USAGE);
         Mockito.verifyNoInteractions(launcher);
         Mockito.verify(tuiArguments, Mockito.never()).restoreLogDataAfterTui();
+    }
+
+    @Test
+    void shouldCompleteNormallyWhenAnExecutionLimitIsReached() throws Exception {
+        ReportingArguments localReportingArguments = Mockito.mock(ReportingArguments.class);
+        TestCaseListener localTestCaseListener = Mockito.mock(TestCaseListener.class);
+        ExecutionStopController stopController = Mockito.mock(ExecutionStopController.class);
+        ExecutionStatisticsListener statistics = Mockito.mock(ExecutionStatisticsListener.class);
+        QualityGateArguments qualityGate = Mockito.mock(QualityGateArguments.class);
+        CatsExecutionEventPublisher eventPublisher = new CatsExecutionEventPublisher();
+        CatsExecutionLimitReachedException limitReached =
+                new CatsExecutionLimitReachedException("Execution limit reached");
+        Mockito.doThrow(limitReached).when(stopController).startSession();
+        List<CatsExecutionEvent> events = new ArrayList<>();
+
+        try (CatsExecutionEventPublisher.Subscription ignored = eventPublisher.subscribe(events::add);
+             CatsCommand command = new CatsCommand()) {
+            ReflectionTestUtils.setField(command, "reportingArguments", localReportingArguments);
+            ReflectionTestUtils.setField(command, "testCaseListener", localTestCaseListener);
+            ReflectionTestUtils.setField(command, "executionStopController", stopController);
+            ReflectionTestUtils.setField(command, "executionStatisticsListener", statistics);
+            ReflectionTestUtils.setField(command, "qualityGateArguments", qualityGate);
+            ReflectionTestUtils.setField(command, "executionEventPublisher", eventPublisher);
+
+            command.run();
+
+            Assertions.assertThat(command.getExitCode()).isZero();
+            Assertions.assertThat(events).singleElement().isInstanceOf(CatsExecutionEvent.SessionCompleted.class);
+            Mockito.verify(localTestCaseListener).endSession();
+            Mockito.verify(stopController).finishSession();
+            Mockito.verify(qualityGate, Mockito.atLeastOnce()).shouldFailBuild(0, 0);
+        }
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -87,6 +88,7 @@ public class TestCaseListener {
     private final ReportingArguments reportingArguments;
     private final FilterArguments filterArguments;
     private final CatsExecutionEventPublisher executionEventPublisher;
+    private final ExecutionStopController executionStopController;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
 
@@ -109,12 +111,14 @@ public class TestCaseListener {
      * @param reportingArguments   the arguments for reporting test cases
      * @param filterArguments      the arguments for filtering fuzzers
      * @param executionEventPublisher publisher for presentation-neutral execution events
+     * @param executionStopController controller for global execution limits
      * @throws NoSuchElementException if no matching exporter is found for the specified report format
      */
     public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er,
                             TestReportsGenerator testReportsGenerator, IgnoreArguments ignoreArguments,
                             ReportingArguments reportingArguments, FilterArguments filterArguments,
-                            CatsExecutionEventPublisher executionEventPublisher) {
+                            CatsExecutionEventPublisher executionEventPublisher,
+                            ExecutionStopController executionStopController) {
         this.executionStatisticsListener = er;
         this.testReportsGenerator = testReportsGenerator;
         this.ignoreArguments = ignoreArguments;
@@ -122,6 +126,7 @@ public class TestCaseListener {
         this.reportingArguments = reportingArguments;
         this.filterArguments = filterArguments;
         this.executionEventPublisher = executionEventPublisher;
+        this.executionStopController = executionStopController;
     }
 
     private static String replaceBrackets(String message, Object... params) {
@@ -176,6 +181,7 @@ public class TestCaseListener {
      * @param s              the runnable representing the test logic
      */
     public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s, FuzzingData data) {
+        executionStopController.checkBeforeTest();
         this.startTestCase(data);
         try {
             s.run();
@@ -187,6 +193,7 @@ public class TestCaseListener {
             this.checkForIOErrors(e);
         }
         this.endTestCase();
+        executionStopController.checkAfterTest();
     }
 
     /**

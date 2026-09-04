@@ -3,8 +3,10 @@ package com.endava.cats.args;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import picocli.CommandLine;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @QuarkusTest
@@ -17,7 +19,7 @@ class StopArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"2,0,false", "2,1,true", "2,3,false"})
+    @CsvSource({"2,-1,false", "2,0,false", "2,1,true", "2,3,false"})
     void shouldTestStopOnErrors(int errorNo, int threshold, boolean expected) {
         ReflectionTestUtils.setField(stopArguments, "stopAfterErrors", threshold);
 
@@ -26,7 +28,7 @@ class StopArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"2,0,false", "2,1,true", "2,3,false"})
+    @CsvSource({"2,-1,false", "2,0,false", "2,1,true", "2,3,false"})
     void shouldTestStopOnTests(int testsNo, int threshold, boolean expected) {
         ReflectionTestUtils.setField(stopArguments, "stopAfterMutations", threshold);
 
@@ -35,7 +37,7 @@ class StopArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"2000,0,false", "2000,1,true", "2000,3,false"})
+    @CsvSource({"2000,-1,false", "2000,0,false", "2000,1,true", "2000,3,false"})
     void shouldTestStopOnTime(int millisToSubtract, int thresholdInSeconds, boolean expected) {
         ReflectionTestUtils.setField(stopArguments, "stopAfterTimeInSec", thresholdInSeconds);
         long startTime = System.currentTimeMillis() - millisToSubtract;
@@ -51,5 +53,14 @@ class StopArgumentsTest {
 
         boolean result = stopArguments.isAnyStopConditionProvided();
         Assertions.assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldAcceptStopAfterTestsAsAliasForStopAfterMutations() {
+        new CommandLine(stopArguments).parseArgs("--stopAfterTests", "12");
+
+        Assertions.assertThat(stopArguments.getStopAfterMutations()).isEqualTo(12);
+        Assertions.assertThat(stopArguments.triggeredCondition(0, 12, System.currentTimeMillis()))
+                .contains(StopArguments.StopCondition.TESTS);
     }
 }
