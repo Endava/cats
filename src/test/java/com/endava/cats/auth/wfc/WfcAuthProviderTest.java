@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @QuarkusTest
 class WfcAuthProviderTest {
@@ -81,7 +80,7 @@ class WfcAuthProviderTest {
 
         ArgumentCaptor<Request> request = ArgumentCaptor.forClass(Request.class);
         Mockito.verify(client).newCall(request.capture());
-        Assertions.assertThat(request.getValue().url().toString()).isEqualTo("https://example.com/wfc-login");
+        Assertions.assertThat(request.getValue().url()).hasToString("https://example.com/wfc-login");
         Assertions.assertThat(request.getValue().method()).isEqualTo("POST");
         Assertions.assertThat(requestBody(request.getValue())).isEqualTo("{\"username\":\"cats\",\"password\":\"secret\"}");
     }
@@ -106,8 +105,7 @@ class WfcAuthProviderTest {
         Assertions.assertThat(provider.getAuthenticationHeaderNames()).isEmpty();
         Assertions.assertThat(provider.getAuthenticationQueryParamNames()).containsExactly("access_token");
         String authenticatedUrl = provider.applyQueryParams("https://api.example.com/items?access_token=old&keep=yes", client);
-        Assertions.assertThat(authenticatedUrl).contains("keep=yes", "access_token=abc%20123");
-        Assertions.assertThat(authenticatedUrl).doesNotContain("access_token=old");
+        Assertions.assertThat(authenticatedUrl).contains("keep=yes", "access_token=abc%20123").doesNotContain("access_token=old");
     }
 
     @Test
@@ -144,7 +142,7 @@ class WfcAuthProviderTest {
 
         ArgumentCaptor<Request> request = ArgumentCaptor.forClass(Request.class);
         Mockito.verify(client).newCall(request.capture());
-        Assertions.assertThat(request.getValue().url().toString()).isEqualTo("https://example.com/base/login");
+        Assertions.assertThat(request.getValue().url()).hasToString("https://example.com/base/login");
         Assertions.assertThat(request.getValue().header("X-Login")).isEqualTo("yes");
         Assertions.assertThat(requestBody(request.getValue())).isEqualTo("user=user+name&password=p%40ss+word");
     }

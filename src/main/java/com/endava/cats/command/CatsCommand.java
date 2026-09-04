@@ -273,26 +273,30 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     public void run() {
         if (reportingArguments.isTui()) {
             if (filterArguments.isDryRun()) {
-                System.err.println("--tui cannot be combined with --dryRun");
+                logger.fatal("--tui cannot be combined with --dryRun");
                 exitCodeDueToErrors = CommandLine.ExitCode.USAGE;
                 return;
             }
             if (reportingArguments.getTuiMaxResults() < 1) {
-                System.err.println("--tuiMaxResults must be greater than zero");
+                logger.fatal("--tuiMaxResults must be greater than zero");
                 exitCodeDueToErrors = CommandLine.ExitCode.USAGE;
                 return;
             }
             reportingArguments.processLogData();
+            RuntimeException terminalFailure = null;
             try {
                 if (tuiLauncher.run(this::executeSession, serviceCaller::cancelActiveCalls,
                         reportingArguments.getTuiMaxResults())) {
                     exitCodeDueToErrors = CANCELLED_EXIT_CODE;
                 }
             } catch (RuntimeException e) {
-                System.err.println("Unable to run the CATS terminal interface: " + e.getMessage());
+                terminalFailure = e;
                 exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
             } finally {
                 reportingArguments.restoreLogDataAfterTui();
+            }
+            if (terminalFailure != null) {
+                logger.fatal("Unable to run the CATS terminal interface: {}", terminalFailure.getMessage());
             }
             return;
         }
@@ -309,15 +313,14 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             this.printSuggestions();
             this.printVersion(newVersion);
         } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
             cancelled = true;
             failureMessage = "Execution cancelled by user";
             exitCodeDueToErrors = CANCELLED_EXIT_CODE;
-            Thread.interrupted();
         } catch (CatsExecutionCancelledException e) {
             cancelled = true;
             failureMessage = e.getMessage();
             exitCodeDueToErrors = CANCELLED_EXIT_CODE;
-            Thread.interrupted();
         } catch (CatsException | IOException | ExecutionException | IllegalArgumentException e) {
             failureMessage = e.toString();
             logger.fatal("Something went wrong while running CATS: {}", e.toString());

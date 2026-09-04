@@ -593,7 +593,7 @@ final class CatsTuiState {
     }
 
     private void clampFuzzerOffset() {
-        fuzzerOffset = Math.clamp(fuzzerCount() - fuzzerPageSize(screen), 0, fuzzerOffset);
+        fuzzerOffset = Math.clamp((long) fuzzerCount() - fuzzerPageSize(screen), 0, fuzzerOffset);
     }
 
     private int detailPageSize() {

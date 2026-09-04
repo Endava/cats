@@ -184,7 +184,7 @@ class CatsTuiLauncherTest {
 
         try (MockedStatic<CatsTuiLauncher> launcherMethods = Mockito.mockStatic(
                 CatsTuiLauncher.class, Mockito.CALLS_REAL_METHODS);
-             MockedConstruction<JLineBackend> _ = Mockito.mockConstruction(JLineBackend.class,
+             var _ = Mockito.mockConstruction(JLineBackend.class,
                      (backend, _) -> Mockito.when(backend.size()).thenReturn(new Size(100, 30)));
              MockedStatic<ToolkitRunner> toolkit = Mockito.mockStatic(ToolkitRunner.class)) {
             launcherMethods.when(CatsTuiLauncher::requireInteractiveTerminal).thenAnswer(_ -> null);

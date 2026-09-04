@@ -385,7 +385,7 @@ final class CatsTuiView {
         if (code >= 400) {
             return WARNING_STYLE;
         }
-        if (code >= 200 && code < 400) {
+        if (code >= 200) {
             return SUCCESS_STYLE;
         }
         return VALUE_STYLE;

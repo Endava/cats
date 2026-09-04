@@ -130,10 +130,6 @@ public abstract class OpenApiRefExtractor {
         return new RefInfo(filePath, pointer);
     }
 
-    private static boolean isOpenAPIFile(String filePath) {
-        return FILE_EXTENSION_PATTERN.matcher(filePath).find();
-    }
-
     private static Path resolveRelativePath(Path currentFile, String relativePath) {
         if (relativePath.isEmpty()) {
             return currentFile;
@@ -150,6 +146,10 @@ public abstract class OpenApiRefExtractor {
         private RefInfo(String filePath, String pointer) {
             this.filePath = filePath != null ? filePath.trim() : "";
             this.pointer = pointer != null ? pointer.trim() : "";
+        }
+
+        private boolean isOpenAPIFile(String filePath) {
+            return FILE_EXTENSION_PATTERN.matcher(filePath).find();
         }
 
         boolean isLocalPointer() {

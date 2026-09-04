@@ -101,10 +101,14 @@ class TestCaseListenerTest {
 
     @Test
     void shouldCancelAfterPersistingTheCurrentTestCase() {
+        FuzzingData fuzzingData = FuzzingData.builder().build();
+        Runnable testExecution = () -> {
+        };
         Thread.currentThread().interrupt();
         try {
-            Assertions.assertThatThrownBy(() -> testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
-            }, FuzzingData.builder().build())).isInstanceOf(CatsExecutionCancelledException.class);
+            Assertions.assertThatThrownBy(() ->
+                    testCaseListener.createAndExecuteTest(logger, fuzzer, testExecution, fuzzingData))
+                    .isInstanceOf(CatsExecutionCancelledException.class);
 
             Mockito.verify(testReportsGenerator).writeTestCase(Mockito.any());
             Assertions.assertThat(testCaseListener.testCaseMap).isEmpty();
