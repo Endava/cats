@@ -42,8 +42,6 @@ public class DryRunAspect {
     @Inject
     ReportingArguments reportingArguments;
 
-    private int counter;
-
     /**
      * Intercepts the startSession from the TestCaseListener.
      *
@@ -116,7 +114,6 @@ public class DryRunAspect {
         if (data instanceof FuzzingData fuzzingData) {
             paths.merge(fuzzingData.getPath() + "_" + fuzzingData.getMethod(), 1, Integer::sum);
         }
-        counter++;
         return null;
     }
 
