@@ -211,8 +211,8 @@ function _picocli_cats() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands="generate-completion help list replay run template fuzz lint info stats validate random generate explain"
-  local flag_opts="'-A' '--checkHeaders' '-F' '--checkFields' '-T' '--checkHttp' '-C' '--checkContract' '--includeContract' '--includeLinters' '-W' '--includeWhitespaces' '-E' '--includeEmojis' '-U' '--includeControlChars' '--createRefData' '-d' '--dryRun' '--skipDeprecatedOperations' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--useExamples' '--useRequestBodyExamples' '--useResponseBodyExamples' '--useSchemaExamples' '--usePropertyExamples' '--cachePayloads' '--rfc7396' '--allowInvalidEnumValues' '--checkAllowHeader' '--healthCheck' '--strictTypes' '--useDefaults' '--resolveXxxOfCombinationForResponses' '--http2PriorKnowledge' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--checkUpdate' '--color' '--printProgress' '--nameReplace' '--simpleReplace' '--matchInput' '--mi' '--includeAllInjectionPayloads' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--securityFuzzerFile' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--fieldsFuzzingStrategy' '--maxFieldsToRemove' '--edgeSpacesStrategy' '--sanitizationStrategy' '--largeStringsSize' '--randomHeadersNumber' '--selfReferenceDepth' '-L' '--contentType' '--oneOfSelection' '--anyOfSelection' '--limitXxxOfCombinations' '--limitFuzzedFields' '--seed' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--words' '-w' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '--failOn' '--qualityGate'"
+  local flag_opts="'-A' '--checkHeaders' '-F' '--checkFields' '-T' '--checkHttp' '-C' '--checkContract' '--includeContract' '--includeLinters' '-W' '--includeWhitespaces' '-E' '--includeEmojis' '-U' '--includeControlChars' '--createRefData' '-d' '--dryRun' '--skipDeprecatedOperations' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--useExamples' '--useRequestBodyExamples' '--useResponseBodyExamples' '--useSchemaExamples' '--usePropertyExamples' '--cachePayloads' '--rfc7396' '--allowInvalidEnumValues' '--checkAllowHeader' '--healthCheck' '--strictTypes' '--useDefaults' '--resolveXxxOfCombinationForResponses' '--http2PriorKnowledge' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--nameReplace' '--simpleReplace' '--matchInput' '--mi' '--includeAllInjectionPayloads' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--securityFuzzerFile' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--fieldsFuzzingStrategy' '--maxFieldsToRemove' '--edgeSpacesStrategy' '--sanitizationStrategy' '--largeStringsSize' '--randomHeadersNumber' '--selfReferenceDepth' '-L' '--contentType' '--oneOfSelection' '--anyOfSelection' '--limitXxxOfCombinations' '--limitFuzzedFields' '--seed' '--discriminatorCasing' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--words' '-w' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '--failOn' '--qualityGate' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm'"
   local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
   local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
   local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
@@ -278,6 +278,15 @@ function _picocli_cats() {
       return
       ;;
     '--authRefreshInterval'|'--ari')
+      return
+      ;;
+    '--wfcAuth')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--wfcAuthName')
       return
       ;;
     '--errorLeaksKeywords'|'-K')
@@ -498,6 +507,9 @@ function _picocli_cats() {
     '--seed')
       return
       ;;
+    '--discriminatorCasing')
+      return
+      ;;
     '-l'|'--log')
       return
       ;;
@@ -513,6 +525,9 @@ function _picocli_cats() {
       return $?
       ;;
     '-o'|'--output')
+      return
+      ;;
+    '--tuiMaxResults')
       return
       ;;
     '--maxResponseTimeInMs')
@@ -551,6 +566,15 @@ function _picocli_cats() {
       return
       ;;
     '--qualityGate')
+      return
+      ;;
+    '--stopAfterTimeInSec'|'--st')
+      return
+      ;;
+    '--stopAfterErrors'|'--se')
+      return
+      ;;
+    '--stopAfterTests'|'--stopAfterMutations'|'--sm')
       return
       ;;
   esac
@@ -641,7 +665,7 @@ function _picocli_cats_replay() {
 
   local commands=""
   local flag_opts="'-D' '--debug' '-v' '--verbose' '--errors' '--warnings' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '-H' '-s' '--server' '-o' '--output' '--reportFolder' '-r'"
+  local arg_opts="'--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-H' '-s' '--server' '-o' '--output' '--reportFolder' '-r'"
 
   type compopt &>/dev/null && compopt +o default
 
@@ -668,6 +692,15 @@ function _picocli_cats_replay() {
       return
       ;;
     '--authRefreshInterval'|'--ari')
+      return
+      ;;
+    '--wfcAuth')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--wfcAuthName')
       return
       ;;
     '-H')
@@ -700,8 +733,8 @@ function _picocli_cats_run() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--checkUpdate' '--color' '--printProgress' '--createRefData' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--headers' '--queryParams' '-H' '--refData' '--contentType' '--oneOfSelection' '--anyOfSelection' '--seed' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr'"
+  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--createRefData' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--headers' '--queryParams' '-H' '--refData' '--contentType' '--oneOfSelection' '--anyOfSelection' '--seed' '--discriminatorCasing' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr'"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
 
@@ -759,6 +792,15 @@ function _picocli_cats_run() {
     '--authRefreshInterval'|'--ari')
       return
       ;;
+    '--wfcAuth')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--wfcAuthName')
+      return
+      ;;
     '-l'|'--log')
       return
       ;;
@@ -774,6 +816,9 @@ function _picocli_cats_run() {
       return $?
       ;;
     '-o'|'--output')
+      return
+      ;;
+    '--tuiMaxResults')
       return
       ;;
     '--maxResponseTimeInMs')
@@ -815,6 +860,9 @@ function _picocli_cats_run() {
       return
       ;;
     '--seed')
+      return
+      ;;
+    '--discriminatorCasing')
       return
       ;;
     '-i'|'--ignoreResponseCodes'|'--ic')
@@ -872,8 +920,8 @@ function _picocli_cats_template() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--checkUpdate' '--color' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterMutations' '--sm' '--words' '-w' '--headers' '-H' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
+  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--words' '-w' '--headers' '-H' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
@@ -932,6 +980,15 @@ function _picocli_cats_template() {
     '--authRefreshInterval'|'--ari')
       return
       ;;
+    '--wfcAuth')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--wfcAuthName')
+      return
+      ;;
     '-l'|'--log')
       return
       ;;
@@ -947,6 +1004,9 @@ function _picocli_cats_template() {
       return $?
       ;;
     '-o'|'--output')
+      return
+      ;;
+    '--tuiMaxResults')
       return
       ;;
     '--maxResponseTimeInMs')
@@ -1011,7 +1071,7 @@ function _picocli_cats_template() {
     '--stopAfterErrors'|'--se')
       return
       ;;
-    '--stopAfterMutations'|'--sm')
+    '--stopAfterTests'|'--stopAfterMutations'|'--sm')
       return
       ;;
     '--words'|'-w')
@@ -1055,8 +1115,8 @@ function _picocli_cats_fuzz() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--checkUpdate' '--color' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterMutations' '--sm' '--words' '-w' '--headers' '-H' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
+  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--words' '-w' '--headers' '-H' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
@@ -1115,6 +1175,15 @@ function _picocli_cats_fuzz() {
     '--authRefreshInterval'|'--ari')
       return
       ;;
+    '--wfcAuth')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--wfcAuthName')
+      return
+      ;;
     '-l'|'--log')
       return
       ;;
@@ -1130,6 +1199,9 @@ function _picocli_cats_fuzz() {
       return $?
       ;;
     '-o'|'--output')
+      return
+      ;;
+    '--tuiMaxResults')
       return
       ;;
     '--maxResponseTimeInMs')
@@ -1194,7 +1266,7 @@ function _picocli_cats_fuzz() {
     '--stopAfterErrors'|'--se')
       return
       ;;
-    '--stopAfterMutations'|'--sm')
+    '--stopAfterTests'|'--stopAfterMutations'|'--sm')
       return
       ;;
     '--words'|'-w')
@@ -1238,8 +1310,8 @@ function _picocli_cats_lint() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--checkUpdate' '--color' '--printProgress' '--strict' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--pathNaming' '--pathVariablesNaming' '--queryParamsNaming' '--jsonObjectsNaming' '--jsonPropertiesNaming' '--headersNaming' '--enumsNaming' '--operationPrefixMapFile' '-c' '--contract' '--skipLinters' '--skipLinter' '--skipPaths' '--skipPath'"
+  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--strict' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--pathNaming' '--pathVariablesNaming' '--queryParamsNaming' '--jsonObjectsNaming' '--jsonPropertiesNaming' '--headersNaming' '--enumsNaming' '--operationPrefixMapFile' '-c' '--contract' '--skipLinters' '--skipLinter' '--skipPaths' '--skipPath'"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local pathNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL" "UPPER_UNDERSCORE" "LOWER_UNDERSCORE") # --pathNaming values
@@ -1274,6 +1346,9 @@ function _picocli_cats_lint() {
       return $?
       ;;
     '-o'|'--output')
+      return
+      ;;
+    '--tuiMaxResults')
       return
       ;;
     '--maxResponseTimeInMs')
@@ -1433,8 +1508,8 @@ function _picocli_cats_random() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--checkUpdate' '--color' '--printProgress' '--matchInput' '--mi' '--createRefData' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--securityFuzzerFile' '--mutators' '-m' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterMutations' '--sm' '--httpMethod' '-X' '--contentType' '--oneOfSelection' '--anyOfSelection' '--path' '-p' '--seed'"
+  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--matchInput' '--mi' '--createRefData' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--securityFuzzerFile' '--mutators' '-m' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--httpMethod' '-X' '--contentType' '--oneOfSelection' '--anyOfSelection' '--path' '-p' '--seed'"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
@@ -1493,6 +1568,15 @@ function _picocli_cats_random() {
     '--authRefreshInterval'|'--ari')
       return
       ;;
+    '--wfcAuth')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--wfcAuthName')
+      return
+      ;;
     '-l'|'--log')
       return
       ;;
@@ -1508,6 +1592,9 @@ function _picocli_cats_random() {
       return $?
       ;;
     '-o'|'--output')
+      return
+      ;;
+    '--tuiMaxResults')
       return
       ;;
     '--maxResponseTimeInMs')
@@ -1611,7 +1698,7 @@ function _picocli_cats_random() {
     '--stopAfterErrors'|'--se')
       return
       ;;
-    '--stopAfterMutations'|'--sm')
+    '--stopAfterTests'|'--stopAfterMutations'|'--sm')
       return
       ;;
     '--httpMethod'|'-X')
