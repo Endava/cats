@@ -1,0 +1,58 @@
+openapi: 3.0.1
+info:
+  title: Required fields per anyOf variant
+  version: 1.0.0
+paths:
+  /required-fields:
+    post:
+      operationId: requiredFields
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Request'
+      responses:
+        '200':
+          description: Successful response
+components:
+  schemas:
+    Request:
+      type: object
+      required:
+        - id
+        - selection
+      properties:
+        id:
+          type: string
+        optionalRoot:
+          type: string
+        selection:
+          required:
+            - alwaysRequired
+          anyOf:
+            - type: object
+              required:
+                - shared
+                - variantRequired
+              properties:
+                shared:
+                  type: string
+                variantRequired:
+                  type: string
+                optionalNested:
+                  type: string
+                alwaysRequired:
+                  type: string
+            - type: object
+              required:
+                - variantRequired
+              properties:
+                shared:
+                  type: string
+                variantRequired:
+                  type: string
+                optionalNested:
+                  type: string
+                alwaysRequired:
+                  type: string

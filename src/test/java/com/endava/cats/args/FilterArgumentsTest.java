@@ -86,7 +86,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
-                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer", "SingleElementArrayToScalarFieldsFuzzer").hasSize(201);
+                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer", "SingleElementArrayToScalarFieldsFuzzer").hasSize(202);
     }
 
     @Test
@@ -153,7 +153,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(206);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(207);
     }
 
     @Test
@@ -386,7 +386,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnFuzzersAsClasses() {
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(133);
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(134);
     }
 
     @Test
@@ -416,7 +416,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldCountTotalFuzzers() {
-        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(149);
+        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(150);
     }
 
     @Test
@@ -425,7 +425,7 @@ class FilterArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"ALL,190", "FUZZERS,149", "LINTERS,41"})
+    @CsvSource({"ALL,191", "FUZZERS,150", "LINTERS,41"})
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);
@@ -530,7 +530,7 @@ class FilterArgumentsTest {
 
         List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
         Assertions.assertThat(suppliedFuzzers)
-                .contains("HappyPath", "RemoveFields", "NullValuesInFields");
+                .contains("HappyPath", "OnlyRequiredFields", "RemoveFields", "NullValuesInFields");
     }
 
     @Test

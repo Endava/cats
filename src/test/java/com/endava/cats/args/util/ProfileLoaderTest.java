@@ -97,6 +97,7 @@ class ProfileLoaderTest {
             Assertions.assertThat(profile.get().fuzzers())
                     .contains(
                             "HappyPath",
+                            "OnlyRequiredFields",
                             "RemoveFields",
                             "NullValuesInFields"
                     );
@@ -129,6 +130,7 @@ class ProfileLoaderTest {
             Assertions.assertThat(profile.get().fuzzers())
                     .contains(
                             "HappyPath",
+                            "OnlyRequiredFields",
                             "MinGreaterThanMaxFields",
                             "DateRangeInversion"
                     );
