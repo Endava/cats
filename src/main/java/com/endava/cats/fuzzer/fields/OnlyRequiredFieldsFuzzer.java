@@ -9,13 +9,13 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * Sends a valid request containing only fields marked as required in the OpenAPI contract.
  */
-@ApplicationScoped
+@Singleton
 @FieldFuzzer
 public class OnlyRequiredFieldsFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OnlyRequiredFieldsFuzzer.class);

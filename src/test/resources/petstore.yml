@@ -567,6 +567,7 @@ components:
           type: string
         colors:
           type: array
+          uniqueItems: true
           items:
             $ref: '#/components/schemas/Colors'
     Pet:

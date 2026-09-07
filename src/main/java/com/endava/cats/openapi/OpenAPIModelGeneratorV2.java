@@ -26,6 +26,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -58,6 +59,7 @@ public class OpenAPIModelGeneratorV2 {
     public static final int LIMIT_OF_EXAMPLES = 500;
     public static final int REQUEST_TOTAL_DEPTH = 200;
     public static final int RESPONSE_TOTAL_DEPTH = 50;
+    private static final int MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS = 20;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGeneratorV2.class);
     private final Random random;
     private final ProcessingArguments.ExamplesFlags examplesFlags;
@@ -78,6 +80,7 @@ public class OpenAPIModelGeneratorV2 {
     private final int totalDepth;
     private final String discriminatorCasing;
     private String currentRequiredProperty = "";
+    private boolean bypassExamplesCache;
 
     /**
      * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
@@ -318,7 +321,7 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private List<GeneratedExample> getFromCacheOrExample(String cacheKey, Schema schema) {
-        if (examplesCache.containsKey(cacheKey)) {
+        if (!bypassExamplesCache && examplesCache.containsKey(cacheKey)) {
             return examplesCache.get(cacheKey);
         }
 
@@ -397,7 +400,9 @@ public class OpenAPIModelGeneratorV2 {
             }
         }
 
-        examplesCache.put(cacheKey, examples);
+        if (!bypassExamplesCache) {
+            examplesCache.put(cacheKey, examples);
+        }
 
         return examples;
     }
@@ -651,17 +656,14 @@ public class OpenAPIModelGeneratorV2 {
         logger.trace("resolveArraySchemaProperties for schema {}", propertyName);
         List<GeneratedExample> examples = new ArrayList<>();
         Schema itemSchema = getArrayItemsOrDefault(schema);
-
-        List<GeneratedExample> itemExamples = resolvePropertyToExamples(propertyName, itemSchema, true);
         int arraySize = getArrayLength(schema);
+        List<GeneratedExample> arrayExamples = generateArrayExamples(propertyName, itemSchema, arraySize,
+                item -> unwrapArrayItem(propertyName, item), Boolean.TRUE.equals(schema.getUniqueItems()));
 
-        for (GeneratedExample itemExample : itemExamples) {
+        for (GeneratedExample arrayExample : arrayExamples) {
             Map<String, Object> newExample = new HashMap<>();
-
-            Object toAdd = unwrapArrayItem(propertyName, itemExample.value());
-
-            newExample.put(propertyName, Collections.nCopies(arraySize, toAdd));
-            examples.add(new GeneratedExample(newExample, itemExample.requiredFields()));
+            newExample.put(propertyName, arrayExample.value());
+            examples.add(new GeneratedExample(newExample, arrayExample.requiredFields()));
         }
 
         return examples;
@@ -777,28 +779,67 @@ public class OpenAPIModelGeneratorV2 {
             return;
         }
 
-        if (Boolean.TRUE.equals(property.getUniqueItems())) {
-            logger.trace("Creating unique items array for property {}", propertyName);
-            int arraySize = getArrayLength(property);
-            Schema itemSchema = getArrayItemsOrDefault(property);
-            Set<Object> itemExamples = new HashSet<>();
-            Object itemExample = resolvePropertyToExample(propertyName + ".items", itemSchema, false);
+        Schema itemSchema = getArrayItemsOrDefault(property);
+        int arraySize = getArrayLength(property);
+        examples.addAll(generateArrayExamples(propertyName + ".items", itemSchema, arraySize,
+                Function.identity(), Boolean.TRUE.equals(property.getUniqueItems())));
+    }
 
-            while (itemExamples.size() < arraySize && itemExample != null) {
-                itemExample = resolvePropertyToExample(propertyName + ".items", itemSchema, false);
-                itemExamples.add(itemExample);
+    private List<GeneratedExample> generateArrayExamples(String propertyName, Schema itemSchema, int arraySize,
+                                                          Function<Object, Object> itemMapper, boolean uniqueItems) {
+        List<GeneratedExample> templates = generateFreshArrayItemExamples(propertyName, itemSchema);
+        List<GeneratedExample> arrays = new ArrayList<>();
+
+        for (int variantIndex = 0; variantIndex < templates.size(); variantIndex++) {
+            GeneratedExample template = templates.get(variantIndex);
+            List<Object> items = new ArrayList<>();
+            Set<String> requiredFields = new LinkedHashSet<>();
+
+            for (int itemIndex = 0; itemIndex < arraySize; itemIndex++) {
+                GeneratedExample itemExample = itemIndex == 0
+                        ? template
+                        : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template);
+                Object item = itemMapper.apply(itemExample.value());
+
+                int attempts = 0;
+                while (uniqueItems && containsEquivalent(items, item)
+                        && attempts++ < MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS) {
+                    itemExample = generateArrayItemVariant(propertyName, itemSchema, variantIndex, template);
+                    item = itemMapper.apply(itemExample.value());
+                }
+
+                if (uniqueItems && containsEquivalent(items, item)) {
+                    logger.debug("Could not generate {} unique items for array {}", arraySize, propertyName);
+                    break;
+                }
+
+                items.add(item);
+                requiredFields.addAll(itemExample.requiredFields());
             }
-            examples.add(new GeneratedExample(itemExamples,
-                    collectRequiredFields(itemSchema, currentRequiredProperty, Collections.newSetFromMap(new IdentityHashMap<>()))));
-        } else {
-            Schema itemSchema = getArrayItemsOrDefault(property);
-            List<GeneratedExample> itemExamples = resolvePropertyToExamples(propertyName + ".items", itemSchema, true);
-            int arraySize = getArrayLength(property);
-            examples.addAll(itemExamples.stream()
-                    .map(innerExample -> new GeneratedExample(
-                            Collections.nCopies(arraySize, innerExample.value()), innerExample.requiredFields()))
-                    .toList());
+            arrays.add(new GeneratedExample(items, requiredFields));
         }
+
+        return arrays;
+    }
+
+    private GeneratedExample generateArrayItemVariant(String propertyName, Schema itemSchema, int variantIndex,
+                                                       GeneratedExample fallback) {
+        List<GeneratedExample> generated = generateFreshArrayItemExamples(propertyName, itemSchema);
+        return variantIndex < generated.size() ? generated.get(variantIndex) : fallback;
+    }
+
+    private List<GeneratedExample> generateFreshArrayItemExamples(String propertyName, Schema itemSchema) {
+        boolean previousBypassExamplesCache = bypassExamplesCache;
+        bypassExamplesCache = true;
+        try {
+            return resolvePropertyToExamples(propertyName, itemSchema, true);
+        } finally {
+            bypassExamplesCache = previousBypassExamplesCache;
+        }
+    }
+
+    private static boolean containsEquivalent(List<Object> items, Object candidate) {
+        return items.stream().anyMatch(item -> Objects.deepEquals(item, candidate));
     }
 
     private void mapDiscriminator(Schema<?> composedSchema, List<Schema> anyOf) {

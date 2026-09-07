@@ -86,7 +86,8 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
-                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer", "SingleElementArrayToScalarFieldsFuzzer").hasSize(202);
+                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer", "SingleElementArrayToScalarFieldsFuzzer",
+                        "DuplicateItemsInUniqueArraysFieldsFuzzer").hasSize(203);
     }
 
     @Test
@@ -153,7 +154,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(207);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(208);
     }
 
     @Test
@@ -386,7 +387,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnFuzzersAsClasses() {
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(134);
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(135);
     }
 
     @Test
@@ -416,7 +417,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldCountTotalFuzzers() {
-        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(150);
+        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(151);
     }
 
     @Test
@@ -425,7 +426,7 @@ class FilterArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"ALL,191", "FUZZERS,150", "LINTERS,41"})
+    @CsvSource({"ALL,192", "FUZZERS,151", "LINTERS,41"})
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);

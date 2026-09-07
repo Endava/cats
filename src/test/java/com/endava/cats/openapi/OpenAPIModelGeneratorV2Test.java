@@ -9,7 +9,10 @@ import com.endava.cats.util.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -17,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -119,6 +123,74 @@ class OpenAPIModelGeneratorV2Test {
         schema.setMaxItems(max);
         int result = generator.getArrayLength(schema);
         Assertions.assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldGenerateDifferentObjectsForEachNestedArrayElement() {
+        ValidDataFormat sequentialDataFormat = Mockito.mock(ValidDataFormat.class);
+        Mockito.when(sequentialDataFormat.generate(Mockito.any(), Mockito.anyString()))
+                .thenReturn("first", "second");
+
+        ObjectSchema itemSchema = new ObjectSchema();
+        itemSchema.addProperty("name", new StringSchema());
+        ArraySchema arraySchema = new ArraySchema();
+        arraySchema.setItems(itemSchema);
+        arraySchema.setMinItems(2);
+        arraySchema.setMaxItems(2);
+        ObjectSchema containerSchema = new ObjectSchema();
+        containerSchema.addProperty("items", arraySchema);
+        globalContext.getSchemaMap().put("ArrayContainer", containerSchema);
+
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, sequentialDataFormat,
+                new ProcessingArguments.ExamplesFlags(false, false, false, false), 3, true, 2);
+
+        String payload = generator.generate("ArrayContainer").getFirst();
+
+        var items = JsonUtils.parseAsJsonElement(payload).getAsJsonObject().getAsJsonArray("items");
+        Assertions.assertThat(items).hasSize(2);
+        Assertions.assertThat(items.get(0).getAsJsonObject().get("name").getAsString()).isEqualTo("first");
+        Assertions.assertThat(items.get(1).getAsJsonObject().get("name").getAsString()).isEqualTo("second");
+    }
+
+    @Test
+    void shouldGenerateDifferentValuesForEachRootArrayElement() {
+        ValidDataFormat sequentialDataFormat = Mockito.mock(ValidDataFormat.class);
+        Mockito.when(sequentialDataFormat.generate(Mockito.any(), Mockito.anyString()))
+                .thenReturn("first", "second");
+
+        ArraySchema rootArraySchema = new ArraySchema();
+        rootArraySchema.setItems(new StringSchema());
+        rootArraySchema.setMinItems(2);
+        rootArraySchema.setMaxItems(2);
+        globalContext.getSchemaMap().put("RootArray", rootArraySchema);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, sequentialDataFormat,
+                new ProcessingArguments.ExamplesFlags(false, false, false, false), 3, true, 2);
+
+        String payload = generator.generate("RootArray").getFirst();
+
+        var items = JsonUtils.parseAsJsonElement(payload).getAsJsonArray();
+        Assertions.assertThat(items).hasSize(2);
+        Assertions.assertThat(items.get(0).getAsString()).isEqualTo("first");
+        Assertions.assertThat(items.get(1).getAsString()).isEqualTo("second");
+    }
+
+    @Test
+    void shouldRetainRepeatedValuesWhenTheItemExampleIsFixed() {
+        StringSchema itemSchema = new StringSchema();
+        itemSchema.setExample("fixed");
+        ArraySchema rootArraySchema = new ArraySchema();
+        rootArraySchema.setItems(itemSchema);
+        rootArraySchema.setMinItems(2);
+        rootArraySchema.setMaxItems(2);
+        globalContext.getSchemaMap().put("RootArray", rootArraySchema);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
+
+        String payload = generator.generate("RootArray").getFirst();
+
+        var items = JsonUtils.parseAsJsonElement(payload).getAsJsonArray();
+        Assertions.assertThat(items.asList().stream().map(item -> item.getAsString()).toList())
+                .containsExactly("fixed", "fixed");
     }
 
     @Test
