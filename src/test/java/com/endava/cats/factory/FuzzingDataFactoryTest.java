@@ -384,7 +384,7 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(data).hasSize(1);
         FuzzingData fuzzingData = data.getFirst();
-        Assertions.assertThat(fuzzingData.getAllRequiredFields()).containsExactly("breed", "id").doesNotContain("color");
+        Assertions.assertThat(fuzzingData.getAllRequiredFields()).containsExactlyInAnyOrder("breed", "id").doesNotContain("color");
         assertPropertiesExistInRequestPropertyTypes(fuzzingData);
     }
 
@@ -394,8 +394,25 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(data).hasSize(1);
         FuzzingData fuzzingData = data.getFirst();
-        Assertions.assertThat(fuzzingData.getAllRequiredFields()).containsExactly("legs", "breed", "id").doesNotContain("color");
+        Assertions.assertThat(fuzzingData.getAllRequiredFields()).containsExactlyInAnyOrder("legs", "breed", "id").doesNotContain("color");
         assertPropertiesExistInRequestPropertyTypes(fuzzingData);
+    }
+
+    @Test
+    void shouldAssociateRequiredFieldsWithTheAnyOfVariantThatGeneratedEachPayload() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/required-fields", "src/test/resources/required-fields-anyof.yml");
+
+        Assertions.assertThat(data).hasSize(2);
+        Assertions.assertThat(data)
+                .extracting(fuzzingData -> Set.copyOf(fuzzingData.getAllRequiredFields()))
+                .containsExactlyInAnyOrder(
+                        Set.of("id", "selection", "selection#alwaysRequired", "selection#shared", "selection#variantRequired"),
+                        Set.of("id", "selection", "selection#alwaysRequired", "selection#variantRequired"));
+        Assertions.assertThat(data)
+                .allSatisfy(fuzzingData -> {
+                    Assertions.assertThat(fuzzingData.getPayload()).contains("optionalRoot", "optionalNested", "alwaysRequired", "shared", "variantRequired");
+                    assertPropertiesExistInRequestPropertyTypes(fuzzingData);
+                });
     }
 
     @Test

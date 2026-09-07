@@ -67,7 +67,7 @@ public class OpenAPIModelGeneratorV2 {
     private final Map<String, Integer> callStackCounter;
     private final boolean useDefaults;
     private final int maxArraySize;
-    private final Map<String, List<Map<String, Object>>> examplesCache = new HashMap<>();
+    private final Map<String, List<GeneratedExample>> examplesCache = new HashMap<>();
 
     @Getter
     private final Map<String, Schema> requestDataTypes = new HashMap<>();
@@ -77,6 +77,7 @@ public class OpenAPIModelGeneratorV2 {
     private int currentPropertiesDepth;
     private final int totalDepth;
     private final String discriminatorCasing;
+    private String currentRequiredProperty = "";
 
     /**
      * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
@@ -161,15 +162,17 @@ public class OpenAPIModelGeneratorV2 {
         this.totalDepth = RESPONSE_TOTAL_DEPTH;
     }
 
-    private void addExampleAndKeepDepth(String propertyName, Object propertyExample, Map<String, Object> newExample, List<Map<String, Object>> combinedExamples) {
+    private void addExampleAndKeepDepth(String propertyName, GeneratedExample propertyExample, Map<String, Object> newExample,
+                                        Set<String> requiredFields, List<GeneratedExample> combinedExamples) {
         logger.trace("addExampleAndKeepDepth for property {}", propertyName);
-        switch (propertyExample) {
+        switch (propertyExample.value()) {
             case Map map when map.get(null) != null -> newExample.put(propertyName, map.values().iterator().next());
             case Map map when map.get(propertyName) != null && isNotCyclingReference(propertyName) ->
                     newExample.put(propertyName, map.get(propertyName));
-            case null, default -> newExample.put(propertyName, propertyExample);
+            case null, default -> newExample.put(propertyName, propertyExample.value());
         }
-        combinedExamples.add(newExample);
+        requiredFields.addAll(propertyExample.requiredFields());
+        combinedExamples.add(new GeneratedExample(newExample, requiredFields));
     }
 
     private boolean isNotCyclingReference(String propertyName) {
@@ -184,19 +187,29 @@ public class OpenAPIModelGeneratorV2 {
 
 
     public List<String> generate(String modelName) {
-        List<String> examples = new ArrayList<>();
+        return generateWithMetadata(modelName).stream().map(GeneratedPayload::payload).toList();
+    }
+
+    /**
+     * Generates example payloads together with the required fields belonging to the exact schema variant that produced each payload.
+     *
+     * @param modelName the schema name
+     * @return generated payloads and their variant-specific required fields
+     */
+    public List<GeneratedPayload> generateWithMetadata(String modelName) {
+        List<GeneratedPayload> examples = new ArrayList<>();
         if (modelName != null) {
             final Schema schema = this.globalContext.getSchemaFromReference(modelName);
             if (schema != null) {
-                List<Map<String, Object>> generatedExamples = generateExamplesForSchema(modelName, schema);
-                for (Object generatedExample : generatedExamples) {
-                    String example = this.transformInJson(modelName, generatedExample);
+                List<GeneratedExample> generatedExamples = generateExamplesForSchema(modelName, schema);
+                for (GeneratedExample generatedExample : generatedExamples) {
+                    String example = this.transformInJson(modelName, generatedExample.value());
 
                     if (example != null) {
-                        examples.add(example);
+                        examples.add(new GeneratedPayload(example, List.copyOf(generatedExample.requiredFields())));
                     }
                 }
-                return examples.isEmpty() ? List.of("{}") : examples;
+                return examples.isEmpty() ? List.of(new GeneratedPayload("{}", List.of())) : examples;
             } else {
                 throw new IllegalArgumentException("Scheme is not declared: " + modelName);
             }
@@ -304,19 +317,20 @@ public class OpenAPIModelGeneratorV2 {
         return schema;
     }
 
-    private List<Map<String, Object>> getFromCacheOrExample(String cacheKey, Schema schema) {
+    private List<GeneratedExample> getFromCacheOrExample(String cacheKey, Schema schema) {
         if (examplesCache.containsKey(cacheKey)) {
             return examplesCache.get(cacheKey);
         }
 
         Object fromExample = extractExampleFromSchema(schema, examplesFlags.useSchemaExamples());
         if (fromExample != null) {
-            return List.of(formatExampleAsMap(fromExample));
+            return List.of(new GeneratedExample(formatExampleAsMap(fromExample),
+                    collectRequiredFields(schema, currentRequiredProperty, Collections.newSetFromMap(new IdentityHashMap<>()))));
         }
         return List.of();
     }
 
-    private List<Map<String, Object>> generateExamplesForSchema(String name, Schema schema) {
+    private List<GeneratedExample> generateExamplesForSchema(String name, Schema schema) {
         logger.trace("generateExamplesForSchema for schema {}", name);
         /* When checking for cyclic references make sure we exclude schema names. Some OpenAPI specs are generated by frameworks,
         so they might generate schema names that might seem cyclic such as: Body_Create_a_previously_generated_voice_v1_voice_generation_create_voice_post
@@ -324,14 +338,14 @@ public class OpenAPIModelGeneratorV2 {
         if (JsonUtils.isCyclicReference(currentProperty, selfReferenceDepth) && globalContext.getSchemaFromReference(name) == null) {
             return List.of();
         }
-        String cacheKey = name + "_" + schema.hashCode();
+        String cacheKey = currentRequiredProperty + "_" + name + "_" + schema.hashCode();
 
-        List<Map<String, Object>> fromCacheOrExample = getFromCacheOrExample(cacheKey, schema);
+        List<GeneratedExample> fromCacheOrExample = getFromCacheOrExample(cacheKey, schema);
         if (!fromCacheOrExample.isEmpty()) {
             return fromCacheOrExample;
         }
 
-        List<Map<String, Object>> examples = new ArrayList<>();
+        List<GeneratedExample> examples = new ArrayList<>();
         if (schema.get$ref() != null) {
             schema = globalContext.getSchemaFromReference(schema.get$ref());
         }
@@ -352,7 +366,7 @@ public class OpenAPIModelGeneratorV2 {
         boolean hasOneOfOrAnyOf = CatsModelUtils.hasOneOf(schema) || CatsModelUtils.hasAnyOf(schema);
         boolean hasPropertiesAndComposed = (schema.getProperties() != null && !schema.getProperties().isEmpty()) && hasOneOfOrAnyOf;
 
-        List<Map<String, Object>> parentPropertyExamples = new ArrayList<>();
+        List<GeneratedExample> parentPropertyExamples = new ArrayList<>();
         if (hasPropertiesAndComposed) {
             parentPropertyExamples = traverseSchemaProperties(schema, name, true); // skip discriminator
         } else if (schema.getProperties() != null && !schema.getProperties().isEmpty()) {
@@ -360,7 +374,7 @@ public class OpenAPIModelGeneratorV2 {
         }
 
         if (CatsModelUtils.isAllOf(schema) || CatsModelUtils.isAllOfWithProperties(schema)) {
-            List<Map<String, Object>> allOfExamples = resolveAllOfSchemaProperties(schema, name);
+            List<GeneratedExample> allOfExamples = resolveAllOfSchemaProperties(schema, name);
             examples = combineExampleLists(examples, allOfExamples);
         }
 
@@ -369,7 +383,7 @@ public class OpenAPIModelGeneratorV2 {
         }
 
         if (CatsModelUtils.isArraySchema(schema)) {
-            List<Map<String, Object>> arrayExamples = resolveArraySchemaProperties(name, schema);
+            List<GeneratedExample> arrayExamples = resolveArraySchemaProperties(name, schema);
             examples = combineExampleLists(examples, arrayExamples);
         }
 
@@ -379,7 +393,7 @@ public class OpenAPIModelGeneratorV2 {
                 Map<String, Object> defaultExample = new HashMap<>();
                 String key = name != null && name.endsWith(".items") ? name.substring(0, name.lastIndexOf('.')) : name;
                 defaultExample.put(key, resolvedExample);
-                examples.add(defaultExample);
+                examples.add(new GeneratedExample(defaultExample, Collections.emptySet()));
             }
         }
 
@@ -388,19 +402,34 @@ public class OpenAPIModelGeneratorV2 {
         return examples;
     }
 
-    private List<Map<String, Object>> handleAnyOrOneOf(String name, Schema schema, List<Map<String, Object>> parentPropertyExamples, List<Map<String, Object>> examples) {
-        List<Map<String, Object>> oneOfAnyOfExamples = resolveAnyOfOneOfSchemaProperties(name, schema);
+    /**
+     * Returns all required fields declared by a schema. This is used only when a request example replaces the generated payload and
+     * therefore cannot be associated with one of the generated composition variants.
+     *
+     * @param modelName the schema name
+     * @return required field paths, using {@code #} as the nesting separator
+     */
+    public List<String> getRequiredFields(String modelName) {
+        Schema<?> schema = globalContext.getSchemaFromReference(modelName);
+        if (schema == null) {
+            return List.of();
+        }
+        return List.copyOf(collectRequiredFields(schema, "", Collections.newSetFromMap(new IdentityHashMap<>())));
+    }
+
+    private List<GeneratedExample> handleAnyOrOneOf(String name, Schema schema, List<GeneratedExample> parentPropertyExamples, List<GeneratedExample> examples) {
+        List<GeneratedExample> oneOfAnyOfExamples = resolveAnyOfOneOfSchemaProperties(name, schema);
 
         if (!parentPropertyExamples.isEmpty()) {
-            List<Map<String, Object>> mergedExamples = new ArrayList<>();
-            for (Map<String, Object> oneOfExample : oneOfAnyOfExamples) {
-                for (Map<String, Object> parentExample : parentPropertyExamples) {
-                    Map<String, Object> merged = new HashMap<>(oneOfExample);
+            List<GeneratedExample> mergedExamples = new ArrayList<>();
+            for (GeneratedExample oneOfExample : oneOfAnyOfExamples) {
+                for (GeneratedExample parentExample : parentPropertyExamples) {
+                    Map<String, Object> merged = new HashMap<>(asMap(oneOfExample));
 
-                    for (Map.Entry<String, Object> entry : parentExample.entrySet()) {
+                    for (Map.Entry<String, Object> entry : asMap(parentExample).entrySet()) {
                         merged.putIfAbsent(entry.getKey(), entry.getValue());
                     }
-                    mergedExamples.add(merged);
+                    mergedExamples.add(new GeneratedExample(merged, unionRequiredFields(oneOfExample, parentExample)));
                 }
             }
             examples = combineExampleLists(examples, mergedExamples);
@@ -419,18 +448,20 @@ public class OpenAPIModelGeneratorV2 {
         return JsonUtils.getSimpleObjectMapper().convertValue(fromExample, Map.class);
     }
 
-    private List<Map<String, Object>> traverseSchemaProperties(Schema schema, String currentSchemaName) {
+    private List<GeneratedExample> traverseSchemaProperties(Schema schema, String currentSchemaName) {
         return traverseSchemaProperties(schema, currentSchemaName, false);
     }
 
-    private List<Map<String, Object>> traverseSchemaProperties(Schema schema, String currentSchemaName, boolean skipDiscriminator) {
+    private List<GeneratedExample> traverseSchemaProperties(Schema schema, String currentSchemaName, boolean skipDiscriminator) {
         logger.trace("traverseSchemaProperties for schema {}, skipDiscriminator: {}", currentSchemaName, skipDiscriminator);
-        List<Map<String, Object>> examples = new ArrayList<>();
+        List<GeneratedExample> examples = new ArrayList<>();
 
         Set<Map.Entry<String, Schema>> properties = schema.getProperties().entrySet();
+        Set<String> requiredProperties = new HashSet<>(Optional.ofNullable(schema.getRequired()).orElse(Collections.emptyList()));
         for (Map.Entry<String, Schema> entry : properties) {
             String propertyName = entry.getKey();
             Schema property = entry.getValue();
+            String requiredPropertyPath = appendRequiredProperty(currentRequiredProperty, propertyName);
 
             currentPropertiesDepth++;
             // this is a hack to avoid infinite recursion when the schema references itself and JsonUtils.isCyclicReference does not catch it.
@@ -446,17 +477,19 @@ public class OpenAPIModelGeneratorV2 {
                 continue;
             }
 
-            List<Object> propertyExamples;
+            List<GeneratedExample> propertyExamples;
             if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName)) {
-                propertyExamples = List.of(matchToEnumOrEmpty(currentSchemaName, property, propertyName));
-                globalContext.recordDiscriminator(currentProperty, schema.getDiscriminator(), propertyExamples);
+                Object discriminatorExample = matchToEnumOrEmpty(currentSchemaName, property, propertyName);
+                propertyExamples = List.of(GeneratedExample.of(discriminatorExample));
+                globalContext.recordDiscriminator(currentProperty, schema.getDiscriminator(), List.of(discriminatorExample));
                 recordRequestSchema(currentProperty + "#" + propertyName, property);
             } else {
                 propertyExamples = resolvePropertyToExamples(propertyName, property);
             }
 
             if (!propertyExamples.isEmpty()) {
-                examples = combineExamples(examples, propertyName, propertyExamples);
+                examples = combineExamples(examples, propertyName, propertyExamples, requiredPropertyPath,
+                        requiredProperties.contains(propertyName));
                 currentPropertiesDepth--;
             }
         }
@@ -464,9 +497,9 @@ public class OpenAPIModelGeneratorV2 {
         return examples;
     }
 
-    private List<Map<String, Object>> resolveAllOfSchemaProperties(Schema schema, String propertyName) {
+    private List<GeneratedExample> resolveAllOfSchemaProperties(Schema schema, String propertyName) {
         logger.trace("resolveAllOfSchemaProperties for schema {}", propertyName);
-        List<Map<String, Object>> examples = new ArrayList<>();
+        List<GeneratedExample> examples = new ArrayList<>();
         keepOriginalSchema(propertyName, schema);
         mergeRequiredProperties(schema.getAllOf());
 
@@ -485,17 +518,17 @@ public class OpenAPIModelGeneratorV2 {
 
         List<Schema> schemas = schema.getAllOf().stream().filter(iteratingSchema -> !isNullSchema((Schema<?>) iteratingSchema)).toList();
         for (Schema subSchema : schemas) {
-            List<Map<String, Object>> subExamples = generateExamplesForSchema(propertyName, subSchema);
-            List<Map<String, Object>> interimExamples = new ArrayList<>();
+            List<GeneratedExample> subExamples = generateExamplesForSchema(propertyName, subSchema);
+            List<GeneratedExample> interimExamples = new ArrayList<>();
 
             if (CatsModelUtils.isAnyOf(subSchema) || CatsModelUtils.isOneOf(subSchema)) {
                 interimExamples.addAll(subExamples);
             } else if (examples.isEmpty()) {
                 examples.addAll(subExamples);
             } else {
-                for (Map<String, Object> subExample : subExamples) {
-                    for (Map<String, Object> existingExample : examples) {
-                        interimExamples.add(mergeMaps(existingExample, subExample));
+                for (GeneratedExample subExample : subExamples) {
+                    for (GeneratedExample existingExample : examples) {
+                        interimExamples.add(mergeExamples(existingExample, subExample));
                     }
                 }
             }
@@ -527,7 +560,8 @@ public class OpenAPIModelGeneratorV2 {
                     : this.discriminatorCasing;
             String discriminatorValue = WordUtils.convertToDetectedCasing(propertyName, detectedCasing);
 
-            for (Map<String, Object> example : examples) {
+            for (GeneratedExample generatedExample : examples) {
+                Map<String, Object> example = asMap(generatedExample);
                 // Only set if not already set or if it's empty
                 Object currentValue = example.get(discriminatorPropertyName);
                 if (currentValue == null || currentValue.toString().isEmpty()) {
@@ -540,38 +574,36 @@ public class OpenAPIModelGeneratorV2 {
     }
 
 
-    private List<Map<String, Object>> resolveAnyOfOneOfSchemaProperties(String propertyName, Schema schema) {
+    private List<GeneratedExample> resolveAnyOfOneOfSchemaProperties(String propertyName, Schema<?> schema) {
         if (resolveAnyOfAsMultipleSchema) {
             return resolveAnyOfOneOfSchemaPropertiesWithMultipleSchemas(propertyName, schema);
         }
         return List.of(flatMap(resolveAnyOfOneOfSchemaPropertiesWithMultipleSchemas(propertyName, schema)));
     }
 
-    private static Map<String, Object> flatMap(List<Map<String, Object>> generatedExamples) {
-        return generatedExamples.stream()
-                .flatMap(map -> map.entrySet().stream())
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (existing, replacement) -> {
-                            if (existing instanceof List<?> existingList) {
-                                List<Object> newList = new ArrayList<>(existingList);
-                                newList.add(replacement);
-                                return newList;
-                            } else {
-                                List<Object> list = new ArrayList<>();
-                                list.add(existing);
-                                list.add(replacement);
-                                return list;
-                            }
-                        }
-                ));
+    private static GeneratedExample flatMap(List<GeneratedExample> generatedExamples) {
+        Map<String, Object> flattened = new HashMap<>();
+        Set<String> requiredFields = new LinkedHashSet<>();
+        for (GeneratedExample generatedExample : generatedExamples) {
+            requiredFields.addAll(generatedExample.requiredFields());
+            for (Map.Entry<String, Object> entry : asMap(generatedExample).entrySet()) {
+                flattened.merge(entry.getKey(), entry.getValue(), (existing, replacement) -> {
+                    if (existing instanceof List<?> existingList) {
+                        List<Object> values = new ArrayList<>(existingList);
+                        values.add(replacement);
+                        return values;
+                    }
+                    return new ArrayList<>(List.of(existing, replacement));
+                });
+            }
+        }
+        return new GeneratedExample(flattened, requiredFields);
     }
 
-    private List<Map<String, Object>> resolveAnyOfOneOfSchemaPropertiesWithMultipleSchemas(String propertyName, Schema schema) {
+    private List<GeneratedExample> resolveAnyOfOneOfSchemaPropertiesWithMultipleSchemas(String propertyName, Schema<?> schema) {
         logger.trace("resolveAnyOfOneOfSchemaProperties for schema {}", propertyName);
         mapDiscriminator(schema, Optional.ofNullable(schema.getAnyOf()).orElse(schema.getOneOf()));
-        List<Map<String, Object>> examples = new ArrayList<>();
+        List<GeneratedExample> examples = new ArrayList<>();
         List<Schema> schemas = CatsModelUtils.getInterfaces(schema).stream().filter(iteratingSchema -> !isNullSchema(iteratingSchema)).toList();
 
         for (Schema subSchema : schemas) {
@@ -579,11 +611,12 @@ public class OpenAPIModelGeneratorV2 {
                 Schema resolved = globalContext.getSchemaFromReference(subSchema.get$ref());
                 if (resolved != null) {
                     String schemaName = CatsModelUtils.getSimpleRefUsingOAT(subSchema.get$ref());
-                    List<Map<String, Object>> variantExamples = generateExamplesForSchema(schemaName, resolved);
-                    for (Map<String, Object> variantExample : variantExamples) {
+                    List<GeneratedExample> variantExamples = generateExamplesForSchema(schemaName, resolved);
+                    for (GeneratedExample variantExample : variantExamples) {
                         Map<String, Object> wrappedExample = new HashMap<>();
-                        wrappedExample.put(propertyName, variantExample.getOrDefault(schemaName, variantExample));
-                        examples.add(wrappedExample);
+                        Map<String, Object> variantValue = asMap(variantExample);
+                        wrappedExample.put(propertyName, variantValue.getOrDefault(schemaName, variantValue));
+                        examples.add(new GeneratedExample(wrappedExample, variantExample.requiredFields()));
                     }
                 }
             } else {
@@ -591,7 +624,19 @@ public class OpenAPIModelGeneratorV2 {
             }
         }
 
-        return examples;
+        Set<String> composedRequiredFields = Optional.ofNullable(schema.getRequired()).orElse(Collections.emptyList()).stream()
+                .map(required -> appendRequiredProperty(currentRequiredProperty, required))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (composedRequiredFields.isEmpty()) {
+            return examples;
+        }
+        return examples.stream()
+                .map(example -> {
+                    Set<String> requiredFields = new LinkedHashSet<>(example.requiredFields());
+                    requiredFields.addAll(composedRequiredFields);
+                    return new GeneratedExample(example.value(), requiredFields);
+                })
+                .toList();
     }
 
     private static Schema getArrayItemsOrDefault(Schema schema) {
@@ -602,21 +647,21 @@ public class OpenAPIModelGeneratorV2 {
         return items;
     }
 
-    private List<Map<String, Object>> resolveArraySchemaProperties(String propertyName, Schema schema) {
+    private List<GeneratedExample> resolveArraySchemaProperties(String propertyName, Schema schema) {
         logger.trace("resolveArraySchemaProperties for schema {}", propertyName);
-        List<Map<String, Object>> examples = new ArrayList<>();
+        List<GeneratedExample> examples = new ArrayList<>();
         Schema itemSchema = getArrayItemsOrDefault(schema);
 
-        List<Object> itemExamples = resolvePropertyToExamples(propertyName, itemSchema);
+        List<GeneratedExample> itemExamples = resolvePropertyToExamples(propertyName, itemSchema, true);
         int arraySize = getArrayLength(schema);
 
-        for (Object itemExample : itemExamples) {
+        for (GeneratedExample itemExample : itemExamples) {
             Map<String, Object> newExample = new HashMap<>();
 
-            Object toAdd = unwrapArrayItem(propertyName, itemExample);
+            Object toAdd = unwrapArrayItem(propertyName, itemExample.value());
 
             newExample.put(propertyName, Collections.nCopies(arraySize, toAdd));
-            examples.add(newExample);
+            examples.add(new GeneratedExample(newExample, itemExample.requiredFields()));
         }
 
         return examples;
@@ -660,14 +705,23 @@ public class OpenAPIModelGeneratorV2 {
         return Math.clamp(this.maxArraySize, min, max);
     }
 
-    private List<Object> resolvePropertyToExamples(String propertyName, Schema property) {
+    private List<GeneratedExample> resolvePropertyToExamples(String propertyName, Schema property) {
+        return resolvePropertyToExamples(propertyName, property, false);
+    }
+
+    private List<GeneratedExample> resolvePropertyToExamples(String propertyName, Schema property, boolean arrayItem) {
         logger.trace("resolvePropertyToExamples for property {}", propertyName);
-        List<Object> examples = new ArrayList<>();
+        List<GeneratedExample> examples = new ArrayList<>();
         String previousProperty = currentProperty;
+        String previousRequiredProperty = currentRequiredProperty;
 
         currentProperty = StringUtils.isBlank(previousProperty) ? propertyName : previousProperty + "#" + propertyName;
+        if (!arrayItem) {
+            currentRequiredProperty = appendRequiredProperty(previousRequiredProperty, propertyName);
+        }
         if (JsonUtils.isCyclicReference(currentProperty, selfReferenceDepth) || property == null) {
             currentProperty = previousProperty;
+            currentRequiredProperty = previousRequiredProperty;
             return examples;
         }
 
@@ -678,17 +732,20 @@ public class OpenAPIModelGeneratorV2 {
         } else if (CatsModelUtils.isMapSchema(property)) {
             Map<String, Object> mapExample = new HashMap<>();
             Schema additionalProperties = CatsModelUtils.getAdditionalProperties(property);
-            List<Object> valueExamples = resolvePropertyToExamples("value", additionalProperties);
-            for (Object valueExample : valueExamples) {
-                mapExample.put("key", valueExample);
+            List<GeneratedExample> valueExamples = resolvePropertyToExamples("value", additionalProperties);
+            GeneratedExample lastValue = null;
+            for (GeneratedExample valueExample : valueExamples) {
+                mapExample.put("key", valueExample.value());
+                lastValue = valueExample;
             }
-            examples.add(mapExample);
+            examples.add(new GeneratedExample(mapExample,
+                    lastValue == null ? Collections.emptySet() : lastValue.requiredFields()));
         } else if (!StringUtils.isEmpty(property.get$ref())) {
             Schema<?> resolved = globalContext.getSchemaFromReference(property.get$ref());
             if (resolved != null && CatsModelUtils.isPrimitiveSchema(resolved)) {
                 Object value = resolvePropertyToExample(propertyName, resolved);
                 if (value != null) {
-                    examples.add(value);
+                    examples.add(GeneratedExample.of(value));
                 }
             } else {
                 examples.addAll(generateExamplesForSchema(propertyName, property));
@@ -702,19 +759,21 @@ public class OpenAPIModelGeneratorV2 {
         } else {
             Object example = resolvePropertyToExample(propertyName, property);
             if (example != null) {
-                examples.add(example);
+                examples.add(GeneratedExample.of(example));
             }
         }
 
         currentProperty = previousProperty;
+        currentRequiredProperty = previousRequiredProperty;
 
         return examples;
     }
 
-    private void createExamplesArray(String propertyName, Schema property, List<Object> examples) {
+    private void createExamplesArray(String propertyName, Schema property, List<GeneratedExample> examples) {
         Object arrayExample = extractExampleFromSchema(property, examplesFlags.usePropertyExamples());
         if (arrayExample != null) {
-            examples.add(arrayExample);
+            examples.add(new GeneratedExample(arrayExample,
+                    collectRequiredFields(property, currentRequiredProperty, Collections.newSetFromMap(new IdentityHashMap<>()))));
             return;
         }
 
@@ -729,12 +788,16 @@ public class OpenAPIModelGeneratorV2 {
                 itemExample = resolvePropertyToExample(propertyName + ".items", itemSchema, false);
                 itemExamples.add(itemExample);
             }
-            examples.add(itemExamples);
+            examples.add(new GeneratedExample(itemExamples,
+                    collectRequiredFields(itemSchema, currentRequiredProperty, Collections.newSetFromMap(new IdentityHashMap<>()))));
         } else {
             Schema itemSchema = getArrayItemsOrDefault(property);
-            List<Object> itemExamples = resolvePropertyToExamples(propertyName + ".items", itemSchema);
+            List<GeneratedExample> itemExamples = resolvePropertyToExamples(propertyName + ".items", itemSchema, true);
             int arraySize = getArrayLength(property);
-            examples.addAll(itemExamples.stream().map(innerExample -> Collections.nCopies(arraySize, innerExample)).toList());
+            examples.addAll(itemExamples.stream()
+                    .map(innerExample -> new GeneratedExample(
+                            Collections.nCopies(arraySize, innerExample.value()), innerExample.requiredFields()))
+                    .toList());
         }
     }
 
@@ -877,20 +940,30 @@ public class OpenAPIModelGeneratorV2 {
         }
     }
 
-    private List<Map<String, Object>> combineExamples(List<Map<String, Object>> existingExamples, String propertyName, List<Object> propertyExamples) {
+    private List<GeneratedExample> combineExamples(List<GeneratedExample> existingExamples, String propertyName,
+                                                   List<GeneratedExample> propertyExamples, String requiredPropertyPath,
+                                                   boolean required) {
         logger.trace("combineExamples for property {}", propertyName);
-        List<Map<String, Object>> combinedExamples = new ArrayList<>();
+        List<GeneratedExample> combinedExamples = new ArrayList<>();
 
         if (existingExamples.isEmpty()) {
-            for (Object propertyExample : propertyExamples) {
+            for (GeneratedExample propertyExample : propertyExamples) {
                 Map<String, Object> newExample = new HashMap<>();
-                addExampleAndKeepDepth(propertyName, propertyExample, newExample, combinedExamples);
+                Set<String> requiredFields = new LinkedHashSet<>();
+                if (required) {
+                    requiredFields.add(requiredPropertyPath);
+                }
+                addExampleAndKeepDepth(propertyName, propertyExample, newExample, requiredFields, combinedExamples);
             }
         } else {
-            for (Map<String, Object> existingExample : existingExamples) {
-                for (Object propertyExample : propertyExamples) {
-                    Map<String, Object> newExample = new HashMap<>(existingExample);
-                    addExampleAndKeepDepth(propertyName, propertyExample, newExample, combinedExamples);
+            for (GeneratedExample existingExample : existingExamples) {
+                for (GeneratedExample propertyExample : propertyExamples) {
+                    Map<String, Object> newExample = new HashMap<>(asMap(existingExample));
+                    Set<String> requiredFields = new LinkedHashSet<>(existingExample.requiredFields());
+                    if (required) {
+                        requiredFields.add(requiredPropertyPath);
+                    }
+                    addExampleAndKeepDepth(propertyName, propertyExample, newExample, requiredFields, combinedExamples);
                 }
             }
         }
@@ -985,7 +1058,7 @@ public class OpenAPIModelGeneratorV2 {
         return example;
     }
 
-    private List<Map<String, Object>> combineExampleLists(List<Map<String, Object>> list1, List<Map<String, Object>> list2) {
+    private List<GeneratedExample> combineExampleLists(List<GeneratedExample> list1, List<GeneratedExample> list2) {
         logger.trace("combineExampleLists");
         if (list1.isEmpty()) {
             return list2;
@@ -994,12 +1067,12 @@ public class OpenAPIModelGeneratorV2 {
             return list1;
         }
 
-        List<Map<String, Object>> combined = new ArrayList<>();
-        for (Map<String, Object> example1 : list1) {
-            for (Map<String, Object> example2 : list2) {
-                Map<String, Object> combinedExample = new HashMap<>(example1);
-                combinedExample.putAll(example2);
-                combined.add(combinedExample);
+        List<GeneratedExample> combined = new ArrayList<>();
+        for (GeneratedExample example1 : list1) {
+            for (GeneratedExample example2 : list2) {
+                Map<String, Object> combinedExample = new HashMap<>(asMap(example1));
+                combinedExample.putAll(asMap(example2));
+                combined.add(new GeneratedExample(combinedExample, unionRequiredFields(example1, example2)));
             }
         }
         return combined;
@@ -1144,12 +1217,62 @@ public class OpenAPIModelGeneratorV2 {
         return false;
     }
 
-    private Map<String, Object> mergeMaps(Map<String, Object> firstMap, Map<String, Object> secondMap) {
-        Map<String, Object> newMap = new HashMap<>();
-        newMap.putAll(firstMap);
-        newMap.putAll(secondMap);
+    private static GeneratedExample mergeExamples(GeneratedExample first, GeneratedExample second) {
+        Map<String, Object> merged = new HashMap<>(asMap(first));
+        merged.putAll(asMap(second));
+        return new GeneratedExample(merged, unionRequiredFields(first, second));
+    }
 
-        return newMap;
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> asMap(GeneratedExample example) {
+        return (Map<String, Object>) example.value();
+    }
+
+    private static Set<String> unionRequiredFields(GeneratedExample... examples) {
+        Set<String> requiredFields = new LinkedHashSet<>();
+        for (GeneratedExample example : examples) {
+            requiredFields.addAll(example.requiredFields());
+        }
+        return requiredFields;
+    }
+
+    private static String appendRequiredProperty(String parent, String property) {
+        return StringUtils.isBlank(parent) ? property : parent + "#" + property;
+    }
+
+    private Set<String> collectRequiredFields(Schema<?> schema, String parent, Set<Schema<?>> visited) {
+        if (schema == null) {
+            return new LinkedHashSet<>();
+        }
+        if (schema.get$ref() != null) {
+            schema = globalContext.getSchemaFromReference(schema.get$ref());
+            if (schema == null) {
+                return new LinkedHashSet<>();
+            }
+        }
+        if (!visited.add(schema)) {
+            return new LinkedHashSet<>();
+        }
+
+        Set<String> requiredFields = new LinkedHashSet<>();
+        Set<String> requiredProperties = new HashSet<>(Optional.ofNullable(schema.getRequired()).orElse(Collections.emptyList()));
+        Map<String, Schema> properties = Optional.ofNullable(schema.getProperties()).orElse(Collections.emptyMap());
+        for (Map.Entry<String, Schema> property : properties.entrySet()) {
+            String propertyPath = appendRequiredProperty(parent, property.getKey());
+            if (requiredProperties.contains(property.getKey())) {
+                requiredFields.add(propertyPath);
+            }
+            requiredFields.addAll(collectRequiredFields(property.getValue(), propertyPath, visited));
+        }
+
+        if (schema.getItems() != null) {
+            requiredFields.addAll(collectRequiredFields(schema.getItems(), parent, visited));
+        }
+        for (Schema<?> composedSchema : CatsModelUtils.getInterfaces(schema)) {
+            requiredFields.addAll(collectRequiredFields(composedSchema, parent, visited));
+        }
+        visited.remove(schema);
+        return requiredFields;
     }
 
     private void recordRequestSchema(String propertyName, Schema<?> schema) {
@@ -1178,6 +1301,28 @@ public class OpenAPIModelGeneratorV2 {
         } catch (Exception _) {
             globalContext.recordError("A valid string could not be generated for the property '" + propertyName + "' using the pattern '" + pattern + "'. Please consider either changing the pattern or simplifying it.");
             return DEFAULT_STRING_WHEN_GENERATION_FAILS;
+        }
+    }
+
+    private record GeneratedExample(Object value, Set<String> requiredFields) {
+        private GeneratedExample {
+            requiredFields = Collections.unmodifiableSet(new LinkedHashSet<>(requiredFields));
+        }
+
+        private static GeneratedExample of(Object value) {
+            return new GeneratedExample(value, Collections.emptySet());
+        }
+    }
+
+    /**
+     * A generated JSON payload and the required fields for the exact schema composition variant used to create it.
+     *
+     * @param payload        generated JSON payload
+     * @param requiredFields required field paths, using {@code #} as the nesting separator
+     */
+    public record GeneratedPayload(String payload, List<String> requiredFields) {
+        public GeneratedPayload {
+            requiredFields = List.copyOf(requiredFields);
         }
     }
 }

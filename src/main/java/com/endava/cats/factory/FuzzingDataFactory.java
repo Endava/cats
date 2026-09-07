@@ -11,6 +11,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
+import com.endava.cats.openapi.OpenAPIModelGeneratorV2.GeneratedPayload;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.JsonUtils;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -64,6 +66,7 @@ public class FuzzingDataFactory {
     private final CatsGlobalContext globalContext;
     private final ValidDataFormat validDataFormat;
     private final FilterArguments filterArguments;
+    private final IdentityHashMap<Schema<?>, GenerationResult> generatedRequestExamplesCache = new IdentityHashMap<>();
 
     /**
      * Constructs a new {@code FuzzingDataFactory} with the specified arguments.
@@ -300,12 +303,13 @@ public class FuzzingDataFactory {
 
         for (String reqSchemaName : reqSchemaNames) {
             GenerationResult generationResult = this.getRequestPayloadsSamples(mediaType, reqSchemaName);
-            fuzzingDataList.addAll(generationResult.examplePayloads().stream()
-                    .map(payload -> FuzzingData.builder()
+            fuzzingDataList.addAll(generationResult.generatedPayloads().stream()
+                    .map(generatedPayload -> FuzzingData.builder()
                             .method(method).path(path)
                             .contractPath(path)
                             .headers(this.extractHeaders(item, operation))
-                            .payload(payload)
+                            .payload(generatedPayload.payload())
+                            .allRequiredFields(generatedPayload.requiredFields())
                             .responseCodes(operation.getResponses().keySet())
                             .reqSchema(globalContext.getSchemaFromReference(reqSchemaName))
                             .pathItem(item).responseContentTypes(responsesContentTypes)
@@ -412,12 +416,13 @@ public class FuzzingDataFactory {
 
         logger.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
 
-        return generationResult.examplePayloads().stream()
-                .map(payload -> FuzzingData.builder()
+        return generationResult.generatedPayloads().stream()
+                .map(generatedPayload -> FuzzingData.builder()
                         .method(method).path(path)
                         .contractPath(path)
                         .headers(this.extractHeaders(item, operation))
-                        .payload(payload)
+                        .payload(generatedPayload.payload())
+                        .allRequiredFields(generatedPayload.requiredFields())
                         .responseCodes(operation.getResponses().keySet())
                         .reqSchema(syntheticSchema.getValue())
                         .pathItem(item)
@@ -606,29 +611,59 @@ public class FuzzingDataFactory {
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE, processingArguments.getDiscriminatorCasing());
 
         /* Event though the media type might have an example set, we still generate samples in order to properly map each field with its corresponding data type*/
-        List<String> result = this.generateSample(reqSchemaName, generator);
+        GenerationResult generated = this.generateRequestSamples(reqSchemaName, generator);
+        List<GeneratedPayload> result = generated.generatedPayloads();
         if (mediaType != null && CatsModelUtils.isArraySchema(mediaType.getSchema())) {
             /*when dealing with ArraySchemas we make sure we have 2 elements in the array*/
             result = result.stream()
-                    .map(payload -> {
-                        if (JsonUtils.isJsonArray(payload)) {
-                            return payload;
+                    .map(generatedPayload -> {
+                        if (JsonUtils.isJsonArray(generatedPayload.payload())) {
+                            return generatedPayload;
                         }
-                        return "[" + payload + "," + payload + "]";
+                        String arrayPayload = "[" + generatedPayload.payload() + "," + generatedPayload.payload() + "]";
+                        return new GeneratedPayload(arrayPayload, generatedPayload.requiredFields());
                     }).toList();
         }
 
         if (mediaType != null && processingArguments.isUseRequestBodyExamples()) {
-            List<String> examples = extractExamples(mediaType).stream()
+            List<GeneratedPayload> examples = extractExamples(mediaType).stream()
                     .map(JsonUtils::serialize)
                     .filter(Objects::nonNull)
+                    .map(example -> new GeneratedPayload(example, generator.getRequiredFields(reqSchemaName)))
                     .toList();
             if (!examples.isEmpty()) {
                 result = new ArrayList<>(examples);
             }
         }
 
-        return new GenerationResult(result, generator.getRequestDataTypes());
+        return new GenerationResult(result, generated.requestDataTypes());
+    }
+
+    private GenerationResult generateRequestSamples(String reqSchemaName, OpenAPIModelGeneratorV2 generator) {
+        String onlySchemaName = CatsModelUtils.getSimpleRef(reqSchemaName);
+        Schema<?> requestSchema = globalContext.getSchemaFromReference(reqSchemaName);
+        if (processingArguments.isCachePayloads() && generatedRequestExamplesCache.containsKey(requestSchema)) {
+            logger.debug("Example and required fields for schema name {} already generated, using cached value", onlySchemaName);
+            return generatedRequestExamplesCache.get(requestSchema);
+        }
+
+        long t0 = System.currentTimeMillis();
+        logger.debug("Starting to generate example and required fields for schema name {}", reqSchemaName);
+        List<GeneratedPayload> examples = generator.generateWithMetadata(reqSchemaName);
+        logger.debug("Finish generating example and required fields for schema name {}, took {}ms", reqSchemaName,
+                System.currentTimeMillis() - t0);
+
+        if (processingArguments.getLimitXxxOfCombinations() > 0) {
+            examples = examples.stream()
+                    .limit(Math.min(processingArguments.getLimitXxxOfCombinations(), examples.size()))
+                    .toList();
+        }
+
+        GenerationResult result = new GenerationResult(examples, Map.copyOf(generator.getRequestDataTypes()));
+        if (processingArguments.isCachePayloads()) {
+            generatedRequestExamplesCache.put(requestSchema, result);
+        }
+        return result;
     }
 
     private List<String> generateSample(String reqSchemaName, OpenAPIModelGeneratorV2 generator) {
@@ -883,6 +918,9 @@ public class FuzzingDataFactory {
         schema.setExample(examples.getFirst());
     }
 
-    public record GenerationResult(List<String> examplePayloads, Map<String, Schema> requestDataTypes) {
+    public record GenerationResult(List<GeneratedPayload> generatedPayloads, Map<String, Schema> requestDataTypes) {
+        public List<String> examplePayloads() {
+            return generatedPayloads.stream().map(GeneratedPayload::payload).toList();
+        }
     }
 }
