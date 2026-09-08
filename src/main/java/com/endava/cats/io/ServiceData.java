@@ -23,6 +23,8 @@ public class ServiceData {
     private final String relativePath;
     private final Collection<CatsHeader> headers;
     private final String payload;
+    /** The generated payload before a fuzzer applied mutations. */
+    private final String originalPayload;
     private final HttpMethod httpMethod;
     private final String contentType;
     private final String pathParamsPayload;

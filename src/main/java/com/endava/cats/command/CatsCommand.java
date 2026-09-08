@@ -25,6 +25,7 @@ import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.io.RuntimeResourcePool;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.FuzzingData;
@@ -179,6 +180,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Processing Options:|@%n", exclusive = false)
     ProcessingArguments processingArguments;
+
+    @Inject
+    RuntimeResourcePool runtimeResourcePool;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
@@ -484,6 +488,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         //this is a hack to set terminal width here in order to avoid importing a full-blown library like jline
         // just for getting the terminal width
         CatsRandom.initRandom(processingArguments.getSeed());
+        runtimeResourcePool.clear();
         ConsoleUtils.initTerminalWidth(spec);
         reportingArguments.processLogData();
         apiArguments.validateRequired(spec);
@@ -525,6 +530,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                 AnsiUtils.blue(CatsRandom.getStoredSeed()));
         logger.config("Quality gate: {}",
                 AnsiUtils.blue(qualityGateArguments.getQualityGateDescription()));
+        logger.config("Reuse successful runtime resources: {}",
+                AnsiUtils.blue(processingArguments.isReuseSuccessfulResources()));
 
         int nofOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
         logger.config("Total number of OpenAPI operations: {}", AnsiUtils.blue(nofOfOperations));

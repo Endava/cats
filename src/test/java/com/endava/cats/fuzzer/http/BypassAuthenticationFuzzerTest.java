@@ -9,6 +9,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.io.RuntimeResourcePool;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -47,7 +48,7 @@ class BypassAuthenticationFuzzerTest {
         wfcAuthProvider = Mockito.mock(WfcAuthProvider.class);
         Mockito.when(wfcAuthProvider.getAuthenticationHeaderNames()).thenReturn(Set.of());
         serviceCaller = Mockito.spy(new ServiceCaller(Mockito.mock(CatsGlobalContext.class), testCaseListener, filesArguments, Mockito.mock(AuthArguments.class),
-                Mockito.mock(ApiArguments.class), Mockito.mock(ProcessingArguments.class), wfcAuthProvider));
+                Mockito.mock(ApiArguments.class), Mockito.mock(ProcessingArguments.class), wfcAuthProvider, Mockito.mock(RuntimeResourcePool.class)));
         simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
         bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(simpleExecutor, filesArguments, serviceCaller);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));

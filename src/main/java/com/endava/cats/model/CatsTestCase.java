@@ -15,6 +15,7 @@ import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -60,6 +61,7 @@ public class CatsTestCase {
     private String fullRequestPath;
     private String contractPath;
     private String server;
+    private final List<ResourceCorrelation> runtimeCorrelations = new ArrayList<>();
 
     @Exclude
     private boolean validJson = true;
@@ -123,6 +125,15 @@ public class CatsTestCase {
      */
     public boolean hasResultSwitched() {
         return resultIgnoreDetails != null;
+    }
+
+    /**
+     * Checks whether runtime resource values were used while building this request.
+     *
+     * @return true when at least one runtime correlation was applied
+     */
+    public boolean hasRuntimeCorrelations() {
+        return !runtimeCorrelations.isEmpty();
     }
 
     /**

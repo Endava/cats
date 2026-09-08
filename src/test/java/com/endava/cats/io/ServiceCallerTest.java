@@ -8,6 +8,7 @@ import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
+import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.report.TestCaseListener;
@@ -53,6 +54,7 @@ class ServiceCallerTest {
     CatsGlobalContext catsGlobalContext;
     FilesArguments filesArguments;
     WfcAuthProvider wfcAuthProvider;
+    TestCaseListener testCaseListener;
     private ServiceCaller serviceCaller;
 
     @BeforeAll
@@ -61,6 +63,10 @@ class ServiceCallerTest {
         wireMockServer.start();
         wireMockServer.stubFor(WireMock.get("/not-json").willReturn(WireMock.ok("<html>test</html>")));
         wireMockServer.stubFor(WireMock.post("/pets").willReturn(WireMock.ok("{'result':'OK'}")));
+        wireMockServer.stubFor(WireMock.post("/customers")
+                .willReturn(WireMock.created().withBody("{\"id\":\"customer-42\"}")));
+        wireMockServer.stubFor(WireMock.get("/customers/customer-42")
+                .willReturn(WireMock.okJson("{\"id\":\"customer-42\"}")));
         wireMockServer.stubFor(WireMock.put("/pets").willReturn(WireMock.aResponse().withBody("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.get("/pets/1").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
         wireMockServer.stubFor(WireMock.get("/pets/1?limit=2").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
@@ -96,8 +102,9 @@ class ServiceCallerTest {
     void setupEach() throws Exception {
         filesArguments = new FilesArguments();
         wfcAuthProvider = new WfcAuthProvider(authArguments, apiArguments);
-        TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
-        serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments, apiArguments, processingArguments, wfcAuthProvider);
+        testCaseListener = Mockito.mock(TestCaseListener.class);
+        serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments, apiArguments, processingArguments,
+                wfcAuthProvider, new RuntimeResourcePool(processingArguments, filesArguments));
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(authArguments, "wfcAuthFile", null);
@@ -109,12 +116,51 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(authArguments, "sslKeystore", null);
         ReflectionTestUtils.setField(authArguments, "proxyHost", null);
         ReflectionTestUtils.setField(authArguments, "proxyPort", 0);
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", false);
 
         filesArguments.loadHeaders();
         filesArguments.loadRefData();
         filesArguments.loadURLParams();
         filesArguments.loadQueryParams();
         catsGlobalContext.getPostSuccessfulResponses().clear();
+    }
+
+    @Test
+    void shouldReuseSuccessfulResourceInTheNextRequest() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        CatsResponse createResponse = serviceCaller.call(ServiceData.builder().relativePath("/customers")
+                .headers(Set.of()).payload("{\"name\":\"generated\"}").httpMethod(HttpMethod.POST)
+                .contentType("application/json").build());
+        CatsResponse getResponse = serviceCaller.call(ServiceData.builder().relativePath("/customers/{customerId}")
+                .headers(Set.of()).payload("{\"customerId\":\"generated\"}").httpMethod(HttpMethod.GET)
+                .contentType("application/json").build());
+
+        Assertions.assertThat(createResponse.getResponseCode()).isEqualTo(201);
+        Assertions.assertThat(getResponse.getResponseCode()).isEqualTo(200);
+        wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo("/customers/customer-42")));
+    }
+
+    @Test
+    void shouldKeepTheServiceResponseWhenRuntimeResourceProcessingFails() {
+        RuntimeResourcePool failingPool = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(failingPool.enrich(Mockito.any(), Mockito.anyString()))
+                .thenThrow(new IllegalArgumentException("enrichment failed"));
+        Mockito.doThrow(new IllegalStateException("observation failed"))
+                .when(failingPool).observe(Mockito.any(), Mockito.any(CatsRequest.class), Mockito.any(CatsResponse.class));
+        ServiceCaller caller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments,
+                apiArguments, processingArguments, wfcAuthProvider, failingPool);
+        caller.initRateLimiter();
+        caller.initHttpClient();
+
+        CatsResponse response = caller.call(ServiceData.builder().relativePath("/pets/{id}")
+                .headers(Set.of()).payload("{\"id\":\"1\"}").httpMethod(HttpMethod.GET)
+                .contentType("application/json").build());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
+        Mockito.verify(failingPool).observe(Mockito.any(), Mockito.any(CatsRequest.class), Mockito.same(response));
     }
 
     @Test

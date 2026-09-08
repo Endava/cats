@@ -21,6 +21,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.google.gson.JsonParser;
@@ -103,6 +104,27 @@ class TestCaseListenerTest {
         Mockito.verify(testReportsGenerator).writeTestCase(Mockito.any());
         Mockito.verify(executionStopController).checkBeforeTest();
         Mockito.verify(executionStopController).checkAfterTest();
+    }
+
+    @Test
+    void shouldRecordRuntimeResourceCorrelationOnTheActiveTestCase() {
+        ResourceCorrelation correlation = ResourceCorrelation.builder()
+                .sourceMethod("POST").sourcePath("/customers").sourceLocation("response.body.$.id")
+                .targetLocation("path").targetField("customerId").value("customer-42").build();
+        MDC.put(TestCaseListener.ID, "correlation-test");
+        testCaseListener.testCaseMap.put("correlation-test", new CatsTestCase());
+        try {
+            testCaseListener.addRuntimeCorrelation(logger, correlation);
+
+            Assertions.assertThat(testCaseListener.testCaseMap.get("correlation-test").getRuntimeCorrelations())
+                    .containsExactly(correlation);
+            Mockito.verify(logger).note(Mockito.contains("Runtime resource correlation"),
+                    Mockito.eq("POST"), Mockito.eq("/customers"), Mockito.eq("response.body.$.id"),
+                    Mockito.eq("path"), Mockito.eq("customerId"), Mockito.eq("customer-42"));
+        } finally {
+            MDC.remove(TestCaseListener.ID);
+            testCaseListener.testCaseMap.clear();
+        }
     }
 
     @Test

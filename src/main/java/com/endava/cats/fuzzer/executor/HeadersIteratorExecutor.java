@@ -80,6 +80,7 @@ public class HeadersIteratorExecutor {
                                     .contractPath(context.getFuzzingData().getContractPath())
                                     .headers(clonedHeaders)
                                     .payload(context.getFuzzingData().getPayload())
+                                    .originalPayload(context.getFuzzingData().getPayload())
                                     .fuzzedHeader(header.getName())
                                     .queryParams(context.getFuzzingData().getQueryParams())
                                     .queryParameterSerializations(context.getFuzzingData().getQueryParameterSerializations())

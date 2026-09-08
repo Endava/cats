@@ -19,6 +19,7 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.tui.model.TestResultSnapshot;
@@ -247,6 +248,22 @@ public class TestCaseListener {
     public void addScenario(PrettyLogger logger, String scenario, Object... params) {
         logger.info(scenario, params);
         currentTestCase().setScenario(replaceBrackets(scenario, params));
+    }
+
+    /**
+     * Adds traceability for a value reused from a previously successful request.
+     *
+     * @param logger      logger used for the visible execution note
+     * @param correlation applied runtime correlation
+     */
+    public void addRuntimeCorrelation(PrettyLogger logger, ResourceCorrelation correlation) {
+        logger.note("Runtime resource correlation: [{} {} {}] supplied [{} {}] with value [{}]",
+                correlation.getSourceMethod(), correlation.getSourcePath(), correlation.getSourceLocation(),
+                correlation.getTargetLocation(), correlation.getTargetField(), correlation.getValue());
+        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        if (testCase != null) {
+            testCase.getRuntimeCorrelations().add(correlation);
+        }
     }
 
     /**

@@ -121,10 +121,12 @@ public class FieldsIteratorExecutor {
                         .contractPath(context.getFuzzingData().getContractPath())
                         .headers(context.getFuzzingData().getHeaders())
                         .payload(fuzzingResult.json())
+                        .originalPayload(context.getFuzzingData().getPayload())
                         .queryParams(context.getFuzzingData().getQueryParams())
                         .queryParameterSerializations(context.getFuzzingData().getQueryParameterSerializations())
                         .httpMethod(context.getFuzzingData().getMethod())
                         .contentType(context.getFuzzingData().getFirstRequestContentType())
+                        .fuzzedField(fuzzedField)
                         .replaceRefData(context.isReplaceRefData())
                         .pathParamsPayload(context.getFuzzingData().getPathParamsPayload())
                         .build());

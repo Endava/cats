@@ -6,12 +6,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
+import picocli.CommandLine;
 
 import java.util.Map;
 
 @QuarkusTest
 class ProcessingArgumentsTest {
 
+    @Test
+    void shouldEnableRuntimeResourceReuseFromCommandLine() {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+
+        new CommandLine(processingArguments).parseArgs("--reuseSuccessfulResources");
+
+        Assertions.assertThat(processingArguments.isReuseSuccessfulResources()).isTrue();
+    }
 
     @Test
     void shouldMatchXxxSelectionWhenArgumentNotProvided() {

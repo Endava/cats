@@ -1,11 +1,16 @@
 package com.endava.cats.model;
 
 
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.google.gson.Gson;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+
+import java.io.StringWriter;
+import java.util.Map;
 
 @QuarkusTest
 class CatsTestCaseTest {
@@ -44,6 +49,31 @@ class CatsTestCaseTest {
         CatsTestCase catsTestCase = new CatsTestCase();
         catsTestCase.setResultSkipped();
         Assertions.assertThat(catsTestCase.isNotSkipped()).isFalse();
+    }
+
+    @Test
+    void shouldExposeRuntimeCorrelationsInJsonAndHtmlReports() throws Exception {
+        CatsTestCase catsTestCase = new CatsTestCase();
+        catsTestCase.setTestId("test 1");
+        catsTestCase.setResultDetails("");
+        catsTestCase.getRuntimeCorrelations().add(ResourceCorrelation.builder()
+                .sourceMethod("POST")
+                .sourcePath("/customers")
+                .sourceLocation("response.body.$.id")
+                .targetLocation("path")
+                .targetField("customerId")
+                .value("customer-42")
+                .build());
+
+        String json = new Gson().toJson(catsTestCase);
+        StringWriter html = new StringWriter();
+        new DefaultMustacheFactory().compile("test-case.mustache")
+                .execute(html, Map.of("TEST_CASE", catsTestCase)).flush();
+
+        Assertions.assertThat(catsTestCase.hasRuntimeCorrelations()).isTrue();
+        Assertions.assertThat(json).contains("runtimeCorrelations", "response.body.$.id", "customer-42");
+        Assertions.assertThat(html.toString()).contains("Runtime Correlations",
+                "POST /customers response.body.$.id", "path customerId = customer-42");
     }
 
 }

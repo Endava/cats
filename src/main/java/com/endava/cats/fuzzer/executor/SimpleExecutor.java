@@ -67,6 +67,7 @@ public class SimpleExecutor {
                             .contractPath(context.getFuzzingData().getContractPath())
                             .headers(context.getHeaders())
                             .payload(context.getPayload())
+                            .originalPayload(context.getFuzzingData().getPayload())
                             .queryParams(context.getFuzzingData().getQueryParams())
                             .queryParameterSerializations(context.getFuzzingData().getQueryParameterSerializations())
                             .httpMethod(context.getHttpMethod())

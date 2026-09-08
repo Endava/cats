@@ -125,6 +125,16 @@
             <span class="rounded path details">{{fullRequestPath}}</span>
         </div>
 
+        {{#hasRuntimeCorrelations}}
+        <div class="component title">
+            <p>Runtime Correlations</p>
+        </div>
+        <div class="component text">
+            {{#runtimeCorrelations}}
+            <p>{{sourceMethod}} {{sourcePath}} {{sourceLocation}} &rarr; {{targetLocation}} {{targetField}} = {{value}}</p>
+            {{/runtimeCorrelations}}
+        </div>
+        {{/hasRuntimeCorrelations}}
         <div class="component title border-left-bottom">
             <p>Http Method</p>
         </div>

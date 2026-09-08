@@ -102,6 +102,7 @@ public class ServiceCaller {
     private final ProcessingArguments processingArguments;
     private final CatsGlobalContext catsGlobalContext;
     private final WfcAuthProvider wfcAuthProvider;
+    private final RuntimeResourcePool runtimeResourcePool;
     OkHttpClient okHttpClient;
 
     private RateLimiter rateLimiter;
@@ -118,7 +119,7 @@ public class ServiceCaller {
      */
     @Inject
     public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments,
-                         WfcAuthProvider wfcAuthProvider) {
+                         WfcAuthProvider wfcAuthProvider, RuntimeResourcePool runtimeResourcePool) {
         this.testCaseListener = lr;
         this.filesArguments = filesArguments;
         this.authArguments = authArguments;
@@ -126,6 +127,7 @@ public class ServiceCaller {
         this.processingArguments = processingArguments;
         this.catsGlobalContext = context;
         this.wfcAuthProvider = wfcAuthProvider;
+        this.runtimeResourcePool = runtimeResourcePool;
     }
 
     /**
@@ -222,6 +224,9 @@ public class ServiceCaller {
         this.recordServiceData(data);
 
         String processedPayload = this.replacePayloadWithRefData(data);
+        RuntimeResourcePool.ResolvedRequest resolvedRequest = this.enrichWithRuntimeResources(data, processedPayload);
+        processedPayload = resolvedRequest.payload();
+        resolvedRequest.correlations().forEach(correlation -> testCaseListener.addRuntimeCorrelation(logger, correlation));
         processedPayload = this.convertPayloadInSpecificContentType(processedPayload, data);
         logger.debug("Payload replaced with ref data: {}", processedPayload);
 
@@ -233,7 +238,7 @@ public class ServiceCaller {
 
         long startTime = System.currentTimeMillis();
         try {
-            String url = this.constructUrl(data, processedPayload);
+            String url = this.constructUrl(data, processedPayload, resolvedRequest.pathParamsPayload());
 
             catsRequest.setUrl(url);
             this.recordRequest(catsRequest);
@@ -246,6 +251,7 @@ public class ServiceCaller {
             CatsResponse response = this.callService(catsRequest, data.getFuzzedFields());
 
             this.recordResponse(response);
+            this.observeRuntimeResources(data, catsRequest, response);
             return response;
         } catch (IOException | IllegalStateException e) {
             long duration = System.currentTimeMillis() - startTime;
@@ -269,6 +275,25 @@ public class ServiceCaller {
         }
     }
 
+    private RuntimeResourcePool.ResolvedRequest enrichWithRuntimeResources(ServiceData data, String processedPayload) {
+        try {
+            return runtimeResourcePool.enrich(data, processedPayload);
+        } catch (RuntimeException e) {
+            logger.warn("Runtime resource correlation failed while preparing the request; continuing without it: {}", e.getMessage());
+            logger.debug("Runtime resource correlation stacktrace", e);
+            return new RuntimeResourcePool.ResolvedRequest(processedPayload, data.getPathParamsPayload(), List.of());
+        }
+    }
+
+    private void observeRuntimeResources(ServiceData data, CatsRequest request, CatsResponse response) {
+        try {
+            runtimeResourcePool.observe(data, request, response);
+        } catch (RuntimeException e) {
+            logger.warn("Unable to store runtime resources from the response; keeping the service response unchanged: {}", e.getMessage());
+            logger.debug("Runtime resource observation stacktrace", e);
+        }
+    }
+
     /**
      * Final url is being constructed by replacing path variables with the supplied urlParams or refData.
      * It also adds supplied query params if any.
@@ -278,6 +303,10 @@ public class ServiceCaller {
      * @return a url with path params replaced by urlParams or refData + additional query params
      */
     String constructUrl(ServiceData data, String processedPayload) {
+        return constructUrl(data, processedPayload, data.getPathParamsPayload());
+    }
+
+    private String constructUrl(ServiceData data, String processedPayload, String pathParamsPayload) {
         String decodedUrl = CatsUtil.unescapeCurlyBrackets(apiArguments.getServer() + data.getRelativePath());
         logger.debug("Decoded URL: {}", decodedUrl);
         if (!data.isReplaceUrlParams()) {
@@ -288,12 +317,12 @@ public class ServiceCaller {
         String url = this.getPathWithRefDataReplacedForHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
 
         if (!HttpMethod.requiresBody(data.getHttpMethod())) {
-            url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
+            url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, processedPayload, apiArguments.getServer() + data.getRelativePath());
             url = this.addUriParams(processedPayload, data, url);
         }
-        url = this.addPathParamsIfNotReplaced(url, data.getPathParamsPayload());
+        url = this.addPathParamsIfNotReplaced(url, pathParamsPayload);
         if (HttpMethod.requiresBody(data.getHttpMethod())) {
-            url = this.addQueryParamsFromPathParamsPayload(url, data);
+            url = this.addQueryParamsFromPathParamsPayload(url, data, pathParamsPayload);
         }
         url = this.addAdditionalQueryParams(url, data.getRelativePath());
         url = this.addWfcAuthQueryParams(url);
@@ -315,7 +344,10 @@ public class ServiceCaller {
     }
 
     String addQueryParamsFromPathParamsPayload(String url, ServiceData data) {
-        String pathParamsPayload = data.getPathParamsPayload();
+        return addQueryParamsFromPathParamsPayload(url, data, data.getPathParamsPayload());
+    }
+
+    private String addQueryParamsFromPathParamsPayload(String url, ServiceData data, String pathParamsPayload) {
         Set<String> queryParams = data.getQueryParams();
 
         if (StringUtils.isEmpty(pathParamsPayload) || queryParams.isEmpty()) {
@@ -443,12 +475,10 @@ public class ServiceCaller {
      * @param startingUrl initial url constructed from contract
      * @return the URL with variables replaced based on the supplied values
      */
-    private String getPathWithRefDataReplacedForNonHttpEntityRequests(ServiceData data, String startingUrl) {
+    private String getPathWithRefDataReplacedForNonHttpEntityRequests(ServiceData data, String processedPayload, String startingUrl) {
         String actualUrl = this.filesArguments.replacePathWithUrlParams(startingUrl);
 
-        if (StringUtils.isNotEmpty(data.getPayload())) {
-            String processedPayload = this.replacePayloadWithRefData(data);
-
+        if (StringUtils.isNotEmpty(processedPayload)) {
             actualUrl = this.replacePathParams(actualUrl, processedPayload, data);
             actualUrl = this.replaceRemovedParams(actualUrl);
         } else {
