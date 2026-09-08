@@ -81,6 +81,7 @@ public class OpenAPIModelGeneratorV2 {
     private final String discriminatorCasing;
     private String currentRequiredProperty = "";
     private boolean bypassExamplesCache;
+    private boolean bypassDeclaredExamples;
 
     /**
      * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
@@ -325,7 +326,8 @@ public class OpenAPIModelGeneratorV2 {
             return examplesCache.get(cacheKey);
         }
 
-        Object fromExample = extractExampleFromSchema(schema, examplesFlags.useSchemaExamples());
+        Object fromExample = extractExampleFromSchema(schema,
+                examplesFlags.useSchemaExamples() && !bypassDeclaredExamples);
         if (fromExample != null) {
             return List.of(new GeneratedExample(formatExampleAsMap(fromExample),
                     collectRequiredFields(schema, currentRequiredProperty, Collections.newSetFromMap(new IdentityHashMap<>()))));
@@ -772,7 +774,8 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private void createExamplesArray(String propertyName, Schema property, List<GeneratedExample> examples) {
-        Object arrayExample = extractExampleFromSchema(property, examplesFlags.usePropertyExamples());
+        Object arrayExample = extractExampleFromSchema(property,
+                examplesFlags.usePropertyExamples() && !bypassDeclaredExamples);
         if (arrayExample != null) {
             examples.add(new GeneratedExample(arrayExample,
                     collectRequiredFields(property, currentRequiredProperty, Collections.newSetFromMap(new IdentityHashMap<>()))));
@@ -787,6 +790,14 @@ public class OpenAPIModelGeneratorV2 {
 
     private List<GeneratedExample> generateArrayExamples(String propertyName, Schema itemSchema, int arraySize,
                                                           Function<Object, Object> itemMapper, boolean uniqueItems) {
+        if (CatsModelUtils.isFreeFormSchema(itemSchema)) {
+            List<Object> items = new ArrayList<>();
+            for (int itemIndex = 0; itemIndex < arraySize; itemIndex++) {
+                items.add(getFreeFormArrayItem(itemIndex));
+            }
+            return List.of(new GeneratedExample(items, Collections.emptySet()));
+        }
+
         List<GeneratedExample> templates = generateFreshArrayItemExamples(propertyName, itemSchema);
         List<GeneratedExample> arrays = new ArrayList<>();
 
@@ -798,13 +809,13 @@ public class OpenAPIModelGeneratorV2 {
             for (int itemIndex = 0; itemIndex < arraySize; itemIndex++) {
                 GeneratedExample itemExample = itemIndex == 0
                         ? template
-                        : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template);
+                        : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, uniqueItems);
                 Object item = itemMapper.apply(itemExample.value());
 
                 int attempts = 0;
                 while (uniqueItems && containsEquivalent(items, item)
                         && attempts++ < MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS) {
-                    itemExample = generateArrayItemVariant(propertyName, itemSchema, variantIndex, template);
+                    itemExample = generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, true);
                     item = itemMapper.apply(itemExample.value());
                 }
 
@@ -822,19 +833,40 @@ public class OpenAPIModelGeneratorV2 {
         return arrays;
     }
 
+    private static Object getFreeFormArrayItem(int itemIndex) {
+        return switch (itemIndex) {
+            case 0 -> "cats";
+            case 1 -> 42;
+            case 2 -> true;
+            case 3 -> Map.of("cats", "fuzzy");
+            case 4 -> List.of("cats");
+            case 5 -> null;
+            default -> "cats" + itemIndex;
+        };
+    }
+
     private GeneratedExample generateArrayItemVariant(String propertyName, Schema itemSchema, int variantIndex,
-                                                       GeneratedExample fallback) {
-        List<GeneratedExample> generated = generateFreshArrayItemExamples(propertyName, itemSchema);
+                                                       GeneratedExample fallback, boolean ignoreDeclaredExamples) {
+        List<GeneratedExample> generated = generateFreshArrayItemExamples(propertyName, itemSchema,
+                ignoreDeclaredExamples);
         return variantIndex < generated.size() ? generated.get(variantIndex) : fallback;
     }
 
     private List<GeneratedExample> generateFreshArrayItemExamples(String propertyName, Schema itemSchema) {
+        return generateFreshArrayItemExamples(propertyName, itemSchema, false);
+    }
+
+    private List<GeneratedExample> generateFreshArrayItemExamples(String propertyName, Schema itemSchema,
+                                                                   boolean ignoreDeclaredExamples) {
         boolean previousBypassExamplesCache = bypassExamplesCache;
+        boolean previousBypassDeclaredExamples = bypassDeclaredExamples;
         bypassExamplesCache = true;
+        bypassDeclaredExamples = ignoreDeclaredExamples;
         try {
             return resolvePropertyToExamples(propertyName, itemSchema, true);
         } finally {
             bypassExamplesCache = previousBypassExamplesCache;
+            bypassDeclaredExamples = previousBypassDeclaredExamples;
         }
     }
 
@@ -1122,7 +1154,7 @@ public class OpenAPIModelGeneratorV2 {
     private Object resolvePropertyToExample(String propertyName, Schema propertySchema, boolean useExamples) {
         logger.trace("resolvePropertyToExample for property {}", propertyName);
         //examples will take first priority
-        Object example = this.extractExampleFromSchema(propertySchema, useExamples);
+        Object example = this.extractExampleFromSchema(propertySchema, useExamples && !bypassDeclaredExamples);
         if (example != null) {
             logger.trace("Example set in swagger spec, returning example: '{}'", example);
             return example;
@@ -1164,7 +1196,7 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private <T> Object getExampleForObjectSchema(Schema<T> property) {
-        return extractExampleFromSchema(property, examplesFlags.usePropertyExamples());
+        return extractExampleFromSchema(property, examplesFlags.usePropertyExamples() && !bypassDeclaredExamples);
     }
 
     private Object getExampleFromBooleanSchema() {

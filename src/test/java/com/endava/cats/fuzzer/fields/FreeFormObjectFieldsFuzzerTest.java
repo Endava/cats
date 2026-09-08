@@ -12,6 +12,7 @@ import com.google.gson.JsonObject;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.parser.OpenAPIV3Parser;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,8 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@QuarkusTest
 class FreeFormObjectFieldsFuzzerTest {
-    private static final int MUTATION_COUNT = 13;
+    private static final int MUTATION_COUNT = 14;
 
     private SimpleExecutor simpleExecutor;
     private FreeFormObjectFieldsFuzzer fuzzer;

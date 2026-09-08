@@ -1,8 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.MatchArguments;
-import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
@@ -15,6 +13,7 @@ import com.endava.cats.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,12 +34,8 @@ class DuplicateItemsInUniqueArraysFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        FilesArguments filesArguments = Mockito.mock(FilesArguments.class);
-        Mockito.when(filesArguments.getRefData(Mockito.any())).thenReturn(Map.of());
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
-        FieldsIteratorExecutor executor = new FieldsIteratorExecutor(serviceCaller, testCaseListener,
-                Mockito.mock(MatchArguments.class), filesArguments);
-        fuzzer = new DuplicateItemsInUniqueArraysFieldsFuzzer(executor);
+        fuzzer = new DuplicateItemsInUniqueArraysFieldsFuzzer(new SimpleExecutor(testCaseListener, serviceCaller));
     }
 
     @Test
@@ -61,7 +56,7 @@ class DuplicateItemsInUniqueArraysFieldsFuzzerTest {
         Assertions.assertThat(items.get(0)).isEqualTo(items.get(2));
         Assertions.assertThat(items.get(1)).isNotEqualTo(items.get(0));
         Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(),
-                Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+                Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.eq(true), Mockito.eq(true));
     }
 
     @Test
@@ -92,6 +87,26 @@ class DuplicateItemsInUniqueArraysFieldsFuzzerTest {
         Mockito.verify(serviceCaller).call(request.capture());
         Assertions.assertThat(JsonUtils.equalAsJson(request.getValue().getPayload(),
                 "{\"container\":{\"items\":[1,1]}}")).isTrue();
+    }
+
+    @Test
+    void shouldDuplicateAnItemInAReferencedRootArray() {
+        ArraySchema schema = uniqueArraySchema(null);
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("[1,2]");
+        Mockito.when(data.getReqSchema()).thenReturn(new Schema<>().$ref("#/components/schemas/UniqueArray"));
+        Mockito.when(data.getSchemaMap()).thenReturn(Map.of("UniqueArray", schema));
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of());
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of());
+        Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+        Mockito.when(serviceCaller.call(Mockito.any()))
+                .thenReturn(CatsResponse.builder().body("{}").responseCode(400).build());
+
+        fuzzer.fuzz(data);
+
+        ArgumentCaptor<ServiceData> request = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller).call(request.capture());
+        Assertions.assertThat(JsonUtils.equalAsJson(request.getValue().getPayload(), "[1,1]")).isTrue();
     }
 
     @Test

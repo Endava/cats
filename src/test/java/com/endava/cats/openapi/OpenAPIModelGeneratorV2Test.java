@@ -6,6 +6,7 @@ import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
+import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -175,6 +176,29 @@ class OpenAPIModelGeneratorV2Test {
     }
 
     @Test
+    void shouldGenerateMixedValuesForFreeFormArrayItems() {
+        ArraySchema rootArraySchema = new ArraySchema();
+        rootArraySchema.setItems(new Schema<>());
+        rootArraySchema.setMinItems(6);
+        rootArraySchema.setMaxItems(6);
+        globalContext.getSchemaMap().put("FreeFormArray", rootArraySchema);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(false, false, false, false), 3, true, 6);
+
+        String payload = generator.generate("FreeFormArray").getFirst();
+
+        var items = JsonUtils.parseAsJsonElement(payload).getAsJsonArray();
+        Assertions.assertThat(items).hasSize(6);
+        Assertions.assertThat(items.get(0).isJsonPrimitive()).isTrue();
+        Assertions.assertThat(items.get(0).getAsString()).isEqualTo("cats");
+        Assertions.assertThat(items.get(1).getAsInt()).isEqualTo(42);
+        Assertions.assertThat(items.get(2).getAsBoolean()).isTrue();
+        Assertions.assertThat(items.get(3).isJsonObject()).isTrue();
+        Assertions.assertThat(items.get(4).isJsonArray()).isTrue();
+        Assertions.assertThat(items.get(5).isJsonNull()).isTrue();
+    }
+
+    @Test
     void shouldRetainRepeatedValuesWhenTheItemExampleIsFixed() {
         StringSchema itemSchema = new StringSchema();
         itemSchema.setExample("fixed");
@@ -191,6 +215,30 @@ class OpenAPIModelGeneratorV2Test {
         var items = JsonUtils.parseAsJsonElement(payload).getAsJsonArray();
         Assertions.assertThat(items.asList().stream().map(item -> item.getAsString()).toList())
                 .containsExactly("fixed", "fixed");
+    }
+
+    @Test
+    void shouldGenerateAnAlternativeToAFixedExampleForUniqueItems() {
+        ValidDataFormat sequentialDataFormat = Mockito.mock(ValidDataFormat.class);
+        Mockito.when(sequentialDataFormat.generate(Mockito.any(), Mockito.anyString())).thenReturn("generated");
+
+        StringSchema itemSchema = new StringSchema();
+        itemSchema.setExample("fixed");
+        ArraySchema rootArraySchema = new ArraySchema();
+        rootArraySchema.setItems(itemSchema);
+        rootArraySchema.setMinItems(2);
+        rootArraySchema.setMaxItems(2);
+        rootArraySchema.setUniqueItems(true);
+        globalContext.getSchemaMap().put("RootArray", rootArraySchema);
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, sequentialDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
+
+        String payload = generator.generate("RootArray").getFirst();
+
+        var items = JsonUtils.parseAsJsonElement(payload).getAsJsonArray();
+        Assertions.assertThat(items).hasSize(2);
+        Assertions.assertThat(items.asList().stream().map(JsonElement::getAsString).toList())
+                .containsExactly("fixed", "generated");
     }
 
     @Test

@@ -272,6 +272,61 @@ public abstract class CatsModelUtils {
     }
 
     /**
+     * Checks whether a schema allows a value of any JSON type.
+     *
+     * <p>This covers an empty schema ({@code {}}) and the OpenAPI 3.1 boolean schema
+     * {@code true}. Metadata such as descriptions and CATS extensions does not make an
+     * otherwise empty schema constrained.</p>
+     *
+     * @param schema the schema to check
+     * @return true when the schema does not constrain the JSON value type
+     */
+    public static boolean isFreeFormSchema(Schema<?> schema) {
+        return schema != null &&
+                (Boolean.TRUE.equals(schema.getBooleanSchemaValue()) ||
+                        (schema.getBooleanSchemaValue() == null && !isNotEmptySchema(schema) &&
+                                hasNoValidationKeywords(schema)));
+    }
+
+    private static boolean hasNoValidationKeywords(Schema<?> schema) {
+        return CatsUtil.isEmpty(schema.getEnum()) &&
+                schema.getMultipleOf() == null &&
+                schema.getMaximum() == null &&
+                schema.getExclusiveMaximumValue() == null &&
+                schema.getMinimum() == null &&
+                schema.getExclusiveMinimumValue() == null &&
+                schema.getMaxLength() == null &&
+                schema.getMinLength() == null &&
+                schema.getPattern() == null &&
+                schema.getMaxItems() == null &&
+                schema.getMinItems() == null &&
+                schema.getUniqueItems() == null &&
+                schema.getMaxProperties() == null &&
+                schema.getMinProperties() == null &&
+                schema.getNot() == null &&
+                schema.getAdditionalProperties() == null &&
+                schema.getFormat() == null &&
+                schema.getContains() == null &&
+                schema.getMaxContains() == null &&
+                schema.getMinContains() == null &&
+                CatsUtil.isEmpty(schema.getPatternProperties()) &&
+                CatsUtil.isEmpty(schema.getPrefixItems()) &&
+                schema.getPropertyNames() == null &&
+                schema.getUnevaluatedProperties() == null &&
+                schema.getAdditionalItems() == null &&
+                schema.getUnevaluatedItems() == null &&
+                schema.getIf() == null &&
+                schema.getThen() == null &&
+                schema.getElse() == null &&
+                schema.getContentSchema() == null &&
+                CatsUtil.isEmpty(schema.getDependentSchemas()) &&
+                CatsUtil.isEmpty(schema.getDependentRequired()) &&
+                schema.getConst() == null &&
+                schema.get$dynamicRef() == null &&
+                CatsUtil.isEmpty(schema.getJsonSchema());
+    }
+
+    /**
      * Checks if the schema is empty. An empty schema is an Object schema that has no properties,
      * no required fields, no type, no ref, no items, no additionalProperties.
      *

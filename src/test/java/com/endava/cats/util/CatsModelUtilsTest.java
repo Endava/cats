@@ -2,7 +2,9 @@ package com.endava.cats.util;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -15,6 +17,24 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @QuarkusTest
 class CatsModelUtilsTest {
+
+    @Test
+    void shouldIdentifyFreeFormSchemas() {
+        Schema<?> emptyWithMetadata = new Schema<>().description("any JSON value");
+        emptyWithMetadata.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "items");
+
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(new Schema<>())).isTrue();
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(emptyWithMetadata)).isTrue();
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(new Schema<>().booleanSchemaValue(true))).isTrue();
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(new Schema<>().booleanSchemaValue(false))).isFalse();
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(new StringSchema())).isFalse();
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(new Schema<>()._enum(List.of("only")))).isFalse();
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(new Schema<>().pattern("[a-z]+"))).isFalse();
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(new Schema<>().maxLength(10))).isFalse();
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(new Schema<>().minContains(1))).isFalse();
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(new Schema<>().additionalProperties(false))).isFalse();
+        Assertions.assertThat(CatsModelUtils.isFreeFormSchema(null)).isFalse();
+    }
 
     @ParameterizedTest
     @CsvSource(value = {

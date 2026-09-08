@@ -1,55 +1,89 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
-import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
-import com.endava.cats.fuzzer.fields.base.BaseReplaceFieldsFuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
+import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 /**
  * Duplicates an item in arrays declared with {@code uniqueItems: true}.
- *
- * <p>This bean must be a singleton because {@link BaseReplaceFieldsFuzzer} has no no-args constructor
- * and therefore cannot be proxied using {@code ApplicationScoped}.</p>
  */
 @Singleton
 @FieldFuzzer
-public class DuplicateItemsInUniqueArraysFieldsFuzzer extends BaseReplaceFieldsFuzzer {
+public class DuplicateItemsInUniqueArraysFieldsFuzzer implements Fuzzer {
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(DuplicateItemsInUniqueArraysFieldsFuzzer.class);
+    private final SimpleExecutor simpleExecutor;
+
     /**
      * Creates a new DuplicateItemsInUniqueArraysFieldsFuzzer instance.
      *
-     * @param executor the executor used to iterate through array fields
+     * @param simpleExecutor the executor used to run each array mutation
      */
-    public DuplicateItemsInUniqueArraysFieldsFuzzer(FieldsIteratorExecutor executor) {
-        super(executor);
+    public DuplicateItemsInUniqueArraysFieldsFuzzer(SimpleExecutor simpleExecutor) {
+        this.simpleExecutor = simpleExecutor;
     }
 
     @Override
-    public BaseReplaceFieldsContext getContext(FuzzingData data) {
-        return BaseReplaceFieldsContext.builder()
-                .replaceWhat("arrays with uniqueItems enabled")
-                .replaceWith("arrays containing a duplicate item")
-                .skipMessage("Fuzzer only runs for non-empty arrays with uniqueItems enabled")
-                .fieldFilter(field -> canDuplicateItem(data, field))
-                .fuzzValueProducer((schema, field) -> duplicateItem(data.getPayload(), field))
-                .build();
+    public void fuzz(FuzzingData data) {
+        String payload = data.getPayload();
+        if (!JsonUtils.isValidJson(payload)) {
+            logger.debug("Skipping fuzzer because payload is not valid JSON");
+            return;
+        }
+
+        List<JsonPayloadTarget> targets = findTargets(data, payload);
+        if (targets.isEmpty()) {
+            logger.debug("Skipping fuzzer because no mutable arrays with uniqueItems enabled were found");
+            return;
+        }
+
+        for (JsonPayloadTarget target : targets) {
+            duplicateItem(payload, target).ifPresent(fuzzedPayload -> simpleExecutor.execute(
+                    SimpleExecutorContext.builder()
+                            .fuzzingData(data)
+                            .fuzzer(this)
+                            .logger(logger)
+                            .payload(fuzzedPayload)
+                            .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                            .replaceRefData(false)
+                            .scenario("Duplicate an item in array [%s] declared with uniqueItems"
+                                    .formatted(target.displayName()))
+                            .build()));
+        }
     }
 
-    private static boolean canDuplicateItem(FuzzingData data, String field) {
-        Schema<?> schema = data.getRequestPropertyTypes().get(field);
+    private static List<JsonPayloadTarget> findTargets(FuzzingData data, String payload) {
+        List<JsonPayloadTarget> targets = new ArrayList<>();
+        for (JsonPayloadTarget target : JsonPayloadTarget.candidatesFor(data)) {
+            if (canDuplicateItem(payload, target)) {
+                targets.add(target);
+            }
+        }
+        return targets;
+    }
+
+    private static boolean canDuplicateItem(String payload, JsonPayloadTarget target) {
+        Schema<?> schema = target.schema();
         if (schema == null || !Boolean.TRUE.equals(schema.getUniqueItems())) {
             return false;
         }
 
-        Optional<JsonArray> array = getArray(data.getPayload(), field);
+        Optional<JsonArray> array = getArray(payload, target);
         if (array.isEmpty() || array.get().isEmpty()) {
             return false;
         }
@@ -57,35 +91,35 @@ public class DuplicateItemsInUniqueArraysFieldsFuzzer extends BaseReplaceFieldsF
         return array.get().size() > 1 || schema.getMaxItems() == null || schema.getMaxItems() > 1;
     }
 
-    private static List<Object> duplicateItem(String payload, String field) {
-        return getArray(payload, field)
-                .map(DuplicateItemsInUniqueArraysFieldsFuzzer::duplicateFirstItem)
-                .<List<Object>>map(array -> List.of(array.toString()))
-                .orElseGet(List::of);
+    private static Optional<String> duplicateItem(String payload, JsonPayloadTarget target) {
+        return getArray(payload, target).map(original -> {
+            JsonArray result = original.deepCopy();
+            JsonElement duplicate = original.get(0).deepCopy();
+            if (result.size() == 1) {
+                result.add(duplicate);
+            } else {
+                result.set(result.size() - 1, duplicate);
+            }
+            return target.replaceValueIn(payload, result);
+        });
     }
 
-    private static JsonArray duplicateFirstItem(JsonArray original) {
-        JsonArray result = original.deepCopy();
-        JsonElement duplicate = original.get(0).deepCopy();
-        if (result.size() == 1) {
-            result.add(duplicate);
-        } else {
-            result.set(result.size() - 1, duplicate);
-        }
-        return result;
+    private static Optional<JsonArray> getArray(String payload, JsonPayloadTarget target) {
+        return target.arrayFrom(payload);
     }
 
-    private static Optional<JsonArray> getArray(String payload, String field) {
-        if (!JsonUtils.isArray(payload, field)) {
-            return Optional.empty();
-        }
+    @Override
+    public List<HttpMethod> skipForHttpMethods() {
+        return List.of(HttpMethod.HEAD, HttpMethod.GET, HttpMethod.DELETE);
+    }
 
-        String serialized = JsonUtils.serialize(JsonUtils.getVariableFromJson(payload, field));
-        if (serialized == null) {
-            return Optional.empty();
-        }
+    @Override
+    public String description() {
+        return "iterate through each array with uniqueItems enabled and replace it with an array containing a duplicate item";
+    }
 
-        JsonElement element = JsonParser.parseString(serialized);
-        return element.isJsonArray() ? Optional.of(element.getAsJsonArray()) : Optional.empty();
+    @Override
+    public String toString() {
+        return ConsoleUtils.sanitizeFuzzerName(getClass().getSimpleName());
     }
 }
