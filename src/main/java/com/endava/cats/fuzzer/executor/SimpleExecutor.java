@@ -62,23 +62,17 @@ public class SimpleExecutor {
             }
 
             CatsResponse response = serviceCaller.call(
-                    ServiceData.builder()
+                    ServiceData.from(context.getFuzzingData())
                             .relativePath(context.getPath())
-                            .contractPath(context.getFuzzingData().getContractPath())
                             .headers(context.getHeaders())
                             .payload(context.getPayload())
-                            .originalPayload(context.getFuzzingData().getPayload())
-                            .queryParams(context.getFuzzingData().getQueryParams())
-                            .queryParameterSerializations(context.getFuzzingData().getQueryParameterSerializations())
                             .httpMethod(context.getHttpMethod())
-                            .contentType(context.getFuzzingData().getFirstRequestContentType())
                             .replaceRefData(context.isReplaceRefData())
                             .skippedHeaders(context.getSkippedHeaders())
                             .addUserHeaders(context.isAddUserHeaders())
                             .replaceUrlParams(context.isReplaceUrlParams())
                             .validJson(context.isValidJson())
                             .mutationTargets(context.getMutationTargets())
-                            .pathParamsPayload(context.getFuzzingData().getPathParamsPayload())
                             .build());
 
             if (context.getResponseProcessor() != null) {

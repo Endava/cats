@@ -1,6 +1,8 @@
 package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
+import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.RunOutcome;
 import com.endava.cats.util.AnsiUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.Getter;
@@ -14,19 +16,6 @@ import java.util.Map;
 @ApplicationScoped
 @DryRun
 public class ExecutionStatisticsListener {
-    private static final String COMPLETED_DETAILS = "All selected fuzzers completed";
-
-    /**
-     * Describes how the current execution session ended.
-     */
-    public enum RunStatus {
-        COMPLETED,
-        LIMIT_REACHED,
-        CANCELLED,
-        FAILED
-    }
-
-
     /**
      * Map to track the count of errors per path.
      */
@@ -71,17 +60,13 @@ public class ExecutionStatisticsListener {
     private int ioErrors;
 
     @Getter
-    private RunStatus runStatus = RunStatus.COMPLETED;
-
-    @Getter
-    private String runStatusDetails = COMPLETED_DETAILS;
+    private volatile RunOutcome runOutcome = RunOutcome.completed();
 
     /**
      * Resets outcome metadata for a new execution session without clearing accumulated test statistics.
      */
     public synchronized void startSession() {
-        runStatus = RunStatus.COMPLETED;
-        runStatusDetails = COMPLETED_DETAILS;
+        runOutcome = RunOutcome.completed();
     }
 
     /**
@@ -90,8 +75,7 @@ public class ExecutionStatisticsListener {
      * @param details the limit that stopped execution
      */
     public synchronized void markLimitReached(String details) {
-        runStatus = RunStatus.LIMIT_REACHED;
-        runStatusDetails = details;
+        runOutcome = RunOutcome.limitReached(details);
     }
 
     /**
@@ -100,8 +84,7 @@ public class ExecutionStatisticsListener {
      * @param details cancellation details
      */
     public synchronized void markCancelled(String details) {
-        runStatus = RunStatus.CANCELLED;
-        runStatusDetails = details;
+        runOutcome = RunOutcome.cancelled(details);
     }
 
     /**
@@ -110,8 +93,20 @@ public class ExecutionStatisticsListener {
      * @param details failure details
      */
     public synchronized void markFailed(String details) {
-        runStatus = RunStatus.FAILED;
-        runStatusDetails = details;
+        runOutcome = RunOutcome.failed(details);
+    }
+
+    /**
+     * Captures the current statistics and outcome in one immutable representation.
+     *
+     * @param qualityGatePassed whether the configured quality gate passed
+     * @param qualityGateDescription human-readable configured quality gate
+     * @return execution summary for reports and presentation layers
+     */
+    public synchronized ExecutionSummary snapshot(boolean qualityGatePassed, String qualityGateDescription) {
+        return new ExecutionSummary(getTotalRequests(), getAll(), getSuccess(), getWarns(), getErrors(),
+                skipped, getSkippedFromReporting(), authErrors, ioErrors, getResponseCodeDistribution(),
+                getTopFailingPaths(10), qualityGatePassed, qualityGateDescription, runOutcome);
     }
 
     /**

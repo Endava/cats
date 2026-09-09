@@ -9,7 +9,8 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
+import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -90,9 +91,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
                     .fuzzer(this)
                     .fuzzingData(data)
                     .payload(finalJsonPayload)
-                    .mutationTargets(subset.stream()
-                            .flatMap(field -> MutationTarget.requestFields(data, field).stream())
-                            .toList())
+                    .mutationTargets(RequestTargetResolver.resolvePayloadFields(data, subset))
                     .expectedResponseCode(ResponseCodeFamilyPredefined.from(String.valueOf(expectedWording[0])))
                     .scenario("Remove the following fields from request: " + subset.toString())
                     .expectedResult(String.format(" as required fields %s removed", expectedWording[1]))

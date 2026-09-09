@@ -1,8 +1,9 @@
 package com.endava.cats.model;
 
-
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
@@ -73,23 +74,22 @@ class CatsTestCaseTest {
                 .responseContentType("application/json")
                 .httpMethod("GET")
                 .body("{}")
-                .fuzzedField("customerId")
-                .mutationTargets(List.of(MutationTarget.body("customerId"), MutationTarget.header("X-Test")))
+                .responseValidationField("customerId")
                 .build());
+        catsTestCase.getRequestProvenance().addMutationTargets(
+                List.of(RequestTarget.body("customerId"), RequestTarget.header("X-Test")));
         catsTestCase.getRuntimeCorrelations().add(ResourceCorrelation.builder()
                 .sourceMethod("POST")
                 .sourcePath("/customers")
                 .sourceLocation("response.body.$.id")
-                .targetLocation("path")
-                .targetField("customerId")
+                .target(RequestTarget.path("customerId"))
                 .value("customer-42")
                 .build());
         catsTestCase.getRuntimeCorrelations().add(ResourceCorrelation.builder()
                 .sourceMethod("POST")
                 .sourcePath("/customers/{customerId}/orders")
                 .sourceLocation("response.body.$.orderId")
-                .targetLocation("path")
-                .targetField("orderId")
+                .target(RequestTarget.path("orderId"))
                 .value("order-7")
                 .build());
 
@@ -100,8 +100,21 @@ class CatsTestCaseTest {
 
         Assertions.assertThat(catsTestCase.hasRuntimeCorrelations()).isTrue();
         Assertions.assertThat(catsTestCase.hasMutationTargets()).isTrue();
-        Assertions.assertThat(json).contains("runtimeCorrelations", "response.body.$.id", "customer-42",
-                "mutationTargets", "customerId", "X-Test");
+        JsonObject provenance = JsonParser.parseString(json).getAsJsonObject()
+                .getAsJsonObject("requestProvenance");
+        Assertions.assertThat(provenance.getAsJsonArray("mutationTargets")).hasSize(2);
+        Assertions.assertThat(provenance.getAsJsonArray("mutationTargets").get(0).getAsJsonObject().get("location").getAsString())
+                .isEqualTo("BODY");
+        Assertions.assertThat(provenance.getAsJsonArray("mutationTargets").get(1).getAsJsonObject().get("name").getAsString())
+                .isEqualTo("X-Test");
+        Assertions.assertThat(provenance.getAsJsonArray("runtimeCorrelations")).hasSize(2);
+        JsonObject firstCorrelation = provenance.getAsJsonArray("runtimeCorrelations").get(0).getAsJsonObject();
+        Assertions.assertThat(firstCorrelation.get("sourceLocation").getAsString()).isEqualTo("response.body.$.id");
+        Assertions.assertThat(firstCorrelation.getAsJsonObject("target").get("location").getAsString())
+                .isEqualTo("PATH");
+        Assertions.assertThat(firstCorrelation.getAsJsonObject("target").get("name").getAsString())
+                .isEqualTo("customerId");
+        Assertions.assertThat(firstCorrelation.get("value").getAsString()).isEqualTo("customer-42");
         String htmlReport = html.toString();
         Assertions.assertThat(htmlReport).contains("Runtime Correlations",
                 "POST /customers", "response.body.$.id", "path customerId", "customer-42",

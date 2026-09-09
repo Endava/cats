@@ -15,7 +15,6 @@ import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -61,7 +60,7 @@ public class CatsTestCase {
     private String fullRequestPath;
     private String contractPath;
     private String server;
-    private final List<ResourceCorrelation> runtimeCorrelations = new ArrayList<>();
+    private final RequestProvenance requestProvenance = new RequestProvenance();
 
     @Exclude
     private boolean validJson = true;
@@ -133,7 +132,7 @@ public class CatsTestCase {
      * @return true when at least one runtime correlation was applied
      */
     public boolean hasRuntimeCorrelations() {
-        return !runtimeCorrelations.isEmpty();
+        return requestProvenance.hasRuntimeCorrelations();
     }
 
     /**
@@ -142,7 +141,25 @@ public class CatsTestCase {
      * @return true when at least one mutation target is available for reporting
      */
     public boolean hasMutationTargets() {
-        return response != null && response.getMutationTargets() != null && !response.getMutationTargets().isEmpty();
+        return requestProvenance.hasMutationTargets();
+    }
+
+    /**
+     * Returns request mutations for report templates and compatibility with existing exporters.
+     *
+     * @return mutations applied to the request
+     */
+    public List<RequestTarget> getMutationTargets() {
+        return requestProvenance.getMutationTargets();
+    }
+
+    /**
+     * Returns runtime correlations for report templates and compatibility with existing exporters.
+     *
+     * @return correlations applied while resolving the request
+     */
+    public List<ResourceCorrelation> getRuntimeCorrelations() {
+        return requestProvenance.getRuntimeCorrelations();
     }
 
     /**

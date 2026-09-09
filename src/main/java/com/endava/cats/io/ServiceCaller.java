@@ -14,7 +14,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -223,6 +223,7 @@ public class ServiceCaller {
     @DryRun
     public CatsResponse call(ServiceData data) {
         this.recordServiceData(data);
+        testCaseListener.addMutationTargets(data.getAllMutationTargets());
 
         String processedPayload = this.replacePayloadWithRefData(data);
         RuntimeResourcePool.ResolvedRequest resolvedRequest = this.enrichWithRuntimeResources(data, processedPayload);
@@ -249,7 +250,7 @@ public class ServiceCaller {
             logger.note("Final url: {}", url);
 
             startTime = System.currentTimeMillis();
-            CatsResponse response = this.callService(catsRequest, data.getFuzzedFields(), data.getAllMutationTargets());
+            CatsResponse response = this.callService(catsRequest, data.getResponseValidationFields());
 
             this.recordResponse(response);
             this.observeRuntimeResources(data, catsRequest, response);
@@ -263,9 +264,8 @@ public class ServiceCaller {
                     .body(exceptionalResponse.responseBody()).httpMethod(catsRequest.getHttpMethod())
                     .responseTimeInMs(duration).responseCode(exceptionalResponse.responseCode())
                     .jsonBody(JsonUtils.parseAsJsonElement(exceptionalResponse.responseBody()))
-                    .fuzzedField(data.getFuzzedFields()
+                    .responseValidationField(data.getResponseValidationFields()
                             .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
-                    .mutationTargets(data.getAllMutationTargets())
                     .build();
 
             this.recordRequestAndResponse(catsRequest, catsResponse, data);
@@ -500,28 +500,14 @@ public class ServiceCaller {
     }
 
     /**
-     * Calls the service with the provided {@code catsRequest} and set of fuzzed fields.
+     * Calls the service with the provided request and response-validation fields.
      *
      * @param catsRequest  The CATS request to be sent to the service.
-     * @param fuzzedFields The set of fuzzed fields for the request.
+     * @param responseValidationFields fields whose presence may be validated in error responses
      * @return The CATS response received from the service.
      * @throws IOException If an I/O error occurs during the service call.
      */
-    public CatsResponse callService(CatsRequest catsRequest, Set<String> fuzzedFields) throws IOException {
-        return callService(catsRequest, fuzzedFields, fuzzedFields.stream().map(MutationTarget::body).toList());
-    }
-
-    /**
-     * Calls the service and attaches the supplied mutation metadata to its response.
-     *
-     * @param catsRequest     request to execute
-     * @param fuzzedFields    fields used by response validation
-     * @param mutationTargets request parts changed by the fuzzer
-     * @return the service response
-     * @throws IOException if the request cannot be completed
-     */
-    public CatsResponse callService(CatsRequest catsRequest, Set<String> fuzzedFields,
-                                    List<MutationTarget> mutationTargets) throws IOException {
+    public CatsResponse callService(CatsRequest catsRequest, Set<String> responseValidationFields) throws IOException {
         acquireRateLimitPermit();
         long startTime = System.currentTimeMillis();
         RequestBody requestBody = null;
@@ -545,8 +531,8 @@ public class ServiceCaller {
             CatsResponse catsResponse = catsResponseBuilder.httpMethod(catsRequest.getHttpMethod())
                     .responseTimeInMs(endTime - startTime)
                     .path(catsRequest.getUrl())
-                    .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
-                    .mutationTargets(List.copyOf(mutationTargets))
+                    .responseValidationField(responseValidationFields.stream().findAny()
+                            .map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
                     .build();
 
             logger.complete("Protocol: {}, Method: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}, ResponseWords: {}, ResponseLines: {}",
@@ -930,9 +916,9 @@ public class ServiceCaller {
             } else {
                 logger.debug("Replacing field {} with value {}", entry.getKey(), refDataValue);
                 FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
-                boolean mergeFuzzing = data.isFuzzedField(entry.getKey(), MutationTarget.Location.BODY) ||
-                        data.isFuzzedField(entry.getKey(), MutationTarget.Location.PATH) ||
-                        data.isFuzzedField(entry.getKey(), MutationTarget.Location.QUERY);
+                boolean mergeFuzzing = data.isFuzzedField(entry.getKey(), RequestTarget.Location.BODY) ||
+                        data.isFuzzedField(entry.getKey(), RequestTarget.Location.PATH) ||
+                        data.isFuzzedField(entry.getKey(), RequestTarget.Location.QUERY);
                 payload = FuzzingStrategy.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();
             }
         } catch (PathNotFoundException _) {

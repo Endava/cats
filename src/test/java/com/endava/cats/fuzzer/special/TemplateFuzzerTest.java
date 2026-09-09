@@ -9,6 +9,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
@@ -29,6 +30,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 @QuarkusTest
@@ -112,7 +114,7 @@ class TemplateFuzzerTest {
         Mockito.when(matchArguments.isMatchResponse(Mockito.any())).thenReturn(isResponseMatch);
         Mockito.when(matchArguments.isInputReflected(Mockito.any(), Mockito.any())).thenReturn(isInputMatch);
         Mockito.when(matchArguments.getMatchString()).thenReturn(" arguments");
-        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("field"))
                 .processedPayload("{\"field\":\"value\"}")
@@ -127,7 +129,7 @@ class TemplateFuzzerTest {
     @ParameterizedTest
     @CsvSource({"http://localhost/field", "http://localhost/path?field&test=value"})
     void shouldRunWhenPathParam(String url) throws Exception {
-        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
 
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("field"))
@@ -143,7 +145,7 @@ class TemplateFuzzerTest {
 
     @Test
     void shouldRunWhenTargetFieldInHeader() throws Exception {
-        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
 
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("header"))
@@ -173,7 +175,7 @@ class TemplateFuzzerTest {
 
     @Test
     void shouldRunWithUserDictionary() throws Exception {
-        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("header"))
                 .processedPayload("{\"field\":\"value\"}")
@@ -189,7 +191,7 @@ class TemplateFuzzerTest {
     @ParameterizedTest
     @CsvSource({"{\"field\":\"value\"},http://url/FUZZ,2", "{\"field\":\"FUZZ\"},http://url/,2", "{\"field\":\"value\"},http://url/,0"})
     void shouldRunWithFuzzKeyword(String payload, String path, int times) throws Exception {
-        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("FUZZ"))
                 .headers(Set.of())
@@ -203,6 +205,24 @@ class TemplateFuzzerTest {
     }
 
     @Test
+    void shouldReportALiteralFuzzPlaceholderAsAPathMutation() throws Exception {
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        Mockito.when(userArguments.getWords()).thenReturn(new File("src/test/resources/dict.txt"));
+        FuzzingData data = FuzzingData.builder()
+                .targetFields(Set.of("FUZZ"))
+                .headers(Set.of())
+                .processedPayload("{\"field\":\"value\"}")
+                .method(HttpMethod.POST)
+                .path("http://localhost/users/FUZZ")
+                .build();
+
+        templateFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(2))
+                .addMutationTargets(List.of(RequestTarget.path("FUZZ")));
+    }
+
+    @Test
     void shouldReportErrorWhenServiceException() throws Exception {
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("header"))
@@ -211,7 +231,7 @@ class TemplateFuzzerTest {
                 .method(HttpMethod.POST)
                 .path("http://url")
                 .build();
-        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet(), Mockito.anyList())).thenThrow(IOException.class);
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenThrow(IOException.class);
         Mockito.when(userArguments.getWords()).thenReturn(new File("src/test/resources/dict.txt"));
 
         templateFuzzer.fuzz(data);
@@ -279,7 +299,7 @@ class TemplateFuzzerTest {
     @CsvSource({"true", "false"})
     void shouldRunInContinuousMode(boolean nameReplace) throws Exception {
         Mockito.when(userArguments.isNameReplace()).thenReturn(nameReplace);
-        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
         templateFuzzer.setRandom(true);
         Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
         templateFuzzer.fuzz(FuzzingData.builder()

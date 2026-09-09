@@ -15,6 +15,8 @@ import com.endava.cats.fuzzer.contract.PathTagsLinter;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.RunOutcome;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
@@ -35,6 +37,7 @@ import picocli.CommandLine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 @QuarkusTest
@@ -142,6 +145,11 @@ class CatsCommandTest {
         CatsExecutionLimitReachedException limitReached =
                 new CatsExecutionLimitReachedException("Execution limit reached");
         Mockito.doThrow(limitReached).when(stopController).startSession();
+        Mockito.when(qualityGate.getQualityGateDescription()).thenReturn("");
+        Mockito.when(statistics.getRunOutcome()).thenReturn(RunOutcome.limitReached("Execution limit reached"));
+        Mockito.when(statistics.snapshot(Mockito.anyBoolean(), Mockito.anyString()))
+                .thenReturn(new ExecutionSummary(0, 0, 0, 0, 0, 0, 0, 0, 0,
+                        Map.of(), Map.of(), true, "", RunOutcome.limitReached("Execution limit reached")));
         List<CatsExecutionEvent> events = new ArrayList<>();
 
         try (var _ = eventPublisher.subscribe(events::add);
@@ -173,6 +181,7 @@ class CatsCommandTest {
         CatsExecutionEventPublisher eventPublisher = new CatsExecutionEventPublisher();
         IllegalStateException failure = new IllegalStateException("Unexpected failure");
         Mockito.doThrow(failure).when(stopController).startSession();
+        Mockito.when(statistics.getRunOutcome()).thenReturn(RunOutcome.failed(failure.toString()));
         List<CatsExecutionEvent> events = new ArrayList<>();
 
         try (var _ = eventPublisher.subscribe(events::add);

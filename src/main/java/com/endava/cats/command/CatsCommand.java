@@ -37,7 +37,7 @@ import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.tui.CatsTuiLauncher;
 import com.endava.cats.tui.model.RunConfigurationSnapshot;
-import com.endava.cats.tui.model.RunSummarySnapshot;
+import com.endava.cats.model.RunOutcome;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
@@ -317,8 +317,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     private void executeSession() {
-        String failureMessage = null;
-        boolean cancelled = false;
         try {
             Future<VersionChecker.CheckResult> newVersion = this.checkForNewVersion();
             testCaseListener.startSession();
@@ -328,43 +326,44 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             this.printVersion(newVersion);
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
-            cancelled = true;
-            failureMessage = "Execution cancelled by user";
-            executionStatisticsListener.markCancelled(failureMessage);
+            executionStatisticsListener.markCancelled("Execution cancelled by user");
             exitCodeDueToErrors = CANCELLED_EXIT_CODE;
         } catch (CatsExecutionCancelledException e) {
-            cancelled = true;
-            failureMessage = e.getMessage();
-            executionStatisticsListener.markCancelled(failureMessage);
+            executionStatisticsListener.markCancelled(e.getMessage());
             exitCodeDueToErrors = CANCELLED_EXIT_CODE;
         } catch (CatsExecutionLimitReachedException e) {
             executionStatisticsListener.markLimitReached(e.getMessage());
             logger.complete(e.getMessage());
         } catch (CatsException | IOException | ExecutionException | IllegalArgumentException e) {
-            failureMessage = e.toString();
-            executionStatisticsListener.markFailed(failureMessage);
+            executionStatisticsListener.markFailed(e.toString());
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
             logger.debug("Stacktrace: {}", e);
             exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
         } catch (RuntimeException e) {
-            failureMessage = e.toString();
-            executionStatisticsListener.markFailed(failureMessage);
+            executionStatisticsListener.markFailed(e.toString());
             throw e;
         } finally {
             executionStopController.finishSession();
             testCaseListener.endSession();
             if (executionEventPublisher.hasSubscribers()) {
-                if (cancelled) {
-                    executionEventPublisher.publish(new CatsExecutionEvent.SessionCancelled(Instant.now(), failureMessage));
-                } else if (failureMessage == null) {
-                    boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(
-                            executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
-                    executionEventPublisher.publish(new CatsExecutionEvent.SessionCompleted(Instant.now(),
-                            RunSummarySnapshot.from(executionStatisticsListener, qualityGatePassed,
-                                    qualityGateArguments.getQualityGateDescription())));
-                } else {
-                    executionEventPublisher.publish(new CatsExecutionEvent.SessionFailed(Instant.now(), failureMessage));
-                }
+                this.publishSessionOutcome();
+            }
+        }
+    }
+
+    private void publishSessionOutcome() {
+        RunOutcome outcome = executionStatisticsListener.getRunOutcome();
+        switch (outcome.status()) {
+            case CANCELLED -> executionEventPublisher.publish(
+                    new CatsExecutionEvent.SessionCancelled(Instant.now(), outcome.details()));
+            case FAILED -> executionEventPublisher.publish(
+                    new CatsExecutionEvent.SessionFailed(Instant.now(), outcome.details()));
+            case COMPLETED, LIMIT_REACHED -> {
+                boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(
+                        executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
+                executionEventPublisher.publish(new CatsExecutionEvent.SessionCompleted(Instant.now(),
+                        executionStatisticsListener.snapshot(qualityGatePassed,
+                                qualityGateArguments.getQualityGateDescription())));
             }
         }
     }

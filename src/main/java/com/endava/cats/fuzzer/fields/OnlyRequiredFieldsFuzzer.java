@@ -7,7 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -43,8 +43,8 @@ public class OnlyRequiredFieldsFuzzer implements Fuzzer {
                 .fuzzer(this)
                 .payload(payload)
                 .mutationTarget(HttpMethod.requiresBody(data.getMethod())
-                        ? MutationTarget.requestBody()
-                        : MutationTarget.query("Optional parameters"))
+                        ? RequestTarget.requestBody()
+                        : RequestTarget.query("Optional parameters"))
                 .scenario("Send a request containing only required fields")
                 .logger(logger)
                 .build());

@@ -7,7 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -50,7 +50,7 @@ public class ExtraHeadersFuzzer implements Fuzzer {
                         .logger(logger)
                         .scenario("Add an extra header inside the request: name [%s], value [%s]. ".formatted(CATS_FUZZY_HEADER, CATS_FUZZY_HEADER))
                         .headers(headerSet)
-                        .mutationTarget(MutationTarget.header(CATS_FUZZY_HEADER))
+                        .mutationTarget(RequestTarget.header(CATS_FUZZY_HEADER))
                         .build()
         );
     }

@@ -21,6 +21,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
@@ -110,7 +111,7 @@ class TestCaseListenerTest {
     void shouldRecordRuntimeResourceCorrelationOnTheActiveTestCase() {
         ResourceCorrelation correlation = ResourceCorrelation.builder()
                 .sourceMethod("POST").sourcePath("/customers").sourceLocation("response.body.$.id")
-                .targetLocation("path").targetField("customerId").value("customer-42").build();
+                .target(RequestTarget.path("customerId")).value("customer-42").build();
         MDC.put(TestCaseListener.ID, "correlation-test");
         testCaseListener.testCaseMap.put("correlation-test", new CatsTestCase());
         try {
@@ -124,6 +125,22 @@ class TestCaseListenerTest {
         } finally {
             MDC.remove(TestCaseListener.ID);
             testCaseListener.testCaseMap.clear();
+        }
+    }
+
+    @Test
+    void shouldRecordMutationTargetsOnTheActiveTestCase() {
+        RequestTarget body = RequestTarget.body("customerId");
+        RequestTarget header = RequestTarget.header("X-Test");
+        MDC.put(TestCaseListener.ID, "mutation-test");
+        testCaseListener.testCaseMap.put("mutation-test", new CatsTestCase());
+        try {
+            testCaseListener.addMutationTargets(List.of(body, header, body));
+
+            Assertions.assertThat(testCaseListener.testCaseMap.get("mutation-test").getMutationTargets())
+                    .containsExactly(body, header);
+        } finally {
+            MDC.remove(TestCaseListener.ID);
         }
     }
 
@@ -590,7 +607,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4','anEnum':'value'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("anEnum", enumSchema));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
-        Mockito.when(response.getFuzzedField()).thenReturn(fuzzedField);
+        Mockito.when(response.getResponseValidationField()).thenReturn(fuzzedField);
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
@@ -736,7 +753,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
         Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
-        Mockito.when(response.getFuzzedField()).thenReturn("someField");
+        Mockito.when(response.getResponseValidationField()).thenReturn("someField");
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
@@ -759,7 +776,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponses()).thenReturn(new TreeMap<>(Map.of("4xx", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}"))));
         Mockito.when(response.responseCodeAsString()).thenReturn(responseCode);
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
-        Mockito.when(response.getFuzzedField()).thenReturn("test");
+        Mockito.when(response.getResponseValidationField()).thenReturn("test");
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());

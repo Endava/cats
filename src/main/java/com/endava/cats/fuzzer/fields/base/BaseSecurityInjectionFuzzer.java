@@ -10,7 +10,7 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
@@ -113,7 +113,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
                                     .formatted(getInjectionType(), field, truncatePayload(payload)))
                             .fuzzer(this)
                             .payload(fuzzedPayload)
-                            .mutationTarget(MutationTarget.requestField(data, field))
+                            .mutationTargets(RequestTargetResolver.resolvePayloadField(data, field))
                             .responseProcessor(this::processResponse)
                             .build()
             );

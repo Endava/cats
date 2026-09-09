@@ -6,7 +6,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import lombok.Builder;
 import lombok.NonNull;
@@ -85,7 +85,7 @@ public class SimpleExecutorContext {
 
     /** Request parts deliberately changed by this fuzzer. */
     @Singular
-    Set<MutationTarget> mutationTargets;
+    Set<RequestTarget> mutationTargets;
 
     /**
      * Whether to add the headers supplied in the {@code --headers} file.

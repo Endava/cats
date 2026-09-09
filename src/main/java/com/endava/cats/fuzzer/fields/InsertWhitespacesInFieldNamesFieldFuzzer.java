@@ -8,7 +8,7 @@ import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -59,7 +59,7 @@ public class InsertWhitespacesInFieldNamesFieldFuzzer implements Fuzzer {
                 .fuzzer(this)
                 .fuzzingData(data)
                 .payload(fuzzedJson)
-                .mutationTarget(MutationTarget.body(field))
+                .mutationTarget(RequestTarget.body(field))
                 .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                 .scenario("Insert random whitespaces in the field name [" + field + "]")
                 .build());

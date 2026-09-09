@@ -9,6 +9,8 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.RequestTarget;
+import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsModelUtils;
@@ -107,12 +109,11 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             FuzzingResult fuzzingResult = FuzzingStrategy.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
             boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.fuzzedValue(), data, fuzzedField);
 
-            ServiceData serviceData = ServiceData.builder().relativePath(data.getPath())
-                    .headers(data.getHeaders()).payload(fuzzingResult.json()).originalPayload(data.getPayload())
-                    .httpMethod(data.getMethod()).contractPath(data.getContractPath())
-                    .fuzzedField(fuzzedField).queryParams(data.getQueryParams()).contentType(data.getFirstRequestContentType())
-                    .queryParameterSerializations(data.getQueryParameterSerializations())
-                    .pathParamsPayload(data.getPathParamsPayload()).build();
+            ServiceData serviceData = ServiceData.from(data)
+                    .payload(fuzzingResult.json())
+                    .responseValidationField(fuzzedField)
+                    .mutationTargets(RequestTargetResolver.resolvePayloadField(data, fuzzedField))
+                    .build();
             ResponseCodeFamily expectedResponseCodeBasedOnConstraints = this.getExpectedResponseCodeBasedOnConstraints(isFuzzedValueMatchingPattern, fuzzingConstraints);
 
             testCaseListener.addExpectedResult(logger, "Should return [{}]", expectedResponseCodeBasedOnConstraints.asString());

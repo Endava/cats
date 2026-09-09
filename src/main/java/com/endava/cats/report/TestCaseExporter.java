@@ -11,7 +11,9 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
+import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.ProcessingError;
+import com.endava.cats.model.RunOutcome;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
@@ -334,7 +336,11 @@ public abstract class TestCaseExporter {
      * @param executionStatisticsListener the listener providing statistics on CATS execution
      */
     public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionStatisticsListener executionStatisticsListener) {
-        CatsTestReport report = this.createTestReport(summaries, executionStatisticsListener);
+        boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(
+                executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
+        ExecutionSummary executionSummary = executionStatisticsListener.snapshot(
+                qualityGatePassed, qualityGateArguments.getQualityGateDescription());
+        CatsTestReport report = this.createTestReport(summaries, executionSummary);
         double averageResponseTime = summaries.stream().mapToDouble(CatsTestCaseSummary::getTimeToExecuteInMs).average().orElse(0);
 
         Map<String, Object> context = new HashMap<>();
@@ -361,7 +367,7 @@ public abstract class TestCaseExporter {
         context.put("AVERAGE_RESPONSE_TIME", SINGLE_DECIMAL_FORMAT.format(averageResponseTime));
         context.put("RUN_STATUS", formatRunStatus(report.getRunStatus()));
         context.put("RUN_STATUS_DETAILS", report.getRunStatusDetails());
-        context.put("RUN_STATUS_RESULT", runStatusResult(ExecutionStatisticsListener.RunStatus.valueOf(report.getRunStatus())));
+        context.put("RUN_STATUS_RESULT", runStatusResult(executionSummary.outcome().status()));
         context.put("QUALITY_GATE_STATUS", report.isQualityGatePassed() ? "PASSED" : "FAILED");
         context.put("QUALITY_GATE_RESULT", report.isQualityGatePassed() ? "success" : "error");
         context.put("QUALITY_GATE_DESCRIPTION", report.getQualityGateDescription());
@@ -395,11 +401,11 @@ public abstract class TestCaseExporter {
         var groupedTestCases = ClusterCompute.createClusters(summaries);
         context.put("GROUPED_TEST_CASES", groupedTestCases);
 
-        Map<Integer, Integer> responseCodeDistribution = executionStatisticsListener.getResponseCodeDistribution();
+        Map<Integer, Integer> responseCodeDistribution = executionSummary.responseCodeDistribution();
         context.put("RESPONSE_CODE_DISTRIBUTION", buildResponseCodeDistributionForTemplate(responseCodeDistribution));
         context.put("HAS_RESPONSE_CODES", !responseCodeDistribution.isEmpty());
 
-        Map<String, Long> topFailingPaths = executionStatisticsListener.getTopFailingPaths(10);
+        Map<String, Long> topFailingPaths = executionSummary.topFailingPaths();
         context.put("TOP_FAILING_PATHS", buildTopFailingPathsForTemplate(topFailingPaths));
         context.put("HAS_FAILING_PATHS", !topFailingPaths.isEmpty());
         Writer writer = this.getSummaryTemplate().execute(new StringWriter(), context);
@@ -416,28 +422,26 @@ public abstract class TestCaseExporter {
 
     }
 
-    private CatsTestReport createTestReport(List<CatsTestCaseSummary> summaries, ExecutionStatisticsListener executionStatisticsListener) {
+    private CatsTestReport createTestReport(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary) {
         List<CatsTestCaseSummary> sortedSummaries = summaries.stream().sorted().toList();
-        boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(
-                executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
         List<ProcessingError> processingErrors = catsGlobalContext.getRecordedErrors().stream()
                 .sorted(Comparator.comparing(ProcessingError::toString))
                 .toList();
 
-        return CatsTestReport.builder().testCases(sortedSummaries).errors(executionStatisticsListener.getErrors())
-                .success(executionStatisticsListener.getSuccess()).totalTests(executionStatisticsListener.getAll())
-                .totalRequests(executionStatisticsListener.getTotalRequests())
-                .skippedFromReporting(executionStatisticsListener.getSkippedFromReporting())
-                .skipped(executionStatisticsListener.getSkipped())
-                .authErrors(executionStatisticsListener.getAuthErrors())
-                .ioErrors(executionStatisticsListener.getIoErrors())
-                .warnings(executionStatisticsListener.getWarns()).timestamp(OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME))
+        return CatsTestReport.builder().testCases(sortedSummaries).errors(executionSummary.errors())
+                .success(executionSummary.success()).totalTests(executionSummary.reportedResults())
+                .totalRequests(executionSummary.totalRequests())
+                .skippedFromReporting(executionSummary.skippedFromReporting())
+                .skipped(executionSummary.skipped())
+                .authErrors(executionSummary.authenticationErrors())
+                .ioErrors(executionSummary.ioErrors())
+                .warnings(executionSummary.warnings()).timestamp(OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME))
                 .executionTime(((System.currentTimeMillis() - t0) / 1000))
                 .catsVersion(appVersion)
-                .runStatus(executionStatisticsListener.getRunStatus().name())
-                .runStatusDetails(executionStatisticsListener.getRunStatusDetails())
-                .qualityGatePassed(qualityGatePassed)
-                .qualityGateDescription(qualityGateArguments.getQualityGateDescription())
+                .runStatus(executionSummary.outcome().status().name())
+                .runStatusDetails(executionSummary.outcome().details())
+                .qualityGatePassed(executionSummary.qualityGatePassed())
+                .qualityGateDescription(executionSummary.qualityGateDescription())
                 .randomSeed(CatsRandom.getStoredSeed())
                 .successfulResourceReuseEnabled(processingArguments.isReuseSuccessfulResources())
                 .stopAfterTests(stopArguments.getStopAfterMutations())
@@ -451,7 +455,7 @@ public abstract class TestCaseExporter {
         return total == 0 ? 0 : (double) count / total * 100;
     }
 
-    private static String runStatusResult(ExecutionStatisticsListener.RunStatus runStatus) {
+    private static String runStatusResult(RunOutcome.Status runStatus) {
         return switch (runStatus) {
             case COMPLETED -> "success";
             case LIMIT_REACHED -> "info";

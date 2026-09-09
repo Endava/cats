@@ -1,8 +1,9 @@
 package com.endava.cats.tui;
 
 import com.endava.cats.tui.event.CatsExecutionEvent;
+import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.RunOutcome;
 import com.endava.cats.tui.model.RunConfigurationSnapshot;
-import com.endava.cats.tui.model.RunSummarySnapshot;
 import com.endava.cats.tui.model.TestResultSnapshot;
 import dev.tamboui.tui.event.KeyCode;
 import dev.tamboui.tui.event.KeyEvent;
@@ -120,10 +121,10 @@ class CatsTuiViewTest {
                 "cats replay --test " + id);
     }
 
-    private static RunSummarySnapshot summary(boolean qualityGatePassed, String description) {
-        return new RunSummarySnapshot(8, 5, 1, 1, 1, 1, 3, 1, 2,
+    private static ExecutionSummary summary(boolean qualityGatePassed, String description) {
+        return new ExecutionSummary(8, 5, 1, 1, 1, 1, 3, 1, 2,
                 Map.of(200, 1, 422, 1, 500, 1), Map.of("/orders", 2L),
-                qualityGatePassed, description);
+                qualityGatePassed, description, RunOutcome.completed());
     }
 
     private static void assertRenders(CatsTuiState state) {

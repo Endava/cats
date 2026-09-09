@@ -18,7 +18,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.NoMediaType;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.report.TestCaseListener;
@@ -226,11 +226,11 @@ class ServiceCallerTest {
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.DELETE)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json")
-                .mutationTarget(MutationTarget.path("id")).build());
+                .mutationTarget(RequestTarget.path("id")).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEmpty();
-        Assertions.assertThat(catsResponse.getMutationTargets()).containsExactly(MutationTarget.path("id"));
+        Mockito.verify(testCaseListener).addMutationTargets(List.of(RequestTarget.path("id")));
     }
 
     @Test
@@ -465,7 +465,7 @@ class ServiceCallerTest {
     @Test
     void shouldMergeFuzzingForSuppliedHeaders() {
         ServiceData data = ServiceData.builder().headers(Set.of(CatsHeader.builder().name("catsFuzzedHeader").value("  anotherValue").build()))
-                .fuzzedHeader("catsFuzzedHeader").contentType("application/json").build();
+                .mutationTarget(RequestTarget.header("catsFuzzedHeader")).contentType("application/json").build();
         List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
         List<KeyValuePair<String, Object>> catsHeader = headers.stream().filter(header -> header.getKey().equalsIgnoreCase("catsFuzzedHeader")).toList();
 
@@ -476,7 +476,7 @@ class ServiceCallerTest {
     @Test
     void shouldMergeTypedHeaderMutationWithSuppliedHeader() {
         ServiceData data = ServiceData.builder().headers(Set.of(CatsHeader.builder().name("catsFuzzedHeader").value("  anotherValue").build()))
-                .mutationTarget(MutationTarget.header("catsFuzzedHeader")).contentType("application/json").build();
+                .mutationTarget(RequestTarget.header("catsFuzzedHeader")).contentType("application/json").build();
 
         List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
         List<KeyValuePair<String, Object>> catsHeader = headers.stream()
@@ -492,7 +492,8 @@ class ServiceCallerTest {
     void shouldAddHeaderWhenAddUserHeadersOffButSuppliedInHeadersFile() {
         ServiceData data = ServiceData.builder()
                 .headers(Set.of(CatsHeader.builder().name("simpleHeader").value("simpleValue").build(), CatsHeader.builder().name("catsFuzzedHeader").value("anotherValue").build()))
-                .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).contentType("application/json").build();
+                .mutationTarget(RequestTarget.header("catsFuzzedHeader"))
+                .addUserHeaders(false).contentType("application/json").build();
 
         List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
         List<String> headerNames = headers.stream().map(KeyValuePair::getKey).toList();
@@ -508,7 +509,8 @@ class ServiceCallerTest {
         ServiceData data = ServiceData.builder()
                 .headers(Set.of(CatsHeader.builder().name("simpleHeader").value("simpleValue").build()))
                 .relativePath("auth-header").contractPath("auth-header")
-                .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).contentType("application/json").build();
+                .mutationTarget(RequestTarget.header("catsFuzzedHeader"))
+                .addUserHeaders(false).contentType("application/json").build();
 
         List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
         List<String> headerNames = headers.stream().map(KeyValuePair::getKey).toList();
@@ -615,7 +617,7 @@ class ServiceCallerTest {
                 .headers(List.of(CatsHeader.builder().name("catsFuzzedHeader").value("simpleValue").build(),
                         CatsHeader.builder().name("catsFuzzedHeader").value("anotherValue").build()))
                 .relativePath("auth-header")
-                .fuzzedHeader("anotherOne").contentType("application/json").build();
+                .mutationTarget(RequestTarget.header("anotherOne")).contentType("application/json").build();
 
         List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
         long numberOfHeaders = headers.stream().filter(header -> header.getKey().equalsIgnoreCase("catsFuzzedHeader")).count();
@@ -1015,6 +1017,8 @@ class ServiceCallerTest {
 
     @Test
     void shouldPropagateQuerySerializationFromAnOpenApiOperationToTheFinalUrl() {
+        ReflectionTestUtils.setField(processingArguments, "useExamples", null);
+        ReflectionTestUtils.setField(processingArguments, "usePropertyExamples", true);
         String contract = """
                 openapi: 3.0.3
                 info:

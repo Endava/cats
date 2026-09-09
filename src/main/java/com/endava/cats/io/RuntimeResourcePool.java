@@ -6,7 +6,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.FuzzingResult;
@@ -154,7 +154,7 @@ public class RuntimeResourcePool {
 
         String result = json;
         for (TargetField target : reusableTargets(json, data, pathParametersPayload)) {
-            if ((target.location() == TargetLocation.PATH && !data.isReplaceUrlParams()) ||
+            if ((target.location() == RequestTarget.Location.PATH && !data.isReplaceUrlParams()) ||
                     hasExplicitValue(data, target) || shouldSkipOwnPostIdentifier(data, target)) {
                 continue;
             }
@@ -166,7 +166,7 @@ public class RuntimeResourcePool {
 
             String before = result;
             ResolvedValue value = resolved.get();
-            boolean mergeFuzzing = data.isFuzzedField(target.path(), mutationLocation(target.location())) ||
+            boolean mergeFuzzing = data.isFuzzedField(target.path(), target.location()) ||
                     wasModifiedByFuzzer(data, json, target.path(), pathParametersPayload);
             try {
                 FuzzingResult fuzzingResult = FuzzingStrategy.replaceField(result, target.path(),
@@ -181,8 +181,7 @@ public class RuntimeResourcePool {
                         .sourceMethod(value.resource().sourceMethod().name())
                         .sourcePath(value.resource().sourcePath())
                         .sourceLocation(value.storedValue().sourceLocation())
-                        .targetLocation(target.location().name().toLowerCase(Locale.ROOT))
-                        .targetField(target.path())
+                        .target(new RequestTarget(target.location(), target.path()))
                         .value(value.value())
                         .build());
             }
@@ -222,8 +221,8 @@ public class RuntimeResourcePool {
         for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
             String path = prefix.isEmpty() ? entry.getKey() : prefix + "#" + entry.getKey();
             if (entry.getValue().isJsonPrimitive()) {
-                TargetLocation location = targetLocation(data, entry.getKey(), pathParametersPayload);
-                if (location == TargetLocation.PATH || isIdentifierName(entry.getKey())) {
+                RequestTarget.Location location = targetLocation(data, entry.getKey(), pathParametersPayload);
+                if (location == RequestTarget.Location.PATH || isIdentifierName(entry.getKey())) {
                     targets.add(new TargetField(path, entry.getKey(), location));
                 }
             } else {
@@ -232,16 +231,16 @@ public class RuntimeResourcePool {
         }
     }
 
-    private TargetLocation targetLocation(ServiceData data, String name, boolean pathParametersPayload) {
+    private RequestTarget.Location targetLocation(ServiceData data, String name, boolean pathParametersPayload) {
         if (pathParametersPayload || !HttpMethod.requiresBody(data.getHttpMethod())) {
             if (OpenApiUtils.getPathVariables(data.getRelativePath()).stream().anyMatch(name::equalsIgnoreCase)) {
-                return TargetLocation.PATH;
+                return RequestTarget.Location.PATH;
             }
             if (data.getQueryParams().stream().anyMatch(name::equalsIgnoreCase)) {
-                return TargetLocation.QUERY;
+                return RequestTarget.Location.QUERY;
             }
         }
-        return TargetLocation.BODY;
+        return RequestTarget.Location.BODY;
     }
 
     private boolean hasExplicitValue(ServiceData data, TargetField target) {
@@ -251,15 +250,15 @@ public class RuntimeResourcePool {
         if (hasRefData) {
             return true;
         }
-        if (target.location() == TargetLocation.PATH && !filesArguments.isNotUrlParam(target.name())) {
+        if (target.location() == RequestTarget.Location.PATH && !filesArguments.isNotUrlParam(target.name())) {
             return true;
         }
-        return target.location() == TargetLocation.QUERY && filesArguments.getAdditionalQueryParamsForPath(data.getRelativePath()).keySet()
+        return target.location() == RequestTarget.Location.QUERY && filesArguments.getAdditionalQueryParamsForPath(data.getRelativePath()).keySet()
                 .stream().anyMatch(key -> key.equalsIgnoreCase(target.name()));
     }
 
     private boolean shouldSkipOwnPostIdentifier(ServiceData data, TargetField target) {
-        if (data.getHttpMethod() != HttpMethod.POST || target.location() != TargetLocation.BODY) {
+        if (data.getHttpMethod() != HttpMethod.POST || target.location() != RequestTarget.Location.BODY) {
             return false;
         }
         String resource = resourceName(data.getRelativePath());
@@ -532,14 +531,6 @@ public class RuntimeResourcePool {
                 name.endsWith("Guid") || name.endsWith("GUID");
     }
 
-    private MutationTarget.Location mutationLocation(TargetLocation targetLocation) {
-        return switch (targetLocation) {
-            case PATH -> MutationTarget.Location.PATH;
-            case QUERY -> MutationTarget.Location.QUERY;
-            case BODY -> MutationTarget.Location.BODY;
-        };
-    }
-
     private boolean wasModifiedByFuzzer(ServiceData data, String currentPayload, String path,
                                         boolean pathParametersPayload) {
         if (pathParametersPayload || StringUtils.isBlank(data.getOriginalPayload()) ||
@@ -661,11 +652,7 @@ public class RuntimeResourcePool {
     public record ResolvedRequest(String payload, String pathParamsPayload, List<ResourceCorrelation> correlations) {
     }
 
-    private enum TargetLocation {
-        PATH, QUERY, BODY
-    }
-
-    private record TargetField(String path, String name, TargetLocation location) {
+    private record TargetField(String path, String name, RequestTarget.Location location) {
     }
 
     private record ResolvedValue(ResourceInstance resource, StoredValue storedValue, int score) {

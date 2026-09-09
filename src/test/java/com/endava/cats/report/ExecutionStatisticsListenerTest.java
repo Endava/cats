@@ -1,5 +1,6 @@
 package com.endava.cats.report;
 
+import com.endava.cats.model.RunOutcome;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -193,13 +194,12 @@ class ExecutionStatisticsListenerTest {
         listener.increaseSuccess("/path");
         listener.markFailed("Contract processing failed");
 
-        Assertions.assertThat(listener.getRunStatus()).isEqualTo(ExecutionStatisticsListener.RunStatus.FAILED);
-        Assertions.assertThat(listener.getRunStatusDetails()).isEqualTo("Contract processing failed");
+        Assertions.assertThat(listener.getRunOutcome())
+                .isEqualTo(RunOutcome.failed("Contract processing failed"));
 
         listener.startSession();
 
-        Assertions.assertThat(listener.getRunStatus()).isEqualTo(ExecutionStatisticsListener.RunStatus.COMPLETED);
-        Assertions.assertThat(listener.getRunStatusDetails()).isEqualTo("All selected fuzzers completed");
+        Assertions.assertThat(listener.getRunOutcome()).isEqualTo(RunOutcome.completed());
         Assertions.assertThat(listener.getSuccess()).isOne();
     }
 

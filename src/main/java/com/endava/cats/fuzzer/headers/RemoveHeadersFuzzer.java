@@ -7,7 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -55,7 +55,7 @@ public class RemoveHeadersFuzzer implements Fuzzer {
                             .headers(headersSubset)
                             .mutationTargets(data.getHeaders().stream()
                                     .filter(header -> !headersSubset.contains(header))
-                                    .map(header -> MutationTarget.header(header.getName()))
+                                    .map(header -> RequestTarget.header(header.getName()))
                                     .toList())
                             .scenario("Send only the following headers: %s plus any authentication headers.".formatted(headersSubset))
                             .expectedResponseCode(ResponseCodeFamilyPredefined.getResultCodeBasedOnRequiredFieldsRemoved(anyMandatoryHeaderRemoved))

@@ -8,7 +8,7 @@ import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -62,7 +62,7 @@ public class ZeroWidthCharsInNamesHeadersFuzzer implements Fuzzer {
                             .scenario("Inject zero-width characters in the header names")
                             .headers(clonedHeaders)
                             .mutationTargets(data.getHeaders().stream()
-                                    .map(header -> MutationTarget.header(header.getName()))
+                                    .map(header -> RequestTarget.header(header.getName()))
                                     .toList())
                             .build()
             );

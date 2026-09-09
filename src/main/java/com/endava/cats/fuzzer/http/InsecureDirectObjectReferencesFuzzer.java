@@ -12,7 +12,7 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
@@ -146,7 +146,7 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
                                     .formatted(idField, alternativeId, currentValue))
                             .fuzzer(this)
                             .payload(fuzzedPayload)
-                            .mutationTarget(MutationTarget.requestField(data, idField))
+                            .mutationTargets(RequestTargetResolver.resolvePayloadField(data, idField))
                             .responseProcessor(this::checkForIdorVulnerability)
                             .build()
             );

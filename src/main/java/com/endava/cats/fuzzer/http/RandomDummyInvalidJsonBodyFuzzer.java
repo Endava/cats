@@ -7,7 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -73,7 +73,7 @@ public class RandomDummyInvalidJsonBodyFuzzer implements Fuzzer {
                             .scenario("Send %s as invalid json request body".formatted(payload))
                             .fuzzer(this)
                             .payload(payload)
-                            .mutationTarget(MutationTarget.requestBody())
+                            .mutationTarget(RequestTarget.requestBody())
                             .build());
         }
     }

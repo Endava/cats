@@ -20,6 +20,7 @@ import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.ResourceCorrelation;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.tui.model.TestResultSnapshot;
@@ -47,6 +48,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -262,7 +264,19 @@ public class TestCaseListener {
                 correlation.getTargetLocation(), correlation.getTargetField(), correlation.getValue());
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
         if (testCase != null) {
-            testCase.getRuntimeCorrelations().add(correlation);
+            testCase.getRequestProvenance().addRuntimeCorrelation(correlation);
+        }
+    }
+
+    /**
+     * Adds the request parts deliberately changed by the current fuzzer.
+     *
+     * @param mutationTargets mutations applied while constructing the request
+     */
+    public void addMutationTargets(Collection<RequestTarget> mutationTargets) {
+        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        if (testCase != null) {
+            testCase.getRequestProvenance().addMutationTargets(mutationTargets);
         }
     }
 
@@ -1090,11 +1104,11 @@ public class TestCaseListener {
     }
 
     private boolean isFuzzedFieldPresentInResponse(CatsResponse response) {
-        return response.getFuzzedField() == null ||
+        return response.getResponseValidationField() == null ||
                 response.getBody()
                         .replaceAll("[-_\\s]+", "")
                         .toLowerCase(Locale.ROOT)
-                        .contains(response.getFuzzedField()
+                        .contains(response.getResponseValidationField()
                                 .replaceAll("[-_#\\s]+", "")
                                 .toLowerCase(Locale.ROOT));
     }

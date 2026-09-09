@@ -5,6 +5,8 @@ import com.endava.cats.args.MatchArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.RequestTarget;
+import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -116,19 +118,12 @@ public class FieldsIteratorExecutor {
         FuzzingResult fuzzingResult = this.getFuzzingResult(context, fuzzedField, strategy);
 
         CatsResponse response = serviceCaller.call(
-                ServiceData.builder()
-                        .relativePath(context.getFuzzingData().getPath())
-                        .contractPath(context.getFuzzingData().getContractPath())
-                        .headers(context.getFuzzingData().getHeaders())
+                ServiceData.from(context.getFuzzingData())
                         .payload(fuzzingResult.json())
-                        .originalPayload(context.getFuzzingData().getPayload())
-                        .queryParams(context.getFuzzingData().getQueryParams())
-                        .queryParameterSerializations(context.getFuzzingData().getQueryParameterSerializations())
-                        .httpMethod(context.getFuzzingData().getMethod())
-                        .contentType(context.getFuzzingData().getFirstRequestContentType())
-                        .fuzzedField(fuzzedField)
+                        .responseValidationField(fuzzedField)
+                        .mutationTargets(RequestTargetResolver.resolvePayloadField(
+                                context.getFuzzingData(), fuzzedField))
                         .replaceRefData(context.isReplaceRefData())
-                        .pathParamsPayload(context.getFuzzingData().getPathParamsPayload())
                         .build());
 
         if (context.getExpectedResponseCode() != null) {

@@ -4,7 +4,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
@@ -55,7 +55,7 @@ class NewFieldsFuzzerTest {
         newFieldsFuzzer.fuzz(data);
 
         Assertions.assertThat(capturedContext().getMutationTargets())
-                .containsExactly(MutationTarget.body(NEW_FIELD));
+                .containsExactly(RequestTarget.body(NEW_FIELD));
     }
 
     @Test
@@ -64,7 +64,7 @@ class NewFieldsFuzzerTest {
         newFieldsFuzzer.fuzz(data);
 
         Assertions.assertThat(capturedContext().getMutationTargets())
-                .containsExactly(MutationTarget.query(NEW_FIELD));
+                .containsExactly(RequestTarget.query(NEW_FIELD));
     }
 
     @Test

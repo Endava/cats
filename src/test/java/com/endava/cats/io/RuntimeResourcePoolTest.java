@@ -5,7 +5,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.util.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
@@ -273,7 +273,8 @@ class RuntimeResourcePoolTest {
         resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
                 response(201, "{\"id\":\"clean-customer\"}"));
         ServiceData fuzzedPost = ServiceData.builder().relativePath("/customers").payload("{}")
-                .fuzzedField("name").httpMethod(HttpMethod.POST).contentType("application/json").build();
+                .mutationTarget(RequestTarget.body("name")).httpMethod(HttpMethod.POST)
+                .contentType("application/json").build();
         resourcePool.observe(fuzzedPost, request("POST", "/customers", "{}"),
                 response(201, "{\"id\":\"fuzzed-customer\"}"));
 
@@ -366,7 +367,7 @@ class RuntimeResourcePoolTest {
                 .contractPath("/customers/{customerId}")
                 .payload("{\"customerId\":\"  fuzzed\"}")
                 .queryParams(Set.of())
-                .fuzzedField("customerId")
+                .mutationTarget(RequestTarget.path("customerId"))
                 .httpMethod(HttpMethod.GET)
                 .contentType("application/json")
                 .build();
@@ -387,7 +388,7 @@ class RuntimeResourcePoolTest {
                 .contractPath("/customers/{customerId}")
                 .payload("{\"customerId\":\"invalid-id\"}")
                 .queryParams(Set.of())
-                .fuzzedField("customerId")
+                .mutationTarget(RequestTarget.path("customerId"))
                 .httpMethod(HttpMethod.GET)
                 .contentType("application/json")
                 .build();
@@ -409,7 +410,7 @@ class RuntimeResourcePoolTest {
                 .payload("{\"customerId\":\"invalid-id\"}")
                 .pathParamsPayload("{\"customerId\":\"invalid-id\"}")
                 .queryParams(Set.of())
-                .mutationTarget(MutationTarget.path("customerId"))
+                .mutationTarget(RequestTarget.path("customerId"))
                 .httpMethod(HttpMethod.GET)
                 .contentType("application/json")
                 .build();

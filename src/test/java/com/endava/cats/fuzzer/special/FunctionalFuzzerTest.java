@@ -8,7 +8,7 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.CatsDSLWords;
@@ -282,9 +282,9 @@ class FunctionalFuzzerTest {
         ArgumentCaptor<ServiceData> request = ArgumentCaptor.forClass(ServiceData.class);
         Mockito.verify(serviceCaller).call(request.capture());
         Assertions.assertThat(request.getValue().getAllMutationTargets())
-                .contains(MutationTarget.requestBody())
-                .doesNotContain(MutationTarget.body("additionalProperties_1"),
-                        MutationTarget.body("additionalProperties_2"));
+                .contains(RequestTarget.requestBody())
+                .doesNotContain(RequestTarget.body("additionalProperties_1"),
+                        RequestTarget.body("additionalProperties_2"));
     }
 
     @Test

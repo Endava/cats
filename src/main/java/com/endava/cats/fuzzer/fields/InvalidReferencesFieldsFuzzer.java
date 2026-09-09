@@ -10,7 +10,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.WordUtils;
@@ -63,7 +63,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
                                 .fuzzingData(data)
                                 .logger(logger)
                                 .path(pathMutation.path())
-                                .mutationTarget(MutationTarget.path(pathMutation.parameter()))
+                                .mutationTarget(RequestTarget.path(pathMutation.parameter()))
                                 .scenario("Fuzz path parameters for HTTP methods with bodies. Current path: %s".formatted(pathMutation.path()))
                                 .expectedSpecificResponseCode("[2XX, 4XX]")
                                 .responseProcessor(this::processResponse)

@@ -7,7 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
@@ -113,7 +113,7 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
                 .fuzzer(this)
                 .fuzzingData(data)
                 .payload(duplicatedPayload)
-                .mutationTarget(MutationTarget.body(field))
+                .mutationTarget(RequestTarget.body(field))
                 .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                 .scenario("Duplicate key [" + field + "] in parent object with second value [" + DUPLICATE_VALUE + "]")
                 .replaceRefData(false)

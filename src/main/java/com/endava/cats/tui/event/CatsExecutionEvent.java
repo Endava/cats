@@ -1,7 +1,7 @@
 package com.endava.cats.tui.event;
 
 import com.endava.cats.tui.model.RunConfigurationSnapshot;
-import com.endava.cats.tui.model.RunSummarySnapshot;
+import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.tui.model.TestResultSnapshot;
 
 import java.time.Instant;
@@ -66,7 +66,7 @@ public sealed interface CatsExecutionEvent {
     /**
      * Signals that the complete execution and report generation lifecycle has finished.
      */
-    record SessionCompleted(Instant occurredAt, RunSummarySnapshot summary) implements CatsExecutionEvent {
+    record SessionCompleted(Instant occurredAt, ExecutionSummary summary) implements CatsExecutionEvent {
     }
 
     /**

@@ -8,6 +8,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -75,18 +76,9 @@ public class HeadersIteratorExecutor {
                                 return;
                             }
 
-                            ServiceData serviceData = ServiceData.builder()
-                                    .relativePath(context.getFuzzingData().getPath())
-                                    .contractPath(context.getFuzzingData().getContractPath())
+                            ServiceData serviceData = ServiceData.from(context.getFuzzingData())
                                     .headers(clonedHeaders)
-                                    .payload(context.getFuzzingData().getPayload())
-                                    .originalPayload(context.getFuzzingData().getPayload())
-                                    .fuzzedHeader(header.getName())
-                                    .queryParams(context.getFuzzingData().getQueryParams())
-                                    .queryParameterSerializations(context.getFuzzingData().getQueryParameterSerializations())
-                                    .httpMethod(context.getFuzzingData().getMethod())
-                                    .contentType(context.getFuzzingData().getFirstRequestContentType())
-                                    .pathParamsPayload(context.getFuzzingData().getPathParamsPayload())
+                                    .mutationTarget(RequestTarget.header(header.getName()))
                                     .build();
 
                             CatsResponse response = serviceCaller.call(serviceData);

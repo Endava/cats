@@ -5,7 +5,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.JsonUtils;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
@@ -77,7 +77,7 @@ class OnlyRequiredFieldsFuzzerTest {
         Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
         Assertions.assertThat(context.getScenario()).contains("only required fields");
         Assertions.assertThat(context.getFuzzingData()).isSameAs(data);
-        Assertions.assertThat(context.getMutationTargets()).containsExactly(MutationTarget.requestBody());
+        Assertions.assertThat(context.getMutationTargets()).containsExactly(RequestTarget.requestBody());
     }
 
     @Test
@@ -99,7 +99,7 @@ class OnlyRequiredFieldsFuzzerTest {
         fuzzer.fuzz(data);
 
         Assertions.assertThat(capturedContext().getMutationTargets())
-                .containsExactly(MutationTarget.query("Optional parameters"));
+                .containsExactly(RequestTarget.query("Optional parameters"));
     }
 
     @Test

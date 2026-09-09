@@ -16,7 +16,8 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
+import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -298,8 +299,10 @@ public class TemplateFuzzer implements Fuzzer {
         long startTime = System.currentTimeMillis();
 
         try {
-            List<MutationTarget> mutationTargets = MutationTarget.requestFields(data, targetField);
-            CatsResponse catsResponse = serviceCaller.callService(catsRequest, Set.of(targetField), mutationTargets);
+            List<RequestTarget> mutationTargets = RequestTargetResolver.resolveTemplateMutation(
+                    data, catsRequest, targetField);
+            testCaseListener.addMutationTargets(mutationTargets);
+            CatsResponse catsResponse = serviceCaller.callService(catsRequest, Set.of(targetField));
             checkResponse(catsResponse, data, fuzzedValue);
         } catch (IOException e) {
             long duration = System.currentTimeMillis() - startTime;
@@ -309,8 +312,7 @@ public class TemplateFuzzer implements Fuzzer {
                     .body(exceptionalResponse.responseBody()).httpMethod(catsRequest.getHttpMethod())
                     .responseTimeInMs(duration).responseCode(exceptionalResponse.responseCode())
                     .jsonBody(JsonUtils.parseAsJsonElement(exceptionalResponse.responseBody()))
-                    .fuzzedField(targetField)
-                    .mutationTargets(MutationTarget.requestFields(data, targetField))
+                    .responseValidationField(targetField)
                     .build();
 
             checkResponse(catsResponse, data, fuzzedValue);

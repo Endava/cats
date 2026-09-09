@@ -4,10 +4,12 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
@@ -19,6 +21,7 @@ import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -65,10 +68,17 @@ class RandomFuzzerTest {
     void shouldRunWhenPayloadNotEmpty() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getPayload()).thenReturn("{\"id\":\"value\"}");
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.GET);
+        Mockito.when(data.getPath()).thenReturn("/resources?id=value");
+        Mockito.when(data.getQueryParams()).thenReturn(Set.of("id"));
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("id"));
         Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
+
         randomFuzzer.fuzz(data);
-        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
+
+        ArgumentCaptor<SimpleExecutorContext> context = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(simpleExecutor).execute(context.capture());
+        Assertions.assertThat(context.getValue().getMutationTargets()).containsExactly(RequestTarget.query("id"));
     }
 
     @Test

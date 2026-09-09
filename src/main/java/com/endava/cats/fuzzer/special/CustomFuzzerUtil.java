@@ -11,7 +11,8 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
+import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -138,11 +140,10 @@ public class CustomFuzzerUtil {
             }
 
             String pathParamsPayloadWithCustomValues = this.getPathParamsPayloadWithCustomValues(data.getPathParamsPayload(), currentPathValues);
-            CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).replaceRefData(false).httpMethod(data.getMethod())
-                    .headers(headers).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).contractPath(data.getContractPath())
-                    .queryParameterSerializations(data.getQueryParameterSerializations())
-                    .contentType(data.getFirstRequestContentType()).pathParamsPayload(pathParamsPayloadWithCustomValues)
-                    .mutationTargets(getMutationTargets(data, currentPathValues, isHeadersFuzzing, arrayOfHeaders, i)).build());
+            CatsResponse response = serviceCaller.call(ServiceData.from(data).replaceRefData(false)
+                    .headers(headers).payload(payloadWithCustomValuesReplaced).pathParamsPayload(pathParamsPayloadWithCustomValues)
+                    .mutationTargets(getMutationTargets(data, currentPathValues, payloadWithCustomValuesReplaced,
+                            pathParamsPayloadWithCustomValues, headers, isHeadersFuzzing, arrayOfHeaders, i)).build());
 
             this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced, pathParamsPayloadWithCustomValues);
 
@@ -167,20 +168,23 @@ public class CustomFuzzerUtil {
         return headers;
     }
 
-    private List<MutationTarget> getMutationTargets(FuzzingData data, Map<String, Object> currentPathValues,
-                                                     boolean headersFuzzing, CatsHeader[] headers, int iteration) {
-        Set<MutationTarget> targets = currentPathValues.keySet().stream()
+    private List<RequestTarget> getMutationTargets(FuzzingData data, Map<String, Object> currentPathValues,
+                                                     String mutatedPayload, String mutatedParameterPayload,
+                                                     Collection<CatsHeader> mutatedHeaders, boolean headersFuzzing,
+                                                     CatsHeader[] headers, int iteration) {
+        Set<String> candidateFields = currentPathValues.keySet().stream()
                 .filter(field -> !CATS_BODY_FUZZ.equals(field) && !CATS_HEADERS.equals(field))
                 .filter(field -> !field.matches(CatsDSLWords.ADDITIONAL_PROPERTIES))
                 .filter(this::isNotAReservedWord)
-                .flatMap(field -> MutationTarget.requestFields(data, field).stream())
                 .collect(Collectors.toSet());
+        Set<RequestTarget> targets = new HashSet<>(RequestTargetResolver.resolveCustomMutations(data,
+                mutatedPayload, mutatedParameterPayload, mutatedHeaders, candidateFields));
         if (currentPathValues.containsKey(CATS_BODY_FUZZ) || currentPathValues.keySet().stream()
                 .anyMatch(field -> field.matches(CatsDSLWords.ADDITIONAL_PROPERTIES))) {
-            targets.add(MutationTarget.requestBody());
+            targets.add(RequestTarget.requestBody());
         }
         if (headersFuzzing && iteration < headers.length) {
-            targets.add(MutationTarget.header(headers[iteration].getName()));
+            targets.add(RequestTarget.header(headers[iteration].getName()));
         }
         return List.copyOf(targets);
     }

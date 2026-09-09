@@ -2,7 +2,7 @@ package com.endava.cats.tui;
 
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.model.RunConfigurationSnapshot;
-import com.endava.cats.tui.model.RunSummarySnapshot;
+import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.tui.model.TestResultSnapshot;
 import dev.tamboui.toolkit.event.EventResult;
 import dev.tamboui.tui.event.KeyEvent;
@@ -42,7 +42,7 @@ final class CatsTuiState {
     private Instant startedAt;
     private Instant finishedAt;
     private RunConfigurationSnapshot configuration;
-    private RunSummarySnapshot summary;
+    private ExecutionSummary summary;
     private Screen screen = Screen.OVERVIEW;
     private ResultFilter filter = ResultFilter.ALL;
     private String status = "Starting CATS";
@@ -892,7 +892,7 @@ final class CatsTuiState {
         return configuration;
     }
 
-    RunSummarySnapshot summary() {
+    ExecutionSummary summary() {
         return summary;
     }
 

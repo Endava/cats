@@ -8,7 +8,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.MutationTarget;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -77,7 +77,7 @@ public class FreeFormObjectFieldsFuzzer implements Fuzzer {
                 .fuzzer(this)
                 .logger(logger)
                 .payload(payload)
-                .mutationTarget(target.root() ? MutationTarget.requestBody() : MutationTarget.body(target.path()))
+                .mutationTarget(target.root() ? RequestTarget.requestBody() : RequestTarget.body(target.path()))
                 .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX_TWOXX)
                 .scenario("Add %s to free-form object [%s]".formatted(mutation.description(), target.displayName()))
                 .matchResponseResult(false)

@@ -1,8 +1,9 @@
 package com.endava.cats.tui;
 
 import com.endava.cats.tui.event.CatsExecutionEvent;
+import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.RunOutcome;
 import com.endava.cats.tui.model.RunConfigurationSnapshot;
-import com.endava.cats.tui.model.RunSummarySnapshot;
 import com.endava.cats.tui.model.TestResultSnapshot;
 import dev.tamboui.tui.event.KeyCode;
 import dev.tamboui.tui.event.KeyEvent;
@@ -41,8 +42,8 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.warnings()).isEqualTo(1);
 
         state.accept(new CatsExecutionEvent.SessionCompleted(NOW.plusSeconds(5),
-                new RunSummarySnapshot(20, 18, 10, 3, 5, 2, 2, 0, 0, Map.of(200, 10),
-                        Map.of("/pets", 5L), false, "Default: fail on any error")));
+                new ExecutionSummary(20, 18, 10, 3, 5, 2, 2, 0, 0, Map.of(200, 10),
+                        Map.of("/pets", 5L), false, "Default: fail on any error", RunOutcome.completed())));
 
         Assertions.assertThat(state.running()).isFalse();
         Assertions.assertThat(state.status()).isEqualTo("Finished");
@@ -489,8 +490,8 @@ class CatsTuiStateTest {
         CatsTuiState running = new CatsTuiState();
         running.handleKey(KeyEvent.ofChar('Q'));
         Assertions.assertThat(running.status()).isEqualTo("Cancellation requested");
-        running.accept(new CatsExecutionEvent.SessionCompleted(NOW, new RunSummarySnapshot(0, 0, 0, 0, 0,
-                0, 0, 0, 0, Map.of(), Map.of(), true, "done")));
+        running.accept(new CatsExecutionEvent.SessionCompleted(NOW, new ExecutionSummary(0, 0, 0, 0, 0,
+                0, 0, 0, 0, Map.of(), Map.of(), true, "done", RunOutcome.completed())));
         running.handleKey(KeyEvent.ofChar('q'));
         Assertions.assertThat(running.status()).isEqualTo("Finished");
     }

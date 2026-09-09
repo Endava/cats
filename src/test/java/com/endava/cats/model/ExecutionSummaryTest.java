@@ -1,4 +1,4 @@
-package com.endava.cats.tui.model;
+package com.endava.cats.model;
 
 import com.endava.cats.report.ExecutionStatisticsListener;
 import io.quarkus.test.junit.QuarkusTest;
@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 @QuarkusTest
-class RunSummarySnapshotTest {
+class ExecutionSummaryTest {
 
     @Test
     void shouldCreateAnImmutableSnapshotOfExecutionStatistics() {
@@ -23,7 +23,7 @@ class RunSummarySnapshotTest {
         statistics.recordResponseCode(200);
         statistics.recordResponseCode(500);
 
-        RunSummarySnapshot snapshot = RunSummarySnapshot.from(statistics, false, "fail on errors");
+        ExecutionSummary snapshot = statistics.snapshot(false, "fail on errors");
         Map<Integer, Integer> responseCodeDistribution = snapshot.responseCodeDistribution();
         Map<String, Long> topFailingPaths = snapshot.topFailingPaths();
 
@@ -40,6 +40,7 @@ class RunSummarySnapshotTest {
         Assertions.assertThat(topFailingPaths).containsEntry("/pets", 1L);
         Assertions.assertThat(snapshot.qualityGatePassed()).isFalse();
         Assertions.assertThat(snapshot.qualityGateDescription()).isEqualTo("fail on errors");
+        Assertions.assertThat(snapshot.outcome()).isEqualTo(RunOutcome.completed());
         Assertions.assertThatThrownBy(() -> responseCodeDistribution.put(201, 1))
                 .isInstanceOf(UnsupportedOperationException.class);
         Assertions.assertThatThrownBy(() -> topFailingPaths.put("/new", 1L))
