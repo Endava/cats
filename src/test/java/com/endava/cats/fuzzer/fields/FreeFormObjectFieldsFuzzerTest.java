@@ -50,7 +50,7 @@ class FreeFormObjectFieldsFuzzerTest {
         fuzzer.fuzz(data);
 
         List<SimpleExecutorContext> contexts = capturedContexts(MUTATION_COUNT);
-        Assertions.assertThat(contexts).allSatisfy(context -> {
+        Assertions.assertThat(contexts).isNotEmpty().allSatisfy(context -> {
             Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX_TWOXX);
             Assertions.assertThat(context.isMatchResponseResult()).isFalse();
             Assertions.assertThat(context.isMatchResponseContentType()).isFalse();

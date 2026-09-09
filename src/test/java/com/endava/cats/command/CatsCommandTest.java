@@ -144,7 +144,7 @@ class CatsCommandTest {
         Mockito.doThrow(limitReached).when(stopController).startSession();
         List<CatsExecutionEvent> events = new ArrayList<>();
 
-        try (CatsExecutionEventPublisher.Subscription _ = eventPublisher.subscribe(events::add);
+        try (var _ = eventPublisher.subscribe(events::add);
              CatsCommand command = new CatsCommand()) {
             ReflectionTestUtils.setField(command, "reportingArguments", localReportingArguments);
             ReflectionTestUtils.setField(command, "testCaseListener", localTestCaseListener);

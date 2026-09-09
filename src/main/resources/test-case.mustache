@@ -125,16 +125,6 @@
             <span class="rounded path details">{{fullRequestPath}}</span>
         </div>
 
-        {{#hasRuntimeCorrelations}}
-        <div class="component title">
-            <p>Runtime Correlations</p>
-        </div>
-        <div class="component text">
-            {{#runtimeCorrelations}}
-            <p>{{sourceMethod}} {{sourcePath}} {{sourceLocation}} &rarr; {{targetLocation}} {{targetField}} = {{value}}</p>
-            {{/runtimeCorrelations}}
-        </div>
-        {{/hasRuntimeCorrelations}}
         <div class="component title border-left-bottom">
             <p>Http Method</p>
         </div>
@@ -231,8 +221,37 @@
             <pre><code>{{catsReplay}}</code></pre>
         </div>
     </div>
-</div>
 {{/hasRequestDetails}}
+{{#hasRuntimeCorrelations}}
+    <div class="section-response">
+        <div class="tabs-header">
+            <div class="component section-title">Runtime Correlations</div>
+        </div>
+        <div class="code-area-outside">
+            <table class="runtime-correlations-table">
+                <thead>
+                <tr class="header">
+                    <th>Source operation</th>
+                    <th>Source location</th>
+                    <th>Target</th>
+                    <th>Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{#runtimeCorrelations}}
+                <tr class="runtime-correlation-row">
+                    <td>{{sourceMethod}} {{sourcePath}}</td>
+                    <td>{{sourceLocation}}</td>
+                    <td>{{targetLocation}} {{targetField}}</td>
+                    <td>{{value}}</td>
+                </tr>
+                {{/runtimeCorrelations}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{{/hasRuntimeCorrelations}}
+</div>
 {{/TEST_CASE}}
 {{#JS}}
 <script src="script.js"></script>

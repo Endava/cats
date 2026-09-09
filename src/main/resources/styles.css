@@ -844,6 +844,19 @@ code {
 	font-size: 14px;
 }
 
+.runtime-correlations-table {
+	border-collapse: collapse;
+	table-layout: auto;
+	width: 100%;
+}
+
+.runtime-correlations-table th,
+.runtime-correlations-table td {
+	overflow-wrap: anywhere;
+	padding-right: 24px;
+	text-align: left;
+}
+
 .section-response {
 	margin-top: 50px;
 	margin-bottom: 50px;
