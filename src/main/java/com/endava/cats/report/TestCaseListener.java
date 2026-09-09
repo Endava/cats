@@ -485,6 +485,7 @@ public class TestCaseListener {
      * version, build time, and platform.
      */
     public void startSession() {
+        executionStatisticsListener.startSession();
         MDC.put(ID_ANSI, this.getKeyDefault());
         MDC.put(FUZZER, this.getKeyDefault());
         MDC.put(FUZZER_KEY, this.getKeyDefault());

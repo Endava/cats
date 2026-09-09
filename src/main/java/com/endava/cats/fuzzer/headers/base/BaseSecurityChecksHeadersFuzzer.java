@@ -8,6 +8,7 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -77,6 +78,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
                             .matchResponseResult(false)
                             .matchResponseContentType(this.shouldMatchContentType())
                             .headers(headers)
+                            .mutationTarget(MutationTarget.header(targetHeaderName()))
                             .build());
         }
     }

@@ -6,9 +6,11 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.Singular;
 import lombok.Value;
 
 import java.util.Collection;
@@ -80,6 +82,10 @@ public class SimpleExecutorContext {
      * to process the response and decide the expected behaviours, you can supply your own processor.
      */
     BiConsumer<CatsResponse, FuzzingData> responseProcessor;
+
+    /** Request parts deliberately changed by this fuzzer. */
+    @Singular
+    Set<MutationTarget> mutationTargets;
 
     /**
      * Whether to add the headers supplied in the {@code --headers} file.

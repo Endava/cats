@@ -8,6 +8,7 @@ import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
@@ -60,6 +61,7 @@ public class ZeroWidthCharsInNamesFieldsFuzzer implements Fuzzer {
                 .fuzzer(this)
                 .fuzzingData(data)
                 .payload(fuzzedPayload)
+                .mutationTarget(MutationTarget.body(fuzzedField))
                 .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                 .scenario("Insert zero-width chars in field names: field [" + fuzzedField + "], char [" + FuzzingStrategy.formatValue(fuzzValue) + "]. All other details are similar to a happy flow")
                 .build());

@@ -10,6 +10,7 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
@@ -146,6 +147,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
                                     .formatted(field, truncatePayload(payload)))
                             .fuzzer(this)
                             .payload(fuzzedPayload)
+                            .mutationTarget(MutationTarget.requestField(data, field))
                             .responseProcessor((response, fuzzingData) -> processResponse(response, fuzzingData, payload))
                             .build()
             );

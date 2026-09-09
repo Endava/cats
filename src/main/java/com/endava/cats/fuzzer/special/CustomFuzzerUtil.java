@@ -11,6 +11,7 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
@@ -140,7 +141,8 @@ public class CustomFuzzerUtil {
             CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).replaceRefData(false).httpMethod(data.getMethod())
                     .headers(headers).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).contractPath(data.getContractPath())
                     .queryParameterSerializations(data.getQueryParameterSerializations())
-                    .contentType(data.getFirstRequestContentType()).pathParamsPayload(pathParamsPayloadWithCustomValues).build());
+                    .contentType(data.getFirstRequestContentType()).pathParamsPayload(pathParamsPayloadWithCustomValues)
+                    .mutationTargets(getMutationTargets(data, currentPathValues, isHeadersFuzzing, arrayOfHeaders, i)).build());
 
             this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced, pathParamsPayloadWithCustomValues);
 
@@ -163,6 +165,24 @@ public class CustomFuzzerUtil {
             headers.add(headerToReplace);
         }
         return headers;
+    }
+
+    private List<MutationTarget> getMutationTargets(FuzzingData data, Map<String, Object> currentPathValues,
+                                                     boolean headersFuzzing, CatsHeader[] headers, int iteration) {
+        Set<MutationTarget> targets = currentPathValues.keySet().stream()
+                .filter(field -> !CATS_BODY_FUZZ.equals(field) && !CATS_HEADERS.equals(field))
+                .filter(field -> !field.matches(CatsDSLWords.ADDITIONAL_PROPERTIES))
+                .filter(this::isNotAReservedWord)
+                .flatMap(field -> MutationTarget.requestFields(data, field).stream())
+                .collect(Collectors.toSet());
+        if (currentPathValues.containsKey(CATS_BODY_FUZZ) || currentPathValues.keySet().stream()
+                .anyMatch(field -> field.matches(CatsDSLWords.ADDITIONAL_PROPERTIES))) {
+            targets.add(MutationTarget.requestBody());
+        }
+        if (headersFuzzing && iteration < headers.length) {
+            targets.add(MutationTarget.header(headers[iteration].getName()));
+        }
+        return List.copyOf(targets);
     }
 
     private int getNumberOfIterationsBasedOnHeaders(FuzzingData data, Map<String, Object> currentPathValues) {

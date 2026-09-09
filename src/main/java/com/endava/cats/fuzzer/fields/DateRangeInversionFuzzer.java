@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
@@ -182,6 +183,8 @@ public class DateRangeInversionFuzzer implements Fuzzer {
                         .fuzzingData(data)
                         .logger(logger)
                         .payload(mutatedPayload)
+                        .mutationTarget(MutationTarget.requestField(data, startField))
+                        .mutationTarget(MutationTarget.requestField(data, endField))
                         .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                         .scenario("Send a request where date field [%s]=%s is after date field [%s]=%s, violating temporal relationship"
                                 .formatted(startField, startValue, endField, endValue))

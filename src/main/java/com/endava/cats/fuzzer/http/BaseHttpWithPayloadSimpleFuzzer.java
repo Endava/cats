@@ -7,6 +7,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -52,6 +53,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
                         .fuzzer(this)
                         .validJson(false)
                         .payload(this.getPayload(data))
+                        .mutationTarget(MutationTarget.requestBody())
                         .build()
         );
     }

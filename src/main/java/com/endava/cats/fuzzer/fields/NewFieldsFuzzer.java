@@ -8,6 +8,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
@@ -57,6 +58,9 @@ public class NewFieldsFuzzer implements Fuzzer {
                 .fuzzer(this)
                 .fuzzingData(data)
                 .payload(fuzzedJson)
+                .mutationTarget(HttpMethod.requiresBody(data.getMethod())
+                        ? MutationTarget.body(NEW_FIELD)
+                        : MutationTarget.query(NEW_FIELD))
                 .expectedResponseCode(expectedResultCode)
                 .scenario("Add new field inside the request: name [" + NEW_FIELD + "], value [" + NEW_FIELD + "]. All other details are similar to a happy flow")
                 .build());

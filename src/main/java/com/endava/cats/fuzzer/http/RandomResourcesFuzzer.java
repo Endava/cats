@@ -10,6 +10,7 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
@@ -89,6 +90,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
                             .scenario("Send random values in path variables")
                             .fuzzer(this)
                             .path(path)
+                            .mutationTargets(pathVariables.stream().map(MutationTarget::path).toList())
                             .replaceUrlParams(false)
                             .build()
             );
@@ -124,10 +126,10 @@ public class RandomResourcesFuzzer implements Fuzzer {
             logger.warn("The payload is the same after fuzzing, this might indicate an issue with the contract definition");
             return;
         }
-        this.executeTests(data, payloads);
+        this.executeTests(data, payloads, pathVariables);
     }
 
-    private void executeTests(FuzzingData data, Set<String> payloads) {
+    private void executeTests(FuzzingData data, Set<String> payloads, Set<String> pathVariables) {
         for (String payload : payloads) {
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
@@ -138,6 +140,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
                             .scenario("Send random values in path variables")
                             .fuzzer(this)
                             .payload(payload)
+                            .mutationTargets(pathVariables.stream().map(MutationTarget::path).toList())
                             .replaceUrlParams(false)
                             .build()
             );

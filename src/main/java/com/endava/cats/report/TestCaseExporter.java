@@ -1,18 +1,22 @@
 package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.args.StopArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
+import com.endava.cats.model.ProcessingError;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.endava.cats.util.AnsiUtils;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.KeyValueSerializer;
@@ -76,8 +80,10 @@ public abstract class TestCaseExporter {
 
     final ReportingArguments reportingArguments;
     final CatsGlobalContext catsGlobalContext;
-    final com.endava.cats.args.QualityGateArguments qualityGateArguments;
+    final QualityGateArguments qualityGateArguments;
     final ExecutionStatisticsListener executionStatisticsListener;
+    final ProcessingArguments processingArguments;
+    final StopArguments stopArguments;
 
     private Path reportingPath;
     private long t0;
@@ -105,15 +111,21 @@ public abstract class TestCaseExporter {
      * @param catsGlobalContext           the global context
      * @param qualityGateArguments        the quality gate arguments
      * @param executionStatisticsListener the execution statistics listener
+     * @param processingArguments         the processing arguments
+     * @param stopArguments               the execution stop arguments
      */
     @Inject
     protected TestCaseExporter(ReportingArguments reportingArguments, CatsGlobalContext catsGlobalContext,
                                QualityGateArguments qualityGateArguments,
-                               ExecutionStatisticsListener executionStatisticsListener) {
+                               ExecutionStatisticsListener executionStatisticsListener,
+                               ProcessingArguments processingArguments,
+                               StopArguments stopArguments) {
         this.reportingArguments = reportingArguments;
         this.catsGlobalContext = catsGlobalContext;
         this.qualityGateArguments = qualityGateArguments;
         this.executionStatisticsListener = executionStatisticsListener;
+        this.processingArguments = processingArguments;
+        this.stopArguments = stopArguments;
         maskingSerializer = new GsonBuilder()
                 .setStrictness(Strictness.LENIENT)
                 .setPrettyPrinting()
@@ -323,7 +335,7 @@ public abstract class TestCaseExporter {
      */
     public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionStatisticsListener executionStatisticsListener) {
         CatsTestReport report = this.createTestReport(summaries, executionStatisticsListener);
-        double averageResponseTime = summaries.stream().mapToDouble(CatsTestCaseSummary::getTimeToExecuteInMs).sum() / summaries.size();
+        double averageResponseTime = summaries.stream().mapToDouble(CatsTestCaseSummary::getTimeToExecuteInMs).average().orElse(0);
 
         Map<String, Object> context = new HashMap<>();
         context.put("WARNINGS", LARGE_NUMBER_FORMAT.format(report.getWarnings()));
@@ -332,6 +344,11 @@ public abstract class TestCaseExporter {
         context.put("ERRORS_JUNIT", LARGE_NUMBER_FORMAT.format(report.getErrorsJunit()));
         context.put("FAILURES_JUNIT", LARGE_NUMBER_FORMAT.format(report.getFailuresJunit()));
         context.put("TOTAL", LARGE_NUMBER_FORMAT.format(report.getTotalTests()));
+        context.put("TOTAL_REQUESTS", LARGE_NUMBER_FORMAT.format(report.getTotalRequests()));
+        context.put("SKIPPED_FROM_REPORTING", LARGE_NUMBER_FORMAT.format(report.getSkippedFromReporting()));
+        context.put("SKIPPED", LARGE_NUMBER_FORMAT.format(report.getSkipped()));
+        context.put("AUTH_ERRORS", LARGE_NUMBER_FORMAT.format(report.getAuthErrors()));
+        context.put("IO_ERRORS", LARGE_NUMBER_FORMAT.format(report.getIoErrors()));
         context.put("TIMESTAMP", report.getTimestamp());
         context.put("TIMESTAMP_ISO", OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE_TIME));
         context.put("TEST_CASES", report.getTestCases());
@@ -342,10 +359,22 @@ public abstract class TestCaseExporter {
         context.put("JS", this.isJavascript());
         context.put("OS", this.osDetails);
         context.put("AVERAGE_RESPONSE_TIME", SINGLE_DECIMAL_FORMAT.format(averageResponseTime));
+        context.put("RUN_STATUS", formatRunStatus(report.getRunStatus()));
+        context.put("RUN_STATUS_DETAILS", report.getRunStatusDetails());
+        context.put("RUN_STATUS_RESULT", runStatusResult(ExecutionStatisticsListener.RunStatus.valueOf(report.getRunStatus())));
+        context.put("QUALITY_GATE_STATUS", report.isQualityGatePassed() ? "PASSED" : "FAILED");
+        context.put("QUALITY_GATE_RESULT", report.isQualityGatePassed() ? "success" : "error");
+        context.put("QUALITY_GATE_DESCRIPTION", report.getQualityGateDescription());
+        context.put("RANDOM_SEED", report.getRandomSeed());
+        context.put("RESOURCE_REUSE_STATUS", report.isSuccessfulResourceReuseEnabled() ? "Enabled" : "Disabled");
+        context.put("STOP_LIMITS", buildStopLimitsForTemplate(report));
+        context.put("HAS_STOP_LIMITS", hasStopLimits(report));
+        context.put("PROCESSING_ERRORS", buildProcessingErrorsForTemplate(report.getProcessingErrors()));
+        context.put("HAS_PROCESSING_ERRORS", !report.getProcessingErrors().isEmpty());
 
-        double warnPercentage = (double) report.getWarnings() / report.getTotalTests() * 100;
-        double errorPercentage = (double) report.getErrors() / report.getTotalTests() * 100;
-        double successPercentage = (double) report.getSuccess() / report.getTotalTests() * 100;
+        double warnPercentage = percentage(report.getWarnings(), report.getTotalTests());
+        double errorPercentage = percentage(report.getErrors(), report.getTotalTests());
+        double successPercentage = percentage(report.getSuccess(), report.getTotalTests());
 
         context.put("WARN_PERCENTAGE", warnPercentage);
         context.put("ERROR_PERCENTAGE", errorPercentage);
@@ -389,12 +418,80 @@ public abstract class TestCaseExporter {
 
     private CatsTestReport createTestReport(List<CatsTestCaseSummary> summaries, ExecutionStatisticsListener executionStatisticsListener) {
         List<CatsTestCaseSummary> sortedSummaries = summaries.stream().sorted().toList();
+        boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(
+                executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
+        List<ProcessingError> processingErrors = catsGlobalContext.getRecordedErrors().stream()
+                .sorted(Comparator.comparing(ProcessingError::toString))
+                .toList();
 
         return CatsTestReport.builder().testCases(sortedSummaries).errors(executionStatisticsListener.getErrors())
                 .success(executionStatisticsListener.getSuccess()).totalTests(executionStatisticsListener.getAll())
+                .totalRequests(executionStatisticsListener.getTotalRequests())
+                .skippedFromReporting(executionStatisticsListener.getSkippedFromReporting())
+                .skipped(executionStatisticsListener.getSkipped())
+                .authErrors(executionStatisticsListener.getAuthErrors())
+                .ioErrors(executionStatisticsListener.getIoErrors())
                 .warnings(executionStatisticsListener.getWarns()).timestamp(OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME))
                 .executionTime(((System.currentTimeMillis() - t0) / 1000))
-                .catsVersion(appVersion).build();
+                .catsVersion(appVersion)
+                .runStatus(executionStatisticsListener.getRunStatus().name())
+                .runStatusDetails(executionStatisticsListener.getRunStatusDetails())
+                .qualityGatePassed(qualityGatePassed)
+                .qualityGateDescription(qualityGateArguments.getQualityGateDescription())
+                .randomSeed(CatsRandom.getStoredSeed())
+                .successfulResourceReuseEnabled(processingArguments.isReuseSuccessfulResources())
+                .stopAfterTests(stopArguments.getStopAfterMutations())
+                .stopAfterErrors(stopArguments.getStopAfterErrors())
+                .stopAfterTimeInSec(stopArguments.getStopAfterTimeInSec())
+                .processingErrors(processingErrors)
+                .build();
+    }
+
+    private static double percentage(long count, long total) {
+        return total == 0 ? 0 : (double) count / total * 100;
+    }
+
+    private static String runStatusResult(ExecutionStatisticsListener.RunStatus runStatus) {
+        return switch (runStatus) {
+            case COMPLETED -> "success";
+            case LIMIT_REACHED -> "info";
+            case CANCELLED -> "warn";
+            case FAILED -> "error";
+        };
+    }
+
+    private static String formatRunStatus(String runStatus) {
+        String normalized = runStatus.replace('_', ' ').toLowerCase(Locale.ROOT);
+        return Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
+    }
+
+    private static List<Map<String, Object>> buildStopLimitsForTemplate(CatsTestReport report) {
+        return List.of(
+                        Map.<String, Object>of("name", "Tests", "value", report.getStopAfterTests()),
+                        Map.<String, Object>of("name", "Errors", "value", report.getStopAfterErrors()),
+                        Map.<String, Object>of("name", "Time", "value", report.getStopAfterTimeInSec(), "suffix", " seconds"))
+                .stream()
+                .filter(limit -> ((Long) limit.get("value")) > 0)
+                .toList();
+    }
+
+    private static boolean hasStopLimits(CatsTestReport report) {
+        return report.getStopAfterTests() > 0 || report.getStopAfterErrors() > 0 || report.getStopAfterTimeInSec() > 0;
+    }
+
+    private static List<Map<String, String>> buildProcessingErrorsForTemplate(List<ProcessingError> processingErrors) {
+        return processingErrors.stream()
+                .map(error -> Map.of(
+                        "operation", processingErrorOperation(error),
+                        "message", error.message()))
+                .toList();
+    }
+
+    private static String processingErrorOperation(ProcessingError error) {
+        if (StringUtils.isBlank(error.httpMethod())) {
+            return StringUtils.defaultIfBlank(error.path(), "Global");
+        }
+        return error.httpMethod() + (StringUtils.isBlank(error.path()) ? "" : " " + error.path());
     }
 
     /**

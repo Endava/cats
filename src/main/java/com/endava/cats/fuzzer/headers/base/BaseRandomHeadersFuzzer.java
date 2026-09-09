@@ -9,6 +9,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
@@ -66,6 +67,7 @@ public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
                         .scenario(String.format("Add %s extra random headers.", processingArguments.getRandomHeadersNumber()))
                         .responseProcessor(this::checkResponse)
                         .headers(headers)
+                        .mutationTarget(MutationTarget.header("Additional random headers"))
                         .build()
         );
     }

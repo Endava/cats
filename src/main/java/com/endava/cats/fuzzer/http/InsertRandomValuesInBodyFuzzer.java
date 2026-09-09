@@ -9,6 +9,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -53,6 +54,7 @@ public class InsertRandomValuesInBodyFuzzer implements Fuzzer {
                                 .scenario("Insert invalid data %s within a valid json request body".formatted(maliciousPayload))
                                 .fuzzer(this)
                                 .payload(finalPayload)
+                                .mutationTarget(MutationTarget.requestBody())
                                 .build());
             }
         }

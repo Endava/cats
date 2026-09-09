@@ -330,18 +330,26 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             Thread.currentThread().interrupt();
             cancelled = true;
             failureMessage = "Execution cancelled by user";
+            executionStatisticsListener.markCancelled(failureMessage);
             exitCodeDueToErrors = CANCELLED_EXIT_CODE;
         } catch (CatsExecutionCancelledException e) {
             cancelled = true;
             failureMessage = e.getMessage();
+            executionStatisticsListener.markCancelled(failureMessage);
             exitCodeDueToErrors = CANCELLED_EXIT_CODE;
         } catch (CatsExecutionLimitReachedException e) {
+            executionStatisticsListener.markLimitReached(e.getMessage());
             logger.complete(e.getMessage());
         } catch (CatsException | IOException | ExecutionException | IllegalArgumentException e) {
             failureMessage = e.toString();
+            executionStatisticsListener.markFailed(failureMessage);
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
             logger.debug("Stacktrace: {}", e);
             exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
+        } catch (RuntimeException e) {
+            failureMessage = e.toString();
+            executionStatisticsListener.markFailed(failureMessage);
+            throw e;
         } finally {
             executionStopController.finishSession();
             testCaseListener.endSession();

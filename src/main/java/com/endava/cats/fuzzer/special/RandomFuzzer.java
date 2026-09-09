@@ -15,6 +15,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -120,6 +121,7 @@ public class RandomFuzzer implements Fuzzer {
                             .logger(logger)
                             .payload(mutatedPayload)
                             .headers(mutatedHeaders)
+                            .mutationTargets(getMutationTargets(data, targetField, mutatedPayload, mutatedHeaders))
                             .scenario("Send a random payload mutating field [%s] with [%s] mutator".formatted(targetField, selectedRandomMutator.description()))
                             .expectedSpecificResponseCode("a response that doesn't match given --matchXXX arguments")
                             .responseProcessor(this::processResponse)
@@ -128,6 +130,23 @@ public class RandomFuzzer implements Fuzzer {
             testCaseListener.updateUnknownProgress(data);
             shouldStop = stopArguments.shouldStop(executionStatisticsListener.getErrors(), testCaseListener.getCurrentTestCaseNumber(), startTime);
         }
+    }
+
+    private List<MutationTarget> getMutationTargets(FuzzingData data, String targetField, String mutatedPayload,
+                                                     Collection<CatsHeader> mutatedHeaders) {
+        List<MutationTarget> targets = new ArrayList<>();
+        Collection<CatsHeader> originalHeaders = data.getHeaders() == null ? List.of() : data.getHeaders();
+        if (!Objects.equals(data.getPayload(), mutatedPayload)) {
+            targets.addAll(MutationTarget.requestFields(data, targetField));
+        }
+        Collection<CatsHeader> finalMutatedHeaders = mutatedHeaders == null ? List.of() : mutatedHeaders;
+        finalMutatedHeaders.stream()
+                .filter(mutated -> originalHeaders.stream().noneMatch(original ->
+                        original.getName().equalsIgnoreCase(mutated.getName()) &&
+                                Objects.equals(original.getValue(), mutated.getValue())))
+                .map(header -> MutationTarget.header(header.getName()))
+                .forEach(targets::add);
+        return List.copyOf(targets);
     }
 
     void processResponse(CatsResponse catsResponse, FuzzingData fuzzingData) {

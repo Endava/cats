@@ -5,6 +5,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.util.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
@@ -394,6 +395,28 @@ class RuntimeResourcePoolTest {
         RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(fuzzedData, fuzzedData.getPayload());
 
         Assertions.assertThat(result.payload()).contains("invalid-id").doesNotContain("customer-42");
+        Assertions.assertThat(result.correlations()).isEmpty();
+    }
+
+    @Test
+    void shouldNotOverrideTypedPathMutation() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"id\":\"customer-42\"}"));
+        ServiceData fuzzedData = ServiceData.builder()
+                .relativePath("/customers/{customerId}")
+                .contractPath("/customers/{customerId}")
+                .payload("{\"customerId\":\"invalid-id\"}")
+                .pathParamsPayload("{\"customerId\":\"invalid-id\"}")
+                .queryParams(Set.of())
+                .mutationTarget(MutationTarget.path("customerId"))
+                .httpMethod(HttpMethod.GET)
+                .contentType("application/json")
+                .build();
+
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(fuzzedData, fuzzedData.getPayload());
+
+        Assertions.assertThat(result.pathParamsPayload()).contains("invalid-id").doesNotContain("customer-42");
         Assertions.assertThat(result.correlations()).isEmpty();
     }
 

@@ -77,6 +77,7 @@ public class SimpleExecutor {
                             .addUserHeaders(context.isAddUserHeaders())
                             .replaceUrlParams(context.isReplaceUrlParams())
                             .validJson(context.isValidJson())
+                            .mutationTargets(context.getMutationTargets())
                             .pathParamsPayload(context.getFuzzingData().getPathParamsPayload())
                             .build());
 

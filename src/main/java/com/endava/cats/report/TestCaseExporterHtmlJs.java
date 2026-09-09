@@ -1,7 +1,9 @@
 package com.endava.cats.report;
 
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.args.StopArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.github.mustachejava.Mustache;
 import jakarta.inject.Inject;
@@ -21,16 +23,21 @@ public class TestCaseExporterHtmlJs extends TestCaseExporter {
     /**
      * Constructs a new instance of TestCaseExporterHtmlJs with the specified reporting arguments.
      *
-     * @param reportingArguments the reporting arguments
-     * @param catsGlobalContext  the global context
-     * @param qualityGateArguments the quality gate arguments
+     * @param reportingArguments          the reporting arguments
+     * @param catsGlobalContext           the global context
+     * @param qualityGateArguments        the quality gate arguments
      * @param executionStatisticsListener the execution statistics listener
+     * @param processingArguments         the processing arguments
+     * @param stopArguments               the execution stop arguments
      */
     @Inject
     public TestCaseExporterHtmlJs(ReportingArguments reportingArguments, CatsGlobalContext catsGlobalContext,
                                   QualityGateArguments qualityGateArguments,
-                                  ExecutionStatisticsListener executionStatisticsListener) {
-        super(reportingArguments, catsGlobalContext, qualityGateArguments, executionStatisticsListener);
+                                  ExecutionStatisticsListener executionStatisticsListener,
+                                  ProcessingArguments processingArguments,
+                                  StopArguments stopArguments) {
+        super(reportingArguments, catsGlobalContext, qualityGateArguments, executionStatisticsListener,
+                processingArguments, stopArguments);
     }
 
     @Override

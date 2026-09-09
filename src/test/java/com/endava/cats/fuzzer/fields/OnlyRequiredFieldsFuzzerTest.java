@@ -5,6 +5,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.util.JsonUtils;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
@@ -76,6 +77,29 @@ class OnlyRequiredFieldsFuzzerTest {
         Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
         Assertions.assertThat(context.getScenario()).contains("only required fields");
         Assertions.assertThat(context.getFuzzingData()).isSameAs(data);
+        Assertions.assertThat(context.getMutationTargets()).containsExactly(MutationTarget.requestBody());
+    }
+
+    @Test
+    void shouldReportOptionalQueryParametersAsTheTargetForMethodsWithoutBodies() {
+        ObjectSchema schema = objectSchema(
+                Map.of("required", new StringSchema(), "optional", new StringSchema()),
+                List.of("required"));
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.GET)
+                .path("/path")
+                .payload("{\"required\":\"yes\",\"optional\":\"no\"}")
+                .reqSchema(schema)
+                .schemaMap(Map.of())
+                .allRequiredFields(List.of("required"))
+                .requestPropertyTypes(Map.of())
+                .requestContentTypes(List.of("application/json"))
+                .build();
+
+        fuzzer.fuzz(data);
+
+        Assertions.assertThat(capturedContext().getMutationTargets())
+                .containsExactly(MutationTarget.query("Optional parameters"));
     }
 
     @Test

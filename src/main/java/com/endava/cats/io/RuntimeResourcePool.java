@@ -6,6 +6,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.FuzzingResult;
@@ -165,7 +166,7 @@ public class RuntimeResourcePool {
 
             String before = result;
             ResolvedValue value = resolved.get();
-            boolean mergeFuzzing = isFuzzed(data.getFuzzedFields(), target.path()) ||
+            boolean mergeFuzzing = data.isFuzzedField(target.path(), mutationLocation(target.location())) ||
                     wasModifiedByFuzzer(data, json, target.path(), pathParametersPayload);
             try {
                 FuzzingResult fuzzingResult = FuzzingStrategy.replaceField(result, target.path(),
@@ -531,8 +532,12 @@ public class RuntimeResourcePool {
                 name.endsWith("Guid") || name.endsWith("GUID");
     }
 
-    private boolean isFuzzed(Set<String> fuzzedFields, String path) {
-        return fuzzedFields.stream().anyMatch(field -> field.equalsIgnoreCase(path));
+    private MutationTarget.Location mutationLocation(TargetLocation targetLocation) {
+        return switch (targetLocation) {
+            case PATH -> MutationTarget.Location.PATH;
+            case QUERY -> MutationTarget.Location.QUERY;
+            case BODY -> MutationTarget.Location.BODY;
+        };
     }
 
     private boolean wasModifiedByFuzzer(ServiceData data, String currentPayload, String path,
@@ -545,7 +550,7 @@ public class RuntimeResourcePool {
     }
 
     private boolean isFuzzedRequest(ServiceData data) {
-        boolean hasDeclaredMutation = !data.getFuzzedFields().isEmpty() || !data.getFuzzedHeaders().isEmpty();
+        boolean hasDeclaredMutation = data.hasDeclaredMutation();
         if (hasDeclaredMutation || StringUtils.isBlank(data.getOriginalPayload())) {
             return hasDeclaredMutation;
         }

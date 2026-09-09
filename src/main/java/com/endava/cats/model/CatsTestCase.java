@@ -137,6 +137,15 @@ public class CatsTestCase {
     }
 
     /**
+     * Checks whether the fuzzer reported any request mutation targets.
+     *
+     * @return true when at least one mutation target is available for reporting
+     */
+    public boolean hasMutationTargets() {
+        return response != null && response.getMutationTargets() != null && !response.getMutationTargets().isEmpty();
+    }
+
+    /**
      * A json formatted version of the http headers sent in request
      *
      * @return request headers in json format

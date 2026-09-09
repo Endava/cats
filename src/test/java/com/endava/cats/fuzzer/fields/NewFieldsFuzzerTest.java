@@ -1,8 +1,10 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
@@ -10,6 +12,7 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.Collections;
@@ -51,7 +54,8 @@ class NewFieldsFuzzerTest {
         setup(HttpMethod.POST);
         newFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
+        Assertions.assertThat(capturedContext().getMutationTargets())
+                .containsExactly(MutationTarget.body(NEW_FIELD));
     }
 
     @Test
@@ -59,7 +63,8 @@ class NewFieldsFuzzerTest {
         setup(HttpMethod.GET);
         newFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
+        Assertions.assertThat(capturedContext().getMutationTargets())
+                .containsExactly(MutationTarget.query(NEW_FIELD));
     }
 
     @Test
@@ -112,5 +117,11 @@ class NewFieldsFuzzerTest {
         data = FuzzingData.builder().path("path1").method(method).payload("{'field':'oldValue'}").
                 responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema())
                 .requestContentTypes(List.of("application/json")).build();
+    }
+
+    private SimpleExecutorContext capturedContext() {
+        ArgumentCaptor<SimpleExecutorContext> context = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(simpleExecutor).execute(context.capture());
+        return context.getValue();
     }
 }

@@ -134,6 +134,7 @@
             </div>
         </div>
     </div>
+    {{>summary-run-details}}
     {{#HAS_RESPONSE_CODES}}
     <h2 class="title-section">Statistics</h2>
     <div class="stats-grid">
@@ -227,9 +228,11 @@
                 <thead>
                 <tr class="header">
                     <th style="width: 5%">ID</th>
-                    <th style="width: 25%">Fuzzer</th>
-                    <th style="width: 50%">Scenario</th>
-                    <th style="width: 6%">Result</th>
+                    <th style="width: 19%">Fuzzer</th>
+                    <th style="width: 38%">Scenario</th>
+                    <th style="width: 8%">Response</th>
+                    <th style="width: 7%">Time</th>
+                    <th style="width: 8%">Result</th>
                     <th style="width: 15%">Result Reason</th>
                 </tr>
                 </thead>
@@ -240,6 +243,8 @@
                     <td><a href="{{key}}.html" target="_blank">{{fuzzer}}</a></td>
                     <td><a href="{{key}}.html" target="_blank"><span class="active rounded rounded-{{httpMethod}}">{{httpMethod}}</span><span
                             class="active rounded path">{{path}}</span><span class="scenario">{{scenario}}</span></a></td>
+                    <td><a href="{{key}}.html" target="_blank">{{httpResponseCode}}</a></td>
+                    <td><a href="{{key}}.html" target="_blank">{{timeToExecuteInMs}}ms</a></td>
                     <td><a href="{{key}}.html" target="_blank"><label class="test-result result-{{result}}">{{result}}</label></a></td>
                     <td>
                         {{#switchedResult}}

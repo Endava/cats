@@ -14,6 +14,18 @@ import java.util.Map;
 @ApplicationScoped
 @DryRun
 public class ExecutionStatisticsListener {
+    private static final String COMPLETED_DETAILS = "All selected fuzzers completed";
+
+    /**
+     * Describes how the current execution session ended.
+     */
+    public enum RunStatus {
+        COMPLETED,
+        LIMIT_REACHED,
+        CANCELLED,
+        FAILED
+    }
+
 
     /**
      * Map to track the count of errors per path.
@@ -57,6 +69,50 @@ public class ExecutionStatisticsListener {
      */
     @Getter
     private int ioErrors;
+
+    @Getter
+    private RunStatus runStatus = RunStatus.COMPLETED;
+
+    @Getter
+    private String runStatusDetails = COMPLETED_DETAILS;
+
+    /**
+     * Resets outcome metadata for a new execution session without clearing accumulated test statistics.
+     */
+    public synchronized void startSession() {
+        runStatus = RunStatus.COMPLETED;
+        runStatusDetails = COMPLETED_DETAILS;
+    }
+
+    /**
+     * Records that execution ended cooperatively after a configured limit was reached.
+     *
+     * @param details the limit that stopped execution
+     */
+    public synchronized void markLimitReached(String details) {
+        runStatus = RunStatus.LIMIT_REACHED;
+        runStatusDetails = details;
+    }
+
+    /**
+     * Records that execution was cancelled.
+     *
+     * @param details cancellation details
+     */
+    public synchronized void markCancelled(String details) {
+        runStatus = RunStatus.CANCELLED;
+        runStatusDetails = details;
+    }
+
+    /**
+     * Records that execution failed before normal completion.
+     *
+     * @param details failure details
+     */
+    public synchronized void markFailed(String details) {
+        runStatus = RunStatus.FAILED;
+        runStatusDetails = details;
+    }
 
     /**
      * Increases the count of authentication errors.

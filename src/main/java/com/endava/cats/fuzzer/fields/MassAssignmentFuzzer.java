@@ -10,6 +10,7 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -158,6 +159,7 @@ public class MassAssignmentFuzzer implements Fuzzer {
                                 .formatted(fieldName, truncateValue(fieldValue)))
                         .fuzzer(this)
                         .payload(fuzzedPayload)
+                        .mutationTarget(MutationTarget.body(fieldName))
                         .responseProcessor((response, fuzzData) -> processResponse(response, fuzzData, fieldName, fieldValue))
                         .build()
         );

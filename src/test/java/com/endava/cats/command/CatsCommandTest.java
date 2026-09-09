@@ -159,7 +159,38 @@ class CatsCommandTest {
             Assertions.assertThat(events).singleElement().isInstanceOf(CatsExecutionEvent.SessionCompleted.class);
             Mockito.verify(localTestCaseListener).endSession();
             Mockito.verify(stopController).finishSession();
+            Mockito.verify(statistics).markLimitReached("Execution limit reached");
             Mockito.verify(qualityGate, Mockito.atLeastOnce()).shouldFailBuild(0, 0);
+        }
+    }
+
+    @Test
+    void shouldPublishFailedEventWhenUnexpectedRuntimeExceptionOccurs() throws Exception {
+        ReportingArguments localReportingArguments = Mockito.mock(ReportingArguments.class);
+        TestCaseListener localTestCaseListener = Mockito.mock(TestCaseListener.class);
+        ExecutionStopController stopController = Mockito.mock(ExecutionStopController.class);
+        ExecutionStatisticsListener statistics = Mockito.mock(ExecutionStatisticsListener.class);
+        CatsExecutionEventPublisher eventPublisher = new CatsExecutionEventPublisher();
+        IllegalStateException failure = new IllegalStateException("Unexpected failure");
+        Mockito.doThrow(failure).when(stopController).startSession();
+        List<CatsExecutionEvent> events = new ArrayList<>();
+
+        try (var _ = eventPublisher.subscribe(events::add);
+             CatsCommand command = new CatsCommand()) {
+            ReflectionTestUtils.setField(command, "reportingArguments", localReportingArguments);
+            ReflectionTestUtils.setField(command, "testCaseListener", localTestCaseListener);
+            ReflectionTestUtils.setField(command, "executionStopController", stopController);
+            ReflectionTestUtils.setField(command, "executionStatisticsListener", statistics);
+            ReflectionTestUtils.setField(command, "executionEventPublisher", eventPublisher);
+
+            Assertions.assertThatThrownBy(command::run).isSameAs(failure);
+
+            Assertions.assertThat(events).singleElement().isInstanceOfSatisfying(
+                    CatsExecutionEvent.SessionFailed.class,
+                    event -> Assertions.assertThat(event.message()).isEqualTo(failure.toString()));
+            Mockito.verify(localTestCaseListener).endSession();
+            Mockito.verify(stopController).finishSession();
+            Mockito.verify(statistics).markFailed(failure.toString());
         }
     }
 

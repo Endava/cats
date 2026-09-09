@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -102,6 +103,8 @@ public class MinGreaterThanMaxFieldsFuzzer implements Fuzzer {
                         .fuzzingData(data)
                         .logger(logger)
                         .payload(mutatedPayload)
+                        .mutationTarget(MutationTarget.requestField(data, lowField))
+                        .mutationTarget(MutationTarget.requestField(data, highField))
                         .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                         .scenario("Send a request where field [%s] > field [%s], violating logical relationship"
                                 .formatted(lowField, highField))

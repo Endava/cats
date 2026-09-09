@@ -1,0 +1,59 @@
+<h2 class="title-section">Run Details</h2>
+<div class="run-details-grid">
+    <div class="card-wrapper">
+        <h2 class="action-tag no-top">Run outcome</h2>
+        <p class="report-status"><label class="test-result result-{{RUN_STATUS_RESULT}}">{{RUN_STATUS}}</label></p>
+        <p class="report-detail-note">{{RUN_STATUS_DETAILS}}</p>
+        <h2 class="action-tag">Quality gate</h2>
+        <p class="report-status"><label class="test-result result-{{QUALITY_GATE_RESULT}}">{{QUALITY_GATE_STATUS}}</label></p>
+        <p class="report-detail-note">{{QUALITY_GATE_DESCRIPTION}}</p>
+    </div>
+    <div class="card-wrapper">
+        <h2 class="action-tag no-top">Request accounting</h2>
+        <div class="report-detail-row"><span>Total requests</span><strong>{{TOTAL_REQUESTS}}</strong></div>
+        <div class="report-detail-row"><span>Reported results</span><strong>{{TOTAL}}</strong></div>
+        <div class="report-detail-row"><span>Skipped from reporting</span><strong>{{SKIPPED_FROM_REPORTING}}</strong></div>
+    </div>
+    <div class="card-wrapper">
+        <h2 class="action-tag no-top">Execution diagnostics</h2>
+        <div class="report-detail-row"><span>Skipped tests</span><strong>{{SKIPPED}}</strong></div>
+        <div class="report-detail-row"><span>Authentication errors</span><strong>{{AUTH_ERRORS}}</strong></div>
+        <div class="report-detail-row"><span>I/O errors</span><strong>{{IO_ERRORS}}</strong></div>
+    </div>
+    <div class="card-wrapper">
+        <h2 class="action-tag no-top">Reproduction</h2>
+        <div class="report-detail-row"><span>Random seed</span><strong>{{RANDOM_SEED}}</strong></div>
+        <div class="report-detail-row"><span>Runtime resource reuse</span><strong>{{RESOURCE_REUSE_STATUS}}</strong></div>
+        {{#HAS_STOP_LIMITS}}
+        <h2 class="action-tag">Configured stop limits</h2>
+        {{#STOP_LIMITS}}
+        <div class="report-detail-row"><span>{{name}}</span><strong>{{value}}{{suffix}}</strong></div>
+        {{/STOP_LIMITS}}
+        {{/HAS_STOP_LIMITS}}
+        {{^HAS_STOP_LIMITS}}
+        <div class="report-detail-row"><span>Stop limits</span><strong>None</strong></div>
+        {{/HAS_STOP_LIMITS}}
+    </div>
+</div>
+{{#HAS_PROCESSING_ERRORS}}
+<h2 class="title-section">Processing Limitations</h2>
+<div class="card-wrapper">
+    <p class="report-detail-note">These issues may have prevented some contract elements or fuzzing scenarios from being processed completely.</p>
+    <table class="report-details-table">
+        <thead>
+        <tr class="header">
+            <th>Operation</th>
+            <th>Details</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{#PROCESSING_ERRORS}}
+        <tr>
+            <td>{{operation}}</td>
+            <td>{{message}}</td>
+        </tr>
+        {{/PROCESSING_ERRORS}}
+        </tbody>
+    </table>
+</div>
+{{/HAS_PROCESSING_ERRORS}}

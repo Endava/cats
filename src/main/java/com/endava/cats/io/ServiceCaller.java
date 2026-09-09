@@ -14,6 +14,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -248,7 +249,7 @@ public class ServiceCaller {
             logger.note("Final url: {}", url);
 
             startTime = System.currentTimeMillis();
-            CatsResponse response = this.callService(catsRequest, data.getFuzzedFields());
+            CatsResponse response = this.callService(catsRequest, data.getFuzzedFields(), data.getAllMutationTargets());
 
             this.recordResponse(response);
             this.observeRuntimeResources(data, catsRequest, response);
@@ -264,6 +265,7 @@ public class ServiceCaller {
                     .jsonBody(JsonUtils.parseAsJsonElement(exceptionalResponse.responseBody()))
                     .fuzzedField(data.getFuzzedFields()
                             .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
+                    .mutationTargets(data.getAllMutationTargets())
                     .build();
 
             this.recordRequestAndResponse(catsRequest, catsResponse, data);
@@ -506,6 +508,20 @@ public class ServiceCaller {
      * @throws IOException If an I/O error occurs during the service call.
      */
     public CatsResponse callService(CatsRequest catsRequest, Set<String> fuzzedFields) throws IOException {
+        return callService(catsRequest, fuzzedFields, fuzzedFields.stream().map(MutationTarget::body).toList());
+    }
+
+    /**
+     * Calls the service and attaches the supplied mutation metadata to its response.
+     *
+     * @param catsRequest     request to execute
+     * @param fuzzedFields    fields used by response validation
+     * @param mutationTargets request parts changed by the fuzzer
+     * @return the service response
+     * @throws IOException if the request cannot be completed
+     */
+    public CatsResponse callService(CatsRequest catsRequest, Set<String> fuzzedFields,
+                                    List<MutationTarget> mutationTargets) throws IOException {
         acquireRateLimitPermit();
         long startTime = System.currentTimeMillis();
         RequestBody requestBody = null;
@@ -530,6 +546,7 @@ public class ServiceCaller {
                     .responseTimeInMs(endTime - startTime)
                     .path(catsRequest.getUrl())
                     .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
+                    .mutationTargets(List.copyOf(mutationTargets))
                     .build();
 
             logger.complete("Protocol: {}, Method: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}, ResponseWords: {}, ResponseLines: {}",
@@ -833,7 +850,7 @@ public class ServiceCaller {
     }
 
     private void replaceHeaderIfNotFuzzed(List<KeyValuePair<String, Object>> headers, ServiceData data, Map.Entry<String, String> suppliedHeader) {
-        if (!data.getFuzzedHeaders().contains(suppliedHeader.getKey())) {
+        if (!data.isFuzzedHeader(suppliedHeader.getKey())) {
             replaceHeaderWithUserSuppliedHeader(headers, suppliedHeader.getKey(), suppliedHeader.getValue());
         } else {
             /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try this behavior on a valid header value */
@@ -913,7 +930,9 @@ public class ServiceCaller {
             } else {
                 logger.debug("Replacing field {} with value {}", entry.getKey(), refDataValue);
                 FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
-                boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
+                boolean mergeFuzzing = data.isFuzzedField(entry.getKey(), MutationTarget.Location.BODY) ||
+                        data.isFuzzedField(entry.getKey(), MutationTarget.Location.PATH) ||
+                        data.isFuzzedField(entry.getKey(), MutationTarget.Location.QUERY);
                 payload = FuzzingStrategy.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();
             }
         } catch (PathNotFoundException _) {

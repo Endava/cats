@@ -19,12 +19,27 @@ import java.util.stream.Collectors;
 public class CatsTestReport {
     private final List<CatsTestCaseSummary> testCases;
     private final long totalTests;
+    private final long totalRequests;
+    private final long skippedFromReporting;
+    private final int skipped;
+    private final int authErrors;
+    private final int ioErrors;
     private final long success;
     private final long warnings;
     private final long errors;
     private final long executionTime;
     private final String timestamp;
     private final String catsVersion;
+    private final String runStatus;
+    private final String runStatusDetails;
+    private final boolean qualityGatePassed;
+    private final String qualityGateDescription;
+    private final long randomSeed;
+    private final boolean successfulResourceReuseEnabled;
+    private final long stopAfterTests;
+    private final long stopAfterErrors;
+    private final long stopAfterTimeInSec;
+    private final List<ProcessingError> processingErrors;
 
     public List<JunitTestSuite> getTestSuites() {
         DecimalFormat decimalFormat = new DecimalFormat("#.###");

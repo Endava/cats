@@ -18,6 +18,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.model.NoMediaType;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.report.TestCaseListener;
@@ -224,10 +225,12 @@ class ServiceCallerTest {
         serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.DELETE)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json")
+                .mutationTarget(MutationTarget.path("id")).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEmpty();
+        Assertions.assertThat(catsResponse.getMutationTargets()).containsExactly(MutationTarget.path("id"));
     }
 
     @Test
@@ -468,6 +471,21 @@ class ServiceCallerTest {
 
         Assertions.assertThat(catsHeader).hasSize(1);
         Assertions.assertThat(catsHeader.getFirst().getValue()).isEqualTo("  cats");
+    }
+
+    @Test
+    void shouldMergeTypedHeaderMutationWithSuppliedHeader() {
+        ServiceData data = ServiceData.builder().headers(Set.of(CatsHeader.builder().name("catsFuzzedHeader").value("  anotherValue").build()))
+                .mutationTarget(MutationTarget.header("catsFuzzedHeader")).contentType("application/json").build();
+
+        List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
+        List<KeyValuePair<String, Object>> catsHeader = headers.stream()
+                .filter(header -> header.getKey().equalsIgnoreCase("catsFuzzedHeader"))
+                .toList();
+
+        Assertions.assertThat(catsHeader).singleElement()
+                .extracting(KeyValuePair::getValue)
+                .isEqualTo("  cats");
     }
 
     @Test

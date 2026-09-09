@@ -187,4 +187,20 @@ class ExecutionStatisticsListenerTest {
         Assertions.assertThat(listener.getSkippedFromReporting()).isZero();
     }
 
+    @Test
+    void shouldTrackAndResetRunOutcomeWithoutResettingStatistics() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        listener.increaseSuccess("/path");
+        listener.markFailed("Contract processing failed");
+
+        Assertions.assertThat(listener.getRunStatus()).isEqualTo(ExecutionStatisticsListener.RunStatus.FAILED);
+        Assertions.assertThat(listener.getRunStatusDetails()).isEqualTo("Contract processing failed");
+
+        listener.startSession();
+
+        Assertions.assertThat(listener.getRunStatus()).isEqualTo(ExecutionStatisticsListener.RunStatus.COMPLETED);
+        Assertions.assertThat(listener.getRunStatusDetails()).isEqualTo("All selected fuzzers completed");
+        Assertions.assertThat(listener.getSuccess()).isOne();
+    }
+
 }

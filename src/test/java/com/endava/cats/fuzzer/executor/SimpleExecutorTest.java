@@ -7,6 +7,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
@@ -50,6 +51,8 @@ class SimpleExecutorTest {
                 .fuzzer(fuzzer)
                 .fuzzingData(fuzzingData)
                 .payload("{\"customerId\":\"mutated\"}")
+                .mutationTarget(MutationTarget.body("customerId"))
+                .mutationTarget(MutationTarget.header("X-Test"))
                 .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                 .build());
 
@@ -57,5 +60,7 @@ class SimpleExecutorTest {
         Mockito.verify(serviceCaller).call(serviceData.capture());
         Assertions.assertThat(serviceData.getValue().getPayload()).contains("mutated");
         Assertions.assertThat(serviceData.getValue().getOriginalPayload()).contains("original");
+        Assertions.assertThat(serviceData.getValue().getAllMutationTargets()).containsExactly(
+                MutationTarget.body("customerId"), MutationTarget.header("X-Test"));
     }
 }

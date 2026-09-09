@@ -118,6 +118,24 @@
             <p>{{fuzzer}}</p>
         </div>
 
+        {{#hasMutationTargets}}
+        <div class="component title">
+            <p>Mutation Targets</p>
+        </div>
+        <div class="component text">
+            <table class="mutation-targets-table">
+                <tbody>
+                {{#response.mutationTargets}}
+                <tr class="mutation-target-row">
+                    <td>{{locationName}}</td>
+                    <td>{{name}}</td>
+                </tr>
+                {{/response.mutationTargets}}
+                </tbody>
+            </table>
+        </div>
+        {{/hasMutationTargets}}
+
         <div class="component title">
             <p>Full Request Path</p>
         </div>
@@ -125,11 +143,32 @@
             <span class="rounded path details">{{fullRequestPath}}</span>
         </div>
 
-        <div class="component title border-left-bottom">
+        <div class="component title">
             <p>Http Method</p>
         </div>
-        <div class="component text border-right-bottom">
+        <div class="component text">
             <span class="active rounded rounded-{{httpMethod}} details">{{httpMethod}}</span>
+        </div>
+
+        <div class="component title">
+            <p>Actual Response</p>
+        </div>
+        <div class="component text">
+            <p>{{response.responseCode}}</p>
+        </div>
+
+        <div class="component title">
+            <p>Response Time</p>
+        </div>
+        <div class="component text">
+            <p>{{response.responseTimeInMs}}ms</p>
+        </div>
+
+        <div class="component title border-left-bottom">
+            <p>Response Content Type</p>
+        </div>
+        <div class="component text border-right-bottom">
+            <p>{{response.responseContentType}}</p>
         </div>
         <div class="clearfix"></div>
     </div>

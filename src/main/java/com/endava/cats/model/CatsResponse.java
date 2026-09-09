@@ -34,6 +34,8 @@ public class CatsResponse {
     private final JsonElement jsonBody;
     private final List<KeyValuePair<String, String>> headers;
     private final String responseContentType;
+    @Builder.Default
+    private final List<MutationTarget> mutationTargets = List.of();
 
     @Exclude
     private final String path;

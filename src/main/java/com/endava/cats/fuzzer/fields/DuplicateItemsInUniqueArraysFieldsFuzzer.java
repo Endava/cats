@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
@@ -59,6 +60,7 @@ public class DuplicateItemsInUniqueArraysFieldsFuzzer implements Fuzzer {
                             .fuzzer(this)
                             .logger(logger)
                             .payload(fuzzedPayload)
+                            .mutationTarget(target.root() ? MutationTarget.requestBody() : MutationTarget.body(target.path()))
                             .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                             .replaceRefData(false)
                             .scenario("Duplicate an item in array [%s] declared with uniqueItems"

@@ -9,6 +9,7 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -61,6 +62,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
                         .scenario("Send a happy flow bypassing authentication. Removed headers " + authenticationHeaders)
                         .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX_AA)
                         .skippedHeaders(authenticationHeaders)
+                        .mutationTargets(authenticationHeaders.stream().map(MutationTarget::header).toList())
                         .build());
     }
 

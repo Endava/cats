@@ -8,6 +8,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -63,6 +64,7 @@ public class HttpMethodFuzzerUtil {
                         .responseProcessor(this::checkResponse)
                         .fuzzingData(data)
                         .httpMethod(httpMethod)
+                        .mutationTarget(MutationTarget.httpMethod())
                         .build()
         );
     }

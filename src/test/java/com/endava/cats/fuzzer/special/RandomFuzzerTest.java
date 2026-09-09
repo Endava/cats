@@ -11,6 +11,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
+import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -44,6 +45,7 @@ class RandomFuzzerTest {
         matchArguments = Mockito.mock(MatchArguments.class);
         testCaseListener = Mockito.mock(TestCaseListener.class);
         filesArguments = Mockito.mock(FilesArguments.class);
+        CatsRandom.initRandom(0);
 
         randomFuzzer = new RandomFuzzer(simpleExecutor, testCaseListener,
                 executionStatisticsListener,

@@ -67,7 +67,15 @@ class CatsTestCaseTest {
                 .payload("{}")
                 .headers(List.of())
                 .build());
-        catsTestCase.setResponse(CatsResponse.from(200, "{}", "GET", 1));
+        catsTestCase.setResponse(CatsResponse.builder()
+                .responseCode(200)
+                .responseTimeInMs(17)
+                .responseContentType("application/json")
+                .httpMethod("GET")
+                .body("{}")
+                .fuzzedField("customerId")
+                .mutationTargets(List.of(MutationTarget.body("customerId"), MutationTarget.header("X-Test")))
+                .build());
         catsTestCase.getRuntimeCorrelations().add(ResourceCorrelation.builder()
                 .sourceMethod("POST")
                 .sourcePath("/customers")
@@ -91,11 +99,18 @@ class CatsTestCaseTest {
                 .execute(html, Map.of("TEST_CASE", catsTestCase)).flush();
 
         Assertions.assertThat(catsTestCase.hasRuntimeCorrelations()).isTrue();
-        Assertions.assertThat(json).contains("runtimeCorrelations", "response.body.$.id", "customer-42");
+        Assertions.assertThat(catsTestCase.hasMutationTargets()).isTrue();
+        Assertions.assertThat(json).contains("runtimeCorrelations", "response.body.$.id", "customer-42",
+                "mutationTargets", "customerId", "X-Test");
         String htmlReport = html.toString();
         Assertions.assertThat(htmlReport).contains("Runtime Correlations",
                 "POST /customers", "response.body.$.id", "path customerId", "customer-42",
-                "POST /customers/{customerId}/orders", "response.body.$.orderId", "path orderId", "order-7");
+                "POST /customers/{customerId}/orders", "response.body.$.orderId", "path orderId", "order-7",
+                "Mutation Targets", "Body field", "customerId", "Header", "X-Test",
+                "Actual Response", "200", "Response Time", "17ms",
+                "Response Content Type", "application/json");
+        Assertions.assertThat(StringUtils.countMatches(htmlReport, "class=\"mutation-target-row\""))
+                .isEqualTo(2);
         Assertions.assertThat(StringUtils.countMatches(htmlReport, "class=\"runtime-correlation-row\""))
                 .isEqualTo(2);
         Assertions.assertThat(htmlReport.indexOf("Runtime Correlations"))

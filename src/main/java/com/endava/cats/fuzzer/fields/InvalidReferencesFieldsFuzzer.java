@@ -10,6 +10,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.MutationTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.WordUtils;
@@ -54,15 +55,16 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         if (this.hasPathVariables(data.getPath())) {
-            List<String> pathCombinations = this.replacePathVariables(data.getPath());
-            for (String pathCombination : pathCombinations) {
+            List<PathMutation> pathCombinations = this.replacePathVariables(data.getPath());
+            for (PathMutation pathMutation : pathCombinations) {
                 simpleExecutor.execute(
                         SimpleExecutorContext.builder()
                                 .fuzzer(this)
                                 .fuzzingData(data)
                                 .logger(logger)
-                                .path(pathCombination)
-                                .scenario("Fuzz path parameters for HTTP methods with bodies. Current path: %s".formatted(pathCombination))
+                                .path(pathMutation.path())
+                                .mutationTarget(MutationTarget.path(pathMutation.parameter()))
+                                .scenario("Fuzz path parameters for HTTP methods with bodies. Current path: %s".formatted(pathMutation.path()))
                                 .expectedSpecificResponseCode("[2XX, 4XX]")
                                 .responseProcessor(this::processResponse)
                                 .build());
@@ -81,7 +83,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
         }
     }
 
-    private List<String> replacePathVariables(String path) {
+    private List<PathMutation> replacePathVariables(String path) {
         List<String> variables = new ArrayList<>();
         Matcher matcher = VARIABLES_PATTERN.matcher(path);
         while (matcher.find()) {
@@ -104,8 +106,8 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
         return createPathCombinations(path, variables, variablesValues);
     }
 
-    private static List<String> createPathCombinations(String path, List<String> variables, Map<String, String> variablesValues) {
-        List<String> result = new ArrayList<>();
+    private static List<PathMutation> createPathCombinations(String path, List<String> variables, Map<String, String> variablesValues) {
+        List<PathMutation> result = new ArrayList<>();
         List<String> payloads = new ArrayList<>(UnicodeGenerator.getAbugidasChars());
         payloads.add(UnicodeGenerator.getZalgoText());
         payloads.addAll(UnicodeGenerator.getInvalidReferences());
@@ -119,11 +121,14 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
             }
             for (String payload : payloads) {
                 String fuzzedPath = interimPath.replace(variable, variablesValues.get(variable) + payload);
-                result.add(fuzzedPath);
+                result.add(new PathMutation(fuzzedPath, variable.substring(1, variable.length() - 1)));
             }
         }
 
         return result;
+    }
+
+    private record PathMutation(String path, String parameter) {
     }
 
     private boolean hasPathVariables(String path) {
