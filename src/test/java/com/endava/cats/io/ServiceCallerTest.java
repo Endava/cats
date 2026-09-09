@@ -3,22 +3,38 @@ package com.endava.cats.io;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.factory.FuzzingDataFactory;
+import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
+import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.NoMediaType;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.KeyValuePair;
+import com.endava.cats.util.OpenApiUtils;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.Fault;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.parser.core.models.ParseOptions;
 import jakarta.inject.Inject;
+import okhttp3.HttpUrl;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,6 +42,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -50,6 +67,10 @@ class ServiceCallerTest {
     ApiArguments apiArguments;
     @Inject
     ProcessingArguments processingArguments;
+    @Inject
+    FilterArguments filterArguments;
+    @Inject
+    ValidDataFormat validDataFormat;
     @Inject
     CatsGlobalContext catsGlobalContext;
     FilesArguments filesArguments;
@@ -919,6 +940,130 @@ class ServiceCallerTest {
         String result = serviceCaller.constructUrl(data, data.getPayload());
 
         Assertions.assertThat(result).endsWith(expectedPath);
+    }
+
+    @Test
+    void shouldSerializeDeepObjectQueryParametersWithoutDroppingTheParameterName() {
+        ServiceData data = ServiceData.builder()
+                .relativePath("/items")
+                .payload("{\"filter\":{\"state\":\"active\",\"page\":2}}")
+                .queryParams(Set.of("filter"))
+                .queryParameterSerializations(Map.of("filter",
+                        new QueryParameterSerialization(QueryParameterSerialization.DEEP_OBJECT, true)))
+                .httpMethod(HttpMethod.GET)
+                .build();
+
+        HttpUrl result = HttpUrl.get(serviceCaller.constructUrl(data, data.getPayload()));
+
+        Assertions.assertThat(result.queryParameter("filter[state]")).isEqualTo("active");
+        Assertions.assertThat(result.queryParameter("filter[page]")).isEqualTo("2");
+        Assertions.assertThat(result.queryParameterNames()).doesNotContain("state", "page");
+    }
+
+    @Test
+    void shouldSerializeNonExplodedFormObjectQueryParametersAsOneParameter() {
+        ServiceData data = ServiceData.builder()
+                .relativePath("/items")
+                .payload("{\"filter\":{\"state\":\"active\",\"page\":2}}")
+                .queryParams(Set.of("filter"))
+                .queryParameterSerializations(Map.of("filter",
+                        new QueryParameterSerialization(QueryParameterSerialization.FORM, false)))
+                .httpMethod(HttpMethod.GET)
+                .build();
+
+        HttpUrl result = HttpUrl.get(serviceCaller.constructUrl(data, data.getPayload()));
+
+        Assertions.assertThat(result.queryParameter("filter")).isEqualTo("state,active,page,2");
+        Assertions.assertThat(result.queryParameterNames()).doesNotContain("state", "page");
+    }
+
+    @Test
+    void shouldSerializeDeepObjectQueryParametersForBodyMethods() {
+        ServiceData data = ServiceData.builder()
+                .relativePath("/items")
+                .payload("{\"name\":\"test\"}")
+                .pathParamsPayload("{\"filter\":{\"state\":\"active\"}}")
+                .queryParams(Set.of("filter"))
+                .queryParameterSerializations(Map.of("filter",
+                        new QueryParameterSerialization(QueryParameterSerialization.DEEP_OBJECT, true)))
+                .httpMethod(HttpMethod.POST)
+                .build();
+
+        HttpUrl result = HttpUrl.get(serviceCaller.constructUrl(data, data.getPayload()));
+
+        Assertions.assertThat(result.queryParameter("filter[state]")).isEqualTo("active");
+        Assertions.assertThat(result.queryParameterNames()).doesNotContain("state");
+    }
+
+    @Test
+    void shouldPropagateQuerySerializationFromAnOpenApiOperationToTheFinalUrl() {
+        String contract = """
+                openapi: 3.0.3
+                info:
+                  title: Query serialization test
+                  version: 1.0.0
+                paths:
+                  /search:
+                    get:
+                      parameters:
+                        - name: filter
+                          in: query
+                          style: deepObject
+                          explode: true
+                          schema:
+                            type: object
+                            properties:
+                              state:
+                                type: string
+                                example: ACTIVE
+                              page:
+                                type: integer
+                                example: 2
+                      responses:
+                        '200':
+                          description: OK
+                """;
+        OpenAPI openAPI = new OpenAPIParser().readContents(contract, null, new ParseOptions()).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application\\/.*\\+?json"));
+        catsGlobalContext.getSchemaMap().clear();
+        catsGlobalContext.getSchemaMap().putAll(schemas);
+        catsGlobalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
+        catsGlobalContext.setOpenAPI(openAPI);
+        FuzzingDataFactory fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments,
+                catsGlobalContext, validDataFormat, filterArguments);
+        FuzzingData fuzzingData = fuzzingDataFactory
+                .fromPathItem("/search", openAPI.getPaths().get("/search"), openAPI).getFirst();
+
+        TestCaseListener executorListener = Mockito.mock(TestCaseListener.class);
+        ServiceCaller capturingCaller = Mockito.mock(ServiceCaller.class);
+        PrettyLogger logger = Mockito.mock(PrettyLogger.class);
+        Fuzzer fuzzer = Mockito.mock(Fuzzer.class);
+        Mockito.when(executorListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.TWOXX))
+                .thenReturn(true);
+        Mockito.doAnswer(invocation -> {
+            invocation.getArgument(2, Runnable.class).run();
+            return null;
+        }).when(executorListener).createAndExecuteTest(Mockito.eq(logger), Mockito.eq(fuzzer),
+                Mockito.any(Runnable.class), Mockito.eq(fuzzingData));
+        Mockito.when(capturingCaller.call(Mockito.any())).thenReturn(CatsResponse.empty());
+
+        new SimpleExecutor(executorListener, capturingCaller).execute(SimpleExecutorContext.builder()
+                .logger(logger)
+                .fuzzer(fuzzer)
+                .fuzzingData(fuzzingData)
+                .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
+                .build());
+
+        ArgumentCaptor<ServiceData> serviceData = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(capturingCaller).call(serviceData.capture());
+        String finalUrl = serviceCaller.constructUrl(serviceData.getValue(), serviceData.getValue().getPayload());
+        HttpUrl parsedUrl = HttpUrl.get(finalUrl);
+
+        Assertions.assertThat(fuzzingData.getQueryParameterSerializations())
+                .containsEntry("filter", new QueryParameterSerialization(QueryParameterSerialization.DEEP_OBJECT, true));
+        Assertions.assertThat(parsedUrl.queryParameter("filter[state]")).isEqualTo("ACTIVE");
+        Assertions.assertThat(parsedUrl.queryParameter("filter[page]")).isEqualTo("2");
+        Assertions.assertThat(parsedUrl.queryParameterNames()).doesNotContain("state", "page");
     }
 
     @Test

@@ -627,9 +627,14 @@ public class ServiceCaller {
     private List<KeyValuePair<String, String>> buildQueryParameters(String payload, ServiceData data) {
         List<KeyValuePair<String, String>> queryParams = new ArrayList<>();
         JsonElement jsonElement = JsonUtils.parseOrConvertToJsonElement(payload);
+        Map<String, QueryParameterSerialization> serializations = Optional.ofNullable(data.getQueryParameterSerializations())
+                .orElseGet(Collections::emptyMap);
 
         for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
-            if (child.getValue().isJsonObject()) {
+            boolean namedQueryParameter = data.getQueryParams().contains(child.getKey())
+                    || serializations.containsKey(child.getKey())
+                    || CatsDSLWords.isExtraField(child.getKey());
+            if (child.getValue().isJsonObject() && !namedQueryParameter) {
                 queryParams.addAll(this.buildQueryParameters(child.getValue().toString(), data));
             } else if (!data.getPathParams().contains(child.getKey()) || data.getQueryParams().contains(child.getKey()) || CatsDSLWords.isExtraField(child.getKey())) {
                 if (child.getValue().isJsonNull()) {
@@ -643,34 +648,94 @@ public class ServiceCaller {
     }
 
     private List<KeyValuePair<String, String>> buildQueryParameter(String name, JsonElement value, ServiceData data) {
+        QueryParameterSerialization serialization = Optional.ofNullable(data.getQueryParameterSerializations())
+                .orElseGet(Collections::emptyMap)
+                .getOrDefault(name, QueryParameterSerialization.defaults());
+
+        if (value.isJsonObject()) {
+            return buildObjectQueryParameter(name, value.getAsJsonObject(), serialization);
+        }
         if (!value.isJsonArray()) {
             return List.of(new KeyValuePair<>(name, value.getAsString()));
         }
 
-        List<String> values = new ArrayList<>();
-        value.getAsJsonArray().forEach(item -> {
-            if (!item.isJsonNull()) {
-                values.add(item.isJsonPrimitive() ? item.getAsString() : item.toString());
-            }
-        });
+        List<String> values = queryParameterValues(value.getAsJsonArray());
         if (values.isEmpty()) {
             return Collections.emptyList();
         }
-
-        QueryParameterSerialization serialization = Optional.ofNullable(data.getQueryParameterSerializations())
-                .orElseGet(Collections::emptyMap)
-                .getOrDefault(name, QueryParameterSerialization.defaults());
 
         if (QueryParameterSerialization.FORM.equals(serialization.style()) && serialization.explode()) {
             return values.stream().map(item -> new KeyValuePair<>(name, item)).toList();
         }
 
-        String delimiter = switch (serialization.style()) {
+        return List.of(new KeyValuePair<>(name, String.join(queryParameterDelimiter(serialization), values)));
+    }
+
+    private List<KeyValuePair<String, String>> buildObjectQueryParameter(String name, JsonObject value,
+                                                                          QueryParameterSerialization serialization) {
+        if (QueryParameterSerialization.DEEP_OBJECT.equals(serialization.style())) {
+            List<KeyValuePair<String, String>> parameters = new ArrayList<>();
+            value.entrySet().forEach(entry -> addDeepObjectQueryParameters(
+                    name + "[" + entry.getKey() + "]", entry.getValue(), parameters));
+            return List.copyOf(parameters);
+        }
+
+        if (QueryParameterSerialization.FORM.equals(serialization.style()) && serialization.explode()) {
+            return value.entrySet().stream()
+                    .filter(entry -> !entry.getValue().isJsonNull())
+                    .map(entry -> new KeyValuePair<>(entry.getKey(), queryParameterValue(entry.getValue())))
+                    .toList();
+        }
+
+        List<String> values = new ArrayList<>();
+        value.entrySet().stream()
+                .filter(entry -> !entry.getValue().isJsonNull())
+                .forEach(entry -> {
+                    values.add(entry.getKey());
+                    values.add(queryParameterValue(entry.getValue()));
+                });
+        if (values.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return List.of(new KeyValuePair<>(name, String.join(queryParameterDelimiter(serialization), values)));
+    }
+
+    private String queryParameterDelimiter(QueryParameterSerialization serialization) {
+        return switch (serialization.style()) {
             case "spaceDelimited" -> " ";
             case "pipeDelimited" -> "|";
             default -> ",";
         };
-        return List.of(new KeyValuePair<>(name, String.join(delimiter, values)));
+    }
+
+    private void addDeepObjectQueryParameters(String name, JsonElement value,
+                                               List<KeyValuePair<String, String>> parameters) {
+        if (value.isJsonNull()) {
+            return;
+        }
+        if (value.isJsonObject()) {
+            value.getAsJsonObject().entrySet().forEach(entry -> addDeepObjectQueryParameters(
+                    name + "[" + entry.getKey() + "]", entry.getValue(), parameters));
+        } else if (value.isJsonArray()) {
+            value.getAsJsonArray().forEach(item -> addDeepObjectQueryParameters(name, item, parameters));
+        } else {
+            parameters.add(new KeyValuePair<>(name, value.getAsString()));
+        }
+    }
+
+    private List<String> queryParameterValues(Iterable<JsonElement> values) {
+        List<String> result = new ArrayList<>();
+        values.forEach(item -> {
+            if (!item.isJsonNull()) {
+                result.add(queryParameterValue(item));
+            }
+        });
+        return result;
+    }
+
+    private String queryParameterValue(JsonElement value) {
+        return value.isJsonPrimitive() ? value.getAsString() : value.toString();
     }
 
     /**
