@@ -5,6 +5,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.util.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -79,7 +80,7 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(result.payload()).contains("collection-42", "issued-locator")
                 .doesNotContain("generated-collection", "generated-locator");
         Assertions.assertThat(result.correlations())
-                .extracting(correlation -> correlation.getTargetField())
+                .extracting(ResourceCorrelation::getTargetField)
                 .containsExactlyInAnyOrder("collectionKey", "locator");
         Assertions.assertThat(result.correlations())
                 .filteredOn(correlation -> correlation.getTargetField().equals("locator"))
@@ -103,7 +104,7 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(result.payload()).contains("collection-42", "second-locator")
                 .doesNotContain("generated-collection", "generated-locator");
         Assertions.assertThat(result.correlations())
-                .extracting(correlation -> correlation.getTargetField())
+                .extracting(ResourceCorrelation::getTargetField)
                 .containsExactlyInAnyOrder("collectionKey", "locator");
     }
 
@@ -317,7 +318,7 @@ class RuntimeResourcePoolTest {
 
         Assertions.assertThat(result.payload()).contains("\"id\":\"new-order\"", "customer-42");
         Assertions.assertThat(result.pathParamsPayload()).contains("customer-42");
-        Assertions.assertThat(result.correlations()).extracting(correlation -> correlation.getTargetField())
+        Assertions.assertThat(result.correlations()).extracting(ResourceCorrelation::getTargetField)
                 .containsExactlyInAnyOrder("customerId", "customerId");
     }
 
@@ -350,7 +351,7 @@ class RuntimeResourcePoolTest {
 
         Assertions.assertThat(result.payload()).contains("customer-42", "order-99")
                 .doesNotContain("generated-customer", "generated-order");
-        Assertions.assertThat(result.correlations()).extracting(correlation -> correlation.getTargetField())
+        Assertions.assertThat(result.correlations()).extracting(ResourceCorrelation::getTargetField)
                 .containsExactlyInAnyOrder("customer#id", "order#id");
     }
 

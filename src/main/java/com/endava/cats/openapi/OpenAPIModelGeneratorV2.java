@@ -26,8 +26,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -785,11 +785,11 @@ public class OpenAPIModelGeneratorV2 {
         Schema itemSchema = getArrayItemsOrDefault(property);
         int arraySize = getArrayLength(property);
         examples.addAll(generateArrayExamples(propertyName + ".items", itemSchema, arraySize,
-                Function.identity(), Boolean.TRUE.equals(property.getUniqueItems())));
+                UnaryOperator.identity(), Boolean.TRUE.equals(property.getUniqueItems())));
     }
 
     private List<GeneratedExample> generateArrayExamples(String propertyName, Schema itemSchema, int arraySize,
-                                                          Function<Object, Object> itemMapper, boolean uniqueItems) {
+                                                         UnaryOperator<Object> itemMapper, boolean uniqueItems) {
         if (CatsModelUtils.isFreeFormSchema(itemSchema)) {
             List<Object> items = new ArrayList<>();
             for (int itemIndex = 0; itemIndex < arraySize; itemIndex++) {

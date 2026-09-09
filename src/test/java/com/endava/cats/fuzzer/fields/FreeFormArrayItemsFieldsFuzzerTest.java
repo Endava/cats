@@ -9,11 +9,11 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
+import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.parser.OpenAPIV3Parser;
-import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +51,7 @@ class FreeFormArrayItemsFieldsFuzzerTest {
         fuzzer.fuzz(data);
 
         List<SimpleExecutorContext> contexts = capturedContexts(MUTATION_COUNT);
-        Assertions.assertThat(contexts).allSatisfy(context -> {
+        Assertions.assertThat(contexts).isNotEmpty().allSatisfy(context -> {
             Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(
                     ResponseCodeFamilyPredefined.FOURXX_TWOXX);
             Assertions.assertThat(context.isMatchResponseResult()).isFalse();
@@ -106,7 +106,7 @@ class FreeFormArrayItemsFieldsFuzzerTest {
         fuzzer.fuzz(data);
 
         List<SimpleExecutorContext> contexts = capturedContexts(MUTATION_COUNT);
-        Assertions.assertThat(contexts).allSatisfy(context -> {
+        Assertions.assertThat(contexts).isNotEmpty().allSatisfy(context -> {
             JsonArray payload = JsonUtils.parseAsJsonElement(context.getPayload()).getAsJsonArray();
             Assertions.assertThat(payload).hasSize(2);
             Assertions.assertThat(payload.get(1).getAsInt()).isEqualTo(42);
@@ -121,8 +121,8 @@ class FreeFormArrayItemsFieldsFuzzerTest {
 
         fuzzer.fuzz(data);
 
-        Assertions.assertThat(capturedContexts(MUTATION_COUNT)).allSatisfy(context -> Assertions.assertThat(
-                JsonUtils.parseAsJsonElement(context.getPayload()).getAsJsonObject().getAsJsonArray("items"))
+        Assertions.assertThat(capturedContexts(MUTATION_COUNT)).isNotEmpty().allSatisfy(context -> Assertions.assertThat(
+                        JsonUtils.parseAsJsonElement(context.getPayload()).getAsJsonObject().getAsJsonArray("items"))
                 .hasSize(1));
     }
 

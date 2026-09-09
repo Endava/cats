@@ -213,7 +213,7 @@ class OpenAPIModelGeneratorV2Test {
         String payload = generator.generate("RootArray").getFirst();
 
         var items = JsonUtils.parseAsJsonElement(payload).getAsJsonArray();
-        Assertions.assertThat(items.asList().stream().map(item -> item.getAsString()).toList())
+        Assertions.assertThat(items.asList().stream().map(JsonElement::getAsString).toList())
                 .containsExactly("fixed", "fixed");
     }
 
