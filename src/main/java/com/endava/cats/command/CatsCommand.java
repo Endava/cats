@@ -30,6 +30,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.RunOutcome;
 import com.endava.cats.openapi.handler.api.SchemaWalker;
 import com.endava.cats.openapi.handler.index.SpecPositionIndex;
 import com.endava.cats.report.ExecutionStatisticsListener;
@@ -345,7 +346,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         } finally {
             executionStopController.finishSession();
             ExecutionSummary executionSummary = testCaseListener.endSession();
-            if (executionEventPublisher.hasSubscribers()) {
+            if (executionSummary != null && executionSummary.outcome().status() == RunOutcome.Status.FAILED) {
+                exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
+            }
+            if (executionSummary != null && executionEventPublisher.hasSubscribers()) {
                 executionEventPublisher.publish(new CatsExecutionEvent.SessionEnded(Instant.now(), executionSummary));
             }
         }

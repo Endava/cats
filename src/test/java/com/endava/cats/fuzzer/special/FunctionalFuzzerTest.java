@@ -102,6 +102,29 @@ class FunctionalFuzzerTest {
     }
 
     @Test
+    void shouldCloseFuzzerLifecycleWhenFunctionalTestExecutionFails() {
+        FilesArguments localFiles = Mockito.mock(FilesArguments.class);
+        CustomFuzzerUtil localUtil = Mockito.mock(CustomFuzzerUtil.class);
+        TestCaseListener localListener = Mockito.mock(TestCaseListener.class);
+        FuzzingData data = FuzzingData.builder().contractPath("/pets").method(HttpMethod.GET).build();
+        Map<String, Map<String, Object>> details = Map.of(
+                "/pets", Map.of("test-1", Map.of("httpMethod", "GET")));
+        Mockito.when(localFiles.getCustomFuzzerDetails()).thenReturn(details);
+        Mockito.when(localUtil.isMatchingHttpMethod(Mockito.any(), Mockito.eq(HttpMethod.GET))).thenReturn(true);
+        Mockito.doThrow(new IllegalStateException("functional test failed"))
+                .when(localUtil).executeTestCases(Mockito.eq(data), Mockito.eq("test-1"), Mockito.any(), Mockito.any());
+        FunctionalFuzzer localFuzzer = new FunctionalFuzzer(localFiles, localUtil, localListener);
+        localFuzzer.fuzz(data);
+
+        Assertions.assertThatThrownBy(localFuzzer::executeCustomFuzzerTests)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("functional test failed");
+
+        Mockito.verify(localListener).beforeFuzz(FunctionalFuzzer.class, "/pets", "GET");
+        Mockito.verify(localListener).afterFuzz("/pets");
+    }
+
+    @Test
     void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecuted() {
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).responseContentType("application/json").build();
         FuzzingData data = this.setupFuzzingData(catsResponse, "newValue", "newValue2");

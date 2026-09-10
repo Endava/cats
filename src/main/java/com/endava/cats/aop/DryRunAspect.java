@@ -55,6 +55,7 @@ public class DryRunAspect {
      * @throws Exception if something goes wrong
      */
     public Object startSession(InvocationContext context) throws Exception {
+        paths.clear();
         if (reportingArguments.isJsonOutput()) {
             CatsUtil.setCatsLogLevel("OFF");
         }

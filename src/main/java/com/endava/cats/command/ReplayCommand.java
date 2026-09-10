@@ -52,10 +52,11 @@ import java.util.Optional;
                 "    cats replay --errors --warnings"},
         versionProvider = VersionProvider.class)
 @Unremovable
-public class ReplayCommand implements Runnable {
+public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
+    private int exitCode = CommandLine.ExitCode.OK;
 
     @CommandLine.Parameters(
             description = "The list of CATS tests. When providing a .json extension it will be considered a path, " +
@@ -286,6 +287,7 @@ public class ReplayCommand implements Runnable {
 
         //see if any header is dynamic and it needs a parser
         headersFromFile.forEach(header -> header.setValue(CatsDSLParser.parseAndGetResult(header.getValue().toString(), authArguments.getAuthScriptAsMap())));
+        testCase.getRequest().setHeaders(headersFromFile);
     }
 
     private CatsTestCase loadTestCaseFile(String testCaseFileName) throws IOException {
@@ -298,23 +300,27 @@ public class ReplayCommand implements Runnable {
         return testCase;
     }
 
-    private void initReportingPath() {
+    private boolean initReportingPath() {
         if (StringUtils.isBlank(this.outputReportFolder)) {
-            return;
+            return true;
         }
 
         try {
             testCaseListener.initReportingPath(this.outputReportFolder);
             testCaseListener.writeHelperFiles();
-        } catch (IOException e) {
+            return true;
+        } catch (Exception e) {
+            exitCode = CommandLine.ExitCode.SOFTWARE;
             logger.error("There was an issue creating the output folder: {}", e.getMessage());
             logger.debug("Stacktrace:", e);
+            return false;
         }
     }
 
 
     @Override
     public void run() {
+        exitCode = CommandLine.ExitCode.OK;
         if (debug) {
             CatsUtil.setCatsLogLevel("ALL");
             logger.fav("Setting CATS log level to ALL!");
@@ -326,7 +332,9 @@ public class ReplayCommand implements Runnable {
             return;
         }
 
-        this.initReportingPath();
+        if (!this.initReportingPath()) {
+            return;
+        }
         ReplayStats stats = (errors || warnings) ? createInitialStats() : null;
 
         for (String testCaseFileName : testCases) {
@@ -345,6 +353,11 @@ public class ReplayCommand implements Runnable {
         if (stats != null) {
             printSummary(stats, testCases.size());
         }
+    }
+
+    @Override
+    public int getExitCode() {
+        return exitCode;
     }
 
     private ReplayStats createInitialStats() {

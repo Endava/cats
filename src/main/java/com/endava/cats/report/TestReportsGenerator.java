@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.exception.CatsException;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
@@ -9,7 +10,11 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Singleton;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * A class responsible for generating test reports based on the provided test case exporters and reporting arguments.
@@ -18,6 +23,7 @@ import java.util.List;
 @Singleton
 public class TestReportsGenerator {
     private final List<TestCaseExporter> testCaseExporters;
+    private final TestCaseExporter primaryExporter;
 
     /**
      * Constructs a new TestReportsGenerator with the specified test case exporters and reporting arguments.
@@ -27,9 +33,30 @@ public class TestReportsGenerator {
      */
     public TestReportsGenerator(Instance<TestCaseExporter> testCaseExporters,
                                 ReportingArguments reportingArguments) {
-        this.testCaseExporters = testCaseExporters.stream()
-                .filter(exporter -> reportingArguments.getReportFormat().contains(exporter.reportFormat()))
+        Map<ReportingArguments.ReportFormat, TestCaseExporter> exportersByFormat = testCaseExporters.stream()
+                .collect(Collectors.toMap(TestCaseExporter::reportFormat, Function.identity(),
+                        (first, second) -> {
+                            throw new CatsException("Multiple report exporters registered for format " + first.reportFormat());
+                        }, LinkedHashMap::new));
+        List<ReportingArguments.ReportFormat> selectedFormats = reportingArguments.getReportFormat().stream()
+                .distinct()
                 .toList();
+        if (selectedFormats.isEmpty()) {
+            throw new CatsException("At least one report format must be selected");
+        }
+        this.primaryExporter = findExporter(exportersByFormat, selectedFormats.iterator().next());
+        this.testCaseExporters = selectedFormats.stream()
+                .map(format -> findExporter(exportersByFormat, format))
+                .toList();
+    }
+
+    private TestCaseExporter findExporter(Map<ReportingArguments.ReportFormat, TestCaseExporter> exportersByFormat,
+                                          ReportingArguments.ReportFormat format) {
+        TestCaseExporter exporter = exportersByFormat.get(format);
+        if (exporter == null) {
+            throw new CatsException("No report exporter registered for format " + format);
+        }
+        return exporter;
     }
 
     /**
@@ -45,12 +72,12 @@ public class TestReportsGenerator {
     }
 
     /**
-     * Writes a test case to the report using the first available test case exporter.
+     * Writes a format-independent test case artifact using the explicitly selected primary exporter.
      *
      * @param catsTestCase the test case to be written to the report
      */
     public void writeTestCase(CatsTestCase catsTestCase) {
-        testCaseExporters.getFirst().writeTestCase(catsTestCase);
+        primaryExporter.writeTestCase(catsTestCase);
     }
 
     /**
@@ -77,7 +104,7 @@ public class TestReportsGenerator {
      * @param testCaseSummaryDetails the list of test case summaries containing error details
      */
     public void writeErrorsByReason(List<CatsTestCaseSummary> testCaseSummaryDetails) {
-        testCaseExporters.getFirst().writeErrorsByReason(testCaseSummaryDetails);
+        primaryExporter.writeErrorsByReason(testCaseSummaryDetails);
     }
 
 
@@ -87,17 +114,17 @@ public class TestReportsGenerator {
      * @param testCaseExecutionDetails the list of test case execution summaries to be included in the performance report
      */
     public void writePerformanceReport(List<CatsTestCaseExecutionSummary> testCaseExecutionDetails) {
-        testCaseExporters.getFirst().writePerformanceReport(testCaseExecutionDetails);
+        primaryExporter.writePerformanceReport(testCaseExecutionDetails);
     }
 
     /**
-     * Prints the execution details using the first available test case exporter.
+     * Prints execution details through the explicitly selected primary exporter.
      */
     public void printExecutionDetails(ExecutionSummary executionSummary) {
-        testCaseExporters.getFirst().printExecutionDetails(executionSummary);
+        primaryExporter.printExecutionDetails(executionSummary);
     }
 
     public void writeTopFuzzers(List<CatsTestCaseSummary> testCaseSummaries) {
-        testCaseExporters.getFirst().writeTopFuzzers(testCaseSummaries);
+        primaryExporter.writeTopFuzzers(testCaseSummaries);
     }
 }

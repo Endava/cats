@@ -82,9 +82,12 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.fuzzingData().getContractPath().equalsIgnoreCase(entry.getKey()))
                     .forEach(customFuzzerExecution -> {
                         testCaseListener.beforeFuzz(this.getClass(), customFuzzerExecution.fuzzingData().getContractPath(), customFuzzerExecution.fuzzingData().getMethod().name());
-                        customFuzzerUtil.executeTestCases(customFuzzerExecution.fuzzingData(), customFuzzerExecution.testId(),
-                                customFuzzerExecution.testEntry(), this);
-                        testCaseListener.afterFuzz(customFuzzerExecution.fuzzingData().getContractPath());
+                        try {
+                            customFuzzerUtil.executeTestCases(customFuzzerExecution.fuzzingData(), customFuzzerExecution.testId(),
+                                    customFuzzerExecution.testEntry(), this);
+                        } finally {
+                            testCaseListener.afterFuzz(customFuzzerExecution.fuzzingData().getContractPath());
+                        }
                     });
         }
     }

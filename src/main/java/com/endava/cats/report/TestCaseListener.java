@@ -56,7 +56,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,7 +67,9 @@ import static com.endava.cats.context.CatsGlobalContext.HTTP_METHOD;
 import static com.endava.cats.model.CatsTestCase.SKIP_REPORTING;
 
 /**
- * This class exposes methods to record the progress of a test case
+ * This class exposes methods to record the progress of a test case.
+ * Instances are confined to the execution thread and are not safe for concurrent test execution because lifecycle
+ * context and report buffers are session-owned.
  */
 @ApplicationScoped
 @DryRun
@@ -95,6 +96,7 @@ public class TestCaseListener {
     private final CatsExecutionEventPublisher executionEventPublisher;
     private final ExecutionStopController executionStopController;
     private final ExecutionSummaryProvider executionSummaryProvider;
+    private boolean reportingInitialized;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
 
@@ -119,7 +121,6 @@ public class TestCaseListener {
      * @param executionEventPublisher publisher for presentation-neutral execution events
      * @param executionStopController controller for global execution limits
      * @param executionSummaryProvider provider for the final immutable execution snapshot
-     * @throws NoSuchElementException if no matching exporter is found for the specified report format
      */
     public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er,
                             TestReportsGenerator testReportsGenerator, IgnoreArguments ignoreArguments,
@@ -194,14 +195,17 @@ public class TestCaseListener {
         this.startTestCase(data);
         try {
             s.run();
+        } catch (CatsExecutionCancelledException e) {
+            throw e;
         } catch (Exception e) {
             CatsResultFactory.CatsResult catsResult = CatsResultFactory.createUnexpectedException(fuzzer.getClass().getSimpleName(), Optional.ofNullable(e.getMessage()).orElse(""));
             this.reportResultError(externalLogger, data, catsResult.reason(), catsResult.message());
             externalLogger.error("Exception while processing: {}", e.getMessage());
             externalLogger.debug("Detailed stacktrace", e);
             this.checkForIOErrors(e);
+        } finally {
+            this.endTestCase();
         }
-        this.endTestCase();
         executionStopController.checkAfterTest();
     }
 
@@ -393,6 +397,7 @@ public class TestCaseListener {
      */
     public void addResponse(CatsResponse response) {
         currentTestCase().setResponse(response);
+        executionStatisticsListener.recordResponseCode(response.getResponseCode());
         if (!ignoreArguments.isIgnoreErrorLeaksCheck()) {
             extractErrorLeaks();
         }
@@ -409,24 +414,27 @@ public class TestCaseListener {
     }
 
     private void endTestCase() {
-        CatsTestCase currentTestCase = currentTestCase();
-        currentTestCase.setFuzzer(MDC.get(FUZZER_KEY));
-        executionStatisticsListener.increaseCompletedTests();
-        if (currentTestCase.isNotSkipped()) {
-            testReportsGenerator.writeTestCase(currentTestCase);
-            keepSummary(currentTestCase);
-            recordResponseCode(currentTestCase);
+        String testId = MDC.get(ID);
+        try {
+            CatsTestCase currentTestCase = currentTestCase();
+            currentTestCase.setFuzzer(MDC.get(FUZZER_KEY));
+            executionStatisticsListener.increaseCompletedTests();
+            if (currentTestCase.isNotSkipped()) {
+                testReportsGenerator.writeTestCase(currentTestCase);
+                keepSummary(currentTestCase);
+            }
+            keepExecutionDetails(currentTestCase);
+            if (executionEventPublisher.hasSubscribers()) {
+                executionEventPublisher.publish(new CatsExecutionEvent.TestCompleted(Instant.now(),
+                        TestResultSnapshot.from(currentTestCase, reportingArguments.getMaskedHeaders())));
+            }
+            logger.info(SEPARATOR);
+            CatsExecutionCancelledException.check();
+        } finally {
+            testCaseMap.remove(testId);
+            MDC.remove(ID);
+            MDC.put(ID_ANSI, this.getKeyDefault());
         }
-        keepExecutionDetails(currentTestCase);
-        if (executionEventPublisher.hasSubscribers()) {
-            executionEventPublisher.publish(new CatsExecutionEvent.TestCompleted(Instant.now(),
-                    TestResultSnapshot.from(currentTestCase, reportingArguments.getMaskedHeaders())));
-        }
-        testCaseMap.remove(MDC.get(ID));
-        MDC.remove(ID);
-        MDC.put(ID_ANSI, this.getKeyDefault());
-        logger.info(SEPARATOR);
-        CatsExecutionCancelledException.check();
     }
 
     /**
@@ -435,12 +443,6 @@ public class TestCaseListener {
     public void recordRequestAttempt() {
         executionStatisticsListener.increaseRequestsAttempted();
         executionEventPublisher.publish(new CatsExecutionEvent.RequestAttempted(Instant.now()));
-    }
-
-    private void recordResponseCode(CatsTestCase testCase) {
-        if (testCase.getResponse() != null) {
-            executionStatisticsListener.recordResponseCode(testCase.getResponse().getResponseCode());
-        }
     }
 
     private void keepSummary(CatsTestCase testCase) {
@@ -515,6 +517,13 @@ public class TestCaseListener {
      */
     public void startSession() {
         executionStatisticsListener.startSession();
+        reportingInitialized = false;
+        testCaseMap.clear();
+        testCaseSummaryDetails.clear();
+        testCaseExecutionDetails.clear();
+        runPerPathListener.clear();
+        TEST.set(0);
+        MDC.remove(ID);
         MDC.put(ID_ANSI, this.getKeyDefault());
         MDC.put(FUZZER, this.getKeyDefault());
         MDC.put(FUZZER_KEY, this.getKeyDefault());
@@ -541,6 +550,7 @@ public class TestCaseListener {
      */
     public void initReportingPath() throws IOException {
         testReportsGenerator.initPath(null);
+        reportingInitialized = true;
     }
 
     /**
@@ -551,6 +561,7 @@ public class TestCaseListener {
      */
     public void initReportingPath(String folder) throws IOException {
         testReportsGenerator.initPath(folder);
+        reportingInitialized = true;
     }
 
     /**
@@ -578,21 +589,37 @@ public class TestCaseListener {
      */
     public ExecutionSummary endSession() {
         ExecutionSummary executionSummary = executionSummaryProvider.snapshot();
+        if (!reportingInitialized) {
+            return executionSummary;
+        }
         try {
             markPreviousPathAsDone();
             renderGlobalFuzzersStatistics();
             reportingArguments.enableAdditionalLoggingIfSummary();
-            testReportsGenerator.writeSummary(testCaseSummaryDetails, executionSummary);
             testReportsGenerator.writeHelperFiles();
             testReportsGenerator.writeErrorsByReason(testCaseSummaryDetails);
             testReportsGenerator.writeTopFuzzers(testCaseSummaryDetails);
             testReportsGenerator.writePerformanceReport(testCaseExecutionDetails);
+            testReportsGenerator.writeSummary(testCaseSummaryDetails, executionSummary);
             testReportsGenerator.printExecutionDetails(executionSummary);
             if (!reportingArguments.isTui()) {
                 writeRecordedErrorsIfPresent();
             }
         } catch (Exception e) {
-            logger.error("Error while ending sessions {}", e.getMessage());
+            String details = "Report generation failed: " + Optional.ofNullable(e.getMessage())
+                    .orElse(e.getClass().getSimpleName());
+            executionStatisticsListener.markFailed(details);
+            logger.error("{}", details);
+            logger.debug("Detailed stacktrace", e);
+            ExecutionSummary failedSummary = executionSummaryProvider.snapshot();
+            if (reportingInitialized) {
+                try {
+                    testReportsGenerator.writeSummary(testCaseSummaryDetails, failedSummary);
+                } catch (Exception summaryFailure) {
+                    logger.debug("Unable to write the failed execution outcome to the summary report", summaryFailure);
+                }
+            }
+            return failedSummary;
         }
         return executionSummary;
     }

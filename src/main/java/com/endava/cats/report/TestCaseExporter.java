@@ -5,6 +5,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.exception.CatsReportException;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
@@ -74,7 +75,6 @@ public abstract class TestCaseExporter {
     private static final String HTML = ".html";
     private static final String JSON = ".json";
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
-    private static final String STACKTRACE = "Stacktrace";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
 
     final ReportingArguments reportingArguments;
@@ -251,9 +251,7 @@ public abstract class TestCaseExporter {
         try {
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), EXECUTION_TIME_REPORT), maskingSerializer.toJson(timeExecutionDetails).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            logger.warning("There was an issue writing the execution_times.js: {}. Please check if CATS has proper right to write in the report location: {}",
-                    e.getMessage(), reportingPath.toFile().getAbsolutePath());
-            logger.debug(STACKTRACE, e);
+            throw reportFailure("Unable to write " + EXECUTION_TIME_REPORT, e);
         }
     }
 
@@ -313,9 +311,7 @@ public abstract class TestCaseExporter {
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), this.getSummaryReportTitle()), writer.toString().getBytes(StandardCharsets.UTF_8));
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), maskingSerializer.toJson(report).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            logger.error("There was an error writing the report summary: {}. Please check if CATS has proper right to write in the report location: {}",
-                    e.getMessage(), reportingPath.toFile().getAbsolutePath());
-            logger.debug(STACKTRACE, e);
+            throw reportFailure("Unable to write the report summary", e);
         }
 
     }
@@ -364,9 +360,7 @@ public abstract class TestCaseExporter {
                 }
             }
         } catch (IOException e) {
-            logger.error("Unable to write reporting files: {}. Please check if CATS has proper right to write in the report location: {}",
-                    e.getMessage(), reportingPath.toFile().getAbsolutePath());
-            logger.debug(STACKTRACE, e);
+            throw reportFailure("Unable to write report helper files", e);
         }
     }
 
@@ -429,9 +423,7 @@ public abstract class TestCaseExporter {
             // Write raw bytes to preserve exact payload for replay - don't sanitize
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), maskingSerializer.toJson(testCase).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            logger.error("There was a problem writing test case {}: {}. Please check if CATS has proper right to write in the report location: {}",
-                    testCase.getTestId(), e.getMessage(), reportingPath.toFile().getAbsolutePath());
-            logger.debug(STACKTRACE, e);
+            throw reportFailure("Unable to write JSON for test case " + testCase.getTestId(), e);
         }
     }
 
@@ -449,13 +441,15 @@ public abstract class TestCaseExporter {
         try {
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), writer.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            logger.error("There was a problem writing test case {}: {}. Please check if CATS has proper right to write in the report location: {}",
-                    testCase.getTestId(), e.getMessage(), reportingPath.toFile().getAbsolutePath());
-            logger.debug(STACKTRACE, e);
+            throw reportFailure("Unable to write HTML for test case " + testCase.getTestId(), e);
         } catch (NegativeArraySizeException e) {
-            logger.debug(e.getMessage());
-            logger.debug(STACKTRACE, e);
+            throw reportFailure("Unable to render HTML for test case " + testCase.getTestId(), e);
         }
+    }
+
+    private CatsReportException reportFailure(String operation, Exception cause) {
+        return new CatsReportException("%s in %s: %s".formatted(
+                operation, reportingPath.toAbsolutePath(), cause.getMessage()), cause);
     }
 
 

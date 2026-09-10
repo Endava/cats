@@ -4,6 +4,7 @@ import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.mutators.StringMutationUtils;
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
@@ -310,6 +311,7 @@ public class TemplateFuzzer implements Fuzzer {
                     data, catsRequest, targetField);
             testCaseListener.addMutationTargets(mutationTargets);
             CatsResponse catsResponse = serviceCaller.callService(catsRequest, Set.of(targetField));
+            testCaseListener.addResponse(catsResponse);
             checkResponse(catsResponse, data, fuzzedValue);
         } catch (IOException e) {
             long duration = System.currentTimeMillis() - startTime;
@@ -322,7 +324,10 @@ public class TemplateFuzzer implements Fuzzer {
                     .responseValidationField(targetField)
                     .build();
 
+            testCaseListener.addResponse(catsResponse);
             checkResponse(catsResponse, data, fuzzedValue);
+        } catch (CatsExecutionCancelledException e) {
+            throw e;
         } catch (Exception e) {
             logger.debug("Something unexpected happened: ", e);
             testCaseListener.reportResultError(logger, data, "Check response details", "Something went wrong {}", e.getMessage());
@@ -331,7 +336,6 @@ public class TemplateFuzzer implements Fuzzer {
 
     private void checkResponse(CatsResponse catsResponse, FuzzingData data, Object fuzzedValue) {
         if (matchArguments.isMatchResponse(catsResponse) || matchArguments.isInputReflected(catsResponse, fuzzedValue) || !matchArguments.isAnyMatchArgumentSupplied()) {
-            testCaseListener.addResponse(catsResponse);
             testCaseListener.reportResultError(logger, data, CatsResultFactory.Reason.RESPONSE_MATCHES_ARGUMENTS.value(), "Response matches" + matchArguments.getMatchString());
         } else {
             testCaseListener.skipTest(logger, "Skipping test as response does not match given matchers!");

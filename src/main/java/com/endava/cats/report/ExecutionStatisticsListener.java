@@ -5,13 +5,14 @@ import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.RunOutcome;
 import com.endava.cats.util.AnsiUtils;
 import jakarta.enterprise.context.ApplicationScoped;
-import lombok.Getter;
-
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiPredicate;
 
 /**
  * Listener for tracking execution statistics of CATS tests, including errors, warnings, successes, and skipped tests.
+ * This listener is confined to the execution thread and is not safe for concurrent use. Parallel execution requires
+ * a coordinated redesign of test context, lifecycle events, statistics aggregation, and report generation.
  */
 @ApplicationScoped
 @DryRun
@@ -44,40 +45,44 @@ public class ExecutionStatisticsListener {
     /**
      * Count of skipped tests.
      */
-    @Getter
     private int skipped;
 
     /**
      * Count of completed test cases, including results omitted from reports.
      */
-    @Getter
     private long completedTests;
 
     /**
      * Count of HTTP requests handed to the HTTP client for execution.
      */
-    @Getter
     private long requestsAttempted;
 
     /**
      * Count of authentication errors.
      */
-    @Getter
     private int authErrors;
 
     /**
      * Count of I/O errors.
      */
-    @Getter
     private int ioErrors;
 
-    @Getter
-    private volatile RunOutcome runOutcome = RunOutcome.completed();
+    private RunOutcome runOutcome = RunOutcome.completed();
 
     /**
-     * Resets outcome metadata for a new execution session without clearing accumulated test statistics.
+     * Resets all statistics and outcome metadata for a new execution session.
      */
-    public synchronized void startSession() {
+    public void startSession() {
+        errors.clear();
+        warns.clear();
+        success.clear();
+        skippedFromReporting.clear();
+        responseCodes.clear();
+        skipped = 0;
+        completedTests = 0;
+        requestsAttempted = 0;
+        authErrors = 0;
+        ioErrors = 0;
         runOutcome = RunOutcome.completed();
     }
 
@@ -86,7 +91,7 @@ public class ExecutionStatisticsListener {
      *
      * @param details the limit that stopped execution
      */
-    public synchronized void markLimitReached(String details) {
+    public void markLimitReached(String details) {
         runOutcome = RunOutcome.limitReached(details);
     }
 
@@ -95,7 +100,7 @@ public class ExecutionStatisticsListener {
      *
      * @param details cancellation details
      */
-    public synchronized void markCancelled(String details) {
+    public void markCancelled(String details) {
         runOutcome = RunOutcome.cancelled(details);
     }
 
@@ -104,7 +109,7 @@ public class ExecutionStatisticsListener {
      *
      * @param details failure details
      */
-    public synchronized void markFailed(String details) {
+    public void markFailed(String details) {
         runOutcome = RunOutcome.failed(details);
     }
 
@@ -115,7 +120,26 @@ public class ExecutionStatisticsListener {
      * @param qualityGateDescription human-readable configured quality gate
      * @return execution summary for reports and presentation layers
      */
-    public synchronized ExecutionSummary snapshot(boolean qualityGatePassed, String qualityGateDescription) {
+    public ExecutionSummary snapshot(boolean qualityGatePassed, String qualityGateDescription) {
+        return snapshotWithQualityGate(qualityGatePassed, qualityGateDescription);
+    }
+
+    /**
+     * Evaluates the quality gate from the counts used to construct the session summary. Callers must honor this
+     * listener's single-thread confinement.
+     *
+     * @param shouldFailBuild quality-gate predicate receiving error and warning counts
+     * @param qualityGateDescription human-readable configured quality gate
+     * @return execution summary based on one coherent statistics snapshot
+     */
+    public ExecutionSummary snapshot(BiPredicate<Long, Long> shouldFailBuild,
+                                     String qualityGateDescription) {
+        long errorCount = getErrors();
+        long warningCount = getWarns();
+        return snapshotWithQualityGate(!shouldFailBuild.test(errorCount, warningCount), qualityGateDescription);
+    }
+
+    private ExecutionSummary snapshotWithQualityGate(boolean qualityGatePassed, String qualityGateDescription) {
         return new ExecutionSummary(completedTests, requestsAttempted, getAll(), getSuccess(), getWarns(), getErrors(),
                 skipped, getSkippedFromReporting(), authErrors, ioErrors, getResponseCodeDistribution(),
                 getTopFailingPaths(10), qualityGatePassed, qualityGateDescription, runOutcome);
@@ -309,5 +333,29 @@ public class ExecutionStatisticsListener {
      */
     public long getExecutionsPerPath(String path) {
         return this.errors.getOrDefault(path, 0L) + this.warns.getOrDefault(path, 0L) + this.success.getOrDefault(path, 0L);
+    }
+
+    public int getSkipped() {
+        return skipped;
+    }
+
+    public long getCompletedTests() {
+        return completedTests;
+    }
+
+    public long getRequestsAttempted() {
+        return requestsAttempted;
+    }
+
+    public int getAuthErrors() {
+        return authErrors;
+    }
+
+    public int getIoErrors() {
+        return ioErrors;
+    }
+
+    public RunOutcome getRunOutcome() {
+        return runOutcome;
     }
 }

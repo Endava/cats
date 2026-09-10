@@ -7,6 +7,10 @@ import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.RunOutcome;
+import com.endava.cats.report.ExecutionStatisticsListener;
+import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -18,6 +22,8 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
+import java.util.Map;
+
 @QuarkusTest
 class TemplateFuzzCommandTest {
 
@@ -26,6 +32,10 @@ class TemplateFuzzCommandTest {
     MatchArguments matchArguments;
     @Inject
     UserArguments userArguments;
+    @Inject
+    TestCaseListener testCaseListener;
+    @Inject
+    ExecutionStatisticsListener executionStatisticsListener;
     TemplateFuzzer templateFuzzer;
     StopArguments stopArguments;
     IgnoreArguments ignoreArguments;
@@ -40,6 +50,8 @@ class TemplateFuzzCommandTest {
         ReflectionTestUtils.setField(templateFuzzCommand, "stopArguments", stopArguments);
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
         ReflectionTestUtils.setField(templateFuzzCommand, "ignoreArguments", ignoreArguments);
+        ReflectionTestUtils.setField(templateFuzzCommand, "testCaseListener", testCaseListener);
+        ReflectionTestUtils.setField(templateFuzzCommand, "executionStatisticsListener", executionStatisticsListener);
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(true);
     }
 
@@ -64,6 +76,47 @@ class TemplateFuzzCommandTest {
         Assertions.assertThatThrownBy(command::run)
                 .isInstanceOf(CommandLine.ParameterException.class)
                 .hasMessageContaining("not supported by the template command");
+    }
+
+    @Test
+    void shouldReturnSoftwareExitCodeWhenReportGenerationFails() {
+        TemplateFuzzCommand command = new TemplateFuzzCommand();
+        ReportingArguments arguments = Mockito.mock(ReportingArguments.class);
+        TestCaseListener listener = Mockito.mock(TestCaseListener.class);
+        ExecutionSummary failed = new ExecutionSummary(
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "",
+                RunOutcome.failed("Report generation failed: disk full"));
+        Mockito.when(listener.endSession()).thenReturn(failed);
+        ReflectionTestUtils.setField(command, "reportingArguments", arguments);
+        ReflectionTestUtils.setField(command, "testCaseListener", listener);
+        ReflectionTestUtils.setField(command, "executionStatisticsListener", Mockito.mock(ExecutionStatisticsListener.class));
+
+        ReflectionTestUtils.invokeMethod(command, "completeLifecycle", "/pets", false);
+
+        Assertions.assertThat(command.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+    }
+
+    @Test
+    void shouldFinalizeFuzzerAndSessionWhenTemplateExecutionFails() {
+        TestCaseListener listener = Mockito.mock(TestCaseListener.class);
+        ExecutionStatisticsListener statistics = Mockito.mock(ExecutionStatisticsListener.class);
+        ExecutionSummary completed = new ExecutionSummary(
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "", RunOutcome.completed());
+        Mockito.when(listener.endSession()).thenReturn(completed);
+        Mockito.doThrow(new IllegalStateException("template execution failed"))
+                .when(templateFuzzer).fuzz(Mockito.any());
+        ReflectionTestUtils.setField(templateFuzzCommand, "testCaseListener", listener);
+        ReflectionTestUtils.setField(templateFuzzCommand, "executionStatisticsListener", statistics);
+        templateFuzzCommand.data = "{\"field\":\"value\"}";
+        templateFuzzCommand.url = "http://localhost";
+
+        Assertions.assertThatThrownBy(templateFuzzCommand::run)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("template execution failed");
+
+        Mockito.verify(listener).afterFuzz("http://localhost");
+        Mockito.verify(listener).endSession();
+        Mockito.verify(statistics).markFailed("java.lang.IllegalStateException: template execution failed");
     }
 
     @Test
@@ -97,6 +150,7 @@ class TemplateFuzzCommandTest {
         templateFuzzCommand.data = "@src/test/resources/dict_non_real.txt";
         templateFuzzCommand.run();
         Mockito.verifyNoInteractions(templateFuzzer);
+        Assertions.assertThat(templateFuzzCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
     }
 
     @Test

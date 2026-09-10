@@ -3,23 +3,29 @@ package com.endava.cats.command;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsRequest;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
+import picocli.CommandLine;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @QuarkusTest
 class ReplayCommandTest {
@@ -66,6 +72,28 @@ class ReplayCommandTest {
     }
 
     @Test
+    void shouldApplyReplayHeaderOverridesToTheRequest() throws Exception {
+        replayCommand.tests = new String[]{"src/test/resources/Test12.json"};
+        replayCommand.headersMap = new HashMap<>(Map.of("X-Vault-Token", "OVERRIDDEN", "X-New", "added"));
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        Mockito.when(response.getBody()).thenReturn("");
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenReturn(response);
+
+        replayCommand.run();
+
+        ArgumentCaptor<CatsRequest> request = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(serviceCaller).callService(request.capture(), Mockito.eq(Collections.emptySet()));
+        Assertions.assertThat(request.getValue().getHeaders())
+                .filteredOn(header -> "X-Vault-Token".equals(header.getKey()))
+                .singleElement().extracting(header -> header.getValue()).isEqualTo("OVERRIDDEN");
+        Assertions.assertThat(request.getValue().getHeaders())
+                .anySatisfy(header -> {
+                    Assertions.assertThat(header.getKey()).isEqualTo("X-New");
+                    Assertions.assertThat(header.getValue()).isEqualTo("added");
+                });
+    }
+
+    @Test
     void shouldWriteTestsInOutputFolder() throws Exception {
         replayCommand.tests = new String[]{"src/test/resources/Test12.json"};
         ReflectionTestUtils.setField(replayCommand, "outputReportFolder", "replay-report");
@@ -76,6 +104,19 @@ class ReplayCommandTest {
         Mockito.verify(serviceCaller, Mockito.times(1)).callService(Mockito.any(), Mockito.eq(Collections.emptySet()));
         Mockito.verify(testCaseListener).writeHelperFiles();
         Mockito.verify(testCaseListener).writeIndividualTestCase(Mockito.any());
+    }
+
+    @Test
+    void shouldReturnSoftwareExitCodeWhenOutputReportInitializationFails() throws Exception {
+        replayCommand.tests = new String[]{"src/test/resources/Test12.json"};
+        ReflectionTestUtils.setField(replayCommand, "outputReportFolder", "replay-report");
+        Mockito.doThrow(new IOException("output is read-only"))
+                .when(testCaseListener).initReportingPath("replay-report");
+
+        replayCommand.run();
+
+        Assertions.assertThat(replayCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+        Mockito.verifyNoInteractions(serviceCaller);
     }
 
     @Test

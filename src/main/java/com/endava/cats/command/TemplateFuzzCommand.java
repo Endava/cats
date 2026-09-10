@@ -10,11 +10,15 @@ import com.endava.cats.args.UserArguments;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsHeader;
+import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.RunOutcome;
+import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
@@ -70,8 +74,10 @@ import java.util.stream.Collectors;
                 "    cats template -X GET -t \"path1,query1\" -i \"2XX,4XX\" http://service-url/path1?query1=test&query2 --random --stopAfterTimeInSec 5"},
         versionProvider = VersionProvider.class)
 @Unremovable
-public class TemplateFuzzCommand implements Runnable {
+public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGenerator {
+    private static final int CANCELLED_EXIT_CODE = 130;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TemplateFuzzCommand.class);
+    private int exitCode = CommandLine.ExitCode.OK;
 
     /**
      * Keyword used to mark fields to fuzz.
@@ -124,6 +130,9 @@ public class TemplateFuzzCommand implements Runnable {
     TestCaseListener testCaseListener;
 
     @Inject
+    ExecutionStatisticsListener executionStatisticsListener;
+
+    @Inject
     CatsGlobalContext catsGlobalContext;
 
     @Getter
@@ -158,11 +167,17 @@ public class TemplateFuzzCommand implements Runnable {
 
     @Override
     public void run() {
+        exitCode = CommandLine.ExitCode.OK;
         if (reportingArguments.isTui()) {
             throw new CommandLine.ParameterException(spec.commandLine(),
                     "--tui is not supported by the template command; use an OpenAPI-backed fuzzing command");
         }
+        boolean sessionStarted = false;
+        boolean fuzzerStarted = false;
+        String fuzzingPath = null;
         try {
+            testCaseListener.startSession();
+            sessionStarted = true;
             this.init();
             String payload = this.loadPayload();
             logger.debug("Resolved payload: {}", payload);
@@ -175,17 +190,32 @@ public class TemplateFuzzCommand implements Runnable {
                     .targetFields(fieldsToFuzz)
                     .build();
             templateFuzzer.setRandom(random);
-            beforeFuzz(fuzzingData.getContractPath(), fuzzingData.getMethod().name());
+            fuzzingPath = fuzzingData.getContractPath();
+            beforeFuzz(fuzzingPath, fuzzingData.getMethod().name());
+            fuzzerStarted = true;
             templateFuzzer.fuzz(fuzzingData);
-            afterFuzz(fuzzingData.getContractPath());
+        } catch (CatsExecutionCancelledException e) {
+            executionStatisticsListener.markCancelled(e.getMessage());
+            exitCode = CANCELLED_EXIT_CODE;
         } catch (IOException e) {
+            executionStatisticsListener.markFailed(e.toString());
+            exitCode = CommandLine.ExitCode.SOFTWARE;
             logger.debug("Exception while fuzzing given data!", e);
             logger.error("Something went wrong while fuzzing. The data file does not exist or is not reachable: {}. Error message: {}", data, e.getMessage());
+        } catch (CommandLine.ParameterException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            executionStatisticsListener.markFailed(e.toString());
+            exitCode = CommandLine.ExitCode.SOFTWARE;
+            throw e;
+        } finally {
+            if (sessionStarted) {
+                completeLifecycle(fuzzingPath, fuzzerStarted);
+            }
         }
     }
 
     private void init() {
-        testCaseListener.startSession();
         CatsRandom.initRandom(seed);
         reportingArguments.processLogData();
         ConsoleUtils.initTerminalWidth(spec);
@@ -223,10 +253,33 @@ public class TemplateFuzzCommand implements Runnable {
         return "";
     }
 
-    private void afterFuzz(String path) {
-        reportingArguments.enableAdditionalLoggingIfSummary();
-        testCaseListener.afterFuzz(path);
-        testCaseListener.endSession();
+    private void completeLifecycle(String path, boolean fuzzerStarted) {
+        try {
+            reportingArguments.enableAdditionalLoggingIfSummary();
+            if (fuzzerStarted) {
+                testCaseListener.afterFuzz(path);
+            }
+        } catch (RuntimeException e) {
+            executionStatisticsListener.markFailed("Fuzzer finalization failed: " + e.getMessage());
+            exitCode = CommandLine.ExitCode.SOFTWARE;
+            logger.debug("Template fuzzer finalization failed", e);
+        }
+
+        try {
+            ExecutionSummary executionSummary = testCaseListener.endSession();
+            if (executionSummary.outcome().status() == RunOutcome.Status.FAILED) {
+                exitCode = CommandLine.ExitCode.SOFTWARE;
+            }
+        } catch (RuntimeException e) {
+            executionStatisticsListener.markFailed("Session finalization failed: " + e.getMessage());
+            exitCode = CommandLine.ExitCode.SOFTWARE;
+            logger.debug("Template session finalization failed", e);
+        }
+    }
+
+    @Override
+    public int getExitCode() {
+        return exitCode;
     }
 
     private void beforeFuzz(String path, String method) throws IOException {

@@ -20,6 +20,7 @@ import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
@@ -95,6 +96,7 @@ class TestCaseListenerTest {
         testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, testReportsGenerator,
                 ignoreArguments, reportingArguments, filterArguments, executionEventPublisher, executionStopController,
                 executionSummaryProvider);
+        ReflectionTestUtils.setField(testCaseListener, "reportingInitialized", true);
         catsGlobalContext.getDiscriminators().clear();
         catsGlobalContext.getFuzzersConfiguration().clear();
     }
@@ -186,6 +188,50 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldNotReportCancellationAsATestError() {
+        try {
+            Assertions.assertThatThrownBy(() -> testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+                        Thread.currentThread().interrupt();
+                        CatsExecutionCancelledException.check();
+                    }, FuzzingData.builder().build()))
+                    .isInstanceOf(CatsExecutionCancelledException.class);
+
+            Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
+            Assertions.assertThat(testCaseListener.testCaseMap).isEmpty();
+            Assertions.assertThat(MDC.get(TestCaseListener.ID)).isNull();
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    void shouldClearTestContextWhenFinalizationFails() {
+        IllegalStateException reportFailure = new IllegalStateException("Cannot write test report");
+        Mockito.doThrow(reportFailure).when(testReportsGenerator).writeTestCase(Mockito.any());
+
+        Assertions.assertThatThrownBy(() -> testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+        }, FuzzingData.builder().build())).isSameAs(reportFailure);
+
+        Assertions.assertThat(testCaseListener.testCaseMap).isEmpty();
+        Assertions.assertThat(MDC.get(TestCaseListener.ID)).isNull();
+    }
+
+    @Test
+    void shouldRecordOnlyActualResponsesIncludingThoseOmittedFromReports() {
+        Mockito.when(ignoreArguments.isSkipReportingForSuccess()).thenReturn(true);
+
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addResponse(CatsResponse.builder().responseCode(204).build());
+            testCaseListener.reportInfo(logger, "Success");
+        }, FuzzingData.builder().contractPath("/pets").build());
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () ->
+                testCaseListener.reportInfo(logger, "Contract check passed"), FuzzingData.builder().build());
+
+        Mockito.verify(executionStatisticsListener).recordResponseCode(204);
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).recordResponseCode(Mockito.anyInt());
+    }
+
+    @Test
     void shouldNotWriteRecordedErrorsToConsoleInTuiMode() {
         CatsGlobalContext localContext = Mockito.mock(CatsGlobalContext.class);
         ReportingArguments tuiArguments = Mockito.mock(ReportingArguments.class);
@@ -264,14 +310,84 @@ class TestCaseListenerTest {
     }
 
     @Test
-    void givenATestCase_whenExecutingStartAndEndSession_thenTheSummaryAndReportFilesAreCreated() {
+    void givenATestCase_whenExecutingStartAndEndSession_thenTheSummaryAndReportFilesAreCreated() throws Exception {
         ReflectionTestUtils.setField(testCaseListener, "appName", "CATS");
         testCaseListener.startSession();
+        testCaseListener.initReportingPath();
         testCaseListener.endSession();
 
+        Mockito.verify(testReportsGenerator).initPath(null);
         Mockito.verify(testReportsGenerator, Mockito.times(1)).writeHelperFiles();
         Mockito.verify(testReportsGenerator, Mockito.times(1))
                 .writeSummary(Mockito.anyList(), Mockito.any(ExecutionSummary.class));
+    }
+
+    @Test
+    void shouldClearListenerStateAtTheStartOfEachSession() {
+        testCaseListener.testCaseMap.put("old", new CatsTestCase());
+        testCaseListener.testCaseSummaryDetails.add(Mockito.mock(CatsTestCaseSummary.class));
+        testCaseListener.testCaseExecutionDetails.add(Mockito.mock(CatsTestCaseExecutionSummary.class));
+        TestCaseListener.TEST.set(42);
+        MDC.put(TestCaseListener.ID, "old");
+
+        testCaseListener.startSession();
+
+        Assertions.assertThat(testCaseListener.testCaseMap).isEmpty();
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).isEmpty();
+        Assertions.assertThat(testCaseListener.testCaseExecutionDetails).isEmpty();
+        Assertions.assertThat(TestCaseListener.TEST).hasValue(0);
+        Assertions.assertThat(MDC.get(TestCaseListener.ID)).isNull();
+        Mockito.verify(executionStatisticsListener).startSession();
+    }
+
+    @Test
+    void shouldMarkSessionFailedWhenFinalReportGenerationFails() {
+        ExecutionSummary completed = new ExecutionSummary(
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "", RunOutcome.completed());
+        ExecutionSummary failed = new ExecutionSummary(
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "",
+                RunOutcome.failed("Report generation failed: disk full"));
+        Mockito.when(executionSummaryProvider.snapshot()).thenReturn(completed, failed);
+        Mockito.doThrow(new IllegalStateException("disk full"))
+                .when(testReportsGenerator).writeSummary(Mockito.anyList(), Mockito.any());
+
+        ExecutionSummary result = testCaseListener.endSession();
+
+        Assertions.assertThat(result).isSameAs(failed);
+        Mockito.verify(executionStatisticsListener).markFailed("Report generation failed: disk full");
+    }
+
+    @Test
+    void shouldRewriteSummaryWithFailedOutcomeWhenLateReportGenerationFails() {
+        ExecutionSummary completed = new ExecutionSummary(
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "", RunOutcome.completed());
+        ExecutionSummary failed = new ExecutionSummary(
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "",
+                RunOutcome.failed("Report generation failed: console unavailable"));
+        Mockito.when(executionSummaryProvider.snapshot()).thenReturn(completed, failed);
+        Mockito.doThrow(new IllegalStateException("console unavailable"))
+                .when(testReportsGenerator).printExecutionDetails(completed);
+
+        ExecutionSummary result = testCaseListener.endSession();
+
+        Assertions.assertThat(result).isSameAs(failed);
+        Mockito.verify(testReportsGenerator).writeSummary(testCaseListener.testCaseSummaryDetails, completed);
+        Mockito.verify(testReportsGenerator).writeSummary(testCaseListener.testCaseSummaryDetails, failed);
+    }
+
+    @Test
+    void shouldPreserveOriginalOutcomeWhenReportingWasNotInitialized() {
+        ExecutionSummary failed = new ExecutionSummary(
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "",
+                RunOutcome.failed("Contract cannot be read"));
+        Mockito.when(executionSummaryProvider.snapshot()).thenReturn(failed);
+        ReflectionTestUtils.setField(testCaseListener, "reportingInitialized", false);
+
+        ExecutionSummary result = testCaseListener.endSession();
+
+        Assertions.assertThat(result).isSameAs(failed);
+        Mockito.verifyNoInteractions(testReportsGenerator);
+        Mockito.verify(executionStatisticsListener, Mockito.never()).markFailed(Mockito.anyString());
     }
 
     @Test

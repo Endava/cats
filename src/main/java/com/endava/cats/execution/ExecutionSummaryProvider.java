@@ -31,9 +31,7 @@ public class ExecutionSummaryProvider {
      * @return immutable execution summary
      */
     public ExecutionSummary snapshot() {
-        boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(
-                executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
         return executionStatisticsListener.snapshot(
-                qualityGatePassed, qualityGateArguments.getQualityGateDescription());
+                qualityGateArguments::shouldFailBuild, qualityGateArguments.getQualityGateDescription());
     }
 }

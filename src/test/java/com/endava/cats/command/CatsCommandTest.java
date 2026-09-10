@@ -172,6 +172,35 @@ class CatsCommandTest {
     }
 
     @Test
+    void shouldReturnSoftwareExitCodeWhenSessionFinalizationReportsFailure() throws Exception {
+        ReportingArguments localReportingArguments = Mockito.mock(ReportingArguments.class);
+        TestCaseListener localTestCaseListener = Mockito.mock(TestCaseListener.class);
+        ExecutionStopController stopController = Mockito.mock(ExecutionStopController.class);
+        ExecutionStatisticsListener statistics = Mockito.mock(ExecutionStatisticsListener.class);
+        QualityGateArguments qualityGate = Mockito.mock(QualityGateArguments.class);
+        CatsExecutionEventPublisher eventPublisher = new CatsExecutionEventPublisher();
+        CatsExecutionLimitReachedException limitReached =
+                new CatsExecutionLimitReachedException("Execution limit reached");
+        ExecutionSummary failedSummary = executionSummary(
+                RunOutcome.failed("Report generation failed: disk full"));
+        Mockito.doThrow(limitReached).when(stopController).startSession();
+        Mockito.when(localTestCaseListener.endSession()).thenReturn(failedSummary);
+
+        try (CatsCommand command = new CatsCommand()) {
+            ReflectionTestUtils.setField(command, "reportingArguments", localReportingArguments);
+            ReflectionTestUtils.setField(command, "testCaseListener", localTestCaseListener);
+            ReflectionTestUtils.setField(command, "executionStopController", stopController);
+            ReflectionTestUtils.setField(command, "executionStatisticsListener", statistics);
+            ReflectionTestUtils.setField(command, "qualityGateArguments", qualityGate);
+            ReflectionTestUtils.setField(command, "executionEventPublisher", eventPublisher);
+
+            command.run();
+
+            Assertions.assertThat(command.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+        }
+    }
+
+    @Test
     void shouldPublishCancelledOutcomeWhenCooperativeCancellationIsRequested() throws Exception {
         ReportingArguments localReportingArguments = Mockito.mock(ReportingArguments.class);
         TestCaseListener localTestCaseListener = Mockito.mock(TestCaseListener.class);

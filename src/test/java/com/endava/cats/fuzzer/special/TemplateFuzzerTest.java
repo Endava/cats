@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.special;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -86,9 +87,10 @@ class TemplateFuzzerTest {
     }
 
     @Test
-    void shouldSkipWhenMatchArgumentsButNoMatch() {
+    void shouldSkipWhenMatchArgumentsButNoMatch() throws Exception {
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(true);
         Mockito.when(matchArguments.isMatchResponse(Mockito.any())).thenReturn(false);
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("field"))
                 .processedPayload("{\"field\":\"value\"}")
@@ -98,6 +100,33 @@ class TemplateFuzzerTest {
                 .build();
         templateFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(44)).skipTest(Mockito.any(), Mockito.eq("Skipping test as response does not match given matchers!"));
+        Mockito.verify(testCaseListener, Mockito.times(44)).addResponse(Mockito.any());
+    }
+
+    @Test
+    void shouldPropagateCancellationWithoutReportingATestError() throws Exception {
+        Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(true);
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenAnswer(_ -> {
+            Thread.currentThread().interrupt();
+            CatsExecutionCancelledException.check();
+            return CatsResponse.empty();
+        });
+        FuzzingData data = FuzzingData.builder()
+                .targetFields(Set.of("field"))
+                .processedPayload("{\"field\":\"value\"}")
+                .headers(Collections.emptySet())
+                .path("http://url")
+                .method(HttpMethod.POST)
+                .build();
+
+        try {
+            Assertions.assertThatThrownBy(() -> templateFuzzer.fuzz(data))
+                    .isInstanceOf(CatsExecutionCancelledException.class);
+            Mockito.verify(testCaseListener, Mockito.never()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
+        } finally {
+            Thread.interrupted();
+        }
     }
 
     @ParameterizedTest

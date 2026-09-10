@@ -196,9 +196,18 @@ class ExecutionStatisticsListenerTest {
     }
 
     @Test
-    void shouldTrackAndResetRunOutcomeWithoutResettingStatistics() {
+    void shouldResetAllSessionStatisticsAndRunOutcome() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseSuccess("/path");
+        listener.increaseErrors("/path");
+        listener.increaseWarns("/path");
+        listener.increaseSkippedFromReporting("/path");
+        listener.increaseSkipped();
+        listener.increaseCompletedTests();
+        listener.increaseRequestsAttempted();
+        listener.increaseAuthErrors();
+        listener.increaseIoErrors();
+        listener.recordResponseCode(200);
         listener.markFailed("Contract processing failed");
 
         Assertions.assertThat(listener.getRunOutcome())
@@ -207,7 +216,16 @@ class ExecutionStatisticsListenerTest {
         listener.startSession();
 
         Assertions.assertThat(listener.getRunOutcome()).isEqualTo(RunOutcome.completed());
-        Assertions.assertThat(listener.getSuccess()).isOne();
+        Assertions.assertThat(listener.getSuccess()).isZero();
+        Assertions.assertThat(listener.getErrors()).isZero();
+        Assertions.assertThat(listener.getWarns()).isZero();
+        Assertions.assertThat(listener.getSkippedFromReporting()).isZero();
+        Assertions.assertThat(listener.getSkipped()).isZero();
+        Assertions.assertThat(listener.getCompletedTests()).isZero();
+        Assertions.assertThat(listener.getRequestsAttempted()).isZero();
+        Assertions.assertThat(listener.getAuthErrors()).isZero();
+        Assertions.assertThat(listener.getIoErrors()).isZero();
+        Assertions.assertThat(listener.getResponseCodeDistribution()).isEmpty();
     }
 
 }
