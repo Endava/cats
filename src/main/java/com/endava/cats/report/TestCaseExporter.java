@@ -2,7 +2,6 @@ package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.context.CatsGlobalContext;
@@ -13,7 +12,6 @@ import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.ProcessingError;
-import com.endava.cats.model.RunOutcome;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
@@ -47,7 +45,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -82,50 +79,32 @@ public abstract class TestCaseExporter {
 
     final ReportingArguments reportingArguments;
     final CatsGlobalContext catsGlobalContext;
-    final QualityGateArguments qualityGateArguments;
-    final ExecutionStatisticsListener executionStatisticsListener;
     final ProcessingArguments processingArguments;
     final StopArguments stopArguments;
 
     private Path reportingPath;
     private long t0;
     private final Gson maskingSerializer;
-    private static final DecimalFormat LARGE_NUMBER_FORMAT;
-    private static final DecimalFormat SINGLE_DECIMAL_FORMAT = new DecimalFormat("#0.0");
-
     @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
 
     final String osDetails;
 
-    static {
-        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
-        symbols.setGroupingSeparator(' '); // Set space as the grouping separator
-        LARGE_NUMBER_FORMAT = new DecimalFormat("#,###", symbols);
-    }
-
-
     /**
      * Constructs a TestCaseExporter with the specified reporting arguments and global context.
      *
      * @param reportingArguments          the reporting arguments
      * @param catsGlobalContext           the global context
-     * @param qualityGateArguments        the quality gate arguments
-     * @param executionStatisticsListener the execution statistics listener
      * @param processingArguments         the processing arguments
      * @param stopArguments               the execution stop arguments
      */
     @Inject
     protected TestCaseExporter(ReportingArguments reportingArguments, CatsGlobalContext catsGlobalContext,
-                               QualityGateArguments qualityGateArguments,
-                               ExecutionStatisticsListener executionStatisticsListener,
                                ProcessingArguments processingArguments,
                                StopArguments stopArguments) {
         this.reportingArguments = reportingArguments;
         this.catsGlobalContext = catsGlobalContext;
-        this.qualityGateArguments = qualityGateArguments;
-        this.executionStatisticsListener = executionStatisticsListener;
         this.processingArguments = processingArguments;
         this.stopArguments = stopArguments;
         maskingSerializer = new GsonBuilder()
@@ -282,11 +261,11 @@ public abstract class TestCaseExporter {
      * Prints the execution details including the overall CATS execution time, the total number of requests, and statistics on passed, warnings, and errors.
      * It also provides a message with a link to the generated report if available.
      */
-    public void printExecutionDetails() {
+    public void printExecutionDetails(ExecutionSummary executionSummary) {
         String duration = Duration.ofMillis(System.currentTimeMillis() - t0).toString().toLowerCase(Locale.ROOT).substring(2);
-        long totalRequests = executionStatisticsListener.getTotalRequests();
-        long skippedFromReporting = executionStatisticsListener.getSkippedFromReporting();
-        long reportedResults = executionStatisticsListener.getAll();
+        long totalRequests = executionSummary.totalRequests();
+        long skippedFromReporting = executionSummary.skippedFromReporting();
+        long reportedResults = executionSummary.reportedResults();
 
         emptyConsoleLine();
 
@@ -302,7 +281,7 @@ public abstract class TestCaseExporter {
             String errors = AnsiUtils.boldRed("‼ errors: {}");
             String finalMessage = catsFinished + totalRequestsMsg + skippedMsg + reportedMsg + passed + warnings + errors;
             logger.complete(finalMessage, duration, totalRequests, skippedFromReporting, reportedResults,
-                    executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors());
+                    executionSummary.success(), executionSummary.warnings(), executionSummary.errors());
         } else {
             // When no skip arguments are used, show traditional format
             String catsFinished = AnsiUtils.blue("CATS finished in {}. Total requests {}. ");
@@ -310,17 +289,16 @@ public abstract class TestCaseExporter {
             String warnings = AnsiUtils.boldYellow("⚠ warnings: {}, ");
             String errors = AnsiUtils.boldRed("‼ errors: {}");
             String finalMessage = catsFinished + passed + warnings + errors;
-            logger.complete(finalMessage, duration, totalRequests, executionStatisticsListener.getSuccess(),
-                    executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors());
+            logger.complete(finalMessage, duration, totalRequests, executionSummary.success(),
+                    executionSummary.warnings(), executionSummary.errors());
         }
 
         // Print quality gate result
-        boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
-        String qualityGateStatus = qualityGatePassed
+        String qualityGateStatus = executionSummary.qualityGatePassed()
                 ? AnsiUtils.boldGreen("✔ Quality gate PASSED")
                 : AnsiUtils.boldRed("✖ Quality gate FAILED");
         String qualityGateDescription = AnsiUtils.blue(" [{}]");
-        logger.complete(qualityGateStatus + qualityGateDescription, qualityGateArguments.getQualityGateDescription());
+        logger.complete(qualityGateStatus + qualityGateDescription, executionSummary.qualityGateDescription());
 
         String check = AnsiUtils.blue(String.format("You can open the report here: %s ", reportingPath.toUri() + getSummaryReportTitle()));
         logger.complete(check);
@@ -330,84 +308,18 @@ public abstract class TestCaseExporter {
     /**
      * Writes a summary report based on the provided test case map and execution statistics.
      * It creates a CatsTestReport and extracts information such as warnings, success, errors, and total tests.
-     * The gathered information is stored in a context map.
+     * The gathered information is exposed through a typed template context.
      *
      * @param summaries                   the pre-created summary for each test case
-     * @param executionStatisticsListener the listener providing statistics on CATS execution
+     * @param executionSummary immutable statistics and outcome captured for this execution
      */
-    public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionStatisticsListener executionStatisticsListener) {
-        boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(
-                executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
-        ExecutionSummary executionSummary = executionStatisticsListener.snapshot(
-                qualityGatePassed, qualityGateArguments.getQualityGateDescription());
+    public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary) {
         CatsTestReport report = this.createTestReport(summaries, executionSummary);
         double averageResponseTime = summaries.stream().mapToDouble(CatsTestCaseSummary::getTimeToExecuteInMs).average().orElse(0);
 
-        Map<String, Object> context = new HashMap<>();
-        context.put("WARNINGS", LARGE_NUMBER_FORMAT.format(report.getWarnings()));
-        context.put("SUCCESS", LARGE_NUMBER_FORMAT.format(report.getSuccess()));
-        context.put("ERRORS", LARGE_NUMBER_FORMAT.format(report.getErrors()));
-        context.put("ERRORS_JUNIT", LARGE_NUMBER_FORMAT.format(report.getErrorsJunit()));
-        context.put("FAILURES_JUNIT", LARGE_NUMBER_FORMAT.format(report.getFailuresJunit()));
-        context.put("TOTAL", LARGE_NUMBER_FORMAT.format(report.getTotalTests()));
-        context.put("TOTAL_REQUESTS", LARGE_NUMBER_FORMAT.format(report.getTotalRequests()));
-        context.put("SKIPPED_FROM_REPORTING", LARGE_NUMBER_FORMAT.format(report.getSkippedFromReporting()));
-        context.put("SKIPPED", LARGE_NUMBER_FORMAT.format(report.getSkipped()));
-        context.put("AUTH_ERRORS", LARGE_NUMBER_FORMAT.format(report.getAuthErrors()));
-        context.put("IO_ERRORS", LARGE_NUMBER_FORMAT.format(report.getIoErrors()));
-        context.put("TIMESTAMP", report.getTimestamp());
-        context.put("TIMESTAMP_ISO", OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE_TIME));
-        context.put("TEST_CASES", report.getTestCases());
-        context.put("TEST_SUITES", report.getTestSuites());
-        context.put("EXECUTION", Duration.ofSeconds(report.getExecutionTime()).toString().toLowerCase(Locale.ROOT).substring(2));
-        context.put("TIME", report.getExecutionTime());
-        context.put("VERSION", report.getCatsVersion());
-        context.put("JS", this.isJavascript());
-        context.put("OS", this.osDetails);
-        context.put("AVERAGE_RESPONSE_TIME", SINGLE_DECIMAL_FORMAT.format(averageResponseTime));
-        context.put("RUN_STATUS", formatRunStatus(report.getRunStatus()));
-        context.put("RUN_STATUS_DETAILS", report.getRunStatusDetails());
-        context.put("RUN_STATUS_RESULT", runStatusResult(executionSummary.outcome().status()));
-        context.put("QUALITY_GATE_STATUS", report.isQualityGatePassed() ? "PASSED" : "FAILED");
-        context.put("QUALITY_GATE_RESULT", report.isQualityGatePassed() ? "success" : "error");
-        context.put("QUALITY_GATE_DESCRIPTION", report.getQualityGateDescription());
-        context.put("RANDOM_SEED", report.getRandomSeed());
-        context.put("RESOURCE_REUSE_STATUS", report.isSuccessfulResourceReuseEnabled() ? "Enabled" : "Disabled");
-        context.put("STOP_LIMITS", buildStopLimitsForTemplate(report));
-        context.put("HAS_STOP_LIMITS", hasStopLimits(report));
-        context.put("PROCESSING_ERRORS", buildProcessingErrorsForTemplate(report.getProcessingErrors()));
-        context.put("HAS_PROCESSING_ERRORS", !report.getProcessingErrors().isEmpty());
-
-        double warnPercentage = percentage(report.getWarnings(), report.getTotalTests());
-        double errorPercentage = percentage(report.getErrors(), report.getTotalTests());
-        double successPercentage = percentage(report.getSuccess(), report.getTotalTests());
-
-        context.put("WARN_PERCENTAGE", warnPercentage);
-        context.put("ERROR_PERCENTAGE", errorPercentage);
-        context.put("SUCCESS_PERCENTAGE", successPercentage);
-
         CatsConfiguration catsConfiguration = catsGlobalContext.getCatsConfiguration();
-
-        if (catsConfiguration != null) {
-            context.put("CONTRACT_NAME", catsConfiguration.contract());
-            context.put("BASE_URL", catsConfiguration.basePath());
-            context.put("HTTP_METHODS", catsConfiguration.httpMethods().stream().map(Enum::name).map(String::toLowerCase).toList());
-            context.put("FUZZERS", catsConfiguration.fuzzers());
-            context.put("TOTAL_FUZZERS", catsConfiguration.totalFuzzers());
-            context.put("PATHS", catsConfiguration.pathsToRun());
-            context.put("TOTAL_PATHS", catsConfiguration.totalPaths());
-        }
-
-        var groupedTestCases = ClusterCompute.createClusters(summaries);
-        context.put("GROUPED_TEST_CASES", groupedTestCases);
-
-        Map<Integer, Integer> responseCodeDistribution = executionSummary.responseCodeDistribution();
-        context.put("RESPONSE_CODE_DISTRIBUTION", buildResponseCodeDistributionForTemplate(responseCodeDistribution));
-        context.put("HAS_RESPONSE_CODES", !responseCodeDistribution.isEmpty());
-
-        Map<String, Long> topFailingPaths = executionSummary.topFailingPaths();
-        context.put("TOP_FAILING_PATHS", buildTopFailingPathsForTemplate(topFailingPaths));
-        context.put("HAS_FAILING_PATHS", !topFailingPaths.isEmpty());
+        SummaryReportContext context = SummaryReportContext.create(report, executionSummary, catsConfiguration,
+                this.isJavascript(), osDetails, averageResponseTime);
         Writer writer = this.getSummaryTemplate().execute(new StringWriter(), context);
 
         try {
@@ -449,53 +361,6 @@ public abstract class TestCaseExporter {
                 .stopAfterTimeInSec(stopArguments.getStopAfterTimeInSec())
                 .processingErrors(processingErrors)
                 .build();
-    }
-
-    private static double percentage(long count, long total) {
-        return total == 0 ? 0 : (double) count / total * 100;
-    }
-
-    private static String runStatusResult(RunOutcome.Status runStatus) {
-        return switch (runStatus) {
-            case COMPLETED -> "success";
-            case LIMIT_REACHED -> "info";
-            case CANCELLED -> "warn";
-            case FAILED -> "error";
-        };
-    }
-
-    private static String formatRunStatus(String runStatus) {
-        String normalized = runStatus.replace('_', ' ').toLowerCase(Locale.ROOT);
-        return Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
-    }
-
-    private static List<Map<String, Object>> buildStopLimitsForTemplate(CatsTestReport report) {
-        return List.of(
-                        Map.<String, Object>of("name", "Tests", "value", report.getStopAfterTests()),
-                        Map.<String, Object>of("name", "Errors", "value", report.getStopAfterErrors()),
-                        Map.<String, Object>of("name", "Time", "value", report.getStopAfterTimeInSec(), "suffix", " seconds"))
-                .stream()
-                .filter(limit -> ((Long) limit.get("value")) > 0)
-                .toList();
-    }
-
-    private static boolean hasStopLimits(CatsTestReport report) {
-        return report.getStopAfterTests() > 0 || report.getStopAfterErrors() > 0 || report.getStopAfterTimeInSec() > 0;
-    }
-
-    private static List<Map<String, String>> buildProcessingErrorsForTemplate(List<ProcessingError> processingErrors) {
-        return processingErrors.stream()
-                .map(error -> Map.of(
-                        "operation", processingErrorOperation(error),
-                        "message", error.message()))
-                .toList();
-    }
-
-    private static String processingErrorOperation(ProcessingError error) {
-        if (StringUtils.isBlank(error.httpMethod())) {
-            return StringUtils.defaultIfBlank(error.path(), "Global");
-        }
-        return error.httpMethod() + (StringUtils.isBlank(error.path()) ? "" : " " + error.path());
     }
 
     /**
@@ -606,38 +471,6 @@ public abstract class TestCaseExporter {
         }
     }
 
-
-    private List<Map<String, Object>> buildResponseCodeDistributionForTemplate(Map<Integer, Integer> distribution) {
-        return distribution.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("code", entry.getKey());
-                    item.put("count", entry.getValue());
-                    item.put("family", getResponseCodeFamily(entry.getKey()));
-                    return item;
-                })
-                .toList();
-    }
-
-    private String getResponseCodeFamily(int code) {
-        if (code >= 200 && code < 300) return "2xx";
-        if (code >= 300 && code < 400) return "3xx";
-        if (code >= 400 && code < 500) return "4xx";
-        if (code >= 500 && code < 600) return "5xx";
-        return "other";
-    }
-
-    private List<Map<String, Object>> buildTopFailingPathsForTemplate(Map<String, Long> topFailingPaths) {
-        return topFailingPaths.entrySet().stream()
-                .map(entry -> {
-                    Map<String, Object> item = new HashMap<>();
-                    item.put("path", entry.getKey());
-                    item.put("count", entry.getValue());
-                    return item;
-                })
-                .toList();
-    }
 
     /**
      * Indicates whether the report format involves JavaScript functionality.

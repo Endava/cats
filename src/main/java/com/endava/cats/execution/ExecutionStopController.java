@@ -79,15 +79,6 @@ public class ExecutionStopController {
 
     private void stopExecution(StopArguments.StopCondition condition) {
         active = false;
-        throw new CatsExecutionLimitReachedException(switch (condition) {
-            case ERRORS -> limitMessage("--stopAfterErrors", stopArguments.getStopAfterErrors(), "error");
-            case TESTS -> limitMessage("--stopAfterTests", stopArguments.getStopAfterMutations(), "test");
-            case TIME -> limitMessage("--stopAfterTimeInSec", stopArguments.getStopAfterTimeInSec(), "second");
-        });
-    }
-
-    private static String limitMessage(String option, long limit, String unit) {
-        return "Execution stopped after reaching " + option + " (" + limit + " " + unit +
-                (limit == 1 ? "" : "s") + ")";
+        throw new CatsExecutionLimitReachedException(stopArguments.describe(condition));
     }
 }

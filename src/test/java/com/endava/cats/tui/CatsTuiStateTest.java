@@ -41,7 +41,7 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.success()).isEqualTo(1);
         Assertions.assertThat(state.warnings()).isEqualTo(1);
 
-        state.accept(new CatsExecutionEvent.SessionCompleted(NOW.plusSeconds(5),
+        state.accept(new CatsExecutionEvent.SessionEnded(NOW.plusSeconds(5),
                 new ExecutionSummary(20, 18, 10, 3, 5, 2, 2, 0, 0, Map.of(200, 10),
                         Map.of("/pets", 5L), false, "Default: fail on any error", RunOutcome.completed())));
 
@@ -66,21 +66,51 @@ class CatsTuiStateTest {
     @Test
     void shouldExposeSessionFailure() {
         CatsTuiState state = new CatsTuiState();
-        state.accept(new CatsExecutionEvent.SessionFailed(NOW, "Contract cannot be read"));
+        state.accept(new CatsExecutionEvent.SessionEnded(NOW,
+                new ExecutionSummary(7, 6, 4, 1, 1, 0, 1, 0, 0, Map.of(), Map.of(),
+                        false, "failed", RunOutcome.failed("Contract cannot be read"))));
 
         Assertions.assertThat(state.running()).isFalse();
         Assertions.assertThat(state.status()).isEqualTo("Failed");
         Assertions.assertThat(state.failureMessage()).isEqualTo("Contract cannot be read");
+        Assertions.assertThat(state.totalRequests()).isEqualTo(7);
+    }
+
+    @Test
+    void shouldExposeTerminalFailureWithoutASessionSummary() {
+        CatsTuiState state = new CatsTuiState();
+        state.accept(new CatsExecutionEvent.TerminalFailed(NOW, "Worker failed before session completion"));
+
+        Assertions.assertThat(state.running()).isFalse();
+        Assertions.assertThat(state.status()).isEqualTo("Failed");
+        Assertions.assertThat(state.failureMessage()).isEqualTo("Worker failed before session completion");
+        Assertions.assertThat(state.summary()).isNull();
     }
 
     @Test
     void shouldExposeSessionCancellation() {
         CatsTuiState state = new CatsTuiState();
-        state.accept(new CatsExecutionEvent.SessionCancelled(NOW, "Execution cancelled by user"));
+        state.accept(new CatsExecutionEvent.SessionEnded(NOW,
+                new ExecutionSummary(5, 4, 3, 1, 0, 0, 1, 0, 0, Map.of(), Map.of(),
+                        true, "cancelled", RunOutcome.cancelled("Execution cancelled by user"))));
 
         Assertions.assertThat(state.running()).isFalse();
         Assertions.assertThat(state.status()).isEqualTo("Cancelled");
         Assertions.assertThat(state.failureMessage()).isEqualTo("Execution cancelled by user");
+        Assertions.assertThat(state.totalRequests()).isEqualTo(5);
+    }
+
+    @Test
+    void shouldExposeLimitReachedAsANormalCompletion() {
+        CatsTuiState state = new CatsTuiState();
+        state.accept(new CatsExecutionEvent.SessionEnded(NOW,
+                new ExecutionSummary(10, 10, 8, 1, 1, 0, 0, 0, 0, Map.of(), Map.of(),
+                        true, "done", RunOutcome.limitReached("Maximum tests reached"))));
+
+        Assertions.assertThat(state.running()).isFalse();
+        Assertions.assertThat(state.status()).isEqualTo("Limit reached");
+        Assertions.assertThat(state.failureMessage()).isNull();
+        Assertions.assertThat(state.summary().outcome().details()).isEqualTo("Maximum tests reached");
     }
 
     @Test
@@ -490,7 +520,7 @@ class CatsTuiStateTest {
         CatsTuiState running = new CatsTuiState();
         running.handleKey(KeyEvent.ofChar('Q'));
         Assertions.assertThat(running.status()).isEqualTo("Cancellation requested");
-        running.accept(new CatsExecutionEvent.SessionCompleted(NOW, new ExecutionSummary(0, 0, 0, 0, 0,
+        running.accept(new CatsExecutionEvent.SessionEnded(NOW, new ExecutionSummary(0, 0, 0, 0, 0,
                 0, 0, 0, 0, Map.of(), Map.of(), true, "done", RunOutcome.completed())));
         running.handleKey(KeyEvent.ofChar('q'));
         Assertions.assertThat(running.status()).isEqualTo("Finished");

@@ -1,7 +1,6 @@
 package com.endava.cats.report;
 
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.context.CatsGlobalContext;
@@ -24,19 +23,14 @@ public class TestCaseExporterHtmlJsCluster extends TestCaseExporter {
      *
      * @param reportingArguments          the reporting arguments
      * @param catsGlobalContext           the global context
-     * @param qualityGateArguments        the quality gate arguments
-     * @param executionStatisticsListener the execution statistics listener
      * @param processingArguments         the processing arguments
      * @param stopArguments               the execution stop arguments
      */
     @Inject
     public TestCaseExporterHtmlJsCluster(ReportingArguments reportingArguments, CatsGlobalContext catsGlobalContext,
-                                         QualityGateArguments qualityGateArguments,
-                                         ExecutionStatisticsListener executionStatisticsListener,
                                          ProcessingArguments processingArguments,
                                          StopArguments stopArguments) {
-        super(reportingArguments, catsGlobalContext, qualityGateArguments, executionStatisticsListener,
-                processingArguments, stopArguments);
+        super(reportingArguments, catsGlobalContext, processingArguments, stopArguments);
     }
 
     @Override

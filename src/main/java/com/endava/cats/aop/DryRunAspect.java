@@ -3,7 +3,9 @@ package com.endava.cats.aop;
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.execution.ExecutionSummaryProvider;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsUtil;
@@ -42,6 +44,9 @@ public class DryRunAspect {
     @Inject
     ReportingArguments reportingArguments;
 
+    @Inject
+    ExecutionSummaryProvider executionSummaryProvider;
+
     /**
      * Intercepts the startSession from the TestCaseListener.
      *
@@ -79,9 +84,9 @@ public class DryRunAspect {
     /**
      * Logic to be executed instead of TestCaseListener.endSession()
      *
-     * @return nothing
+     * @return the final execution summary, without writing report files
      */
-    public Object endSession() {
+    public ExecutionSummary endSession() {
         if (reportingArguments.isJsonOutput()) {
             List<DryRunEntry> pathTests = paths.entrySet().stream()
                     .map(entry -> {
@@ -99,7 +104,7 @@ public class DryRunAspect {
             logger.noFormat("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
             paths.forEach((s, integer) -> logger.noFormat(AnsiUtils.boldYellow(" -> path {}: {} tests"), s, integer));
         }
-        return null;
+        return executionSummaryProvider.snapshot();
     }
 
     /**

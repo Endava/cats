@@ -109,22 +109,39 @@ class CatsTuiLauncherTest {
     void shouldCaptureWorkerFailuresAsEvents() {
         ConcurrentLinkedQueue<CatsExecutionEvent> events = new ConcurrentLinkedQueue<>();
         AtomicReference<RuntimeException> failure = new AtomicReference<>();
+        AtomicBoolean sessionEnded = new AtomicBoolean();
         IllegalArgumentException cause = new IllegalArgumentException("broken execution");
 
         ReflectionTestUtils.invokeMethod(CatsTuiLauncher.class, "runExecution",
                 (Runnable) () -> {
                     throw cause;
-                }, events, failure);
+                }, events, failure, sessionEnded);
 
         Assertions.assertThat(failure.get()).isSameAs(cause);
-        Assertions.assertThat(events).singleElement().isInstanceOfSatisfying(CatsExecutionEvent.SessionFailed.class,
+        Assertions.assertThat(events).singleElement().isInstanceOfSatisfying(CatsExecutionEvent.TerminalFailed.class,
                 event -> Assertions.assertThat(event.message()).contains("broken execution"));
 
         failure.set(null);
         events.clear();
         ReflectionTestUtils.invokeMethod(CatsTuiLauncher.class, "runExecution", (Runnable) () -> {
-        }, events, failure);
+        }, events, failure, sessionEnded);
         Assertions.assertThat(failure.get()).isNull();
+        Assertions.assertThat(events).isEmpty();
+    }
+
+    @Test
+    void shouldNotAddTerminalFailureAfterTheSessionEnded() {
+        ConcurrentLinkedQueue<CatsExecutionEvent> events = new ConcurrentLinkedQueue<>();
+        AtomicReference<RuntimeException> failure = new AtomicReference<>();
+        AtomicBoolean sessionEnded = new AtomicBoolean(true);
+        IllegalArgumentException cause = new IllegalArgumentException("broken execution");
+
+        ReflectionTestUtils.invokeMethod(CatsTuiLauncher.class, "runExecution",
+                (Runnable) () -> {
+                    throw cause;
+                }, events, failure, sessionEnded);
+
+        Assertions.assertThat(failure.get()).isSameAs(cause);
         Assertions.assertThat(events).isEmpty();
     }
 

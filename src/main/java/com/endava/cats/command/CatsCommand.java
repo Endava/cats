@@ -28,6 +28,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.RuntimeResourcePool;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsConfiguration;
+import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.handler.api.SchemaWalker;
 import com.endava.cats.openapi.handler.index.SpecPositionIndex;
@@ -37,7 +38,6 @@ import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.tui.CatsTuiLauncher;
 import com.endava.cats.tui.model.RunConfigurationSnapshot;
-import com.endava.cats.model.RunOutcome;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
@@ -344,26 +344,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             throw e;
         } finally {
             executionStopController.finishSession();
-            testCaseListener.endSession();
+            ExecutionSummary executionSummary = testCaseListener.endSession();
             if (executionEventPublisher.hasSubscribers()) {
-                this.publishSessionOutcome();
-            }
-        }
-    }
-
-    private void publishSessionOutcome() {
-        RunOutcome outcome = executionStatisticsListener.getRunOutcome();
-        switch (outcome.status()) {
-            case CANCELLED -> executionEventPublisher.publish(
-                    new CatsExecutionEvent.SessionCancelled(Instant.now(), outcome.details()));
-            case FAILED -> executionEventPublisher.publish(
-                    new CatsExecutionEvent.SessionFailed(Instant.now(), outcome.details()));
-            case COMPLETED, LIMIT_REACHED -> {
-                boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(
-                        executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
-                executionEventPublisher.publish(new CatsExecutionEvent.SessionCompleted(Instant.now(),
-                        executionStatisticsListener.snapshot(qualityGatePassed,
-                                qualityGateArguments.getQualityGateDescription())));
+                executionEventPublisher.publish(new CatsExecutionEvent.SessionEnded(Instant.now(), executionSummary));
             }
         }
     }

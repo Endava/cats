@@ -142,8 +142,15 @@ public class TemplateFuzzer implements Fuzzer {
             createRequestAndExecuteTest(data, targetField, String.valueOf(mutatedValue), mutatedPayload, selectedRandomMutator.description());
 
             userArguments.setNameReplace(oldNameReplace);
-            shouldStop = stopArguments.shouldStop(executionStatisticsListener.getErrors(), testCaseListener.getCurrentTestCaseNumber(), startTime);
+            shouldStop = markLimitReachedIfTriggered(startTime);
         }
+    }
+
+    private boolean markLimitReachedIfTriggered(long startTime) {
+        Optional<StopArguments.StopCondition> condition = stopArguments.triggeredCondition(
+                executionStatisticsListener.getErrors(), testCaseListener.getCurrentTestCaseNumber(), startTime);
+        condition.ifPresent(reached -> executionStatisticsListener.markLimitReached(stopArguments.describe(reached)));
+        return condition.isPresent();
     }
 
     private void runNormalFuzzing(FuzzingData data) {

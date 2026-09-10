@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @QuarkusTest
@@ -301,7 +302,11 @@ class TemplateFuzzerTest {
         Mockito.when(userArguments.isNameReplace()).thenReturn(nameReplace);
         Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
         templateFuzzer.setRandom(true);
-        Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
+        Mockito.when(stopArguments.triggeredCondition(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong()))
+                .thenReturn(Optional.of(StopArguments.StopCondition.TESTS));
+        Mockito.when(stopArguments.describe(StopArguments.StopCondition.TESTS))
+                .thenReturn("Execution stopped after reaching --stopAfterTests (1 test)");
+        executionStatisticsListener.startSession();
         templateFuzzer.fuzz(FuzzingData.builder()
                 .path("/test")
                 .processedPayload("""
@@ -315,5 +320,7 @@ class TemplateFuzzerTest {
                 .method(HttpMethod.POST)
                 .build());
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.any(), Mockito.any());
+        Assertions.assertThat(executionStatisticsListener.getRunOutcome().details())
+                .isEqualTo("Execution stopped after reaching --stopAfterTests (1 test)");
     }
 }

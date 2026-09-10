@@ -5,6 +5,7 @@ import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsResponse;
@@ -27,6 +28,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
 import java.util.Set;
+import java.util.stream.Stream;
 
 @QuarkusTest
 class RandomFuzzerTest {
@@ -65,7 +67,22 @@ class RandomFuzzerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void shouldRunWhenPayloadNotEmpty() {
+        Instance<Mutator> bodyMutators = Mockito.mock(Instance.class);
+        Mockito.when(bodyMutators.stream()).thenReturn(Stream.of(new BodyMutator() {
+            @Override
+            public String mutate(String inputJson, String selectedField) {
+                return inputJson.replace("value", "mutated");
+            }
+
+            @Override
+            public String description() {
+                return "test body mutation";
+            }
+        }));
+        randomFuzzer = new RandomFuzzer(simpleExecutor, testCaseListener, executionStatisticsListener,
+                matchArguments, bodyMutators, stopArguments, filesArguments);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getPayload()).thenReturn("{\"id\":\"value\"}");
         Mockito.when(data.getMethod()).thenReturn(HttpMethod.GET);

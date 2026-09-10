@@ -1,9 +1,9 @@
 <?xml version="1.0" ?>
-<testsuites skipped="{{WARNINGS}}" errors="{{ERRORS_JUNIT}}" failures="{{FAILURES_JUNIT}}" tests="{{TOTAL}}" time="{{TIME}}"
-            name="CATS {{VERSION}}">
-    {{#TEST_SUITES}}
+<testsuites skipped="{{warnings}}" errors="{{errorsJunit}}" failures="{{failuresJunit}}" tests="{{total}}" time="{{time}}"
+            name="CATS {{version}}">
+    {{#testSuites}}
     <testsuite name="{{fuzzer}}" skipped="{{warnings}}" errors="{{errors}}" failures="{{failures}}"
-               tests="{{totalTests}}" time="{{time}}" timestamp="{{TIMESTAMP_ISO}}">
+               tests="{{totalTests}}" time="{{time}}" timestamp="{{timestampIso}}">
         {{#testCases}}
         <testcase name="{{key}} - {{path}}" classname="{{fuzzer}}" time="{{timeToExecuteInSec}}">
             {{#warning}}
@@ -15,5 +15,5 @@
         </testcase>
         {{/testCases}}
     </testsuite>
-    {{/TEST_SUITES}}
+    {{/testSuites}}
 </testsuites>

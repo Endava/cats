@@ -34,11 +34,13 @@ class CatsTuiViewTest {
         assertRenders(state);
 
         CatsTuiState failed = new CatsTuiState();
-        failed.accept(new CatsExecutionEvent.SessionFailed(NOW, "first line\nsecond line"));
+        failed.accept(new CatsExecutionEvent.SessionEnded(NOW,
+                summary(true, null, RunOutcome.failed("first line\nsecond line"))));
         assertRenders(failed);
 
         CatsTuiState cancelled = new CatsTuiState();
-        cancelled.accept(new CatsExecutionEvent.SessionCancelled(NOW, null));
+        cancelled.accept(new CatsExecutionEvent.SessionEnded(NOW,
+                summary(true, null, RunOutcome.cancelled(null))));
         assertRenders(cancelled);
     }
 
@@ -80,13 +82,13 @@ class CatsTuiViewTest {
     @Test
     void shouldRenderCompletedSummariesForBothQualityGateOutcomes() {
         CatsTuiState failedGate = populatedState();
-        failedGate.accept(new CatsExecutionEvent.SessionCompleted(NOW.plusSeconds(65),
+        failedGate.accept(new CatsExecutionEvent.SessionEnded(NOW.plusSeconds(65),
                 summary(false, "Errors are not allowed")));
         failedGate.handleKey(KeyEvent.ofChar('3'));
         assertRenders(failedGate);
 
         CatsTuiState passedGate = new CatsTuiState();
-        passedGate.accept(new CatsExecutionEvent.SessionCompleted(NOW, summary(true, null)));
+        passedGate.accept(new CatsExecutionEvent.SessionEnded(NOW, summary(true, null)));
         passedGate.handleKey(KeyEvent.ofChar('3'));
         assertRenders(passedGate);
     }
@@ -122,9 +124,13 @@ class CatsTuiViewTest {
     }
 
     private static ExecutionSummary summary(boolean qualityGatePassed, String description) {
+        return summary(qualityGatePassed, description, RunOutcome.completed());
+    }
+
+    private static ExecutionSummary summary(boolean qualityGatePassed, String description, RunOutcome outcome) {
         return new ExecutionSummary(8, 5, 1, 1, 1, 1, 3, 1, 2,
                 Map.of(200, 1, 422, 1, 500, 1), Map.of("/orders", 2L),
-                qualityGatePassed, description, RunOutcome.completed());
+                qualityGatePassed, description, outcome);
     }
 
     private static void assertRenders(CatsTuiState state) {

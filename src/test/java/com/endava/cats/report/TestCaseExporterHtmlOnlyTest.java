@@ -1,7 +1,6 @@
 package com.endava.cats.report;
 
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.context.CatsGlobalContext;
@@ -9,6 +8,7 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -31,7 +31,6 @@ class TestCaseExporterHtmlOnlyTest {
     @Test
     void shouldIncludeRunDetailsAndExecutionDiagnosticsInHtmlAndJsonReports() throws Exception {
         ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
-        QualityGateArguments qualityGateArguments = Mockito.mock(QualityGateArguments.class);
         ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);
         StopArguments stopArguments = Mockito.mock(StopArguments.class);
         CatsGlobalContext globalContext = new CatsGlobalContext();
@@ -39,7 +38,6 @@ class TestCaseExporterHtmlOnlyTest {
 
         Mockito.when(reportingArguments.getOutputReportFolder()).thenReturn(reportDirectory.toString());
         Mockito.when(reportingArguments.getMaskedHeaders()).thenReturn(Set.of());
-        Mockito.when(qualityGateArguments.getQualityGateDescription()).thenReturn("Default: fail on any error");
         Mockito.when(processingArguments.isReuseSuccessfulResources()).thenReturn(true);
         Mockito.when(stopArguments.isAnyStopConditionProvided()).thenReturn(true);
         Mockito.when(stopArguments.getStopAfterMutations()).thenReturn(25L);
@@ -56,11 +54,12 @@ class TestCaseExporterHtmlOnlyTest {
         globalContext.recordError("Could not resolve a request schema reference");
         MDC.clear();
 
+        ExecutionSummary executionSummary = statistics.snapshot(true, "Default: fail on any error");
         TestCaseExporterHtmlOnly exporter = new TestCaseExporterHtmlOnly(reportingArguments, globalContext,
-                qualityGateArguments, statistics, processingArguments, stopArguments);
+                processingArguments, stopArguments);
         exporter.appVersion = "test-version";
         exporter.initPath(reportDirectory.toString());
-        exporter.writeSummary(List.of(summary()), statistics);
+        exporter.writeSummary(List.of(summary()), executionSummary);
 
         String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
         String json = Files.readString(reportDirectory.resolve("cats-summary-report.json"));

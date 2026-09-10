@@ -64,20 +64,15 @@ public sealed interface CatsExecutionEvent {
     }
 
     /**
-     * Signals that the complete execution and report generation lifecycle has finished.
+     * Signals that the complete execution and report generation lifecycle has ended.
+     * The summary outcome distinguishes normal completion, limits, cancellation, and failure.
      */
-    record SessionCompleted(Instant occurredAt, ExecutionSummary summary) implements CatsExecutionEvent {
+    record SessionEnded(Instant occurredAt, ExecutionSummary summary) implements CatsExecutionEvent {
     }
 
     /**
-     * Signals that the user cancelled execution before it completed.
+     * Signals that the terminal worker failed before CATS could produce a final execution summary.
      */
-    record SessionCancelled(Instant occurredAt, String message) implements CatsExecutionEvent {
-    }
-
-    /**
-     * Signals that execution could not complete normally.
-     */
-    record SessionFailed(Instant occurredAt, String message) implements CatsExecutionEvent {
+    record TerminalFailed(Instant occurredAt, String message) implements CatsExecutionEvent {
     }
 }

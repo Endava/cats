@@ -76,6 +76,20 @@ public class StopArguments {
         return Optional.empty();
     }
 
+    /**
+     * Describes a reached stop condition consistently across execution modes.
+     *
+     * @param condition the condition that stopped execution
+     * @return human-readable completion details
+     */
+    public String describe(StopCondition condition) {
+        return switch (condition) {
+            case ERRORS -> limitMessage("--stopAfterErrors", stopAfterErrors, "error");
+            case TESTS -> limitMessage("--stopAfterTests", stopAfterMutations, "test");
+            case TIME -> limitMessage("--stopAfterTimeInSec", stopAfterTimeInSec, "second");
+        };
+    }
+
     private boolean isTimeThresholdTriggered(long startTimeInMs) {
         if (stopAfterTimeInSec <= 0) {
             return false;
@@ -97,5 +111,10 @@ public class StopArguments {
             return false;
         }
         return errors >= stopAfterErrors;
+    }
+
+    private static String limitMessage(String option, long limit, String unit) {
+        return "Execution stopped after reaching " + option + " (" + limit + " " + unit +
+                (limit == 1 ? "" : "s") + ")";
     }
 }

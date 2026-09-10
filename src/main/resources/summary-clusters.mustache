@@ -10,9 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap" rel="stylesheet">
     <script src="chart.js"></script>
     <script>
-        const totalErr = parseInt('{{ERRORS}}'.replace(/ /g, ''));
-        const totalWrn = parseInt('{{WARNINGS}}'.replace(/ /g, ''));
-        const totalScs = parseInt('{{SUCCESS}}'.replace(/ /g, ''));
+        const totalErr = parseInt('{{errors}}'.replace(/ /g, ''));
+        const totalWrn = parseInt('{{warnings}}'.replace(/ /g, ''));
+        const totalScs = parseInt('{{success}}'.replace(/ /g, ''));
     </script>
     <title>Cats</title>
 </head>
@@ -21,22 +21,22 @@
     <div class="flex-items-center">
         <img src="./assets/clock-wise.svg" alt="version">
         <span class="left">
-				Generated with CATS {{VERSION}} on {{OS}}
+				Generated with CATS {{version}} on {{os}}
 			</span>
     </div>
     <div class="flex-items-center">
         <img src="./assets/clock.svg" alt="timestamp">
         <span>
-				{{TIMESTAMP}}
+				{{timestamp}}
 			</span>
     </div>
 </div>
 <header>
     <div class="logo">
         <img class="logo-white" src="./assets/cats-logo-dark.svg" alt="White Logo">
-        {{#JS}}
+        {{#javascript}}
         <img class="logo-dark" src="./assets/cats-logo-white.svg" alt="Dark Logo">
-        {{/JS}}
+        {{/javascript}}
     </div>
     <div class="theme-toggle">
         <button id="theme-toggle" style="display: none;">
@@ -52,34 +52,34 @@
             <div class="card-header">
                 <div>
                     <h2 class="action-tag">Total Tests Run</h2>
-                    <p class="big-number">{{TOTAL}} tests</p>
+                    <p class="big-number">{{total}} tests</p>
                 </div>
             </div>
-            {{#JS}}
+            {{#javascript}}
             <div class="chart-container">
                 <canvas id="myChart"></canvas>
                 <div id="legend-container"></div>
             </div>
             <script src="draw_chart.js"></script>
-            {{/JS}}
-            {{^JS}}
+            {{/javascript}}
+            {{^javascript}}
             <div>
                 <div class="chart-container">
                     <div class="chart">
                         <div class="chart-inner">
-                            <div class="chart-bar" style="width: {{ERROR_PERCENTAGE}}%"></div>
-                            <div class="chart-bar" style="width: {{WARN_PERCENTAGE}}%"></div>
-                            <div class="chart-bar" style="width: {{SUCCESS_PERCENTAGE}}%"></div>
+                            <div class="chart-bar" style="width: {{errorPercentage}}%"></div>
+                            <div class="chart-bar" style="width: {{warnPercentage}}%"></div>
+                            <div class="chart-bar" style="width: {{successPercentage}}%"></div>
                         </div>
                     </div>
                     <div class="chart-labels">
-                        <div class="chart-label">Errors {{ERRORS}}</div>
-                        <div class="chart-label">Warnings {{WARNINGS}}</div>
-                        <div class="chart-label">Success {{SUCCESS}}</div>
+                        <div class="chart-label">Errors {{errors}}</div>
+                        <div class="chart-label">Warnings {{warnings}}</div>
+                        <div class="chart-label">Success {{success}}</div>
                     </div>
                 </div>
             </div>
-            {{/JS}}
+            {{/javascript}}
         </div>
         <div class="grid">
             <div class="card-wrapper icon-card">
@@ -89,10 +89,10 @@
                 </div>
                 <div>
                     <h2 class="action-tag no-top">Execution Time</h2>
-                    <p class="big-number">{{EXECUTION}}</p>
+                    <p class="big-number">{{execution}}</p>
                     <div style="margin: 5px;"></div>
                     <h2 class="action-tag">Average Response Time</h2>
-                    <p class="big-number">{{AVERAGE_RESPONSE_TIME}}ms</p>
+                    <p class="big-number">{{averageResponseTime}}ms</p>
                 </div>
             </div>
             <div class="card-wrapper icon-card">
@@ -103,9 +103,9 @@
                 </div>
                 <div>
                     <h2 class="action-tag no-top">Http Methods in scope</h2>
-                    {{#HTTP_METHODS}}
+                    {{#httpMethods}}
                     <span class="active rounded rounded-{{.}} small-margin">{{.}}</span>
-                    {{/HTTP_METHODS}}
+                    {{/httpMethods}}
                 </div>
             </div>
             <div class="card-wrapper icon-card">
@@ -116,12 +116,12 @@
                 </div>
                 <div>
                     <h2 class="action-tag no-top">Fuzzers run</h2>
-                    <p class="big-number"><span class="orange_text">{{FUZZERS}}</span> <span
-                            style="color: #9ca3af; font-size: 18px;">out of</span> {{TOTAL_FUZZERS}}</p>
+                    <p class="big-number"><span class="orange_text">{{fuzzers}}</span> <span
+                            style="color: #9ca3af; font-size: 18px;">out of</span> {{totalFuzzers}}</p>
                     <div style="margin: 5px;"></div>
                     <h2 class="action-tag">Paths included</h2>
-                    <p class="big-number"><span class="orange_text">{{PATHS}}</span> <span
-                            style="color: #9ca3af; font-size: 18px;">out of</span> {{TOTAL_PATHS}}</p>
+                    <p class="big-number"><span class="orange_text">{{paths}}</span> <span
+                            style="color: #9ca3af; font-size: 18px;">out of</span> {{totalPaths}}</p>
                 </div>
             </div>
             <div class="card-wrapper icon-card">
@@ -131,16 +131,16 @@
                 </div>
                 <div>
                     <h2 class="action-tag no-top">Base path</h2>
-                    <p class="small-margin link_text">{{BASE_URL}}</p>
+                    <p class="small-margin link_text">{{baseUrl}}</p>
                     <div style="margin: 5px;"></div>
                     <h2 class="action-tag">Spec file name</h2>
-                    <p class="small-margin link_text">{{CONTRACT_NAME}}</p>
+                    <p class="small-margin link_text">{{contractName}}</p>
                 </div>
             </div>
         </div>
     </div>
     {{>summary-run-details}}
-    {{#HAS_RESPONSE_CODES}}
+    {{#hasResponseCodes}}
     <h2 class="title-section">Statistics</h2>
     <div class="stats-grid">
         <div class="card-wrapper">
@@ -150,32 +150,32 @@
                     <p class="big-number">Distribution across all tests</p>
                 </div>
             </div>
-            {{#JS}}
+            {{#javascript}}
             <div class="stats-chart-container">
                 <canvas id="responseCodeChart"></canvas>
                 <div id="response-code-legend-container" class="stats-legend-container"></div>
             </div>
             <script>
                 const responseCodeData = [
-                    {{#RESPONSE_CODE_DISTRIBUTION}}
+                    {{#responseCodeDistribution}}
                     {code: {{code}}, count: {{count}}, family: '{{family}}'},
-                    {{/RESPONSE_CODE_DISTRIBUTION}}
+                    {{/responseCodeDistribution}}
                 ];
             </script>
             <script src="draw_response_codes_chart.js"></script>
-            {{/JS}}
-            {{^JS}}
+            {{/javascript}}
+            {{^javascript}}
             <div class="response-code-list">
-                {{#RESPONSE_CODE_DISTRIBUTION}}
+                {{#responseCodeDistribution}}
                 <div class="response-code-item response-code-{{family}}">
                     <span class="response-code">{{code}}</span>
                     <span class="response-count">{{count}}</span>
                 </div>
-                {{/RESPONSE_CODE_DISTRIBUTION}}
+                {{/responseCodeDistribution}}
             </div>
-            {{/JS}}
+            {{/javascript}}
         </div>
-        {{#HAS_FAILING_PATHS}}
+        {{#hasFailingPaths}}
         <div class="card-wrapper">
             <div class="card-header">
                 <div>
@@ -183,37 +183,37 @@
                     <p class="big-number">Paths with most errors</p>
                 </div>
             </div>
-            {{#JS}}
+            {{#javascript}}
             <div class="stats-chart-container">
                 <canvas id="topFailingPathsChart"></canvas>
                 <div id="top-failing-paths-legend-container" class="stats-legend-container"></div>
             </div>
             <script>
                 const topFailingPathsData = [
-                    {{#TOP_FAILING_PATHS}}
+                    {{#topFailingPaths}}
                     {path: '{{path}}', count: {{count}}},
-                    {{/TOP_FAILING_PATHS}}
+                    {{/topFailingPaths}}
                 ];
             </script>
             <script src="draw_top_failing_paths_chart.js"></script>
-            {{/JS}}
-            {{^JS}}
+            {{/javascript}}
+            {{^javascript}}
             <div class="response-code-list">
-                {{#TOP_FAILING_PATHS}}
+                {{#topFailingPaths}}
                 <div class="response-code-item response-code-5xx">
                     <span class="response-code">{{path}}</span>
                     <span class="response-count">{{count}}</span>
                 </div>
-                {{/TOP_FAILING_PATHS}}
+                {{/topFailingPaths}}
             </div>
-            {{/JS}}
+            {{/javascript}}
         </div>
-        {{/HAS_FAILING_PATHS}}
+        {{/hasFailingPaths}}
     </div>
-    {{/HAS_RESPONSE_CODES}}
+    {{/hasResponseCodes}}
     <h2 class="title-section">Execution Details</h2>
 
-    {{#GROUPED_TEST_CASES}}
+    {{#groupedTestCases}}
     <div class="card-wrapper some-margin">
         <div class="error-cluster-header" onclick="toggleErrorCluster(this)">
             <h3 class="error-title">{{resultReason}}</h3>
@@ -237,11 +237,11 @@
             </div>
         </div>
     </div>
-    {{/GROUPED_TEST_CASES}}
+    {{/groupedTestCases}}
 
 </main>
-{{#JS}}
+{{#javascript}}
 <script src="script.js"></script>
-{{/JS}}
+{{/javascript}}
 </body>
 </html>

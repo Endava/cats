@@ -22,6 +22,15 @@ import java.util.Set;
 @Builder
 @Getter
 public class ServiceData {
+    /**
+     * Explicit builder type kept visible to Javadoc and other source-level API tools.
+     * Lombok augments this class with the generated builder fields and methods.
+     */
+    public static class ServiceDataBuilder {
+        private ServiceDataBuilder() {
+        }
+    }
+
     private final String contractPath;
     private final String relativePath;
     private final Collection<CatsHeader> headers;
@@ -97,7 +106,7 @@ public class ServiceData {
      */
     public List<RequestTarget> getAllMutationTargets() {
         return mutationTargets.stream()
-                .sorted(java.util.Comparator.comparing(target -> target.getLocation().name() + "#" + target.getName()))
+                .sorted(RequestTarget.ordering())
                 .toList();
     }
 

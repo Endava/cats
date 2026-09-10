@@ -5,6 +5,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.execution.ExecutionSummaryProvider;
 import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.fuzzer.api.Fuzzer;
@@ -18,6 +19,7 @@ import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.model.RequestTarget;
@@ -92,6 +94,7 @@ public class TestCaseListener {
     private final FilterArguments filterArguments;
     private final CatsExecutionEventPublisher executionEventPublisher;
     private final ExecutionStopController executionStopController;
+    private final ExecutionSummaryProvider executionSummaryProvider;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
 
@@ -115,13 +118,15 @@ public class TestCaseListener {
      * @param filterArguments      the arguments for filtering fuzzers
      * @param executionEventPublisher publisher for presentation-neutral execution events
      * @param executionStopController controller for global execution limits
+     * @param executionSummaryProvider provider for the final immutable execution snapshot
      * @throws NoSuchElementException if no matching exporter is found for the specified report format
      */
     public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er,
                             TestReportsGenerator testReportsGenerator, IgnoreArguments ignoreArguments,
                             ReportingArguments reportingArguments, FilterArguments filterArguments,
                             CatsExecutionEventPublisher executionEventPublisher,
-                            ExecutionStopController executionStopController) {
+                            ExecutionStopController executionStopController,
+                            ExecutionSummaryProvider executionSummaryProvider) {
         this.executionStatisticsListener = er;
         this.testReportsGenerator = testReportsGenerator;
         this.ignoreArguments = ignoreArguments;
@@ -130,6 +135,7 @@ public class TestCaseListener {
         this.filterArguments = filterArguments;
         this.executionEventPublisher = executionEventPublisher;
         this.executionStopController = executionStopController;
+        this.executionSummaryProvider = executionSummaryProvider;
     }
 
     private static String replaceBrackets(String message, Object... params) {
@@ -558,24 +564,28 @@ public class TestCaseListener {
     /**
      * Ends the test session by performing necessary actions such as writing summaries, helper files, and performance reports.
      * Additionally, prints execution details using the associated logger.
+     *
+     * @return the immutable final execution summary shared by reports and presentation layers
      */
-    public void endSession() {
+    public ExecutionSummary endSession() {
+        ExecutionSummary executionSummary = executionSummaryProvider.snapshot();
         try {
             markPreviousPathAsDone();
             renderGlobalFuzzersStatistics();
             reportingArguments.enableAdditionalLoggingIfSummary();
-            testReportsGenerator.writeSummary(testCaseSummaryDetails);
+            testReportsGenerator.writeSummary(testCaseSummaryDetails, executionSummary);
             testReportsGenerator.writeHelperFiles();
             testReportsGenerator.writeErrorsByReason(testCaseSummaryDetails);
             testReportsGenerator.writeTopFuzzers(testCaseSummaryDetails);
             testReportsGenerator.writePerformanceReport(testCaseExecutionDetails);
-            testReportsGenerator.printExecutionDetails();
+            testReportsGenerator.printExecutionDetails(executionSummary);
             if (!reportingArguments.isTui()) {
                 writeRecordedErrorsIfPresent();
             }
         } catch (Exception e) {
             logger.error("Error while ending sessions {}", e.getMessage());
         }
+        return executionSummary;
     }
 
     /**

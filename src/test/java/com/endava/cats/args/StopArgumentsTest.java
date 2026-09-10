@@ -63,4 +63,17 @@ class StopArgumentsTest {
         Assertions.assertThat(stopArguments.triggeredCondition(0, 12, System.currentTimeMillis()))
                 .contains(StopArguments.StopCondition.TESTS);
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "ERRORS,stopAfterErrors,1,Execution stopped after reaching --stopAfterErrors (1 error)",
+            "TESTS,stopAfterMutations,2,Execution stopped after reaching --stopAfterTests (2 tests)",
+            "TIME,stopAfterTimeInSec,3,Execution stopped after reaching --stopAfterTimeInSec (3 seconds)"
+    })
+    void shouldDescribeReachedConditionsConsistently(StopArguments.StopCondition condition, String field,
+                                                       long value, String expected) {
+        ReflectionTestUtils.setField(stopArguments, field, value);
+
+        Assertions.assertThat(stopArguments.describe(condition)).isEqualTo(expected);
+    }
 }

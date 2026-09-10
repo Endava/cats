@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Comparator;
+
 /**
  * Identifies a concrete part of an HTTP request independently of why that part is being used.
  */
@@ -12,6 +14,11 @@ import lombok.RequiredArgsConstructor;
 @EqualsAndHashCode
 @RequiredArgsConstructor
 public final class RequestTarget {
+    private static final Comparator<RequestTarget> ORDERING = Comparator
+            .comparing(RequestTarget::getLocation)
+            .thenComparing(RequestTarget::getName, String.CASE_INSENSITIVE_ORDER)
+            .thenComparing(RequestTarget::getName);
+
     @NonNull
     private final Location location;
     @NonNull
@@ -53,6 +60,15 @@ public final class RequestTarget {
 
     public static RequestTarget httpMethod() {
         return new RequestTarget(Location.HTTP_METHOD, "Request method");
+    }
+
+    /**
+     * Returns the canonical ordering used when presenting request targets.
+     *
+     * @return comparator ordered by location and then field name
+     */
+    public static Comparator<RequestTarget> ordering() {
+        return ORDERING;
     }
 
     public String getLocationName() {

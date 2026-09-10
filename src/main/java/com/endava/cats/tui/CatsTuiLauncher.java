@@ -11,6 +11,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -56,6 +57,7 @@ public class CatsTuiLauncher {
         requireInteractiveTerminal();
         ConcurrentLinkedQueue<CatsExecutionEvent> eventQueue = new ConcurrentLinkedQueue<>();
         CatsTuiState state = new CatsTuiState(maximumRetainedResults);
+        AtomicBoolean sessionEnded = new AtomicBoolean();
         AtomicReference<RuntimeException> workerFailure = new AtomicReference<>();
         Thread worker = null;
         boolean cancellationRequested = false;
@@ -72,9 +74,14 @@ public class CatsTuiLauncher {
                 .tickRate(Duration.ofMillis(100))
                 .faultTolerant(true)
                 .build();
-             var _ = events.subscribe(eventQueue::offer)) {
+             var _ = events.subscribe(event -> {
+                 if (event instanceof CatsExecutionEvent.SessionEnded) {
+                     sessionEnded.set(true);
+                 }
+                 eventQueue.offer(event);
+             })) {
                 worker = Thread.ofVirtual().name("cats-fuzzing")
-                        .start(() -> runExecution(execution, eventQueue, workerFailure));
+                        .start(() -> runExecution(execution, eventQueue, workerFailure, sessionEnded));
                 try {
                     runner.run(() -> {
                         updateViewport(state, backend);
@@ -105,12 +112,15 @@ public class CatsTuiLauncher {
     }
 
     private static void runExecution(Runnable execution, ConcurrentLinkedQueue<CatsExecutionEvent> eventQueue,
-                                     AtomicReference<RuntimeException> workerFailure) {
+                                     AtomicReference<RuntimeException> workerFailure,
+                                     AtomicBoolean sessionEnded) {
         try {
             execution.run();
         } catch (RuntimeException e) {
             workerFailure.set(e);
-            eventQueue.offer(new CatsExecutionEvent.SessionFailed(Instant.now(), e.toString()));
+            if (!sessionEnded.get()) {
+                eventQueue.offer(new CatsExecutionEvent.TerminalFailed(Instant.now(), e.toString()));
+            }
         }
     }
 

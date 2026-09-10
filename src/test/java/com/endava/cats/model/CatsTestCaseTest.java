@@ -78,14 +78,14 @@ class CatsTestCaseTest {
                 .build());
         catsTestCase.getRequestProvenance().addMutationTargets(
                 List.of(RequestTarget.body("customerId"), RequestTarget.header("X-Test")));
-        catsTestCase.getRuntimeCorrelations().add(ResourceCorrelation.builder()
+        catsTestCase.getRequestProvenance().addRuntimeCorrelation(ResourceCorrelation.builder()
                 .sourceMethod("POST")
                 .sourcePath("/customers")
                 .sourceLocation("response.body.$.id")
                 .target(RequestTarget.path("customerId"))
                 .value("customer-42")
                 .build());
-        catsTestCase.getRuntimeCorrelations().add(ResourceCorrelation.builder()
+        catsTestCase.getRequestProvenance().addRuntimeCorrelation(ResourceCorrelation.builder()
                 .sourceMethod("POST")
                 .sourcePath("/customers/{customerId}/orders")
                 .sourceLocation("response.body.$.orderId")
@@ -100,6 +100,12 @@ class CatsTestCaseTest {
 
         Assertions.assertThat(catsTestCase.hasRuntimeCorrelations()).isTrue();
         Assertions.assertThat(catsTestCase.hasMutationTargets()).isTrue();
+        List<RequestTarget> mutationTargets = catsTestCase.getMutationTargets();
+        List<ResourceCorrelation> runtimeCorrelations = catsTestCase.getRuntimeCorrelations();
+        Assertions.assertThatThrownBy(() -> mutationTargets.add(RequestTarget.body("other")))
+                .isInstanceOf(UnsupportedOperationException.class);
+        Assertions.assertThatThrownBy(runtimeCorrelations::clear)
+                .isInstanceOf(UnsupportedOperationException.class);
         JsonObject provenance = JsonParser.parseString(json).getAsJsonObject()
                 .getAsJsonObject("requestProvenance");
         Assertions.assertThat(provenance.getAsJsonArray("mutationTargets")).hasSize(2);

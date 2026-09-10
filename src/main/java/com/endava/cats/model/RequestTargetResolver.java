@@ -8,7 +8,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -47,7 +46,7 @@ public final class RequestTargetResolver {
             return fields.stream()
                     .map(RequestTarget::body)
                     .distinct()
-                    .sorted(Comparator.comparing(RequestTarget::getName, String.CASE_INSENSITIVE_ORDER))
+                    .sorted(RequestTarget.ordering())
                     .toList();
         }
 
@@ -231,8 +230,7 @@ public final class RequestTargetResolver {
 
     private static List<RequestTarget> ordered(Collection<RequestTarget> targets) {
         return targets.stream()
-                .sorted(Comparator.comparing(RequestTarget::getLocation)
-                        .thenComparing(RequestTarget::getName, String.CASE_INSENSITIVE_ORDER))
+                .sorted(RequestTarget.ordering())
                 .toList();
     }
 

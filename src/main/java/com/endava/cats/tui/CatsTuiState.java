@@ -1,8 +1,9 @@
 package com.endava.cats.tui;
 
+import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.RunOutcome;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.model.RunConfigurationSnapshot;
-import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.tui.model.TestResultSnapshot;
 import dev.tamboui.toolkit.event.EventResult;
 import dev.tamboui.tui.event.KeyEvent;
@@ -117,19 +118,23 @@ final class CatsTuiState {
                 // The next fuzzer event replaces the current label.
             }
             case CatsExecutionEvent.TestCompleted(_, var test) -> register(test);
-            case CatsExecutionEvent.SessionCompleted(var occurredAt, var runSummary) -> {
+            case CatsExecutionEvent.SessionEnded(var occurredAt, var runSummary) -> {
                 summary = runSummary;
                 finishedAt = occurredAt;
                 running = false;
-                status = "Finished";
+                RunOutcome outcome = runSummary.outcome();
+                status = switch (outcome.status()) {
+                    case COMPLETED -> "Finished";
+                    case LIMIT_REACHED -> "Limit reached";
+                    case CANCELLED -> "Cancelled";
+                    case FAILED -> "Failed";
+                };
+                failureMessage = switch (outcome.status()) {
+                    case CANCELLED, FAILED -> outcome.details();
+                    case COMPLETED, LIMIT_REACHED -> null;
+                };
             }
-            case CatsExecutionEvent.SessionCancelled(var occurredAt, var message) -> {
-                failureMessage = message;
-                finishedAt = occurredAt;
-                running = false;
-                status = "Cancelled";
-            }
-            case CatsExecutionEvent.SessionFailed(var occurredAt, var message) -> {
+            case CatsExecutionEvent.TerminalFailed(var occurredAt, var message) -> {
                 failureMessage = message;
                 finishedAt = occurredAt;
                 running = false;

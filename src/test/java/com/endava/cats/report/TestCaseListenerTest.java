@@ -8,6 +8,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.exception.CatsExecutionLimitReachedException;
+import com.endava.cats.execution.ExecutionSummaryProvider;
 import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.http.RandomResourcesFuzzer;
@@ -20,9 +21,11 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
+import com.endava.cats.model.RunOutcome;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.google.gson.JsonParser;
@@ -71,6 +74,7 @@ class TestCaseListenerTest {
     private TestReportsGenerator testReportsGenerator;
     private CatsExecutionEventPublisher executionEventPublisher;
     private ExecutionStopController executionStopController;
+    private ExecutionSummaryProvider executionSummaryProvider;
 
 
     @BeforeEach
@@ -79,6 +83,9 @@ class TestCaseListenerTest {
         fuzzer = Mockito.mock(Fuzzer.class);
         reportingArguments = Mockito.mock(ReportingArguments.class);
         testReportsGenerator = Mockito.mock(TestReportsGenerator.class);
+        executionSummaryProvider = Mockito.mock(ExecutionSummaryProvider.class);
+        Mockito.when(executionSummaryProvider.snapshot()).thenReturn(new ExecutionSummary(
+                0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "", RunOutcome.completed()));
         Mockito.when(reportingArguments.getReportFormat()).thenReturn(List.of(ReportingArguments.ReportFormat.HTML_JS));
         executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
@@ -86,7 +93,8 @@ class TestCaseListenerTest {
         executionEventPublisher = new CatsExecutionEventPublisher();
         executionStopController = Mockito.mock(ExecutionStopController.class);
         testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, testReportsGenerator,
-                ignoreArguments, reportingArguments, filterArguments, executionEventPublisher, executionStopController);
+                ignoreArguments, reportingArguments, filterArguments, executionEventPublisher, executionStopController,
+                executionSummaryProvider);
         catsGlobalContext.getDiscriminators().clear();
         catsGlobalContext.getFuzzersConfiguration().clear();
     }
@@ -184,7 +192,7 @@ class TestCaseListenerTest {
         Mockito.when(tuiArguments.isTui()).thenReturn(true);
         TestCaseListener listener = new TestCaseListener(localContext, executionStatisticsListener,
                 testReportsGenerator, ignoreArguments, tuiArguments, filterArguments, executionEventPublisher,
-                executionStopController);
+                executionStopController, executionSummaryProvider);
 
         listener.endSession();
 
@@ -250,7 +258,8 @@ class TestCaseListenerTest {
         testCaseListener.endSession();
 
         Mockito.verify(testReportsGenerator, Mockito.times(1)).writeHelperFiles();
-        Mockito.verify(testReportsGenerator, Mockito.times(1)).writeSummary(Mockito.anyList());
+        Mockito.verify(testReportsGenerator, Mockito.times(1))
+                .writeSummary(Mockito.anyList(), Mockito.any(ExecutionSummary.class));
     }
 
     @Test

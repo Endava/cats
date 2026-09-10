@@ -2,40 +2,40 @@
 <div class="run-details-grid">
     <div class="card-wrapper">
         <h2 class="action-tag no-top">Run outcome</h2>
-        <p class="report-status"><label class="test-result result-{{RUN_STATUS_RESULT}}">{{RUN_STATUS}}</label></p>
-        <p class="report-detail-note">{{RUN_STATUS_DETAILS}}</p>
+        <p class="report-status"><label class="test-result result-{{runStatusResult}}">{{runStatus}}</label></p>
+        <p class="report-detail-note">{{runStatusDetails}}</p>
         <h2 class="action-tag">Quality gate</h2>
-        <p class="report-status"><label class="test-result result-{{QUALITY_GATE_RESULT}}">{{QUALITY_GATE_STATUS}}</label></p>
-        <p class="report-detail-note">{{QUALITY_GATE_DESCRIPTION}}</p>
+        <p class="report-status"><label class="test-result result-{{qualityGateResult}}">{{qualityGateStatus}}</label></p>
+        <p class="report-detail-note">{{qualityGateDescription}}</p>
     </div>
     <div class="card-wrapper">
         <h2 class="action-tag no-top">Request accounting</h2>
-        <div class="report-detail-row"><span>Total requests</span><strong>{{TOTAL_REQUESTS}}</strong></div>
-        <div class="report-detail-row"><span>Reported results</span><strong>{{TOTAL}}</strong></div>
-        <div class="report-detail-row"><span>Skipped from reporting</span><strong>{{SKIPPED_FROM_REPORTING}}</strong></div>
+        <div class="report-detail-row"><span>Total requests</span><strong>{{totalRequests}}</strong></div>
+        <div class="report-detail-row"><span>Reported results</span><strong>{{total}}</strong></div>
+        <div class="report-detail-row"><span>Skipped from reporting</span><strong>{{skippedFromReporting}}</strong></div>
     </div>
     <div class="card-wrapper">
         <h2 class="action-tag no-top">Execution diagnostics</h2>
-        <div class="report-detail-row"><span>Skipped tests</span><strong>{{SKIPPED}}</strong></div>
-        <div class="report-detail-row"><span>Authentication errors</span><strong>{{AUTH_ERRORS}}</strong></div>
-        <div class="report-detail-row"><span>I/O errors</span><strong>{{IO_ERRORS}}</strong></div>
+        <div class="report-detail-row"><span>Skipped tests</span><strong>{{skipped}}</strong></div>
+        <div class="report-detail-row"><span>Authentication errors</span><strong>{{authErrors}}</strong></div>
+        <div class="report-detail-row"><span>I/O errors</span><strong>{{ioErrors}}</strong></div>
     </div>
     <div class="card-wrapper">
         <h2 class="action-tag no-top">Reproduction</h2>
-        <div class="report-detail-row"><span>Random seed</span><strong>{{RANDOM_SEED}}</strong></div>
-        <div class="report-detail-row"><span>Runtime resource reuse</span><strong>{{RESOURCE_REUSE_STATUS}}</strong></div>
-        {{#HAS_STOP_LIMITS}}
+        <div class="report-detail-row"><span>Random seed</span><strong>{{randomSeed}}</strong></div>
+        <div class="report-detail-row"><span>Runtime resource reuse</span><strong>{{resourceReuseStatus}}</strong></div>
+        {{#hasStopLimits}}
         <h2 class="action-tag">Configured stop limits</h2>
-        {{#STOP_LIMITS}}
+        {{#stopLimits}}
         <div class="report-detail-row"><span>{{name}}</span><strong>{{value}}{{suffix}}</strong></div>
-        {{/STOP_LIMITS}}
-        {{/HAS_STOP_LIMITS}}
-        {{^HAS_STOP_LIMITS}}
+        {{/stopLimits}}
+        {{/hasStopLimits}}
+        {{^hasStopLimits}}
         <div class="report-detail-row"><span>Stop limits</span><strong>None</strong></div>
-        {{/HAS_STOP_LIMITS}}
+        {{/hasStopLimits}}
     </div>
 </div>
-{{#HAS_PROCESSING_ERRORS}}
+{{#hasProcessingErrors}}
 <h2 class="title-section">Processing Limitations</h2>
 <div class="card-wrapper">
     <p class="report-detail-note">These issues may have prevented some contract elements or fuzzing scenarios from being processed completely.</p>
@@ -47,13 +47,13 @@
         </tr>
         </thead>
         <tbody>
-        {{#PROCESSING_ERRORS}}
+        {{#processingErrors}}
         <tr>
             <td>{{operation}}</td>
             <td>{{message}}</td>
         </tr>
-        {{/PROCESSING_ERRORS}}
+        {{/processingErrors}}
         </tbody>
     </table>
 </div>
-{{/HAS_PROCESSING_ERRORS}}
+{{/hasProcessingErrors}}
