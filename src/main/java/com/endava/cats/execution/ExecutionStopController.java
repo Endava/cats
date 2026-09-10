@@ -17,7 +17,7 @@ public class ExecutionStopController {
     private boolean active;
     private long startedAtMillis;
     private long initialErrors;
-    private long completedTests;
+    private long initialCompletedTests;
 
     /**
      * Creates the controller.
@@ -39,7 +39,7 @@ public class ExecutionStopController {
         active = stopArguments.isAnyStopConditionProvided();
         startedAtMillis = System.currentTimeMillis();
         initialErrors = executionStatisticsListener.getErrors();
-        completedTests = 0;
+        initialCompletedTests = executionStatisticsListener.getCompletedTests();
     }
 
     /**
@@ -50,13 +50,12 @@ public class ExecutionStopController {
     }
 
     /**
-     * Counts a fully reported test and stops when it reaches a configured limit.
+     * Stops when a limit is reached after a test completes.
      */
     public synchronized void checkAfterTest() {
         if (!active) {
             return;
         }
-        completedTests++;
         checkLimits();
     }
 
@@ -73,7 +72,9 @@ public class ExecutionStopController {
         }
 
         long sessionErrors = Math.max(0, executionStatisticsListener.getErrors() - initialErrors);
-        stopArguments.triggeredCondition(sessionErrors, completedTests, startedAtMillis)
+        long sessionCompletedTests = Math.max(0,
+                executionStatisticsListener.getCompletedTests() - initialCompletedTests);
+        stopArguments.triggeredCondition(sessionErrors, sessionCompletedTests, startedAtMillis)
                 .ifPresent(this::stopExecution);
     }
 

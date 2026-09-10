@@ -50,8 +50,8 @@
         <div class="card-wrapper">
             <div class="card-header">
                 <div>
-                    <h2 class="action-tag">Total Tests Run</h2>
-                    <p class="big-number">{{total}} tests</p>
+                    <h2 class="action-tag">Tests Completed</h2>
+                    <p class="big-number">{{completedTests}} tests</p>
                 </div>
             </div>
             {{#javascript}}
@@ -210,7 +210,7 @@
     <div class="ran-tests-component">
         <div id="summary">
             <div class="summary-container">
-                <span class="menu-total menu active" data-filtered="All">All <button type="button" data-filtered="All">{{total}}</button></span>
+                <span class="menu-total menu active" data-filtered="All">All <button type="button" data-filtered="All">{{reportedResults}}</button></span>
                 <span class="menu-error menu" data-filtered="error">Errors <button type="button" data-filtered="error">{{errors}}</button></span>
                 <span class="menu-warning menu" data-filtered="warn">Warnings <button type="button" data-filtered="warn">{{warnings}}</button></span>
                 <span class="menu-success menu" data-filtered="success">Success <button type="button" data-filtered="success">{{success}}</button></span>

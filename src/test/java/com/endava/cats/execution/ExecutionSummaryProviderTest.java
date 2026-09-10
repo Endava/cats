@@ -18,7 +18,7 @@ class ExecutionSummaryProviderTest {
     void shouldCaptureStatisticsAndQualityGateInOneSnapshot() {
         ExecutionStatisticsListener statistics = Mockito.mock(ExecutionStatisticsListener.class);
         QualityGateArguments qualityGate = Mockito.mock(QualityGateArguments.class);
-        ExecutionSummary expected = new ExecutionSummary(5, 4, 3, 0, 1, 0, 1, 0, 0,
+        ExecutionSummary expected = new ExecutionSummary(5, 5, 4, 3, 0, 1, 1, 1, 0, 0,
                 Map.of(200, 3), Map.of("/orders", 1L), false, "fail on errors", RunOutcome.completed());
         Mockito.when(statistics.getErrors()).thenReturn(1L);
         Mockito.when(statistics.getWarns()).thenReturn(0L);

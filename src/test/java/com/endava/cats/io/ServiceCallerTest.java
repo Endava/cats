@@ -231,6 +231,7 @@ class ServiceCallerTest {
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEmpty();
         Mockito.verify(testCaseListener).addMutationTargets(List.of(RequestTarget.path("id")));
+        Mockito.verify(testCaseListener).recordRequestAttempt();
     }
 
     @Test

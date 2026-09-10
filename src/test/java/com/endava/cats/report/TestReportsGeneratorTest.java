@@ -23,7 +23,7 @@ class TestReportsGeneratorTest {
         TestCaseExporter junitExporter = Mockito.mock(TestCaseExporter.class);
         Instance<TestCaseExporter> exporters = Mockito.mock(Instance.class);
         ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
-        ExecutionSummary summary = new ExecutionSummary(5, 4, 3, 0, 1, 0, 1, 0, 0,
+        ExecutionSummary summary = new ExecutionSummary(5, 5, 4, 3, 0, 1, 1, 1, 0, 0,
                 Map.of(200, 3), Map.of("/orders", 1L), false, "fail on errors", RunOutcome.completed());
 
         Mockito.when(exporters.stream()).thenReturn(Stream.of(htmlExporter, junitExporter));

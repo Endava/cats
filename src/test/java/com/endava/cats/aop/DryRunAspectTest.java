@@ -19,7 +19,7 @@ class DryRunAspectTest {
     void shouldReturnTheSharedExecutionSummaryWithoutWritingReports() {
         ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
         ExecutionSummaryProvider summaryProvider = Mockito.mock(ExecutionSummaryProvider.class);
-        ExecutionSummary summary = new ExecutionSummary(0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ExecutionSummary summary = new ExecutionSummary(0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 Map.of(), Map.of(), true, "", RunOutcome.completed());
         DryRunAspect aspect = new DryRunAspect();
         ReflectionTestUtils.setField(aspect, "reportingArguments", reportingArguments);

@@ -15,7 +15,7 @@ class ExecutionStatisticsListenerTest {
     @Test
     void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfSkippedTests_thenTheSkippedTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
-        listener.increaseSkipped();// these are ignored in the total count
+        listener.increaseSkipped();
 
         Assertions.assertThat(listener.getSkipped()).isOne();
         Assertions.assertThat(listener.getErrors()).isZero();
@@ -57,7 +57,7 @@ class ExecutionStatisticsListenerTest {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseWarns("test");
         listener.increaseSuccess("test");
-        listener.increaseSkipped(); //these are ignored in the total count
+        listener.increaseSkipped(); // Skipped tests are not reported results.
         listener.increaseErrors("test");
 
         Assertions.assertThat(listener.getAll()).isEqualTo(3);
@@ -169,22 +169,29 @@ class ExecutionStatisticsListenerTest {
     }
 
     @Test
-    void shouldTrackSkippedFromReporting() {
+    void shouldTrackRequestAndReportingAccountingIndependently() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseSkippedFromReporting("/path1");
         listener.increaseSkippedFromReporting("/path2");
         listener.increaseSuccess("/path1");
+        listener.increaseCompletedTests();
+        listener.increaseCompletedTests();
+        listener.increaseCompletedTests();
+        listener.increaseRequestsAttempted();
+        listener.increaseRequestsAttempted();
 
-        Assertions.assertThat(listener.getTotalRequests()).isEqualTo(3);
+        Assertions.assertThat(listener.getCompletedTests()).isEqualTo(3);
+        Assertions.assertThat(listener.getRequestsAttempted()).isEqualTo(2);
         Assertions.assertThat(listener.getSkippedFromReporting()).isEqualTo(2);
         Assertions.assertThat(listener.getAll()).isEqualTo(1);
     }
 
     @Test
-    void shouldReturnZeroForTotalRequestsWhenNoneTracked() {
+    void shouldReturnZeroForExecutionCountsWhenNoneTracked() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
 
-        Assertions.assertThat(listener.getTotalRequests()).isZero();
+        Assertions.assertThat(listener.getCompletedTests()).isZero();
+        Assertions.assertThat(listener.getRequestsAttempted()).isZero();
         Assertions.assertThat(listener.getSkippedFromReporting()).isZero();
     }
 

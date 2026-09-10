@@ -62,8 +62,8 @@ final class CatsTuiView {
     }
 
     private static Element header(CatsTuiState state) {
-        String heading = "CATS REST API Fuzzer  •  %s  •  %s  •  %d tests run".formatted(
-                state.status(), state.elapsed(), state.reportedResults());
+        String heading = "CATS REST API Fuzzer  •  %s  •  %s  •  %d tests completed".formatted(
+                state.status(), state.elapsed(), state.completedTests());
         return panel(text(heading).bold().cyan()).rounded().borderColor(Color.CYAN).length(3);
     }
 
@@ -331,12 +331,13 @@ final class CatsTuiView {
                         Span.styled(state.summary() == null ? "PENDING" : state.qualityGatePassed() ? "PASSED" : "FAILED",
                                 state.summary() == null ? INFO_STYLE : state.qualityGatePassed() ? SUCCESS_STYLE : ERROR_STYLE),
                         Span.raw("    "), Span.styled(state.qualityGateDescription(), VALUE_STYLE)),
-                labelledTriplet("Total requests: ", state.totalRequests(), "    Skipped from reporting: ",
-                        state.skippedFromReporting(), "    Total Tests Run: ", state.reportedResults()),
+                labelledTriplet("Tests completed: ", state.completedTests(), "    HTTP requests sent: ",
+                        state.requestsAttempted(), "    Results included: ", state.reportedResults()),
                 Line.from(Span.styled("Success: %d".formatted(state.success()), SUCCESS_STYLE), Span.raw("    "),
                         Span.styled("Warnings: %d".formatted(state.warnings()), WARNING_STYLE), Span.raw("    "),
                         Span.styled("Errors: %d".formatted(state.errors()), ERROR_STYLE)),
-                Line.from(Span.styled("Skipped: %d".formatted(state.skipped()), SKIPPED_STYLE)),
+                Line.from(Span.styled("Skipped: %d".formatted(state.skipped()), SKIPPED_STYLE), Span.raw("    "),
+                        Span.styled("Omitted from report: %d".formatted(state.skippedFromReporting()), SKIPPED_STYLE)),
                 Line.from(Span.styled("Authentication errors: ", LABEL_STYLE),
                         Span.styled(String.valueOf(state.authenticationErrors()), countStyle(state.authenticationErrors())),
                         Span.raw("    "), Span.styled("I/O errors: ", LABEL_STYLE),

@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -193,6 +194,28 @@ public class CatsTestCase {
      */
     public String getResponseJson() {
         return maskingSerializer.toJson(response);
+    }
+
+    /**
+     * Returns the response body formatted for display in a test-case report.
+     *
+     * @return formatted response body, or an explicit marker when it is empty
+     */
+    public String getResponseBody() {
+        String body = response.getBody();
+        if (StringUtils.isEmpty(body)) {
+            return "[Empty response body]";
+        }
+        return SimpleJsonFormatter.formatJson(body);
+    }
+
+    /**
+     * Returns response headers formatted with the configured header masking rules.
+     *
+     * @return masked response headers in JSON format
+     */
+    public String getResponseHeaders() {
+        return maskingSerializer.toJson(Optional.ofNullable(response.getHeaders()).orElse(List.of()));
     }
 
     /**

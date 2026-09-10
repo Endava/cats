@@ -123,16 +123,11 @@
             <p>Mutation Targets</p>
         </div>
         <div class="component text">
-            <table class="mutation-targets-table">
-                <tbody>
-                {{#mutationTargets}}
-                <tr class="mutation-target-row">
-                    <td>{{locationName}}</td>
-                    <td>{{name}}</td>
-                </tr>
-                {{/mutationTargets}}
-                </tbody>
-            </table>
+            <div class="mutation-targets-list">
+            {{#mutationTargets}}
+                <p class="mutation-target-row">{{locationName}} -&gt; {{name}}</p>
+            {{/mutationTargets}}
+            </div>
         </div>
         {{/hasMutationTargets}}
 
@@ -143,58 +138,37 @@
             <span class="rounded path details">{{fullRequestPath}}</span>
         </div>
 
-        <div class="component title">
+        <div class="component title border-left-bottom">
             <p>Http Method</p>
         </div>
-        <div class="component text">
-            <span class="active rounded rounded-{{httpMethod}} details">{{httpMethod}}</span>
-        </div>
-
-        <div class="component title">
-            <p>Actual Response</p>
-        </div>
-        <div class="component text">
-            <p>{{response.responseCode}}</p>
-        </div>
-
-        <div class="component title">
-            <p>Response Time</p>
-        </div>
-        <div class="component text">
-            <p>{{response.responseTimeInMs}}ms</p>
-        </div>
-
-        <div class="component title border-left-bottom">
-            <p>Response Content Type</p>
-        </div>
         <div class="component text border-right-bottom">
-            <p>{{response.responseContentType}}</p>
+            <span class="active rounded rounded-{{httpMethod}} details">{{httpMethod}}</span>
         </div>
         <div class="clearfix"></div>
     </div>
     {{#hasRequestDetails}}
     {{#js}}
-    <div>
+    <div class="tabbed-section">
         <div class="tabs">
             <div class="tabs-and-title">
                 <div class="component section-title">Request Details</div>
                 <div class="all-tabs">
-                    <div class="component tab active" onclick="showCode(1)">Payload</div>
-                    <div class="component tab" onclick="showCode(2)">Headers</div>
-                    <div class="component tab" onclick="showCode(3)">cURL</div>
+                    <div class="component tab active" onclick="showReportTab(this, 'request-payload')">Payload</div>
+                    <div class="component tab" onclick="showReportTab(this, 'request-headers')">Headers</div>
+                    <div class="component tab" onclick="showReportTab(this, 'request-curl')">cURL</div>
                 </div>
             </div>
-            <button class="copy-button" onclick="copyTabs()">Copy code</button>
+            <button class="copy-button" onclick="copyActiveTab(this)">Copy code</button>
         </div>
-        <div class="code-area" id="code-1">
+        <div class="code-area active" id="request-payload">
             <pre><code>{{requestJson}}</code></pre>
         </div>
 
-        <div class="code-area active" id="code-2">
+        <div class="code-area" id="request-headers">
             <pre><code>{{headers}}</code></pre>
         </div>
 
-        <div class="code-area" id="code-3">
+        <div class="code-area" id="request-curl">
             <pre><code>{{curl}}</code></pre>
         </div>
     </div>
@@ -237,23 +211,73 @@
         </div>
     </div>
     {{/js}}
-    <div class='section-response'>
-        <div class="tabs-header">
-            <div class="component section-title">Response</div>
-            {{#js}}
-            <button class="copy-button copy-button-response" onclick="copyResponse()">Copy code</button>
-            {{/js}}
+    {{#js}}
+    <div class="section-response tabbed-section">
+        <div class="tabs">
+            <div class="tabs-and-title">
+                <div class="component section-title">Response</div>
+                <div class="all-tabs">
+                    <div class="component tab active" onclick="showReportTab(this, 'response-body')">Body</div>
+                    <div class="component tab" onclick="showReportTab(this, 'response-headers')">Headers</div>
+                    <div class="component tab" onclick="showReportTab(this, 'response-details')">Details</div>
+                </div>
+            </div>
+            <button class="copy-button" onclick="copyActiveTab(this)">Copy code</button>
         </div>
-        <div class="code-area-outside" id="code-response">
-            <pre><code>{{responseJson}}</code></pre>
+        <div class="code-area active" id="response-body">
+            <pre><code>{{responseBody}}</code></pre>
+        </div>
+        <div class="code-area" id="response-headers">
+            <pre><code>{{responseHeaders}}</code></pre>
+        </div>
+        <div class="code-area" id="response-details">
+            <div class="response-details-grid">
+                <div class="response-detail"><span>HTTP status</span><strong>{{response.responseCode}}</strong></div>
+                <div class="response-detail"><span>Response time</span><strong>{{response.responseTimeInMs}}ms</strong></div>
+                <div class="response-detail"><span>Content type</span><strong>{{response.responseContentType}}</strong></div>
+                <div class="response-detail"><span>Content length</span><strong>{{response.contentLengthInBytes}} bytes</strong></div>
+                <div class="response-detail"><span>Words</span><strong>{{response.numberOfWordsInResponse}}</strong></div>
+                <div class="response-detail"><span>Lines</span><strong>{{response.numberOfLinesInResponse}}</strong></div>
+            </div>
         </div>
     </div>
+    {{/js}}
+
+    {{^js}}
+    <div class="section-response">
+        <div class="tabs-header">
+            <div class="component section-title">Response Body</div>
+        </div>
+        <div class="code-area-outside">
+            <pre><code>{{responseBody}}</code></pre>
+        </div>
+        <div class="tabs-header stacked-response-section">
+            <div class="component section-title">Response Headers</div>
+        </div>
+        <div class="code-area-outside">
+            <pre><code>{{responseHeaders}}</code></pre>
+        </div>
+        <div class="tabs-header stacked-response-section">
+            <div class="component section-title">Response Details</div>
+        </div>
+        <div class="code-area-outside">
+            <div class="response-details-grid">
+                <div class="response-detail"><span>HTTP status</span><strong>{{response.responseCode}}</strong></div>
+                <div class="response-detail"><span>Response time</span><strong>{{response.responseTimeInMs}}ms</strong></div>
+                <div class="response-detail"><span>Content type</span><strong>{{response.responseContentType}}</strong></div>
+                <div class="response-detail"><span>Content length</span><strong>{{response.contentLengthInBytes}} bytes</strong></div>
+                <div class="response-detail"><span>Words</span><strong>{{response.numberOfWordsInResponse}}</strong></div>
+                <div class="response-detail"><span>Lines</span><strong>{{response.numberOfLinesInResponse}}</strong></div>
+            </div>
+        </div>
+    </div>
+    {{/js}}
 
     <div>
         <div class="tabs-header">
             <div class="component section-title">CATS Replay</div>
             {{#js}}
-            <button class="copy-button copy-button-cats-replay" onclick="copyCatsReplay()">Copy code</button>
+            <button class="copy-button copy-button-cats-replay" onclick="copyCode('code-cats-replay', this)">Copy code</button>
             {{/js}}
         </div>
         <div class="code-area-outside" id="code-cats-replay">
@@ -294,12 +318,6 @@
 {{/TEST_CASE}}
 {{#JS}}
 <script src="script.js"></script>
-<script>
-    // Page scripts
-    window.onload = function () {
-        showCode(1);
-    };
-</script>
 {{/JS}}
 </body>
 

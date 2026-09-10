@@ -48,6 +48,18 @@ public class ExecutionStatisticsListener {
     private int skipped;
 
     /**
+     * Count of completed test cases, including results omitted from reports.
+     */
+    @Getter
+    private long completedTests;
+
+    /**
+     * Count of HTTP requests handed to the HTTP client for execution.
+     */
+    @Getter
+    private long requestsAttempted;
+
+    /**
      * Count of authentication errors.
      */
     @Getter
@@ -104,7 +116,7 @@ public class ExecutionStatisticsListener {
      * @return execution summary for reports and presentation layers
      */
     public synchronized ExecutionSummary snapshot(boolean qualityGatePassed, String qualityGateDescription) {
-        return new ExecutionSummary(getTotalRequests(), getAll(), getSuccess(), getWarns(), getErrors(),
+        return new ExecutionSummary(completedTests, requestsAttempted, getAll(), getSuccess(), getWarns(), getErrors(),
                 skipped, getSkippedFromReporting(), authErrors, ioErrors, getResponseCodeDistribution(),
                 getTopFailingPaths(10), qualityGatePassed, qualityGateDescription, runOutcome);
     }
@@ -128,6 +140,16 @@ public class ExecutionStatisticsListener {
      */
     public void increaseSkipped() {
         this.skipped++;
+    }
+
+    /** Records a completed test case, regardless of whether its result is reported. */
+    public void increaseCompletedTests() {
+        this.completedTests++;
+    }
+
+    /** Records an HTTP request immediately before it is handed to the HTTP client. */
+    public void increaseRequestsAttempted() {
+        this.requestsAttempted++;
     }
 
 
@@ -228,15 +250,6 @@ public class ExecutionStatisticsListener {
      */
     public long getSuccess() {
         return this.success.values().stream().reduce(0L, Long::sum);
-    }
-
-    /**
-     * Gets the total count of all requests made (before skip logic).
-     *
-     * @return The total count of all requests.
-     */
-    public long getTotalRequests() {
-        return this.getAll() + getSkippedFromReporting();
     }
 
     /**

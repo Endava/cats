@@ -29,9 +29,12 @@ public final class SummaryReportContext {
     private final String errors;
     private final String errorsJunit;
     private final String failuresJunit;
-    private final String total;
-    private final String totalRequests;
+    private final String completedTests;
+    private final String requestsAttempted;
+    private final String reportedResults;
+    private final boolean showResultsIncluded;
     private final String skippedFromReporting;
+    private final boolean hasSkippedFromReporting;
     private final String skipped;
     private final String authErrors;
     private final String ioErrors;
@@ -102,9 +105,12 @@ public final class SummaryReportContext {
                 .errors(formatLargeNumber(report.getErrors()))
                 .errorsJunit(formatLargeNumber(report.getErrorsJunit()))
                 .failuresJunit(formatLargeNumber(report.getFailuresJunit()))
-                .total(formatLargeNumber(report.getTotalTests()))
-                .totalRequests(formatLargeNumber(report.getTotalRequests()))
+                .completedTests(formatLargeNumber(report.getCompletedTests()))
+                .requestsAttempted(formatLargeNumber(report.getRequestsAttempted()))
+                .reportedResults(formatLargeNumber(report.getReportedResults()))
+                .showResultsIncluded(report.getReportedResults() != report.getCompletedTests())
                 .skippedFromReporting(formatLargeNumber(report.getSkippedFromReporting()))
+                .hasSkippedFromReporting(report.getSkippedFromReporting() > 0)
                 .skipped(formatLargeNumber(report.getSkipped()))
                 .authErrors(formatLargeNumber(report.getAuthErrors()))
                 .ioErrors(formatLargeNumber(report.getIoErrors()))
@@ -130,9 +136,9 @@ public final class SummaryReportContext {
                 .hasStopLimits(!stopLimits.isEmpty())
                 .processingErrors(processingErrors)
                 .hasProcessingErrors(!processingErrors.isEmpty())
-                .warnPercentage(percentage(report.getWarnings(), report.getTotalTests()))
-                .errorPercentage(percentage(report.getErrors(), report.getTotalTests()))
-                .successPercentage(percentage(report.getSuccess(), report.getTotalTests()))
+                .warnPercentage(percentage(report.getWarnings(), report.getReportedResults()))
+                .errorPercentage(percentage(report.getErrors(), report.getReportedResults()))
+                .successPercentage(percentage(report.getSuccess(), report.getReportedResults()))
                 .groupedTestCases(ClusterCompute.createClusters(report.getTestCases()))
                 .responseCodeDistribution(responseCodes)
                 .hasResponseCodes(!responseCodes.isEmpty())

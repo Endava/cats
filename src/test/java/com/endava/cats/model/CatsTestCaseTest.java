@@ -1,5 +1,6 @@
 package com.endava.cats.model;
 
+import com.endava.cats.util.KeyValuePair;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -73,11 +74,16 @@ class CatsTestCaseTest {
                 .responseTimeInMs(17)
                 .responseContentType("application/json")
                 .httpMethod("GET")
-                .body("{}")
+                .body("{\"result\":\"ok\"}")
+                .headers(List.of(new KeyValuePair<>("Content-Type", "application/json")))
+                .contentLengthInBytes(15)
+                .numberOfWordsInResponse(1)
+                .numberOfLinesInResponse(1)
                 .responseValidationField("customerId")
                 .build());
         catsTestCase.getRequestProvenance().addMutationTargets(
-                List.of(RequestTarget.body("customerId"), RequestTarget.header("X-Test")));
+                List.of(RequestTarget.body("customerId"), RequestTarget.header("X-Test"),
+                        RequestTarget.requestBody()));
         catsTestCase.getRequestProvenance().addRuntimeCorrelation(ResourceCorrelation.builder()
                 .sourceMethod("POST")
                 .sourcePath("/customers")
@@ -108,7 +114,7 @@ class CatsTestCaseTest {
                 .isInstanceOf(UnsupportedOperationException.class);
         JsonObject provenance = JsonParser.parseString(json).getAsJsonObject()
                 .getAsJsonObject("requestProvenance");
-        Assertions.assertThat(provenance.getAsJsonArray("mutationTargets")).hasSize(2);
+        Assertions.assertThat(provenance.getAsJsonArray("mutationTargets")).hasSize(3);
         Assertions.assertThat(provenance.getAsJsonArray("mutationTargets").get(0).getAsJsonObject().get("location").getAsString())
                 .isEqualTo("BODY");
         Assertions.assertThat(provenance.getAsJsonArray("mutationTargets").get(1).getAsJsonObject().get("name").getAsString())
@@ -126,14 +132,25 @@ class CatsTestCaseTest {
                 "POST /customers", "response.body.$.id", "path customerId", "customer-42",
                 "POST /customers/{customerId}/orders", "response.body.$.orderId", "path orderId", "order-7",
                 "Mutation Targets", "Body field", "customerId", "Header", "X-Test",
-                "Actual Response", "200", "Response Time", "17ms",
-                "Response Content Type", "application/json");
+                "Request body -&gt; Entire body", "Response", "Body", "Headers", "Details",
+                "HTTP status", "200", "Response time", "17ms", "Content type", "application/json",
+                "Content length", "15 bytes", "Words", "Lines", "&quot;result&quot;: &quot;ok&quot;");
         Assertions.assertThat(StringUtils.countMatches(htmlReport, "class=\"mutation-target-row\""))
-                .isEqualTo(2);
+                .isEqualTo(3);
         Assertions.assertThat(StringUtils.countMatches(htmlReport, "class=\"runtime-correlation-row\""))
                 .isEqualTo(2);
         Assertions.assertThat(htmlReport.indexOf("Runtime Correlations"))
                 .isGreaterThan(htmlReport.indexOf("CATS Replay"));
+
+        catsTestCase.setJs(false);
+        StringWriter staticHtml = new StringWriter();
+        new DefaultMustacheFactory().compile("test-case.mustache")
+                .execute(staticHtml, Map.of("TEST_CASE", catsTestCase)).flush();
+
+        Assertions.assertThat(staticHtml.toString())
+                .contains("Response Body", "Response Headers", "Response Details",
+                        "HTTP status", "Response time", "Content type")
+                .doesNotContain("showReportTab");
     }
 
 }

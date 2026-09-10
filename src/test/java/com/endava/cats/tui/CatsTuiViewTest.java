@@ -128,7 +128,7 @@ class CatsTuiViewTest {
     }
 
     private static ExecutionSummary summary(boolean qualityGatePassed, String description, RunOutcome outcome) {
-        return new ExecutionSummary(8, 5, 1, 1, 1, 1, 3, 1, 2,
+        return new ExecutionSummary(5, 3, 3, 1, 1, 1, 2, 1, 1, 2,
                 Map.of(200, 1, 422, 1, 500, 1), Map.of("/orders", 2L),
                 qualityGatePassed, description, outcome);
     }

@@ -194,43 +194,30 @@ themeToggleBtn.style.display = 'block';
 themeToggleBtn.addEventListener('click', toggleTheme);
 
 
-// Page scripts
-window.onload = function () {
-    showCode(1);
-};
+function showReportTab(tab, panelId) {
+    const section = tab.closest('.tabbed-section');
+    section.querySelectorAll('.code-area').forEach(panel => panel.classList.remove('active'));
+    section.querySelectorAll('.tab').forEach(candidate => candidate.classList.remove('active'));
 
-function showCode(tabIndex) {
-    const codeAreas = document.querySelectorAll('.code-area');
-    const tabs = document.querySelectorAll('.tab');
-    codeAreas.forEach(codeArea => codeArea.classList.remove('active'));
-    tabs.forEach(tab => tab.classList.remove('active'));
-
-    const selectedCodeArea = document.getElementById('code-' + tabIndex);
-    const selectedTab = document.querySelector('.tab:nth-child(' + tabIndex + ')');
-    if (selectedTab) {
-        selectedCodeArea.classList.add('active');
-        selectedTab.classList.add('active');
+    const selectedPanel = document.getElementById(panelId);
+    if (selectedPanel) {
+        selectedPanel.classList.add('active');
+        tab.classList.add('active');
     }
 }
 
-function copyTabs() {
-    const activeTab = document.querySelector('.tab.active');
-    const tabIndex = Array.from(activeTab.parentNode.children).indexOf(activeTab);
-
-    copyCode('code-' + (tabIndex + 1), '.copy-button');
+function copyActiveTab(button) {
+    const activePanel = button.closest('.tabbed-section').querySelector('.code-area.active');
+    copyElement(activePanel, button);
 }
 
-function copyResponse() {
-    copyCode('code-response', '.copy-button-response');
-}
-
-function copyCatsReplay() {
-    copyCode('code-cats-replay', '.copy-button-cats-replay');
-}
-
-function copyCode(codeAreaId, copyButtonSelector) {
+function copyCode(codeAreaId, copyButton) {
     const codeArea = document.getElementById(codeAreaId);
-    const codeText = codeArea.querySelector('code').innerText;
+    copyElement(codeArea, copyButton);
+}
+
+function copyElement(element, copyButton) {
+    const codeText = element.innerText;
 
     const tempTextarea = document.createElement('textarea');
     tempTextarea.value = codeText;
@@ -239,7 +226,6 @@ function copyCode(codeAreaId, copyButtonSelector) {
     document.execCommand('copy');
     document.body.removeChild(tempTextarea);
 
-    const copyButton = document.querySelector(copyButtonSelector);
     copyButton.textContent = 'Copied';
     copyButton.classList.add("copied");
     setTimeout(() => {

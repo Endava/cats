@@ -520,11 +520,13 @@ public class ServiceCaller {
             //for GET and HEAD, we remove Content-Type as some servers don't like it
             headers.removeAll("Content-Type");
         }
-        try (Response response = okHttpClient.newCall(new Request.Builder()
+        Request request = new Request.Builder()
                 .url(catsRequest.getUrl())
                 .headers(headers.build())
                 .method(catsRequest.getHttpMethod(), requestBody)
-                .build()).execute()) {
+                .build();
+        testCaseListener.recordRequestAttempt();
+        try (Response response = okHttpClient.newCall(request).execute()) {
             long endTime = System.currentTimeMillis();
 
             CatsResponse.CatsResponseBuilder catsResponseBuilder = this.populateCatsResponseFromHttpResponse(response);

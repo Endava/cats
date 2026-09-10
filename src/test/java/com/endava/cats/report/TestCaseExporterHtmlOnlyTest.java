@@ -45,6 +45,10 @@ class TestCaseExporterHtmlOnlyTest {
         statistics.increaseSuccess("/customers");
         statistics.increaseSkipped();
         statistics.increaseSkippedFromReporting("/customers");
+        statistics.increaseCompletedTests();
+        statistics.increaseCompletedTests();
+        statistics.increaseRequestsAttempted();
+        statistics.increaseRequestsAttempted();
         statistics.increaseAuthErrors();
         statistics.increaseIoErrors();
         statistics.markLimitReached("Execution stopped after reaching --stopAfterTests (25 tests)");
@@ -66,17 +70,45 @@ class TestCaseExporterHtmlOnlyTest {
 
         Assertions.assertThat(html).contains(
                 "Run Details", "Limit reached", "Execution stopped after reaching --stopAfterTests (25 tests)",
-                "Quality gate", "PASSED", "Total requests", "2", "Reported results", "1",
-                "Skipped from reporting", "Skipped tests", "Authentication errors", "I/O errors",
+                "Quality gate", "PASSED", "Tests Completed", "2", "HTTP requests sent", "2",
+                "Results included in report", "1",
+                "Omitted by reporting rules", "Skipped tests (total)", "Authentication errors", "I/O errors",
                 "Random seed", "12345", "Runtime resource reuse", "Enabled", "Configured stop limits",
                 "Processing Limitations", "GET /customers", "Could not resolve a request schema reference",
                 "Response", "201", "Time", "12ms");
         Assertions.assertThat(json).contains(
-                "\"totalRequests\": \"2\"", "\"skippedFromReporting\": \"1\"", "\"skipped\": 1",
+                "\"completedTests\": \"2\"", "\"totalRequests\": \"2\"", "\"totalTests\": \"1\"",
+                "\"skippedFromReporting\": \"1\"", "\"skipped\": 1",
                 "\"authErrors\": 1", "\"ioErrors\": 1", "\"runStatus\": \"LIMIT_REACHED\"",
                 "\"qualityGatePassed\": true", "\"randomSeed\": \"12345\"",
                 "\"successfulResourceReuseEnabled\": true", "\"stopAfterTests\": \"25\"",
                 "Could not resolve a request schema reference");
+    }
+
+    @Test
+    void shouldHideRedundantReportAccountingForOrdinaryRuns() throws Exception {
+        ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
+        ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);
+        StopArguments stopArguments = Mockito.mock(StopArguments.class);
+        ExecutionStatisticsListener statistics = new ExecutionStatisticsListener();
+
+        Mockito.when(reportingArguments.getOutputReportFolder()).thenReturn(reportDirectory.toString());
+        Mockito.when(reportingArguments.getMaskedHeaders()).thenReturn(Set.of());
+        statistics.increaseSuccess("/customers");
+        statistics.increaseCompletedTests();
+        statistics.increaseRequestsAttempted();
+
+        TestCaseExporterHtmlOnly exporter = new TestCaseExporterHtmlOnly(reportingArguments,
+                new CatsGlobalContext(), processingArguments, stopArguments);
+        exporter.appVersion = "test-version";
+        exporter.initPath(reportDirectory.toString());
+        exporter.writeSummary(List.of(summary()), statistics.snapshot(true, "Default: fail on any error"));
+
+        String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
+
+        Assertions.assertThat(html)
+                .contains("Tests completed", "HTTP requests sent", "Skipped tests (total)")
+                .doesNotContain("Results included in report", "Omitted by reporting rules");
     }
 
     private static CatsTestCaseSummary summary() {

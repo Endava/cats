@@ -9,14 +9,19 @@
         <p class="report-detail-note">{{qualityGateDescription}}</p>
     </div>
     <div class="card-wrapper">
-        <h2 class="action-tag no-top">Request accounting</h2>
-        <div class="report-detail-row"><span>Total requests</span><strong>{{totalRequests}}</strong></div>
-        <div class="report-detail-row"><span>Reported results</span><strong>{{total}}</strong></div>
-        <div class="report-detail-row"><span>Skipped from reporting</span><strong>{{skippedFromReporting}}</strong></div>
+        <h2 class="action-tag no-top">Execution accounting</h2>
+        <div class="report-detail-row"><span>Tests completed</span><strong>{{completedTests}}</strong></div>
+        <div class="report-detail-row"><span>HTTP requests sent</span><strong>{{requestsAttempted}}</strong></div>
+        {{#showResultsIncluded}}
+        <div class="report-detail-row"><span>Results included in report</span><strong>{{reportedResults}}</strong></div>
+        {{/showResultsIncluded}}
+        <div class="report-detail-row"><span>Skipped tests (total)</span><strong>{{skipped}}</strong></div>
+        {{#hasSkippedFromReporting}}
+        <div class="report-detail-row"><span>Omitted by reporting rules</span><strong>{{skippedFromReporting}}</strong></div>
+        {{/hasSkippedFromReporting}}
     </div>
     <div class="card-wrapper">
         <h2 class="action-tag no-top">Execution diagnostics</h2>
-        <div class="report-detail-row"><span>Skipped tests</span><strong>{{skipped}}</strong></div>
         <div class="report-detail-row"><span>Authentication errors</span><strong>{{authErrors}}</strong></div>
         <div class="report-detail-row"><span>I/O errors</span><strong>{{ioErrors}}</strong></div>
     </div>

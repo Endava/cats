@@ -259,7 +259,7 @@ class CatsCommandTest {
     }
 
     private static ExecutionSummary executionSummary(RunOutcome outcome) {
-        return new ExecutionSummary(0, 0, 0, 0, 0, 0, 0, 0, 0,
+        return new ExecutionSummary(0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 Map.of(), Map.of(), true, "", outcome);
     }
 

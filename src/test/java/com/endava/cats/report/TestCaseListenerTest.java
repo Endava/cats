@@ -85,7 +85,7 @@ class TestCaseListenerTest {
         testReportsGenerator = Mockito.mock(TestReportsGenerator.class);
         executionSummaryProvider = Mockito.mock(ExecutionSummaryProvider.class);
         Mockito.when(executionSummaryProvider.snapshot()).thenReturn(new ExecutionSummary(
-                0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "", RunOutcome.completed()));
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "", RunOutcome.completed()));
         Mockito.when(reportingArguments.getReportFormat()).thenReturn(List.of(ReportingArguments.ReportFormat.HTML_JS));
         executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
@@ -229,6 +229,18 @@ class TestCaseListenerTest {
                     Assertions.assertThat(completed.test().request().httpMethod()).isEqualTo("GET");
                     Assertions.assertThat(completed.test().response().responseCode()).isEqualTo(200);
                 });
+        Mockito.verify(executionStatisticsListener).increaseCompletedTests();
+    }
+
+    @Test
+    void shouldRecordAndPublishEveryRequestAttempt() {
+        List<CatsExecutionEvent> events = new ArrayList<>();
+        executionEventPublisher.subscribe(events::add);
+
+        testCaseListener.recordRequestAttempt();
+
+        Mockito.verify(executionStatisticsListener).increaseRequestsAttempted();
+        Assertions.assertThat(events).singleElement().isInstanceOf(CatsExecutionEvent.RequestAttempted.class);
     }
 
     @Test
@@ -381,6 +393,7 @@ class TestCaseListenerTest {
         prepareTestCaseListenerSimpleSetup(response, () -> testCaseListener.reportInfo(logger, "Something was good"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
+        Mockito.verify(executionStatisticsListener).increaseSkippedFromReporting(Mockito.nullable(String.class));
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
 
         MDC.remove(TestCaseListener.ID);
@@ -502,6 +515,8 @@ class TestCaseListenerTest {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.skipTest(logger, "Skipper!"), FuzzingData.builder().build());
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
+        Mockito.verify(executionStatisticsListener, Mockito.never())
+                .increaseSkippedFromReporting(Mockito.nullable(String.class));
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());

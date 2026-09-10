@@ -62,6 +62,7 @@ final class CatsTuiState {
     private long errors;
     private long skipped;
     private long skippedFromReporting;
+    private long requestsAttempted;
     private long observedTests;
     private long discardedResults;
     private long timedResults;
@@ -117,6 +118,7 @@ final class CatsTuiState {
             case CatsExecutionEvent.FuzzerCompleted _ -> {
                 // The next fuzzer event replaces the current label.
             }
+            case CatsExecutionEvent.RequestAttempted _ -> requestsAttempted++;
             case CatsExecutionEvent.TestCompleted(_, var test) -> register(test);
             case CatsExecutionEvent.SessionEnded(var occurredAt, var runSummary) -> {
                 summary = runSummary;
@@ -962,7 +964,7 @@ final class CatsTuiState {
     }
 
     long completedTests() {
-        return observedTests;
+        return summary == null ? observedTests : summary.completedTests();
     }
 
     long success() {
@@ -978,11 +980,11 @@ final class CatsTuiState {
     }
 
     long skipped() {
-        return summary == null ? skipped : summary.skipped() + summary.skippedFromReporting();
+        return summary == null ? skipped : summary.skipped();
     }
 
-    long totalRequests() {
-        return summary == null ? success + warnings + errors + skippedFromReporting : summary.totalRequests();
+    long requestsAttempted() {
+        return summary == null ? requestsAttempted : summary.requestsAttempted();
     }
 
     long reportedResults() {

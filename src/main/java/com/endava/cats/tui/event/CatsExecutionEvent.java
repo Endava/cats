@@ -58,6 +58,12 @@ public sealed interface CatsExecutionEvent {
     }
 
     /**
+     * Signals that an HTTP request is about to be handed to the HTTP client.
+     */
+    record RequestAttempted(Instant occurredAt) implements CatsExecutionEvent {
+    }
+
+    /**
      * Signals that a single test case has completed.
      */
     record TestCompleted(Instant occurredAt, TestResultSnapshot test) implements CatsExecutionEvent {

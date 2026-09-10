@@ -42,7 +42,7 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.warnings()).isEqualTo(1);
 
         state.accept(new CatsExecutionEvent.SessionEnded(NOW.plusSeconds(5),
-                new ExecutionSummary(20, 18, 10, 3, 5, 2, 2, 0, 0, Map.of(200, 10),
+                new ExecutionSummary(20, 20, 18, 10, 3, 5, 2, 2, 0, 0, Map.of(200, 10),
                         Map.of("/pets", 5L), false, "Default: fail on any error", RunOutcome.completed())));
 
         Assertions.assertThat(state.running()).isFalse();
@@ -50,9 +50,10 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.success()).isEqualTo(10);
         Assertions.assertThat(state.warnings()).isEqualTo(3);
         Assertions.assertThat(state.errors()).isEqualTo(5);
-        Assertions.assertThat(state.totalRequests()).isEqualTo(20);
+        Assertions.assertThat(state.completedTests()).isEqualTo(20);
+        Assertions.assertThat(state.requestsAttempted()).isEqualTo(20);
         Assertions.assertThat(state.reportedResults()).isEqualTo(18);
-        Assertions.assertThat(state.skipped()).isEqualTo(4);
+        Assertions.assertThat(state.skipped()).isEqualTo(2);
         Assertions.assertThat(state.skippedFromReporting()).isEqualTo(2);
         Assertions.assertThat(state.topFailingPaths()).contains("/pets (5)");
         Assertions.assertThat(state.qualityGatePassed()).isFalse();
@@ -67,13 +68,13 @@ class CatsTuiStateTest {
     void shouldExposeSessionFailure() {
         CatsTuiState state = new CatsTuiState();
         state.accept(new CatsExecutionEvent.SessionEnded(NOW,
-                new ExecutionSummary(7, 6, 4, 1, 1, 0, 1, 0, 0, Map.of(), Map.of(),
+                new ExecutionSummary(7, 7, 6, 4, 1, 1, 1, 1, 0, 0, Map.of(), Map.of(),
                         false, "failed", RunOutcome.failed("Contract cannot be read"))));
 
         Assertions.assertThat(state.running()).isFalse();
         Assertions.assertThat(state.status()).isEqualTo("Failed");
         Assertions.assertThat(state.failureMessage()).isEqualTo("Contract cannot be read");
-        Assertions.assertThat(state.totalRequests()).isEqualTo(7);
+        Assertions.assertThat(state.requestsAttempted()).isEqualTo(7);
     }
 
     @Test
@@ -91,20 +92,20 @@ class CatsTuiStateTest {
     void shouldExposeSessionCancellation() {
         CatsTuiState state = new CatsTuiState();
         state.accept(new CatsExecutionEvent.SessionEnded(NOW,
-                new ExecutionSummary(5, 4, 3, 1, 0, 0, 1, 0, 0, Map.of(), Map.of(),
+                new ExecutionSummary(5, 5, 4, 3, 1, 0, 1, 1, 0, 0, Map.of(), Map.of(),
                         true, "cancelled", RunOutcome.cancelled("Execution cancelled by user"))));
 
         Assertions.assertThat(state.running()).isFalse();
         Assertions.assertThat(state.status()).isEqualTo("Cancelled");
         Assertions.assertThat(state.failureMessage()).isEqualTo("Execution cancelled by user");
-        Assertions.assertThat(state.totalRequests()).isEqualTo(5);
+        Assertions.assertThat(state.requestsAttempted()).isEqualTo(5);
     }
 
     @Test
     void shouldExposeLimitReachedAsANormalCompletion() {
         CatsTuiState state = new CatsTuiState();
         state.accept(new CatsExecutionEvent.SessionEnded(NOW,
-                new ExecutionSummary(10, 10, 8, 1, 1, 0, 0, 0, 0, Map.of(), Map.of(),
+                new ExecutionSummary(10, 10, 10, 8, 1, 1, 0, 0, 0, 0, Map.of(), Map.of(),
                         true, "done", RunOutcome.limitReached("Maximum tests reached"))));
 
         Assertions.assertThat(state.running()).isFalse();
@@ -354,6 +355,8 @@ class CatsTuiStateTest {
     @Test
     void shouldTrackAndFilterSkippedResultsWithoutPollutingTimingOrCodes() {
         CatsTuiState state = new CatsTuiState();
+        state.accept(new CatsExecutionEvent.RequestAttempted(NOW));
+        state.accept(new CatsExecutionEvent.RequestAttempted(NOW));
         state.accept(new CatsExecutionEvent.TestCompleted(NOW, test("1", "success", 200, 10)));
         state.accept(new CatsExecutionEvent.TestCompleted(NOW, test("2", "skip_reporting", 503, 90)));
 
@@ -363,8 +366,17 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.filteredResults()).extracting(TestResultSnapshot::id).containsExactly("2");
         Assertions.assertThat(state.skipped()).isEqualTo(1);
         Assertions.assertThat(state.skippedFromReporting()).isEqualTo(1);
+        Assertions.assertThat(state.requestsAttempted()).isEqualTo(2);
         Assertions.assertThat(state.averageResponseTime()).isEqualTo(10);
         Assertions.assertThat(state.responseCodeSummary()).contains("200: 1").doesNotContain("503");
+
+        state.accept(new CatsExecutionEvent.SessionEnded(NOW,
+                new ExecutionSummary(2, 2, 1, 1, 0, 0, 1, 1, 0, 0,
+                        Map.of(200, 1), Map.of(), true, "", RunOutcome.completed())));
+
+        Assertions.assertThat(state.skipped()).isEqualTo(1);
+        Assertions.assertThat(state.skippedFromReporting()).isEqualTo(1);
+        Assertions.assertThat(state.requestsAttempted()).isEqualTo(2);
     }
 
     @Test
@@ -521,7 +533,7 @@ class CatsTuiStateTest {
         running.handleKey(KeyEvent.ofChar('Q'));
         Assertions.assertThat(running.status()).isEqualTo("Cancellation requested");
         running.accept(new CatsExecutionEvent.SessionEnded(NOW, new ExecutionSummary(0, 0, 0, 0, 0,
-                0, 0, 0, 0, Map.of(), Map.of(), true, "done", RunOutcome.completed())));
+                0, 0, 0, 0, 0, Map.of(), Map.of(), true, "done", RunOutcome.completed())));
         running.handleKey(KeyEvent.ofChar('q'));
         Assertions.assertThat(running.status()).isEqualTo("Finished");
     }

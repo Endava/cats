@@ -258,40 +258,26 @@ public abstract class TestCaseExporter {
     }
 
     /**
-     * Prints the execution details including the overall CATS execution time, the total number of requests, and statistics on passed, warnings, and errors.
+     * Prints execution, request, and result accounting together with the final result distribution.
      * It also provides a message with a link to the generated report if available.
      */
     public void printExecutionDetails(ExecutionSummary executionSummary) {
         String duration = Duration.ofMillis(System.currentTimeMillis() - t0).toString().toLowerCase(Locale.ROOT).substring(2);
-        long totalRequests = executionSummary.totalRequests();
-        long skippedFromReporting = executionSummary.skippedFromReporting();
-        long reportedResults = executionSummary.reportedResults();
 
         emptyConsoleLine();
 
-        // Print main execution summary
-        if (skippedFromReporting > 0) {
-            // When skip arguments are used, show detailed breakdown
-            String catsFinished = AnsiUtils.blue("CATS finished in {}. ");
-            String totalRequestsMsg = AnsiUtils.blue("Total requests: {}, ");
-            String skippedMsg = AnsiUtils.blue("skipped from reporting: {}, ");
-            String reportedMsg = AnsiUtils.blue("reported: {}. ");
-            String passed = AnsiUtils.boldGreen("✔ Passed {}, ");
-            String warnings = AnsiUtils.boldYellow("⚠ warnings: {}, ");
-            String errors = AnsiUtils.boldRed("‼ errors: {}");
-            String finalMessage = catsFinished + totalRequestsMsg + skippedMsg + reportedMsg + passed + warnings + errors;
-            logger.complete(finalMessage, duration, totalRequests, skippedFromReporting, reportedResults,
-                    executionSummary.success(), executionSummary.warnings(), executionSummary.errors());
-        } else {
-            // When no skip arguments are used, show traditional format
-            String catsFinished = AnsiUtils.blue("CATS finished in {}. Total requests {}. ");
-            String passed = AnsiUtils.boldGreen("✔ Passed {}, ");
-            String warnings = AnsiUtils.boldYellow("⚠ warnings: {}, ");
-            String errors = AnsiUtils.boldRed("‼ errors: {}");
-            String finalMessage = catsFinished + passed + warnings + errors;
-            logger.complete(finalMessage, duration, totalRequests, executionSummary.success(),
-                    executionSummary.warnings(), executionSummary.errors());
-        }
+        String catsFinished = AnsiUtils.blue("CATS finished in {}. ");
+        String execution = AnsiUtils.blue("Tests completed: {}, HTTP requests sent: {}, results included: {}, "
+                + "skipped: {}, omitted from report: {}. ");
+        String passed = AnsiUtils.boldGreen("✔ Passed {}, ");
+        String warnings = AnsiUtils.boldYellow("⚠ warnings: {}, ");
+        String errors = AnsiUtils.boldRed("‼ errors: {}");
+        logger.complete(catsFinished + execution, duration,
+                executionSummary.completedTests(), executionSummary.requestsAttempted(),
+                executionSummary.reportedResults(), executionSummary.skipped(),
+                executionSummary.skippedFromReporting());
+        logger.complete(passed + warnings + errors, executionSummary.success(),
+                executionSummary.warnings(), executionSummary.errors());
 
         // Print quality gate result
         String qualityGateStatus = executionSummary.qualityGatePassed()
@@ -341,8 +327,9 @@ public abstract class TestCaseExporter {
                 .toList();
 
         return CatsTestReport.builder().testCases(sortedSummaries).errors(executionSummary.errors())
-                .success(executionSummary.success()).totalTests(executionSummary.reportedResults())
-                .totalRequests(executionSummary.totalRequests())
+                .success(executionSummary.success()).completedTests(executionSummary.completedTests())
+                .reportedResults(executionSummary.reportedResults())
+                .requestsAttempted(executionSummary.requestsAttempted())
                 .skippedFromReporting(executionSummary.skippedFromReporting())
                 .skipped(executionSummary.skipped())
                 .authErrors(executionSummary.authenticationErrors())
