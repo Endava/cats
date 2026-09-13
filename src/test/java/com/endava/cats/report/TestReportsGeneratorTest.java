@@ -6,7 +6,6 @@ import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.RunOutcome;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.enterprise.inject.Instance;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 

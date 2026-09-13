@@ -18,10 +18,10 @@ public class ResourceCorrelation {
     private final Object value;
 
     public String getTargetLocation() {
-        return target.getLocation().name().toLowerCase(java.util.Locale.ROOT);
+        return target.location().name().toLowerCase(java.util.Locale.ROOT);
     }
 
     public String getTargetField() {
-        return target.getName();
+        return target.name();
     }
 }

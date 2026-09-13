@@ -9,7 +9,6 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;

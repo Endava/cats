@@ -1,6 +1,5 @@
 package com.endava.cats.model;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -10,21 +9,15 @@ import java.util.Comparator;
 /**
  * Identifies a concrete part of an HTTP request independently of why that part is being used.
  */
-@Getter
-@EqualsAndHashCode
-@RequiredArgsConstructor
-public final class RequestTarget {
+public record RequestTarget(@NonNull Location location, @NonNull String name) {
     private static final Comparator<RequestTarget> ORDERING = Comparator
-            .comparing(RequestTarget::getLocation)
-            .thenComparing(RequestTarget::getName, String.CASE_INSENSITIVE_ORDER)
-            .thenComparing(RequestTarget::getName);
+            .comparing(RequestTarget::location)
+            .thenComparing(RequestTarget::name, String.CASE_INSENSITIVE_ORDER)
+            .thenComparing(RequestTarget::name);
 
-    @NonNull
-    private final Location location;
-    @NonNull
-    private final String name;
-
-    /** Supported request locations. */
+    /**
+     * Supported request locations.
+     */
     @RequiredArgsConstructor
     public enum Location {
         BODY("Body field"),

@@ -108,7 +108,8 @@ class CatsTestCaseTest {
         Assertions.assertThat(catsTestCase.hasMutationTargets()).isTrue();
         List<RequestTarget> mutationTargets = catsTestCase.getMutationTargets();
         List<ResourceCorrelation> runtimeCorrelations = catsTestCase.getRuntimeCorrelations();
-        Assertions.assertThatThrownBy(() -> mutationTargets.add(RequestTarget.body("other")))
+        RequestTarget otherTarget = RequestTarget.body("other");
+        Assertions.assertThatThrownBy(() -> mutationTargets.add(otherTarget))
                 .isInstanceOf(UnsupportedOperationException.class);
         Assertions.assertThatThrownBy(runtimeCorrelations::clear)
                 .isInstanceOf(UnsupportedOperationException.class);

@@ -118,7 +118,7 @@ public class ServiceData {
      */
     public boolean isFuzzedField(String field, RequestTarget.Location location) {
         return mutationTargets.stream()
-                .anyMatch(target -> target.getLocation() == location && target.getName().equalsIgnoreCase(field));
+                .anyMatch(target -> target.location() == location && target.name().equalsIgnoreCase(field));
     }
 
     /**
@@ -128,8 +128,8 @@ public class ServiceData {
      * @return true when supplied header data must preserve the mutation
      */
     public boolean isFuzzedHeader(String headerName) {
-        return mutationTargets.stream().anyMatch(target -> target.getLocation() == RequestTarget.Location.HEADER &&
-                        target.getName().equalsIgnoreCase(headerName));
+        return mutationTargets.stream().anyMatch(target -> target.location() == RequestTarget.Location.HEADER &&
+                        target.name().equalsIgnoreCase(headerName));
     }
 
     /**

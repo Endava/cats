@@ -8,6 +8,7 @@ import dev.tamboui.toolkit.app.ToolkitRunner;
 import dev.tamboui.tui.TuiConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -157,7 +158,7 @@ public class CatsTuiLauncher {
         }
     }
 
-    private static JLineBackend validatedBackend() throws Exception {
+    private static JLineBackend validatedBackend() throws IOException {
         JLineBackend backend = new JLineBackend();
         try {
             Size size = backend.size();

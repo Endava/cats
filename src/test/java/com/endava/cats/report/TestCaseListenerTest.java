@@ -190,10 +190,12 @@ class TestCaseListenerTest {
     @Test
     void shouldNotReportCancellationAsATestError() {
         try {
-            Assertions.assertThatThrownBy(() -> testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
-                        Thread.currentThread().interrupt();
-                        CatsExecutionCancelledException.check();
-                    }, FuzzingData.builder().build()))
+            Runnable testExecution = () -> {
+                Thread.currentThread().interrupt();
+                CatsExecutionCancelledException.check();
+            };
+            FuzzingData fuzzingData = FuzzingData.builder().build();
+            Assertions.assertThatThrownBy(() -> testCaseListener.createAndExecuteTest(logger, fuzzer, testExecution, fuzzingData))
                     .isInstanceOf(CatsExecutionCancelledException.class);
 
             Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());

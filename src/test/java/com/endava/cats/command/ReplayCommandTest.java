@@ -6,6 +6,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
+import com.endava.cats.util.KeyValuePair;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -85,7 +86,7 @@ class ReplayCommandTest {
         Mockito.verify(serviceCaller).callService(request.capture(), Mockito.eq(Collections.emptySet()));
         Assertions.assertThat(request.getValue().getHeaders())
                 .filteredOn(header -> "X-Vault-Token".equals(header.getKey()))
-                .singleElement().extracting(header -> header.getValue()).isEqualTo("OVERRIDDEN");
+                .singleElement().extracting(KeyValuePair::getValue).isEqualTo("OVERRIDDEN");
         Assertions.assertThat(request.getValue().getHeaders())
                 .anySatisfy(header -> {
                     Assertions.assertThat(header.getKey()).isEqualTo("X-New");

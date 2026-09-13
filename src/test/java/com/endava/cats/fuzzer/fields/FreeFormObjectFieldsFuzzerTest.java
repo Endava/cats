@@ -108,7 +108,7 @@ class FreeFormObjectFieldsFuzzerTest {
         fuzzer.fuzz(data);
 
         List<SimpleExecutorContext> contexts = capturedContexts(MUTATION_COUNT);
-        Assertions.assertThat(contexts).allSatisfy(context -> Assertions.assertThat(
+        Assertions.assertThat(contexts).isNotEmpty().allSatisfy(context -> Assertions.assertThat(
                 JsonUtils.parseAsJsonElement(context.getPayload()).getAsJsonObject().get("existing").getAsBoolean()).isTrue());
     }
 

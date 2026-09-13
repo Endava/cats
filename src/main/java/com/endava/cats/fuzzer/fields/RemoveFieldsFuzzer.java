@@ -9,7 +9,6 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
