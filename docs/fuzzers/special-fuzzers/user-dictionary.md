@@ -4,6 +4,20 @@ description: Fuzz  with a custom dictionary and automatic configuration
 ---
 
 # User Dictionary
+
+| Item | Description |
+|:--|:--|
+| **Full Fuzzer Name** | `UserDictionaryFieldsFuzzer` and `UserDictionaryHeadersFuzzer` |
+| **Log Key** | N/A; the active fuzzer name is shown in test results. |
+| **Description** | Replaces request fields or headers with values from a user-supplied dictionary. |
+| **Enabled by default?** | No. Supplying `-w` or `--words` activates the user-dictionary fuzzers. |
+| **Target fields/headers** | All eligible request fields and HTTP headers. |
+| **Expected result** | Responses matching at least one configured `--matchXXX` argument are reported as errors; other responses are skipped. |
+| **Fuzzing logic** | Iterates through dictionary values and replaces each eligible field or header. |
+| **Conditions when this fuzzer will be skipped** | When no custom dictionary is supplied or no `--matchXXX` argument is configured. Other fuzzers are disabled while the custom dictionary is active. |
+| **HTTP methods that will be skipped** | None beyond normal target-specific restrictions. |
+| **Reporting** | Reports configured match conditions as errors and filters all other responses from the final report. |
+
 This Fuzzer is a less configurable form of `SecurityFuzzer`. It is enabled when supplying a custom dictionary via de `-w` argument through the typical `cats ...` command.
 Example:
 
@@ -22,4 +36,3 @@ The Fuzzer will report any response matching any of the `--mX` arguments as erro
 :::caution
 At least one `--mX` argument is required when using a custom dictionary. The User Dictionary Fuzzers won't run without one.
 :::
-

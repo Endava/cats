@@ -22,7 +22,7 @@ sudo cp cats /usr/local/bin/cats
 cats -h
 ```
 
-You can also run CATS using the [uberjar](https://github.com/Endava/cats/releases). This requires [Java 17+](https://sdkman.io/jdks) to be installed.
+You can also run CATS using the [uberjar](https://github.com/Endava/cats/releases). This requires [Java 25+](https://sdkman.io/jdks) to be installed.
 
 You can run it as `java -jar cats.jar`.
 
@@ -48,11 +48,15 @@ You can also check the [cats_autocomplete](https://github.com/Endava/cats/blob/m
 
 ## Build from sources
 
-You can build CATS from sources on you local box. You need [Java 17+](https://sdkman.io/jdks). Maven is already bundled.
+You can build CATS from sources on your local machine with [Java 25+](https://sdkman.io/jdks). Maven is already bundled.
 
 :::caution Before running the first build
-Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork ok [OKHttp](https://square.github.io/okhttp/) which will install locally
-under the `4.11.0-CATS` version, so don't worry about overriding the official versions.
+Before running the first build, please make sure you run `./mvnw clean`. CATS uses patched forks of [OkHttp](https://square.github.io/okhttp/) and [Swagger Parser](https://github.com/swagger-api/swagger-parser). Maven installs these artifacts locally from the repository's `lib/` directory:
+
+- `com.squareup.okhttp3:okhttp:5.4.0-CATS`
+- `io.swagger.parser.v3:swagger-parser-v3:2.1.46-CATS`
+
+These `-CATS` versions are local build artifacts and are intentionally kept separate from the official dependency versions.
 :::
 
 You can use the following Maven command to build the project as an uberjar:
@@ -69,4 +73,3 @@ You can also build native images using a [GraalVM Java version](https://www.graa
 ### Notes on Unit Tests
 
 You may see some `error` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the Fuzzers.
-

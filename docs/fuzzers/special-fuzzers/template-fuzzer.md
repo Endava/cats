@@ -4,6 +4,20 @@ description: Fuzz non-OpenAPI endpoints
 ---
 
 # Template Fuzzer
+
+| Item | Description |
+|:--|:--|
+| **Full Fuzzer Name** | `TemplateFuzzer` |
+| **Log Key** | N/A; the selected mutator is included in each scenario. |
+| **Description** | Fuzzes non-OpenAPI endpoints from a request template. |
+| **Enabled by default?** | No. Enable it with `cats template`. |
+| **Target fields** | Targets supplied with `-t`/`--target`; these may be body fields, path/query parameters, or headers. |
+| **Expected result** | Responses are evaluated with the configured match, ignore, or filter conditions. |
+| **Fuzzing logic** | Iteratively replaces selected template targets with built-in mutator payloads or values from `-w`/`--words`. |
+| **Conditions when this fuzzer will be skipped** | When no target is supplied, a target is not present in the template request, or the request cannot be parsed. |
+| **HTTP methods that will be skipped** | Body mutation is skipped for methods without bodies; path/query/header mutation remains available. |
+| **Reporting** | Reports responses according to the configured response-code and match conditions. |
+
 The `TemplateFuzzer` can be used to fuzz non-OpenAPI endpoints using the `cats fuzz` sub-command. 
 If the target API does not have an OpenAPI spec available, you can use a request template to run a limited set of payloads.
 The syntax for running the `TemplateFuzzer` is very similar to `curl`:

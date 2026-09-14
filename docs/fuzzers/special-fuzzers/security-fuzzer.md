@@ -4,6 +4,20 @@ description: Fuzz with custom dictionaries and discrete configuration
 ---
 
 # Security Fuzzer
+
+| Item | Description |
+|:--|:--|
+| **Full Fuzzer Name** | `SecurityFuzzer` |
+| **Log Key** | N/A; test identifiers and scenarios from the input file identify executions. |
+| **Description** | Runs custom security payloads from a dictionary against explicitly selected request targets. |
+| **Enabled by default?** | No. Enable it with `cats run <security-fuzzer-file>`. |
+| **Target fields** | `targetFields`, `targetFieldTypes`, HTTP headers, or the entire request body as configured in the YAML file. |
+| **Expected result** | The `expectedResponseCode` supplied for each test case; security tests commonly expect `4XX` or a context-specific `2XX`. |
+| **Fuzzing logic** | Creates one test for each selected target and dictionary value while preserving generated values for fields that are not tested. |
+| **Conditions when this fuzzer will be skipped** | When no security fuzzer file is supplied, a path has no matching configuration, or no target is selected. |
+| **HTTP methods that will be skipped** | Methods excluded by the test file or unavailable on the selected OpenAPI path. |
+| **Reporting** | Reports results against each test's configured response-code expectation and optional `verify` assertions. |
+
 You can use CATS with your own dictionary by fuzzing specific fields with different sets of [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings).
 The behaviour is similar to the `FunctionalFuzzer` using `cats run <file-name>` sub-command. 
 You can use the exact same elements for output variables, test correlation, verify responses and so forth, with the addition that you must also specify a `targetFields` and/or `targetFieldTypes` and a `stringsList` element.
@@ -141,4 +155,3 @@ You can also set `additionalProperties` fields through the `functionalFuzzerFile
 
 ## SecurityFuzzer Reserved keywords
 The following keywords are reserved in `SecurityFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `verify`, `oneOfSelection`, `targetFields`, `targetFieldTypes`, `stringsFile`, `checkBoolean`, `additionalProperties`, `topElement` and `mapValues`.
-

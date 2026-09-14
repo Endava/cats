@@ -5,6 +5,19 @@ description: The Fuzzer used to write functional tests without coding
 
 # Functional Fuzzer
 
+| Item | Description |
+|:--|:--|
+| **Full Fuzzer Name** | `FunctionalFuzzer` |
+| **Log Key** | N/A; test identifiers and scenarios from the input file identify executions. |
+| **Description** | Runs user-defined functional tests while preserving CATS payload generation and self-healing behavior. |
+| **Enabled by default?** | No. Enable it with `cats run <file>`. |
+| **Target fields** | Fields, path parameters, headers, and request bodies specified by the functional test file. |
+| **Expected result** | The `expectedResponseCode` supplied for each test case, optionally combined with `verify` assertions. |
+| **Fuzzing logic** | Generates a valid request, applies values from the YAML DSL, executes tests in declared order, and can pass output variables between tests. |
+| **Conditions when this fuzzer will be skipped** | When no functional test file is supplied, the path is not configured, the HTTP method does not match, or required keywords are missing. |
+| **HTTP methods that will be skipped** | A test method is skipped when it is invalid or unavailable on the selected OpenAPI path. |
+| **Reporting** | Reports the configured response-code expectation and any `verify` assertion failures. |
+
 You can leverage CATS super-powers of self-healing and payload generation in order to write functional tests.
 This is achieved using the so called `FunctionaFuzzer` using the `cats run <file-name>` sub-command. 
 The `FunctionalFuzzer` is not a `Fuzzer` per se, but was named as such for consistency.
@@ -229,4 +242,3 @@ You can also set `additionalProperties` fields through the `FunctionalFuzzer` fi
 
 ## Reserved Keywords
 The following keywords are reserved in `FunctionalFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `oneOfSelection`, `verify`, `checkBoolean`, `additionalProperties`, `topElement` and `mapValues`.
-
