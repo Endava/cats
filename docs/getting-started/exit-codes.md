@@ -5,11 +5,18 @@ description: Exit Codes
 
 # Exit Codes
 CATS has the following exit codes:
-- `191` when for invalid input
-- `192` when something unexpected happens during execution
-- `number_of_errors` number of errors found while fuzzing
+
+- `0` when execution completes successfully and the configured quality gate passes
+- `1` when an internal execution error occurs or the configured `--failOn`/`--qualityGate` condition fails
+- `2` when command-line input is invalid
+- `130` when an interactive TUI run is cancelled
 
 :::info
-There might be cases when `191`, `192` might overlap with the actual number of errors reported by CATS.
-These are probably very rare cases. You can use the `cat cats-report/cats-summary-report.json | jq .errors` to differentiate if needed.
+The number of errors and warnings is still recorded in
+`cats-report/cats-summary-report.json`, even when a quality gate changes the
+process exit status:
+
+```bash
+jq '{errors, warnings, qualityGatePassed}' cats-report/cats-summary-report.json
+```
 :::

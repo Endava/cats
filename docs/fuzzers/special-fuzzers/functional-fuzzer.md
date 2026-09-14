@@ -36,6 +36,30 @@ The `FunctionalFuzzer` file has the following syntax:
         httpMethod: HTTP_METHOD
 ```
 
+## Global variables and path variables
+
+Define values once under `cats-global-vars` and reference them from any test:
+
+```yaml
+cats-global-vars:
+  tenant: "demo"
+  generatedId: "#(uuid)"
+
+/pets/{id}:
+  get_pet:
+    id: ${generatedId}
+    tenant: ${tenant}
+    expectedResponseCode: 200
+    httpMethod: GET
+```
+
+Values captured from a response can be reused through `output` as before. Path
+variables can also be captured explicitly with `$path`, while request values
+can be referenced with `$request` in output and verification expressions.
+
+The `scenario` keyword is preferred for the displayed test scenario; `description`
+remains supported for compatibility.
+
 And a typical run will look like (supposing the above file is named `functionalFuzzer.yml`):
 
 ```shell
@@ -205,5 +229,4 @@ You can also set `additionalProperties` fields through the `FunctionalFuzzer` fi
 
 ## Reserved Keywords
 The following keywords are reserved in `FunctionalFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `oneOfSelection`, `verify`, `checkBoolean`, `additionalProperties`, `topElement` and `mapValues`.
-
 

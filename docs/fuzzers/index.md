@@ -11,8 +11,8 @@ There are multiple categories of Fuzzers available:
 
 Additional checks which are not actually using any fuzzing, but leverage the CATS internal model for consistency and are also called Fuzzers:
 
-- `ContractInfo` Fuzzers which checks the contract for API good practices
-- `Special` Fuzzers a special category of Fuzzers which need further configuration and are focused on more complex activities like functional flow, custom dictionaries or supplying your own request templates, rather than OpenAPI specs.
+- `Linter` Fuzzers which check the contract for API good practices
+- `Special` Fuzzers are dedicated workflows that need further configuration and focus on activities such as functional flows, custom dictionaries, random mutators, or request templates rather than OpenAPI-only fuzzing.
 
 Each Fuzzer from the above categories are individually detailed using the below description table.
 

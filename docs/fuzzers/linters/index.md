@@ -17,24 +17,49 @@ Usually a good OpenAPI contract must follow several good practices in order to m
 - avoid using `xml` payload unless there is a really good reason (like documenting an old API for example)
 - json types and properties do not use the same naming (like having a `Pet` with a property named `pet`)
 
-CATS has currently 17 registered `Linter` Fuzzers or Linters:
-- `EmptyPathsLinter` - verifies that the current path contains at least one operation
+CATS has currently 41 registered `Linter` Fuzzers or Linters. The names below
+match the current output of `cats list --linters`:
+- `ArrayWithoutItemsLinter` - detects array schemas that do not define an `items` property
+- `CollectionPaginationLinter` - verifies that collection GET operations support pagination
+- `DeleteHasBodyLinter` - checks if DELETE methods have a body
+- `EmptyPathsLinter` - verifies that each path contains at least one operation
+- `EmptyRequestSchemaLinter` - detects request schemas without properties, references, or composition
+- `EmptyResponseSchemaLinter` - detects response schemas without properties, references, or composition
+- `EnumCaseGlobalLinter` - verifies consistent casing for string enum values across the contract
+- `EnumCasePathLevelLinter` - verifies enum casing for inline path-level schemas
+- `GetHasBodyLinter` - checks if GET methods have a body
+- `HeadHasBodyLinter` - checks if HEAD methods have a body
 - `HeadersCaseLinter` - verifies that HTTP headers follow naming conventions
-- `HttpStatusCodeInValidRangeFuzzer` -  verifies that all HTTP response codes are within the range of 100 to 599
+- `HttpMethodConsistencyErrorLinter` - flags missing critical REST methods
+- `HttpMethodConsistencyWarnLinter` - flags missing optional REST methods
+- `HttpStatusCodeInRangeLinter` - verifies that response codes are between 100 and 599
 - `JsonObjectsCaseLinter` - verifies that JSON elements follow naming conventions
+- `MultipleSuccessCodesLinter` - flags operations with multiple 2xx response codes
+- `OperationIdVerbPrefixLinter` - verifies operationId prefixes for HTTP methods
+- `PatchWithoutBodyLinter` - verifies that PATCH operations define a request body
 - `PathCaseLinter` - verifies that path elements follow naming conventions
-- `PathNounsLinter` - verifies that path elements use nouns to describe resources
-- `PathPluralsLinter` - verifies that path elements uses pluralization to describe resources
-- `PathTagsLinterFuzzer` - verifies that all OpenAPI paths contain tags elements and checks if the tags elements match the ones declared at the top level
-- `QueryParamsCaseLinter` - verifies that query params follow naming conventions
-- `RecommendedHeadersLinterFuzzer` - verifies that all OpenAPI contract paths contain recommended headers like: CorrelationId/TraceId, etc.
-- `RecommendedHttpCodesLinterFuzzer` - verifies that the current path contains all recommended HTTP response codes for all operations
-- `SecuritySchemesLinterFuzzer` - verifies if the OpenApi contract contains valid security schemas for all paths, either globally configured or per path
-- `TopLevelElementsLinterFuzzer` - verifies that all OpenAPI contract level elements are present and provide meaningful information: API description, documentation, title, version, etc.
-- `VersionsLinterFuzzer` - verifies that a given path doesn't contain versioning information
-- `XmlContentTypeLinterFuzzer` - verifies that all OpenAPI contract paths responses and requests does not offer `application/xml` as a Content-Type
-- `TracingHeadersLinter` - verifies that all OpenAPI contract paths contain recommended headers like: CorrelationId/TraceId, etc.
-- `UniqueOperationIdsLinter` - verifies that all operationIds are unique
+- `PathNounsLinter` - verifies that path elements use nouns
+- `PathPluralsLinter` - verifies plural resource names
+- `PathTagsLinter` - verifies path tags and top-level tag consistency
+- `PostWithoutBodyLinter` - verifies that POST operations define a request body
+- `PutWithoutBodyLinter` - verifies that PUT operations define a request body
+- `QueryParamsCaseLinter` - verifies that query parameters follow naming conventions
+- `RecommendedHttpCodesLinter` - verifies recommended response codes
+- `ResponsesWithBodiesLinter` - verifies response bodies are present except for 204 and 304
+- `SecuritySchemesLinter` - verifies valid security schemes are configured
+- `StringSchemaLimitGlobalLinter` - verifies string schemas have `maxLength` or `enum`
+- `StringSchemaPathLevelLinter` - verifies limits for inline path-level string schemas
+- `TopLevelElementsLinter` - verifies meaningful contract-level metadata
+- `TracingHeadersLinter` - verifies recommended tracing headers
+- `UniqueOperationIdsLinter` - verifies that operationIds are unique
+- `UnusedExamplesLinter` - flags unreferenced component examples
+- `UnusedHeadersLinter` - flags unreferenced component headers
+- `UnusedParametersLinter` - flags unreferenced component parameters
+- `UnusedRequestBodiesLinter` - flags unreferenced component request bodies
+- `UnusedResponsesLinter` - flags unreferenced component responses
+- `UnusedSchemasLinter` - flags unreferenced component schemas
+- `VersionsLinter` - verifies that paths do not contain versioning information
+- `XmlContentTypeLinter` - verifies that requests and responses do not offer `application/xml`
 
 You can run only these Fuzzers using `cats lint --contract=CONTRACT`.
 

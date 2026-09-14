@@ -81,3 +81,10 @@ The JUNIT report is written as `junit.xml` in the `cats-report` folder. Individu
 :::tip
 If you want to have history for CATS runs you can use the `--timestampReports` argument. This will create sub-folders for each run within the `cats-reports` folder with the corresponding timestamp.
 :::
+
+## Execution summary
+
+Recent reports also include the configured quality-gate status, stop-condition
+status, and execution summaries. A run can stop before all generated tests are
+executed because of `--stopAfterTests`, `--stopAfterErrors`, or
+`--stopAfterTimeInSec`; tests already executed remain included in the summary.

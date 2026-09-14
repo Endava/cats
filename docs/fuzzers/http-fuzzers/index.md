@@ -1,33 +1,36 @@
 # HTTP Fuzzers
-CATS has currently 26 registered `HTTP` Fuzzers:
-- `BypassAuthenticationFuzzer` - check if an authentication header is supplied; if yes try to make requests without it
-- `CheckDeletedResourcesNotAvailableFuzzer` - checks that resources are not available through `GET` after a successful `DELETE`
-- `CustomHttpMethods` - iterate through a list of hypothetical HTTP methods that are not expected to be implemented by REST APIs
-- `DummyRequestFuzzer` - send a dummy json request {'cats': 'cats'}
-- `EmptyBodyFuzzer` - send a request with a empty string body
-- `EmptyJsonArrayBody` - send a request with a empty json array body
-- `EmptyJsonBody` - send a request with a empty json body
-- `HappyFuzzer` - send a request with all fields and headers populated
-- `HttpMethodsFuzzer` - iterate through each undocumented HTTP method and send an empty request
-- `InsecureDirectObjectReferences` - detects Insecure Direct Object Reference (IDOR) vulnerabilities by replacing ID fields with alternative values
-- `InsertRandomValuesInBody` - insert invalid data within a valid request body
-- `MalformedJsonFuzzer` - send a malformed json request which has the String 'bla' at the end
-- `NonRestHttpMethodsFuzzer` - iterate through a list of HTTP method specific to the WebDav protocol that are not expected to be implemented by REST APIs
-- `NullBodyFuzzer` - send a request with a NULL body
-- `NullUnicodeBody` - send a request with a \u0000 body
-- `NullUnicodeSymbolBody` - send a request with a ␀ body
-- `RandomDummyInvalidJsonBody` - send a request with dummy invalid json body
-- `RandomNegativeDecimalBodyFuzzer` - send a request with a random negative decimal body
-- `RandomNegativeIntegerBodyFuzzer` - send a request with a random negative integer body
-- `RandomPositiveDecimalBodyFuzzer` - send a request with a random positive decimal body
-- `RandomPositiveIntegerBodyFuzzer` - send a request with a random positive integer body
-- `RandomResourcesFuzzer` - iterate through each path variable and send random resource identifiers
-- `RandomStringBodyFuzzer` - send a request with a random string body
-- `RandomUnicodeBodyFuzzer` - send a request with a random unicode string body
-- `ZeroDecimalBodyFuzzer` - send a request with decimal 0.0 as body
-- `ZeroIntegerBodyFuzzer` - send a request with integer 0 (zero) as body
 
-You can run only these Fuzzers by supplying the `--checkHttp` argument.
+CATS has currently 26 registered `HTTP` Fuzzers. The names below match
+`cats list --fuzzers`:
+
+- `BypassAuthentication` - remove authentication headers and check access control
+- `CheckDeletedResourcesNotAvailable` - verify resources are unavailable after successful deletes
+- `CustomHttpMethods` - send hypothetical methods not expected for REST APIs
+- `DummyRequest` - send a dummy JSON request
+- `EmptyBody` - send an empty-string body
+- `EmptyJsonArrayBody` - send an empty JSON array body
+- `EmptyJsonBody` - send an empty JSON object body
+- `HappyPath` - send a request with all fields and headers populated
+- `HttpMethods` - send undocumented HTTP methods
+- `InsecureDirectObjectReferences` - replace ID fields with alternative values to detect IDOR
+- `InsertRandomValuesInBody` - insert invalid data into a valid request body
+- `MalformedJson` - send malformed JSON
+- `NonRestHttpMethods` - send WebDAV methods not expected for REST APIs
+- `NullBody` - send a null body
+- `NullUnicodeBody` - send a `\\u0000` body
+- `NullUnicodeSymbolBody` - send a Unicode null-symbol body
+- `RandomDummyInvalidJsonBody` - send dummy invalid JSON
+- `RandomNegativeDecimalBody` - send a random negative decimal body
+- `RandomNegativeIntegerBody` - send a random negative integer body
+- `RandomPositiveDecimalBody` - send a random positive decimal body
+- `RandomPositiveIntegerBody` - send a random positive integer body
+- `RandomResources` - send random resource identifiers in path variables
+- `RandomStringBody` - send a random string body
+- `RandomUnicodeBody` - send a random Unicode string body
+- `ZeroDecimalBody` - send a decimal zero body
+- `ZeroIntegerBody` - send an integer zero body
+
+Run only these fuzzers with `--checkHttp`.
 
 ```mdx-code-block
 import DocCardList from '@theme/DocCardList';

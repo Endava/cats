@@ -57,3 +57,21 @@ The syntax of dynamically setting dates is similar with [Spring Expression Langu
 Dynamic expressions can also refer variables or request/response fields internally. In the example above, `expiry` is a field returned in the response.
 If you want to refer a variable created in a previous test, let's call it `petName`, you can do so as: `T(org.apache.commons.lang3.StringUtils).substringAfterLast(${petName},'a')`.
 You can also refer request elements using `${request#field}`.
+
+## Shorthand generators
+
+Functional and security fuzzer files also support shorthand expressions using
+the `#(...)` syntax:
+
+```yaml
+name: "#(alphanumeric(12))"
+email: "#(email)"
+identifier: "#(uuid)"
+createdOn: "#(today)"
+futureDate: "#(todayPlus(30))"
+```
+
+Available helpers include `uuid`, `email`, `now`, `today`, `todayPlus(days)`,
+`todayMinus(days)`, `alphanumeric(length)`, `alphabetic(length)`,
+`numeric(length)`, and `ascii(length)`. Length ranges can be supplied as
+`function(min,max)`.

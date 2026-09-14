@@ -4,143 +4,178 @@ description: All CATS arguments
 ---
 
 # Arguments
-You can get the full list of arguments by running `cats -h`. Below is a short description for each:
 
-- `--contract=LOCATION_OF_THE_CONTRACT` supplies the location of the OpenApi or Swagger contract.
-- `--server=URL` supplies the URL of the service implementing the contract.
-- `--basicauth=USR:PWD` supplies a `username:password` pair, in case the service uses basic auth.
-- `--authRefreshInterval=value_in_seconds` Amount of time in seconds after which to get new auth credentials
-- `--authRefreshScript=script` Script to get executed after `--authRefreshInterval` in order to get new auth credentials. The script will replace any headers that have `auth_script` as value. If you don't supply a `--authRefreshInterval`, but you supply a script, the script will be used to get the initial auth credentials.
-- `--fuzzers=LIST_OF_FUZZERS` supplies a comma separated list of fuzzers. The supplied list of Fuzzers can be partial names, not full Fuzzer names. CATS which check for all Fuzzers containing the supplied strings. If the argument is not supplied, all fuzzers will be run.
-- `--log=PACKAGE:LEVEL` can configure custom log level for a given package. You can provide a comma separated list of packages and levels or a level to apply to everything. This is helpful when you want to see full HTTP traffic: `--log=org.apache.http.wire:debug` or suppress CATS logging: `--log=com.endava.cats:warn`
-- `--skipLog=LEVELS`  A list of log levels to skip. For example, you can skip only note and info levels, but leave the rest
-- `--paths=PATH_LIST` supplies a comma separated list of OpenApi paths to be tested. If no path is supplied, all paths will be considered.
-- `--skipPaths=PATH_LIST` a comma separated list of paths to ignore. If no path is supplied, no path will be ignored
-- `--fieldsFuzzingStrategy=STRATEGY` specifies which strategy will be used for field fuzzing. Available strategies are `ONEBYONE`, `SIZE` and `POWERSET`. More information on field fuzzing can be found in the sections below.
-- `--maxFieldsToRemove=INTEGER` specifies the maximum number of fields to be removed when using the `SIZE` fields fuzzing strategy.
-- `--refData=FILE` specifies the file containing static reference data which must be fixed in order to have valid business requests. This is a YAML file. It is explained further in the sections below.
-- `--headers=FILE` specifies a file containing headers that will be added when sending payloads to the endpoints. You can use this option to add oauth/JWT tokens for example.
-- `--edgeSpacesStrategy=STRATEGY` specifies how to expect the server to behave when sending trailing and prefix spaces within fields. Possible values are `trimAndValidate` and `validateAndTrim`.
-- `--sanitizationStrategy=STRATEGY` specifies how to expect the server to behave when sending Unicode Control Chars and Unicode Other Symbols within the fields. Possible values are `sanitizeAndValidate` and `validateAndSanitize`
-- `--urlParams param1:value1 param2:value2` A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs. This is useful when you have static parameters in URLs (like 'version' for example).
-- `--functionalFuzzerFile=FILE ` a file used by the `FunctionalFuzzer` that will be used to create user-supplied payloads.
-- `--skipFuzzers=LIST_OF_FIZZERs` a comma separated list of fuzzers that will be skipped for **all** paths. You can either provide full `Fuzzer` names (for example: `--skippedFuzzers=VeryLargeStringsFuzzer`) or partial `Fuzzer` names (for example: `--skipFuzzers=VeryLarge`). `CATS` will check if the `Fuzzer` names contains the string you provide in the arguments value.
-- `--skipFields=field1,field2#subField1` a comma separated list of fields that will be skipped by replacement Fuzzers like EmptyStringsInFields, NullValuesInFields, etc. **When a field starts with `!` any field that starts with that name will be entirely skipped for fuzzing**
-- `--httpMethods=PUT,POST,etc` a comma separated list of HTTP methods that will be used to filter which http methods will be executed for each path within the contract
-- `--securityFuzzerFile=FILE` A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities
-- `--printExecutionStatistics` If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method. By default this will print a summary for each endpoint: max, min and average. If you want detailed reports you must supply `--printExecutionStatistics=detailed`
-- `--timestampReports` If supplied (no value needed), it will output the report still inside the `cats-report` folder, but in a sub-folder with the current timestamp
-- `--reportFormat=FORMAT` Specifies the format of the CATS report. Supported formats: `HTML_ONLY`, `HTML_JS` or `JUNIT`. You can use `HTML_ONLY` if you want the report to not contain any Javascript. This is useful in CI environments due to Javascript content security policies. Default is `HTML_JS` which includes some sorting and filtering capabilities.
-- `--[no-]useExamples` If `true` then CATS will use ALL examples supplied in the OpenAPI contract. This is equivalent to setting `--usePropertyExamples --useRequestBodyExamples --useResponseBodyExamples --useSchemaExamples`. If `false` CATS will rely only on generated values
-- `--[no-]usePropertyExamples` If `true` then CATS will use examples supplied in the OpenAPI contract for properties. If `false` CATS will rely only on generated values
-- `--[no-]useRequestBodyExamples` If `true` then CATS will use examples supplied in the OpenAPI contract for request bodies, at media-type level. If `false` CATS will rely only on generated values
-- `--[no-]useResponseBodyExamples` If `true` then CATS will use examples supplied in the OpenAPI contract for response bodies, at media-type level. If `false` CATS will rely only on generated values
-- `--[no-]useSchemaExamples` If `true` then CATS will use examples supplied in the OpenAPI contract for schemas. If `false` CATS will rely only on generated values
-- `--checkFields` If supplied (no value needed), it will only run the `Field` Fuzzers
-- `--checkHeaders` If supplied (no value needed), it will only run the `Header` Fuzzers
-- `--checkHttp` If supplied (no value needed), it will only run the `HTTP` Fuzzers
-- `--includeWhitespaces` If supplied (no value needed), it will include the `Whitespaces` Fuzzers
-- `--includeEmojis` If supplied (no value needed), it will include the `Emojis` Fuzzers
-- `--includeControlChars` If supplied (no value needed), it will include the `ControlChars` Fuzzers
-- `--includeContract` If supplied (no value needed), it will include `ContractInfo` Fuzzers
-- `--sslKeystore` Location of the JKS keystore holding certificates used when authenticating calls using one-way or two-way SSL
-- `--sslKeystorePwd` The password of the `sslKeystore`
-- `--sslKeyPwd` The password of the private key from the `sslKeystore`
-- `--proxyHost=INTEGER` The proxy server's host name (if running behind proxy)
-- `--proxyPort=INTEGER` The proxy server's port number (if running behind proxy)
-- `--maxRequestsPerMinute=INTEGER` Maximum number of requests per minute; this is useful when APIs have rate limiting implemented; default is 10000
-- `--connectionTimeout=INTEGER` Time period in seconds which CATS should establish a connection with the server; default is 10 seconds
-- `--writeTimeout=INTEGER` Maximum time of inactivity in seconds between two data packets when sending the request to the server; default is 10 seconds
-- `--readTimeout=INTEGER` Maximum time of inactivity in seconds between two data packets when waiting for the server's response; default is 10 seconds
-- `--dryRun` If provided, it will simulate a run of the service with the supplied configuration. The run won't produce a report, but will show how many tests will be generated and run for each OpenAPI endpoint
-- `--ignoreResponseCodes` HTTP_CODES_LIST a comma separated list of HTTP response codes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR. You can use response code families as `2xx`, `4xx`, etc.
-- `--ignoreResponseSize` SIZE_LIST a comma separated list of response sizes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
-- `--ignoreResponseWords` COUNT_LIST a comma separated list of words count in the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
-- `--ignoreResponseLines` LINES_COUNT a comma separated list of lines count in the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
-- `--ignoreResponseRegex` a REGEX that will match against the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
-- `--ignoreErrorLeaksCheck`If supplied (no value needed) it won't check if the response body contains sensitive information and will return the test result as SUCCESS instead of ERROR
-- `--filterResponseCodes` HTTP_CODES_LIST a comma separated list of HTTP response codes that will be filtered and not included in the final report. You can use response code families as `2xx`, `4xx`, etc.
-- `--filterResponseSize` SIZE_LIST a comma separated list of response sizes that will be filtered and not included in the final report
-- `--filterResponseWords` COUNT_LIST a comma separated list of words count in the response that will be filtered and not included in the final report
-- `--filterResponseLines` LINES_COUNT a comma separated list of lines count in the response that will be filtered and not included in the final report
-- `--filterResponseRegex` a REGEX that will match against the response that will be filtered and not included in the final report
-- `--tests` TESTS_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder
-- `--ignoreResponseCodeUndocumentedCheck` If supplied (not value needed) it won't check if the response code received from the service matches the value expected by the fuzzer and will return the test result as SUCCESS instead of WARN
-- `--ignoreResponseBodyCheck` If supplied (no value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN
-- `--ignoreResponseContentTypeCheck`If supplied (no value needed) it won't check if the response content type matches the one(s) defined in the contract for the corresponding http response code
-- `--blackbox` If supplied (no value needed) it will ignore all response codes except for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx,501"`
-- `--contentType` A custom mime type if the OpenAPI spec uses content type negotiation versioning.
-- `--output=PATH` The path where the CATS report will be written. Default is `cats-report` in the current directory
-- `--skipReportingForIgnoredCodes` Skip reporting entirely for any of the ignored arguments provided in `--ignoreResponseXXX`
-- `--skipReportingForSuccess` Skip reporting entirely for tests cases reported as success. Default: false
-- `--skipReportingForWarning` Skip reporting entirely for tests cases reported as warnings. Default: false
-- `--largeStringsSize=NUMBER` The size of the strings used by the Fuzzers sending large values like `VeryLargeStringsFuzzer`. Default: `40000`
-- `--debug` Sets logging level to all
-- `--json` Make specific commands output in `json` format
-- `--words=FILE` A custom dictionary that can be supplied. When this is supplied only the `TemplateFuzzer` will be active.
-- `--[no-]-checkUpdates`  If true checks if there is a CATS update available and prints the release notes along with the links. Default: true
-- `--[no-]-color` If true enables ANSI codes and coloured console output. Default: true
-- `--onlyLog=star,note` A list of log levels to include; allows more granular control of the log levels
-- `--userAgent=USER_AGENT` The user agent to be set in the User-Agent HTTP header. Default: cats/version
-- `--verbosity=DETAILED|SUMMARY`  Sets the verbosity of the console logging. If set to summary CATS will only output a simple progress screen per path. Default: `SUMMARY`
-- `--oneOfSelection "field1=value1"`, `--anyOfSelection` A `name=value` list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions which result in multiple payloads for a single endpoint and http method
-- `--randomHeadersNumber=NUMBER` The number of random headers that will be sent by the `LargeNumberOfRandomAlphanumericHeadersFuzzer` and `LargeNumberOfRandomHeadersFuzzer`. Default: `10000`
-- `--skipFieldTypes=string,integer,etc.` A comma separated list of OpenAPI data types to skip. It only supports standard types: https://swagger.io/docs/specification/data-models/data-types
-- `--skipFieldFormats=date,email,etc` A comma separated list of OpenAPI data formats to skip.  It supports formats mentioned in the documentation: https://swagger.io/docs/specification/data-models/data-types
-- `--fieldTypes=string,integer,etc.` A comma separated list of OpenAPI data types to include. It only supports standard types: https://swagger.io/docs/specification/data-models/data-types
-- `--fieldFormats=date,email,etc.` A comma separated list of OpenAPI data formats to include. It supports formats mentioned in the documentation: https://swagger.io/docs/specification/data-models/data-types
-- `--maxResponseTimeInMs` Sets a response time limit in milliseconds. If responses take longer than the provided value, they will get marked as error with reason `Response time exceeds max`. The response time limit check is triggered only if the test case is considered successful i.e. response matches Fuzzer expectations
-- `--rfc7396` When set to true it will send Content-Type=application/merge-patch+json for PATCH requests. Default: false`
-- `--maskHeaders` A comma separated list of headers to mask to protect sensitive info such as login credentials to be written in report files. Masked headers will be replaced with `$$HeaderName` so that test cases can be replayed using environment variables
-- `--tags`  A comma separated list of tags to include. If no tag is supplied, all tags will be considered. To list all available tags run: `cats stats -c api.yml`
-- `--skipTags` A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. To list all available tags run: `cats stats -c  api.yml`
-- `--fuzzersConfig=FILE` A properties file with Fuzzer configuration that changes default behaviour. Configuration keys are prefixed with the fully qualified Fuzzer name  
-- `--mutators=FOLDER` A folder containing custom mutators. Only applicable when using the `cats random` sub-command
-- `--allowInvalidEnumValues` When set to true the `InvalidValuesInEnumsFieldsFuzzer` will expect a 2XX response code instead of 4XX
-- `--selfReferenceDepth=<selfReferenceDepth>` Max depth for objects having cyclic dependencies
-- `--limitXxxOfCombinations=<limitXxxOfCombinations>` Max number of anyOf/oneOf combinations
-- `--limitFuzzedFields=<numberOfFields>` Max number of fields that will be fuzzed
-- `--[no-]useDefaults` If set to true, it will use the default values when generating examples
-- `--nameReplace` If set to true, it will simply do a replacement between the targetFields names provided and the fuzz values 
-- `--stopAfterErrors=<stopAfterErrors>` Number of errors after which the continuous fuzzing will stop running. Errors are defined as conditions matching the given match arguments. Only available in `cats random` sub-command. 
-- `--stopAfterMutations=<stopAfterMutations>` Number of mutations (test cases) after which the continuous fuzzing will stop running. Only available in `cats random` sub-command.
-- `--stopAfterTimeInSec=<stopAfterTimeInSec>` Amount of time in seconds for how long the continuous fuzzing will run before stopping. Only available in `cats random` sub-command.
-- `--pathsRunOrder=<pathsOrderFile>` A file with the order in which the paths will be executed. The paths are on each line. The order from file will drive the execution order
-- `--errorLeaksKeywords=<errorLeaksKeywords>` A properties file with error leaks keywords that will be used when processing responses to detect potential error leaks. If one of these keyword is found, the test case will be marked as error
-- `-P name=value` A list of `name=value` pairs that will be used to replace url params for all paths
-- `-H name=value` A list of `name=value` pairs that will be used to replace headers for all paths
-- `-Q name=value` A list of `name=value` pairs that will be used to replace query params for all paths
-- `-R name=value` A list of `name=value` pairs that will be used as reference data for all paths
-- `--operationIds=<operationIds>` A comma separated list of operationIds to include. If no operationId is supplied, all operationIds will be considered.
-- `--skipOperationIds=<skipOperationIds>` A comma separated list of operationIds to ignore. If no operationId is supplied, no operationId will be ignored.
-- `--skipFuzzersForExtension` Skip specific fuzzers for endpoints with certain OpenAPI extension values. Format: x-extension-name=value:Fuzzer1,Fuzzer2.
-- `--resolveXxxOfCombinationForResponses` Resolve anyOf/oneOf combinations for responses. Default: false
-- `--http2PriorKnowledge` If set to `true`, it will force a http2 connection, without fallback to HTTP 1.X
-- `--includeAllInjectionPayloads` Include all injection payloads for security fuzzers (SQL, XSS, Command, NoSQL injection). By default, only a curated top 10 payloads are used per injection type to reduce execution time.
-- `--seed=<value>` a seed used for deterministic generation of the random values
+The complete, version-specific list is always available with `cats --help`.
+The options below are grouped by purpose and apply to the OpenAPI fuzzing
+command unless noted otherwise. Most long options accept either `--name=value`
+or `--name value`.
 
-:::tip
-When you want to skip fuzzing entirely for a specific JSON object or specific fields you must prefix the field name from the `--skipFields` argument with `!`.
-The following `--skipFields="!address"` will skip fuzzing for all sub-fields of the `address` object. If you also want CATS to not sent the `address` 
-object at all to the service (sometimes some object might not make sense in conjunction with other objects) you must also use the `cats_remove_field`
-within the reference data file.
+## Contract and service
 
-```yaml
-all:
-  address: cats_remove_field
-```
+- `-c, --contract=FILE` supplies the OpenAPI contract.
+- `-s, --server=URL` supplies the base URL of the service.
+- `--contentType=TYPE` overrides the MIME type used for content-type negotiation versioning.
+- `--connectionTimeout=SECONDS` sets the connection timeout. Default: `10`.
+- `--readTimeout=SECONDS` sets the maximum response read inactivity. Default: `10`.
+- `--writeTimeout=SECONDS` sets the maximum request write inactivity. Default: `10`.
+- `--maxRequestsPerMinute=NUMBER` limits request throughput. Default: `10000`.
+- `--userAgent=VALUE` sets the `User-Agent` header. Default: `cats/VERSION`.
+- `--configFile=FILE` loads command configuration from a file.
 
-:::
+## Authentication and request data
 
-Next arguments are active only when supplying a custom dictionary via `--words`:
-- `--matchResponseCodes=<matchResponseCodes>[,<matchResponseCodes>...]` A comma separated list of HTTP response codes that will be matched as error. All other response codes will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
-- `--matchResponseLines=<matchResponseLines>[,<matchResponseLines>...]` A comma separated list of number of line counts in the response that will be matched as error. All other response line counts will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
-- `--matchResponseRegex=<matchResponseRegex>` A regex that will match against the response that will be matched as error. All other response body matches will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
-- `--matchResponseSize=<matchResponseSizes>[,<matchResponseSizes>...]` A comma separated list of response sizes that will be matched as error. All other response sizes will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
-- `--matchResponseWords=<matchResponseWords>[,<matchResponseWords>...]` A comma separated list of word counts in the response that will be matched as error. All other response word counts will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
+- `--basicAuth=USER:PASSWORD` supplies HTTP basic authentication. `--basicauth` is an alias.
+- `--authRefreshInterval=SECONDS` controls how often CATS refreshes credentials.
+- `--authRefreshScript=SCRIPT` runs a script to obtain refreshed credentials. Headers whose value is `auth_script` are replaced with the script output.
+- `--ari` and `--ars` are short aliases for the authentication refresh options.
+- `--sslKeystore=FILE`, `--sslKeystorePwd=PASSWORD`, and `--sslKeyPwd=PASSWORD` configure one-way or two-way SSL authentication.
+- `--proxyHost=HOST` and `--proxyPort=PORT` configure the proxy server.
+- `--headers=FILE` loads per-path headers from YAML. `-H name=value` adds a header globally.
+- `--queryParams=FILE` loads per-path query parameters from YAML. `-Q name=value` adds a query parameter globally.
+- `--refData=FILE` loads fixed values required for valid business requests. `-R name=value` adds reference data globally.
+- `--urlParams=name:value,...` replaces path parameters globally. `-P name=value` is the equivalent global parameter form.
+- `--functionalFuzzerFile=FILE` supplies the functional test file used by `cats run`.
+- `--securityFuzzerFile=FILE` supplies the configuration used by the `SecurityFuzzer`.
+- `--createRefData` asks the `FunctionalFuzzer` to create a reference-data file from the paths and output variables in the functional file.
+- `--wfcAuth=FILE` loads a Web Fuzzing Commons authentication YAML/JSON file. CATS resolves the selected entry and applies its headers, cookies, or query parameters.
+- `--wfcAuthName=NAME` selects an entry from `--wfcAuth`; if omitted, the first entry is used.
+
+See [Authentication](../getting-started/authentication) for the built-in
+authentication options and [WFC authentication](../getting-started/wfc-auth)
+for Web Fuzzing Commons configuration.
+
+## Fuzzer selection and scope
+
+- `-f, --fuzzers=FUZZER,...` runs only matching fuzzers. Full or partial names are accepted. Use `cats list --fuzzers` to see the current names.
+- `--skipFuzzers=FUZZER,...` ignores matching fuzzers.
+- `--skipFuzzersForExtension=EXTENSION=VALUE:Fuzzer1,Fuzzer2` skips fuzzers for endpoints having a matching OpenAPI extension. `--skipFuzzerForExtension` is an alias.
+- `--mode=ALL|NEGATIVE|POSITIVE` selects all scenarios, only negative scenarios, or only positive/happy-path scenarios. Default: `ALL`.
+- `--profile=security|quick|compliance|ci|full` selects a built-in fuzzer profile. Default: `full`.
+- `--profileFile=FILE` loads custom fuzzer profiles from YAML.
+- `--healthCheck` runs the minimal `health-check` profile before full fuzzing. Default: `false`.
+- `--checkFields` runs only Field Fuzzers.
+- `--checkHeaders` runs only Header Fuzzers.
+- `--checkHttp` runs only HTTP Fuzzers.
+- `--includeLinters` or `--includeContract` includes Contract/Linter Fuzzers.
+- `--checkContract` is an alias for including Contract/Linter Fuzzers.
+- `--includeWhitespaces`, `--includeEmojis`, and `--includeControlChars` enable the corresponding opt-in fuzzers.
+- `-p, --paths=PATH,...` limits execution to selected paths. `--path` is an alias.
+- `--skipPaths=PATH,...` excludes paths.
+- `--operationIds=ID,...` limits execution to selected operation IDs. `--operationId` is an alias.
+- `--skipOperationIds=ID,...` excludes operation IDs.
+- `--tags=TAG,...` limits execution to selected tags. `--tag` is an alias.
+- `--skipTags=TAG,...` excludes tags.
+- `--httpMethods=METHOD,...` limits execution to selected HTTP methods. `--httpMethod` is an alias.
+- `--skipHttpMethods=METHOD,...` excludes HTTP methods.
+- `--skipDeprecatedOperations` excludes deprecated API operations. Default: `false`.
+- `--skipFields=FIELD,...` excludes fields from replacement fuzzers. Prefix a field with `!` to skip that field and all descendants.
+- `--skipHeaders=HEADER,...` excludes headers from all fuzzers.
+- `--fieldTypes=TYPE,...` and `--fieldFormats=FORMAT,...` include only matching OpenAPI field types or formats.
+- `--skipFieldTypes=TYPE,...` and `--skipFieldFormats=FORMAT,...` exclude matching OpenAPI field types or formats.
+
+## Processing
+
+- `--fieldsFuzzingStrategy=ONEBYONE|SIZE|POWERSET` selects the field-removal strategy. Default: `ONEBYONE`.
+- `--maxFieldsToRemove=NUMBER` limits fields removed by the `SIZE` strategy.
+- `--limitFuzzedFields=NUMBER` limits request fields selected for fuzzing. `0` means all fields.
+- `--largeStringsSize=NUMBER` controls the size of generated large strings. Default: `40000`.
+- `--randomHeadersNumber=NUMBER` controls the number of generated random headers. Default: `10000`.
+- `--selfReferenceDepth=NUMBER` limits generated depth for cyclic request objects. Default: `2`.
+- `--limitXxxOfCombinations=NUMBER` limits generated `oneOf`/`anyOf` combinations. Default: `20`.
+- `--resolveXxxOfCombinationForResponses` also resolves `oneOf`/`anyOf` combinations in responses.
+- `--discriminatorCasing=STYLE` chooses the casing for discriminator values when the contract has no explicit enum or mapping. Supported styles include `PascalCase`, `camelCase`, `UPPER_SNAKE_CASE`, `lower_snake_case`, `kebab-case`, and `lowercase`.
+- `--oneOfSelection=name=value,...` or `--anyOfSelection=name=value,...` selects discriminator values when multiple request payloads are possible.
+- `--[no-]useDefaults` controls whether schema defaults are used. Default: `true`.
+- `--[no-]useExamples` enables the contract's request, schema, property, and response examples together.
+- `--usePropertyExamples`, `--useRequestBodyExamples`, `--useResponseBodyExamples`, and `--useSchemaExamples` control individual example sources; the property and response options are negatable with `--no-...`.
+- `--[no-]cachePayloads` reuses generated payload examples for the same schema. Default: `true`.
+- `--reuseSuccessfulResources` reuses identifiers learned from successful `POST`, `PUT`, and collection `GET` responses in later requests. Default: `false`.
+- `--strictTypes` expects `2XX` for type-coercion scenarios; `--no-strictTypes` permits the normal `4XX` expectation. Default: enabled.
+- `--allowInvalidEnumValues` expects `2XX` when invalid enum values are sent. Default: `false`.
+- `--edgeSpacesStrategy=VALIDATE_AND_TRIM|TRIM_AND_VALIDATE` controls expectations for leading or trailing spaces.
+- `--sanitizationStrategy=SANITIZE_AND_VALIDATE|VALIDATE_AND_SANITIZE` controls expectations for Unicode control characters and other symbols.
+- `--http2PriorKnowledge` forces HTTP/2 without falling back to HTTP/1.x.
+- `--rfc7396` uses `application/merge-patch+json` for PATCH requests.
+- `--checkAllowHeader` checks that responses to HTTP-method fuzzers contain a correct `Allow` header.
+- `--pathsRunOrder=FILE` executes paths in the order listed in the file.
+- `--fuzzersConfig=FILE` loads per-fuzzer response-code configuration from a properties file.
+- `--errorLeaksKeywords=FILE` supplies keywords used to detect possible error leaks.
+- `--seed=NUMBER` makes random value generation deterministic. Default: `0`.
+- `--dryRun` prints the planned test count and fuzzer selection without invoking the service.
+- `--blackbox` ignores response mismatches except for `5XX` errors.
+- `--includeAllInjectionPayloads` uses the complete SQL, XSS, command, and NoSQL injection payload sets instead of the curated top ten per type.
+
+## Response handling and reporting
+
+- `--ignoreResponseCodes=CODE,...`, `--ignoreResponseSize=SIZE,...`, `--ignoreResponseWords=COUNT,...`, and `--ignoreResponseLines=COUNT,...` treat matching responses as success.
+- `--ignoreResponseRegex=REGEX` treats matching response bodies as success.
+- `--ignoreResponseContentTypeCheck`, `--ignoreResponseBodyCheck`, `--ignoreErrorLeaksCheck`, and `--ignoreResponseCodeUndocumentedCheck` disable the corresponding checks.
+- `--filterResponseCodes=CODE,...`, `--filterResponseSize=SIZE,...`, `--filterResponseWords=COUNT,...`, `--filterResponseLines=COUNT,...`, and `--filterResponseRegex=REGEX` omit matching results from the report.
+- `--skipReportingForIgnoredCodes` omits results matching ignored response conditions. `--skipReportingForSuccess` and `--skipReportingForWarning` omit successful or warning results. Their short aliases are `--sri`, `--srs`, and `--srw`.
+- Short aliases are available for common response options: `-i`/`--ic` for ignored codes, `-k`/`--sri` for skipped ignored results, `-b` for blackbox, `--fc`, `--fl`, `--fr`, `--fs`, and `--fw` for filters, and `--ib`, `--ie`, `--il`, `--ir`, `--is`, `--it`, `--iu`, and `--iw` for ignore checks. Match options also have `--mc`, `--mi`, `--ml`, `--mr`, `--ms`, and `--mw` aliases.
+- `--maxResponseTimeInMs=MILLISECONDS` reports successful responses exceeding the limit as errors.
+- `-o, --output=DIR` selects the report directory. Default: `cats-report`.
+- `--reportFormat=HTML_JS|HTML_ONLY|JUNIT,...` selects report formats. Default: `HTML_JS`.
+- `--timestampReports` places each run in a timestamped subdirectory.
+- `--printExecutionStatistics` prints endpoint/method timing summaries.
+- `--printDetailedExecutionStatistics` prints per-request timing details.
+- `--printProgress` prints URLs matching the configured filters.
+- `--tui` runs OpenAPI fuzzing in the interactive terminal interface.
+- `--tuiMaxResults=NUMBER` controls how many recent test details the TUI retains. Default: `10000`.
+- `--verbosity=SUMMARY|DETAILED` controls console logging detail. Default: `SUMMARY`.
+- `--[no-]checkUpdate` controls update checks. Default: `true`.
+- `--[no-]color` enables or disables coloured output. Default: `true`.
+- `-j, --json` selects JSON output for commands that support it.
+- `-D, --debug` enables all CATS log levels.
+- `-l, --log=PACKAGE:LEVEL,...` sets custom package log levels.
+- `-O, --onlyLog=LEVEL,...` includes only selected log levels.
+- `-g, --skipLog=LEVEL,...` excludes selected log levels.
+- `--maskHeaders=HEADER,...` masks sensitive headers in console and reports.
+- `--nameReplace` or `--simpleReplace` applies dictionary values by replacing the selected target field names directly.
+
+## Quality gates and stop conditions
+
+- `--failOn=error,warn` makes CATS exit with code `1` when any selected result type is reported. Default: `error`.
+- `--qualityGate="errors<5,warns<20"` sets numeric thresholds. Supported metrics are `errors` and `warns`; quality-gate thresholds take precedence over `--failOn`.
+- `--stopAfterErrors=NUMBER` stops after the specified number of error results.
+- `--stopAfterTests=NUMBER` stops after the specified number of test cases. `--stopAfterMutations` and `--sm` are aliases.
+- `--stopAfterTimeInSec=SECONDS` stops after the specified elapsed time.
+
+Stop conditions apply to normal OpenAPI fuzzing as well as continuous and
+template fuzzing. When an execution limit is reached, the report records the
+stop condition and the run summary still reflects the tests already executed.
+
+## Custom dictionary matching
+
+These options are active when a custom dictionary is supplied with `--words`:
+
+- `--words=FILE` loads a custom dictionary.
+- `--matchResponseCodes=CODE,...`, `--matchResponseSize=SIZE,...`, `--matchResponseWords=COUNT,...`, and `--matchResponseLines=COUNT,...` mark matching responses as errors.
+- `--matchResponseRegex=REGEX` marks matching response bodies as errors.
+- `--matchInput` marks a test as an error when the response reflects the fuzzed input.
+
+`--cmt` is the short alias for `--customMutatorTypes`. `--version` prints the
+CATS version and exits.
+
+For the short option aliases and command-specific options, run:
 
 ```bash
-cats --contract=my.yml --server=https://locathost:8080 --checkHeaders
+cats --help
+cats list --help
+cats replay --help
+cats run --help
+cats template --help
+cats random --help
 ```
 
-This will run CATS against `http://localhost:8080` using `my.yml` as an API spec and will only run the HTTP headers Fuzzers.
+## Command-specific options
+
+- `cats list` supports `--fuzzers`, `--linters`, `--profiles`, `--formats`, `--mutators`, `--customMutatorTypes`, `--fieldsFuzzerStrategies`, and `--paths`. Use `--json` for machine-readable output.
+- `cats replay TEST` supports `--errors`, `--warnings`, `--reportFolder=DIR`, `--output=DIR`, `--server=URL`, and `--verbose`.
+- `cats template URL` supports `--data=JSON_OR_FILE`, `--targetFields=FIELD,...`, `--httpMethod=METHOD`, `--headers`, and `--random`.
+- `cats lint` supports `--skipLinters=NAME,...`, `--strict`, `--enumsNaming`, `--headersNaming`, `--jsonObjectsNaming`, `--jsonPropertiesNaming`, `--operationPrefixMapFile`, `--pathNaming`, `--pathVariablesNaming`, and `--queryParamsNaming`.
+- `cats stats` supports `--detailed` and `--skip=SECTION,...`.
+- `cats validate` supports `--detailed`.
+- `cats generate` supports `--path=PATH`, `--httpMethod=METHOD`, `--limit=NUMBER`, `--selfReferenceDepth=NUMBER`, `--pretty`, and `--[no-]useExamples`.
+- `cats explain` requires `--type=fuzzer|mutator|response_code|error_reason` and a positional value to explain.
+- `cats generate-completion` prints the shell completion script. Enable it in the current shell with `source <(cats generate-completion)`.

@@ -67,6 +67,27 @@ Otherwise, it will run indefinitely and won't produce a summary report. It will 
 
 Continuous fuzzing is based on [mutators](./mutators.md).
 
+## Profiles and health checks
+
+Use a [fuzzer profile](./fuzzer-profiles) to select a predefined test suite:
+
+```shell
+cats -c openapi.yaml -s http://localhost:8080 --profile quick
+```
+
+To verify reachability with the minimal `HappyPath` profile before starting a
+full run, use `--healthCheck`:
+
+```shell
+cats -c openapi.yaml -s http://localhost:8080 --healthCheck
+```
+
+The `--mode NEGATIVE` and `--mode POSITIVE` options provide another way to
+select negative or positive scenarios across the registered fuzzers.
+
+For CI, use [quality gates and stop conditions](./quality-gates) to control
+exit status and bound the run.
+
 ## Notes on Skipped Tests
 :::info
 You may notice a significant number of tests marked as `skipped`. CATS tries to apply all Fuzzers to all fields, but this is not always possible.

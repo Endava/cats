@@ -1,46 +1,49 @@
 # Header Fuzzers
-CATS has currently 39 registered `Header`  Fuzzers:
-- `AbugidasCharsInHeadersFuzzer` -  iterate through each header and send requests with abugidas chars in the targeted header
-- `AcceptLanguageHeaders` - send a request with a locale Accept-Language header and expect to get 200 code
-- `CRLFHeaders` - iterate through each header and send CR & LF characters in the targeted header
-- `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
-- `DummyAcceptHeadersFuzzer` - send a request with a dummy Accept header and expect to get 406 code
-- `DummyContentTypeHeadersFuzzer` - send a request with a dummy Content-Type header and expect to get 415 code
-- `DummyContentLengthHeadersFuzzer` - send a request with a dummy Content-Length header and expect to get 400 code
-- `DummyTransferEncodingHeadersFuzzer` - send a request with a dummy Transfer-Encoding header and expect to get a 400 or 501 code
-- `DuplicateHeaderFuzzer` - send a 'happy' flow request and duplicate an existing header
-- `EmptyStringValuesInHeadersFuzzer` - iterate through each header and send requests with empty String values in the targeted header
-- `ExtraHeadersFuzzer` - send a 'happy' flow request and add an extra field inside the request called 'Cats-Fuzzy-Header'
-- `InvalidContentLengthHeadersFuzzer` - send a request with an invalid Content-Length header and expect to get 400 code
-- `LargeNumberRandomAlphanumericHeaders` - send a 'happy' flow request with 10 000 extra random alphanumeric headers
-- `LargeNumberRandomHeaders` - send a 'happy' flow request with 10 000 extra random headers
-- `LeadingControlCharsInHeadersFuzzer` - iterate through each header and prefix values with control chars
-- `LeadingWhitespacesInHeadersFuzzer` - iterate through each header and prefix value with unicode separators
-- `LeadingMultiCodePointEmojisInHeadersFuzzer` - iterate through each header and prefix values with multi code point emojis
-- `LeadingSingleCodePointEmojisInHeadersFuzzer` - iterate through each header and prefix values with single code point emojis
-- `LeadingSpacesInHeadersFuzzer` - iterate through each header and send requests with spaces prefixing the value in the targeted header
-- `RemoveHeadersFuzzer` - iterate through each header and remove different combinations of them
-- `OnlyControlCharsInHeadersFuzzer` - iterate through each header and replace value with control chars
-- `OnlySpacesInHeadersFuzzer` - iterate through each header and replace value with spaces
-- `OnlyMultiCodePointEmojisInHeaders` - iterate through each header and send values replaced by multi code point emojis in the targeted header
-- `OnlySingleCodePointEmojisInHeaders` - iterate through each header and send values replaced by single code point emojis in the targeted header
-- `OnlyWhitespacesInHeadersFuzzer` - iterate through each header and replace value with unicode separators
-- `ResponseHeadersMatchContractHeaders` - send a request with all fields and headers populated and checks if the response headers match the ones defined in the contract
-- `TrailingSpacesInHeadersFuzzer` - iterate through each header and send requests with trailing spaces in the targeted header
-- `TrailingControlCharsInHeadersFuzzer` - iterate through each header and trail values with control chars
-- `TrailingMultiCodePointEmojisHeaders` - iterate through each header and send values suffixed with multi code point emojis in the targeted header
-- `TrailingSingleCodePointEmojisHeaders` - iterate through each header and send values suffixed with single code point emojis in the targeted header
-- `TrailingWhitespacesInHeadersFuzzer` - iterate through each header and trail values with unicode separators
-- `UnsupportedAcceptHeadersFuzzer` - send a request with an unsupported Accept header and expect to get 406 code
-- `UnsupportedContentTypesHeadersFuzzer` - send a request with an unsupported Content-Type header and expect to get 415 code
-- `UserDictionaryHeadersFuzzer` - iterates through each request headers and sends values from the user supplied dictionary
-- `VeryLargeStringsInHeadersFuzzer` - iterate through each header and send large values in the targeted header
-- `VeryLargeUnicodeStringsInHeadersFuzzer` - iterate through each header and send large unicode values in the targeted header
-- `ZalgoTextInHeadersFuzzer` - iterate through each header and send requests with zalgo text in the targeted header
-- `ZeroWidthCharsInNamesHeaders` - injects zero-width characters in the header names
-- `ZeroWidthCharsInValuesHeaders` - iterate through each header and send Zero-width characters in the targeted header
 
-You can run only these Fuzzers by supplying the `--checkHeaders` argument.
+CATS has currently 39 registered `Header` Fuzzers. The names below match
+`cats list --fuzzers`:
+
+- `AbugidasInHeaders` - send abugidas characters in header values
+- `AcceptLanguageHeaders` - send a locale `Accept-Language` header
+- `CRLFHeaders` - send CR and LF characters in header values
+- `CheckSecurityHeaders` - check responses for recommended security headers
+- `DummyAcceptHeaders` - send a dummy `Accept` header and expect `406`
+- `DummyContentLengthHeaders` - send an invalid `Content-Length` and expect `400`
+- `DummyContentTypeHeaders` - send a dummy `Content-Type` and expect `415`
+- `DummyTransferEncodingHeaders` - send a dummy `Transfer-Encoding` and expect `400` or `501`
+- `DuplicateHeaders` - duplicate an existing header
+- `EmptyStringsInHeaders` - send empty header values
+- `ExtraHeaders` - add an unexpected `Cats-Fuzzy-Header`
+- `InvalidContentLengthHeaders` - send an invalid `Content-Length` and expect `400`
+- `LargeNumberOfRandomAlphanumericHeaders` - send 10,000 random alphanumeric headers
+- `LargeNumberOfRandomHeaders` - send 10,000 random headers
+- `LeadingControlCharsInHeaders` - prefix header values with control characters
+- `LeadingMultiCodePointEmojisInHeaders` - prefix header values with multi-code-point emojis
+- `LeadingSingleCodePointEmojisInHeaders` - prefix header values with single-code-point emojis
+- `LeadingSpacesInHeaders` - prefix header values with spaces
+- `LeadingWhitespacesInHeaders` - prefix header values with Unicode separators
+- `OnlyControlCharsInHeaders` - replace header values with control characters
+- `OnlyMultiCodePointEmojisInHeaders` - replace header values with multi-code-point emojis
+- `OnlySingleCodePointEmojisInHeaders` - replace header values with single-code-point emojis
+- `OnlySpacesInHeaders` - replace header values with spaces
+- `OnlyWhitespacesInHeaders` - replace header values with Unicode separators
+- `RemoveHeaders` - remove different combinations of headers
+- `ResponseHeadersMatchContractHeaders` - compare response headers with contract headers
+- `TrailingControlCharsInHeaders` - suffix header values with control characters
+- `TrailingMultiCodePointEmojisHeaders` - suffix header values with multi-code-point emojis
+- `TrailingSingleCodePointEmojisHeaders` - suffix header values with single-code-point emojis
+- `TrailingSpacesInHeaders` - suffix header values with spaces
+- `TrailingWhitespacesInHeaders` - suffix header values with Unicode separators
+- `UnsupportedAcceptHeaders` - send an unsupported `Accept` header and expect `406`
+- `UnsupportedContentTypesHeaders` - send an unsupported `Content-Type` and expect `415`
+- `UserDictionaryHeaders` - send values from the user dictionary
+- `VeryLargeStringsInHeaders` - send large string values
+- `VeryLargeUnicodeStringsInHeaders` - send large Unicode values
+- `ZalgoTextInHeaders` - send Zalgo text
+- `ZeroWidthCharsInNamesHeaders` - inject zero-width characters in header names
+- `ZeroWidthCharsInValuesHeaders` - send zero-width characters in header values
+
+Run only these fuzzers with `--checkHeaders`.
 
 ```mdx-code-block
 import DocCardList from '@theme/DocCardList';

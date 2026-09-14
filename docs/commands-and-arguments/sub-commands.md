@@ -17,7 +17,13 @@ All available subcommands are listed below:
 
 - `cats list --fuzzers` will list all the existing fuzzers, grouped by categories
 
-- `cats list --fieldsFuzzingStrategy` will list all the available fields fuzzing strategies
+- `cats list --profiles` will list the built-in fuzzer profiles and the fuzzers selected by each profile
+
+- `cats list --mutators` will list the mutators available to `cats random`
+
+- `cats list --fieldsFuzzerStrategies` will list the field-fuzzing strategies
+
+- `cats list --customMutatorTypes` will list the supported custom mutator types
 
 - `cats list --paths --contract=CONTRACT` will list all the paths available within the contract
 
@@ -44,6 +50,16 @@ All available subcommands are listed below:
 - `cats explain` will explain a given response code or reason message
 
 - `cats generate` will generate a request based on a given OpenAPI contract
+
+- `cats generate-completion` will generate a bash/zsh completion script for `cats`. Enable it in the current shell with `source <(cats generate-completion)`.
+
+The `cats explain --type TYPE INFO` command provides detailed information about a
+fuzzer, mutator, response code, or error reason. For example:
+
+```bash
+cats explain --type response_code 953
+cats explain --type error_reason "Error details leak"
+```
 
 :::tip
 Each sub-command has its own help. You can run `cats sub-command -h` to check all available arguments: `cats template -h`.
