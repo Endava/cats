@@ -68,6 +68,9 @@ public class ServiceData {
     private final Set<String> queryParams = new HashSet<>();
     @Builder.Default
     private final Map<String, QueryParameterSerialization> queryParameterSerializations = Map.of();
+    /** Variables supplied by a custom fuzzer for resolving dynamic request values. */
+    @Builder.Default
+    private final Map<String, String> dynamicVariables = Map.of();
 
     /**
      * Creates a service-call builder populated with the operation metadata shared by all executors.

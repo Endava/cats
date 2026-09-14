@@ -519,6 +519,34 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldResolveSuppliedHeadersFromDynamicVariables() {
+        ReflectionTestUtils.setField(filesArguments, "headers", Map.of("all", Map.of(
+                "X-Session-Secret", "${sessionSecret}",
+                "Authorization", "Bearer ${clientToken}")));
+        ServiceData data = ServiceData.builder()
+                .relativePath("/checkout-embeds/{sessionId}/initialize")
+                .contractPath("/checkout-embeds/{sessionId}/initialize")
+                .headers(Set.of())
+                .dynamicVariables(Map.of("sessionSecret", "secret-123", "clientToken", "token-456"))
+                .contentType("application/json")
+                .build();
+
+        List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
+
+        Assertions.assertThat(headers)
+                .filteredOn(header -> header.getKey().equalsIgnoreCase("X-Session-Secret"))
+                .singleElement()
+                .extracting(KeyValuePair::getValue)
+                .isEqualTo("secret-123");
+        Assertions.assertThat(headers)
+                .filteredOn(header -> header.getKey().equalsIgnoreCase("Authorization")
+                        && "Bearer token-456".equals(header.getValue()))
+                .singleElement()
+                .extracting(KeyValuePair::getValue)
+                .isEqualTo("Bearer token-456");
+    }
+
+    @Test
     void shouldIdentifyCommonAuthenticationHeaders() {
         Assertions.assertThat(serviceCaller.isAuthenticationHeader("Authorization")).isTrue();
         Assertions.assertThat(serviceCaller.isAuthenticationHeader("X-Api-Key")).isTrue();

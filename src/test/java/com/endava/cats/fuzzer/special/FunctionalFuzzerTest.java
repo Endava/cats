@@ -261,6 +261,25 @@ class FunctionalFuzzerTest {
     }
 
     @Test
+    void shouldPassOutputVariablesToServiceCallerForDynamicHeaderResolution() throws Exception {
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer.yml", "{\"code\": \"200\"}");
+
+        filesArguments.loadCustomFuzzerFile();
+        functionalFuzzer.fuzz(data);
+        functionalFuzzer.executeCustomFuzzerTests();
+
+        ArgumentCaptor<ServiceData> requests = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.times(4)).call(requests.capture());
+        List<ServiceData> capturedRequests = requests.getAllValues();
+
+        Assertions.assertThat(capturedRequests.getFirst().getDynamicVariables()).isEmpty();
+        Assertions.assertThat(capturedRequests.subList(1, 4))
+                .allSatisfy(request -> Assertions.assertThat(request.getDynamicVariables())
+                        .containsEntry("resp", "200")
+                        .containsEntry("custId", "john"));
+    }
+
+    @Test
     void shouldAllowMultipleExpectedResponses() throws Exception {
         String file = "src/test/resources/functionalFuzzer-multiple-rp.yml";
         FuzzingData data = setContext(file, "{\"code\": \"200\"}");

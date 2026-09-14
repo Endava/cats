@@ -142,6 +142,7 @@ public class CustomFuzzerUtil {
             String pathParamsPayloadWithCustomValues = this.getPathParamsPayloadWithCustomValues(data.getPathParamsPayload(), currentPathValues);
             CatsResponse response = serviceCaller.call(ServiceData.from(data).replaceRefData(false)
                     .headers(headers).payload(payloadWithCustomValuesReplaced).pathParamsPayload(pathParamsPayloadWithCustomValues)
+                    .dynamicVariables(Map.copyOf(this.variables))
                     .mutationTargets(getMutationTargets(data, currentPathValues, payloadWithCustomValuesReplaced,
                             pathParamsPayloadWithCustomValues, headers, isHeadersFuzzing, arrayOfHeaders, i)).build());
 

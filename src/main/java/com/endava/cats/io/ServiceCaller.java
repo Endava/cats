@@ -781,9 +781,10 @@ public class ServiceCaller {
         Map<String, Object> userSuppliedHeaders = filesArguments.getHeaders(data.getContractPath());
         logger.debug("Path {} (including ALL headers) has the following headers: {}", data.getContractPath(), userSuppliedHeaders);
 
+        Map<String, String> headerParserContext = getHeaderParserContext(data);
         Map<String, String> suppliedHeaders = userSuppliedHeaders.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> CatsDSLParser.parseAndGetResult(String.valueOf(entry.getValue()), authArguments.getAuthScriptAsMap())));
+                        entry -> parseSuppliedHeaderValue(String.valueOf(entry.getValue()), headerParserContext)));
 
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
             if (data.isAddUserHeaders()) {
@@ -792,6 +793,20 @@ public class ServiceCaller {
                 replaceHeaderWithUserSuppliedHeader(headers, suppliedHeader.getKey(), suppliedHeader.getValue());
             }
         }
+    }
+
+    private Map<String, String> getHeaderParserContext(ServiceData data) {
+        Map<String, String> context = new HashMap<>(authArguments.getAuthScriptAsMap());
+        context.putAll(data.getDynamicVariables());
+        return context;
+    }
+
+    private String parseSuppliedHeaderValue(String value, Map<String, String> context) {
+        String result = value;
+        for (Map.Entry<String, String> variable : context.entrySet()) {
+            result = result.replace("${" + variable.getKey() + "}", variable.getValue());
+        }
+        return CatsDSLParser.parseAndGetResult(result, context);
     }
 
     private static void replaceHeaderWithUserSuppliedHeader(List<KeyValuePair<String, Object>> headers, String headerName, Object headerValue) {
