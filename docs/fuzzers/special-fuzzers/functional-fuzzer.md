@@ -19,7 +19,7 @@ description: The Fuzzer used to write functional tests without coding
 | **Reporting** | Reports the configured response-code expectation and any `verify` assertion failures. |
 
 You can leverage CATS super-powers of self-healing and payload generation in order to write functional tests.
-This is achieved using the so called `FunctionaFuzzer` using the `cats run <file-name>` sub-command. 
+This is achieved using the `FunctionalFuzzer` through the `cats run <file-name>` sub-command.
 The `FunctionalFuzzer` is not a `Fuzzer` per se, but was named as such for consistency.
 The functional tests are written in a YAML file using a simple DSL.
 The DSL supports adding identifiers, descriptions, assertions as well as passing variables between tests.
@@ -55,7 +55,8 @@ Define values once under `cats-global-vars` and reference them from any test:
 
 ```yaml
 cats-global-vars:
-  tenant: "demo"
+  environment: "demo"
+  tenant: "tenant-${environment}"
   generatedId: "#(uuid)"
 
 /pets/{id}:
@@ -66,9 +67,17 @@ cats-global-vars:
     httpMethod: GET
 ```
 
+Place a global variable after any variables it references. Placeholders can be
+embedded in a larger value, so the example above resolves `tenant` to
+`tenant-demo`.
+
 Values captured from a response can be reused through `output` as before. Path
 variables can also be captured explicitly with `$path`, while request values
 can be referenced with `$request` in output and verification expressions.
+
+Placeholders can be embedded in functional request-body values and `verify`
+values. For example, `Bearer ${accessToken}` combines literal text with a value
+captured by an earlier test.
 
 The `scenario` keyword is preferred for the displayed test scenario; `description`
 remains supported for compatibility.
@@ -100,6 +109,34 @@ Suppose we have an endpoint that creates data (doing a `POST`), and we want to c
 We need a way to get some identifier from the POST call and send it to the GET call.
 The `FunctionalFuzzer` input file can have an `output` entry where you can state a variable name, and its fully qualified name from the response in order to set its value.
 You can then refer the variable using `${variable_name}` from a subsequent test in order to use its value.
+
+An output selector normally reads from the response body. Prefix a response
+header with `header#` to capture its value instead:
+
+```yaml
+/sessions:
+  create_session:
+    scenario: Create a session and capture its token
+    httpMethod: POST
+    expectedResponseCode: 201
+    output:
+      sessionId: id
+      accessToken: header#X-Access-Token
+```
+
+Output variables are also available to headers supplied with `-H` or
+`--headers`, and to query parameters supplied with `--queryParams`. This allows
+later tests in the same functional run to use values such as
+`Authorization: Bearer ${accessToken}` or `session_id=${sessionId}`. When using
+an inline header, quote the value so the shell does not expand the placeholder:
+
+```shell
+cats run functionalFuzzer.yml -c contract.yml -s http://localhost:8080 \
+  -H 'Authorization=Bearer ${accessToken}'
+```
+
+For per-path headers or query parameters, put the same placeholders in the YAML
+file passed to `--headers` or `--queryParams`.
 
 Here is an example:
 
@@ -185,7 +222,7 @@ But this one won't (`pet#name` is missing):
 }
 ```
 
-You can also refer to request fields in the `verify` section by using the `${request#..}` qualifier. Using the above example, by having the following `verify` section:
+You can also refer to request fields in the `verify` section by using the `${request#..}` qualifier, and to previously captured variables with `${variableName}`. Using the above example, by having the following `verify` section:
 
 ```yaml
 /pet:
@@ -198,6 +235,7 @@ You can also refer to request fields in the `verify` section by using the `${req
       petId: pet#id
     verify:
       pet#name: "${request#name}"
+      pet#authorization: "Bearer ${accessToken}"
       pet#id: "[0-9]+"
 ```
 
@@ -241,4 +279,4 @@ Important notes:
 You can also set `additionalProperties` fields through the `FunctionalFuzzer` file using the same syntax as for [Setting additionalProperties in Reference Data](/docs/getting-started/reference-data-file#setting-additionalproperties).
 
 ## Reserved Keywords
-The following keywords are reserved in `FunctionalFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `oneOfSelection`, `verify`, `checkBoolean`, `additionalProperties`, `topElement` and `mapValues`.
+The following keywords are reserved in `FunctionalFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `scenario`, `description`, `oneOfSelection`, `verify`, `checkBoolean`, `checkTrue`, `checkFalse`, `additionalProperties`, `topElement` and `mapValues`.

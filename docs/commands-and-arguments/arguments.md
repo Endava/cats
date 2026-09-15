@@ -89,7 +89,7 @@ for Web Fuzzing Commons configuration.
 - `--[no-]useExamples` enables the contract's request, schema, property, and response examples together.
 - `--usePropertyExamples`, `--useRequestBodyExamples`, `--useResponseBodyExamples`, and `--useSchemaExamples` control individual example sources; the property and response options are negatable with `--no-...`.
 - `--[no-]cachePayloads` reuses generated payload examples for the same schema. Default: `true`.
-- `--reuseSuccessfulResources` reuses identifiers learned from successful `POST`, `PUT`, and collection `GET` responses in later requests. Default: `false`.
+- `--[no-]reuseSuccessfulResources` controls whether identifiers learned from successful `POST`, `PUT`, and collection `GET` responses are reused in later requests. Default: `true` starting with CATS 14.1.0. See [Runtime resource reuse](../advanced-topics/runtime-resource-reuse).
 - `--strictTypes` expects `2XX` for type-coercion scenarios; `--no-strictTypes` permits the normal `4XX` expectation. Default: enabled.
 - `--allowInvalidEnumValues` expects `2XX` when invalid enum values are sent. Default: `false`.
 - `--edgeSpacesStrategy=VALIDATE_AND_TRIM|TRIM_AND_VALIDATE` controls expectations for leading or trailing spaces.
