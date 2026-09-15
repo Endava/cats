@@ -1,7 +1,7 @@
 package com.endava.cats.command;
 
 import com.endava.cats.args.AuthArguments;
-import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
@@ -286,7 +286,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         headersFromFile.addAll(headersMap.entrySet().stream().map(entry -> new KeyValuePair<>(entry.getKey(), entry.getValue())).toList());
 
         //see if any header is dynamic and it needs a parser
-        headersFromFile.forEach(header -> header.setValue(CatsDSLParser.parseAndGetResult(header.getValue().toString(), authArguments.getAuthScriptAsMap())));
+        headersFromFile.forEach(header -> header.setValue(DynamicValueResolver.resolve(header.getValue().toString(), authArguments.getAuthScriptAsMap())));
         testCase.getRequest().setHeaders(headersFromFile);
     }
 

@@ -4,6 +4,7 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsRequest;
+import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.KeyValuePair;
@@ -92,6 +93,20 @@ class ReplayCommandTest {
                     Assertions.assertThat(header.getKey()).isEqualTo("X-New");
                     Assertions.assertThat(header.getValue()).isEqualTo("added");
                 });
+    }
+
+    @Test
+    void shouldResolveEmbeddedVariablesInReplayHeaderOverrides() {
+        Mockito.when(replayCommand.authArguments.getAuthScriptAsMap()).thenReturn(Map.of("token", "token-123"));
+        replayCommand.headersMap = new HashMap<>(Map.of("Authorization", "Bearer ${token}"));
+        CatsTestCase testCase = new CatsTestCase();
+
+        ReflectionTestUtils.invokeMethod(replayCommand, "loadHeadersIfSupplied", testCase);
+
+        Assertions.assertThat(testCase.getRequest().getHeaders())
+                .singleElement()
+                .extracting(KeyValuePair::getValue)
+                .isEqualTo("Bearer token-123");
     }
 
     @Test
