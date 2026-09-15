@@ -464,6 +464,26 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldResolveAdditionalQueryParamsFromDynamicVariables() {
+        ReflectionTestUtils.setField(filesArguments, "queryParams", Map.of("all", Map.of(
+                "session_secret", "${sessionSecret}",
+                "static_param", "static-value")));
+        ServiceData data = ServiceData.builder()
+                .relativePath("/checkout-embeds/{sessionId}/initialize")
+                .contractPath("/checkout-embeds/{sessionId}/initialize")
+                .headers(Set.of())
+                .dynamicVariables(Map.of("sessionSecret", "secret-123"))
+                .contentType("application/json")
+                .build();
+
+        String finalUrl = serviceCaller.addAdditionalQueryParams("http://localhost", data);
+
+        HttpUrl parsedUrl = HttpUrl.get(finalUrl);
+        Assertions.assertThat(parsedUrl.queryParameter("session_secret")).isEqualTo("secret-123");
+        Assertions.assertThat(parsedUrl.queryParameter("static_param")).isEqualTo("static-value");
+    }
+
+    @Test
     void shouldMergeFuzzingForSuppliedHeaders() {
         ServiceData data = ServiceData.builder().headers(Set.of(CatsHeader.builder().name("catsFuzzedHeader").value("  anotherValue").build()))
                 .mutationTarget(RequestTarget.header("catsFuzzedHeader")).contentType("application/json").build();

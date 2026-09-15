@@ -327,7 +327,7 @@ public class ServiceCaller {
         if (HttpMethod.requiresBody(data.getHttpMethod())) {
             url = this.addQueryParamsFromPathParamsPayload(url, data, pathParamsPayload);
         }
-        url = this.addAdditionalQueryParams(url, data.getRelativePath());
+        url = this.addAdditionalQueryParams(url, data);
         url = this.addWfcAuthQueryParams(url);
         logger.debug("Replaced URL: {}", url);
         return url;
@@ -375,10 +375,22 @@ public class ServiceCaller {
     }
 
     String addAdditionalQueryParams(String startingUrl, String currentPath) {
+        return addAdditionalQueryParams(startingUrl, currentPath, Map.of());
+    }
+
+    String addAdditionalQueryParams(String startingUrl, ServiceData data) {
+        Map<String, String> context = data.getDynamicVariables().isEmpty()
+                ? Map.of()
+                : getHeaderParserContext(data);
+        return addAdditionalQueryParams(startingUrl, data.getRelativePath(), context);
+    }
+
+    private String addAdditionalQueryParams(String startingUrl, String currentPath, Map<String, String> context) {
         HttpUrl.Builder httpUrl = HttpUrl.get(startingUrl).newBuilder();
 
         for (Map.Entry<String, Object> queryParamEntry : filesArguments.getAdditionalQueryParamsForPath(currentPath).entrySet()) {
-            httpUrl.addQueryParameter(queryParamEntry.getKey(), String.valueOf(queryParamEntry.getValue()));
+            String value = DynamicValueResolver.resolve(String.valueOf(queryParamEntry.getValue()), context);
+            httpUrl.addQueryParameter(queryParamEntry.getKey(), value);
         }
 
         return httpUrl.build().toString();
