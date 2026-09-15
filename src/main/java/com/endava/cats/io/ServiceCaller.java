@@ -8,6 +8,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.http.HttpMethod;
@@ -784,7 +785,7 @@ public class ServiceCaller {
         Map<String, String> headerParserContext = getHeaderParserContext(data);
         Map<String, String> suppliedHeaders = userSuppliedHeaders.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> parseSuppliedHeaderValue(String.valueOf(entry.getValue()), headerParserContext)));
+                        entry -> DynamicValueResolver.resolve(String.valueOf(entry.getValue()), headerParserContext)));
 
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
             if (data.isAddUserHeaders()) {
@@ -799,14 +800,6 @@ public class ServiceCaller {
         Map<String, String> context = new HashMap<>(authArguments.getAuthScriptAsMap());
         context.putAll(data.getDynamicVariables());
         return context;
-    }
-
-    private String parseSuppliedHeaderValue(String value, Map<String, String> context) {
-        String result = value;
-        for (Map.Entry<String, String> variable : context.entrySet()) {
-            result = result.replace("${" + variable.getKey() + "}", variable.getValue());
-        }
-        return CatsDSLParser.parseAndGetResult(result, context);
     }
 
     private static void replaceHeaderWithUserSuppliedHeader(List<KeyValuePair<String, Object>> headers, String headerName, Object headerValue) {
