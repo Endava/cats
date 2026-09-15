@@ -553,6 +553,18 @@ class FunctionalFuzzerTest {
     }
 
     @Test
+    void shouldResolveEmbeddedVariablesInVerifyValues() {
+        customFuzzerUtil.getVariables().put("expectedToken", "token-123");
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        Mockito.when(response.getBody()).thenReturn("{}");
+
+        String verifyValue = ReflectionTestUtils.invokeMethod(customFuzzerUtil, "getVerifyValue",
+                "{}", response, "Bearer ${expectedToken}");
+
+        Assertions.assertThat(verifyValue).isEqualTo("Bearer token-123");
+    }
+
+    @Test
     void shouldHandleNullGlobalVarsGracefully() {
         Map<String, Map<String, Object>> details = new HashMap<>();
         details.put("/some/path", new HashMap<>(Map.of("test1", "value")));

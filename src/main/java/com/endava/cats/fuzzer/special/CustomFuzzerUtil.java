@@ -288,7 +288,10 @@ public class CustomFuzzerUtil {
     }
 
     private String getVerifyValue(String request, CatsResponse response, String value) {
-        String verifyValue = CatsDSLParser.parseAndGetResult(value, Map.of(Parser.REQUEST, request, Parser.RESPONSE, response.getBody()));
+        Map<String, String> contextForParser = new HashMap<>(variables);
+        contextForParser.put(Parser.REQUEST, request);
+        contextForParser.put(Parser.RESPONSE, response.getBody());
+        String verifyValue = DynamicValueResolver.resolve(value, contextForParser);
 
         /* It means that it's 'just' a CATS variable */
         if (verifyValue.startsWith("$")) {
