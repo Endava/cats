@@ -32,8 +32,22 @@ import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.SpecVersion;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.JsonSchema;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
@@ -52,6 +66,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -671,6 +686,86 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldRejectResponseMissingRequiredProperty() {
+        ObjectSchema schema = new ObjectSchema();
+        schema.addProperty("id", new IntegerSchema());
+        schema.setRequired(List.of("id"));
+
+        assertSchemaMismatch(schema, "{\"id\":1}", "{}");
+    }
+
+    @Test
+    void shouldRejectResponsePropertyWithWrongType() {
+        ObjectSchema schema = new ObjectSchema();
+        schema.addProperty("id", new IntegerSchema());
+        schema.setRequired(List.of("id"));
+
+        CatsTestCaseSummary result = assertSchemaMismatch(schema, "{\"id\":1}", "{\"id\":\"wrong\"}");
+
+        Assertions.assertThat(result.getResultDetails()).contains("Validation errors", "id", "integer");
+    }
+
+    @Test
+    void shouldRejectInvalidArrayElementAfterTheFirst() {
+        ObjectSchema itemSchema = new ObjectSchema();
+        itemSchema.addProperty("id", new IntegerSchema());
+        itemSchema.setRequired(List.of("id"));
+        ArraySchema schema = new ArraySchema();
+        schema.setItems(itemSchema);
+
+        assertSchemaMismatch(schema, "[{\"id\":1}]", "[{\"id\":1},{\"id\":\"wrong\"}]");
+    }
+
+    @Test
+    void shouldRejectAdditionalPropertyWhenForbidden() {
+        ObjectSchema schema = new ObjectSchema();
+        schema.addProperty("id", new IntegerSchema());
+        schema.setAdditionalProperties(false);
+
+        assertSchemaMismatch(schema, "{\"id\":1}", "{\"id\":1,\"unexpected\":true}");
+    }
+
+    @Test
+    void shouldAcceptResponseMatchingSchema() {
+        ObjectSchema schema = new ObjectSchema();
+        schema.addProperty("id", new IntegerSchema());
+        schema.setRequired(List.of("id"));
+
+        executeSchemaValidation(schema, "{\"id\":1}", "{\"id\":42}");
+
+        Mockito.verify(executionStatisticsListener).increaseSuccess(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+    }
+
+    @Test
+    void shouldResolveComponentSchemaReferences() {
+        ObjectSchema componentSchema = new ObjectSchema();
+        componentSchema.addProperty("id", new IntegerSchema());
+        componentSchema.setRequired(List.of("id"));
+        Components components = new Components();
+        components.setSchemas(Map.of("Resource", componentSchema));
+        Schema<?> responseSchema = new Schema<>().$ref("#/components/schemas/Resource");
+
+        assertSchemaMismatch(responseSchema, "{\"id\":1}", "{\"id\":\"wrong\"}", SpecVersion.V30, components);
+    }
+
+    @Test
+    void shouldValidateOpenApi31Schemas() {
+        JsonSchema schema = new JsonSchema();
+        schema.setTypes(Set.of("integer", "null"));
+
+        assertSchemaMismatch(schema, "1", "\"wrong\"", SpecVersion.V31, new Components());
+    }
+
+    @Test
+    void shouldRejectInvalidResponseFormats() {
+        StringSchema schema = new StringSchema();
+        schema.setFormat("date");
+
+        assertSchemaMismatch(schema, "\"2026-09-16\"", "\"not-a-date\"");
+    }
+
+    @Test
     void givenAnUndocumentedResponseThatMatchesTheResponseCode_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
@@ -758,10 +853,20 @@ class TestCaseListenerTest {
         String responseBody = "{\"a\":\"x\",\"b\":\"y\"}";
         Mockito.when(response.getBody()).thenReturn(responseBody);
         Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString(responseBody));
+        ObjectSchema responseSchema = new ObjectSchema();
+        responseSchema.addProperty("a", new StringSchema());
+        responseSchema.addProperty("b", new StringSchema());
+        OpenAPI openAPI = new OpenAPI();
+        openAPI.setSpecVersion(SpecVersion.V30);
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200"));
         Mockito.when(data.getResponses()).thenReturn(Map.of("200", List.of("{\"a\":\"x\"}")));
-        Mockito.when(data.getResponseSchemas()).thenReturn(Map.of("200", List.of("{\"a\":\"generated\",\"b\":\"generated\"}")));
+        Mockito.when(data.getOpenApi()).thenReturn(openAPI);
+        Mockito.when(data.getResponseSchema("200", "2XX", "application/json")).thenReturn(Optional.of(responseSchema));
+        Mockito.when(data.getResponseContentTypes()).thenReturn(Map.of("200", List.of("application/json")));
+        Mockito.when(data.getContentTypesByResponseCode("200")).thenReturn(List.of("application/json"));
         Mockito.when(response.responseCodeAsString()).thenReturn("200");
+        Mockito.when(response.responseCodeAsResponseRange()).thenReturn("2XX");
+        Mockito.when(response.getResponseContentType()).thenReturn("application/json");
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("GET").build());
@@ -1154,6 +1259,70 @@ class TestCaseListenerTest {
         TestCaseListener testCaseListenerSpy = Mockito.spy(testCaseListener);
         testCaseListenerSpy.updateUnknownProgress(data);
         Mockito.verify(testCaseListenerSpy).notifySummaryObservers("/test");
+    }
+
+    private CatsTestCaseSummary assertSchemaMismatch(Schema<?> schema, String generatedSample, String responseBody) {
+        CatsTestCaseSummary result = executeSchemaValidation(schema, generatedSample, responseBody);
+
+        Mockito.verify(executionStatisticsListener).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
+        return result;
+    }
+
+    private CatsTestCaseSummary assertSchemaMismatch(Schema<?> schema, String generatedSample, String responseBody,
+                                                     SpecVersion specVersion, Components components) {
+        CatsTestCaseSummary result = executeSchemaValidation(schema, generatedSample, responseBody, specVersion, components);
+
+        Mockito.verify(executionStatisticsListener).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
+        return result;
+    }
+
+    private CatsTestCaseSummary executeSchemaValidation(Schema<?> schema, String generatedSample, String responseBody) {
+        return executeSchemaValidation(schema, generatedSample, responseBody, SpecVersion.V30, new Components());
+    }
+
+    private CatsTestCaseSummary executeSchemaValidation(Schema<?> schema, String generatedSample, String responseBody,
+                                                        SpecVersion specVersion, Components components) {
+        MediaType mediaType = new MediaType();
+        mediaType.setSchema(schema);
+        Content content = new Content();
+        content.addMediaType("application/json", mediaType);
+        ApiResponse apiResponse = new ApiResponse();
+        apiResponse.setContent(content);
+        ApiResponses responses = new ApiResponses();
+        responses.addApiResponse("200", apiResponse);
+        Operation operation = new Operation();
+        operation.setResponses(responses);
+        PathItem pathItem = new PathItem();
+        pathItem.setGet(operation);
+        OpenAPI openAPI = new OpenAPI();
+        openAPI.setSpecVersion(specVersion);
+        openAPI.setComponents(components);
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.GET)
+                .pathItem(pathItem)
+                .openApi(openAPI)
+                .schemaMap(Optional.ofNullable(components.getSchemas()).orElseGet(Collections::emptyMap))
+                .responseCodes(Set.of("200"))
+                .responses(Map.of("200", List.of(generatedSample)))
+                .responseSchemaDefinitions(Map.of("200", Map.of("application/json", schema)))
+                .responseContentTypes(Map.of("200", List.of("application/json")))
+                .build();
+        CatsResponse response = CatsResponse.builder()
+                .body(responseBody)
+                .jsonBody(JsonParser.parseString(responseBody))
+                .responseCode(200)
+                .responseContentType("application/json")
+                .build();
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("GET").build());
+            testCaseListener.addResponse(response);
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX, true, false);
+        }, data);
+        return testCaseListener.testCaseSummaryDetails.getFirst();
     }
 
     private void prepareTestCaseListenerSimpleSetup(CatsResponse build, Runnable runnable) {

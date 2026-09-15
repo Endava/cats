@@ -3,6 +3,7 @@ package com.endava.cats.model;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.external.MediaType;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -13,6 +14,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -46,7 +48,7 @@ public class FuzzingData {
     private final Map<String, Schema> schemaMap;
     private final Map<String, List<String>> responses;
     @Builder.Default
-    private final Map<String, List<String>> responseSchemas = Collections.emptyMap();
+    private final Map<String, Map<String, Schema<?>>> responseSchemaDefinitions = Collections.emptyMap();
     private final Map<String, Schema> requestPropertyTypes;
     private final List<String> requestContentTypes;
     private final Set<String> queryParams;
@@ -440,6 +442,42 @@ public class FuzzingData {
                 sets.addAll(getAllSubsetsOfSize(new ArrayList<>(allFields), i));
             }
             return sets;
+        }
+    }
+
+    public Optional<Schema<?>> getResponseSchema(String responseCode, String responseRange, String contentType) {
+        Map<String, Map<String, Schema<?>>> definitions = Optional.ofNullable(responseSchemaDefinitions)
+                .orElseGet(Collections::emptyMap);
+        for (String candidate : Arrays.asList(responseCode, responseRange, "default")) {
+            Map<String, Schema<?>> schemasByContentType = definitions.entrySet().stream()
+                    .filter(entry -> entry.getKey().equalsIgnoreCase(candidate))
+                    .map(Map.Entry::getValue)
+                    .findFirst()
+                    .orElseGet(Collections::emptyMap);
+            Optional<Schema<?>> matchingSchema = schemasByContentType.entrySet().stream()
+                    .filter(entry -> areContentTypesEquivalent(entry.getKey(), contentType))
+                    .map(Map.Entry::getValue)
+                    .findFirst();
+            if (matchingSchema.isPresent()) {
+                return matchingSchema;
+            }
+            if (schemasByContentType.size() == 1) {
+                return Optional.ofNullable(schemasByContentType.values().iterator().next());
+            }
+        }
+        return Optional.empty();
+    }
+
+    private boolean areContentTypesEquivalent(String firstContentType, String secondContentType) {
+        try {
+            MediaType firstMediaType = MediaType.parse(Optional.ofNullable(firstContentType).orElse(CatsResponse.unknownContentType())).withoutParameters();
+            MediaType secondMediaType = MediaType.parse(Optional.ofNullable(secondContentType).orElse(CatsResponse.unknownContentType())).withoutParameters();
+            return firstMediaType.is(secondMediaType) || secondMediaType.is(firstMediaType)
+                    || (firstMediaType.type().equalsIgnoreCase(secondMediaType.type())
+                    && (firstMediaType.subtype().endsWith(secondMediaType.subtype())
+                    || secondMediaType.subtype().endsWith(firstMediaType.subtype())));
+        } catch (IllegalArgumentException _) {
+            return false;
         }
     }
 

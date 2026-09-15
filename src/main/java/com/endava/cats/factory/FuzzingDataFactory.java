@@ -295,7 +295,7 @@ public class FuzzingDataFactory {
 
         Set<Object> examples = this.extractExamples(mediaType);
         Map<String, List<String>> responses = this.getResponsePayloads(operation);
-        Map<String, List<String>> responseSchemas = this.getResponseSchemaPayloads(operation);
+        Map<String, Map<String, Schema<?>>> responseSchemaDefinitions = this.getResponseSchemaDefinitions(operation);
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation);
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
         Map<String, Set<String>> responseHeaders = this.getResponseHeaders(operation);
@@ -317,7 +317,7 @@ public class FuzzingDataFactory {
                             .isRequestBodyRequired(this.isRequestBodyRequired(operation))
                             .schemaMap(globalContext.getSchemaMap())
                             .responses(responses)
-                            .responseSchemas(responseSchemas)
+                            .responseSchemaDefinitions(responseSchemaDefinitions)
                             .requestPropertyTypes(generationResult.requestDataTypes())
                             .openApi(openAPI)
                             .tags(operation.getTags())
@@ -410,7 +410,7 @@ public class FuzzingDataFactory {
         GenerationResult generationResult = this.getRequestPayloadsSamples(null, syntheticSchema.getKey());
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation);
         Map<String, List<String>> responses = this.getResponsePayloads(operation);
-        Map<String, List<String>> responseSchemas = this.getResponseSchemaPayloads(operation);
+        Map<String, Map<String, Schema<?>>> responseSchemaDefinitions = this.getResponseSchemaDefinitions(operation);
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
         Map<String, Set<String>> responseHeaders = this.getResponseHeaders(operation);
 
@@ -428,7 +428,7 @@ public class FuzzingDataFactory {
                         .pathItem(item)
                         .schemaMap(globalContext.getSchemaMap())
                         .responses(responses)
-                        .responseSchemas(responseSchemas)
+                        .responseSchemaDefinitions(responseSchemaDefinitions)
                         .responseContentTypes(responsesContentTypes)
                         .requestPropertyTypes(generationResult.requestDataTypes())
                         .requestContentTypes(requestContentTypes)
@@ -733,6 +733,28 @@ public class FuzzingDataFactory {
     }
 
 
+    private Map<String, Map<String, Schema<?>>> getResponseSchemaDefinitions(Operation operation) {
+        Map<String, Map<String, Schema<?>>> responseSchemas = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        operation.getResponses().forEach((responseCode, response) -> {
+            ApiResponse resolvedResponse = response;
+            if (response.get$ref() != null) {
+                Object referencedResponse = globalContext.getApiResponseFromReference(response.get$ref());
+                if (referencedResponse instanceof ApiResponse apiResponse) {
+                    resolvedResponse = apiResponse;
+                }
+            }
+            Map<String, Schema<?>> schemasByContentType = new LinkedHashMap<>();
+            Optional.ofNullable(resolvedResponse.getContent()).orElseGet(Content::new)
+                    .forEach((contentType, mediaType) -> {
+                        if (mediaType != null && mediaType.getSchema() != null) {
+                            schemasByContentType.put(contentType, mediaType.getSchema());
+                        }
+                    });
+            responseSchemas.put(responseCode, Map.copyOf(schemasByContentType));
+        });
+        return Collections.unmodifiableMap(responseSchemas);
+    }
+
     private Map<String, List<String>> getResponseContentTypes(Operation operation) {
         Map<String, List<String>> responses = new HashMap<>();
         for (String responseCode : operation.getResponses().keySet()) {
@@ -779,40 +801,6 @@ public class FuzzingDataFactory {
             }
         }
         return responses;
-    }
-
-    private Map<String, List<String>> getResponseSchemaPayloads(Operation operation) {
-        Map<String, List<String>> responseSchemas = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        ProcessingArguments.ExamplesFlags noExamples = new ProcessingArguments.ExamplesFlags(false, false, false, false);
-        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, noExamples,
-                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), RESPONSES_ARRAY_SIZE,
-                processingArguments.isResolveXxxOfCombinationForResponses(), processingArguments.getDiscriminatorCasing());
-
-        for (String responseCode : operation.getResponses().keySet()) {
-            String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
-            if (responseSchemaRef == null) {
-                responseSchemas.put(responseCode, Collections.emptyList());
-            } else {
-                responseSchemas.put(responseCode, generateResponseSchemaSamples(responseSchemaRef, generator));
-            }
-        }
-        return responseSchemas;
-    }
-
-    private List<String> generateResponseSchemaSamples(String responseSchemaRef, OpenAPIModelGeneratorV2 generator) {
-        String cacheKey = "response-schema:" + CatsModelUtils.getSimpleRef(responseSchemaRef);
-        if (globalContext.isExampleAlreadyGenerated(cacheKey) && processingArguments.isCachePayloads()) {
-            return globalContext.getGeneratedExamplesCache().get(cacheKey);
-        }
-
-        List<String> samples = generator.generate(responseSchemaRef);
-        if (processingArguments.getLimitXxxOfCombinations() > 0) {
-            samples = samples.stream()
-                    .limit(Math.min(processingArguments.getLimitXxxOfCombinations(), samples.size()))
-                    .toList();
-        }
-        globalContext.addGeneratedExample(cacheKey, samples);
-        return samples;
     }
 
     private List<String> getExamplesFromApiResponseForResponseCode(Operation operation, String responseCode) {

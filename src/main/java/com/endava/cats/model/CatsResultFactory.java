@@ -27,7 +27,14 @@ public interface CatsResultFactory {
      * @return a CatsResult to use in reports
      */
     static CatsResult createNotMatchingResponseSchema(String receivedResponseCode) {
+        return createNotMatchingResponseSchema(receivedResponseCode, "");
+    }
+
+    static CatsResult createNotMatchingResponseSchema(String receivedResponseCode, String validationDetails) {
         String message = "Response does NOT match expected result. Response code [%s] is documented, but response body does NOT match the corresponding schema.".formatted(receivedResponseCode);
+        if (validationDetails != null && !validationDetails.isBlank()) {
+            message += " Validation errors: " + validationDetails;
+        }
         String reason = Reason.NOT_MATCHING_RESPONSE_SCHEMA.value();
 
         return new CatsResult(message, reason);

@@ -22,6 +22,31 @@ import java.util.Set;
 class FuzzingDataTest {
 
     @Test
+    void shouldSelectExactResponseSchemaBeforeRangeAndDefault() {
+        Schema<?> exactSchema = new StringSchema();
+        Schema<?> rangeSchema = new NumberSchema();
+        Schema<?> defaultSchema = new ObjectSchema();
+        FuzzingData data = FuzzingData.builder().responseSchemaDefinitions(Map.of(
+                "200", Map.of("application/json", exactSchema),
+                "2XX", Map.of("application/json", rangeSchema),
+                "default", Map.of("application/json", defaultSchema))).build();
+
+        Assertions.assertThat(data.getResponseSchema("200", "2XX", "application/json")).contains(exactSchema);
+        Assertions.assertThat(data.getResponseSchema("201", "2XX", "application/json")).contains(rangeSchema);
+        Assertions.assertThat(data.getResponseSchema("404", "4XX", "application/json")).contains(defaultSchema);
+    }
+
+    @Test
+    void shouldMatchVendorJsonResponseContentType() {
+        Schema<?> schema = new ObjectSchema();
+        FuzzingData data = FuzzingData.builder().responseSchemaDefinitions(
+                Map.of("200", Map.of("application/json", schema))).build();
+
+        Assertions.assertThat(data.getResponseSchema("200", "2XX", "application/vnd.cats+json; charset=utf-8"))
+                .contains(schema);
+    }
+
+    @Test
     void givenASchema_whenGettingAllFieldsAsASingleSet_thenAllFieldsAreReturned() {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMap());

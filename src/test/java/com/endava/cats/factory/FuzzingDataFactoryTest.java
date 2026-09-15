@@ -260,7 +260,7 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
-    void shouldGenerateResponseSchemaShapeIndependentlyFromPartialResponseExample() throws Exception {
+    void shouldStoreResponseSchemaIndependentlyFromPartialResponseExample() throws Exception {
         Mockito.when(processingArguments.isUseResponseBodyExamples()).thenReturn(true);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
 
@@ -269,7 +269,10 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data).hasSize(1);
         FuzzingData fuzzingData = data.getFirst();
         Assertions.assertThat(fuzzingData.getResponses().get("200").getFirst()).contains("a").doesNotContain("b");
-        Assertions.assertThat(fuzzingData.getResponseSchemas().get("200").getFirst()).contains("a", "b");
+        Schema<?> responseSchema = fuzzingData.getResponseSchemaDefinitions().get("200").get("application/json");
+        Schema<?> resolvedSchema = responseSchema.get$ref() == null ? responseSchema
+                : catsGlobalContext.getSchemaFromReference(responseSchema.get$ref());
+        Assertions.assertThat(resolvedSchema.getProperties()).containsKeys("a", "b");
     }
 
     @Test

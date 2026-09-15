@@ -96,6 +96,7 @@ public class TestCaseListener {
     private final CatsExecutionEventPublisher executionEventPublisher;
     private final ExecutionStopController executionStopController;
     private final ExecutionSummaryProvider executionSummaryProvider;
+    private final ResponseSchemaValidator responseSchemaValidator;
     private boolean reportingInitialized;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
@@ -137,6 +138,7 @@ public class TestCaseListener {
         this.executionEventPublisher = executionEventPublisher;
         this.executionStopController = executionStopController;
         this.executionSummaryProvider = executionSummaryProvider;
+        this.responseSchemaValidator = new ResponseSchemaValidator();
     }
 
     private static String replaceBrackets(String message, Object... params) {
@@ -907,12 +909,15 @@ public class TestCaseListener {
      */
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema, boolean shouldMatchContentType) {
         expectedResultCode = this.getExpectedResponseCodeConfiguredFor(MDC.get(FUZZER_KEY), data.getPath(), String.valueOf(data.getMethod()).toLowerCase(Locale.ROOT), expectedResultCode);
-        boolean matchesResponseSchema = !shouldMatchToResponseSchema || this.matchesResponseSchema(response, data);
+        ResponseSchemaValidator.ValidationResult schemaValidation = shouldMatchToResponseSchema
+                ? this.validateResponseSchema(response, data) : ResponseSchemaValidator.ValidationResult.valid();
+        boolean matchesResponseSchema = schemaValidation.isValid();
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
         boolean isResponseContentTypeMatching = !shouldMatchContentType || this.isResponseContentTypeMatching(response, data);
 
-        this.logger.debug("matchesResponseSchema {}, responseCodeExpected {}, responseCodeDocumented {}", matchesResponseSchema, responseCodeExpected, responseCodeDocumented);
+        this.logger.debug("matchesResponseSchema {}, responseCodeExpected {}, responseCodeDocumented {}, schemaValidationErrors {}",
+                matchesResponseSchema, responseCodeExpected, responseCodeDocumented, schemaValidation.errors());
         this.storeRequestOnPostOrRemoveOnDelete(data, response);
 
         ResponseAssertions assertions = ResponseAssertions.builder().matchesResponseSchema(matchesResponseSchema)
@@ -929,7 +934,9 @@ public class TestCaseListener {
             this.reportInfo(logger, CatsResultFactory.createExpectedResponse(response.responseCodeAsString()));
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
             this.logger.debug("Response code expected and documented but doesn't match response schema");
-            this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResultFactory.createNotMatchingResponseSchema(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
+            this.reportWarnOrInfoBasedOnCheck(logger, data,
+                    CatsResultFactory.createNotMatchingResponseSchema(response.responseCodeAsString(), schemaValidation.details()),
+                    ignoreArguments.isIgnoreResponseBodyCheck());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
             this.logger.debug("Response code expected but not documented");
             this.reportWarnOrInfoBasedOnCheck(logger, data,
@@ -1095,25 +1102,31 @@ public class TestCaseListener {
         return expectedResultCode.matchesAllowedResponseCodes(response.responseCodeAsString());
     }
 
-    private boolean matchesResponseSchema(CatsResponse response, FuzzingData data) {
+    private ResponseSchemaValidator.ValidationResult validateResponseSchema(CatsResponse response, FuzzingData data) {
         try {
-            List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
+            if (response.getBody() == null || isResponseContentTypeNotMatchable(response) || isNotTypicalDocumentedResponseCode(response)) {
+                return ResponseSchemaValidator.ValidationResult.valid();
+            }
 
-            return isNullResponse(response)
-                    || isResponseEmpty(response, responses)
-                    || isResponseContentTypeNotMatchable(response)
-                    || isNotTypicalDocumentedResponseCode(response)
+            ResponseSchemaValidator.ValidationResult validation = responseSchemaValidator.validate(response, data);
+            if (validation.performed()) {
+                if (validation.isValid() && !isFuzzedFieldPresentInResponse(response) && isErrorResponse(response)) {
+                    return ResponseSchemaValidator.ValidationResult.invalid(List.of("Error response does not identify the fuzzed field"));
+                }
+                return validation;
+            }
+
+            List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
+            boolean matches = isResponseEmpty(response, responses)
                     || isEmptyArray(response.getJsonBody())
                     || isActualResponseMatchingDocumentedResponses(response, responses);
+            return matches ? ResponseSchemaValidator.ValidationResult.valid()
+                    : ResponseSchemaValidator.ValidationResult.invalid(List.of());
         } catch (Exception e) {
             logger.debug("Something happened while matching response schema!", e);
             //if something happens during json parsing we consider it doesn't match schema
-            return false;
+            return ResponseSchemaValidator.ValidationResult.invalid(List.of("Response schema validation failed: " + e.getMessage()));
         }
-    }
-
-    private boolean isNullResponse(CatsResponse response) {
-        return response.getJsonBody() == null || response.getBody() == null;
     }
 
     private boolean isResponseContentTypeNotMatchable(CatsResponse response) {
@@ -1127,10 +1140,7 @@ public class TestCaseListener {
     }
 
     private List<String> getExpectedResponsesByResponseCode(CatsResponse response, FuzzingData data) {
-        Map<String, List<String>> responseSchemas = Optional.ofNullable(data.getResponseSchemas()).orElse(Collections.emptyMap());
-        Map<String, List<String>> responsesMap = responseSchemas.isEmpty()
-                ? Optional.ofNullable(data.getResponses()).orElse(Collections.emptyMap())
-                : responseSchemas;
+        Map<String, List<String>> responsesMap = Optional.ofNullable(data.getResponses()).orElse(Collections.emptyMap());
         List<String> responses = responsesMap.get(response.responseCodeAsString());
 
         if (CatsUtil.isEmpty(responses)) {
