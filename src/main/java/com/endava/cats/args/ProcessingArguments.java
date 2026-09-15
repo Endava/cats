@@ -124,9 +124,9 @@ public class ProcessingArguments {
             description = "If set to @|bold true|@, it will resolve oneOf/anyOf combinations also for responses. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean resolveXxxOfCombinationForResponses;
 
-    @CommandLine.Option(names = {"--reuseSuccessfulResources"},
+    @CommandLine.Option(names = {"--reuseSuccessfulResources"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "When set to @|bold true|@, identifier values from successful POST, PUT and collection GET responses are reused in later requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean reuseSuccessfulResources;
+    private boolean reuseSuccessfulResources = true;
 
 
     @CommandLine.Option(names = {"--http2PriorKnowledge"},

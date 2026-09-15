@@ -36,6 +36,7 @@ class RuntimeResourcePoolTest {
 
     @Test
     void shouldDoNothingWhenRuntimeResourceReuseIsDisabled() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", false);
         resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
                 response(201, "{\"id\":\"customer-42\"}"));
 

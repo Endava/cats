@@ -14,12 +14,21 @@ import java.util.Map;
 class ProcessingArgumentsTest {
 
     @Test
-    void shouldEnableRuntimeResourceReuseFromCommandLine() {
+    void shouldEnableRuntimeResourceReuseByDefault() {
         ProcessingArguments processingArguments = new ProcessingArguments();
 
-        new CommandLine(processingArguments).parseArgs("--reuseSuccessfulResources");
+        new CommandLine(processingArguments).parseArgs();
 
         Assertions.assertThat(processingArguments.isReuseSuccessfulResources()).isTrue();
+    }
+
+    @Test
+    void shouldDisableRuntimeResourceReuseFromCommandLine() {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+
+        new CommandLine(processingArguments).parseArgs("--no-reuseSuccessfulResources");
+
+        Assertions.assertThat(processingArguments.isReuseSuccessfulResources()).isFalse();
     }
 
     @Test
