@@ -12,6 +12,7 @@ import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.CatsDSLWords;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
@@ -538,6 +539,17 @@ class FunctionalFuzzerTest {
         customFuzzerUtil.loadGlobalVariables(details);
 
         Assertions.assertThat(customFuzzerUtil.getVariables()).containsEntry("authorization", "Bearer token-123");
+    }
+
+    @Test
+    void shouldResolveEmbeddedVariablesInCustomFuzzerBodyValues() {
+        customFuzzerUtil.getVariables().put("token", "token-123");
+
+        String payload = ReflectionTestUtils.invokeMethod(customFuzzerUtil, "replaceElementWithCustomValue",
+                Map.entry("authorization", "Bearer ${token}"), "{\"authorization\":\"old\"}", "{}");
+
+        Assertions.assertThat(JsonUtils.getVariableFromJson(payload, "$.authorization"))
+                .isEqualTo("Bearer token-123");
     }
 
     @Test

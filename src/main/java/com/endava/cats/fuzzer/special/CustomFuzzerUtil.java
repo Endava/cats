@@ -537,7 +537,7 @@ public class CustomFuzzerUtil {
 
         Object toReplace = this.getPropertyValueToReplaceInBody(keyValue);
         if (toReplace instanceof String str) {
-            toReplace = CatsDSLParser.parseAndGetResult(str, contextForParser);
+            toReplace = DynamicValueResolver.resolve(str, contextForParser);
         }
         try {
             FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(toReplace);
