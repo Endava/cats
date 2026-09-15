@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ReportingArguments;
@@ -7,6 +8,7 @@ import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.RunOutcome;
 import com.endava.cats.report.ExecutionStatisticsListener;
@@ -23,6 +25,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class TemplateFuzzCommandTest {
@@ -125,6 +128,21 @@ class TemplateFuzzCommandTest {
         templateFuzzCommand.url = "localhost";
         templateFuzzCommand.run();
         Mockito.verify(templateFuzzer, Mockito.times(1)).fuzz(Mockito.any());
+    }
+
+    @Test
+    void shouldResolveEmbeddedVariablesInTemplateHeaders() {
+        AuthArguments authArguments = Mockito.mock(AuthArguments.class);
+        Mockito.when(authArguments.getAuthScriptAsMap()).thenReturn(Map.of("token", "token-123"));
+        ReflectionTestUtils.setField(templateFuzzCommand, "authArguments", authArguments);
+        templateFuzzCommand.headers = Map.of("Authorization", "Bearer ${token}");
+
+        Set<CatsHeader> resolvedHeaders = ReflectionTestUtils.invokeMethod(templateFuzzCommand, "getHeaders");
+
+        Assertions.assertThat(resolvedHeaders)
+                .singleElement()
+                .extracting(CatsHeader::getValue)
+                .isEqualTo("Bearer token-123");
     }
 
     @Test

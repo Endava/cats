@@ -9,7 +9,7 @@ import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
-import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -292,7 +292,7 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
                 .stream()
                 .map(entry -> CatsHeader.builder()
                         .name(entry.getKey().trim())
-                        .value(CatsDSLParser.parseAndGetResult(entry.getValue().trim(), authArguments.getAuthScriptAsMap()))
+                        .value(DynamicValueResolver.resolve(entry.getValue().trim(), authArguments.getAuthScriptAsMap()))
                         .build())
                 .collect(Collectors.toSet());
     }
