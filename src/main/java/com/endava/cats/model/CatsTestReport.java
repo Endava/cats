@@ -19,15 +19,13 @@ import java.util.stream.Collectors;
 @Builder
 public class CatsTestReport {
     private final List<CatsTestCaseSummary> testCases;
-    private final long completedTests;
-    /** Kept as {@code totalTests} in JSON for report-consumer compatibility. */
+    /** Number of results included in the report. Kept as {@code totalTests} in JSON for consumer compatibility. */
     @SerializedName("totalTests")
     private final long reportedResults;
     /** Kept as {@code totalRequests} in JSON for report-consumer compatibility. */
     @SerializedName("totalRequests")
     private final long requestsAttempted;
     private final long skippedFromReporting;
-    private final int skipped;
     private final int authErrors;
     private final int ioErrors;
     private final long success;

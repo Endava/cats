@@ -10,7 +10,8 @@ import java.util.Map;
 import java.util.function.BiPredicate;
 
 /**
- * Listener for tracking execution statistics of CATS tests, including errors, warnings, successes, and skipped tests.
+ * Listener for tracking execution statistics of CATS tests, including errors, warnings, successes, and results
+ * intentionally omitted by reporting options.
  * This listener is confined to the execution thread and is not safe for concurrent use. Parallel execution requires
  * a coordinated redesign of test context, lifecycle events, statistics aggregation, and report generation.
  */
@@ -32,9 +33,7 @@ public class ExecutionStatisticsListener {
      */
     private final Map<String, Long> success = new HashMap<>();
 
-    /**
-     * Map to track the count of requests that were skipped from reporting per path.
-     */
+    /** Map to track results intentionally not reported because of reporting options, grouped by path. */
     private final Map<String, Long> skippedFromReporting = new HashMap<>();
 
     /**
@@ -43,14 +42,10 @@ public class ExecutionStatisticsListener {
     private final Map<Integer, Integer> responseCodes = new HashMap<>();
 
     /**
-     * Count of skipped tests.
+     * Count of test-case boundaries processed by the engine. This drives stop limits only and is deliberately not
+     * exposed as completed-test reporting because it includes ordinary control-flow skips.
      */
-    private int skipped;
-
-    /**
-     * Count of completed test cases, including results omitted from reports.
-     */
-    private long completedTests;
+    private long processedTests;
 
     /**
      * Count of HTTP requests handed to the HTTP client for execution.
@@ -78,8 +73,7 @@ public class ExecutionStatisticsListener {
         success.clear();
         skippedFromReporting.clear();
         responseCodes.clear();
-        skipped = 0;
-        completedTests = 0;
+        processedTests = 0;
         requestsAttempted = 0;
         authErrors = 0;
         ioErrors = 0;
@@ -140,8 +134,8 @@ public class ExecutionStatisticsListener {
     }
 
     private ExecutionSummary snapshotWithQualityGate(boolean qualityGatePassed, String qualityGateDescription) {
-        return new ExecutionSummary(completedTests, requestsAttempted, getAll(), getSuccess(), getWarns(), getErrors(),
-                skipped, getSkippedFromReporting(), authErrors, ioErrors, getResponseCodeDistribution(),
+        return new ExecutionSummary(requestsAttempted, getAll(), getSuccess(), getWarns(), getErrors(),
+                getSkippedFromReporting(), authErrors, ioErrors, getResponseCodeDistribution(),
                 getTopFailingPaths(10), qualityGatePassed, qualityGateDescription, runOutcome);
     }
 
@@ -159,28 +153,21 @@ public class ExecutionStatisticsListener {
         this.ioErrors++;
     }
 
-    /**
-     * Increases the count of skipped tests.
-     */
-    public void increaseSkipped() {
-        this.skipped++;
-    }
-
-    /** Records a completed test case, regardless of whether its result is reported. */
-    public void increaseCompletedTests() {
-        this.completedTests++;
-    }
-
     /** Records an HTTP request immediately before it is handed to the HTTP client. */
     public void increaseRequestsAttempted() {
         this.requestsAttempted++;
     }
 
+    /** Records a processed test-case boundary for execution stop limits. */
+    public void increaseProcessedTests() {
+        this.processedTests++;
+    }
+
 
     /**
-     * Increases the count of requests skipped from reporting for a specific path.
+     * Increases the count of results intentionally not reported for a specific path.
      *
-     * @param path The path for which skipped requests are increased.
+     * @param path the path for which the not-reported count is increased
      */
     public void increaseSkippedFromReporting(String path) {
         this.skippedFromReporting.merge(path, 1L, Long::sum);
@@ -277,9 +264,9 @@ public class ExecutionStatisticsListener {
     }
 
     /**
-     * Gets the total count of requests skipped from reporting.
+     * Gets the total count of results intentionally not reported because of reporting options.
      *
-     * @return The total count of skipped requests.
+     * @return the total count of results not reported
      */
     public long getSkippedFromReporting() {
         return this.skippedFromReporting.values().stream().reduce(0L, Long::sum);
@@ -335,16 +322,12 @@ public class ExecutionStatisticsListener {
         return this.errors.getOrDefault(path, 0L) + this.warns.getOrDefault(path, 0L) + this.success.getOrDefault(path, 0L);
     }
 
-    public int getSkipped() {
-        return skipped;
-    }
-
-    public long getCompletedTests() {
-        return completedTests;
-    }
-
     public long getRequestsAttempted() {
         return requestsAttempted;
+    }
+
+    public long getProcessedTests() {
+        return processedTests;
     }
 
     public int getAuthErrors() {

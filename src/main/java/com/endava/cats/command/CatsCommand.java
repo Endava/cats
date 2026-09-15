@@ -105,7 +105,7 @@ import java.util.stream.Collectors;
         customSynopsis = {"@|bold cats|@ @|fg(yellow) -c|@ <CONTRACT> @|fg(yellow) -s|@ <SERVER> [ADDITIONAL OPTIONS]",
                 "@|bold cats (list | replay | run | template | lint | info | stats | validate | random | generate | explain)|@ [OPTIONS]", "%n"},
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
-        exitCodeList = {"@|bold  0|@:Successful program execution",
+        exitCodeList = {"@|bold 0|@:Successful program execution",
                 "@|bold 2|@:Usage error: user input for the command was incorrect",
                 "@|bold 1|@:Internal execution error: an exception occurred when executing command",
                 "@|bold 130|@:Execution cancelled from the terminal interface"},

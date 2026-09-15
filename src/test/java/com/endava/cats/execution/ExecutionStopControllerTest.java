@@ -27,10 +27,10 @@ class ExecutionStopControllerTest {
         ReflectionTestUtils.setField(stopArguments, "stopAfterMutations", 2);
         controller.startSession();
 
-        executionStatisticsListener.increaseCompletedTests();
+        executionStatisticsListener.increaseProcessedTests();
         controller.checkAfterTest();
 
-        executionStatisticsListener.increaseCompletedTests();
+        executionStatisticsListener.increaseProcessedTests();
         Assertions.assertThatThrownBy(controller::checkAfterTest)
                 .isInstanceOf(CatsExecutionLimitReachedException.class)
                 .hasMessage("Execution stopped after reaching --stopAfterTests (2 tests)");

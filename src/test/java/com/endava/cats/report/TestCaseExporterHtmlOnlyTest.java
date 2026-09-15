@@ -43,10 +43,7 @@ class TestCaseExporterHtmlOnlyTest {
         Mockito.when(stopArguments.getStopAfterMutations()).thenReturn(25L);
 
         statistics.increaseSuccess("/customers");
-        statistics.increaseSkipped();
         statistics.increaseSkippedFromReporting("/customers");
-        statistics.increaseCompletedTests();
-        statistics.increaseCompletedTests();
         statistics.increaseRequestsAttempted();
         statistics.increaseRequestsAttempted();
         statistics.increaseAuthErrors();
@@ -70,23 +67,25 @@ class TestCaseExporterHtmlOnlyTest {
 
         Assertions.assertThat(html).contains(
                 "Run Details", "Limit reached", "Execution stopped after reaching --stopAfterTests (25 tests)",
-                "Quality gate", "PASSED", "Tests Completed", "2", "HTTP requests sent", "2",
-                "Results included in report", "1",
-                "Omitted by reporting rules", "Skipped tests (total)", "Authentication errors", "I/O errors",
+                "Quality gate", "PASSED", "Tests Reported", "1",
+                "Authentication errors", "I/O errors",
                 "Random seed", "12345", "Runtime resource reuse", "Enabled", "Configured stop limits",
                 "Processing Limitations", "GET /customers", "Could not resolve a request schema reference",
-                "Response", "201", "Time", "12ms");
+                "Response", "201", "Time", "12ms")
+                .doesNotContain("Execution accounting", "Skipped tests", "HTTP requests sent",
+                        "Results included in report", "Omitted by reporting rules");
         Assertions.assertThat(json).contains(
-                "\"completedTests\": \"2\"", "\"totalRequests\": \"2\"", "\"totalTests\": \"1\"",
-                "\"skippedFromReporting\": \"1\"", "\"skipped\": 1",
+                "\"totalRequests\": \"2\"", "\"totalTests\": \"1\"",
+                "\"skippedFromReporting\": \"1\"",
                 "\"authErrors\": 1", "\"ioErrors\": 1", "\"runStatus\": \"LIMIT_REACHED\"",
                 "\"qualityGatePassed\": true", "\"randomSeed\": \"12345\"",
                 "\"successfulResourceReuseEnabled\": true", "\"stopAfterTests\": \"25\"",
-                "Could not resolve a request schema reference");
+                "Could not resolve a request schema reference")
+                .doesNotContain("\"completedTests\":", "\"skipped\":");
     }
 
     @Test
-    void shouldHideRedundantReportAccountingForOrdinaryRuns() throws Exception {
+    void shouldNotIncludeExecutionAccountingForOrdinaryRuns() throws Exception {
         ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
         ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);
         StopArguments stopArguments = Mockito.mock(StopArguments.class);
@@ -95,7 +94,6 @@ class TestCaseExporterHtmlOnlyTest {
         Mockito.when(reportingArguments.getOutputReportFolder()).thenReturn(reportDirectory.toString());
         Mockito.when(reportingArguments.getMaskedHeaders()).thenReturn(Set.of());
         statistics.increaseSuccess("/customers");
-        statistics.increaseCompletedTests();
         statistics.increaseRequestsAttempted();
 
         TestCaseExporterHtmlOnly exporter = new TestCaseExporterHtmlOnly(reportingArguments,
@@ -107,8 +105,9 @@ class TestCaseExporterHtmlOnlyTest {
         String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
 
         Assertions.assertThat(html)
-                .contains("Tests completed", "HTTP requests sent", "Skipped tests (total)")
-                .doesNotContain("Results included in report", "Omitted by reporting rules");
+                .contains("Tests Reported", "Run outcome", "Quality gate", "Execution diagnostics", "Reproduction")
+                .doesNotContain("Execution accounting", "Tests completed", "HTTP requests sent",
+                        "Results included in report", "Skipped tests", "Omitted by reporting rules");
     }
 
     private static CatsTestCaseSummary summary() {

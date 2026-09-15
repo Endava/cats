@@ -87,7 +87,7 @@ class TemplateFuzzCommandTest {
         ReportingArguments arguments = Mockito.mock(ReportingArguments.class);
         TestCaseListener listener = Mockito.mock(TestCaseListener.class);
         ExecutionSummary failed = new ExecutionSummary(
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "",
+                0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "",
                 RunOutcome.failed("Report generation failed: disk full"));
         Mockito.when(listener.endSession()).thenReturn(failed);
         ReflectionTestUtils.setField(command, "reportingArguments", arguments);
@@ -104,7 +104,7 @@ class TemplateFuzzCommandTest {
         TestCaseListener listener = Mockito.mock(TestCaseListener.class);
         ExecutionStatisticsListener statistics = Mockito.mock(ExecutionStatisticsListener.class);
         ExecutionSummary completed = new ExecutionSummary(
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "", RunOutcome.completed());
+                0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "", RunOutcome.completed());
         Mockito.when(listener.endSession()).thenReturn(completed);
         Mockito.doThrow(new IllegalStateException("template execution failed"))
                 .when(templateFuzzer).fuzz(Mockito.any());

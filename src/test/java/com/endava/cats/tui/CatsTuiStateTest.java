@@ -37,12 +37,12 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.pathProgressLabel()).isEqualTo("1 / 2 paths");
         Assertions.assertThat(state.currentPath()).isEqualTo("/pets");
         Assertions.assertThat(state.currentFuzzer()).isEqualTo("MissingFields (POST)");
-        Assertions.assertThat(state.completedTests()).isEqualTo(2);
+        Assertions.assertThat(state.reportedResults()).isEqualTo(2);
         Assertions.assertThat(state.success()).isEqualTo(1);
         Assertions.assertThat(state.warnings()).isEqualTo(1);
 
         state.accept(new CatsExecutionEvent.SessionEnded(NOW.plusSeconds(5),
-                new ExecutionSummary(20, 20, 18, 10, 3, 5, 2, 2, 0, 0, Map.of(200, 10),
+                new ExecutionSummary(20, 18, 10, 3, 5, 2, 0, 0, Map.of(200, 10),
                         Map.of("/pets", 5L), false, "Default: fail on any error", RunOutcome.completed())));
 
         Assertions.assertThat(state.running()).isFalse();
@@ -50,10 +50,9 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.success()).isEqualTo(10);
         Assertions.assertThat(state.warnings()).isEqualTo(3);
         Assertions.assertThat(state.errors()).isEqualTo(5);
-        Assertions.assertThat(state.completedTests()).isEqualTo(20);
+        Assertions.assertThat(state.reportedResults()).isEqualTo(18);
         Assertions.assertThat(state.requestsAttempted()).isEqualTo(20);
         Assertions.assertThat(state.reportedResults()).isEqualTo(18);
-        Assertions.assertThat(state.skipped()).isEqualTo(2);
         Assertions.assertThat(state.skippedFromReporting()).isEqualTo(2);
         Assertions.assertThat(state.topFailingPaths()).contains("/pets (5)");
         Assertions.assertThat(state.qualityGatePassed()).isFalse();
@@ -68,7 +67,7 @@ class CatsTuiStateTest {
     void shouldExposeSessionFailure() {
         CatsTuiState state = new CatsTuiState();
         state.accept(new CatsExecutionEvent.SessionEnded(NOW,
-                new ExecutionSummary(7, 7, 6, 4, 1, 1, 1, 1, 0, 0, Map.of(), Map.of(),
+                new ExecutionSummary(7, 6, 4, 1, 1, 1, 0, 0, Map.of(), Map.of(),
                         false, "failed", RunOutcome.failed("Contract cannot be read"))));
 
         Assertions.assertThat(state.running()).isFalse();
@@ -92,7 +91,7 @@ class CatsTuiStateTest {
     void shouldExposeSessionCancellation() {
         CatsTuiState state = new CatsTuiState();
         state.accept(new CatsExecutionEvent.SessionEnded(NOW,
-                new ExecutionSummary(5, 5, 4, 3, 1, 0, 1, 1, 0, 0, Map.of(), Map.of(),
+                new ExecutionSummary(5, 4, 3, 1, 0, 1, 0, 0, Map.of(), Map.of(),
                         true, "cancelled", RunOutcome.cancelled("Execution cancelled by user"))));
 
         Assertions.assertThat(state.running()).isFalse();
@@ -105,7 +104,7 @@ class CatsTuiStateTest {
     void shouldExposeLimitReachedAsANormalCompletion() {
         CatsTuiState state = new CatsTuiState();
         state.accept(new CatsExecutionEvent.SessionEnded(NOW,
-                new ExecutionSummary(10, 10, 10, 8, 1, 1, 0, 0, 0, 0, Map.of(), Map.of(),
+                new ExecutionSummary(10, 10, 8, 1, 1, 0, 0, 0, Map.of(), Map.of(),
                         true, "done", RunOutcome.limitReached("Maximum tests reached"))));
 
         Assertions.assertThat(state.running()).isFalse();
@@ -364,17 +363,15 @@ class CatsTuiStateTest {
         state.handleKey(KeyEvent.ofChar('i'));
 
         Assertions.assertThat(state.filteredResults()).extracting(TestResultSnapshot::id).containsExactly("2");
-        Assertions.assertThat(state.skipped()).isEqualTo(1);
         Assertions.assertThat(state.skippedFromReporting()).isEqualTo(1);
         Assertions.assertThat(state.requestsAttempted()).isEqualTo(2);
         Assertions.assertThat(state.averageResponseTime()).isEqualTo(10);
         Assertions.assertThat(state.responseCodeSummary()).contains("200: 1").doesNotContain("503");
 
         state.accept(new CatsExecutionEvent.SessionEnded(NOW,
-                new ExecutionSummary(2, 2, 1, 1, 0, 0, 1, 1, 0, 0,
+                new ExecutionSummary(2, 1, 1, 0, 0, 1, 0, 0,
                         Map.of(200, 1), Map.of(), true, "", RunOutcome.completed())));
 
-        Assertions.assertThat(state.skipped()).isEqualTo(1);
         Assertions.assertThat(state.skippedFromReporting()).isEqualTo(1);
         Assertions.assertThat(state.requestsAttempted()).isEqualTo(2);
     }
@@ -386,7 +383,7 @@ class CatsTuiStateTest {
         state.accept(new CatsExecutionEvent.TestCompleted(NOW, test("2", "warning", 400, 20)));
         state.accept(new CatsExecutionEvent.TestCompleted(NOW, test("3", "error", 500, 30)));
 
-        Assertions.assertThat(state.completedTests()).isEqualTo(3);
+        Assertions.assertThat(state.reportedResults()).isEqualTo(3);
         Assertions.assertThat(state.retainedResults()).isEqualTo(2);
         Assertions.assertThat(state.discardedResults()).isEqualTo(1);
         Assertions.assertThat(state.filteredResults()).extracting(TestResultSnapshot::id).containsExactly("2", "3");
@@ -533,7 +530,7 @@ class CatsTuiStateTest {
         running.handleKey(KeyEvent.ofChar('Q'));
         Assertions.assertThat(running.status()).isEqualTo("Cancellation requested");
         running.accept(new CatsExecutionEvent.SessionEnded(NOW, new ExecutionSummary(0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, Map.of(), Map.of(), true, "done", RunOutcome.completed())));
+                0, 0, 0, Map.of(), Map.of(), true, "done", RunOutcome.completed())));
         running.handleKey(KeyEvent.ofChar('q'));
         Assertions.assertThat(running.status()).isEqualTo("Finished");
     }

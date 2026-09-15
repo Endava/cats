@@ -418,7 +418,7 @@ public class TestCaseListener {
         try {
             CatsTestCase currentTestCase = currentTestCase();
             currentTestCase.setFuzzer(MDC.get(FUZZER_KEY));
-            executionStatisticsListener.increaseCompletedTests();
+            executionStatisticsListener.increaseProcessedTests();
             if (currentTestCase.isNotSkipped()) {
                 testReportsGenerator.writeTestCase(currentTestCase);
                 keepSummary(currentTestCase);
@@ -820,7 +820,6 @@ public class TestCaseListener {
     }
 
     private void reportSkipped(PrettyLogger logger, Object... params) {
-        executionStatisticsListener.increaseSkipped();
         logger.skip("Skipped due to: {}", params);
         CatsTestCase testCase = currentTestCase();
         testCase.setResultSkipped();

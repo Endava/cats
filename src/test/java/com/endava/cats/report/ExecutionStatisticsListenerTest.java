@@ -13,22 +13,11 @@ import java.util.stream.IntStream;
 class ExecutionStatisticsListenerTest {
 
     @Test
-    void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfSkippedTests_thenTheSkippedTestsAreReportedCorrectly() {
-        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
-        listener.increaseSkipped();
-
-        Assertions.assertThat(listener.getSkipped()).isOne();
-        Assertions.assertThat(listener.getErrors()).isZero();
-        Assertions.assertThat(listener.getAll()).isZero();
-    }
-
-    @Test
     void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfErrorTests_thenTheErrorTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseErrors("test");
 
         Assertions.assertThat(listener.getErrors()).isOne();
-        Assertions.assertThat(listener.getSkipped()).isZero();
         Assertions.assertThat(listener.getAll()).isOne();
     }
 
@@ -38,7 +27,6 @@ class ExecutionStatisticsListenerTest {
         listener.increaseSuccess("test");
 
         Assertions.assertThat(listener.getSuccess()).isOne();
-        Assertions.assertThat(listener.getSkipped()).isZero();
         Assertions.assertThat(listener.getAll()).isOne();
     }
 
@@ -48,7 +36,6 @@ class ExecutionStatisticsListenerTest {
         listener.increaseWarns("test");
 
         Assertions.assertThat(listener.getWarns()).isOne();
-        Assertions.assertThat(listener.getSkipped()).isZero();
         Assertions.assertThat(listener.getAll()).isOne();
     }
 
@@ -57,7 +44,6 @@ class ExecutionStatisticsListenerTest {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseWarns("test");
         listener.increaseSuccess("test");
-        listener.increaseSkipped(); // Skipped tests are not reported results.
         listener.increaseErrors("test");
 
         Assertions.assertThat(listener.getAll()).isEqualTo(3);
@@ -169,28 +155,49 @@ class ExecutionStatisticsListenerTest {
     }
 
     @Test
-    void shouldTrackRequestAndReportingAccountingIndependently() {
+    void shouldTrackResultsOmittedByReportingOptionsSeparatelyFromRequestsAndReportedTests() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseSkippedFromReporting("/path1");
-        listener.increaseSkippedFromReporting("/path2");
         listener.increaseSuccess("/path1");
-        listener.increaseCompletedTests();
-        listener.increaseCompletedTests();
-        listener.increaseCompletedTests();
         listener.increaseRequestsAttempted();
         listener.increaseRequestsAttempted();
 
-        Assertions.assertThat(listener.getCompletedTests()).isEqualTo(3);
+        Assertions.assertThat(listener.snapshot(true, "").reportedResults()).isOne();
         Assertions.assertThat(listener.getRequestsAttempted()).isEqualTo(2);
-        Assertions.assertThat(listener.getSkippedFromReporting()).isEqualTo(2);
+        Assertions.assertThat(listener.getSkippedFromReporting()).isOne();
         Assertions.assertThat(listener.getAll()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldReportOneTestForOneOrdinaryHttpRequest() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        listener.increaseSuccess("/path");
+        listener.increaseRequestsAttempted();
+
+        var summary = listener.snapshot(true, "");
+
+        Assertions.assertThat(summary.reportedResults()).isOne();
+        Assertions.assertThat(summary.requestsAttempted()).isOne();
+        Assertions.assertThat(summary.skippedFromReporting()).isZero();
+    }
+
+    @Test
+    void shouldReportLinterResultWithoutAnHttpRequest() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        listener.increaseWarns("/contract");
+
+        var summary = listener.snapshot(true, "");
+
+        Assertions.assertThat(summary.reportedResults()).isOne();
+        Assertions.assertThat(summary.requestsAttempted()).isZero();
+        Assertions.assertThat(summary.skippedFromReporting()).isZero();
     }
 
     @Test
     void shouldReturnZeroForExecutionCountsWhenNoneTracked() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
 
-        Assertions.assertThat(listener.getCompletedTests()).isZero();
+        Assertions.assertThat(listener.snapshot(true, "").reportedResults()).isZero();
         Assertions.assertThat(listener.getRequestsAttempted()).isZero();
         Assertions.assertThat(listener.getSkippedFromReporting()).isZero();
     }
@@ -202,8 +209,7 @@ class ExecutionStatisticsListenerTest {
         listener.increaseErrors("/path");
         listener.increaseWarns("/path");
         listener.increaseSkippedFromReporting("/path");
-        listener.increaseSkipped();
-        listener.increaseCompletedTests();
+        listener.increaseProcessedTests();
         listener.increaseRequestsAttempted();
         listener.increaseAuthErrors();
         listener.increaseIoErrors();
@@ -220,8 +226,8 @@ class ExecutionStatisticsListenerTest {
         Assertions.assertThat(listener.getErrors()).isZero();
         Assertions.assertThat(listener.getWarns()).isZero();
         Assertions.assertThat(listener.getSkippedFromReporting()).isZero();
-        Assertions.assertThat(listener.getSkipped()).isZero();
-        Assertions.assertThat(listener.getCompletedTests()).isZero();
+        Assertions.assertThat(listener.snapshot(true, "").reportedResults()).isZero();
+        Assertions.assertThat(listener.getProcessedTests()).isZero();
         Assertions.assertThat(listener.getRequestsAttempted()).isZero();
         Assertions.assertThat(listener.getAuthErrors()).isZero();
         Assertions.assertThat(listener.getIoErrors()).isZero();

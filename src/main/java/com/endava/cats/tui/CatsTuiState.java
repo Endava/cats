@@ -60,10 +60,8 @@ final class CatsTuiState {
     private long success;
     private long warnings;
     private long errors;
-    private long skipped;
     private long skippedFromReporting;
     private long requestsAttempted;
-    private long observedTests;
     private long discardedResults;
     private long timedResults;
     private long totalResponseTime;
@@ -444,7 +442,6 @@ final class CatsTuiState {
 
     private void register(TestResultSnapshot test) {
         TestResultSnapshot previousSelection = selectedTest();
-        observedTests++;
         if (results.size() == maximumRetainedResults) {
             results.removeFirst();
             discardedResults++;
@@ -458,7 +455,6 @@ final class CatsTuiState {
             case WARNING -> warnings++;
             case SUCCESS -> success++;
             case SKIPPED -> {
-                skipped++;
                 if (isSkippedFromReporting(test.result())) {
                     skippedFromReporting++;
                 }
@@ -963,10 +959,6 @@ final class CatsTuiState {
         return failureMessage;
     }
 
-    long completedTests() {
-        return summary == null ? observedTests : summary.completedTests();
-    }
-
     long success() {
         return summary == null ? success : summary.success();
     }
@@ -977,10 +969,6 @@ final class CatsTuiState {
 
     long errors() {
         return summary == null ? errors : summary.errors();
-    }
-
-    long skipped() {
-        return summary == null ? skipped : summary.skipped();
     }
 
     long requestsAttempted() {

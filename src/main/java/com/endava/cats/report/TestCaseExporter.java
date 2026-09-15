@@ -264,17 +264,18 @@ public abstract class TestCaseExporter {
         emptyConsoleLine();
 
         String catsFinished = AnsiUtils.blue("CATS finished in {}. ");
-        String execution = AnsiUtils.blue("Tests completed: {}, HTTP requests sent: {}, results included: {}, "
-                + "skipped: {}, omitted from report: {}. ");
+        String execution = AnsiUtils.blue("Tests reported: {}, HTTP requests sent: {}. ");
         String passed = AnsiUtils.boldGreen("✔ Passed {}, ");
         String warnings = AnsiUtils.boldYellow("⚠ warnings: {}, ");
         String errors = AnsiUtils.boldRed("‼ errors: {}");
         logger.complete(catsFinished + execution, duration,
-                executionSummary.completedTests(), executionSummary.requestsAttempted(),
-                executionSummary.reportedResults(), executionSummary.skipped(),
-                executionSummary.skippedFromReporting());
+                executionSummary.reportedResults(), executionSummary.requestsAttempted());
         logger.complete(passed + warnings + errors, executionSummary.success(),
                 executionSummary.warnings(), executionSummary.errors());
+        if (executionSummary.skippedFromReporting() > 0) {
+            logger.complete(AnsiUtils.blue("Not reported due to reporting options: {}."),
+                    executionSummary.skippedFromReporting());
+        }
 
         // Print quality gate result
         String qualityGateStatus = executionSummary.qualityGatePassed()
@@ -322,11 +323,10 @@ public abstract class TestCaseExporter {
                 .toList();
 
         return CatsTestReport.builder().testCases(sortedSummaries).errors(executionSummary.errors())
-                .success(executionSummary.success()).completedTests(executionSummary.completedTests())
+                .success(executionSummary.success())
                 .reportedResults(executionSummary.reportedResults())
                 .requestsAttempted(executionSummary.requestsAttempted())
                 .skippedFromReporting(executionSummary.skippedFromReporting())
-                .skipped(executionSummary.skipped())
                 .authErrors(executionSummary.authenticationErrors())
                 .ioErrors(executionSummary.ioErrors())
                 .warnings(executionSummary.warnings()).timestamp(OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME))

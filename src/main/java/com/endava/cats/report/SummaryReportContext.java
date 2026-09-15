@@ -29,13 +29,8 @@ public final class SummaryReportContext {
     private final String errors;
     private final String errorsJunit;
     private final String failuresJunit;
-    private final String completedTests;
-    private final String requestsAttempted;
+    private final String testsReported;
     private final String reportedResults;
-    private final boolean showResultsIncluded;
-    private final String skippedFromReporting;
-    private final boolean hasSkippedFromReporting;
-    private final String skipped;
     private final String authErrors;
     private final String ioErrors;
     private final String timestamp;
@@ -105,13 +100,8 @@ public final class SummaryReportContext {
                 .errors(formatLargeNumber(report.getErrors()))
                 .errorsJunit(formatLargeNumber(report.getErrorsJunit()))
                 .failuresJunit(formatLargeNumber(report.getFailuresJunit()))
-                .completedTests(formatLargeNumber(report.getCompletedTests()))
-                .requestsAttempted(formatLargeNumber(report.getRequestsAttempted()))
+                .testsReported(formatLargeNumber(report.getReportedResults()))
                 .reportedResults(formatLargeNumber(report.getReportedResults()))
-                .showResultsIncluded(report.getReportedResults() != report.getCompletedTests())
-                .skippedFromReporting(formatLargeNumber(report.getSkippedFromReporting()))
-                .hasSkippedFromReporting(report.getSkippedFromReporting() > 0)
-                .skipped(formatLargeNumber(report.getSkipped()))
                 .authErrors(formatLargeNumber(report.getAuthErrors()))
                 .ioErrors(formatLargeNumber(report.getIoErrors()))
                 .timestamp(report.getTimestamp())
