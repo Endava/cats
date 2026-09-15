@@ -12,6 +12,7 @@ import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.CatsDSLWords;
+import com.endava.cats.util.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -258,6 +259,36 @@ class FunctionalFuzzerTest {
         functionalFuzzer.executeCustomFuzzerTests();
         Map<String, String> variables = customFuzzerUtil.getVariables();
         Assertions.assertThat(variables).containsEntry("resp", "200").containsEntry("custId", "john");
+    }
+
+    @Test
+    void shouldCaptureOutputVariablesFromResponseHeaders() throws Exception {
+        File customFuzzerFile = File.createTempFile("functional-fuzzer-response-header", ".yml");
+        Files.writeString(customFuzzerFile.toPath(), """
+                /pets/{id}/move:
+                  test_1:
+                    pet: stay
+                    expectedResponseCode: 200
+                    httpMethod: POST
+                    output:
+                      clientToken: header#X-Client-Token
+                """);
+        customFuzzerFile.deleteOnExit();
+
+        FuzzingData data = setContext(customFuzzerFile.getAbsolutePath(), "{\"code\": \"200\"}");
+        CatsResponse response = CatsResponse.builder()
+                .body("{\"code\": \"200\"}")
+                .headers(List.of(new KeyValuePair<>("X-Client-Token", "token-456")))
+                .responseCode(200)
+                .responseContentType("application/json")
+                .build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(response);
+
+        filesArguments.loadCustomFuzzerFile();
+        functionalFuzzer.fuzz(data);
+        functionalFuzzer.executeCustomFuzzerTests();
+
+        Assertions.assertThat(customFuzzerUtil.getVariables()).containsEntry("clientToken", "token-456");
     }
 
     @Test

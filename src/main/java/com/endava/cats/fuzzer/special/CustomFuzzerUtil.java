@@ -18,6 +18,7 @@ import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -59,6 +60,7 @@ import static com.endava.cats.util.JsonUtils.NOT_SET;
  */
 @ApplicationScoped
 public class CustomFuzzerUtil {
+    private static final String RESPONSE_HEADER_PREFIX = "header#";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(CustomFuzzerUtil.class);
     @Getter
     private final Map<String, String> variables = new HashMap<>();
@@ -320,7 +322,7 @@ public class CustomFuzzerUtil {
 
         result.putAll(variablesMap.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> String.valueOf(JsonUtils.getVariableFromJson(response.getBody(), mappingFunction.apply(entry))))
+                        entry -> getResponseValue(response, mappingFunction.apply(entry)))
                 ));
 
         //we make sure that "checkBoolean" is not marked as NOT_SET and set to TRUE so that is matched against the computed expression
@@ -328,6 +330,15 @@ public class CustomFuzzerUtil {
                 .stream()
                 .map(CustomFuzzerUtil::remapCheckBoolean)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private String getResponseValue(CatsResponse response, String selector) {
+        if (selector.startsWith(RESPONSE_HEADER_PREFIX)) {
+            String headerName = selector.substring(RESPONSE_HEADER_PREFIX.length());
+            KeyValuePair<String, String> header = response.getHeader(headerName);
+            return header == null ? JsonUtils.NOT_SET : header.getValue();
+        }
+        return String.valueOf(JsonUtils.getVariableFromJson(response.getBody(), selector));
     }
 
     private static Map.Entry<String, String> remapCheckBoolean(Map.Entry<String, String> entry) {
