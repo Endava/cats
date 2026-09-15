@@ -494,6 +494,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         logger.config("OpenAPI specs: {}", AnsiUtils.blue(apiArguments.getContract()));
         logger.config("API base url: {}", AnsiUtils.blue(apiArguments.getServer()));
         logger.config("Reporting path: {}", AnsiUtils.blue(reportingArguments.getOutputReportFolder()));
+        logger.config("--insecure: {}", AnsiUtils.blue(authArguments.isInsecure()));
         if (wfcAuthProvider.isEnabled()) {
             logger.config("WFC Auth file: {}", AnsiUtils.blue(authArguments.getWfcAuthFile()));
             logger.config("WFC Auth entry: {}", AnsiUtils.blue(wfcAuthProvider.getSelectedAuthenticationName()));

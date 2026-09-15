@@ -115,6 +115,12 @@ You can run it as `java -jar cats.jar`.
 
 Head to the releases page to download the latest version: [https://github.com/Endava/cats/releases](https://github.com/Endava/cats/releases).
 
+## TLS
+
+CATS verifies server certificates and hostnames by default. For trusted test environments using self-signed certificates, verification can be disabled explicitly with `--insecure`.
+
+For mutual TLS, use `--sslKeystore`, `--sslKeystorePwd` and `--sslKeyPwd`. If `--sslKeyPwd` is omitted, CATS uses the keystore password for the private key.
+
 ## Build from sources
 
 You can build CATS from sources on you local box. You need [Java 25](https://sdkman.io/jdks). Maven is already bundled.

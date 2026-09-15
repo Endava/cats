@@ -18,7 +18,7 @@ import java.util.Map;
 @Getter
 public class AuthArguments {
     @CommandLine.Option(names = {"--sslKeystore"},
-            description = "Location of the keystore holding certificates used when authenticating calls using one-way or two-way SSL")
+            description = "Location of the JKS keystore holding the client certificate and private key for mutual TLS")
     private String sslKeystore;
 
     @CommandLine.Option(names = {"--sslKeystorePwd"},
@@ -28,6 +28,10 @@ public class AuthArguments {
     @CommandLine.Option(names = {"--sslKeyPwd"},
             description = "The password of the private key from the sslKeystore")
     private String sslKeyPwd;
+
+    @CommandLine.Option(names = {"--insecure"},
+            description = "Disable TLS certificate and hostname verification. Use only for trusted test environments")
+    private boolean insecure;
 
     @CommandLine.Option(names = {"--basicAuth", "--basicauth"},
             description = "A username:password pair, when using basic auth")

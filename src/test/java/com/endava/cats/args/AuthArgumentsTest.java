@@ -13,6 +13,11 @@ import java.net.Proxy;
 class AuthArgumentsTest {
 
     @Test
+    void shouldUseStrictTlsByDefault() {
+        Assertions.assertThat(new AuthArguments().isInsecure()).isFalse();
+    }
+
+    @Test
     void shouldReturnEmptyBasicAuth() {
         AuthArguments args = new AuthArguments();
         Assertions.assertThat(args.isBasicAuthSupplied()).isFalse();

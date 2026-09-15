@@ -49,10 +49,12 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -145,20 +147,25 @@ public class ServiceCaller {
      */
     @PostConstruct
     public void initHttpClient() {
+        okHttpClient = null;
         try {
-            final TrustManager[] trustAllCerts = this.buildTrustAllManager();
-            final SSLSocketFactory sslSocketFactory = this.buildSslSocketFactory(trustAllCerts);
-
-            okHttpClient = new OkHttpClient.Builder()
+            OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
                     .proxy(authArguments.getProxy())
                     .connectTimeout(apiArguments.getConnectionTimeout(), TimeUnit.SECONDS)
                     .readTimeout(apiArguments.getReadTimeout(), TimeUnit.SECONDS)
                     .writeTimeout(apiArguments.getWriteTimeout(), TimeUnit.SECONDS)
                     .connectionPool(new ConnectionPool(10, 15, TimeUnit.MINUTES))
-                    .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
                     .retryOnConnectionFailure(true)
-                    .protocols(processingArguments.isHttp2PriorKnowledge() ? List.of(Protocol.H2_PRIOR_KNOWLEDGE) : List.of(Protocol.HTTP_2, Protocol.HTTP_1_1))
-                    .hostnameVerifier((_, _) -> true).build();
+                    .protocols(processingArguments.isHttp2PriorKnowledge() ? List.of(Protocol.H2_PRIOR_KNOWLEDGE) : List.of(Protocol.HTTP_2, Protocol.HTTP_1_1));
+
+            if (authArguments.isMutualTls() || authArguments.isInsecure()) {
+                X509TrustManager trustManager = authArguments.isInsecure() ? buildTrustAllManager() : buildDefaultTrustManager();
+                clientBuilder.sslSocketFactory(buildSslSocketFactory(trustManager), trustManager);
+            }
+            if (authArguments.isInsecure()) {
+                clientBuilder.hostnameVerifier((_, _) -> true);
+            }
+            okHttpClient = clientBuilder.build();
 
             logger.debug("Proxy configuration to be used: {}", authArguments.getProxy());
         } catch (GeneralSecurityException | IOException e) {
@@ -176,42 +183,53 @@ public class ServiceCaller {
         }
     }
 
-    private TrustManager[] buildTrustAllManager() {
-        return new TrustManager[]{
-                new X509TrustManager() {
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
-                        //we don't do anything here
-                    }
+    private X509TrustManager buildTrustAllManager() {
+        return new X509TrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                //we don't do anything here
+            }
 
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
-                        //we don't do anything here
-                    }
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                //we don't do anything here
+            }
 
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-                }
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
         };
     }
 
-    private SSLSocketFactory buildSslSocketFactory(TrustManager[] trustAllCerts) throws IOException, GeneralSecurityException {
-        final SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
+    private X509TrustManager buildDefaultTrustManager() throws GeneralSecurityException {
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        trustManagerFactory.init((KeyStore) null);
+        return Arrays.stream(trustManagerFactory.getTrustManagers())
+                .filter(X509TrustManager.class::isInstance)
+                .map(X509TrustManager.class::cast)
+                .findFirst()
+                .orElseThrow(() -> new GeneralSecurityException("No default X509 trust manager available"));
+    }
+
+    private SSLSocketFactory buildSslSocketFactory(X509TrustManager trustManager) throws IOException, GeneralSecurityException {
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        KeyManager[] keyManagers = null;
 
         if (authArguments.isMutualTls()) {
+            char[] keystorePassword = Optional.ofNullable(authArguments.getSslKeystorePwd()).orElse("").toCharArray();
+            char[] keyPassword = Optional.ofNullable(authArguments.getSslKeyPwd())
+                    .orElse(authArguments.getSslKeystorePwd() == null ? "" : authArguments.getSslKeystorePwd())
+                    .toCharArray();
             try (InputStream inputStream = new FileInputStream(authArguments.getSslKeystore())) {
                 KeyStore keyStore = KeyStore.getInstance("jks");
-                keyStore.load(inputStream, authArguments.getSslKeystorePwd().toCharArray());
+                keyStore.load(inputStream, keystorePassword);
                 KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                keyManagerFactory.init(keyStore, authArguments.getSslKeystorePwd().toCharArray());
-                sslContext.init(keyManagerFactory.getKeyManagers(), trustAllCerts, new SecureRandom());
+                keyManagerFactory.init(keyStore, keyPassword);
+                keyManagers = keyManagerFactory.getKeyManagers();
             }
-        } else {
-            sslContext.init(null, trustAllCerts, new SecureRandom());
         }
-
+        sslContext.init(keyManagers, new TrustManager[]{trustManager}, new SecureRandom());
         return sslContext.getSocketFactory();
     }
 

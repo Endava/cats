@@ -36,19 +36,29 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import jakarta.inject.Inject;
 import okhttp3.HttpUrl;
+import okhttp3.Request;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Proxy;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.Key;
+import java.security.KeyStore;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -81,9 +91,10 @@ class ServiceCallerTest {
 
     @BeforeAll
     static void setup() {
-        wireMockServer = new WireMockServer(new WireMockConfiguration().dynamicPort());
+        wireMockServer = new WireMockServer(new WireMockConfiguration().dynamicPort().dynamicHttpsPort());
         wireMockServer.start();
         wireMockServer.stubFor(WireMock.get("/not-json").willReturn(WireMock.ok("<html>test</html>")));
+        wireMockServer.stubFor(WireMock.get("/secure").willReturn(WireMock.ok("{}")));
         wireMockServer.stubFor(WireMock.post("/pets").willReturn(WireMock.ok("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.post("/customers")
                 .willReturn(WireMock.created().withBody("{\"id\":\"customer-42\"}")));
@@ -136,6 +147,9 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParamsEmpty.yml"));
         ReflectionTestUtils.setField(filesArguments, "params", List.of("gid:1", "test:2"));
         ReflectionTestUtils.setField(authArguments, "sslKeystore", null);
+        ReflectionTestUtils.setField(authArguments, "sslKeystorePwd", null);
+        ReflectionTestUtils.setField(authArguments, "sslKeyPwd", null);
+        ReflectionTestUtils.setField(authArguments, "insecure", false);
         ReflectionTestUtils.setField(authArguments, "proxyHost", null);
         ReflectionTestUtils.setField(authArguments, "proxyPort", 0);
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", false);
@@ -388,12 +402,53 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldRejectSelfSignedCertificatesByDefault() {
+        serviceCaller.initHttpClient();
+
+        Assertions.assertThatThrownBy(this::callSelfSignedServer)
+                .isInstanceOf(SSLHandshakeException.class);
+    }
+
+    @Test
+    void shouldAllowSelfSignedCertificatesWhenInsecureIsEnabled() throws IOException {
+        ReflectionTestUtils.setField(authArguments, "insecure", true);
+        serviceCaller.initHttpClient();
+
+        Assertions.assertThat(callSelfSignedServer()).isEqualTo(200);
+    }
+
+    @Test
     void shouldLoadKeystoreAndCreateSSLFactory() {
         ReflectionTestUtils.setField(authArguments, "sslKeystore", "src/test/resources/cats.jks");
         ReflectionTestUtils.setField(authArguments, "sslKeystorePwd", "password");
         ReflectionTestUtils.setField(authArguments, "sslKeyPwd", "password");
 
         serviceCaller.initHttpClient();
+        Assertions.assertThat(serviceCaller.okHttpClient).isNotNull();
+    }
+
+    @Test
+    void shouldUseSeparatePrivateKeyPassword(@TempDir Path tempDir) throws Exception {
+        char[] sourcePassword = "password".toCharArray();
+        KeyStore source = KeyStore.getInstance("JKS");
+        try (InputStream input = Files.newInputStream(Path.of("src/test/resources/cats.jks"))) {
+            source.load(input, sourcePassword);
+        }
+        String alias = source.aliases().nextElement();
+        Key key = source.getKey(alias, sourcePassword);
+        KeyStore target = KeyStore.getInstance("JKS");
+        target.load(null, null);
+        target.setKeyEntry(alias, key, "key-password".toCharArray(), source.getCertificateChain(alias));
+        Path targetPath = tempDir.resolve("separate-passwords.jks");
+        try (OutputStream output = Files.newOutputStream(targetPath)) {
+            target.store(output, "store-password".toCharArray());
+        }
+        ReflectionTestUtils.setField(authArguments, "sslKeystore", targetPath.toString());
+        ReflectionTestUtils.setField(authArguments, "sslKeystorePwd", "store-password");
+        ReflectionTestUtils.setField(authArguments, "sslKeyPwd", "key-password");
+
+        serviceCaller.initHttpClient();
+
         Assertions.assertThat(serviceCaller.okHttpClient).isNotNull();
     }
 
@@ -1213,5 +1268,12 @@ class ServiceCallerTest {
                 .build();
         String result = serviceCaller.addQueryParamsFromPathParamsPayload(url, data);
         Assertions.assertThat(result).isEqualTo(url);
+    }
+
+    private int callSelfSignedServer() throws IOException {
+        Request request = new Request.Builder().url("https://localhost:" + wireMockServer.httpsPort() + "/secure").build();
+        try (okhttp3.Response response = serviceCaller.okHttpClient.newCall(request).execute()) {
+            return response.code();
+        }
     }
 }
