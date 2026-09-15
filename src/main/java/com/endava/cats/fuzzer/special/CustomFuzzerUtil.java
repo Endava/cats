@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.http.HttpMethod;
@@ -95,7 +96,7 @@ public class CustomFuzzerUtil {
         Map<String, Object> globalVars = customFuzzerDetails.remove(CatsDSLWords.CATS_GLOBAL_VARS);
         if (globalVars != null) {
             for (Map.Entry<String, Object> entry : globalVars.entrySet()) {
-                String evaluatedValue = CatsDSLParser.parseAndGetResult(String.valueOf(entry.getValue()), variables);
+                String evaluatedValue = DynamicValueResolver.resolve(String.valueOf(entry.getValue()), variables);
                 variables.put(entry.getKey(), evaluatedValue);
                 log.debug("Global variable [{}] evaluated to [{}]", entry.getKey(), evaluatedValue);
             }

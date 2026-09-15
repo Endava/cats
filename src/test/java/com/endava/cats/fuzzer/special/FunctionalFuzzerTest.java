@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -524,6 +525,19 @@ class FunctionalFuzzerTest {
 
         Assertions.assertThat(customFuzzerUtil.getVariables()).containsEntry("testVar", "computed");
         Assertions.assertThat(details).doesNotContainKey("cats-global-vars").containsKey("/some/path");
+    }
+
+    @Test
+    void shouldResolveEmbeddedVariablesInGlobalVariables() {
+        Map<String, Object> globalVariables = new LinkedHashMap<>();
+        globalVariables.put("token", "token-123");
+        globalVariables.put("authorization", "Bearer ${token}");
+        Map<String, Map<String, Object>> details = new HashMap<>();
+        details.put(CatsDSLWords.CATS_GLOBAL_VARS, globalVariables);
+
+        customFuzzerUtil.loadGlobalVariables(details);
+
+        Assertions.assertThat(customFuzzerUtil.getVariables()).containsEntry("authorization", "Bearer token-123");
     }
 
     @Test
