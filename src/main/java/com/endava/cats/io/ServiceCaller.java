@@ -5,6 +5,7 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
@@ -26,6 +27,7 @@ import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.RateLimiter;
+import com.endava.cats.util.SensitiveDataPolicy;
 import com.endava.cats.util.WordUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -97,13 +99,12 @@ public class ServiceCaller {
     private static final Object SUBSTITUTE_FOR_NULL = "SET_TO_NULL";
     private static final String CATS_HEADER_UUID = "X-Cats-Trace-Id";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ServiceCaller.class);
-    private static final List<String> AUTH_HEADERS = Arrays.asList("cookie", "authorization", "authorisation", "token", "jwt", "apikey",
-            "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
     private final FilesArguments filesArguments;
     private final TestCaseListener testCaseListener;
     private final AuthArguments authArguments;
     private final ApiArguments apiArguments;
     private final ProcessingArguments processingArguments;
+    private final ReportingArguments reportingArguments;
     private final CatsGlobalContext catsGlobalContext;
     private final WfcAuthProvider wfcAuthProvider;
     private final RuntimeResourcePool runtimeResourcePool;
@@ -123,12 +124,13 @@ public class ServiceCaller {
      */
     @Inject
     public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments,
-                         WfcAuthProvider wfcAuthProvider, RuntimeResourcePool runtimeResourcePool) {
+                         ReportingArguments reportingArguments, WfcAuthProvider wfcAuthProvider, RuntimeResourcePool runtimeResourcePool) {
         this.testCaseListener = lr;
         this.filesArguments = filesArguments;
         this.authArguments = authArguments;
         this.apiArguments = apiArguments;
         this.processingArguments = processingArguments;
+        this.reportingArguments = reportingArguments;
         this.catsGlobalContext = context;
         this.wfcAuthProvider = wfcAuthProvider;
         this.runtimeResourcePool = runtimeResourcePool;
@@ -264,9 +266,9 @@ public class ServiceCaller {
             catsRequest.setUrl(url);
             this.recordRequest(catsRequest);
 
-            logger.note("Final list of request headers: {}", headers);
+            logger.note("Final list of request headers: {}", SensitiveDataPolicy.maskHeadersForDisplay(headers, reportingArguments));
             logger.note("Final payload: {}", processedPayload);
-            logger.note("Final url: {}", url);
+            logger.note("Final url: {}", SensitiveDataPolicy.maskUrl(url, reportingArguments));
 
             startTime = System.currentTimeMillis();
             CatsResponse response = this.callService(catsRequest, data.getResponseValidationFields());
@@ -329,7 +331,7 @@ public class ServiceCaller {
 
     private String constructUrl(ServiceData data, String processedPayload, String pathParamsPayload) {
         String decodedUrl = CatsUtil.unescapeCurlyBrackets(apiArguments.getServer() + data.getRelativePath());
-        logger.debug("Decoded URL: {}", decodedUrl);
+        logger.debug("Decoded URL: {}", SensitiveDataPolicy.maskUrl(decodedUrl, reportingArguments));
         if (!data.isReplaceUrlParams()) {
             String actualUrl = this.replacePathParams(decodedUrl, processedPayload, data);
             return this.addWfcAuthQueryParams(this.replaceRemovedParams(actualUrl));
@@ -347,7 +349,7 @@ public class ServiceCaller {
         }
         url = this.addAdditionalQueryParams(url, data);
         url = this.addWfcAuthQueryParams(url);
-        logger.debug("Replaced URL: {}", url);
+        logger.debug("Replaced URL: {}", SensitiveDataPolicy.maskUrl(url, reportingArguments));
         return url;
     }
 
@@ -397,10 +399,7 @@ public class ServiceCaller {
     }
 
     String addAdditionalQueryParams(String startingUrl, ServiceData data) {
-        Map<String, String> context = data.getDynamicVariables().isEmpty()
-                ? Map.of()
-                : getHeaderParserContext(data);
-        return addAdditionalQueryParams(startingUrl, data.getRelativePath(), context);
+        return addAdditionalQueryParams(startingUrl, data.getRelativePath(), getHeaderParserContext(data));
     }
 
     private String addAdditionalQueryParams(String startingUrl, String currentPath, Map<String, String> context) {
@@ -482,6 +481,8 @@ public class ServiceCaller {
         this.addMandatoryHeaders(data, headers);
         this.addSuppliedHeaders(data, headers);
         this.addWfcAuthHeaders(headers);
+        reportingArguments.registerSensitiveHeaders(wfcAuthProvider.getAuthenticationHeaderNames());
+        reportingArguments.registerSensitiveQueryParams(wfcAuthProvider.getAuthenticationQueryParamNames());
         this.removeSkippedHeaders(data, headers);
         this.addBasicAuth(headers);
 
@@ -596,7 +597,7 @@ public class ServiceCaller {
         int numberOfLines = rawResponse.split("[\r|\n]").length;
 
         logger.debug("Raw response body: {}", rawResponse);
-        logger.debug("Raw response headers: {}", response.headers());
+        logger.debug("Raw response headers: {}", SensitiveDataPolicy.maskHeadersForDisplay(responseHeaders, reportingArguments));
 
         return CatsResponse.builder()
                 .responseCode(response.code())
@@ -810,7 +811,8 @@ public class ServiceCaller {
 
     private void addSuppliedHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
         Map<String, Object> userSuppliedHeaders = filesArguments.getHeaders(data.getContractPath());
-        logger.debug("Path {} (including ALL headers) has the following headers: {}", data.getContractPath(), userSuppliedHeaders);
+        logger.debug("Path {} (including ALL headers) has the following headers: {}", data.getContractPath(),
+                SensitiveDataPolicy.maskHeadersForDisplay(userSuppliedHeaders, reportingArguments));
 
         Map<String, String> headerParserContext = getHeaderParserContext(data);
         Map<String, String> suppliedHeaders = userSuppliedHeaders.entrySet().stream()
@@ -827,7 +829,7 @@ public class ServiceCaller {
     }
 
     private Map<String, String> getHeaderParserContext(ServiceData data) {
-        Map<String, String> context = new HashMap<>(authArguments.getAuthScriptAsMap());
+        Map<String, String> context = new HashMap<>(authArguments.getDynamicVariablesContext());
         context.putAll(data.getDynamicVariables());
         return context;
     }
@@ -853,8 +855,12 @@ public class ServiceCaller {
      * @return true if the header is an authentication header, false otherwise
      */
     public boolean isAuthenticationHeader(String header) {
-        String normalizedHeader = header.toLowerCase(Locale.ROOT).replace("-", "").replace("_", "");
-        return AUTH_HEADERS.stream().anyMatch(normalizedHeader::contains) || wfcAuthProvider.isAuthenticationHeader(header);
+        Set<String> wfcHeaders = wfcAuthProvider == null ? Set.of() : wfcAuthProvider.getAuthenticationHeaderNames();
+        return SensitiveDataPolicy.isSensitiveHeader(header, wfcHeaders, false);
+    }
+
+    public Map<String, String> getEnvironmentVariables() {
+        return authArguments.getEnvironmentVariables();
     }
 
     /**
@@ -896,7 +902,7 @@ public class ServiceCaller {
         logger.debug("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
         for (Map.Entry<String, Object> entry : currentPathRefData.entrySet()) {
-            String valueToReplace = CatsDSLParser.parseAndGetResult(String.valueOf(entry.getValue()), Map.of());
+            String valueToReplace = CatsDSLParser.parseAndGetResult(String.valueOf(entry.getValue()), authArguments.getDynamicVariablesContext());
             currentUrl = currentUrl.replace("{" + entry.getKey() + "}", CatsUtil.urlEncodePathSegment(valueToReplace));
             data.getPathParams().add(entry.getKey());
         }
@@ -945,7 +951,9 @@ public class ServiceCaller {
     private String replaceRefDataEntry(ServiceData data, Map.Entry<String, Object> entry, String payload) {
         Object refDataValue = entry.getValue();
         if (refDataValue instanceof String str) {
-            refDataValue = CatsDSLParser.parseAndGetResult(str, Map.of(Parser.REQUEST, data.getPayload()));
+            Map<String, String> context = new HashMap<>(authArguments.getDynamicVariablesContext());
+            context.put(Parser.REQUEST, data.getPayload());
+            refDataValue = CatsDSLParser.parseAndGetResult(str, context);
         }
         if (SUBSTITUTE_FOR_NULL.equals(String.valueOf(refDataValue))) {
             refDataValue = null;

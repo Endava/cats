@@ -133,7 +133,7 @@ class TemplateFuzzCommandTest {
     @Test
     void shouldResolveEmbeddedVariablesInTemplateHeaders() {
         AuthArguments authArguments = Mockito.mock(AuthArguments.class);
-        Mockito.when(authArguments.getAuthScriptAsMap()).thenReturn(Map.of("token", "token-123"));
+        Mockito.when(authArguments.getDynamicVariablesContext()).thenReturn(Map.of("token", "token-123"));
         ReflectionTestUtils.setField(templateFuzzCommand, "authArguments", authArguments);
         templateFuzzCommand.headers = Map.of("Authorization", "Bearer ${token}");
 

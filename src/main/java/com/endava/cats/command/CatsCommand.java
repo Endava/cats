@@ -45,6 +45,7 @@ import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.OpenApiRefExtractor;
 import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.util.SensitiveDataPolicy;
 import com.endava.cats.util.VersionChecker;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -376,6 +377,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         filterArguments.validateValidPaths(openAPI);
         //reporting path is initialized only if OpenAPI spec is successfully parsed
         testCaseListener.initReportingPath();
+        reportingArguments.registerSensitiveQueryParams(SensitiveDataPolicy.openApiQueryApiKeyNames(openAPI));
         this.printConfiguration(openAPI);
         this.initGlobalData(openAPI);
         this.initSchemaWalker(openAPI);
@@ -485,6 +487,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         runtimeResourcePool.clear();
         ConsoleUtils.initTerminalWidth(spec);
         reportingArguments.processLogData();
+        authArguments.getEnvironmentVariables();
         apiArguments.validateRequired(spec);
         filesArguments.loadConfig();
         filterArguments.applyProfile(spec);
@@ -495,6 +498,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         logger.config("API base url: {}", AnsiUtils.blue(apiArguments.getServer()));
         logger.config("Reporting path: {}", AnsiUtils.blue(reportingArguments.getOutputReportFolder()));
         logger.config("--insecure: {}", AnsiUtils.blue(authArguments.isInsecure()));
+        logger.config("--showSecrets: {}", AnsiUtils.blue(reportingArguments.isShowSecrets()));
+        logger.config("Environment file: {}", AnsiUtils.blue(authArguments.getEnvironmentFileStatus()));
         if (wfcAuthProvider.isEnabled()) {
             logger.config("WFC Auth file: {}", AnsiUtils.blue(authArguments.getWfcAuthFile()));
             logger.config("WFC Auth entry: {}", AnsiUtils.blue(wfcAuthProvider.getSelectedAuthenticationName()));

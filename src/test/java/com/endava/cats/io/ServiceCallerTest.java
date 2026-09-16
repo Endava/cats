@@ -5,6 +5,7 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.factory.FuzzingDataFactory;
@@ -79,6 +80,8 @@ class ServiceCallerTest {
     @Inject
     ProcessingArguments processingArguments;
     @Inject
+    ReportingArguments reportingArguments;
+    @Inject
     FilterArguments filterArguments;
     @Inject
     ValidDataFormat validDataFormat;
@@ -137,7 +140,7 @@ class ServiceCallerTest {
         wfcAuthProvider = new WfcAuthProvider(authArguments, apiArguments);
         testCaseListener = Mockito.mock(TestCaseListener.class);
         serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments, apiArguments, processingArguments,
-                wfcAuthProvider, new RuntimeResourcePool(processingArguments, filesArguments));
+                reportingArguments, wfcAuthProvider, new RuntimeResourcePool(processingArguments, filesArguments));
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(authArguments, "wfcAuthFile", null);
@@ -153,6 +156,9 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(authArguments, "proxyHost", null);
         ReflectionTestUtils.setField(authArguments, "proxyPort", 0);
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", false);
+        ReflectionTestUtils.setField(reportingArguments, "showSecrets", false);
+        ReflectionTestUtils.setField(reportingArguments, "maskHeaders", null);
+        reportingArguments.resetSensitiveData();
 
         filesArguments.loadHeaders();
         filesArguments.loadRefData();
@@ -187,7 +193,7 @@ class ServiceCallerTest {
         Mockito.doThrow(new IllegalStateException("observation failed"))
                 .when(failingPool).observe(Mockito.any(), Mockito.any(CatsRequest.class), Mockito.any(CatsResponse.class));
         ServiceCaller caller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments,
-                apiArguments, processingArguments, wfcAuthProvider, failingPool);
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, failingPool);
         caller.initRateLimiter();
         caller.initHttpClient();
 

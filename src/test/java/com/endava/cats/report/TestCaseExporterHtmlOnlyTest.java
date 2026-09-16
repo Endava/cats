@@ -85,6 +85,46 @@ class TestCaseExporterHtmlOnlyTest {
     }
 
     @Test
+    void shouldWriteReplayEnvironmentGuidance() throws Exception {
+        ReportingArguments reportingArguments = new ReportingArguments();
+        reportingArguments.registerReplayEnvironmentVariable("Authorization");
+        reportingArguments.registerReplayEnvironmentVariable("ACCESS_TOKEN");
+        ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);
+        StopArguments stopArguments = Mockito.mock(StopArguments.class);
+        TestCaseExporterHtmlOnly exporter = Mockito.spy(new TestCaseExporterHtmlOnly(reportingArguments,
+                new CatsGlobalContext(), processingArguments, stopArguments));
+        Mockito.doReturn(reportDirectory.resolve("replay.env.example")).when(exporter).replayEnvironmentExamplePath();
+        exporter.appVersion = "test-version";
+        exporter.initPath(reportDirectory.toString());
+
+        exporter.writeSummary(List.of(summary()), new ExecutionStatisticsListener().snapshot(true, "Default: fail on any error"));
+
+        Assertions.assertThat(Files.readString(reportDirectory.resolve("replay.env.example")))
+                .contains("Authorization=", "ACCESS_TOKEN=").doesNotContain("secret");
+        Assertions.assertThat(Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML)))
+                .doesNotContain("Replay Environment Variables", "Authorization", "--envFile");
+        Assertions.assertThat(Files.readString(reportDirectory.resolve("cats-summary-report.json")))
+                .doesNotContain("replayEnvironmentVariables", "Authorization");
+    }
+
+    @Test
+    void shouldNotOverwriteExistingReplayEnvironmentExample() throws Exception {
+        ReportingArguments reportingArguments = new ReportingArguments();
+        reportingArguments.registerReplayEnvironmentVariable("Authorization");
+        Path existingExample = reportDirectory.resolve("replay.env.example");
+        Files.writeString(existingExample, "EXISTING=value\n");
+        TestCaseExporterHtmlOnly exporter = Mockito.spy(new TestCaseExporterHtmlOnly(reportingArguments,
+                new CatsGlobalContext(), Mockito.mock(ProcessingArguments.class), Mockito.mock(StopArguments.class)));
+        Mockito.doReturn(existingExample).when(exporter).replayEnvironmentExamplePath();
+        exporter.appVersion = "test-version";
+        exporter.initPath(reportDirectory.resolve("report").toString());
+
+        exporter.writeSummary(List.of(summary()), new ExecutionStatisticsListener().snapshot(true, "Default: fail on any error"));
+
+        Assertions.assertThat(Files.readString(existingExample)).isEqualTo("EXISTING=value\n");
+    }
+
+    @Test
     void shouldNotIncludeExecutionAccountingForOrdinaryRuns() throws Exception {
         ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
         ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);

@@ -245,7 +245,7 @@ public class CatsTestCase {
             body = CURL_BODY.formatted(request.getPayload());
         }
 
-        return CURL_TEMPLATE.formatted(request.getHttpMethod(), headersString.toString(), body, fullRequestPath);
+        return CURL_TEMPLATE.formatted(request.getHttpMethod(), headersString.toString(), body, fullRequestPath.replace("$$", "$"));
     }
 
     /**

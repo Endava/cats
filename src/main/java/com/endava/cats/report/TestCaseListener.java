@@ -30,6 +30,7 @@ import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.CyclingCharIterator;
+import com.endava.cats.util.SensitiveDataPolicy;
 import com.endava.cats.util.WordUtils;
 import com.endava.cats.util.external.MediaType;
 import com.google.gson.JsonArray;
@@ -424,6 +425,8 @@ public class TestCaseListener {
             if (currentTestCase.isNotSkipped()) {
                 testReportsGenerator.writeTestCase(currentTestCase);
                 keepSummary(currentTestCase);
+            } else {
+                SensitiveDataPolicy.sanitize(currentTestCase, reportingArguments);
             }
             keepExecutionDetails(currentTestCase);
             if (executionEventPublisher.hasSubscribers()) {

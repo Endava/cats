@@ -2,6 +2,8 @@ package com.endava.cats.command;
 
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.DynamicValueResolver;
+import com.endava.cats.dsl.impl.EnvVariableParser;
+import com.endava.cats.exception.CatsException;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
@@ -28,6 +30,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This will replay a given list of tests solely based on the information received in the test case file(s).
@@ -53,6 +57,7 @@ import java.util.Optional;
         versionProvider = VersionProvider.class)
 @Unremovable
 public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
+    private static final Pattern ENV_PLACEHOLDER = Pattern.compile("\\$\\$[A-Za-z0-9_]+");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
@@ -212,6 +217,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         CatsTestCase testCase = this.loadTestCaseFile(testCaseFileName);
         logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
         this.loadHeadersIfSupplied(testCase);
+        testCase.getRequest().setUrl(resolveReplayUrl(testCase.getRequest().getUrl()));
 
         CatsResponse response;
         try {
@@ -286,8 +292,28 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         headersFromFile.addAll(headersMap.entrySet().stream().map(entry -> new KeyValuePair<>(entry.getKey(), entry.getValue())).toList());
 
         //see if any header is dynamic and it needs a parser
-        headersFromFile.forEach(header -> header.setValue(DynamicValueResolver.resolve(header.getValue().toString(), authArguments.getAuthScriptAsMap())));
+        headersFromFile.forEach(header -> header.setValue(resolveReplayValue(header.getValue().toString(), "header " + header.getKey())));
         testCase.getRequest().setHeaders(headersFromFile);
+    }
+
+    private String resolveReplayUrl(String url) {
+        Matcher matcher = ENV_PLACEHOLDER.matcher(url);
+        StringBuilder result = new StringBuilder();
+        while (matcher.find()) {
+            matcher.appendReplacement(result, Matcher.quoteReplacement(resolveReplayValue(matcher.group(), "request URL")));
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
+
+    private String resolveReplayValue(String value, String source) {
+        String resolved = DynamicValueResolver.resolve(value, authArguments.getDynamicVariablesContext());
+        if (EnvVariableParser.isMissing(resolved)) {
+            String variable = EnvVariableParser.variableName(value.substring(value.indexOf("$$")));
+            throw new CatsException("Missing environment variable '" + variable + "' required by replay " + source
+                    + ". Set it in the process environment, provide --envFile, or override the header with -H");
+        }
+        return resolved;
     }
 
     private CatsTestCase loadTestCaseFile(String testCaseFileName) throws IOException {
@@ -325,6 +351,8 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
             CatsUtil.setCatsLogLevel("ALL");
             logger.fav("Setting CATS log level to ALL!");
         }
+        authArguments.getEnvironmentVariables();
+        logger.config("Environment file: {}", authArguments.getEnvironmentFileStatus());
 
         List<String> testCases = this.parseTestCases();
         if (testCases.isEmpty()) {
@@ -347,6 +375,11 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 logger.debug("Exception while replaying test!", e);
                 logger.error("Something went wrong while replaying {}. If the test name ends with .json it is searched as a full path. " +
                         "If it doesn't have an extension it will be searched in the {} folder. Error message: {}", testCaseFileName, reportFolder, e.toString());
+            } catch (CatsException e) {
+                exitCode = CommandLine.ExitCode.SOFTWARE;
+                logger.error(e.getMessage());
+                logger.debug("Replay environment resolution failed", e);
+                return;
             }
         }
 

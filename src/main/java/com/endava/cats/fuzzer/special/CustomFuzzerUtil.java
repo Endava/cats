@@ -84,6 +84,12 @@ public class CustomFuzzerUtil {
         testCaseListener = tcl;
     }
 
+    private Map<String, String> dynamicVariables() {
+        Map<String, String> context = new HashMap<>(Optional.ofNullable(serviceCaller.getEnvironmentVariables()).orElseGet(Map::of));
+        context.putAll(variables);
+        return context;
+    }
+
 
     /**
      * Parses the {@code cats-global-vars} entry from the custom fuzzer file details, evaluates each dynamic value
@@ -96,7 +102,7 @@ public class CustomFuzzerUtil {
         Map<String, Object> globalVars = customFuzzerDetails.remove(CatsDSLWords.CATS_GLOBAL_VARS);
         if (globalVars != null) {
             for (Map.Entry<String, Object> entry : globalVars.entrySet()) {
-                String evaluatedValue = DynamicValueResolver.resolve(String.valueOf(entry.getValue()), variables);
+                String evaluatedValue = DynamicValueResolver.resolve(String.valueOf(entry.getValue()), dynamicVariables());
                 variables.put(entry.getKey(), evaluatedValue);
                 log.debug("Global variable [{}] evaluated to [{}]", entry.getKey(), evaluatedValue);
             }
@@ -288,7 +294,7 @@ public class CustomFuzzerUtil {
     }
 
     private String getVerifyValue(String request, CatsResponse response, String value) {
-        Map<String, String> contextForParser = new HashMap<>(variables);
+        Map<String, String> contextForParser = dynamicVariables();
         contextForParser.put(Parser.REQUEST, request);
         contextForParser.put(Parser.RESPONSE, response.getBody());
         String verifyValue = DynamicValueResolver.resolve(value, contextForParser);
@@ -533,10 +539,9 @@ public class CustomFuzzerUtil {
     }
 
     private String replaceElementWithCustomValue(Map.Entry<String, Object> keyValue, String payload, String pathPayload) {
-        Map<String, String> contextForParser = new HashMap<>();
+        Map<String, String> contextForParser = dynamicVariables();
         contextForParser.put(Parser.REQUEST, payload);
         contextForParser.put(Parser.PATH, pathPayload);
-        contextForParser.putAll(variables);
 
         Object toReplace = this.getPropertyValueToReplaceInBody(keyValue);
         if (toReplace instanceof String str) {

@@ -41,10 +41,12 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -56,6 +58,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -71,6 +75,7 @@ public abstract class TestCaseExporter {
     static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
     private static final String REPORT_JS = "cats-summary-report.json";
     private static final String EXECUTION_TIME_REPORT = "execution_times.json";
+    private static final String REPLAY_ENV_EXAMPLE = "replay.env.example";
     private static final String HTML = ".html";
     private static final String JSON = ".json";
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
@@ -112,7 +117,7 @@ public abstract class TestCaseExporter {
                 .disableHtmlEscaping()
                 .setExclusionStrategies(new ExcludeTestCaseStrategy())
                 .registerTypeAdapter(Long.class, new LongTypeSerializer())
-                .registerTypeAdapter(KeyValuePair.class, new KeyValueSerializer(reportingArguments.getMaskedHeaders()))
+                .registerTypeAdapter(KeyValuePair.class, new KeyValueSerializer(reportingArguments))
                 .serializeNulls()
                 .create();
         this.osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
@@ -310,10 +315,34 @@ public abstract class TestCaseExporter {
             writer.flush();
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), this.getSummaryReportTitle()), writer.toString().getBytes(StandardCharsets.UTF_8));
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), maskingSerializer.toJson(report).getBytes(StandardCharsets.UTF_8));
+            writeReplayEnvironmentExample(replayEnvironmentVariables());
         } catch (IOException e) {
             throw reportFailure("Unable to write the report summary", e);
         }
 
+    }
+
+    private List<String> replayEnvironmentVariables() {
+        return Optional.ofNullable(reportingArguments.getReplayEnvironmentVariables())
+                .orElseGet(Set::of).stream().sorted().toList();
+    }
+
+    private void writeReplayEnvironmentExample(List<String> variables) throws IOException {
+        if (variables.isEmpty()) {
+            return;
+        }
+        String content = variables.stream().map(variable -> variable + "=").collect(Collectors.joining(System.lineSeparator()))
+                + System.lineSeparator();
+        Path destination = replayEnvironmentExamplePath();
+        try {
+            Files.writeString(destination, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+        } catch (FileAlreadyExistsException _) {
+            logger.config("Replay environment example already exists and was not overwritten: {}", destination);
+        }
+    }
+
+    Path replayEnvironmentExamplePath() {
+        return Paths.get(REPLAY_ENV_EXAMPLE).toAbsolutePath().normalize();
     }
 
     private CatsTestReport createTestReport(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary) {

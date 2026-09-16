@@ -121,6 +121,12 @@ CATS verifies server certificates and hostnames by default. For trusted test env
 
 For mutual TLS, use `--sslKeystore`, `--sslKeystorePwd` and `--sslKeyPwd`. If `--sslKeyPwd` is omitted, CATS uses the keystore password for the private key.
 
+## Secrets and replay
+
+CATS masks authentication headers and sensitive query parameters in reports by default, replacing request values with replayable `$$EnvironmentVariable` placeholders. It creates `replay.env.example` without secret values in the directory where CATS is run.
+
+CATS automatically loads `./.env` when present. Use `--envFile path/to/cats.env` to select a different file or `--noEnvFile` to disable dotenv loading in normal, random, functional, template and replay commands. Process environment variables take precedence over dotenv values. Use `--showSecrets` only when unmasked report and console output is explicitly required.
+
 ## Build from sources
 
 You can build CATS from sources on you local box. You need [Java 25](https://sdkman.io/jdks). Maven is already bundled.

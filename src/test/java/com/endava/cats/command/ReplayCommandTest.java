@@ -1,6 +1,7 @@
 package com.endava.cats.command;
 
 import com.endava.cats.args.AuthArguments;
+import com.endava.cats.exception.CatsException;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsRequest;
@@ -53,6 +54,35 @@ class ReplayCommandTest {
     }
 
     @Test
+    void shouldResolveReplayValuesFromEnvironmentFileContext() {
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of("Authorization", "Bearer from-file"));
+
+        String resolved = ReflectionTestUtils.invokeMethod(replayCommand, "resolveReplayValue", "$$Authorization", "header Authorization");
+
+        Assertions.assertThat(resolved).isEqualTo("Bearer from-file");
+    }
+
+    @Test
+    void shouldResolveReplayUrlValuesFromEnvironmentFileContext() {
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of("ACCESS_TOKEN", "from-file"));
+
+        String resolved = ReflectionTestUtils.invokeMethod(replayCommand, "resolveReplayUrl",
+                "https://service.test/items?access_token=$$ACCESS_TOKEN");
+
+        Assertions.assertThat(resolved).isEqualTo("https://service.test/items?access_token=from-file");
+    }
+
+    @Test
+    void shouldFailReplayWhenEnvironmentVariableIsMissing() {
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of());
+
+        Assertions.assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(replayCommand, "resolveReplayValue",
+                        "$$CATS_MISSING_REPLAY_TOKEN", "header Authorization"))
+                .isInstanceOf(CatsException.class)
+                .hasMessageContaining("CATS_MISSING_REPLAY_TOKEN", "--envFile", "-H");
+    }
+
+    @Test
     void shouldNotExecuteIfTestCasesNotSupplied() {
         replayCommand.tests = new String[]{};
 
@@ -97,7 +127,7 @@ class ReplayCommandTest {
 
     @Test
     void shouldResolveEmbeddedVariablesInReplayHeaderOverrides() {
-        Mockito.when(replayCommand.authArguments.getAuthScriptAsMap()).thenReturn(Map.of("token", "token-123"));
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of("token", "token-123"));
         replayCommand.headersMap = new HashMap<>(Map.of("Authorization", "Bearer ${token}"));
         CatsTestCase testCase = new CatsTestCase();
 

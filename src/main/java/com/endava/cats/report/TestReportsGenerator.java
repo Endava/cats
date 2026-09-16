@@ -6,6 +6,7 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.util.SensitiveDataPolicy;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Singleton;
 
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class TestReportsGenerator {
     private final List<TestCaseExporter> testCaseExporters;
     private final TestCaseExporter primaryExporter;
+    private final ReportingArguments reportingArguments;
 
     /**
      * Constructs a new TestReportsGenerator with the specified test case exporters and reporting arguments.
@@ -44,6 +46,7 @@ public class TestReportsGenerator {
         if (selectedFormats.isEmpty()) {
             throw new CatsException("At least one report format must be selected");
         }
+        this.reportingArguments = reportingArguments;
         this.primaryExporter = findExporter(exportersByFormat, selectedFormats.iterator().next());
         this.testCaseExporters = selectedFormats.stream()
                 .map(format -> findExporter(exportersByFormat, format))
@@ -66,6 +69,7 @@ public class TestReportsGenerator {
      * @throws IOException if an I/O error occurs while initializing the path
      */
     public void initPath(String folder) throws IOException {
+        reportingArguments.resetSensitiveData();
         for (TestCaseExporter exporter : testCaseExporters) {
             exporter.initPath(folder);
         }
@@ -77,6 +81,7 @@ public class TestReportsGenerator {
      * @param catsTestCase the test case to be written to the report
      */
     public void writeTestCase(CatsTestCase catsTestCase) {
+        SensitiveDataPolicy.sanitize(catsTestCase, reportingArguments);
         primaryExporter.writeTestCase(catsTestCase);
     }
 

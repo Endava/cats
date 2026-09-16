@@ -1,15 +1,21 @@
 package com.endava.cats.args;
 
+import com.endava.cats.exception.CatsException;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import picocli.CommandLine;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Holds all args related to Authentication details.
@@ -32,6 +38,17 @@ public class AuthArguments {
     @CommandLine.Option(names = {"--insecure"},
             description = "Disable TLS certificate and hostname verification. Use only for trusted test environments")
     private boolean insecure;
+
+    @CommandLine.Option(names = {"--envFile"},
+            description = "Load fallback environment variables from a dotenv file instead of the auto-detected ./.env")
+    private File envFile;
+
+    @CommandLine.Option(names = {"--noEnvFile", "--no-env-file"},
+            description = "Disable automatic loading of ./.env")
+    private boolean noEnvFile;
+
+    private Path loadedEnvFile;
+    private Map<String, String> envFileVariables = Map.of();
 
     @CommandLine.Option(names = {"--basicAuth", "--basicauth"},
             description = "A username:password pair, when using basic auth")
@@ -132,5 +149,84 @@ public class AuthArguments {
      */
     public Map<String, String> getAuthScriptAsMap() {
         return Map.of("auth_script", this.getAuthRefreshScript(), "auth_refresh", String.valueOf(getAuthRefreshInterval()));
+    }
+
+    public Map<String, String> getDynamicVariablesContext() {
+        Map<String, String> context = new LinkedHashMap<>(getEnvironmentVariables());
+        context.putAll(getAuthScriptAsMap());
+        return Map.copyOf(context);
+    }
+
+    public Map<String, String> getEnvironmentVariables() {
+        Path currentFile = selectedEnvironmentFile().orElse(null);
+        if (currentFile == null) {
+            loadedEnvFile = null;
+            envFileVariables = Map.of();
+            return envFileVariables;
+        }
+        if (currentFile.equals(loadedEnvFile)) {
+            return envFileVariables;
+        }
+        try {
+            Map<String, String> variables = new LinkedHashMap<>();
+            for (String sourceLine : Files.readAllLines(currentFile, StandardCharsets.UTF_8)) {
+                String line = sourceLine.strip();
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+                if (line.startsWith("export ")) {
+                    line = line.substring("export ".length()).strip();
+                }
+                int separator = line.indexOf('=');
+                if (separator <= 0) {
+                    throw new CatsException("Invalid dotenv entry in " + currentFile + ": " + sourceLine);
+                }
+                String name = line.substring(0, separator).strip();
+                String value = stripQuotes(line.substring(separator + 1).strip());
+                variables.put(name, value);
+            }
+            loadedEnvFile = currentFile;
+            envFileVariables = Map.copyOf(variables);
+            return envFileVariables;
+        } catch (IOException e) {
+            throw new CatsException("Unable to read --envFile " + currentFile, e);
+        }
+    }
+
+    public String getEnvironmentFileStatus() {
+        Optional<Path> selected = selectedEnvironmentFile();
+        if (noEnvFile) {
+            return "disabled";
+        }
+        if (selected.isEmpty()) {
+            return "none";
+        }
+        return selected.get() + (envFile == null ? " (auto-detected)" : "");
+    }
+
+    Optional<Path> selectedEnvironmentFile() {
+        if (noEnvFile && envFile != null) {
+            throw new CatsException("--envFile and --noEnvFile cannot be used together");
+        }
+        if (noEnvFile) {
+            return Optional.empty();
+        }
+        if (envFile != null) {
+            return Optional.of(envFile.toPath().toAbsolutePath().normalize());
+        }
+        Path defaultFile = defaultEnvironmentFile();
+        return Files.isRegularFile(defaultFile) ? Optional.of(defaultFile) : Optional.empty();
+    }
+
+    Path defaultEnvironmentFile() {
+        return Path.of(".env").toAbsolutePath().normalize();
+    }
+
+    private String stripQuotes(String value) {
+        if (value.length() >= 2 && ((value.startsWith("\"") && value.endsWith("\""))
+                || (value.startsWith("'") && value.endsWith("'")))) {
+            return value.substring(1, value.length() - 1);
+        }
+        return value;
     }
 }

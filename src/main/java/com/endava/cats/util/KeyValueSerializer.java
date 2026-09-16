@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import com.endava.cats.args.ReportingArguments;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
@@ -14,6 +15,7 @@ import java.util.Set;
 public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, Object>> {
 
     private final Set<String> toMask;
+    private final ReportingArguments reportingArguments;
 
     /**
      * Constructs a new instance of KeyValueSerializer with the specified keys to mask.
@@ -22,6 +24,12 @@ public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, O
      */
     public KeyValueSerializer(Set<String> keysToMask) {
         this.toMask = keysToMask;
+        this.reportingArguments = null;
+    }
+
+    public KeyValueSerializer(ReportingArguments reportingArguments) {
+        this.toMask = Set.of();
+        this.reportingArguments = reportingArguments;
     }
 
     @Override
@@ -33,8 +41,12 @@ public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, O
     }
 
     private Object mask(KeyValuePair<String, Object> header) {
-        if (toMask.contains(header.getKey())) {
-            return "$$" + header.getKey().replaceAll("[_-]*", "");
+        if (SensitiveDataPolicy.REDACTED.equals(header.getValue())) {
+            return SensitiveDataPolicy.REDACTED;
+        }
+        boolean explicitlyMasked = toMask.stream().anyMatch(key -> key.equalsIgnoreCase(header.getKey()));
+        if (explicitlyMasked || (reportingArguments != null && reportingArguments.shouldMaskHeader(header.getKey()))) {
+            return SensitiveDataPolicy.placeholder(SensitiveDataPolicy.headerEnvironmentVariable(header.getKey()));
         }
 
         return header.getValue();

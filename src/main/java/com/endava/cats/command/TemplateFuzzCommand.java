@@ -218,6 +218,8 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
     private void init() {
         CatsRandom.initRandom(seed);
         reportingArguments.processLogData();
+        authArguments.getEnvironmentVariables();
+        logger.config("Environment file: {}", authArguments.getEnvironmentFileStatus());
         ConsoleUtils.initTerminalWidth(spec);
         validateRequiredFields();
         testCaseListener.renderFuzzingHeader();
@@ -292,7 +294,7 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
                 .stream()
                 .map(entry -> CatsHeader.builder()
                         .name(entry.getKey().trim())
-                        .value(DynamicValueResolver.resolve(entry.getValue().trim(), authArguments.getAuthScriptAsMap()))
+                        .value(DynamicValueResolver.resolve(entry.getValue().trim(), authArguments.getDynamicVariablesContext()))
                         .build())
                 .collect(Collectors.toSet());
     }

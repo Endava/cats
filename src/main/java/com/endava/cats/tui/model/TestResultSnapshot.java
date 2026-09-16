@@ -4,6 +4,7 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.util.KeyValuePair;
+import com.endava.cats.util.SensitiveDataPolicy;
 
 import java.util.List;
 import java.util.Optional;
@@ -75,8 +76,11 @@ public record TestResultSnapshot(String id, String traceId, String scenario, Str
     }
 
     private static String maskedValue(KeyValuePair<String, ?> header, Set<String> maskedHeaders) {
-        if (maskedHeaders.contains(header.getKey())) {
-            return "$$" + header.getKey().replaceAll("[_-]*", "");
+        if (SensitiveDataPolicy.REDACTED.equals(header.getValue())) {
+            return SensitiveDataPolicy.REDACTED;
+        }
+        if (maskedHeaders.stream().anyMatch(masked -> masked.equalsIgnoreCase(header.getKey()))) {
+            return SensitiveDataPolicy.placeholder(SensitiveDataPolicy.headerEnvironmentVariable(header.getKey()));
         }
         return String.valueOf(header.getValue());
     }

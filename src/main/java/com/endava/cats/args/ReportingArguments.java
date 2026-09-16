@@ -1,6 +1,7 @@
 package com.endava.cats.args;
 
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.SensitiveDataPolicy;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.github.ludovicianul.prettylogger.config.level.PrettyLevel;
@@ -10,6 +11,7 @@ import picocli.CommandLine;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -90,6 +92,14 @@ public class ReportingArguments {
     @CommandLine.Option(names = {"--maskHeaders"},
             description = "A list of headers to mask when logging into console or in report files. Headers will be replaced with @|underline $$headerName|@ so that test cases can be replayed with environment variables", split = ",")
     private Set<String> maskHeaders;
+
+    @CommandLine.Option(names = {"--showSecrets"},
+            description = "Disable automatic masking of sensitive headers and query parameters")
+    private boolean showSecrets;
+
+    private final Set<String> runtimeSensitiveHeaders = new HashSet<>();
+    private final Set<String> runtimeSensitiveQueryParams = new HashSet<>();
+    private final Set<String> replayEnvironmentVariables = new HashSet<>();
 
     @CommandLine.Option(names = {"--printProgress"},
             description = "If set to true, it will print any URLs matching the given match arguments.  Default: @|bold,underline ${DEFAULT-VALUE}|@")
@@ -185,7 +195,44 @@ public class ReportingArguments {
      * @return the masked headers list
      */
     public Set<String> getMaskedHeaders() {
-        return Optional.ofNullable(maskHeaders).orElse(Collections.emptySet());
+        Set<String> result = new HashSet<>(Optional.ofNullable(maskHeaders).orElse(Collections.emptySet()));
+        if (!showSecrets) {
+            result.addAll(runtimeSensitiveHeaders);
+        }
+        return Set.copyOf(result);
+    }
+
+    public boolean shouldMaskHeader(String header) {
+        boolean runtimeSensitive = !showSecrets && runtimeSensitiveHeaders.stream()
+                .anyMatch(runtimeHeader -> runtimeHeader.equalsIgnoreCase(header));
+        return runtimeSensitive || SensitiveDataPolicy.isSensitiveHeader(header,
+                Optional.ofNullable(maskHeaders).orElse(Collections.emptySet()), showSecrets);
+    }
+
+    public boolean shouldMaskQueryParam(String queryParam) {
+        return !showSecrets && SensitiveDataPolicy.isSensitiveQueryParam(queryParam, runtimeSensitiveQueryParams, false);
+    }
+
+    public void registerSensitiveHeaders(Set<String> headers) {
+        runtimeSensitiveHeaders.addAll(Optional.ofNullable(headers).orElseGet(Set::of));
+    }
+
+    public void registerSensitiveQueryParams(Set<String> queryParams) {
+        runtimeSensitiveQueryParams.addAll(Optional.ofNullable(queryParams).orElseGet(Set::of));
+    }
+
+    public void registerReplayEnvironmentVariable(String variable) {
+        replayEnvironmentVariables.add(variable);
+    }
+
+    public Set<String> getReplayEnvironmentVariables() {
+        return Set.copyOf(replayEnvironmentVariables);
+    }
+
+    public void resetSensitiveData() {
+        runtimeSensitiveHeaders.clear();
+        runtimeSensitiveQueryParams.clear();
+        replayEnvironmentVariables.clear();
     }
 
     /**

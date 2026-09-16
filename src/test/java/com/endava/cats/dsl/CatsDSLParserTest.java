@@ -86,6 +86,13 @@ class CatsDSLParserTest {
     }
 
     @Test
+    void shouldResolveEnvironmentVariableFromContext() {
+        String actual = CatsDSLParser.parseAndGetResult("$$CATS_ENV_FILE_TOKEN", Map.of("CATS_ENV_FILE_TOKEN", "from-file"));
+
+        Assertions.assertThat(actual).isEqualTo("from-file");
+    }
+
+    @Test
     void shouldGetNotFoundSystemVariable() {
         String actual = CatsDSLParser.parseAndGetResult("$$cats", null);
         Assertions.assertThat(actual).isEqualTo("not_found_$$cats");
