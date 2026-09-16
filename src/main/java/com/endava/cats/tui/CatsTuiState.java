@@ -815,6 +815,11 @@ final class CatsTuiState {
                 test.response().responseCode(), test.response().responseTimeInMs()));
         lines.add("Content Type: %s    Content Length: %d bytes".formatted(
                 safe(test.response().contentType()), test.response().contentLengthInBytes()));
+        if (test.response().bodyTruncated()) {
+            String declaredLength = test.response().declaredContentLength() < 0
+                    ? "unknown" : test.response().declaredContentLength() + " bytes";
+            lines.add("Response body truncated    Declared Content Length: " + declaredLength);
+        }
         lines.add("Number of Words: %d    Number of Lines: %d".formatted(
                 test.response().numberOfWords(), test.response().numberOfLines()));
         lines.add("Headers:");

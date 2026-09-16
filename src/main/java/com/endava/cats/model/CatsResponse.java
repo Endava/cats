@@ -9,7 +9,9 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.ProtocolException;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +33,10 @@ public class CatsResponse {
     private final long numberOfWordsInResponse;
     private final long numberOfLinesInResponse;
     private final long contentLengthInBytes;
+    private final long capturedBodyBytes;
+    private final long declaredContentLength;
+    private final long responseBodyLimit;
+    private final boolean bodyTruncated;
     private final JsonElement jsonBody;
     private final List<KeyValuePair<String, String>> headers;
     private final String responseContentType;
@@ -51,9 +57,11 @@ public class CatsResponse {
      * @return A CatsResponse instance.
      */
     public static CatsResponse from(int code, String body, String methodType, long ms) {
+        long bodyBytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
         return CatsResponse.builder().responseCode(code).body(body)
                 .jsonBody(JsonParser.parseString(body)).httpMethod(methodType)
-                .headers(Collections.emptyList()).responseTimeInMs(ms).build();
+                .headers(Collections.emptyList()).responseTimeInMs(ms)
+                .contentLengthInBytes(bodyBytes).capturedBodyBytes(bodyBytes).declaredContentLength(bodyBytes).build();
     }
 
     /**
@@ -137,6 +145,10 @@ public class CatsResponse {
         return UNKNOWN_MEDIA_TYPE.equalsIgnoreCase(responseContentType);
     }
 
+    public String getDeclaredContentLengthDisplay() {
+        return declaredContentLength < 0 ? "unknown" : declaredContentLength + " bytes";
+    }
+
     /**
      * Default content type when none is received from the service.
      *
@@ -153,6 +165,12 @@ public class CatsResponse {
      * @return an {@code ExceptionalResponse} enum with response code and message
      */
     public static ExceptionalResponse getResponseByException(Exception e) {
+        if (e instanceof SocketTimeoutException) {
+            return ExceptionalResponse.READ_TIMEOUT;
+        }
+        if (e instanceof InterruptedIOException && "timeout".equalsIgnoreCase(e.getMessage())) {
+            return ExceptionalResponse.CALL_TIMEOUT;
+        }
         if (e instanceof IOException ioException) {
             for (ExceptionalResponse exceptionalResponse : ExceptionalResponse.values()) {
                 if (exceptionContains(ioException, exceptionalResponse.messageToSearch)) {
@@ -193,6 +211,9 @@ public class CatsResponse {
                 """),
         CONNECTION_RESET(958, "connection reset", """
                 {"notAJson": "connection reset! you might retry the request or check connectivity or server status!"}
+                """),
+        CALL_TIMEOUT(959, "call timeout exceeded", """
+                {"notAJson": "call timeout exceeded! you might increase it using --callTimeout"}
                 """),
         NO_BODY(INVALID_ERROR_CODE, "no body", """
                 {"notAJson": "no body due to unknown error"}

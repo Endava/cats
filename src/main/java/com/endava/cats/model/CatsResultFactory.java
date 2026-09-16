@@ -85,6 +85,17 @@ public interface CatsResultFactory {
         return new CatsResult(message, reason);
     }
 
+    static CatsResult createResponseBodyTruncated(long capturedBodyBytes, long maxResponseBytes, long declaredContentLength) {
+        String declaredLength = declaredContentLength < 0 ? "unknown" : String.valueOf(declaredContentLength);
+        String message = "Response body exceeded --maxResponseBytes and was truncated: captured %d bytes, max %d, declared Content-Length %s"
+                .formatted(capturedBodyBytes, maxResponseBytes, declaredLength);
+        return new CatsResult(message, Reason.RESPONSE_BODY_TRUNCATED.value());
+    }
+
+    static CatsResult createCallTimeoutExceeded(long responseTimeInMs) {
+        return new CatsResult("HTTP call exceeded --callTimeout after %d ms".formatted(responseTimeInMs), Reason.CALL_TIMEOUT_EXCEEDED.value());
+    }
+
     /**
      * Creates am unexpected exception message and reason. Typically, as a last resort when cannot determine other reasons.
      *
@@ -172,6 +183,8 @@ public interface CatsResultFactory {
         NOT_IMPLEMENTED("Not implemented", "You forgot to implement this functionality!"),
         NOT_FOUND("Not found", "You might need to provide business context using --refData or --urlParams"),
         RESPONSE_TIME_EXCEEDS_MAX("Response time exceeds max", "The response time exceeds the maximum configured response time supplied using --maxResponseTimeInMs, default is 0 i.e no limit"),
+        RESPONSE_BODY_TRUNCATED("Response body truncated", "The response body exceeded --maxResponseBytes and was truncated before body-dependent checks could complete"),
+        CALL_TIMEOUT_EXCEEDED("Call timeout exceeded", "The HTTP call exceeded the configured --callTimeout fuzzing budget"),
         UNEXPECTED_EXCEPTION("Unexpected exception", "An unexpected exception occurred. This might suggest an issue with CATS itself"),
         ERROR_LEAKS_DETECTED("Error details leak", "The response contains error messages that might expose sensitive information"),
         UNEXPECTED_RESPONSE_CODE("Unexpected response code", "The response code is documented inside the contract, but not expected for the current fuzzer"),

@@ -127,6 +127,8 @@ public class FieldsIteratorExecutor {
 
         if (context.getExpectedResponseCode() != null) {
             testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode());
+        } else if (testCaseListener.reportTruncatedResponse(context.getLogger(), context.getFuzzingData(), response)) {
+            return;
         } else if (!matchArguments.isAnyMatchArgumentSupplied() || matchArguments.isMatchResponse(response) || matchArguments.isInputReflected(response, currentValue)) {
             testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), CatsResultFactory.Reason.RESPONSE_MATCHES_ARGUMENTS.value(), "Response matches" + matchArguments.getMatchString());
         } else {

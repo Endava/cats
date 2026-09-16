@@ -692,7 +692,7 @@ public class TestCaseListener {
 
     private void extractErrorLeaks() {
         CatsTestCase testCase = currentTestCase();
-        if (testCase.getResponse() == null || testCase.getResponse().getBody() == null) {
+        if (testCase.getResponse() == null || testCase.getResponse().getBody() == null || testCase.getResponse().isBodyTruncated()) {
             return;
         }
         String bodyToLowerCase = testCase.getResponse().getBody().toLowerCase(Locale.ROOT);
@@ -723,6 +723,16 @@ public class TestCaseListener {
     public void reportResultWarn(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
         setResultReason(reason);
         this.reportWarn(logger, message, params);
+    }
+
+    public boolean reportTruncatedResponse(PrettyLogger logger, FuzzingData data, CatsResponse response) {
+        if (response == null || !response.isBodyTruncated()) {
+            return false;
+        }
+        CatsResultFactory.CatsResult truncated = CatsResultFactory.createResponseBodyTruncated(
+                response.getCapturedBodyBytes(), response.getResponseBodyLimit(), response.getDeclaredContentLength());
+        this.reportResultWarn(logger, data, truncated.reason(), truncated.message());
+        return true;
     }
 
     private void reportError(PrettyLogger logger, CatsResultFactory.CatsResult catsResult, Object... params) {
@@ -836,6 +846,9 @@ public class TestCaseListener {
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
         List<String> detectedKeyWords = testCase.getErrorLeaks();
 
+        if (reportTruncatedResponse(logger, null, catsResponse)) {
+            return;
+        }
         if (!ignoreArguments.isIgnoreErrorLeaksCheck() && !detectedKeyWords.isEmpty()) {
             logger.debug("Detected keywords in response body: {}", detectedKeyWords);
             reportError(logger, CatsResultFactory.createErrorLeaksDetectedInResponse(detectedKeyWords));
@@ -928,7 +941,13 @@ public class TestCaseListener {
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode()))
                 .matchesContentType(isResponseContentTypeMatching).build();
 
-        if (assertions.isNotMatchingContentType() && !ignoreArguments.isIgnoreResponseContentTypeCheck()) {
+        if (response.getResponseCode() == CatsResponse.ExceptionalResponse.CALL_TIMEOUT.responseCode()) {
+            this.reportError(logger, CatsResultFactory.createCallTimeoutExceeded(response.getResponseTimeInMs()));
+        } else if (response.isBodyTruncated() && !responseCodeExpected) {
+            reportUnexpectedResponseCode(logger, response, expectedResultCode, assertions);
+        } else if (response.isBodyTruncated()) {
+            reportTruncatedResponse(logger, data, response);
+        } else if (assertions.isNotMatchingContentType() && !ignoreArguments.isIgnoreResponseContentTypeCheck()) {
             this.logger.debug("Response content type not matching contract");
             CatsResultFactory.CatsResult contentTypeNotMatching = CatsResultFactory.createNotMatchingContentType(data.getContentTypesByResponseCode(response.responseCodeAsString()), response.getResponseContentType());
             this.reportResultWarn(logger, data, contentTypeNotMatching.reason(), contentTypeNotMatching.message());
@@ -945,21 +964,23 @@ public class TestCaseListener {
             this.reportWarnOrInfoBasedOnCheck(logger, data,
                     CatsResultFactory.createUndocumentedResponseCode(response.responseCodeAsString(), String.valueOf(expectedResultCode.allowedResponseCodes()), String.valueOf(data.getResponseCodes())),
                     ignoreArguments.isIgnoreResponseCodeUndocumentedCheck());
-        } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
-            if (isNotFound(response)) {
-                this.logger.debug("NOT_FOUND response");
-                this.reportError(logger, CatsResultFactory.createNotFound());
-            } else if (assertions.isResponseCodeUnimplemented()) {
-                this.logger.debug("Response code unimplemented");
-                CatsResultFactory.CatsResult notImplementedResult = CatsResultFactory.createNotImplemented();
-                this.reportResultWarn(logger, data, notImplementedResult.reason(), notImplementedResult.message());
-            } else {
-                this.logger.debug("Response code documented but not expected");
-                this.reportError(logger, CatsResultFactory.createUnexpectedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
-            }
-        } else if (isNotFound(response)) {
+        } else {
+            reportUnexpectedResponseCode(logger, response, expectedResultCode, assertions);
+        }
+    }
+
+    private void reportUnexpectedResponseCode(PrettyLogger logger, CatsResponse response, ResponseCodeFamily expectedResultCode,
+                                              ResponseAssertions assertions) {
+        if (isNotFound(response)) {
             this.logger.debug("NOT_FOUND response");
             this.reportError(logger, CatsResultFactory.createNotFound());
+        } else if (assertions.isResponseCodeDocumentedButNotExpected() && assertions.isResponseCodeUnimplemented()) {
+            this.logger.debug("Response code unimplemented");
+            CatsResultFactory.CatsResult notImplementedResult = CatsResultFactory.createNotImplemented();
+            this.reportResultWarn(logger, null, notImplementedResult.reason(), notImplementedResult.message());
+        } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
+            this.logger.debug("Response code documented but not expected");
+            this.reportError(logger, CatsResultFactory.createUnexpectedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
         } else {
             this.logger.debug("Unexpected behaviour");
             this.reportError(logger, CatsResultFactory.createUnexpectedBehaviour(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
@@ -991,7 +1012,7 @@ public class TestCaseListener {
     }
 
     private void storeRequestOnPostOrRemoveOnDelete(FuzzingData data, CatsResponse response) {
-        if (data.getMethod() == HttpMethod.POST && ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
+        if (data.getMethod() == HttpMethod.POST && ResponseCodeFamily.is2xxCode(response.getResponseCode()) && !response.isBodyTruncated()) {
             logger.star("POST method for path {} returned successfully {}. Storing result for DELETE endpoints...", data.getPath(), response.responseCodeAsString());
             Deque<String> existingPosts = globalContext.getPostSuccessfulResponses().getOrDefault(data.getPath(), new ArrayDeque<>());
             existingPosts.add(response.getBody());
@@ -1107,7 +1128,7 @@ public class TestCaseListener {
 
     private ResponseSchemaValidator.ValidationResult validateResponseSchema(CatsResponse response, FuzzingData data) {
         try {
-            if (response.getBody() == null || isResponseContentTypeNotMatchable(response) || isNotTypicalDocumentedResponseCode(response)) {
+            if (response.getBody() == null || response.isBodyTruncated() || isResponseContentTypeNotMatchable(response) || isNotTypicalDocumentedResponseCode(response)) {
                 return ResponseSchemaValidator.ValidationResult.valid();
             }
 

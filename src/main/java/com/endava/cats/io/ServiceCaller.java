@@ -154,6 +154,7 @@ public class ServiceCaller {
             OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
                     .proxy(authArguments.getProxy())
                     .connectTimeout(apiArguments.getConnectionTimeout(), TimeUnit.SECONDS)
+                    .callTimeout(apiArguments.getCallTimeout(), TimeUnit.SECONDS)
                     .readTimeout(apiArguments.getReadTimeout(), TimeUnit.SECONDS)
                     .writeTimeout(apiArguments.getWriteTimeout(), TimeUnit.SECONDS)
                     .connectionPool(new ConnectionPool(10, 15, TimeUnit.MINUTES))
@@ -284,6 +285,7 @@ public class ServiceCaller {
             CatsResponse catsResponse = CatsResponse.builder()
                     .body(exceptionalResponse.responseBody()).httpMethod(catsRequest.getHttpMethod())
                     .responseTimeInMs(duration).responseCode(exceptionalResponse.responseCode())
+                    .declaredContentLength(-1).responseBodyLimit(apiArguments.getMaxResponseBytes())
                     .jsonBody(JsonUtils.parseAsJsonElement(exceptionalResponse.responseBody()))
                     .responseValidationField(data.getResponseValidationFields()
                             .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
@@ -589,7 +591,8 @@ public class ServiceCaller {
                 .entrySet().stream()
                 .map(header -> new KeyValuePair<>(header.getKey(), header.getValue().getFirst())).toList();
 
-        String rawResponse = this.getAsRawString(response);
+        BoundedResponseBodyReader.CapturedBody capturedResponse = BoundedResponseBodyReader.read(response, apiArguments.getMaxResponseBytes());
+        String rawResponse = capturedResponse.body();
         String jsonResponse = JsonUtils.getAsJsonString(rawResponse);
         String responseContentType = this.getResponseContentType(response);
 
@@ -603,9 +606,13 @@ public class ServiceCaller {
                 .responseCode(response.code())
                 .headers(responseHeaders)
                 .body(rawResponse)
+                .bodyTruncated(capturedResponse.truncated())
+                .capturedBodyBytes(capturedResponse.capturedBytes())
+                .declaredContentLength(capturedResponse.declaredContentLength())
+                .responseBodyLimit(apiArguments.getMaxResponseBytes())
                 .jsonBody(JsonParser.parseString(jsonResponse))
                 .numberOfLinesInResponse(numberOfLines)
-                .contentLengthInBytes(rawResponse.getBytes(StandardCharsets.UTF_8).length)
+                .contentLengthInBytes(capturedResponse.capturedBytes())
                 .responseContentType(responseContentType)
                 .numberOfWordsInResponse(numberOfWords);
     }
@@ -784,7 +791,7 @@ public class ServiceCaller {
      * @throws IOException If an I/O error occurs while reading the response body.
      */
     public String getAsRawString(Response response) throws IOException {
-        return response.body().string();
+        return BoundedResponseBodyReader.read(response, apiArguments.getMaxResponseBytes()).body();
     }
 
     private void recordServiceData(ServiceData serviceData) {

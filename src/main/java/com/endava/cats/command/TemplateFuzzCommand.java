@@ -300,6 +300,7 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
     }
 
     private void validateRequiredFields() throws CommandLine.ParameterException {
+        apiArguments.validateResponseLimits(spec);
         if (HttpMethod.requiresBody(httpMethod) && data == null) {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --data=<data>");
         }

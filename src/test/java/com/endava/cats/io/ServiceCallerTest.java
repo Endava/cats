@@ -98,6 +98,9 @@ class ServiceCallerTest {
         wireMockServer.start();
         wireMockServer.stubFor(WireMock.get("/not-json").willReturn(WireMock.ok("<html>test</html>")));
         wireMockServer.stubFor(WireMock.get("/secure").willReturn(WireMock.ok("{}")));
+        wireMockServer.stubFor(WireMock.get("/large-response").willReturn(WireMock.aResponse().withStatus(200)
+                .withHeader("Content-Length", "100").withBody("x".repeat(100))));
+        wireMockServer.stubFor(WireMock.get("/slow-response").willReturn(WireMock.ok("{}").withFixedDelay(1500)));
         wireMockServer.stubFor(WireMock.post("/pets").willReturn(WireMock.ok("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.post("/customers")
                 .willReturn(WireMock.created().withBody("{\"id\":\"customer-42\"}")));
@@ -156,6 +159,11 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(authArguments, "proxyHost", null);
         ReflectionTestUtils.setField(authArguments, "proxyPort", 0);
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", false);
+        ReflectionTestUtils.setField(apiArguments, "connectionTimeout", 10);
+        ReflectionTestUtils.setField(apiArguments, "readTimeout", 10);
+        ReflectionTestUtils.setField(apiArguments, "writeTimeout", 10);
+        ReflectionTestUtils.setField(apiArguments, "callTimeout", 20);
+        ReflectionTestUtils.setField(apiArguments, "maxResponseBytes", 10485760L);
         ReflectionTestUtils.setField(reportingArguments, "showSecrets", false);
         ReflectionTestUtils.setField(reportingArguments, "maskHeaders", null);
         reportingArguments.resetSensitiveData();
@@ -487,8 +495,11 @@ class ServiceCallerTest {
         Assertions.assertThat(apiArguments.getConnectionTimeout()).isEqualTo(10);
         Assertions.assertThat(apiArguments.getReadTimeout()).isEqualTo(10);
         Assertions.assertThat(apiArguments.getWriteTimeout()).isEqualTo(10);
+        Assertions.assertThat(apiArguments.getCallTimeout()).isEqualTo(20);
+        Assertions.assertThat(apiArguments.getMaxResponseBytes()).isEqualTo(10485760);
         serviceCaller.initHttpClient();
 
+        Assertions.assertThat(serviceCaller.okHttpClient.callTimeoutMillis()).isEqualTo(20000);
         Assertions.assertThat(serviceCaller.okHttpClient.readTimeoutMillis()).isEqualTo(10000);
         Assertions.assertThat(serviceCaller.okHttpClient.connectTimeoutMillis()).isEqualTo(10000);
         Assertions.assertThat(serviceCaller.okHttpClient.writeTimeoutMillis()).isEqualTo(10000);
@@ -499,11 +510,56 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(apiArguments, "connectionTimeout", 50);
         ReflectionTestUtils.setField(apiArguments, "readTimeout", 49);
         ReflectionTestUtils.setField(apiArguments, "writeTimeout", 48);
+        ReflectionTestUtils.setField(apiArguments, "callTimeout", 47);
         serviceCaller.initHttpClient();
 
+        Assertions.assertThat(serviceCaller.okHttpClient.callTimeoutMillis()).isEqualTo(47000);
         Assertions.assertThat(serviceCaller.okHttpClient.readTimeoutMillis()).isEqualTo(49000);
         Assertions.assertThat(serviceCaller.okHttpClient.connectTimeoutMillis()).isEqualTo(50000);
         Assertions.assertThat(serviceCaller.okHttpClient.writeTimeoutMillis()).isEqualTo(48000);
+    }
+
+    @Test
+    void shouldTruncateResponseBodyAtConfiguredLimit() {
+        ReflectionTestUtils.setField(apiArguments, "maxResponseBytes", 10L);
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath("/large-response")
+                .httpMethod(HttpMethod.GET).headers(Set.of()).contentType("application/json").build());
+
+        Assertions.assertThat(response.getBody()).hasSize(10);
+        Assertions.assertThat(response.isBodyTruncated()).isTrue();
+        Assertions.assertThat(response.getCapturedBodyBytes()).isEqualTo(10);
+        Assertions.assertThat(response.getDeclaredContentLength()).isEqualTo(-1);
+        Assertions.assertThat(response.getResponseBodyLimit()).isEqualTo(10);
+    }
+
+    @Test
+    void shouldDisableResponseBodyLimitWhenConfiguredWithZero() {
+        ReflectionTestUtils.setField(apiArguments, "maxResponseBytes", 0L);
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath("/large-response")
+                .httpMethod(HttpMethod.GET).headers(Set.of()).contentType("application/json").build());
+
+        Assertions.assertThat(response.getBody()).hasSize(100);
+        Assertions.assertThat(response.isBodyTruncated()).isFalse();
+        Assertions.assertThat(response.getCapturedBodyBytes()).isEqualTo(100);
+    }
+
+    @Test
+    void shouldCancelCallAtConfiguredTotalTimeout() {
+        ReflectionTestUtils.setField(apiArguments, "callTimeout", 1);
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath("/slow-response")
+                .httpMethod(HttpMethod.GET).headers(Set.of()).contentType("application/json").build());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(959);
+        Assertions.assertThat(response.getBody()).contains("call timeout exceeded");
     }
 
     @Test

@@ -180,6 +180,9 @@ public class IgnoreArguments {
      * @return true if the response should not be ignored, false otherwise
      */
     public boolean isNotIgnoredResponse(CatsResponse catsResponse) {
+        if (catsResponse.isBodyTruncated()) {
+            return !this.isIgnoredResponseCode(catsResponse.responseCodeAsString());
+        }
         return !this.isIgnoredResponseCode(catsResponse.responseCodeAsString()) &&
                 this.isNotIgnoredResponseLength(catsResponse.getContentLengthInBytes()) &&
                 this.isNotIgnoredResponseLines(catsResponse.getNumberOfLinesInResponse()) &&

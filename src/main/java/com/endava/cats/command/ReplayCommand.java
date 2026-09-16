@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.impl.EnvVariableParser;
@@ -68,6 +69,12 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     "otherwise it will look for that test in the cats-report folder. Not required when using --errors or --warnings", split = ",", arity = "0..")
     String[] tests;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
+    @Inject
+    ApiArguments apiArguments;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
     AuthArguments authArguments;
@@ -87,6 +94,16 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @CommandLine.Option(names = {"-s", "--server"},
             description = "Base URL of the service. It can be used to overwrite the base URL from the initial test in order to replay it against other service instances")
     private String server;
+
+    @CommandLine.Option(names = {"--callTimeout"},
+            description = "Maximum total time in seconds for an HTTP call. Use 0 to disable. Default: @|bold,underline ${DEFAULT-VALUE}|@",
+            defaultValue = "20")
+    private int callTimeout = 20;
+
+    @CommandLine.Option(names = {"--maxResponseBytes"},
+            description = "Maximum number of decompressed response-body bytes to capture. Use 0 to disable. Default: @|bold,underline ${DEFAULT-VALUE}|@",
+            defaultValue = "10485760")
+    private long maxResponseBytes = 10485760;
 
     @CommandLine.Option(names = {"-o", "--output"},
             description = "If supplied, it will create TestXXX.json files within the given folder with the updated responses received when replaying the tests")
@@ -351,6 +368,9 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
             CatsUtil.setCatsLogLevel("ALL");
             logger.fav("Setting CATS log level to ALL!");
         }
+        apiArguments.setCallTimeout(callTimeout);
+        apiArguments.setMaxResponseBytes(maxResponseBytes);
+        apiArguments.validateResponseLimits(spec);
         authArguments.getEnvironmentVariables();
         logger.config("Environment file: {}", authArguments.getEnvironmentFileStatus());
 

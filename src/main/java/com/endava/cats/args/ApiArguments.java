@@ -41,6 +41,18 @@ public class ApiArguments {
             defaultValue = "10")
     private int readTimeout = 10;
 
+    @Setter
+    @CommandLine.Option(names = {"--callTimeout"},
+            description = "Maximum total time in seconds for an HTTP call. Use 0 to disable. Default: @|bold,underline ${DEFAULT-VALUE}|@",
+            defaultValue = "20")
+    private int callTimeout = 20;
+
+    @Setter
+    @CommandLine.Option(names = {"--maxResponseBytes"},
+            description = "Maximum number of decompressed response-body bytes to capture. Use 0 to disable. Default: @|bold,underline ${DEFAULT-VALUE}|@",
+            defaultValue = "10485760")
+    private long maxResponseBytes = 10485760;
+
     @CommandLine.Option(names = {"--userAgent"},
             description = "The user agent to be set in the User-Agent HTTP header. Default: @|bold,underline cats/${app.version}|@")
     private String userAgent;
@@ -75,6 +87,16 @@ public class ApiArguments {
     public void validateRequired(CommandLine.Model.CommandSpec spec) {
         if (this.contract == null) {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --contract=<contract>");
+        }
+        validateResponseLimits(spec);
+    }
+
+    public void validateResponseLimits(CommandLine.Model.CommandSpec spec) {
+        if (callTimeout < 0) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "--callTimeout must be 0 or greater");
+        }
+        if (maxResponseBytes < 0) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "--maxResponseBytes must be 0 or greater");
         }
     }
 

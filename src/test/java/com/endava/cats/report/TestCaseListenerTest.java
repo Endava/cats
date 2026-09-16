@@ -665,6 +665,80 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldReportTruncatedExpectedResponseWithoutSchemaMismatch() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        Mockito.when(response.getBody()).thenReturn("partial");
+        Mockito.when(response.isBodyTruncated()).thenReturn(true);
+        Mockito.when(response.getCapturedBodyBytes()).thenReturn(10L);
+        Mockito.when(response.getResponseBodyLimit()).thenReturn(10L);
+        Mockito.when(response.getDeclaredContentLength()).thenReturn(100L);
+        Mockito.when(response.responseCodeAsString()).thenReturn("200");
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200"));
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("GET").build());
+            testCaseListener.addResponse(response);
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
+        }, FuzzingData.builder().build());
+
+        Mockito.verify(executionStatisticsListener).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
+        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.getFirst();
+        Assertions.assertThat(testCase.getResultReason()).isEqualTo("Response body truncated");
+        Assertions.assertThat(testCase.getResultDetails()).contains("captured 10 bytes", "max 10", "Content-Length 100")
+                .doesNotContain("schema");
+    }
+
+    @Test
+    void shouldPreserveUnexpectedStatusErrorForTruncatedResponse() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        Mockito.when(response.getBody()).thenReturn("partial");
+        Mockito.when(response.isBodyTruncated()).thenReturn(true);
+        Mockito.when(response.getResponseCode()).thenReturn(500);
+        Mockito.when(response.responseCodeAsString()).thenReturn("500");
+        Mockito.when(response.getResponseContentType()).thenReturn("text/plain");
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("500"));
+        Mockito.when(data.getResponseContentTypes()).thenReturn(Map.of("500", List.of("application/json")));
+        Mockito.when(data.getContentTypesByResponseCode("500")).thenReturn(List.of("application/json"));
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("GET").build());
+            testCaseListener.addResponse(response);
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
+        }, FuzzingData.builder().build());
+
+        Mockito.verify(executionStatisticsListener).increaseErrors(Mockito.any());
+        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.getFirst();
+        Assertions.assertThat(testCase.getResultReason()).isEqualTo("Unexpected response code: 500");
+        Assertions.assertThat(testCase.getResultDetails()).contains("500").doesNotContain("content type", "truncated");
+    }
+
+    @Test
+    void shouldReportDedicatedCallTimeoutResult() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        Mockito.when(response.getResponseCode()).thenReturn(959);
+        Mockito.when(response.responseCodeAsString()).thenReturn("959");
+        Mockito.when(response.getResponseTimeInMs()).thenReturn(1000L);
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("GET").build());
+            testCaseListener.addResponse(response);
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
+        }, FuzzingData.builder().build());
+
+        Mockito.verify(executionStatisticsListener).increaseErrors(Mockito.any());
+        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.getFirst();
+        Assertions.assertThat(testCase.getResultReason()).isEqualTo("Call timeout exceeded");
+        Assertions.assertThat(testCase.getResultDetails()).contains("--callTimeout", "1000 ms");
+    }
+
+    @Test
     void givenADocumentedResponseThatMatchesTheResponseCodeAndButNotSchema_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);

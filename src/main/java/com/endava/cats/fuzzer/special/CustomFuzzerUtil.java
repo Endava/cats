@@ -155,7 +155,9 @@ public class CustomFuzzerUtil {
                     .mutationTargets(getMutationTargets(data, currentPathValues, payloadWithCustomValuesReplaced,
                             pathParamsPayloadWithCustomValues, headers, isHeadersFuzzing, arrayOfHeaders, i)).build());
 
-            this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced, pathParamsPayloadWithCustomValues);
+            if (!response.isBodyTruncated()) {
+                this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced, pathParamsPayloadWithCustomValues);
+            }
 
             String verify = WordUtils.nullOrValueOf(currentPathValues.get(VERIFY));
 
@@ -255,6 +257,10 @@ public class CustomFuzzerUtil {
     }
 
     private void checkVerifiesAndReport(FuzzingData data, String request, CatsResponse response, String verify, ResponseCodeFamily expectedResponseCode) {
+        if (response.isBodyTruncated()) {
+            testCaseListener.reportResult(log, data, response, expectedResponseCode);
+            return;
+        }
         Map<String, String> verifies = this.parseYmlEntryIntoMap(verify);
         Map<String, String> responseValues = this.matchVariablesWithTheResponse(response, verifies, Map.Entry::getKey);
         log.debug("Parameters to verify: {}", verifies);

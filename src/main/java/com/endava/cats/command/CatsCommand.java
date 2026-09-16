@@ -496,6 +496,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     private void printConfiguration(OpenAPI openAPI) {
         logger.config("OpenAPI specs: {}", AnsiUtils.blue(apiArguments.getContract()));
         logger.config("API base url: {}", AnsiUtils.blue(apiArguments.getServer()));
+        logger.config("Call timeout: {} seconds", AnsiUtils.blue(apiArguments.getCallTimeout()));
+        logger.config("Maximum captured response body: {} bytes", AnsiUtils.blue(apiArguments.getMaxResponseBytes()));
         logger.config("Reporting path: {}", AnsiUtils.blue(reportingArguments.getOutputReportFolder()));
         logger.config("--insecure: {}", AnsiUtils.blue(authArguments.isInsecure()));
         logger.config("--showSecrets: {}", AnsiUtils.blue(reportingArguments.isShowSecrets()));

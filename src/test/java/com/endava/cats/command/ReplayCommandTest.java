@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.io.ServiceCaller;
@@ -46,6 +47,7 @@ class ReplayCommandTest {
     @BeforeEach
     void setup() throws IOException {
         replayCommand = new ReplayCommand(serviceCaller, testCaseListener);
+        replayCommand.apiArguments = Mockito.mock(ApiArguments.class);
         replayCommand.authArguments = Mockito.mock(AuthArguments.class);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         if (tempDir == null) {

@@ -18,3 +18,4 @@ cats*.tar.gz
 refData_custom.yml
 referenceFields_replaced.yml
 issues
+replay.env.example

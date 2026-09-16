@@ -127,6 +127,10 @@ CATS masks authentication headers and sensitive query parameters in reports by d
 
 CATS automatically loads `./.env` when present. Use `--envFile path/to/cats.env` to select a different file or `--noEnvFile` to disable dotenv loading in normal, random, functional, template and replay commands. Process environment variables take precedence over dotenv values. Use `--showSecrets` only when unmasked report and console output is explicitly required.
 
+## Response safety budgets
+
+CATS cancels calls that exceed `--callTimeout`, which defaults to 20 seconds, and captures at most `--maxResponseBytes`, which defaults to 10 MiB of the decompressed response body. Set either option to `0` to disable its limit. Truncated responses retain their status and headers, skip full-body validation, and are reported with a dedicated warning.
+
 ## Build from sources
 
 You can build CATS from sources on you local box. You need [Java 25](https://sdkman.io/jdks). Maven is already bundled.

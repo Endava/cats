@@ -118,7 +118,7 @@ class CatsTuiViewTest {
                 reason, "detail:", "ignored", "SchemaFuzzer", path, path, "https://example.com" + path,
                 "https://example.com", true,
                 new TestResultSnapshot.RequestSnapshot("POST", path, "now", "{\"name\":\"cat\"}", headers),
-                new TestResultSnapshot.ResponseSnapshot(code, "POST", responseTime, 16, 2, 1,
+                new TestResultSnapshot.ResponseSnapshot(code, "POST", responseTime, 16, 16, false, 2, 1,
                         "application/json", "{\"result\":\"ok\"}", headers),
                 "cats replay --test " + id);
     }

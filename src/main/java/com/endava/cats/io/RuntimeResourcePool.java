@@ -103,7 +103,7 @@ public class RuntimeResourcePool {
      * @param response response returned by the service
      */
     public synchronized void observe(ServiceData data, CatsRequest request, CatsResponse response) {
-        if (!processingArguments.isReuseSuccessfulResources() || !ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
+        if (!processingArguments.isReuseSuccessfulResources() || !ResponseCodeFamily.is2xxCode(response.getResponseCode()) || response.isBodyTruncated()) {
             return;
         }
 

@@ -7,7 +7,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.ProtocolException;
+import java.net.SocketTimeoutException;
 
 @QuarkusTest
 class CatsResponseTest {
@@ -45,6 +47,14 @@ class CatsResponseTest {
         CatsResponse.ExceptionalResponse response = CatsResponse.getResponseByException(exception);
 
         Assertions.assertThat(response.responseCode()).isEqualTo(responseCode);
+    }
+
+    @Test
+    void shouldDistinguishCallTimeoutFromReadTimeout() {
+        Assertions.assertThat(CatsResponse.getResponseByException(new InterruptedIOException("timeout")))
+                .isEqualTo(CatsResponse.ExceptionalResponse.CALL_TIMEOUT);
+        Assertions.assertThat(CatsResponse.getResponseByException(new SocketTimeoutException("timeout")))
+                .isEqualTo(CatsResponse.ExceptionalResponse.READ_TIMEOUT);
     }
 
     @Test

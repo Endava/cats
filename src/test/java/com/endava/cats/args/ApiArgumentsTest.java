@@ -59,6 +59,22 @@ class ApiArgumentsTest {
     }
 
     @Test
+    void shouldRejectNegativeResponseLimits() {
+        CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
+        Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
+        ApiArguments apiArguments = new ApiArguments();
+        ReflectionTestUtils.setField(apiArguments, "callTimeout", -1);
+
+        Assertions.assertThatThrownBy(() -> apiArguments.validateResponseLimits(spec))
+                .isInstanceOf(CommandLine.ParameterException.class).hasMessageContaining("callTimeout");
+
+        ReflectionTestUtils.setField(apiArguments, "callTimeout", 20);
+        ReflectionTestUtils.setField(apiArguments, "maxResponseBytes", -1L);
+        Assertions.assertThatThrownBy(() -> apiArguments.validateResponseLimits(spec))
+                .isInstanceOf(CommandLine.ParameterException.class).hasMessageContaining("maxResponseBytes");
+    }
+
+    @Test
     void shouldThrowExceptionWhenServerAndOpenApiNull() {
         CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
         Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));

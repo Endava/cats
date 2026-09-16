@@ -504,7 +504,7 @@ class CatsTuiStateTest {
                 null, null, null, null, null, null, null, null, null, null, false,
                 new TestResultSnapshot.RequestSnapshot(null, null, null, null,
                         List.of(new TestResultSnapshot.HeaderSnapshot(null, null))),
-                new TestResultSnapshot.ResponseSnapshot(0, null, 0, 0, 0, 0,
+                new TestResultSnapshot.ResponseSnapshot(0, null, 0, 0, -1, false, 0, 0,
                         null, " ", List.of(new TestResultSnapshot.HeaderSnapshot(null, null))), null);
         state.updateViewport(20, 24);
         state.accept(new CatsExecutionEvent.TestCompleted(NOW, sparse));
@@ -562,7 +562,7 @@ class CatsTuiStateTest {
         return new TestResultSnapshot(id, "trace", scenario, "expected", result, reason, "details", "",
                 fuzzer, path, path, path, "http://localhost", true,
                 new TestResultSnapshot.RequestSnapshot("GET", path, "now", "", List.of()),
-                new TestResultSnapshot.ResponseSnapshot(responseCode, "GET", responseTime, 0, 0, 0,
+                new TestResultSnapshot.ResponseSnapshot(responseCode, "GET", responseTime, 0, -1, false, 0, 0,
                         "application/json", "{}", List.of()),
                 "cats replay");
     }

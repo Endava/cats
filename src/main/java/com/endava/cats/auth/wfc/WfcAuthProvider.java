@@ -3,6 +3,7 @@ package com.endava.cats.auth.wfc;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.io.BoundedResponseBodyReader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webfuzzing.commons.auth.Auth;
@@ -213,7 +214,11 @@ public class WfcAuthProvider {
 
         logger.note("Running WFC Auth login for entry {} at {}", auth.getName(), loginUrl);
         try (Response response = okHttpClient.newCall(request).execute()) {
-            String responseBody = response.body().string();
+            BoundedResponseBodyReader.CapturedBody capturedBody = BoundedResponseBodyReader.read(response, apiArguments.getMaxResponseBytes());
+            if (capturedBody.truncated()) {
+                throw new CatsException("WFC Auth login response exceeded --maxResponseBytes=" + apiArguments.getMaxResponseBytes());
+            }
+            String responseBody = capturedBody.body();
             if (!response.isSuccessful()) {
                 throw new CatsException("WFC Auth login failed for entry %s with HTTP %s and body %s".formatted(auth.getName(), response.code(), responseBody));
             }

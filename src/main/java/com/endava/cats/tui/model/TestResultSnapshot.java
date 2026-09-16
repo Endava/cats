@@ -51,13 +51,14 @@ public record TestResultSnapshot(String id, String traceId, String scenario, Str
      * Immutable response details.
      */
     public record ResponseSnapshot(int responseCode, String httpMethod, long responseTimeInMs,
-                                   long contentLengthInBytes, long numberOfWords, long numberOfLines,
-                                   String contentType, String body, List<HeaderSnapshot> headers) {
+                                   long contentLengthInBytes, long declaredContentLength, boolean bodyTruncated,
+                                   long numberOfWords, long numberOfLines, String contentType, String body,
+                                   List<HeaderSnapshot> headers) {
         private static ResponseSnapshot from(CatsResponse response, Set<String> maskedHeaders) {
             CatsResponse source = Optional.ofNullable(response).orElseGet(CatsResponse::empty);
             return new ResponseSnapshot(source.getResponseCode(), source.getHttpMethod(), source.getResponseTimeInMs(),
-                    source.getContentLengthInBytes(), source.getNumberOfWordsInResponse(),
-                    source.getNumberOfLinesInResponse(), source.getResponseContentType(), source.getBody(),
+                    source.getContentLengthInBytes(), source.getDeclaredContentLength(), source.isBodyTruncated(),
+                    source.getNumberOfWordsInResponse(), source.getNumberOfLinesInResponse(), source.getResponseContentType(), source.getBody(),
                     snapshotHeaders(source.getHeaders(), maskedHeaders));
         }
     }

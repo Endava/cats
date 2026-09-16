@@ -236,6 +236,10 @@
                 <div class="response-detail"><span>Response time</span><strong>{{response.responseTimeInMs}}ms</strong></div>
                 <div class="response-detail"><span>Content type</span><strong>{{response.responseContentType}}</strong></div>
                 <div class="response-detail"><span>Content length</span><strong>{{response.contentLengthInBytes}} bytes</strong></div>
+                {{#response.bodyTruncated}}
+                <div class="response-detail"><span>Body capture</span><strong>Truncated at {{response.capturedBodyBytes}} bytes</strong></div>
+                <div class="response-detail"><span>Declared length</span><strong>{{response.declaredContentLengthDisplay}}</strong></div>
+                {{/response.bodyTruncated}}
                 <div class="response-detail"><span>Words</span><strong>{{response.numberOfWordsInResponse}}</strong></div>
                 <div class="response-detail"><span>Lines</span><strong>{{response.numberOfLinesInResponse}}</strong></div>
             </div>
@@ -266,6 +270,10 @@
                 <div class="response-detail"><span>Response time</span><strong>{{response.responseTimeInMs}}ms</strong></div>
                 <div class="response-detail"><span>Content type</span><strong>{{response.responseContentType}}</strong></div>
                 <div class="response-detail"><span>Content length</span><strong>{{response.contentLengthInBytes}} bytes</strong></div>
+                {{#response.bodyTruncated}}
+                <div class="response-detail"><span>Body capture</span><strong>Truncated at {{response.capturedBodyBytes}} bytes</strong></div>
+                <div class="response-detail"><span>Declared length</span><strong>{{response.declaredContentLengthDisplay}}</strong></div>
+                {{/response.bodyTruncated}}
                 <div class="response-detail"><span>Words</span><strong>{{response.numberOfWordsInResponse}}</strong></div>
                 <div class="response-detail"><span>Lines</span><strong>{{response.numberOfLinesInResponse}}</strong></div>
             </div>

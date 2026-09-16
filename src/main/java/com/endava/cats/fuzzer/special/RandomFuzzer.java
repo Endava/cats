@@ -151,6 +151,9 @@ public class RandomFuzzer implements Fuzzer {
     }
 
     void processResponse(CatsResponse catsResponse, FuzzingData fuzzingData) {
+        if (testCaseListener.reportTruncatedResponse(logger, fuzzingData, catsResponse)) {
+            return;
+        }
         if (matchArguments.isMatchResponse(catsResponse)) {
             testCaseListener.reportResultError(logger, fuzzingData, CatsResultFactory.Reason.RESPONSE_MATCHES_ARGUMENTS.value(), "Response matches" + matchArguments.getMatchString());
         } else {

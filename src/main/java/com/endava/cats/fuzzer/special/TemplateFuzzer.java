@@ -335,6 +335,9 @@ public class TemplateFuzzer implements Fuzzer {
     }
 
     private void checkResponse(CatsResponse catsResponse, FuzzingData data, Object fuzzedValue) {
+        if (testCaseListener.reportTruncatedResponse(logger, data, catsResponse)) {
+            return;
+        }
         if (matchArguments.isMatchResponse(catsResponse) || matchArguments.isInputReflected(catsResponse, fuzzedValue) || !matchArguments.isAnyMatchArgumentSupplied()) {
             testCaseListener.reportResultError(logger, data, CatsResultFactory.Reason.RESPONSE_MATCHES_ARGUMENTS.value(), "Response matches" + matchArguments.getMatchString());
         } else {
