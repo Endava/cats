@@ -1,5 +1,9 @@
 package com.endava.cats.util;
 
+import com.endava.cats.io.BoundedResponseBodyReader;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -11,6 +15,8 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Checks if there is a new CATS version available
@@ -18,11 +24,14 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 public class VersionChecker {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(VersionChecker.class);
+    private static final long MAX_RESPONSE_BYTES = 262144;
+    private static final Pattern RELEASE_TAG = Pattern.compile("^cats-(\\d+\\.\\d+\\.\\d+)$");
     protected static String baseUrl = "https://api.github.com/repos/Endava/cats/releases/latest";
     private static final String DOWNLOAD_URL = "https://github.com/Endava/cats/releases/tag/";
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(2, TimeUnit.SECONDS)
+            .callTimeout(5, TimeUnit.SECONDS)
             .build();
 
     /**
@@ -32,31 +41,42 @@ public class VersionChecker {
      * @return a CheckResult with information about the new version, if present
      */
     public CheckResult checkForNewVersion(String currentVersion) {
-        boolean updateAvailable = false;
-        String downloadLink = null;
-        String latestVersion = null;
-        String releaseNotes = null;
-
         try (Response response = httpClient.newCall(new Request.Builder().url(baseUrl).build()).execute()) {
-            if (response.body() != null) {
-                String responseBody = response.body().string();
-                latestVersion = String.valueOf(JsonUtils.getVariableFromJson(responseBody, "$.tag_name"));
-
-                downloadLink = DOWNLOAD_URL + latestVersion;
-                latestVersion = latestVersion.replace("cats-", "");
-                updateAvailable = compare(currentVersion, latestVersion) < 0;
-
-                releaseNotes = String.valueOf(JsonUtils.getVariableFromJson(responseBody, "$.body"));
+            if (!response.isSuccessful()) {
+                return emptyResult();
             }
+            BoundedResponseBodyReader.CapturedBody capturedBody = BoundedResponseBodyReader.read(response, MAX_RESPONSE_BYTES);
+            if (capturedBody.truncated()) {
+                return emptyResult();
+            }
+            JsonObject release = JsonParser.parseString(capturedBody.body()).getAsJsonObject();
+            String releaseTag = stringValue(release.get("tag_name"));
+            if (releaseTag == null) {
+                return emptyResult();
+            }
+            Matcher matcher = RELEASE_TAG.matcher(releaseTag);
+            if (!matcher.matches()) {
+                return emptyResult();
+            }
+            String latestVersion = matcher.group(1);
+            return CheckResult.builder()
+                    .newVersion(compare(currentVersion, latestVersion) < 0)
+                    .downloadUrl(DOWNLOAD_URL + releaseTag)
+                    .version(latestVersion)
+                    .releaseNotes(stringValue(release.get("body")))
+                    .build();
         } catch (Exception e) {
             LOGGER.debug("Exception while checking latest version", e);
+            return emptyResult();
         }
-        return CheckResult.builder()
-                .newVersion(updateAvailable)
-                .downloadUrl(downloadLink)
-                .version(latestVersion)
-                .releaseNotes(releaseNotes)
-                .build();
+    }
+
+    private static String stringValue(JsonElement value) {
+        return value == null || value.isJsonNull() || !value.isJsonPrimitive() ? null : value.getAsString();
+    }
+
+    private static CheckResult emptyResult() {
+        return CheckResult.builder().build();
     }
 
     static int compare(String version1, String version2) {

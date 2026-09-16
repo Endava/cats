@@ -8,7 +8,9 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @QuarkusTest
 class VersionCheckerTest {
@@ -74,8 +76,42 @@ class VersionCheckerTest {
         VersionChecker.CheckResult result = versionChecker.checkForNewVersion("8.7.7");
 
         Assertions.assertThat(result.isNewVersion()).isFalse();
-        Assertions.assertThat(result.getVersion()).isEqualTo("not_valid");
+        Assertions.assertThat(result.getVersion()).isNull();
         Assertions.assertThat(result.getReleaseNotes()).isNull();
+    }
+
+    @Test
+    void shouldIgnoreNonSuccessfulResponses() {
+        wireMockServer.stubFor(WireMock.get("/latest").willReturn(WireMock.aResponse().withStatus(503).withBody("""
+                {"tag_name":"cats-9.0.0","body":"release notes"}
+                """)));
+
+        VersionChecker.CheckResult result = versionChecker.checkForNewVersion("8.7.7");
+
+        Assertions.assertThat(result.isNewVersion()).isFalse();
+        Assertions.assertThat(result.getVersion()).isNull();
+    }
+
+    @Test
+    void shouldIgnoreOversizedResponses() {
+        String body = "{\"tag_name\":\"cats-9.0.0\",\"body\":\"" + "x".repeat(300000) + "\"}";
+        wireMockServer.stubFor(WireMock.get("/latest").willReturn(WireMock.ok(body)));
+
+        VersionChecker.CheckResult result = versionChecker.checkForNewVersion("8.7.7");
+
+        Assertions.assertThat(result.isNewVersion()).isFalse();
+        Assertions.assertThat(result.getVersion()).isNull();
+        Assertions.assertThat(result.getReleaseNotes()).isNull();
+    }
+
+    @Test
+    void shouldUseShortUpdateCheckTimeouts() {
+        OkHttpClient httpClient = (OkHttpClient) ReflectionTestUtils.getField(versionChecker, "httpClient");
+
+        Assertions.assertThat(httpClient).isNotNull();
+        Assertions.assertThat(httpClient.callTimeoutMillis()).isEqualTo(5000);
+        Assertions.assertThat(httpClient.connectTimeoutMillis()).isEqualTo(2000);
+        Assertions.assertThat(httpClient.readTimeoutMillis()).isEqualTo(2000);
     }
 
     @Test
