@@ -1,11 +1,13 @@
 package com.endava.cats.command;
 
+import com.endava.cats.aop.DryRunAspect;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
@@ -45,6 +47,7 @@ class TemplateFuzzCommandTest {
 
     @BeforeEach
     void setup() {
+        ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", false);
         templateFuzzer = Mockito.mock(TemplateFuzzer.class);
         ReflectionTestUtils.setField(templateFuzzCommand, "templateFuzzer", templateFuzzer);
         matchArguments = Mockito.mock(MatchArguments.class);
@@ -143,6 +146,23 @@ class TemplateFuzzCommandTest {
                 .singleElement()
                 .extracting(CatsHeader::getValue)
                 .isEqualTo("Bearer token-123");
+    }
+
+    @Test
+    void shouldNotRunAuthScriptWhenResolvingDryRunTemplateHeaders() {
+        AuthArguments authArguments = Mockito.mock(AuthArguments.class);
+        Mockito.when(authArguments.getDynamicVariablesContext()).thenReturn(Map.of(
+                Parser.AUTH_SCRIPT, "/script/that/must/not/run", Parser.AUTH_REFRESH, "0"));
+        ReflectionTestUtils.setField(templateFuzzCommand, "authArguments", authArguments);
+        templateFuzzCommand.headers = Map.of("Authorization", "auth_script");
+        ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", true);
+        try {
+            Set<CatsHeader> resolvedHeaders = ReflectionTestUtils.invokeMethod(templateFuzzCommand, "getHeaders");
+
+            Assertions.assertThat(resolvedHeaders).singleElement().extracting(CatsHeader::getValue).isEqualTo("auth_script");
+        } finally {
+            ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", false);
+        }
     }
 
     @Test

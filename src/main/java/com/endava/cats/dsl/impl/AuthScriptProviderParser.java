@@ -1,5 +1,6 @@
 package com.endava.cats.dsl.impl;
 
+import com.endava.cats.aop.DryRunAspect;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -20,6 +21,9 @@ public class AuthScriptProviderParser implements Parser {
 
     @Override
     public String parse(String expression, Map<String, String> context) {
+        if (DryRunAspect.isDryRun()) {
+            return expression;
+        }
         String script = context.get(Parser.AUTH_SCRIPT);
         int authRefreshInterval = Integer.parseInt(context.getOrDefault(Parser.AUTH_REFRESH, "0"));
 

@@ -1,6 +1,7 @@
 package com.endava.cats.dsl.impl;
 
 
+import com.endava.cats.aop.DryRunAspect;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -24,12 +25,24 @@ class AuthScriptProviderParserTest {
         authScriptProviderParser = new AuthScriptProviderParser();
         prettyLogger = Mockito.mock(PrettyLogger.class);
         ReflectionTestUtils.setField(authScriptProviderParser, "logger", prettyLogger);
+        ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", false);
     }
 
     @Test
     void shouldThrowIOExceptionWhenScriptNotProvided() {
         Map<String, String> context = Map.of();
         Assertions.assertThatThrownBy(() -> authScriptProviderParser.parse(null, context)).isInstanceOf(CatsException.class);
+    }
+
+    @Test
+    void shouldNotRunScriptDuringDryRun() {
+        Map<String, String> context = Map.of(Parser.AUTH_SCRIPT, "/script/that/must/not/run");
+        ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", true);
+        try {
+            Assertions.assertThat(authScriptProviderParser.parse("auth_script", context)).isEqualTo("auth_script");
+        } finally {
+            ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", false);
+        }
     }
 
     @Test

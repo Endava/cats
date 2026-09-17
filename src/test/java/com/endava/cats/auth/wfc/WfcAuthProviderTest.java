@@ -2,6 +2,7 @@ package com.endava.cats.auth.wfc;
 
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.exception.CatsException;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
@@ -10,12 +11,14 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.Buffer;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +29,12 @@ import java.util.Map;
 
 @QuarkusTest
 class WfcAuthProviderTest {
+    @Inject
+    WfcAuthProvider interceptedProvider;
+    @Inject
+    AuthArguments interceptedAuthArguments;
+    @Inject
+    FilterArguments filterArguments;
     private AuthArguments authArguments;
     private ApiArguments apiArguments;
     private WfcAuthProvider provider;
@@ -38,6 +47,7 @@ class WfcAuthProviderTest {
         authArguments = Mockito.mock(AuthArguments.class);
         apiArguments = Mockito.mock(ApiArguments.class);
         provider = new WfcAuthProvider(authArguments, apiArguments);
+        ReflectionTestUtils.setField(filterArguments, "dryRun", false);
     }
 
     @Test
@@ -83,6 +93,24 @@ class WfcAuthProviderTest {
         Assertions.assertThat(request.getValue().url()).hasToString("https://example.com/wfc-login");
         Assertions.assertThat(request.getValue().method()).isEqualTo("POST");
         Assertions.assertThat(requestBody(request.getValue())).isEqualTo("{\"username\":\"cats\",\"password\":\"secret\"}");
+    }
+
+    @Test
+    void shouldNotRunDynamicLoginDuringDryRun() {
+        ReflectionTestUtils.setField(interceptedAuthArguments, "wfcAuthFile", new File("src/test/resources/wfc-token-auth.yml"));
+        ReflectionTestUtils.setField(interceptedAuthArguments, "wfcAuthName", "cats");
+        ReflectionTestUtils.setField(filterArguments, "dryRun", true);
+        OkHttpClient client = Mockito.mock(OkHttpClient.class);
+        try {
+            Assertions.assertThat(interceptedProvider.getAuthenticationHeaderNames()).containsExactly("Authorization");
+            Assertions.assertThat(interceptedProvider.getHeaders(client)).isEmpty();
+            Assertions.assertThat(interceptedProvider.getQueryParams(client)).isEmpty();
+            Mockito.verifyNoInteractions(client);
+        } finally {
+            ReflectionTestUtils.setField(filterArguments, "dryRun", false);
+            ReflectionTestUtils.setField(interceptedAuthArguments, "wfcAuthFile", null);
+            ReflectionTestUtils.setField(interceptedAuthArguments, "wfcAuthName", null);
+        }
     }
 
     @Test

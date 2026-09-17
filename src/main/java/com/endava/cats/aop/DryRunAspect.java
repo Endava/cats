@@ -3,6 +3,7 @@ package com.endava.cats.aop;
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.execution.ExecutionSummaryProvider;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.ExecutionSummary;
@@ -10,6 +11,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.VersionChecker;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Inject;
@@ -31,6 +33,8 @@ import java.util.TreeMap;
 @DryRun
 @Interceptor
 public class DryRunAspect {
+    private static final Object PROCEED = new Object();
+    private static volatile boolean dryRun;
 
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
     /**
@@ -47,6 +51,10 @@ public class DryRunAspect {
     @Inject
     ExecutionSummaryProvider executionSummaryProvider;
 
+    public static boolean isDryRun() {
+        return dryRun;
+    }
+
     /**
      * Intercepts the startSession from the TestCaseListener.
      *
@@ -55,6 +63,7 @@ public class DryRunAspect {
      * @throws Exception if something goes wrong
      */
     public Object startSession(InvocationContext context) throws Exception {
+        dryRun = true;
         paths.clear();
         if (reportingArguments.isJsonOutput()) {
             CatsUtil.setCatsLogLevel("OFF");
@@ -88,24 +97,28 @@ public class DryRunAspect {
      * @return the final execution summary, without writing report files
      */
     public ExecutionSummary endSession() {
-        if (reportingArguments.isJsonOutput()) {
-            List<DryRunEntry> pathTests = paths.entrySet().stream()
-                    .map(entry -> {
-                        int splitIndex = entry.getKey().lastIndexOf("_");
-                        String path = entry.getKey().substring(0, splitIndex);
-                        String httpMethod = entry.getKey().substring(splitIndex + 1);
+        try {
+            if (reportingArguments.isJsonOutput()) {
+                List<DryRunEntry> pathTests = paths.entrySet().stream()
+                        .map(entry -> {
+                            int splitIndex = entry.getKey().lastIndexOf("_");
+                            String path = entry.getKey().substring(0, splitIndex);
+                            String httpMethod = entry.getKey().substring(splitIndex + 1);
 
-                        return new DryRunEntry(path, httpMethod, String.valueOf(entry.getValue()));
-                    })
-                    .toList();
-            logger.noFormat(JsonUtils.GSON.toJson(pathTests));
-        } else {
-            logger.noFormat("\n");
-            CatsUtil.setCatsLogLevel("INFO");
-            logger.noFormat("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
-            paths.forEach((s, integer) -> logger.noFormat(AnsiUtils.boldYellow(" -> path {}: {} tests"), s, integer));
+                            return new DryRunEntry(path, httpMethod, String.valueOf(entry.getValue()));
+                        })
+                        .toList();
+                logger.noFormat(JsonUtils.GSON.toJson(pathTests));
+            } else {
+                logger.noFormat("\n");
+                CatsUtil.setCatsLogLevel("INFO");
+                logger.noFormat("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
+                paths.forEach((s, integer) -> logger.noFormat(AnsiUtils.boldYellow(" -> path {}: {} tests"), s, integer));
+            }
+            return executionSummaryProvider.snapshot();
+        } finally {
+            dryRun = false;
         }
-        return executionSummaryProvider.snapshot();
     }
 
     /**
@@ -123,6 +136,51 @@ public class DryRunAspect {
         return null;
     }
 
+    private Object suppressExternalSideEffect(InvocationContext context) {
+        Class<?> declaringClass = context.getMethod().getDeclaringClass();
+        String methodName = context.getMethod().getName();
+        if (declaringClass == VersionChecker.class && "checkForNewVersion".equals(methodName)) {
+            return VersionChecker.CheckResult.builder().build();
+        }
+        if (declaringClass == WfcAuthProvider.class) {
+            if ("getHeaders".equals(methodName) || "getQueryParams".equals(methodName)) {
+                return Map.of();
+            }
+            if ("applyQueryParams".equals(methodName)) {
+                return context.getParameters()[0];
+            }
+        }
+        return PROCEED;
+    }
+
+    private Object defaultValue(Class<?> returnType) {
+        if (returnType == void.class) {
+            return null;
+        }
+        if (returnType == long.class) {
+            return 0L;
+        }
+        if (returnType == boolean.class) {
+            return false;
+        }
+        if (returnType == double.class) {
+            return 0D;
+        }
+        if (returnType == float.class) {
+            return 0F;
+        }
+        if (returnType == byte.class) {
+            return (byte) 0;
+        }
+        if (returnType == short.class) {
+            return (short) 0;
+        }
+        if (returnType == char.class) {
+            return (char) 0;
+        }
+        return 0;
+    }
+
     /**
      * Intercepts all calls annotated with DryRun
      *
@@ -136,6 +194,11 @@ public class DryRunAspect {
             return context.proceed();
         }
 
+        Object suppressed = suppressExternalSideEffect(context);
+        if (suppressed != PROCEED) {
+            return suppressed;
+        }
+
         String methodName = context.getMethod().getName();
         return switch (methodName) {
             case String s when s.startsWith("report") -> report(context);
@@ -146,7 +209,7 @@ public class DryRunAspect {
             case String s when s.startsWith("getErrors") ||
                     s.startsWith("initReportingPath") ||
                     s.startsWith("renderFuzzingHeader") ||
-                    s.startsWith("notifySummaryObservers") -> 0;
+                    s.startsWith("notifySummaryObservers") -> defaultValue(context.getMethod().getReturnType());
             default -> context.proceed();
         };
     }

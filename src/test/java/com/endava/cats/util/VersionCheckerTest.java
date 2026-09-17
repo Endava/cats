@@ -1,9 +1,11 @@
 package com.endava.cats.util;
 
+import com.endava.cats.args.FilterArguments;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,6 +18,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 class VersionCheckerTest {
     public static WireMockServer wireMockServer;
 
+    @Inject
+    VersionChecker interceptedVersionChecker;
+    @Inject
+    FilterArguments filterArguments;
     private static VersionChecker versionChecker;
 
     @BeforeAll
@@ -28,6 +34,7 @@ class VersionCheckerTest {
     @BeforeEach
     void setupEach() {
         versionChecker = new VersionChecker();
+        ReflectionTestUtils.setField(filterArguments, "dryRun", false);
     }
 
     @AfterAll
@@ -78,6 +85,21 @@ class VersionCheckerTest {
         Assertions.assertThat(result.isNewVersion()).isFalse();
         Assertions.assertThat(result.getVersion()).isNull();
         Assertions.assertThat(result.getReleaseNotes()).isNull();
+    }
+
+    @Test
+    void shouldNotCallUpdateServiceWhenSideEffectsAreDisabled() {
+        wireMockServer.resetRequests();
+        ReflectionTestUtils.setField(filterArguments, "dryRun", true);
+        VersionChecker.CheckResult result;
+        try {
+            result = interceptedVersionChecker.checkForNewVersion("8.7.7");
+        } finally {
+            ReflectionTestUtils.setField(filterArguments, "dryRun", false);
+        }
+
+        Assertions.assertThat(result.isNewVersion()).isFalse();
+        wireMockServer.verify(0, WireMock.getRequestedFor(WireMock.urlEqualTo("/latest")));
     }
 
     @Test

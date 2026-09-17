@@ -131,6 +131,8 @@ CATS automatically loads `./.env` when present. Use `--envFile path/to/cats.env`
 
 CATS cancels calls that exceed `--callTimeout`, which defaults to 20 seconds, and captures at most `--maxResponseBytes`, which defaults to 10 MiB of the decompressed response body. Set either option to `0` to disable its limit. Truncated responses retain their status and headers, skip full-body validation, and are reported with a dedicated warning.
 
+When `--dryRun` is enabled, CATS parses local configuration and calculates test counts without invoking target services, WFC login endpoints, authentication scripts, update checks, or report writers.
+
 ## Build from sources
 
 You can build CATS from sources on you local box. You need [Java 25](https://sdkman.io/jdks). Maven is already bundled.

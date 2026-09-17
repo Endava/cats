@@ -320,8 +320,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     private void executeSession() {
         try {
-            Future<VersionChecker.CheckResult> newVersion = this.checkForNewVersion();
             testCaseListener.startSession();
+            Future<VersionChecker.CheckResult> newVersion = this.checkForNewVersion();
             executionStopController.startSession();
             this.doLogic();
             this.printSuggestions();

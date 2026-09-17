@@ -1,5 +1,6 @@
 package com.endava.cats.auth.wfc;
 
+import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.exception.CatsException;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 /**
  * Resolves WFC Auth credentials into request headers and query parameters.
  */
+@DryRun
 @ApplicationScoped
 public class WfcAuthProvider {
     private static final String APPLICATION_JSON = "application/json";
@@ -174,7 +176,6 @@ public class WfcAuthProvider {
         if (auth.getLoginEndpointAuth() == null) {
             return fixedCredentials(auth);
         }
-
         if (cachedCredentials != null && !refreshIntervalElapsed()) {
             return cachedCredentials;
         }

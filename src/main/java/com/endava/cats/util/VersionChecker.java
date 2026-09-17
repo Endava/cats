@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import com.endava.cats.annotations.DryRun;
 import com.endava.cats.io.BoundedResponseBodyReader;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -21,6 +22,7 @@ import java.util.regex.Pattern;
 /**
  * Checks if there is a new CATS version available
  */
+@DryRun
 @Singleton
 public class VersionChecker {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(VersionChecker.class);
