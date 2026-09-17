@@ -139,18 +139,21 @@ class FilterArgumentsTest {
     }
 
     @Test
-    void shouldReturnAllHttpMethodsWhenNotHttpMethodSupplied() {
-        List<HttpMethod> httpMethods = filterArguments.getHttpMethods();
+    void shouldExcludeTraceFromDefaultHttpMethods() {
+        List<HttpMethod> httpMethods = new FilterArguments().getHttpMethods();
 
-        Assertions.assertThat(httpMethods).containsExactlyElementsOf(HttpMethod.restMethods());
+        Assertions.assertThat(httpMethods)
+                .containsExactly(HttpMethod.POST, HttpMethod.PUT, HttpMethod.GET, HttpMethod.DELETE, HttpMethod.PATCH, HttpMethod.HEAD)
+                .doesNotContain(HttpMethod.TRACE);
     }
 
     @Test
-    void shouldReturnGetAndDeleteWhenNotHttpMethodSupplied() {
-        ReflectionTestUtils.setField(filterArguments, "httpMethods", List.of(HttpMethod.GET, HttpMethod.DELETE));
-        List<HttpMethod> httpMethods = filterArguments.getHttpMethods();
+    void shouldReturnExplicitlySelectedHttpMethods() {
+        FilterArguments arguments = new FilterArguments();
+        arguments.setHttpMethods(List.of(HttpMethod.GET, HttpMethod.TRACE));
 
-        Assertions.assertThat(httpMethods).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(arguments.getHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.TRACE);
+        Assertions.assertThat(arguments.isHttpMethodSupplied(HttpMethod.TRACE)).isTrue();
     }
 
     @Test

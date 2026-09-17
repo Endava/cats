@@ -117,7 +117,7 @@ public class FilterArguments {
     @CommandLine.Option(names = {"--httpMethods", "--httpMethod", "-X"},
             description = "A comma separated list of HTTP methods to include. Default: @|bold,underline ${DEFAULT-VALUE}|@", split = ",")
     @Setter
-    private List<HttpMethod> httpMethods = HttpMethod.restMethods();
+    private List<HttpMethod> httpMethods = defaultHttpMethods();
 
     @CommandLine.Option(names = {"--skipHttpMethods", "--skipHttpMethod"},
             description = "A comma separated list of HTTP methods to skip. Default: @|bold,underline ${DEFAULT-VALUE}|@", split = ",")
@@ -690,7 +690,7 @@ public class FilterArguments {
         this.paths = Collections.emptyList();
         this.skipFuzzers = new ArrayList<>();
         this.skipPaths = Collections.emptyList();
-        this.httpMethods = HttpMethod.restMethods();
+        this.httpMethods = defaultHttpMethods();
         this.dryRun = false;
     }
 
@@ -804,6 +804,12 @@ public class FilterArguments {
         return this.httpMethods
                 .stream()
                 .filter(httpMethod -> !skippedHttpMethods.contains(httpMethod))
+                .toList();
+    }
+
+    private static List<HttpMethod> defaultHttpMethods() {
+        return HttpMethod.restMethods().stream()
+                .filter(method -> method != HttpMethod.TRACE)
                 .toList();
     }
 

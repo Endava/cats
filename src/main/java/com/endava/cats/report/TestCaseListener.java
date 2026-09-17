@@ -925,12 +925,13 @@ public class TestCaseListener {
      */
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema, boolean shouldMatchContentType) {
         expectedResultCode = this.getExpectedResponseCodeConfiguredFor(MDC.get(FUZZER_KEY), data.getPath(), String.valueOf(data.getMethod()).toLowerCase(Locale.ROOT), expectedResultCode);
-        ResponseSchemaValidator.ValidationResult schemaValidation = shouldMatchToResponseSchema
+        boolean isHead = data.getMethod() == HttpMethod.HEAD;
+        ResponseSchemaValidator.ValidationResult schemaValidation = shouldMatchToResponseSchema && !isHead
                 ? this.validateResponseSchema(response, data) : ResponseSchemaValidator.ValidationResult.valid();
         boolean matchesResponseSchema = schemaValidation.isValid();
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
-        boolean isResponseContentTypeMatching = !shouldMatchContentType || this.isResponseContentTypeMatching(response, data);
+        boolean isResponseContentTypeMatching = isHead || !shouldMatchContentType || this.isResponseContentTypeMatching(response, data);
 
         this.logger.debug("matchesResponseSchema {}, responseCodeExpected {}, responseCodeDocumented {}, schemaValidationErrors {}",
                 matchesResponseSchema, responseCodeExpected, responseCodeDocumented, schemaValidation.errors());

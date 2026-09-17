@@ -125,6 +125,16 @@ public class FuzzingDataFactory {
             fuzzingDataList.addAll(this.getFuzzingDataForDelete(path, item, item.getDelete(), openAPI));
         }
 
+        if (item.getHead() != null) {
+            logger.debug("Identified HEAD method for path {}", path);
+            fuzzingDataList.addAll(this.getFuzzDataForNonBodyMethods(path, item, item.getHead(), openAPI, HttpMethod.HEAD));
+        }
+
+        if (item.getTrace() != null) {
+            logger.debug("Identified TRACE method for path {}", path);
+            fuzzingDataList.addAll(this.getFuzzDataForNonBodyMethods(path, item, item.getTrace(), openAPI, HttpMethod.TRACE));
+        }
+
         return fuzzingDataList;
     }
 

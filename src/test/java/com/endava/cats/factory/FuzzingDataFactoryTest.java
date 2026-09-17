@@ -31,6 +31,8 @@ import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -1280,6 +1282,51 @@ class FuzzingDataFactoryTest {
         Set<Object> examples = fuzzingDataFactory.extractExamples(mediaType);
 
         Assertions.assertThat(examples).hasSize(2).containsExactly("example2", "\"catsIsCool\"");
+    }
+
+    @Test
+    void shouldGenerateNonBodyDataForDocumentedHeadAndTraceOperations() {
+        ApiResponse headResponse = new ApiResponse();
+        headResponse.setHeaders(Map.of("X-Rate-Limit", new Header()));
+        ApiResponses headResponses = new ApiResponses();
+        headResponses.addApiResponse("200", headResponse);
+        Operation head = new Operation().operationId("headResource").responses(headResponses);
+
+        ApiResponses traceResponses = new ApiResponses();
+        traceResponses.addApiResponse("200", new ApiResponse());
+        Operation trace = new Operation().operationId("traceResource").responses(traceResponses);
+
+        Parameter pathParameter = new Parameter().name("resourceId").in("path").required(true)
+                .schema(new Schema<>().type("string").example("resource-1"));
+        PathItem pathItem = new PathItem().head(head).trace(trace).parameters(List.of(pathParameter));
+        OpenAPI openAPI = new OpenAPI();
+        catsGlobalContext.getSchemaMap().clear();
+        catsGlobalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
+        catsGlobalContext.setOpenAPI(openAPI);
+        Mockito.when(filesArguments.isNotUrlParam(Mockito.anyString())).thenReturn(true);
+
+        List<FuzzingData> data = fuzzingDataFactory.fromPathItem("/resources/{resourceId}", pathItem, openAPI);
+
+        Assertions.assertThat(data).extracting(FuzzingData::getMethod)
+                .containsExactly(HttpMethod.HEAD, HttpMethod.TRACE);
+        Assertions.assertThat(data).allMatch(item -> item.getPayload().contains("resourceId"));
+        Assertions.assertThat(data.getFirst().getResponseHeaders().get("200")).containsExactly("X-Rate-Limit");
+    }
+
+    @Test
+    void shouldNotGenerateHeadOrTraceWhenTheyAreNotDocumented() {
+        ApiResponses responses = new ApiResponses();
+        responses.addApiResponse("200", new ApiResponse());
+        PathItem pathItem = new PathItem().get(new Operation().operationId("getResource").responses(responses));
+        OpenAPI openAPI = new OpenAPI();
+        catsGlobalContext.getSchemaMap().clear();
+        catsGlobalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
+        catsGlobalContext.setOpenAPI(openAPI);
+        Mockito.when(filesArguments.isNotUrlParam(Mockito.anyString())).thenReturn(true);
+
+        List<FuzzingData> data = fuzzingDataFactory.fromPathItem("/resources", pathItem, openAPI);
+
+        Assertions.assertThat(data).extracting(FuzzingData::getMethod).containsExactly(HttpMethod.GET);
     }
 
     @Test

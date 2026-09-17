@@ -485,6 +485,33 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldIgnoreBodyAndContentTypeValidationForHeadResponses() {
+        Mockito.when(ignoreArguments.isIgnoreResponseContentTypeCheck()).thenReturn(false);
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+
+        CatsResponse response = CatsResponse.builder()
+                .body("{\"actual\":true}")
+                .jsonBody(JsonParser.parseString("{\"actual\":true}"))
+                .responseCode(200)
+                .responseContentType("application/json")
+                .build();
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.HEAD);
+        Mockito.when(data.getPath()).thenReturn("/resources");
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("200", List.of("{\"expected\":true}")));
+        Mockito.when(data.getResponseContentTypes()).thenReturn(Map.of("200", List.of("application/csv")));
+        Mockito.when(data.getContentTypesByResponseCode("200")).thenReturn(List.of("application/csv"));
+
+        prepareTestCaseListenerSimpleSetup(response,
+                () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX));
+
+        Mockito.verify(executionStatisticsListener).increaseSuccess(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
+    }
+
+    @Test
     void shouldReturnUnexpectedButDocumentedResponseCode() {
         Mockito.when(ignoreArguments.isIgnoreResponseContentTypeCheck()).thenReturn(true);
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
