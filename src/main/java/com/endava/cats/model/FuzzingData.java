@@ -51,6 +51,7 @@ public class FuzzingData {
     private final Map<String, Map<String, Schema<?>>> responseSchemaDefinitions = Collections.emptyMap();
     private final Map<String, Schema> requestPropertyTypes;
     private final List<String> requestContentTypes;
+    private final String selectedRequestContentType;
     private final Set<String> queryParams;
     @Builder.Default
     private final Map<String, QueryParameterSerialization> queryParameterSerializations = Collections.emptyMap();
@@ -327,7 +328,7 @@ public class FuzzingData {
      * @return the first element from the content types.
      */
     public String getFirstRequestContentType() {
-        return requestContentTypes.getFirst();
+        return Optional.ofNullable(selectedRequestContentType).orElseGet(requestContentTypes::getFirst);
     }
 
     /**

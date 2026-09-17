@@ -276,12 +276,18 @@ public class FuzzingDataFactory {
         }
 
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
-        MediaType mediaType = this.getMediaType(operation, openAPI);
+        SelectedMediaType selectedMediaType = this.getMediaType(operation, openAPI);
 
-        if (mediaType == null) {
-            logger.warn("Content type not supported for path {}, method {}. CATS detects application/json by default. " + "You might try to supply the custom content type using --contentType argument", path, method);
+        if (selectedMediaType == null) {
+            logger.warn("No supported request content type found for path {}, method {}. Supported content types are JSON and application/x-www-form-urlencoded", path, method);
             return Collections.emptyList();
         }
+        if (!isSupportedRequestContentType(selectedMediaType.contentType())) {
+            logger.warn("Request content type {} is not supported for path {}, method {}. Supported content types are JSON and application/x-www-form-urlencoded",
+                    selectedMediaType.contentType(), path, method);
+            return Collections.emptyList();
+        }
+        MediaType mediaType = selectedMediaType.mediaType();
         List<String> reqSchemaNames = this.getCurrentRequestSchemaName(mediaType);
         logger.debug("Request schema names identified for path {}, method {}: {}", path, method, reqSchemaNames);
 
@@ -314,6 +320,7 @@ public class FuzzingDataFactory {
                             .reqSchema(globalContext.getSchemaFromReference(reqSchemaName))
                             .pathItem(item).responseContentTypes(responsesContentTypes)
                             .requestContentTypes(requestContentTypes)
+                            .selectedRequestContentType(selectedMediaType.contentType())
                             .isRequestBodyRequired(this.isRequestBodyRequired(operation))
                             .schemaMap(globalContext.getSchemaMap())
                             .responses(responses)
@@ -585,21 +592,41 @@ public class FuzzingDataFactory {
         return CatsModelUtils.getSimpleRef(innerSchema.get$ref());
     }
 
-    private MediaType getMediaType(Operation operation, OpenAPI openAPI) {
-        for (String contentType : processingArguments.getContentType()) {
-            if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
-                String reqBodyRef = operation.getRequestBody().get$ref();
-
-                RequestBody requestBody = openAPI.getComponents().getRequestBodies().get(CatsModelUtils.getSimpleRef(reqBodyRef));
-                if (requestBody.get$ref() != null) {
-                    requestBody = (RequestBody) globalContext.getObjectFromPathsReference(requestBody.get$ref());
-                }
-                return OpenApiUtils.getMediaTypeFromContent(requestBody.getContent(), contentType);
-            } else if (operation.getRequestBody() != null && OpenApiUtils.hasContentType(operation.getRequestBody().getContent(), List.of(contentType))) {
-                return OpenApiUtils.getMediaTypeFromContent(operation.getRequestBody().getContent(), contentType);
+    private SelectedMediaType getMediaType(Operation operation, OpenAPI openAPI) {
+        if (operation.getRequestBody() == null) {
+            return new SelectedMediaType(defaultRequestContentType(), new NoMediaType());
+        }
+        RequestBody requestBody = operation.getRequestBody();
+        if (requestBody.get$ref() != null) {
+            requestBody = openAPI.getComponents().getRequestBodies().get(CatsModelUtils.getSimpleRef(requestBody.get$ref()));
+            if (requestBody.get$ref() != null) {
+                requestBody = (RequestBody) globalContext.getObjectFromPathsReference(requestBody.get$ref());
             }
         }
-        return hasContent(operation) ? operation.getRequestBody().getContent().get("*/*") : new NoMediaType();
+        Content content = requestBody.getContent();
+        if (content == null) {
+            return new SelectedMediaType(defaultRequestContentType(), new NoMediaType());
+        }
+        for (String contentType : processingArguments.getContentType()) {
+            Optional<Map.Entry<String, MediaType>> selected = content.entrySet().stream()
+                    .filter(entry -> entry.getKey().matches(contentType) || entry.getKey().equalsIgnoreCase(contentType))
+                    .findFirst();
+            if (selected.isPresent()) {
+                return new SelectedMediaType(selected.get().getKey(), selected.get().getValue());
+            }
+        }
+        MediaType wildcard = content.get("*/*");
+        return wildcard == null ? null : new SelectedMediaType(defaultRequestContentType(), wildcard);
+    }
+
+    private String defaultRequestContentType() {
+        return Optional.ofNullable(processingArguments.getDefaultContentType()).orElse("application/json");
+    }
+
+    private boolean isSupportedRequestContentType(String contentType) {
+        String normalized = contentType.toLowerCase(Locale.ROOT);
+        String baseType = normalized.split(";", 2)[0].trim();
+        return normalized.matches(JsonUtils.JSON_WILDCARD) || "application/x-www-form-urlencoded".equals(baseType);
     }
 
     static boolean hasContent(Operation operation) {
@@ -904,6 +931,9 @@ public class FuzzingDataFactory {
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE, processingArguments.getDiscriminatorCasing()));
 
         schema.setExample(examples.getFirst());
+    }
+
+    private record SelectedMediaType(String contentType, MediaType mediaType) {
     }
 
     public record GenerationResult(List<GeneratedPayload> generatedPayloads, Map<String, Schema> requestDataTypes) {

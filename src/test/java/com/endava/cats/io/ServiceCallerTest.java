@@ -272,7 +272,9 @@ class ServiceCallerTest {
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).contains("OK");
-        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets")).withRequestBody(WireMock.equalTo("test=2&id=1")));
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets"))
+                .withHeader("Content-Type", WireMock.matching("application/x-www-form-urlencoded.*"))
+                .withRequestBody(WireMock.equalTo("test=2&id=1")));
     }
 
     @Test
@@ -303,16 +305,35 @@ class ServiceCallerTest {
     }
 
     @Test
-    void shouldNotConvertToUrlFormEncodedWhenError() {
+    void shouldRejectUrlFormEncodingFailure() {
+        Assertions.assertThatThrownBy(() -> serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'id':1}").httpMethod(HttpMethod.POST)
+                        .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
+                        .contentType("application/x-www-form-urlencoded").build()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("application/x-www-form-urlencoded");
+    }
+
+    @Test
+    void shouldPreserveIntentionallyInvalidUrlFormPayload() {
         serviceCaller.initHttpClient();
         serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'id':1}").httpMethod(HttpMethod.POST)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/x-www-form-urlencoded").build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
+                .contentType("application/x-www-form-urlencoded").validJson(false).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
-        Assertions.assertThat(catsResponse.getBody()).contains("OK");
-        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets")).withRequestBody(WireMock.equalTo("{'id':1}")));
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets"))
+                .withRequestBody(WireMock.equalTo("{'id':1}")));
+    }
+
+    @Test
+    void shouldRejectUnsupportedRequestContentType() {
+        Assertions.assertThatThrownBy(() -> serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{\"id\":1}").httpMethod(HttpMethod.POST)
+                        .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
+                        .contentType("application/xml").build()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unsupported request Content-Type", "application/xml");
     }
 
     @Test

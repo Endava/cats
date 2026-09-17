@@ -14,6 +14,7 @@ import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.util.FormEncoder;
+import com.endava.cats.io.util.HttpContent;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.RequestTarget;
@@ -251,10 +252,11 @@ public class ServiceCaller {
         RuntimeResourcePool.ResolvedRequest resolvedRequest = this.enrichWithRuntimeResources(data, processedPayload);
         processedPayload = resolvedRequest.payload();
         resolvedRequest.correlations().forEach(correlation -> testCaseListener.addRuntimeCorrelation(logger, correlation));
-        processedPayload = this.convertPayloadInSpecificContentType(processedPayload, data);
+        EncodedRequestBody encodedBody = this.encodeRequestBody(processedPayload, data);
+        processedPayload = encodedBody.payload();
         logger.debug("Payload replaced with ref data: {}", processedPayload);
 
-        List<KeyValuePair<String, Object>> headers = this.buildHeaders(data);
+        List<KeyValuePair<String, Object>> headers = this.buildHeaders(data, encodedBody.contentType());
         CatsRequest catsRequest = CatsRequest.builder()
                 .headers(headers).payload(processedPayload)
                 .httpMethod(data.getHttpMethod().name())
@@ -415,19 +417,29 @@ public class ServiceCaller {
         return httpUrl.build().toString();
     }
 
-    String convertPayloadInSpecificContentType(String payload, ServiceData data) {
+    private EncodedRequestBody encodeRequestBody(String payload, ServiceData data) {
+        if (!HttpMethod.requiresBody(data.getHttpMethod()) || data.isJsonContentType()) {
+            return new EncodedRequestBody(payload, data.getContentType());
+        }
+        String baseContentType = data.getContentType().toLowerCase(Locale.ROOT).split(";", 2)[0].trim();
+        if (!"application/x-www-form-urlencoded".equals(baseContentType)) {
+            throw new IllegalArgumentException("Unsupported request Content-Type '" + data.getContentType() +
+                    "'. Supported content types are JSON and application/x-www-form-urlencoded");
+        }
+        if (StringUtils.isBlank(payload) || !data.isValidJson()) {
+            return new EncodedRequestBody(payload, data.getContentType());
+        }
         try {
-            if (data.isJsonContentType() || StringUtils.isBlank(payload)) {
-                return payload;
-            }
             HashMap<String, Object> payloadAsMap = new ObjectMapper().readValue(payload, new TypeReference<>() {
             });
-            return FormEncoder.createHttpContent(payloadAsMap).stringContent();
+            HttpContent content = FormEncoder.createHttpContent(payloadAsMap);
+            if (!content.getContentType().startsWith("application/x-www-form-urlencoded")) {
+                throw new IllegalArgumentException("Unable to encode request payload as application/x-www-form-urlencoded");
+            }
+            return new EncodedRequestBody(content.stringContent(), content.getContentType());
         } catch (IOException e) {
-            logger.warn("There was a problem converting the payload to the content-type: {}", e.getMessage());
-            logger.debug("Stacktrace:", e);
+            throw new IllegalArgumentException("Unable to encode request payload as application/x-www-form-urlencoded", e);
         }
-        return payload;
     }
 
     Map<String, String> getPathParamFromCorrespondingPostIfDelete(ServiceData data) {
@@ -478,10 +490,18 @@ public class ServiceCaller {
 
 
     List<KeyValuePair<String, Object>> buildHeaders(ServiceData data) {
-        List<KeyValuePair<String, Object>> headers = new ArrayList<>();
+        return buildHeaders(data, data.getContentType());
+    }
 
-        this.addMandatoryHeaders(data, headers);
+    private List<KeyValuePair<String, Object>> buildHeaders(ServiceData data, String contentType) {
+        List<KeyValuePair<String, Object>> headers = new ArrayList<>();
+        String effectiveContentType = this.getContentType(data.getHttpMethod(), contentType);
+
+        this.addMandatoryHeaders(data, effectiveContentType, headers);
         this.addSuppliedHeaders(data, headers);
+        if (!data.isFuzzedHeader(HttpHeaders.CONTENT_TYPE)) {
+            replaceHeaderWithUserSuppliedHeader(headers, HttpHeaders.CONTENT_TYPE, effectiveContentType);
+        }
         this.addWfcAuthHeaders(headers);
         reportingArguments.registerSensitiveHeaders(wfcAuthProvider.getAuthenticationHeaderNames());
         reportingArguments.registerSensitiveQueryParams(wfcAuthProvider.getAuthenticationQueryParamNames());
@@ -549,7 +569,9 @@ public class ServiceCaller {
         catsRequest.getHeaders().forEach(header -> headers.addUnsafeNonAscii(header.getKey(), String.valueOf(header.getValue())));
 
         if (HttpMethod.requiresBody(catsRequest.getHttpMethod())) {
-            requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8));
+            String contentType = headers.get(HttpHeaders.CONTENT_TYPE);
+            requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8),
+                    contentType == null ? null : MediaType.parse(contentType));
         } else {
             //for GET and HEAD, we remove Content-Type as some servers don't like it
             headers.removeAll("Content-Type");
@@ -649,10 +671,10 @@ public class ServiceCaller {
                         });
     }
 
-    private void addMandatoryHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
+    private void addMandatoryHeaders(ServiceData data, String contentType, List<KeyValuePair<String, Object>> headers) {
         data.getHeaders().forEach(header -> headers.add(new KeyValuePair<>(header.getName(), header.getValue())));
         addIfNotPresent(HttpHeaders.ACCEPT, processingArguments.getDefaultContentType(), data, headers);
-        addIfNotPresent(HttpHeaders.CONTENT_TYPE, this.getContentType(data.getHttpMethod(), data.getContentType()), data, headers);
+        addIfNotPresent(HttpHeaders.CONTENT_TYPE, contentType, data, headers);
         addIfNotPresent(HttpHeaders.USER_AGENT, apiArguments.getUserAgent(testCaseListener.getCurrentTestCaseNumber(), testCaseListener.getCurrentFuzzer()), data, headers);
         addIfNotPresent(CATS_HEADER_UUID, testCaseListener.getTestIdentifier(), data, headers);
     }
@@ -980,5 +1002,8 @@ public class ServiceCaller {
             logger.debug("Ref data key {} was not found within the payload!", entry.getKey());
         }
         return payload;
+    }
+
+    private record EncodedRequestBody(String payload, String contentType) {
     }
 }

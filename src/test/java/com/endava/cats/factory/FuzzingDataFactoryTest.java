@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 @QuarkusTest
 class FuzzingDataFactoryTest {
@@ -454,17 +455,52 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(allFields).containsOnly("data#name", "data", "age");
     }
 
+    @Test
+    void shouldUseSelectedMediaTypeInsteadOfFirstDeclaredMediaType() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml", true, openAPI -> {
+            RequestBody requestBody = openAPI.getPaths().get("/pets").getPost().getRequestBody();
+            MediaType json = requestBody.getContent().get("application/json");
+            requestBody.setContent(new Content()
+                    .addMediaType("application/xml", json)
+                    .addMediaType("application/json", json));
+        });
+
+        FuzzingData post = data.stream().filter(entry -> entry.getMethod() == HttpMethod.POST).findFirst().orElseThrow();
+        Assertions.assertThat(post.getRequestContentTypes()).containsExactly("application/xml", "application/json");
+        Assertions.assertThat(post.getFirstRequestContentType()).isEqualTo("application/json");
+    }
+
+    @Test
+    void shouldSkipExplicitlySelectedUnsupportedMediaType() throws Exception {
+        Mockito.when(processingArguments.getContentType()).thenReturn(List.of("application/xml"));
+
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml", true, openAPI -> {
+            RequestBody requestBody = openAPI.getPaths().get("/pets").getPost().getRequestBody();
+            MediaType json = requestBody.getContent().get("application/json");
+            requestBody.setContent(new Content().addMediaType("application/xml", json));
+        });
+
+        Assertions.assertThat(data).noneMatch(entry -> entry.getMethod() == HttpMethod.POST);
+    }
+
     private List<FuzzingData> setupFuzzingData(String path, String contract) throws IOException {
         return this.setupFuzzingData(path, contract, true);
     }
 
     private List<FuzzingData> setupFuzzingData(String path, String contract, boolean resolve) throws IOException {
+        return setupFuzzingData(path, contract, resolve, openAPI -> {
+        });
+    }
+
+    private List<FuzzingData> setupFuzzingData(String path, String contract, boolean resolve,
+                                                Consumer<OpenAPI> customizer) throws IOException {
         OpenAPIParser openAPIV3Parser = new OpenAPIParser();
         ParseOptions options = new ParseOptions();
         options.setResolve(resolve);
         options.setFlatten(resolve);
 
         OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get(contract)), null, options).getOpenAPI();
+        customizer.accept(openAPI);
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application\\/.*\\+?json"));
         catsGlobalContext.getSchemaMap().clear();
         catsGlobalContext.getSchemaMap().putAll(schemas);
