@@ -209,7 +209,7 @@ public interface CatsResultFactory {
         XSS_INJECTION("XSS payload reflected in response", "The XSS payload was reflected in the response without proper sanitization, indicating a Cross-Site Scripting vulnerability"),
         MISSING_SECURITY_HEADERS("Missing recommended security headers", "The response is missing recommended security headers that help protect against common web vulnerabilities"),
         MISSING_RESPONSE_HEADERS("Missing response headers", "The response is missing headers that are documented in the OpenAPI contract"),
-        POTENTIAL_IDOR("Potential IDOR vulnerability detected", "The API may be vulnerable to Insecure Direct Object Reference, allowing unauthorized access to resources");
+        POTENTIAL_IDOR("Heuristic IDOR signal detected", "A modified identifier was returned in a successful response, but resource ownership was not verified");
 
 
         private final String value;

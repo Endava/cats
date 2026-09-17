@@ -17,6 +17,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
+import com.google.gson.JsonElement;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -147,7 +148,8 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
                             .fuzzer(this)
                             .payload(fuzzedPayload)
                             .mutationTargets(RequestTargetResolver.resolvePayloadField(data, idField))
-                            .responseProcessor(this::checkForIdorVulnerability)
+                            .responseProcessor((response, fuzzingData) ->
+                                    checkForIdorVulnerability(response, fuzzingData, currentValue, alternativeId))
                             .build()
             );
         }
@@ -175,17 +177,37 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
             alternatives.add(UUID.randomUUID().toString());
         }
 
-        return alternatives;
+        return alternatives.stream()
+                .filter(alternative -> !String.valueOf(alternative).equals(valueStr))
+                .distinct()
+                .toList();
     }
 
-    private void checkForIdorVulnerability(CatsResponse response, FuzzingData data) {
+    private void checkForIdorVulnerability(CatsResponse response, FuzzingData data, Object currentValue, Object alternativeId) {
         int responseCode = response.getResponseCode();
 
         if (ResponseCodeFamily.is2xxCode(responseCode)) {
-            testCaseListener.reportResultError(LOGGER, data,
-                    CatsResultFactory.Reason.POTENTIAL_IDOR.value(),
-                    ("Request with modified ID returned success [%s]. The API may be exposing data belonging to other users/resources. " +
-                            "Expected [4XX] response indicating unauthorized access.").formatted(response.responseCodeAsString()));
+            if (isUnverifiableSuccessfulResponse(response)) {
+                testCaseListener.reportResultInfo(LOGGER, data,
+                        "Heuristic IDOR check inconclusive",
+                        "Request with modified ID returned success [%s], but the response was empty or incomplete and does not demonstrate resource exposure."
+                                .formatted(response.responseCodeAsString()));
+                return;
+            }
+
+            if (responseContainsIdValue(response.getBody(), alternativeId)) {
+                testCaseListener.reportResultError(LOGGER, data,
+                        CatsResultFactory.Reason.POTENTIAL_IDOR.value(),
+                        ("Request with modified ID returned success [%s] and the response contains the alternative ID [%s]. " +
+                                "This is a heuristic signal only because resource ownership was not verified.")
+                                .formatted(response.responseCodeAsString(), alternativeId));
+                return;
+            }
+
+            String details = responseContainsIdValue(response.getBody(), currentValue)
+                    ? "The response still contains the original ID [%s], so the mutation may have been ignored.".formatted(currentValue)
+                    : "The response does not contain the alternative ID [%s], so resource exposure could not be established.".formatted(alternativeId);
+            testCaseListener.reportResultInfo(LOGGER, data, "Heuristic IDOR check inconclusive", details);
             return;
         }
 
@@ -211,9 +233,51 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
                         .formatted(responseCode));
     }
 
+    private boolean isUnverifiableSuccessfulResponse(CatsResponse response) {
+        if (response.getResponseCode() == 204 || response.isBodyTruncated() || response.getBody() == null || response.getBody().isBlank()) {
+            return true;
+        }
+        if (!JsonUtils.isValidJson(response.getBody())) {
+            return false;
+        }
+
+        JsonElement body = JsonUtils.parseAsJsonElement(response.getBody());
+        return body.isJsonNull() || (body.isJsonObject() && body.getAsJsonObject().isEmpty()) ||
+                (body.isJsonArray() && body.getAsJsonArray().isEmpty());
+    }
+
+    private boolean responseContainsIdValue(String responseBody, Object expectedValue) {
+        if (!JsonUtils.isValidJson(responseBody)) {
+            return false;
+        }
+        return containsIdValue(JsonUtils.parseAsJsonElement(responseBody), String.valueOf(expectedValue));
+    }
+
+    private boolean containsIdValue(JsonElement element, String expectedValue) {
+        if (element == null || element.isJsonNull()) {
+            return false;
+        }
+        if (element.isJsonArray()) {
+            for (JsonElement item : element.getAsJsonArray()) {
+                if (containsIdValue(item, expectedValue)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (!element.isJsonObject()) {
+            return false;
+        }
+
+        return element.getAsJsonObject().entrySet().stream().anyMatch(entry ->
+                (isIdField(entry.getKey()) && entry.getValue().isJsonPrimitive() &&
+                        expectedValue.equals(entry.getValue().getAsJsonPrimitive().getAsString())) ||
+                        containsIdValue(entry.getValue(), expectedValue));
+    }
+
     @Override
     public String description() {
-        return "detects Insecure Direct Object Reference (IDOR) vulnerabilities by replacing ID fields with alternative values";
+        return "detects heuristic IDOR signals in GET requests by replacing ID fields and verifying alternative IDs in successful responses";
     }
 
     @Override
@@ -223,6 +287,8 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
 
     @Override
     public List<HttpMethod> skipForHttpMethods() {
-        return List.of(HttpMethod.HEAD, HttpMethod.TRACE);
+        return Arrays.stream(HttpMethod.values())
+                .filter(method -> method != HttpMethod.GET)
+                .toList();
     }
 }

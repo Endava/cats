@@ -3,10 +3,12 @@ package com.endava.cats.fuzzer.http;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
+import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.Schema;
@@ -36,13 +38,22 @@ class InsecureDirectObjectReferencesFuzzerTest {
     private InsecureDirectObjectReferencesFuzzer idorFuzzer;
 
     public static Stream<Arguments> getArgumentsForShouldReportErrorWhen() {
-        return Stream.of(Arguments.of(200, "{\"data\": \"sensitive\"}", "IDOR"),
-                Arguments.of(302, "{}", "Unexpected"),
+        return Stream.of(Arguments.of(302, "{}", "Unexpected"),
                 Arguments.of(500, "{}", "Server error"));
+    }
+
+    public static Stream<Arguments> getInconclusiveSuccessfulResponses() {
+        return Stream.of(Arguments.of(200, ""),
+                Arguments.of(200, " "),
+                Arguments.of(200, "null"),
+                Arguments.of(200, "{}"),
+                Arguments.of(200, "[]"),
+                Arguments.of(204, "{\"userId\": \"124\"}"));
     }
 
     @BeforeEach
     void setup() {
+        CatsRandom.initRandom(42);
         serviceCaller = Mockito.mock(ServiceCaller.class);
         simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
         idorFuzzer = new InsecureDirectObjectReferencesFuzzer(simpleExecutor, testCaseListener, null);
@@ -137,6 +148,82 @@ class InsecureDirectObjectReferencesFuzzerTest {
                 Mockito.any(), Mockito.eq(data), Mockito.contains(expectedMessage), Mockito.anyString(), Mockito.any());
     }
 
+    @Test
+    void shouldReportHeuristicErrorWhenAlternativeIdIsReturned() {
+        Map<String, Schema> reqTypes = new HashMap<>();
+        reqTypes.put("userId", new StringSchema());
+
+        FuzzingData data = FuzzingData.builder()
+                .reqSchema(new StringSchema())
+                .requestPropertyTypes(reqTypes)
+                .requestContentTypes(List.of("application/json"))
+                .responseCodes(Set.of("200"))
+                .method(HttpMethod.GET)
+                .build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"userId\": \"123\"}");
+
+        Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(invocation -> {
+            ServiceData serviceData = invocation.getArgument(0);
+            return CatsResponse.builder().body(serviceData.getPayload()).responseCode(200).build();
+        });
+
+        idorFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                Mockito.any(), Mockito.eq(data), Mockito.contains("Heuristic IDOR"), Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldNotReportIdorErrorWhenSuccessfulResponseDoesNotContainAlternativeId() {
+        Map<String, Schema> reqTypes = new HashMap<>();
+        reqTypes.put("userId", new StringSchema());
+
+        FuzzingData data = FuzzingData.builder()
+                .reqSchema(new StringSchema())
+                .requestPropertyTypes(reqTypes)
+                .requestContentTypes(List.of("application/json"))
+                .responseCodes(Set.of("200"))
+                .method(HttpMethod.GET)
+                .build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"userId\": \"123\"}");
+
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder()
+                .body("{\"data\": \"sensitive\"}").responseCode(200).build());
+
+        idorFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.never()).reportResultError(
+                Mockito.any(), Mockito.eq(data), Mockito.contains("IDOR"), Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                Mockito.any(), Mockito.eq(data), Mockito.contains("inconclusive"), Mockito.any());
+    }
+
+    @ParameterizedTest
+    @MethodSource("getInconclusiveSuccessfulResponses")
+    void shouldNotReportIdorErrorForEmptySuccessfulResponse(int responseCode, String body) {
+        Map<String, Schema> reqTypes = new HashMap<>();
+        reqTypes.put("userId", new StringSchema());
+
+        FuzzingData data = FuzzingData.builder()
+                .reqSchema(new StringSchema())
+                .requestPropertyTypes(reqTypes)
+                .requestContentTypes(List.of("application/json"))
+                .responseCodes(Set.of("200"))
+                .method(HttpMethod.GET)
+                .build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"userId\": \"123\"}");
+
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder()
+                .body(body).responseCode(responseCode).build());
+
+        idorFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.never()).reportResultError(
+                Mockito.any(), Mockito.eq(data), Mockito.contains("IDOR"), Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                Mockito.any(), Mockito.eq(data), Mockito.contains("inconclusive"), Mockito.any());
+    }
+
     @ParameterizedTest
     @CsvSource({
             "userId, true",
@@ -180,9 +267,11 @@ class InsecureDirectObjectReferencesFuzzerTest {
     }
 
     @Test
-    void shouldSkipForHeadAndTrace() {
+    void shouldSkipForAllMethodsExceptGet() {
         Assertions.assertThat(idorFuzzer.skipForHttpMethods())
-                .containsExactlyInAnyOrder(HttpMethod.HEAD, HttpMethod.TRACE);
+                .containsExactlyInAnyOrderElementsOf(Stream.of(HttpMethod.values())
+                        .filter(method -> method != HttpMethod.GET)
+                        .toList());
     }
 
     @Test
