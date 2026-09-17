@@ -6,7 +6,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
+import picocli.CommandLine;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 @QuarkusTest
 class QualityGateArgumentsTest {
@@ -136,28 +141,23 @@ class QualityGateArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"errors=5", "invalid<5", "errors<abc", "errors<", "<5", "errors<<5"})
-    void shouldHandleInvalidQualityGate(String gate) {
-        ReflectionTestUtils.setField(qualityGateArguments, "qualityGate", gate);
-
-        // Should not fail on invalid format (logs warning)
-        Assertions.assertThat(qualityGateArguments.shouldFailBuild(10, 0)).isFalse();
+    @CsvSource({"errors=5", "invalid<5", "errors<abc", "errors<", "<5", "errors<<5", "errors<-1", "errors<9223372036854775808"})
+    void shouldRejectInvalidQualityGateAsUsageError(String gate) {
+        Assertions.assertThat(execute("--qualityGate", gate)).isEqualTo(CommandLine.ExitCode.USAGE);
     }
 
     @Test
-    void shouldHandleUnknownMetricInQualityGate() {
-        ReflectionTestUtils.setField(qualityGateArguments, "qualityGate", "unknownmetric<5");
-
-        // Should not fail on unknown metric (logs warning)
-        Assertions.assertThat(qualityGateArguments.shouldFailBuild(10, 0)).isFalse();
+    void shouldAcceptValidQualityGateOptionsDuringParsing() {
+        Assertions.assertThat(execute("--qualityGate", "ERRORS<5,warnings>1"))
+                .isEqualTo(CommandLine.ExitCode.OK);
+        Assertions.assertThat(execute("--failOn", "ERROR,WARN"))
+                .isEqualTo(CommandLine.ExitCode.OK);
     }
 
-    @Test
-    void shouldHandleInvalidOperatorInQualityGate() {
-        ReflectionTestUtils.setField(qualityGateArguments, "qualityGate", "errors=5");
-
-        // Should not fail on invalid operator (logs warning)
-        Assertions.assertThat(qualityGateArguments.shouldFailBuild(10, 0)).isFalse();
+    @ParameterizedTest
+    @ValueSource(strings = {"failure", "error,failure", "error,,warn"})
+    void shouldRejectInvalidFailOnAsUsageError(String failOn) {
+        Assertions.assertThat(execute("--failOn", failOn)).isEqualTo(CommandLine.ExitCode.USAGE);
     }
 
     @Test
@@ -194,12 +194,9 @@ class QualityGateArgumentsTest {
     }
 
     @Test
-    void shouldHandleEmptyConditionsInQualityGate() {
-        ReflectionTestUtils.setField(qualityGateArguments, "qualityGate", "errors<5,,warns<20");
-
-        // Should skip empty conditions
-        Assertions.assertThat(qualityGateArguments.shouldFailBuild(4, 19)).isFalse();
-        Assertions.assertThat(qualityGateArguments.shouldFailBuild(5, 19)).isTrue();
+    void shouldRejectEmptyConditionsInQualityGate() {
+        Assertions.assertThat(execute("--qualityGate", "errors<5,,warns<20"))
+                .isEqualTo(CommandLine.ExitCode.USAGE);
     }
 
     @Test
@@ -217,5 +214,21 @@ class QualityGateArgumentsTest {
 
         Assertions.assertThat(qualityGateArguments.shouldFailBuild(999999, 0)).isFalse();
         Assertions.assertThat(qualityGateArguments.shouldFailBuild(1000000, 0)).isTrue();
+    }
+
+    private int execute(String... args) {
+        CommandLine commandLine = new CommandLine(new QualityGateCommand());
+        commandLine.setErr(new PrintWriter(new StringWriter()));
+        return commandLine.execute(args);
+    }
+
+    @CommandLine.Command
+    static class QualityGateCommand implements Runnable {
+        @CommandLine.ArgGroup(exclusive = false)
+        QualityGateArguments arguments = new QualityGateArguments();
+
+        @Override
+        public void run() {
+        }
     }
 }

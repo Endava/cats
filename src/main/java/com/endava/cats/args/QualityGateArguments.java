@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Holds arguments related to quality gates and exit code behavior.
@@ -19,19 +22,73 @@ import java.util.Map;
 @Singleton
 @Getter
 public class QualityGateArguments {
+    private static final Set<String> VALID_FAIL_ON_CONDITIONS = Set.of("error", "warn");
+    private static final Pattern QUALITY_GATE_PATTERN = Pattern.compile("(?i)^(errors|warns|warnings)\\s*([<>])\\s*(\\d+)$");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(QualityGateArguments.class);
 
-    @CommandLine.Option(names = {"--failOn"},
+    @CommandLine.Option(names = {"--failOn"}, converter = FailOnConverter.class,
             description = "Comma-separated list of conditions that should cause CATS to exit with code 1. " +
                     "Valid values: @|bold error|@, @|bold warn|@. Default: @|bold error|@. " +
                     "Example: @|bold --failOn error,warn|@ will exit 1 on any error or warning")
     private String failOn;
 
-    @CommandLine.Option(names = {"--qualityGate"},
+    @CommandLine.Option(names = {"--qualityGate"}, converter = QualityGateConverter.class,
             description = "Comma-separated list of threshold conditions. Format: @|bold metric<threshold|@ or @|bold metric>threshold|@. " +
-                    "Valid metrics: @|bold errors|@, @|bold warns|@. " +
+                    "Valid metrics: @|bold errors|@, @|bold warns|@, @|bold warnings|@. Thresholds must be non-negative integers. " +
                     "Example: @|bold --qualityGate \"errors<5,warns<20\"|@ will exit 1 if errors >= 5 or warns >= 20")
     private String qualityGate;
+
+    private static void validateFailOn(String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        List<String> invalidConditions = Arrays.stream(value.split(",", -1))
+                .map(String::trim)
+                .map(condition -> condition.toLowerCase(Locale.ROOT))
+                .filter(condition -> !VALID_FAIL_ON_CONDITIONS.contains(condition))
+                .toList();
+        if (!invalidConditions.isEmpty()) {
+            throw new CommandLine.TypeConversionException("Invalid --failOn value '" + value + "'. Valid values: error, warn");
+        }
+    }
+
+    private static void validateQualityGate(String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        for (String condition : value.split(",", -1)) {
+            Matcher matcher = QUALITY_GATE_PATTERN.matcher(condition.trim());
+            if (!matcher.matches()) {
+                throw invalidQualityGate(condition);
+            }
+            try {
+                Long.parseLong(matcher.group(3));
+            } catch (NumberFormatException _) {
+                throw invalidQualityGate(condition);
+            }
+        }
+    }
+
+    private static CommandLine.TypeConversionException invalidQualityGate(String condition) {
+        return new CommandLine.TypeConversionException("Invalid --qualityGate condition '" + condition.trim() +
+                "'. Expected errors, warns, or warnings followed by < or > and a non-negative integer threshold");
+    }
+
+    public static final class FailOnConverter implements CommandLine.ITypeConverter<String> {
+        @Override
+        public String convert(String value) {
+            validateFailOn(value);
+            return value;
+        }
+    }
+
+    public static final class QualityGateConverter implements CommandLine.ITypeConverter<String> {
+        @Override
+        public String convert(String value) {
+            validateQualityGate(value);
+            return value;
+        }
+    }
 
     /**
      * Evaluates whether CATS should exit with an error code based on the configured quality gates.
@@ -102,10 +159,6 @@ public class QualityGateArguments {
                 .toList();
 
         for (String gate : gates) {
-            if (gate.isEmpty()) {
-                continue;
-            }
-
             if (evaluateSingleGate(gate, metrics)) {
                 return true;
             }
@@ -123,53 +176,27 @@ public class QualityGateArguments {
      */
     private boolean evaluateSingleGate(String gate, Map<String, Long> metrics) {
         // Parse gate: metric<threshold or metric>threshold
-        String operator;
-        String[] parts;
+        Matcher matcher = QUALITY_GATE_PATTERN.matcher(gate.trim());
+        if (!matcher.matches()) {
+            throw invalidQualityGate(gate);
+        }
+        String metric = matcher.group(1).toLowerCase(Locale.ROOT);
+        String operator = matcher.group(2);
+        long threshold = Long.parseLong(matcher.group(3));
+        long actualValue = metrics.get(metric);
 
-        if (gate.contains("<")) {
-            operator = "<";
-            parts = gate.split("<", 2);
-        } else if (gate.contains(">")) {
-            operator = ">";
-            parts = gate.split(">", 2);
-        } else {
-            logger.warn("Invalid quality gate format: {}. Expected format: metric<threshold or metric>threshold", gate);
-            return false;
+        boolean violated = switch (operator) {
+            case "<" -> actualValue >= threshold; // Fail if actual >= threshold (want actual < threshold)
+            case ">" -> actualValue <= threshold; // Fail if actual <= threshold (want actual > threshold)
+            default -> throw new IllegalStateException("Unsupported quality gate operator: " + operator);
+        };
+
+        if (violated) {
+            logger.debug("Quality gate violated: {} (actual: {}, threshold: {}, operator: {})",
+                    gate, actualValue, threshold, operator);
         }
 
-        if (parts.length != 2) {
-            logger.warn("Invalid quality gate format: {}. Expected format: metric<threshold or metric>threshold", gate);
-            return false;
-        }
-
-        String metric = parts[0].trim().toLowerCase(Locale.ROOT);
-        String thresholdStr = parts[1].trim();
-
-        if (!metrics.containsKey(metric)) {
-            logger.warn("Unknown metric in quality gate: {}. Valid metrics: errors, warns", metric);
-            return false;
-        }
-
-        try {
-            int threshold = Integer.parseInt(thresholdStr);
-            long actualValue = metrics.get(metric);
-
-            boolean violated = switch (operator) {
-                case "<" -> actualValue >= threshold; // Fail if actual >= threshold (want actual < threshold)
-                case ">" -> actualValue <= threshold; // Fail if actual <= threshold (want actual > threshold)
-                default -> false;
-            };
-
-            if (violated) {
-                logger.debug("Quality gate violated: {} (actual: {}, threshold: {}, operator: {})",
-                        gate, actualValue, threshold, operator);
-            }
-
-            return violated;
-        } catch (NumberFormatException _) {
-            logger.warn("Invalid threshold value in quality gate: {}. Expected integer.", thresholdStr);
-            return false;
-        }
+        return violated;
     }
 
     /**
