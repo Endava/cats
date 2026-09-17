@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
@@ -182,6 +183,28 @@ class ReplayCommandTest {
         ReplayCommand spyReplay = Mockito.spy(replayCommand);
         spyReplay.run();
         Mockito.verify(spyReplay, Mockito.times(1)).showResponseCodesDifferences(Mockito.any(), Mockito.argThat(catsResponse -> catsResponse.getResponseCode() == 953));
+    }
+
+    @Test
+    void shouldSelectTestsAndCollectInitialStatsInOneSummaryParse() throws Exception {
+        Path reportFolder = tempDir.resolve("cats-report-stats");
+        Files.createDirectories(reportFolder);
+        Files.writeString(reportFolder.resolve("cats-summary-report.json"), """
+                {"testCases": [
+                  {"id": "Test 1", "result": "error"},
+                  {"id": "Test 2", "result": "warn"},
+                  {"id": "Test 3", "result": "success"}
+                ]}
+                """);
+        ReflectionTestUtils.setField(replayCommand, "reportFolder", reportFolder.toString());
+        ReflectionTestUtils.setField(replayCommand, "errors", true);
+        ReplayCommand.ReplayStats stats = new ReplayCommand.ReplayStats();
+
+        List<String> selected = ReflectionTestUtils.invokeMethod(replayCommand, "loadTestIdsAndInitialStats", stats);
+
+        Assertions.assertThat(selected).containsExactly(reportFolder.resolve("Test1.json").toString());
+        Assertions.assertThat(stats.initialErrors).isEqualTo(1);
+        Assertions.assertThat(stats.initialWarnings).isEqualTo(1);
     }
 
     @Test

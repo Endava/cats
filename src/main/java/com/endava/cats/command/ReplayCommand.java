@@ -16,6 +16,7 @@ import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
@@ -134,12 +135,12 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         this.testCaseListener = testCaseListener;
     }
 
-    private List<String> parseTestCases() {
+    private List<String> parseTestCases(ReplayStats stats) {
         List<String> testCaseFiles = new ArrayList<>();
 
         // Add tests from retry options (--errors, --warnings)
-        if (errors || warnings) {
-            testCaseFiles.addAll(loadTestIdsFromSummaryReport());
+        if (stats != null) {
+            testCaseFiles.addAll(loadTestIdsAndInitialStats(stats));
         }
 
         // Add explicitly provided test cases
@@ -149,11 +150,10 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     .map(testCase -> testCase.endsWith(".json") ? testCase : reportFolder + "/" + testCase + ".json")
                     .toList());
         }
-
         return testCaseFiles;
     }
 
-    private List<String> loadTestIdsFromSummaryReport() {
+    private List<String> loadTestIdsAndInitialStats(ReplayStats stats) {
         Path summaryPath = Paths.get(reportFolder, "cats-summary-report.json");
         if (!Files.exists(summaryPath)) {
             logger.error("Summary report not found at: {}", summaryPath);
@@ -163,50 +163,50 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         try {
             String content = Files.readString(summaryPath);
             SummaryReport report = JsonUtils.GSON.fromJson(content, SummaryReport.class);
-
             if (report == null || report.testCases == null) {
                 logger.error("Invalid summary report format");
                 return Collections.emptyList();
             }
 
-            List<String> failedIds = new ArrayList<>();
+            List<String> selectedTests = new ArrayList<>();
             for (TestCaseSummaryEntry entry : report.testCases) {
-                if (shouldRetryTest(entry)) {
-                    String testId = entry.id.replace(" ", "");
-                    failedIds.add(reportFolder + "/" + testId + ".json");
+                countInitialResult(entry.result, stats);
+                if (entry.id != null && shouldRetryTest(entry.result)) {
+                    selectedTests.add(reportFolder + "/" + entry.id.replace(" ", "") + ".json");
                 }
             }
-
-            if (failedIds.isEmpty()) {
+            if (selectedTests.isEmpty()) {
                 logger.info("No failed tests found to retry");
             } else {
-                logger.info("Found {} failed test(s) to retry", failedIds.size());
+                logger.info("Found {} failed test(s) to retry", selectedTests.size());
             }
-
-            return Collections.unmodifiableList(failedIds);
+            return Collections.unmodifiableList(selectedTests);
         } catch (IOException e) {
             logger.error("Failed to read summary report: {}", e.getMessage());
             logger.debug("Stacktrace:", e);
-            return Collections.emptyList();
         } catch (Exception e) {
             logger.error("Failed to parse summary report: {}", e.getMessage());
             logger.debug("Stacktrace:", e);
-            return Collections.emptyList();
+        }
+        return Collections.emptyList();
+    }
+
+    private void countInitialResult(String result, ReplayStats stats) {
+        if ("error".equalsIgnoreCase(result)) {
+            stats.initialErrors++;
+        } else if ("warn".equalsIgnoreCase(result)) {
+            stats.initialWarnings++;
         }
     }
 
-    private boolean shouldRetryTest(TestCaseSummaryEntry entry) {
-        if (entry.result == null) {
-            return false;
-        }
-        boolean isError = errors && "error".equalsIgnoreCase(entry.result);
-        boolean isWarning = warnings && "warn".equalsIgnoreCase(entry.result);
-        return isError || isWarning;
+    private boolean shouldRetryTest(String result) {
+        return (errors && "error".equalsIgnoreCase(result)) || (warnings && "warn".equalsIgnoreCase(result));
     }
 
     /**
      * Internal class for deserializing the summary report.
      */
+    @RegisterForReflection
     static class SummaryReport {
         List<TestCaseSummaryEntry> testCases;
     }
@@ -214,6 +214,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
     /**
      * Internal class for deserializing individual test case entries from the summary.
      */
+    @RegisterForReflection
     static class TestCaseSummaryEntry {
         String id;
         String result;
@@ -374,16 +375,15 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         authArguments.getEnvironmentVariables();
         logger.config("Environment file: {}", authArguments.getEnvironmentFileStatus());
 
-        List<String> testCases = this.parseTestCases();
+        ReplayStats stats = errors || warnings ? new ReplayStats() : null;
+        List<String> testCases = parseTestCases(stats);
         if (testCases.isEmpty()) {
             logger.warning("No tests to replay. Provide test names as arguments or use --errors/--warnings");
             return;
         }
-
         if (!this.initReportingPath()) {
             return;
         }
-        ReplayStats stats = (errors || warnings) ? createInitialStats() : null;
 
         for (String testCaseFileName : testCases) {
             try {
@@ -411,27 +411,6 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Override
     public int getExitCode() {
         return exitCode;
-    }
-
-    private ReplayStats createInitialStats() {
-        ReplayStats stats = new ReplayStats();
-        Path summaryPath = Paths.get(reportFolder, "cats-summary-report.json");
-        try {
-            String content = Files.readString(summaryPath);
-            SummaryReport report = JsonUtils.GSON.fromJson(content, SummaryReport.class);
-            if (report != null && report.testCases != null) {
-                for (TestCaseSummaryEntry entry : report.testCases) {
-                    if ("error".equalsIgnoreCase(entry.result)) {
-                        stats.initialErrors++;
-                    } else if ("warn".equalsIgnoreCase(entry.result)) {
-                        stats.initialWarnings++;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.debug("Could not read initial stats: {}", e.getMessage());
-        }
-        return stats;
     }
 
     private void printSummary(ReplayStats stats, int totalReplayed) {
