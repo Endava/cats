@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -76,6 +77,11 @@ public class RandomDummyInvalidJsonBodyFuzzer implements Fuzzer {
                             .mutationTarget(RequestTarget.requestBody())
                             .build());
         }
+    }
+
+    @Override
+    public boolean isApplicableTo(FuzzingData data) {
+        return data.getPayloadFormat() == PayloadFormat.JSON;
     }
 
     @Override

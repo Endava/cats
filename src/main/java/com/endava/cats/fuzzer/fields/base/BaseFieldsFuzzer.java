@@ -9,6 +9,7 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -24,6 +25,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,8 +66,16 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
 
 
     @Override
+    public boolean isApplicableTo(FuzzingData data) {
+        return data.isRootTextPayload() || Fuzzer.super.isApplicableTo(data);
+    }
+
+    @Override
     public void fuzz(FuzzingData data) {
-        Set<String> allFields = data.getAllFieldsByHttpMethod();
+        Set<String> allFields = new HashSet<>(data.getAllFieldsByHttpMethod());
+        if (data.isRootTextPayload()) {
+            allFields.add("$");
+        }
         logger.debug("All required fields, including subfields: {}", data.getAllRequiredFields());
         logger.debug("All fields {}", allFields);
 
@@ -105,14 +115,20 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             testCaseListener.addScenario(logger, "Send [{}] in request fields: field [{}], value [{}], is required [{}]",
                     this.typeOfDataSentToTheService(), fuzzedField, fuzzingStrategy.truncatedValue(), fuzzingConstraints.getRequiredString());
             logger.debug("Fuzzing possible...");
-            FuzzingResult fuzzingResult = FuzzingStrategy.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
+            boolean rootText = data.isRootTextPayload() && "$".equals(fuzzedField);
+            FuzzingResult fuzzingResult = rootText ? fuzzRootTextPayload(data.getPayload(), fuzzingStrategy)
+                    : FuzzingStrategy.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
             boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.fuzzedValue(), data, fuzzedField);
 
-            ServiceData serviceData = ServiceData.from(data)
+            List<RequestTarget> mutationTargets = rootText ? List.of(RequestTarget.requestBody())
+                    : RequestTargetResolver.resolvePayloadField(data, fuzzedField);
+            ServiceData.ServiceDataBuilder serviceDataBuilder = ServiceData.from(data)
                     .payload(fuzzingResult.json())
-                    .responseValidationField(fuzzedField)
-                    .mutationTargets(RequestTargetResolver.resolvePayloadField(data, fuzzedField))
-                    .build();
+                    .mutationTargets(mutationTargets);
+            if (!rootText) {
+                serviceDataBuilder.responseValidationField(fuzzedField);
+            }
+            ServiceData serviceData = serviceDataBuilder.build();
             ResponseCodeFamily expectedResponseCodeBasedOnConstraints = this.getExpectedResponseCodeBasedOnConstraints(isFuzzedValueMatchingPattern, fuzzingConstraints);
 
             testCaseListener.addExpectedResult(logger, "Should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
@@ -131,6 +147,12 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             testCaseListener.skipTest(logger, (String) strategy.process(""));
             logger.info("{} " + strategy.getData().toString(), fuzzedField);
         }
+    }
+
+    private FuzzingResult fuzzRootTextPayload(String payload, FuzzingStrategy fuzzingStrategy) {
+        String currentValue = JsonUtils.parseAsJsonElement(payload).getAsString();
+        Object fuzzedValue = fuzzingStrategy.process(currentValue);
+        return new FuzzingResult(JsonUtils.serialize(fuzzedValue), fuzzedValue);
     }
 
     private FuzzingStrategy createSkipStrategy(FuzzingStrategy fuzzingStrategy) {
@@ -153,8 +175,10 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      * @return true if fuzzing is possible, false otherwise
      */
     private boolean isFuzzingPossible(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
-        return !fuzzingStrategy.isSkip() && JsonUtils.isPrimitive(data.getPayload(), fuzzedField)
-                && isFuzzerWillingToFuzz(data, fuzzedField)
+        boolean rootText = data.isRootTextPayload() && "$".equals(fuzzedField);
+        boolean primitive = rootText ? JsonUtils.parseAsJsonElement(data.getPayload()).isJsonPrimitive()
+                : JsonUtils.isPrimitive(data.getPayload(), fuzzedField);
+        return !fuzzingStrategy.isSkip() && primitive && isFuzzerWillingToFuzz(data, fuzzedField)
                 && !isSkippedField(fuzzedField);
     }
 
@@ -182,7 +206,9 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
 
     private FuzzingConstraints createFuzzingConstraints(FuzzingData data, FuzzingStrategy strategy, String fuzzedField) {
         boolean hasMinLength = this.hasMinValue(data, fuzzedField) && strategy.getData() != null;
-        boolean hasRequiredFieldsFuzzed = data.getAllRequiredFields().contains(fuzzedField);
+        boolean rootText = data.isRootTextPayload() && "$".equals(fuzzedField);
+        boolean hasRequiredFieldsFuzzed = rootText
+                ? data.isRequestBodyRequired() : data.getAllRequiredFields().contains(fuzzedField);
 
         return FuzzingConstraints.builder().hasMinlength(hasMinLength)
                 .hasRequiredFieldsFuzzed(hasRequiredFieldsFuzzed).build();

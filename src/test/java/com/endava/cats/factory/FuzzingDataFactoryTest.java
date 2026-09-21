@@ -10,6 +10,7 @@ import com.endava.cats.model.CatsField;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.util.CatsRandom;
@@ -1327,6 +1328,44 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> data = fuzzingDataFactory.fromPathItem("/resources", pathItem, openAPI);
 
         Assertions.assertThat(data).extracting(FuzzingData::getMethod).containsExactly(HttpMethod.GET);
+    }
+
+    @Test
+    void shouldGeneratePayloadsForTextAndNdjsonMediaTypes() {
+        Map<String, String> contentTypes = Map.of(
+                "text/plain", "text/plain",
+                "text/plain; charset=utf-8", "text/plain",
+                "TEXT/PLAIN; CHARSET=UTF-8", "text/plain",
+                "application/x-ndjson", "application/x-ndjson",
+                "application/x-ndjson; charset=utf-8", "application/x-ndjson");
+        for (Map.Entry<String, String> entry : contentTypes.entrySet()) {
+            String contentType = entry.getKey();
+            PayloadFormat payloadFormat = PayloadFormat.from(contentType);
+            Schema<?> schema = payloadFormat == PayloadFormat.TEXT
+                    ? new Schema<>().type("string").example("hello")
+                    : new Schema<>().type("array").items(new Schema<>().type("object").addProperty("id", new Schema<>().type("integer")));
+            Content content = new Content();
+            content.addMediaType(contentType, new MediaType().schema(schema));
+            RequestBody requestBody = new RequestBody().content(content).required(true);
+            ApiResponses responses = new ApiResponses();
+            responses.addApiResponse("200", new ApiResponse());
+            Operation operation = new Operation().operationId("sendPayload").requestBody(requestBody).responses(responses);
+            PathItem pathItem = new PathItem().post(operation);
+            OpenAPI openAPI = new OpenAPI();
+            catsGlobalContext.getSchemaMap().clear();
+            catsGlobalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
+            catsGlobalContext.setOpenAPI(openAPI);
+            Mockito.when(processingArguments.getContentType()).thenReturn(List.of(entry.getValue()));
+            Mockito.when(filesArguments.isNotUrlParam(Mockito.anyString())).thenReturn(true);
+
+            List<FuzzingData> data = fuzzingDataFactory.fromPathItem("/payload", pathItem, openAPI);
+
+            Assertions.assertThat(data).isNotEmpty().allMatch(item -> contentType.equals(item.getSelectedRequestContentType()));
+            if (payloadFormat == PayloadFormat.TEXT) {
+                Assertions.assertThat(data.getFirst().isRootTextPayload()).isTrue();
+                Assertions.assertThat(data.getFirst().getRequestPropertyTypes()).containsKey("$");
+            }
+        }
     }
 
     @Test

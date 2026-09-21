@@ -3,6 +3,7 @@ package com.endava.cats.io;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.model.RequestTarget;
 import lombok.Builder;
@@ -12,7 +13,6 @@ import lombok.Singular;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -99,7 +99,11 @@ public class ServiceData {
      * @return {@code true} if the content type matches the pattern "application/.*[+]?json;?.*", {@code false} otherwise.
      */
     public boolean isJsonContentType() {
-        return this.contentType.toLowerCase(Locale.ROOT).matches("application/.*[+]?json;?.*");
+        return getPayloadFormat() == PayloadFormat.JSON;
+    }
+
+    public PayloadFormat getPayloadFormat() {
+        return PayloadFormat.from(contentType);
     }
 
     /**

@@ -331,6 +331,18 @@ public class FuzzingData {
         return Optional.ofNullable(selectedRequestContentType).orElseGet(requestContentTypes::getFirst);
     }
 
+    public PayloadFormat getPayloadFormat() {
+        String contentType = selectedRequestContentType;
+        if (contentType == null && requestContentTypes != null && !requestContentTypes.isEmpty()) {
+            contentType = requestContentTypes.getFirst();
+        }
+        return PayloadFormat.from(contentType);
+    }
+
+    public boolean isRootTextPayload() {
+        return getPayloadFormat() == PayloadFormat.TEXT && CatsModelUtils.isStringSchema(reqSchema);
+    }
+
     /**
      * Enumeration representing different set fuzzing strategies for generating sets of field names.
      */

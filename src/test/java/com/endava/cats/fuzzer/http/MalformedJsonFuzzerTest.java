@@ -58,6 +58,16 @@ class MalformedJsonFuzzerTest {
     }
 
     @Test
+    void shouldOnlyApplyToJsonPayloads() {
+        Assertions.assertThat(malformedJsonFuzzer.isApplicableTo(FuzzingData.builder()
+                .selectedRequestContentType("application/json").build())).isTrue();
+        Assertions.assertThat(malformedJsonFuzzer.isApplicableTo(FuzzingData.builder()
+                .selectedRequestContentType("text/plain").build())).isFalse();
+        Assertions.assertThat(malformedJsonFuzzer.isApplicableTo(FuzzingData.builder()
+                .selectedRequestContentType("application/x-ndjson").build())).isFalse();
+    }
+
+    @Test
     void shouldHaveToString() {
         Assertions.assertThat(malformedJsonFuzzer).hasToString(malformedJsonFuzzer.getClass().getSimpleName());
     }

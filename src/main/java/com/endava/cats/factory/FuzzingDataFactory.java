@@ -9,6 +9,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2.GeneratedPayload;
@@ -289,11 +290,11 @@ public class FuzzingDataFactory {
         SelectedMediaType selectedMediaType = this.getMediaType(operation, openAPI);
 
         if (selectedMediaType == null) {
-            logger.warn("No supported request content type found for path {}, method {}. Supported content types are JSON and application/x-www-form-urlencoded", path, method);
+            logger.warn("No supported request content type found for path {}, method {}. Supported payload formats are JSON, form, plain text and NDJSON", path, method);
             return Collections.emptyList();
         }
         if (!isSupportedRequestContentType(selectedMediaType.contentType())) {
-            logger.warn("Request content type {} is not supported for path {}, method {}. Supported content types are JSON and application/x-www-form-urlencoded",
+            logger.warn("Request content type {} is not supported for path {}, method {}. Supported payload formats are JSON, form, plain text and NDJSON",
                     selectedMediaType.contentType(), path, method);
             return Collections.emptyList();
         }
@@ -319,6 +320,10 @@ public class FuzzingDataFactory {
 
         for (String reqSchemaName : reqSchemaNames) {
             GenerationResult generationResult = this.getRequestPayloadsSamples(mediaType, reqSchemaName);
+            Map<String, Schema> requestPropertyTypes = new HashMap<>(generationResult.requestDataTypes());
+            if (PayloadFormat.from(selectedMediaType.contentType()) == PayloadFormat.TEXT && CatsModelUtils.isStringSchema(mediaType.getSchema())) {
+                requestPropertyTypes.put("$", mediaType.getSchema());
+            }
             fuzzingDataList.addAll(generationResult.generatedPayloads().stream()
                     .map(generatedPayload -> FuzzingData.builder()
                             .method(method).path(path)
@@ -335,7 +340,7 @@ public class FuzzingDataFactory {
                             .schemaMap(globalContext.getSchemaMap())
                             .responses(responses)
                             .responseSchemaDefinitions(responseSchemaDefinitions)
-                            .requestPropertyTypes(generationResult.requestDataTypes())
+                            .requestPropertyTypes(requestPropertyTypes)
                             .openApi(openAPI)
                             .tags(operation.getTags())
                             .reqSchemaName(reqSchemaName)
@@ -619,7 +624,7 @@ public class FuzzingDataFactory {
         }
         for (String contentType : processingArguments.getContentType()) {
             Optional<Map.Entry<String, MediaType>> selected = content.entrySet().stream()
-                    .filter(entry -> entry.getKey().matches(contentType) || entry.getKey().equalsIgnoreCase(contentType))
+                    .filter(entry -> matchesContentType(entry.getKey(), contentType))
                     .findFirst();
             if (selected.isPresent()) {
                 return new SelectedMediaType(selected.get().getKey(), selected.get().getValue());
@@ -634,9 +639,30 @@ public class FuzzingDataFactory {
     }
 
     private boolean isSupportedRequestContentType(String contentType) {
-        String normalized = contentType.toLowerCase(Locale.ROOT);
-        String baseType = normalized.split(";", 2)[0].trim();
-        return normalized.matches(JsonUtils.JSON_WILDCARD) || "application/x-www-form-urlencoded".equals(baseType);
+        return PayloadFormat.from(contentType) != PayloadFormat.UNKNOWN;
+    }
+
+    private boolean matchesContentType(String actual, String configured) {
+        if (actual.equalsIgnoreCase(configured)) {
+            return true;
+        }
+        try {
+            if (com.endava.cats.util.external.MediaType.parse(actual)
+                    .is(com.endava.cats.util.external.MediaType.parse(configured))) {
+                return true;
+            }
+        } catch (IllegalArgumentException _) {
+            return matchesContentTypePattern(actual, configured);
+        }
+        return matchesContentTypePattern(actual, configured);
+    }
+
+    private boolean matchesContentTypePattern(String actual, String configured) {
+        try {
+            return actual.matches("(?i:" + configured + ")");
+        } catch (IllegalArgumentException _) {
+            return false;
+        }
     }
 
     static boolean hasContent(Operation operation) {

@@ -278,6 +278,44 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldDecodeJsonStringWhenSendingPlainText() {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("\"hello\\n\\\"cats\\\"\"").httpMethod(HttpMethod.POST)
+                .headers(Collections.emptySet()).contentType("text/plain; charset=utf-8").build());
+
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets"))
+                .withHeader("Content-Type", WireMock.matching("text/plain.*"))
+                .withRequestBody(WireMock.equalTo("hello\n\"cats\"")));
+    }
+
+    @Test
+    void shouldPreserveRawInvalidPlainTextPayload() {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("raw \" text").httpMethod(HttpMethod.POST)
+                .headers(Collections.emptySet()).contentType("text/plain").validJson(false).build());
+
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets"))
+                .withRequestBody(WireMock.equalTo("raw \" text")));
+    }
+
+    @Test
+    void shouldEncodeJsonArrayAsNdjson() {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("[{\"id\":1},{\"id\":2}]").httpMethod(HttpMethod.POST)
+                .headers(Collections.emptySet()).contentType("application/x-ndjson").build());
+
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets"))
+                .withHeader("Content-Type", WireMock.matching("application/x-ndjson.*"))
+                .withRequestBody(WireMock.equalTo("{\"id\":1}\n{\"id\":2}\n")));
+    }
+
+    @Test
     void shouldNotReturnJson() {
         serviceCaller.initHttpClient();
         serviceCaller.initRateLimiter();

@@ -1,7 +1,9 @@
 package com.endava.cats.fuzzer.api;
 
+import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.AnnotationUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +39,11 @@ public interface Fuzzer {
      */
     default List<HttpMethod> skipForHttpMethods() {
         return Collections.emptyList();
+    }
+
+    default boolean isApplicableTo(FuzzingData data) {
+        FieldFuzzer fieldFuzzer = AnnotationUtils.findAnnotation(getClass(), FieldFuzzer.class);
+        return fieldFuzzer == null || data.getPayloadFormat().supportsNamedFields();
     }
 
     /**

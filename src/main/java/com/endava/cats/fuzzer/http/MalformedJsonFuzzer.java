@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.http;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.PayloadFormat;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -31,6 +32,11 @@ public class MalformedJsonFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
     @Override
     protected String getPayload(FuzzingData data) {
         return data.getPayload() + "bla";
+    }
+
+    @Override
+    public boolean isApplicableTo(FuzzingData data) {
+        return data.getPayloadFormat() == PayloadFormat.JSON;
     }
 
     @Override

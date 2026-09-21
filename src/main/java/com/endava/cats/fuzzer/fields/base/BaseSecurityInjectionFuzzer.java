@@ -10,6 +10,7 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
@@ -20,6 +21,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,6 +58,11 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
     }
 
     @Override
+    public boolean isApplicableTo(FuzzingData data) {
+        return data.isRootTextPayload() || Fuzzer.super.isApplicableTo(data);
+    }
+
+    @Override
     public void fuzz(FuzzingData data) {
         if (JsonUtils.isEmptyPayload(data.getPayload())) {
             logger.skip("Skip fuzzer as payload is empty");
@@ -77,7 +84,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
     }
 
     private Set<String> getStringFields(FuzzingData data) {
-        return data.getAllFieldsByHttpMethod()
+        Set<String> stringFields = data.getAllFieldsByHttpMethod()
                 .stream()
                 .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
                 .filter(field -> {
@@ -85,7 +92,11 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
                     return CatsModelUtils.isStringSchema(schema);
                 })
                 .filter(this::shouldFuzzField)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(HashSet::new));
+        if (data.isRootTextPayload()) {
+            stringFields.add("$");
+        }
+        return stringFields;
     }
 
     /**
@@ -102,7 +113,10 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
     private void fuzzField(FuzzingData data, String field) {
         List<String> payloads = getPayloadsToUse();
         for (String payload : payloads) {
-            String fuzzedPayload = CatsUtil.justReplaceField(data.getPayload(), field, payload).json();
+            String fuzzedPayload = data.isRootTextPayload() && "$".equals(field)
+                    ? JsonUtils.serialize(payload) : CatsUtil.justReplaceField(data.getPayload(), field, payload).json();
+            List<RequestTarget> mutationTargets = data.isRootTextPayload() && "$".equals(field)
+                    ? List.of(RequestTarget.requestBody()) : RequestTargetResolver.resolvePayloadField(data, field);
 
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
@@ -113,7 +127,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
                                     .formatted(getInjectionType(), field, truncatePayload(payload)))
                             .fuzzer(this)
                             .payload(fuzzedPayload)
-                            .mutationTargets(RequestTargetResolver.resolvePayloadField(data, field))
+                            .mutationTargets(mutationTargets)
                             .responseProcessor(this::processResponse)
                             .build()
             );

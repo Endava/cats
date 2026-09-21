@@ -5,6 +5,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.PayloadFormat;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -41,6 +42,11 @@ public class EmptyJsonBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
             return ResponseCodeFamilyPredefined.TWOXX;
         }
         return super.getExpectedResponseCode(data);
+    }
+
+    @Override
+    public boolean isApplicableTo(FuzzingData data) {
+        return data.getPayloadFormat() == PayloadFormat.JSON;
     }
 
     @Override

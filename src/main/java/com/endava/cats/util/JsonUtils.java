@@ -104,7 +104,7 @@ public abstract class JsonUtils {
     /**
      * Represents a wildcard pattern for JSON content type with optional parameters.
      */
-    public static final String JSON_WILDCARD = "application\\/.*\\+?json;?.*";
+    public static final String JSON_WILDCARD = "application\\/(?:json|[^;]+\\+json)(?:;.*)?";
     /**
      * Represents the JSON Patch content type.
      */

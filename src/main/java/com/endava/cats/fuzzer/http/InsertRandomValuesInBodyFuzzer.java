@@ -9,6 +9,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -58,6 +59,11 @@ public class InsertRandomValuesInBodyFuzzer implements Fuzzer {
                                 .build());
             }
         }
+    }
+
+    @Override
+    public boolean isApplicableTo(FuzzingData data) {
+        return data.getPayloadFormat() == PayloadFormat.JSON;
     }
 
     @Override

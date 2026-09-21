@@ -624,12 +624,18 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     private List<FuzzingData> filterFuzzingData(List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered, Fuzzer fuzzer) {
-        return CatsUtil.filterAndPrintNotMatching(
+        List<FuzzingData> methodCompatible = CatsUtil.filterAndPrintNotMatching(
                 fuzzingDataListWithHttpMethodsFiltered,
                 data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
                 logger,
                 "HTTP method {} is not supported by {}",
                 t -> t.getMethod().toString(), fuzzer.toString());
+        return CatsUtil.filterAndPrintNotMatching(
+                methodCompatible,
+                fuzzer::isApplicableTo,
+                logger,
+                "Payload format {} is not supported by {}",
+                data -> data.getPayloadFormat().name(), fuzzer.toString());
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
@@ -25,6 +26,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -113,6 +115,27 @@ class SecurityInjectionFuzzerTest {
             sqlInjectionFuzzer.fuzz(data);
 
             Mockito.verify(serviceCaller, Mockito.times(10)).call(Mockito.any());
+        }
+
+        @Test
+        void shouldFuzzTheRootPlainTextBody() {
+            FuzzingData data = FuzzingData.builder()
+                    .method(HttpMethod.POST)
+                    .path("/commands")
+                    .headers(Set.of())
+                    .payload("\"hello\"")
+                    .reqSchema(new StringSchema())
+                    .requestPropertyTypes(Map.of("$", new StringSchema()))
+                    .requestContentTypes(List.of("text/plain"))
+                    .selectedRequestContentType("text/plain")
+                    .queryParams(Set.of())
+                    .build();
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(400).body("").build());
+
+            sqlInjectionFuzzer.fuzz(data);
+
+            Mockito.verify(serviceCaller, Mockito.times(10)).call(Mockito.argThat(request ->
+                    request.getMutationTargets().contains(RequestTarget.requestBody())));
         }
 
         @Test

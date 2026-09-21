@@ -17,6 +17,7 @@ import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.io.util.HttpContent;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.report.TestCaseListener;
@@ -418,14 +419,19 @@ public class ServiceCaller {
     }
 
     private EncodedRequestBody encodeRequestBody(String payload, ServiceData data) {
-        if (!HttpMethod.requiresBody(data.getHttpMethod()) || data.isJsonContentType()) {
+        if (!HttpMethod.requiresBody(data.getHttpMethod())) {
             return new EncodedRequestBody(payload, data.getContentType());
         }
-        String baseContentType = data.getContentType().toLowerCase(Locale.ROOT).split(";", 2)[0].trim();
-        if (!"application/x-www-form-urlencoded".equals(baseContentType)) {
-            throw new IllegalArgumentException("Unsupported request Content-Type '" + data.getContentType() +
-                    "'. Supported content types are JSON and application/x-www-form-urlencoded");
-        }
+        return switch (data.getPayloadFormat()) {
+            case JSON -> new EncodedRequestBody(payload, data.getContentType());
+            case FORM -> encodeFormPayload(payload, data);
+            case TEXT -> new EncodedRequestBody(encodeTextPayload(payload, data.isValidJson()), data.getContentType());
+            case NDJSON -> new EncodedRequestBody(encodeNdjsonPayload(payload, data.isValidJson()), data.getContentType());
+            case UNKNOWN -> throw new IllegalArgumentException("Unsupported request Content-Type '" + data.getContentType() + "'");
+        };
+    }
+
+    private EncodedRequestBody encodeFormPayload(String payload, ServiceData data) {
         if (StringUtils.isBlank(payload) || !data.isValidJson()) {
             return new EncodedRequestBody(payload, data.getContentType());
         }
@@ -439,6 +445,43 @@ public class ServiceCaller {
             return new EncodedRequestBody(content.stringContent(), content.getContentType());
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to encode request payload as application/x-www-form-urlencoded", e);
+        }
+    }
+
+    private String encodeTextPayload(String payload, boolean validJson) {
+        if (StringUtils.isBlank(payload) || !validJson) {
+            return payload;
+        }
+        try {
+            JsonElement element = JsonUtils.parseAsJsonElement(payload);
+            return element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()
+                    ? element.getAsString() : payload;
+        } catch (RuntimeException _) {
+            return payload;
+        }
+    }
+
+    private String encodeNdjsonPayload(String payload, boolean validJson) {
+        if (StringUtils.isBlank(payload) || !validJson) {
+            return payload;
+        }
+        try {
+            JsonElement element = JsonUtils.parseAsJsonElement(payload);
+            if (element.isJsonArray()) {
+                List<String> records = new ArrayList<>();
+                element.getAsJsonArray().forEach(record -> records.add(record.toString()));
+                return records.isEmpty() ? "" : String.join("\n", records) + "\n";
+            }
+            if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+                String raw = element.getAsString();
+                boolean rawNdjson = !raw.isBlank() && raw.lines().filter(Predicate.not(String::isBlank)).allMatch(JsonUtils::isValidJson);
+                if (rawNdjson) {
+                    return raw.endsWith("\n") ? raw : raw + "\n";
+                }
+            }
+            return element + "\n";
+        } catch (RuntimeException _) {
+            return payload;
         }
     }
 
@@ -947,7 +990,7 @@ public class ServiceCaller {
      * @return the initial payload with reference data replaced and matching POST correlations for DELETE requests
      */
     String replacePayloadWithRefData(ServiceData data) {
-        if (!data.isReplaceRefData() || "null".equals(data.getPayload())) {
+        if (!data.getPayloadFormat().supportsNamedFields() || !data.isReplaceRefData() || "null".equals(data.getPayload())) {
             logger.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
             return data.getPayload();
         } else {

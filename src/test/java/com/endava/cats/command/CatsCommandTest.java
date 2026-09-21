@@ -331,7 +331,9 @@ class CatsCommandTest {
         Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of("FunctionalFuzzer"));
         Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
         Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString())).thenReturn(List.of(new PathTagsLinter(testCaseListener)));
-        Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(Mockito.mock(CheckDeletedResourcesNotAvailableFuzzer.class)));
+        CheckDeletedResourcesNotAvailableFuzzer secondPhaseFuzzer = Mockito.mock(CheckDeletedResourcesNotAvailableFuzzer.class);
+        Mockito.when(secondPhaseFuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(secondPhaseFuzzer));
         Mockito.when(executionStatisticsListener.areManyIoErrors()).thenReturn(true);
         Mockito.when(executionStatisticsListener.getIoErrors()).thenReturn(10);
 
