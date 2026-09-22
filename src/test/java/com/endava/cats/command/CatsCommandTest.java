@@ -12,11 +12,14 @@ import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.exception.CatsExecutionLimitReachedException;
 import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.factory.FuzzingDataFactory;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.contract.PathTagsLinter;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
+import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RunOutcome;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
@@ -429,6 +432,45 @@ class CatsCommandTest {
     }
 
     @Test
+    void shouldSeedSafeHappyPathsBeforeOtherFuzzersAndDeferDestructiveOnes() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> executionOrder = new ArrayList<>();
+        HappyPathFuzzer happyPathFuzzer = recordingHappyPathFuzzer(executionOrder);
+        Fuzzer otherFuzzer = recordingFuzzer(executionOrder);
+        List<FuzzingData> data = List.of(
+                fuzzingData(HttpMethod.POST, "/customers"),
+                fuzzingData(HttpMethod.GET, "/customers/{id}"),
+                fuzzingData(HttpMethod.PUT, "/customers/{id}"),
+                fuzzingData(HttpMethod.PATCH, "/customers/{id}"),
+                fuzzingData(HttpMethod.HEAD, "/customers/{id}"),
+                fuzzingData(HttpMethod.DELETE, "/customers/{id}"));
+
+        catsMain.runFirstPhaseFuzzers(data, List.of(otherFuzzer, happyPathFuzzer));
+
+        Assertions.assertThat(executionOrder).containsExactly(
+                "happy-POST", "happy-GET", "happy-PUT", "happy-PATCH", "happy-HEAD",
+                "other-POST", "other-GET", "other-PUT", "other-PATCH", "other-HEAD", "other-DELETE",
+                "happy-DELETE");
+    }
+
+    @Test
+    void shouldPreserveConfiguredFuzzerOrderWhenResourceReuseIsDisabled() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", false);
+        List<String> executionOrder = new ArrayList<>();
+        HappyPathFuzzer happyPathFuzzer = recordingHappyPathFuzzer(executionOrder);
+        Fuzzer otherFuzzer = recordingFuzzer(executionOrder);
+        List<FuzzingData> data = List.of(
+                fuzzingData(HttpMethod.POST, "/customers"),
+                fuzzingData(HttpMethod.DELETE, "/customers/{id}"));
+
+        catsMain.runFirstPhaseFuzzers(data, List.of(otherFuzzer, happyPathFuzzer));
+
+        Assertions.assertThat(executionOrder).containsExactly(
+                "other-POST", "other-DELETE", "happy-POST", "happy-DELETE");
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+    }
+
+    @Test
     void shouldThrowExceptionWhenNoContract() {
         CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
         Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
@@ -447,5 +489,40 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(apiArguments, "server", "server");
         ReflectionTestUtils.setField(apiArguments, "contract", null);
         Assertions.assertThatThrownBy(() -> catsMain.run()).isInstanceOf(CommandLine.ParameterException.class);
+    }
+
+    private HappyPathFuzzer recordingHappyPathFuzzer(List<String> executionOrder) {
+        HappyPathFuzzer fuzzer = Mockito.mock(HappyPathFuzzer.class);
+        Mockito.when(fuzzer.skipForHttpMethods()).thenReturn(List.of());
+        Mockito.when(fuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(fuzzer.toString()).thenReturn("HappyPathFuzzer");
+        Mockito.doAnswer(invocation -> {
+            FuzzingData data = invocation.getArgument(0);
+            executionOrder.add("happy-" + data.getMethod());
+            return null;
+        }).when(fuzzer).fuzz(Mockito.any());
+        return fuzzer;
+    }
+
+    private Fuzzer recordingFuzzer(List<String> executionOrder) {
+        Fuzzer fuzzer = Mockito.mock(Fuzzer.class);
+        Mockito.when(fuzzer.skipForHttpMethods()).thenReturn(List.of());
+        Mockito.when(fuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(fuzzer.toString()).thenReturn("OtherFuzzer");
+        Mockito.doAnswer(invocation -> {
+            FuzzingData data = invocation.getArgument(0);
+            executionOrder.add("other-" + data.getMethod());
+            return null;
+        }).when(fuzzer).fuzz(Mockito.any());
+        return fuzzer;
+    }
+
+    private FuzzingData fuzzingData(HttpMethod method, String path) {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getMethod()).thenReturn(method);
+        Mockito.when(data.getPath()).thenReturn(path);
+        Mockito.when(data.getContractPath()).thenReturn(path);
+        Mockito.when(data.getPayload()).thenReturn("{}");
+        return data;
     }
 }

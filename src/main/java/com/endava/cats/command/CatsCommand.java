@@ -23,6 +23,7 @@ import com.endava.cats.exception.CatsExecutionLimitReachedException;
 import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.RuntimeResourcePool;
@@ -569,8 +570,35 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                 .collect(Collectors.toSet());
 
         List<Fuzzer> fuzzersToRun = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(allHttpMethodsFromFuzzingData, pathItemEntry.getKey());
-        this.runFuzzers(filteredFuzzingData, fuzzersToRun);
+        this.runFirstPhaseFuzzers(filteredFuzzingData, fuzzersToRun);
         this.runFuzzers(filteredFuzzingData, filterArguments.getSecondPhaseFuzzers());
+    }
+
+    void runFirstPhaseFuzzers(List<FuzzingData> fuzzingData, List<Fuzzer> configuredFuzzers) {
+        if (!processingArguments.isReuseSuccessfulResources()) {
+            runFuzzers(fuzzingData, configuredFuzzers);
+            return;
+        }
+        Fuzzer happyPathFuzzer = configuredFuzzers.stream()
+                .filter(HappyPathFuzzer.class::isInstance)
+                .findFirst()
+                .orElse(null);
+        if (happyPathFuzzer == null) {
+            runFuzzers(fuzzingData, configuredFuzzers);
+            return;
+        }
+        List<FuzzingData> seedData = fuzzingData.stream().filter(this::isSafeResourceSeed).toList();
+        List<FuzzingData> deferredHappyPathData = fuzzingData.stream().filter(data -> !seedData.contains(data)).toList();
+        List<Fuzzer> otherFuzzers = configuredFuzzers.stream().filter(fuzzer -> fuzzer != happyPathFuzzer).toList();
+        runFuzzers(seedData, List.of(happyPathFuzzer));
+        runFuzzers(fuzzingData, otherFuzzers);
+        runFuzzers(deferredHappyPathData, List.of(happyPathFuzzer));
+    }
+
+    private boolean isSafeResourceSeed(FuzzingData data) {
+        return data.getMethod() == HttpMethod.POST || data.getMethod() == HttpMethod.PUT ||
+                data.getMethod() == HttpMethod.PATCH || data.getMethod() == HttpMethod.GET ||
+                data.getMethod() == HttpMethod.HEAD;
     }
 
     private void runFuzzers(List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered, List<Fuzzer> configuredFuzzers) {

@@ -381,9 +381,19 @@ public abstract class CatsUtil {
             } else if (index2 != -1) {
                 return 1;
             } else {
-                return e1.getKey().compareTo(e2.getKey());
+                int pathVariables = Integer.compare(OpenApiUtils.getPathVariables(e1.getKey()).size(),
+                        OpenApiUtils.getPathVariables(e2.getKey()).size());
+                if (pathVariables != 0) {
+                    return pathVariables;
+                }
+                int pathDepth = Integer.compare(pathDepth(e1.getKey()), pathDepth(e2.getKey()));
+                return pathDepth != 0 ? pathDepth : e1.getKey().compareTo(e2.getKey());
             }
         };
+    }
+
+    private static int pathDepth(String path) {
+        return (int) List.of(path.split("/")).stream().filter(StringUtils::isNotBlank).count();
     }
 
     /**

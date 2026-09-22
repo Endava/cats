@@ -125,7 +125,9 @@ class CatsUtilTest {
             "''; path1,path2; path1",
             "path2; path1,path2; path2",
             "path3; path1,path2,path3; path3",
-            "path4,path2; path1,path2,path3; path2"
+            "path4,path2; path1,path2,path3; path2",
+            "''; /customers/{id},/orders,/customers; /customers",
+            "/customers/{id}; /customers,/customers/{id}; /customers/{id}"
     }, delimiter = ';')
     void testPathSorting(String pathsOrderString, String inputPathsString, String expectedFirstPath) {
         List<String> pathsOrder = pathsOrderString.isEmpty() ?

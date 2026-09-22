@@ -567,32 +567,6 @@ class TestCaseListenerTest {
     }
 
     @Test
-    void shouldStorePostRequestAndRemoveAfterDelete() {
-        CatsResponse response = CatsResponse.builder().body("{}").responseCode(200).build();
-        FuzzingData data = Mockito.mock(FuzzingData.class);
-        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("300", "400"));
-        Mockito.when(data.getResponses()).thenReturn(Map.of("300", Collections.emptyList()));
-        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
-        Mockito.when(data.getPath()).thenReturn("/test");
-        MDC.put(TestCaseListener.ID, "1");
-        testCaseListener.testCaseMap.put("1", new CatsTestCase());
-        testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
-
-        testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
-        Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses()).hasSize(1).containsKey("/test");
-        Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses().get("/test")).isNotEmpty();
-
-        Mockito.when(data.getMethod()).thenReturn(HttpMethod.DELETE);
-        Mockito.when(data.getPath()).thenReturn("/test/{testId}");
-        testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
-        Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses()).hasSize(1).containsKey("/test");
-        Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses().get("/test")).isEmpty();
-
-        MDC.remove(TestCaseListener.ID);
-        testCaseListener.testCaseMap.clear();
-    }
-
-    @Test
     void shouldCallInfoInsteadOfErrorWhenIgnoreCodeSupplied() {
         Mockito.when(ignoreArguments.isIgnoredResponseCode("200")).thenReturn(true);
         prepareTestCaseListenerSimpleSetup(CatsResponse.builder().responseCode(200).build(), () -> testCaseListener.reportError(logger, "Warn"));

@@ -60,9 +60,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyStore;
-import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -91,6 +89,7 @@ class ServiceCallerTest {
     WfcAuthProvider wfcAuthProvider;
     TestCaseListener testCaseListener;
     private ServiceCaller serviceCaller;
+    private RuntimeResourcePool runtimeResourcePool;
 
     @BeforeAll
     static void setup() {
@@ -142,8 +141,9 @@ class ServiceCallerTest {
         filesArguments = new FilesArguments();
         wfcAuthProvider = new WfcAuthProvider(authArguments, apiArguments);
         testCaseListener = Mockito.mock(TestCaseListener.class);
+        runtimeResourcePool = new RuntimeResourcePool(processingArguments, filesArguments);
         serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments, apiArguments, processingArguments,
-                reportingArguments, wfcAuthProvider, new RuntimeResourcePool(processingArguments, filesArguments));
+                reportingArguments, wfcAuthProvider, runtimeResourcePool);
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(authArguments, "wfcAuthFile", null);
@@ -172,7 +172,6 @@ class ServiceCallerTest {
         filesArguments.loadRefData();
         filesArguments.loadURLParams();
         filesArguments.loadQueryParams();
-        catsGlobalContext.getPostSuccessfulResponses().clear();
     }
 
     @Test
@@ -194,12 +193,56 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldApplySuccessfulRequestBaselineBeforeCallingTheService() {
+        RuntimeResourcePool resourcePool = Mockito.mock(RuntimeResourcePool.class);
+        String baseline = "{\"field\":\"baseline\",\"name\":\"accepted\",\"baselineOnly\":\"accepted\"}";
+        Mockito.when(resourcePool.applySuccessfulRequestBaseline(Mockito.any())).thenReturn(baseline);
+        Mockito.when(resourcePool.enrich(Mockito.any(), Mockito.anyString())).thenAnswer(invocation ->
+                new RuntimeResourcePool.ResolvedRequest(invocation.getArgument(1), null, List.of()));
+        ServiceCaller caller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments,
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool);
+        caller.initRateLimiter();
+        caller.initHttpClient();
+
+        caller.call(ServiceData.builder().relativePath("/pets").headers(Set.of())
+                .payload("{\"baselineOnly\":\"generated\"}").originalPayload("{\"baselineOnly\":\"generated\"}")
+                .httpMethod(HttpMethod.POST).contentType("application/json").build());
+
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets"))
+                .withRequestBody(WireMock.equalToJson("{\"field\":\"newValue\",\"baselineOnly\":\"accepted\"}")));
+    }
+
+    @Test
+    void shouldApplyResolvedResponseHeaderBeforeCallingTheService() {
+        RuntimeResourcePool resourcePool = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(resourcePool.applySuccessfulRequestBaseline(Mockito.any())).thenAnswer(invocation ->
+                ((ServiceData) invocation.getArgument(0)).getPayload());
+        Mockito.when(resourcePool.enrich(Mockito.any(), Mockito.anyString())).thenAnswer(invocation ->
+                new RuntimeResourcePool.ResolvedRequest(invocation.getArgument(1), null, List.of()));
+        Mockito.when(resourcePool.enrichHeaders(Mockito.any(), Mockito.anyList(), Mockito.any())).thenReturn(
+                new RuntimeResourcePool.ResolvedHeaders(List.of(new KeyValuePair<>("If-Match", "\"version-7\"")), List.of()));
+        ServiceCaller caller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments,
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool);
+        caller.initRateLimiter();
+        caller.initHttpClient();
+
+        caller.call(ServiceData.builder().relativePath("/pets")
+                .headers(Set.of(CatsHeader.builder().name("If-Match").value("generated").build()))
+                .payload("{}").originalPayload("{}").httpMethod(HttpMethod.POST)
+                .contentType("application/json").build());
+
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets"))
+                .withHeader("If-Match", WireMock.equalTo("\"version-7\"")));
+    }
+
+    @Test
     void shouldKeepTheServiceResponseWhenRuntimeResourceProcessingFails() {
         RuntimeResourcePool failingPool = Mockito.mock(RuntimeResourcePool.class);
         Mockito.when(failingPool.enrich(Mockito.any(), Mockito.anyString()))
                 .thenThrow(new IllegalArgumentException("enrichment failed"));
         Mockito.doThrow(new IllegalStateException("observation failed"))
-                .when(failingPool).observe(Mockito.any(), Mockito.any(CatsRequest.class), Mockito.any(CatsResponse.class));
+                .when(failingPool).observe(Mockito.any(), Mockito.any(CatsRequest.class), Mockito.any(CatsResponse.class),
+                        Mockito.any(RuntimeResourcePool.ResolvedRequest.class));
         ServiceCaller caller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments,
                 apiArguments, processingArguments, reportingArguments, wfcAuthProvider, failingPool);
         caller.initRateLimiter();
@@ -210,7 +253,8 @@ class ServiceCallerTest {
                 .contentType("application/json").build());
 
         Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
-        Mockito.verify(failingPool).observe(Mockito.any(), Mockito.any(CatsRequest.class), Mockito.same(response));
+        Mockito.verify(failingPool).observe(Mockito.any(), Mockito.any(CatsRequest.class), Mockito.same(response),
+                Mockito.any(RuntimeResourcePool.ResolvedRequest.class));
     }
 
     @Test
@@ -340,6 +384,24 @@ class ServiceCallerTest {
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo(responseCode);
         Assertions.assertThat(catsResponse.getBody()).contains(expectedBody);
         Assertions.assertThat(catsResponse.getJsonBody().toString()).contains("notAJson");
+    }
+
+    @Test
+    void shouldDiscardRuntimeCorrelationStateAfterIoFailure() {
+        RuntimeResourcePool resourcePool = Mockito.mock(RuntimeResourcePool.class);
+        RuntimeResourcePool.ResolvedRequest resolved =
+                new RuntimeResourcePool.ResolvedRequest("{}", null, List.of());
+        Mockito.when(resourcePool.applySuccessfulRequestBaseline(Mockito.any())).thenReturn("{}");
+        Mockito.when(resourcePool.enrich(Mockito.any(), Mockito.anyString())).thenReturn(resolved);
+        ServiceCaller caller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments,
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool);
+        caller.initHttpClient();
+        caller.initRateLimiter();
+
+        caller.call(ServiceData.builder().relativePath("/pets/fault/reset").payload("{}").headers(Set.of())
+                .httpMethod(HttpMethod.GET).contentType("application/json").build());
+
+        Mockito.verify(resourcePool).discard(Mockito.same(resolved));
     }
 
     @Test
@@ -870,25 +932,31 @@ class ServiceCallerTest {
 
 
     @Test
-    void shouldReturnEmptyWhenPostStoredButNotMatchingElement() {
+    void shouldReturnEmptyWhenStoredResourceDoesNotMatchPathParameter() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        ServiceData post = ServiceData.builder().relativePath("/test").payload("{}").httpMethod(HttpMethod.POST)
+                .contentType("application/json").build();
+        runtimeResourcePool.observe(post, CatsRequest.builder().url("http://localhost/test").build(),
+                CatsResponse.builder().responseCode(201).body("{\"field\":23}").build());
         ServiceData data = ServiceData.builder().relativePath("/test/{testId}").httpMethod(HttpMethod.DELETE).build();
-        Deque<String> existingPost = new ArrayDeque<>();
-        existingPost.add("{\"field\": 23}");
-        catsGlobalContext.getPostSuccessfulResponses().put("/test", existingPost);
 
-        Map<String, String> cachedPost = serviceCaller.getPathParamFromCorrespondingPostIfDelete(data);
-        Assertions.assertThat(cachedPost).isEmpty();
+        Map<String, String> resolved = serviceCaller.getPathParamFromCorrespondingPostIfDelete(data);
+
+        Assertions.assertThat(resolved).isEmpty();
     }
 
     @Test
-    void shouldReturnPostParamWhenMatching() {
+    void shouldResolveDeletePathParamFromRuntimeResourcePool() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        ServiceData post = ServiceData.builder().relativePath("/test").payload("{}").httpMethod(HttpMethod.POST)
+                .contentType("application/json").build();
+        runtimeResourcePool.observe(post, CatsRequest.builder().url("http://localhost/test").build(),
+                CatsResponse.builder().responseCode(201).body("{\"testId\":23}").build());
         ServiceData data = ServiceData.builder().relativePath("/test/{testId}").httpMethod(HttpMethod.DELETE).build();
-        Deque<String> existingPost = new ArrayDeque<>();
-        existingPost.add("{\"testId\": 23}");
-        catsGlobalContext.getPostSuccessfulResponses().put("/test", existingPost);
 
-        Map<String, String> cachedPost = serviceCaller.getPathParamFromCorrespondingPostIfDelete(data);
-        Assertions.assertThat(cachedPost).containsEntry("testId", "23");
+        Map<String, String> resolved = serviceCaller.getPathParamFromCorrespondingPostIfDelete(data);
+
+        Assertions.assertThat(resolved).containsEntry("testId", "23");
     }
 
     @ParameterizedTest

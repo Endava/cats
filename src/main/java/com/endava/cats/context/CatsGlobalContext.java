@@ -30,7 +30,6 @@ import org.slf4j.MDC;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -57,7 +56,6 @@ public class CatsGlobalContext {
     private final Map<String, Map<String, Object>> additionalProperties = new HashMap<>();
     private final Set<Discriminator> discriminators = new HashSet<>();
     private final Map<String, Set<Object>> discriminatorValues = new HashMap<>();
-    private final Map<String, Deque<String>> postSuccessfulResponses = new HashMap<>();
     private final Set<String> successfulDeletes = new HashSet<>();
     private final Properties fuzzersConfiguration = new Properties();
     private final Map<String, List<String>> generatedExamplesCache = new HashMap<>();

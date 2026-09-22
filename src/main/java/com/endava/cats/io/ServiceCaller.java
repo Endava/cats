@@ -30,7 +30,6 @@ import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.RateLimiter;
 import com.endava.cats.util.SensitiveDataPolicy;
-import com.endava.cats.util.WordUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonElement;
@@ -68,7 +67,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -80,14 +78,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static com.endava.cats.util.CatsDSLWords.ADDITIONAL_PROPERTIES;
-import static com.endava.cats.util.JsonUtils.NOT_SET;
 
 /**
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
@@ -249,7 +245,8 @@ public class ServiceCaller {
         this.recordServiceData(data);
         testCaseListener.addMutationTargets(data.getAllMutationTargets());
 
-        String processedPayload = this.replacePayloadWithRefData(data);
+        String baselinePayload = this.applySuccessfulRequestBaseline(data);
+        String processedPayload = this.replacePayloadWithRefData(data, baselinePayload);
         RuntimeResourcePool.ResolvedRequest resolvedRequest = this.enrichWithRuntimeResources(data, processedPayload);
         processedPayload = resolvedRequest.payload();
         resolvedRequest.correlations().forEach(correlation -> testCaseListener.addRuntimeCorrelation(logger, correlation));
@@ -258,6 +255,10 @@ public class ServiceCaller {
         logger.debug("Payload replaced with ref data: {}", processedPayload);
 
         List<KeyValuePair<String, Object>> headers = this.buildHeaders(data, encodedBody.contentType());
+        RuntimeResourcePool.ResolvedHeaders resolvedHeaders = this.enrichHeadersWithRuntimeResources(data, headers,
+                resolvedRequest);
+        headers = resolvedHeaders.headers();
+        resolvedHeaders.correlations().forEach(correlation -> testCaseListener.addRuntimeCorrelation(logger, correlation));
         CatsRequest catsRequest = CatsRequest.builder()
                 .headers(headers).payload(processedPayload)
                 .httpMethod(data.getHttpMethod().name())
@@ -278,9 +279,10 @@ public class ServiceCaller {
             CatsResponse response = this.callService(catsRequest, data.getResponseValidationFields());
 
             this.recordResponse(response);
-            this.observeRuntimeResources(data, catsRequest, response);
+            this.observeRuntimeResources(data, catsRequest, response, resolvedRequest);
             return response;
         } catch (IOException | IllegalStateException e) {
+            this.discardRuntimeCorrelations(resolvedRequest);
             long duration = System.currentTimeMillis() - startTime;
 
             CatsResponse.ExceptionalResponse exceptionalResponse = CatsResponse.getResponseByException(e);
@@ -303,6 +305,31 @@ public class ServiceCaller {
         }
     }
 
+    private RuntimeResourcePool.ResolvedHeaders enrichHeadersWithRuntimeResources(
+            ServiceData data, List<KeyValuePair<String, Object>> headers,
+            RuntimeResourcePool.ResolvedRequest resolvedRequest) {
+        try {
+            RuntimeResourcePool.ResolvedHeaders resolved = runtimeResourcePool.enrichHeaders(data, headers,
+                    resolvedRequest);
+            return Optional.ofNullable(resolved)
+                    .orElseGet(() -> new RuntimeResourcePool.ResolvedHeaders(List.copyOf(headers), List.of()));
+        } catch (RuntimeException e) {
+            logger.warn("Runtime response-header correlation failed; continuing without it: {}", e.getMessage());
+            logger.debug("Runtime response-header correlation stacktrace", e);
+            return new RuntimeResourcePool.ResolvedHeaders(List.copyOf(headers), List.of());
+        }
+    }
+
+    private String applySuccessfulRequestBaseline(ServiceData data) {
+        try {
+            return Optional.ofNullable(runtimeResourcePool.applySuccessfulRequestBaseline(data)).orElse(data.getPayload());
+        } catch (RuntimeException e) {
+            logger.warn("Successful request baseline processing failed; continuing without it: {}", e.getMessage());
+            logger.debug("Successful request baseline stacktrace", e);
+            return data.getPayload();
+        }
+    }
+
     private RuntimeResourcePool.ResolvedRequest enrichWithRuntimeResources(ServiceData data, String processedPayload) {
         try {
             return runtimeResourcePool.enrich(data, processedPayload);
@@ -313,12 +340,21 @@ public class ServiceCaller {
         }
     }
 
-    private void observeRuntimeResources(ServiceData data, CatsRequest request, CatsResponse response) {
+    private void observeRuntimeResources(ServiceData data, CatsRequest request, CatsResponse response,
+                                         RuntimeResourcePool.ResolvedRequest resolvedRequest) {
         try {
-            runtimeResourcePool.observe(data, request, response);
+            runtimeResourcePool.observe(data, request, response, resolvedRequest);
         } catch (RuntimeException e) {
             logger.warn("Unable to store runtime resources from the response; keeping the service response unchanged: {}", e.getMessage());
             logger.debug("Runtime resource observation stacktrace", e);
+        }
+    }
+
+    private void discardRuntimeCorrelations(RuntimeResourcePool.ResolvedRequest resolvedRequest) {
+        try {
+            runtimeResourcePool.discard(resolvedRequest);
+        } catch (RuntimeException e) {
+            logger.debug("Unable to discard unused runtime correlations", e);
         }
     }
 
@@ -486,49 +522,7 @@ public class ServiceCaller {
     }
 
     Map<String, String> getPathParamFromCorrespondingPostIfDelete(ServiceData data) {
-        if (data.getHttpMethod() == HttpMethod.DELETE) {
-            String postPath = data.getRelativePath().substring(0, data.getRelativePath().lastIndexOf("/"));
-            logger.note("Executing DELETE for path {}. Searching stored POST requests for corresponding POST path {}", data.getRelativePath(), postPath);
-            String postPayload = catsGlobalContext.getPostSuccessfulResponses().getOrDefault(postPath, new ArrayDeque<>()).peek();
-            if (postPayload != null) {
-                String deleteParam = data.getRelativePath().substring(data.getRelativePath().lastIndexOf("/") + 1).replace("{", "").replace("}", "");
-                logger.note("Found corresponding POST payload. Matching DELETE path parameter {} with POST body...", deleteParam);
-                Optional<String> deleteParamValue = this.getParamValueFromPostPayload(deleteParam, postPayload);
-
-                if (deleteParamValue.isPresent()) {
-                    return Map.of(deleteParam, deleteParamValue.get());
-                }
-            } else {
-                logger.note("No corresponding POST payload found or already consumed");
-            }
-        }
-
-        return Collections.emptyMap();
-    }
-
-    Optional<String> getParamValueFromPostPayload(String deleteParam, String postPayload) {
-        String[] camelCase = deleteParam.split("(?<!(^|[A-Z]))(?=[A-Z])|(?<!^)(?=[A-Z][a-z])");
-        String[] snakeCase = deleteParam.split("_");
-        String[] kebabCase = deleteParam.split("-");
-
-        Set<String> candidates = new TreeSet<>();
-        candidates.addAll(WordUtils.createWordCombinations(snakeCase));
-        candidates.addAll(WordUtils.createWordCombinations(camelCase));
-        candidates.addAll(WordUtils.createWordCombinations(kebabCase));
-
-        logger.debug("Params to search in POST payload {}", candidates);
-
-        for (String candidate : candidates) {
-            String value = String.valueOf(JsonUtils.getVariableFromJson(postPayload, candidate));
-
-            if (!value.equalsIgnoreCase(NOT_SET)) {
-                logger.note("Found matching DELETE parameter in POST payload using key [{}]", candidate);
-                return Optional.of(value);
-            }
-        }
-        logger.warn("Unable to correlate DELETE parameter {} with POST payload", deleteParam);
-
-        return Optional.empty();
+        return runtimeResourcePool.resolvePathParameters(data);
     }
 
 
@@ -990,9 +984,13 @@ public class ServiceCaller {
      * @return the initial payload with reference data replaced and matching POST correlations for DELETE requests
      */
     String replacePayloadWithRefData(ServiceData data) {
-        if (!data.getPayloadFormat().supportsNamedFields() || !data.isReplaceRefData() || "null".equals(data.getPayload())) {
+        return replacePayloadWithRefData(data, data.getPayload());
+    }
+
+    private String replacePayloadWithRefData(ServiceData data, String initialPayload) {
+        if (!data.getPayloadFormat().supportsNamedFields() || !data.isReplaceRefData() || "null".equals(initialPayload)) {
             logger.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
-            return data.getPayload();
+            return initialPayload;
         } else {
             Map<String, Object> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
             logger.debug("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
@@ -1003,7 +1001,7 @@ public class ServiceCaller {
                             .collect(Collectors.toMap(
                                     Map.Entry::getKey,
                                     e -> Objects.requireNonNullElse(e.getValue(), SUBSTITUTE_FOR_NULL)));
-            String payload = data.getPayload();
+            String payload = initialPayload;
 
             /*this will override refData for DELETE requests in order to provide valid entities that will get deleted*/
             refDataWithoutAdditionalProperties.putAll(this.getPathParamFromCorrespondingPostIfDelete(data));
@@ -1024,7 +1022,7 @@ public class ServiceCaller {
         Object refDataValue = entry.getValue();
         if (refDataValue instanceof String str) {
             Map<String, String> context = new HashMap<>(authArguments.getDynamicVariablesContext());
-            context.put(Parser.REQUEST, data.getPayload());
+            context.put(Parser.REQUEST, payload);
             refDataValue = CatsDSLParser.parseAndGetResult(str, context);
         }
         if (SUBSTITUTE_FOR_NULL.equals(String.valueOf(refDataValue))) {

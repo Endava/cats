@@ -935,8 +935,6 @@ public class TestCaseListener {
 
         this.logger.debug("matchesResponseSchema {}, responseCodeExpected {}, responseCodeDocumented {}, schemaValidationErrors {}",
                 matchesResponseSchema, responseCodeExpected, responseCodeDocumented, schemaValidation.errors());
-        this.storeRequestOnPostOrRemoveOnDelete(data, response);
-
         ResponseAssertions assertions = ResponseAssertions.builder().matchesResponseSchema(matchesResponseSchema)
                 .responseCodeDocumented(responseCodeDocumented).responseCodeExpected(responseCodeExpected).
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode()))
@@ -1009,18 +1007,6 @@ public class TestCaseListener {
         } catch (IllegalArgumentException e) {
             logger.debug("Error parsing content type: {}", e.getMessage());
             return false;
-        }
-    }
-
-    private void storeRequestOnPostOrRemoveOnDelete(FuzzingData data, CatsResponse response) {
-        if (data.getMethod() == HttpMethod.POST && ResponseCodeFamily.is2xxCode(response.getResponseCode()) && !response.isBodyTruncated()) {
-            logger.star("POST method for path {} returned successfully {}. Storing result for DELETE endpoints...", data.getPath(), response.responseCodeAsString());
-            Deque<String> existingPosts = globalContext.getPostSuccessfulResponses().getOrDefault(data.getPath(), new ArrayDeque<>());
-            existingPosts.add(response.getBody());
-            globalContext.getPostSuccessfulResponses().put(data.getPath(), existingPosts);
-        } else if (data.getMethod() == HttpMethod.DELETE && ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
-            logger.star("Successful DELETE. Removing top POST request from the store...");
-            globalContext.getPostSuccessfulResponses().getOrDefault(data.getPath().substring(0, data.getPath().lastIndexOf("/")), new ArrayDeque<>()).poll();
         }
     }
 

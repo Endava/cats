@@ -125,7 +125,7 @@ public class ProcessingArguments {
     private boolean resolveXxxOfCombinationForResponses;
 
     @CommandLine.Option(names = {"--reuseSuccessfulResources"}, negatable = true, defaultValue = "true", fallbackValue = "true",
-            description = "When set to @|bold true|@, identifier values from successful POST, PUT and collection GET responses are reused in later requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "When set to @|bold true|@, successful request baselines and correlated resource values are reused in later requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean reuseSuccessfulResources = true;
 
 
