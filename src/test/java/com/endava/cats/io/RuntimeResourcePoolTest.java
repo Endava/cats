@@ -1624,6 +1624,32 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldKnowWhenAnOperationSucceededWithAnUnmodifiedRequest() {
+        enableResourceReuse();
+        ServiceData get = getData("/customers", "{}");
+        ServiceData fuzzedGet = ServiceData.builder().relativePath("/customers").contractPath("/customers").payload("{}")
+                .queryParams(Set.of()).httpMethod(HttpMethod.GET).contentType("application/json")
+                .mutationTarget(RequestTarget.body("name")).build();
+
+        resourcePool.observe(get, request("GET", "/customers", "{}"), response(500, "{}"));
+        resourcePool.observe(fuzzedGet, request("GET", "/customers", "{}"), response(200, "[]"));
+        Assertions.assertThat(resourcePool.hasSucceededWithUnmodifiedRequest("/customers", HttpMethod.GET)).isFalse();
+
+        resourcePool.observe(get, request("GET", "/customers", "{}"), response(200, "[]"));
+        Assertions.assertThat(resourcePool.hasSucceededWithUnmodifiedRequest("/customers", HttpMethod.GET)).isTrue();
+        Assertions.assertThat(resourcePool.hasSucceededWithUnmodifiedRequest("/customers", HttpMethod.POST)).isFalse();
+        Assertions.assertThat(resourcePool.hasSucceededWithUnmodifiedRequest("/other", HttpMethod.GET)).isFalse();
+    }
+
+    @Test
+    void shouldNotKnowSuccessesWhenReuseIsDisabled() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", false);
+        resourcePool.observe(getData("/customers", "{}"), request("GET", "/customers", "{}"), response(200, "[]"));
+
+        Assertions.assertThat(resourcePool.hasSucceededWithUnmodifiedRequest("/customers", HttpMethod.GET)).isFalse();
+    }
+
+    @Test
     void shouldNotReportOperationsFailingOnlyWithAuthErrors() {
         enableResourceReuse();
         ServiceData get = getData("/customers/{customerId}", "{\"customerId\":\"generated\"}");

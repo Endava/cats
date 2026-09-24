@@ -356,6 +356,19 @@ public class RuntimeResourcePool {
         return List.copyOf(result);
     }
 
+    /**
+     * Checks if an unmodified (non-fuzzed) request to the given operation returned 2xx earlier in the run.
+     * Always returns false when {@code --reuseSuccessfulResources} is disabled, as outcomes are not recorded.
+     *
+     * @param path   contract path
+     * @param method HTTP method
+     * @return true if the operation succeeded at least once with an unmodified request
+     */
+    public synchronized boolean hasSucceededWithUnmodifiedRequest(String path, HttpMethod method) {
+        OperationDiagnostics diagnostics = operationDiagnostics.get(new OperationKey(path, method));
+        return diagnostics != null && diagnostics.successes > 0;
+    }
+
     private OperationOutcome producerOutcome(String path, RequestTarget target) {
         if (target.location() != RequestTarget.Location.PATH) {
             return null;

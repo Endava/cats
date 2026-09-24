@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.annotations.SecondPhaseFuzzer;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.CheckArguments;
 import com.endava.cats.args.FilterArguments;
@@ -15,6 +16,7 @@ import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.contract.PathTagsLinter;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
+import com.endava.cats.fuzzer.http.CheckReadsStillWorkFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.RuntimeResourcePool;
@@ -508,7 +510,7 @@ class CatsCommandTest {
         List<String> executionOrder = new ArrayList<>();
         HappyPathFuzzer happyPathFuzzer = recordingHappyPathFuzzer(executionOrder);
         Fuzzer otherFuzzer = recordingFuzzer(executionOrder);
-        Fuzzer secondPhaseFuzzer = recordingFuzzer(executionOrder, "second");
+        Fuzzer secondPhaseFuzzer = recordingFuzzer(CheckDeletedResourcesNotAvailableFuzzer.class, executionOrder, "second");
         Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(secondPhaseFuzzer));
         FuzzingData parentGet = fuzzingData(HttpMethod.GET, "/customers/{id}");
         FuzzingData parentDelete = fuzzingData(HttpMethod.DELETE, "/customers/{id}");
@@ -539,6 +541,37 @@ class CatsCommandTest {
         executionOrder.clear();
         catsMain.runDeferredHappyPathDeletes();
         Assertions.assertThat(executionOrder).isEmpty();
+    }
+
+    @Test
+    void shouldOnlyRunSecondPhaseFuzzersTriggeredByDeletedResourcesAfterDeferredDeletes() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> executionOrder = new ArrayList<>();
+        HappyPathFuzzer happyPathFuzzer = recordingHappyPathFuzzer(executionOrder);
+        Fuzzer deletedResourcesFuzzer = recordingFuzzer(CheckDeletedResourcesNotAvailableFuzzer.class, executionOrder, "deleted");
+        Fuzzer pathCompletedFuzzer = recordingFuzzer(CheckReadsStillWorkFuzzer.class, executionOrder, "reads");
+        Fuzzer unannotatedFuzzer = recordingFuzzer(executionOrder, "unannotated");
+        Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(pathCompletedFuzzer, unannotatedFuzzer, deletedResourcesFuzzer));
+
+        catsMain.runFirstPhaseFuzzers(List.of(fuzzingData(HttpMethod.GET, "/customers/{id}"),
+                fuzzingData(HttpMethod.DELETE, "/customers/{id}")), List.of(happyPathFuzzer));
+        executionOrder.clear();
+        catsMain.runDeferredHappyPathDeletes();
+
+        Assertions.assertThat(executionOrder).containsExactly("happy-DELETE", "deleted-GET", "deleted-DELETE");
+    }
+
+    @Test
+    void shouldRunSecondPhaseFuzzersTriggeredByPathCompletion() {
+        List<String> executionOrder = new ArrayList<>();
+        Fuzzer deletedResourcesFuzzer = recordingFuzzer(CheckDeletedResourcesNotAvailableFuzzer.class, executionOrder, "deleted");
+        Fuzzer pathCompletedFuzzer = recordingFuzzer(CheckReadsStillWorkFuzzer.class, executionOrder, "reads");
+        Fuzzer unannotatedFuzzer = recordingFuzzer(executionOrder, "unannotated");
+        Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(pathCompletedFuzzer, unannotatedFuzzer, deletedResourcesFuzzer));
+
+        catsMain.runSecondPhaseFuzzers(List.of(fuzzingData(HttpMethod.GET, "/customers/{id}")), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
+
+        Assertions.assertThat(executionOrder).containsExactly("reads-GET", "unannotated-GET", "deleted-GET");
     }
 
     @Test
@@ -609,7 +642,11 @@ class CatsCommandTest {
     }
 
     private Fuzzer recordingFuzzer(List<String> executionOrder, String label) {
-        Fuzzer fuzzer = Mockito.mock(Fuzzer.class);
+        return recordingFuzzer(Fuzzer.class, executionOrder, label);
+    }
+
+    private <T extends Fuzzer> T recordingFuzzer(Class<T> type, List<String> executionOrder, String label) {
+        T fuzzer = Mockito.mock(type);
         Mockito.when(fuzzer.skipForHttpMethods()).thenReturn(List.of());
         Mockito.when(fuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
         Mockito.when(fuzzer.toString()).thenReturn(label + "Fuzzer");

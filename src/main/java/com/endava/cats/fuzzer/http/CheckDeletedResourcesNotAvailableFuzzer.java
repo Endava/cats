@@ -23,7 +23,7 @@ import java.util.List;
  * Fuzzer that checks if deleted resources are still available.
  */
 @HttpFuzzer
-@SecondPhaseFuzzer
+@SecondPhaseFuzzer(triggers = {SecondPhaseFuzzer.Trigger.PATH_COMPLETED, SecondPhaseFuzzer.Trigger.PATH_RESOURCES_DELETED})
 @Singleton
 public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CheckDeletedResourcesNotAvailableFuzzer.class);

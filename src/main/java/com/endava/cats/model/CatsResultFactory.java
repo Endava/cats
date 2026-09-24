@@ -211,7 +211,8 @@ public interface CatsResultFactory {
         MISSING_RESPONSE_HEADERS("Missing response headers", "The response is missing headers that are documented in the OpenAPI contract"),
         POTENTIAL_IDOR("Heuristic IDOR signal detected", "A modified identifier was returned in a successful response, but resource ownership was not verified"),
         WRITE_ONLY_FIELDS_EXPOSED("WriteOnly fields exposed in response", "The response contains fields marked as writeOnly in the OpenAPI contract, which must never be returned by the service"),
-        SENSITIVE_DATA_EXPOSED("Sensitive data exposed in response", "The response contains undeclared fields with sensitive names (like password, secret or apiKey) and unmasked values");
+        SENSITIVE_DATA_EXPOSED("Sensitive data exposed in response", "The response contains undeclared fields with sensitive names (like password, secret or apiKey) and unmasked values"),
+        READ_BROKEN_AFTER_FUZZING("Read broken after fuzzing", "An operation that returned 2xx for unmodified requests earlier in the run returns a server error after the path was fuzzed, suggesting that fuzzed writes stored data which breaks reads");
 
 
         private final String value;

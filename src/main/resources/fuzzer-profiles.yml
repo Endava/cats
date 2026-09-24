@@ -78,6 +78,7 @@ profiles:
 
       # Resource Manipulation
       - CheckDeletedResourcesNotAvailable
+      - CheckReadsStillWork
       - RandomResources
       - InvalidReferencesFields
 

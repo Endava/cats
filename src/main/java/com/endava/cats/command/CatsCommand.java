@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.annotations.SecondPhaseFuzzer;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.CheckArguments;
@@ -41,6 +42,7 @@ import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.tui.CatsTuiLauncher;
 import com.endava.cats.tui.model.RunConfigurationSnapshot;
+import com.endava.cats.util.AnnotationUtils;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
@@ -501,8 +503,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     /**
      * Runs the happy path DELETE requests postponed by {@link #runFirstPhaseFuzzers(List, List)} so that parent
      * resources remain available while their child paths are fuzzed. Paths are processed in reverse order,
-     * which runs deeper paths (children) before their parents. Second phase fuzzers run again for each such path
-     * so that the deleted resources are still checked.
+     * which runs deeper paths (children) before their parents. Second phase fuzzers triggered by
+     * {@link SecondPhaseFuzzer.Trigger#PATH_RESOURCES_DELETED} then run for each such path.
      */
     void runDeferredHappyPathDeletes() {
         List<DeferredHappyPathDelete> deferred = List.copyOf(deferredHappyPathDeletes);
@@ -510,8 +512,20 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         for (DeferredHappyPathDelete delete : deferred.reversed()) {
             CatsExecutionCancelledException.check();
             runFuzzers(delete.deleteData(), List.of(delete.happyPathFuzzer()));
-            runFuzzers(delete.pathData(), filterArguments.getSecondPhaseFuzzers());
+            runSecondPhaseFuzzers(delete.pathData(), SecondPhaseFuzzer.Trigger.PATH_RESOURCES_DELETED);
         }
+    }
+
+    void runSecondPhaseFuzzers(List<FuzzingData> fuzzingData, SecondPhaseFuzzer.Trigger trigger) {
+        List<Fuzzer> triggeredFuzzers = filterArguments.getSecondPhaseFuzzers().stream()
+                .filter(fuzzer -> triggers(fuzzer).contains(trigger))
+                .toList();
+        runFuzzers(fuzzingData, triggeredFuzzers);
+    }
+
+    private static List<SecondPhaseFuzzer.Trigger> triggers(Fuzzer fuzzer) {
+        SecondPhaseFuzzer secondPhaseFuzzer = AnnotationUtils.findAnnotation(fuzzer.getClass(), SecondPhaseFuzzer.class);
+        return secondPhaseFuzzer == null ? List.of(SecondPhaseFuzzer.Trigger.PATH_COMPLETED) : List.of(secondPhaseFuzzer.triggers());
     }
 
     private Set<Map.Entry<String, PathItem>> sortPathsAlphabetically(OpenAPI openAPI, List<String> pathsOrder) {
@@ -634,7 +648,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
         List<Fuzzer> fuzzersToRun = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(allHttpMethodsFromFuzzingData, pathItemEntry.getKey());
         this.runFirstPhaseFuzzers(filteredFuzzingData, fuzzersToRun);
-        this.runFuzzers(filteredFuzzingData, filterArguments.getSecondPhaseFuzzers());
+        this.runSecondPhaseFuzzers(filteredFuzzingData, SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
     }
 
     void runFirstPhaseFuzzers(List<FuzzingData> fuzzingData, List<Fuzzer> configuredFuzzers) {

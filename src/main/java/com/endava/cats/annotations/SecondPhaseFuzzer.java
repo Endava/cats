@@ -15,4 +15,26 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface SecondPhaseFuzzer {
+
+    /**
+     * Lifecycle points at which a second phase fuzzer runs for a path.
+     */
+    enum Trigger {
+        /**
+         * After all first phase fuzzers finished for a path.
+         */
+        PATH_COMPLETED,
+        /**
+         * After the happy path DELETE requests of a path ran. These are postponed until all paths are fuzzed,
+         * so that parent resources remain available while their child paths are fuzzed.
+         */
+        PATH_RESOURCES_DELETED
+    }
+
+    /**
+     * The lifecycle points at which the fuzzer runs.
+     *
+     * @return the triggers for running the fuzzer
+     */
+    Trigger[] triggers() default {Trigger.PATH_COMPLETED};
 }

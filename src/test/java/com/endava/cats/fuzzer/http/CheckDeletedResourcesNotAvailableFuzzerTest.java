@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.annotations.SecondPhaseFuzzer;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
@@ -48,6 +49,14 @@ class CheckDeletedResourcesNotAvailableFuzzerTest {
     @Test
     void shouldHaveToString() {
         Assertions.assertThat(checkDeletedResourcesNotAvailableFuzzer.toString()).isNotBlank();
+    }
+
+    @Test
+    void shouldBeTriggeredByPathCompletionAndDeletedResources() {
+        SecondPhaseFuzzer annotation = CheckDeletedResourcesNotAvailableFuzzer.class.getAnnotation(SecondPhaseFuzzer.class);
+
+        Assertions.assertThat(annotation.triggers())
+                .containsExactly(SecondPhaseFuzzer.Trigger.PATH_COMPLETED, SecondPhaseFuzzer.Trigger.PATH_RESOURCES_DELETED);
     }
 
     @CsvSource({"http://localhost:8080/relative-path,/relative-path", "http://localhost/relative-path,/relative-path", "/relative-path,/relative-path"})
