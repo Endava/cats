@@ -36,6 +36,7 @@ import com.endava.cats.openapi.handler.api.SchemaWalker;
 import com.endava.cats.openapi.handler.index.SpecPositionIndex;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.UnresolvedParametersSummary;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.tui.CatsTuiLauncher;
@@ -62,11 +63,13 @@ import picocli.CommandLine;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -237,6 +240,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     String appVersion;
 
     private int exitCodeDueToErrors = CommandLine.ExitCode.OK;
+    private final List<DeferredHappyPathDelete> deferredHappyPathDeletes = new ArrayList<>();
+
+    private record DeferredHappyPathDelete(List<FuzzingData> pathData, List<FuzzingData> deleteData,
+                                           Fuzzer happyPathFuzzer) {
+    }
 
     /**
      * Creates a new instance of CatsCommand.
@@ -320,12 +328,13 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     private void executeSession() {
+        boolean fuzzingCompleted = false;
         try {
             testCaseListener.startSession();
             Future<VersionChecker.CheckResult> newVersion = this.checkForNewVersion();
             executionStopController.startSession();
             this.doLogic();
-            this.printSuggestions();
+            fuzzingCompleted = true;
             this.printVersion(newVersion);
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
@@ -348,6 +357,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         } finally {
             executionStopController.finishSession();
             ExecutionSummary executionSummary = testCaseListener.endSession();
+            if (fuzzingCompleted) {
+                this.printSuggestions();
+                this.printUnresolvedParameters();
+            }
             if (executionSummary != null && executionSummary.outcome().status() == RunOutcome.Status.FAILED) {
                 exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
             }
@@ -409,15 +422,47 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         return executor.submit(versionCallable);
     }
 
-    private void printSuggestions() {
-        if (executionStatisticsListener.areManyAuthErrors()) {
-            String message = AnsiUtils.boldYellow("There were {} tests failing with authorisation errors. Either supply authentication details or check if the supplied credentials are correct!");
-            logger.star(message, executionStatisticsListener.getAuthErrors());
+    /**
+     * Prints hints about auth and i/o errors. This runs after {@link TestCaseListener#endSession()} because
+     * the {@code star} log level is only enabled at that point when running with the default summary verbosity.
+     */
+    void printSuggestions() {
+        try {
+            if (executionStatisticsListener.areManyAuthErrors()) {
+                String message = AnsiUtils.boldYellow("There were {} tests failing with authorisation errors. Either supply authentication details or check if the supplied credentials are correct!");
+                logger.star(message, executionStatisticsListener.getAuthErrors());
+            }
+            if (executionStatisticsListener.areManyIoErrors()) {
+                String message = AnsiUtils.boldYellow("There were {} tests failing with i/o errors. Make sure that you have access to the service or that the --server url is correct!");
+                logger.star(message, executionStatisticsListener.getIoErrors());
+            }
+        } catch (RuntimeException e) {
+            logger.debug("Unable to print suggestions", e);
         }
-        if (executionStatisticsListener.areManyIoErrors()) {
-            String message = AnsiUtils.boldYellow("There were {} tests failing with i/o errors. Make sure that you have access to the service or that the --server url is correct!");
-            logger.star(message, executionStatisticsListener.getIoErrors());
+    }
+
+    void printUnresolvedParameters() {
+        try {
+            OpenAPI openAPI = globalContext.getOpenAPI();
+            List<RuntimeResourcePool.UnresolvedOperation> operations = runtimeResourcePool.unresolvedOperations().stream()
+                    .filter(operation -> isDocumentedOperation(openAPI, operation.outcome().path(), operation.outcome().method()))
+                    .toList();
+            List<String> lines = UnresolvedParametersSummary.render(operations);
+            if (lines.isEmpty()) {
+                return;
+            }
+            ConsoleUtils.emptyLine();
+            logger.info("{}", lines.getFirst());
+            lines.stream().skip(1).forEach(line -> logger.noFormat("{}", line));
+        } catch (RuntimeException e) {
+            logger.debug("Unable to print unresolved parameters summary", e);
         }
+    }
+
+    private static boolean isDocumentedOperation(OpenAPI openAPI, String path, HttpMethod method) {
+        PathItem pathItem = Optional.ofNullable(openAPI).map(OpenAPI::getPaths).map(paths -> paths.get(path)).orElse(null);
+        return pathItem != null && pathItem.readOperationsMap().keySet().stream()
+                .anyMatch(documentedMethod -> documentedMethod.name().equals(method.name()));
     }
 
     private void initGlobalData(OpenAPI openAPI) {
@@ -440,6 +485,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     void startFuzzing(OpenAPI openAPI) {
         List<String> suppliedPaths = filterArguments.getPathsToRun(openAPI);
+        deferredHappyPathDeletes.clear();
 
         for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI, filesArguments.getPathsOrder())) {
             CatsExecutionCancelledException.check();
@@ -448,6 +494,23 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             } else {
                 logger.skip("Skipping path {}", entry.getKey());
             }
+        }
+        this.runDeferredHappyPathDeletes();
+    }
+
+    /**
+     * Runs the happy path DELETE requests postponed by {@link #runFirstPhaseFuzzers(List, List)} so that parent
+     * resources remain available while their child paths are fuzzed. Paths are processed in reverse order,
+     * which runs deeper paths (children) before their parents. Second phase fuzzers run again for each such path
+     * so that the deleted resources are still checked.
+     */
+    void runDeferredHappyPathDeletes() {
+        List<DeferredHappyPathDelete> deferred = List.copyOf(deferredHappyPathDeletes);
+        deferredHappyPathDeletes.clear();
+        for (DeferredHappyPathDelete delete : deferred.reversed()) {
+            CatsExecutionCancelledException.check();
+            runFuzzers(delete.deleteData(), List.of(delete.happyPathFuzzer()));
+            runFuzzers(delete.pathData(), filterArguments.getSecondPhaseFuzzers());
         }
     }
 
@@ -588,11 +651,16 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             return;
         }
         List<FuzzingData> seedData = fuzzingData.stream().filter(this::isSafeResourceSeed).toList();
-        List<FuzzingData> deferredHappyPathData = fuzzingData.stream().filter(data -> !seedData.contains(data)).toList();
+        List<FuzzingData> deleteData = fuzzingData.stream().filter(data -> data.getMethod() == HttpMethod.DELETE).toList();
+        List<FuzzingData> deferredHappyPathData = fuzzingData.stream()
+                .filter(data -> !seedData.contains(data) && !deleteData.contains(data)).toList();
         List<Fuzzer> otherFuzzers = configuredFuzzers.stream().filter(fuzzer -> fuzzer != happyPathFuzzer).toList();
         runFuzzers(seedData, List.of(happyPathFuzzer));
         runFuzzers(fuzzingData, otherFuzzers);
         runFuzzers(deferredHappyPathData, List.of(happyPathFuzzer));
+        if (!deleteData.isEmpty()) {
+            deferredHappyPathDeletes.add(new DeferredHappyPathDelete(fuzzingData, deleteData, happyPathFuzzer));
+        }
     }
 
     private boolean isSafeResourceSeed(FuzzingData data) {

@@ -85,6 +85,14 @@ public class TestCaseListener {
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501", "413", "431");
     private static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
     private static final List<String> CONTENT_TYPE_DONT_MATCH_SCHEMA = List.of("application/csv", "application/pdf");
+    private static final Set<Integer> IO_ERROR_RESPONSE_CODES = Set.of(
+            CatsResponse.ExceptionalResponse.EMPTY_BODY.responseCode(),
+            CatsResponse.ExceptionalResponse.CONNECTION_REFUSED.responseCode(),
+            CatsResponse.ExceptionalResponse.READ_TIMEOUT.responseCode(),
+            CatsResponse.ExceptionalResponse.WRITE_TIMEOUT.responseCode(),
+            CatsResponse.ExceptionalResponse.CONNECTION_TIMEOUT.responseCode(),
+            CatsResponse.ExceptionalResponse.PROTOCOL_EXCEPTION.responseCode(),
+            CatsResponse.ExceptionalResponse.CONNECTION_RESET.responseCode());
     final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
@@ -771,7 +779,7 @@ public class TestCaseListener {
             this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
         }
-        recordAuthErrors(catsResponse);
+        recordAuthAndIoErrors(catsResponse);
     }
 
     private void logAndRecordError(PrettyLogger logger, String message, Object[] params, CatsTestCase testCase, CatsResponse catsResponse) {
@@ -808,9 +816,12 @@ public class TestCaseListener {
         return !catsResponse.isValidErrorCode();
     }
 
-    private void recordAuthErrors(CatsResponse catsResponse) {
-        if (catsResponse.getResponseCode() == 401 || catsResponse.getResponseCode() == 403) {
+    private void recordAuthAndIoErrors(CatsResponse catsResponse) {
+        int responseCode = catsResponse.getResponseCode();
+        if (responseCode == 401 || responseCode == 403) {
             executionStatisticsListener.increaseAuthErrors();
+        } else if (IO_ERROR_RESPONSE_CODES.contains(responseCode)) {
+            executionStatisticsListener.increaseIoErrors();
         }
     }
 

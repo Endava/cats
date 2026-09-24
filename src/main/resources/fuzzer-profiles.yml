@@ -50,6 +50,9 @@ profiles:
       - CheckSecurityHeaders
       - ResponseHeadersMatchContractHeaders
 
+      # Data Exposure
+      - SensitiveDataExposure
+
       # Malicious Input
       - VeryLargeStringsInFields
       - VeryLargeUnicodeStringsInFields

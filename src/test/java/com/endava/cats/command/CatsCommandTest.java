@@ -17,24 +17,33 @@ import com.endava.cats.fuzzer.contract.PathTagsLinter;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.io.RuntimeResourcePool;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.RunOutcome;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
+import com.endava.cats.report.UnresolvedParametersSummary;
 import com.endava.cats.tui.CatsTuiLauncher;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.util.VersionChecker;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
@@ -315,10 +324,41 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/not_existent.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
 
-        catsMain.run();
+        CatsCommand spyMain = Mockito.spy(catsMain);
+        spyMain.run();
         Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
         Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
         Mockito.verify(testCaseListener, Mockito.times(0)).afterFuzz(Mockito.any());
+        Mockito.verify(spyMain, Mockito.never()).printUnresolvedParameters();
+        Mockito.verify(spyMain, Mockito.never()).printSuggestions();
+    }
+
+    @Test
+    void shouldPrintUnresolvedParametersOnlyForDocumentedOperations() {
+        RuntimeResourcePool pool = Mockito.mock(RuntimeResourcePool.class);
+        CatsGlobalContext context = Mockito.mock(CatsGlobalContext.class);
+        OpenAPI openAPI = new OpenAPI().paths(new Paths().addPathItem("/customers/{id}", new PathItem().get(new Operation())));
+        Mockito.when(context.getOpenAPI()).thenReturn(openAPI);
+        RuntimeResourcePool.UnresolvedParameter parameter = new RuntimeResourcePool.UnresolvedParameter(
+                new RequestTarget(RequestTarget.Location.PATH, "id"), RuntimeResourcePool.UnresolvedReason.NO_VALUE_CAPTURED, null);
+        Mockito.when(pool.unresolvedOperations()).thenReturn(List.of(
+                new RuntimeResourcePool.UnresolvedOperation(new RuntimeResourcePool.OperationOutcome("/customers/{id}", HttpMethod.GET, 1, 0, Map.of(404, 1)), List.of(parameter)),
+                new RuntimeResourcePool.UnresolvedOperation(new RuntimeResourcePool.OperationOutcome("/customers/{id}", HttpMethod.PUT, 1, 0, Map.of(405, 1)), List.of(parameter))));
+        Object originalPool = ReflectionTestUtils.getField(catsMain, "runtimeResourcePool");
+        Object originalContext = ReflectionTestUtils.getField(catsMain, "globalContext");
+        try (MockedStatic<UnresolvedParametersSummary> summary = Mockito.mockStatic(UnresolvedParametersSummary.class)) {
+            summary.when(() -> UnresolvedParametersSummary.render(Mockito.anyList())).thenReturn(List.of());
+            ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", pool);
+            ReflectionTestUtils.setField(catsMain, "globalContext", context);
+
+            catsMain.printUnresolvedParameters();
+
+            summary.verify(() -> UnresolvedParametersSummary.render(Mockito.argThat(operations -> operations.size() == 1 &&
+                    operations.getFirst().outcome().method() == HttpMethod.GET)));
+        } finally {
+            ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", originalPool);
+            ReflectionTestUtils.setField(catsMain, "globalContext", originalContext);
+        }
     }
 
     @Test
@@ -349,6 +389,11 @@ class CatsCommandTest {
         Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
         Mockito.verify(testCaseListener, Mockito.times(20)).afterFuzz(Mockito.any());
         Mockito.verify(testCaseListener, Mockito.times(10)).beforeFuzz(Mockito.eq(PathTagsLinter.class), Mockito.any(), Mockito.any());
+        InOrder endOfRun = Mockito.inOrder(testCaseListener, spyMain);
+        endOfRun.verify(testCaseListener).endSession();
+        endOfRun.verify(spyMain).printSuggestions();
+        endOfRun.verify(spyMain).printUnresolvedParameters();
+        Mockito.verify(executionStatisticsListener, Mockito.atLeastOnce()).getIoErrors();
 
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");
@@ -449,8 +494,63 @@ class CatsCommandTest {
 
         Assertions.assertThat(executionOrder).containsExactly(
                 "happy-POST", "happy-GET", "happy-PUT", "happy-PATCH", "happy-HEAD",
-                "other-POST", "other-GET", "other-PUT", "other-PATCH", "other-HEAD", "other-DELETE",
-                "happy-DELETE");
+                "other-POST", "other-GET", "other-PUT", "other-PATCH", "other-HEAD", "other-DELETE");
+
+        catsMain.runDeferredHappyPathDeletes();
+
+        Assertions.assertThat(executionOrder).last().isEqualTo("happy-DELETE");
+        Assertions.assertThat(executionOrder).hasSize(12);
+    }
+
+    @Test
+    void shouldRunDeferredHappyPathDeletesAfterAllPathsWithChildrenFirstAndThenSecondPhase() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> executionOrder = new ArrayList<>();
+        HappyPathFuzzer happyPathFuzzer = recordingHappyPathFuzzer(executionOrder);
+        Fuzzer otherFuzzer = recordingFuzzer(executionOrder);
+        Fuzzer secondPhaseFuzzer = recordingFuzzer(executionOrder, "second");
+        Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(secondPhaseFuzzer));
+        FuzzingData parentGet = fuzzingData(HttpMethod.GET, "/customers/{id}");
+        FuzzingData parentDelete = fuzzingData(HttpMethod.DELETE, "/customers/{id}");
+        FuzzingData childGet = fuzzingData(HttpMethod.GET, "/customers/{id}/orders/{orderId}");
+        FuzzingData childDelete = fuzzingData(HttpMethod.DELETE, "/customers/{id}/orders/{orderId}");
+        FuzzingData collectionPost = fuzzingData(HttpMethod.POST, "/customers");
+
+        catsMain.runFirstPhaseFuzzers(List.of(collectionPost), List.of(otherFuzzer, happyPathFuzzer));
+        catsMain.runFirstPhaseFuzzers(List.of(parentGet, parentDelete), List.of(otherFuzzer, happyPathFuzzer));
+        catsMain.runFirstPhaseFuzzers(List.of(childGet, childDelete), List.of(otherFuzzer, happyPathFuzzer));
+
+        Assertions.assertThat(executionOrder).doesNotContain("happy-DELETE");
+        executionOrder.clear();
+
+        catsMain.runDeferredHappyPathDeletes();
+
+        Assertions.assertThat(executionOrder).containsExactly(
+                "happy-DELETE",
+                "second-GET", "second-DELETE",
+                "happy-DELETE",
+                "second-GET", "second-DELETE");
+        ArgumentCaptor<FuzzingData> deletedData = ArgumentCaptor.forClass(FuzzingData.class);
+        Mockito.verify(happyPathFuzzer, Mockito.times(2)).fuzz(Mockito.argThat(data -> data.getMethod() == HttpMethod.DELETE));
+        Mockito.verify(happyPathFuzzer, Mockito.atLeastOnce()).fuzz(deletedData.capture());
+        Assertions.assertThat(deletedData.getAllValues().stream().filter(data -> data.getMethod() == HttpMethod.DELETE))
+                .containsExactly(childDelete, parentDelete);
+
+        executionOrder.clear();
+        catsMain.runDeferredHappyPathDeletes();
+        Assertions.assertThat(executionOrder).isEmpty();
+    }
+
+    @Test
+    void shouldNotDeferDeletesWhenHappyPathIsNotConfigured() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> executionOrder = new ArrayList<>();
+        Fuzzer otherFuzzer = recordingFuzzer(executionOrder);
+
+        catsMain.runFirstPhaseFuzzers(List.of(fuzzingData(HttpMethod.DELETE, "/customers/{id}")), List.of(otherFuzzer));
+        catsMain.runDeferredHappyPathDeletes();
+
+        Assertions.assertThat(executionOrder).containsExactly("other-DELETE");
     }
 
     @Test
@@ -505,13 +605,17 @@ class CatsCommandTest {
     }
 
     private Fuzzer recordingFuzzer(List<String> executionOrder) {
+        return recordingFuzzer(executionOrder, "other");
+    }
+
+    private Fuzzer recordingFuzzer(List<String> executionOrder, String label) {
         Fuzzer fuzzer = Mockito.mock(Fuzzer.class);
         Mockito.when(fuzzer.skipForHttpMethods()).thenReturn(List.of());
         Mockito.when(fuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
-        Mockito.when(fuzzer.toString()).thenReturn("OtherFuzzer");
+        Mockito.when(fuzzer.toString()).thenReturn(label + "Fuzzer");
         Mockito.doAnswer(invocation -> {
             FuzzingData data = invocation.getArgument(0);
-            executionOrder.add("other-" + data.getMethod());
+            executionOrder.add(label + "-" + data.getMethod());
             return null;
         }).when(fuzzer).fuzz(Mockito.any());
         return fuzzer;

@@ -432,6 +432,14 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.times(times)).increaseAuthErrors();
     }
 
+    @ParameterizedTest
+    @CsvSource({"952,1", "953,1", "954,1", "955,1", "956,1", "957,1", "958,1", "959,0", "999,0", "500,0", "401,0"})
+    void shouldIncreaseTheNumberOfIoErrorsForExceptionalResponses(int respCode, int times) {
+        CatsResponse response = CatsResponse.builder().body("{}").responseCode(respCode).build();
+        prepareTestCaseListenerSimpleSetup(response, () -> testCaseListener.reportError(logger, "Something happened: {}", "bad stuff!"));
+        Mockito.verify(executionStatisticsListener, Mockito.times(times)).increaseIoErrors();
+    }
+
     @Test
     void shouldIncreaseTheNumberOfIOErrors() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {

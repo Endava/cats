@@ -209,7 +209,9 @@ public interface CatsResultFactory {
         XSS_INJECTION("XSS payload reflected in response", "The XSS payload was reflected in the response without proper sanitization, indicating a Cross-Site Scripting vulnerability"),
         MISSING_SECURITY_HEADERS("Missing recommended security headers", "The response is missing recommended security headers that help protect against common web vulnerabilities"),
         MISSING_RESPONSE_HEADERS("Missing response headers", "The response is missing headers that are documented in the OpenAPI contract"),
-        POTENTIAL_IDOR("Heuristic IDOR signal detected", "A modified identifier was returned in a successful response, but resource ownership was not verified");
+        POTENTIAL_IDOR("Heuristic IDOR signal detected", "A modified identifier was returned in a successful response, but resource ownership was not verified"),
+        WRITE_ONLY_FIELDS_EXPOSED("WriteOnly fields exposed in response", "The response contains fields marked as writeOnly in the OpenAPI contract, which must never be returned by the service"),
+        SENSITIVE_DATA_EXPOSED("Sensitive data exposed in response", "The response contains undeclared fields with sensitive names (like password, secret or apiKey) and unmasked values");
 
 
         private final String value;

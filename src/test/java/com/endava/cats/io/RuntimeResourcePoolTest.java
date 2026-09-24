@@ -1534,6 +1534,145 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(result.correlations()).isEmpty();
     }
 
+    @Test
+    void shouldReportPathParameterWithoutCapturedValueAndFailingProducer() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/customers", "{\"name\":\"x\"}"), request("POST", "/customers", "{\"name\":\"x\"}"),
+                response(400, "{}"));
+        resourcePool.observe(getData("/customers/{customerId}", "{\"customerId\":\"generated\"}"),
+                request("GET", "/customers/generated", "{\"customerId\":\"generated\"}"), response(404, "{}"));
+        resourcePool.observe(getData("/customers/{customerId}", "{\"customerId\":\"generated\"}"),
+                request("GET", "/customers/generated", "{\"customerId\":\"generated\"}"), response(404, "{}"));
+
+        Assertions.assertThat(resourcePool.unresolvedOperations()).singleElement().satisfies(operation -> {
+            Assertions.assertThat(operation.outcome().path()).isEqualTo("/customers/{customerId}");
+            Assertions.assertThat(operation.outcome().method()).isEqualTo(HttpMethod.GET);
+            Assertions.assertThat(operation.outcome().requests()).isEqualTo(2);
+            Assertions.assertThat(operation.outcome().successes()).isZero();
+            Assertions.assertThat(operation.outcome().statusCodes()).containsExactly(Map.entry(404, 2));
+            Assertions.assertThat(operation.parameters()).singleElement().satisfies(parameter -> {
+                Assertions.assertThat(parameter.target()).isEqualTo(new RequestTarget(RequestTarget.Location.PATH, "customerId"));
+                Assertions.assertThat(parameter.reason()).isEqualTo(RuntimeResourcePool.UnresolvedReason.NO_VALUE_CAPTURED);
+                Assertions.assertThat(parameter.producer()).isNotNull();
+                Assertions.assertThat(parameter.producer().path()).isEqualTo("/customers");
+                Assertions.assertThat(parameter.producer().method()).isEqualTo(HttpMethod.POST);
+                Assertions.assertThat(parameter.producer().successes()).isZero();
+                Assertions.assertThat(parameter.producer().statusCodes()).containsExactly(Map.entry(400, 1));
+            });
+        });
+    }
+
+    @Test
+    void shouldReportCapturedValuesThatAlwaysReturnNotFound() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"id\":\"customer-42\"}"));
+        resourcePool.observe(getData("/customers/{customerId}", "{\"customerId\":\"generated\"}"),
+                request("GET", "/customers/customer-42", "{\"customerId\":\"customer-42\"}"), response(404, "{}"));
+
+        Assertions.assertThat(resourcePool.unresolvedOperations()).singleElement().satisfies(operation ->
+                Assertions.assertThat(operation.parameters()).singleElement().satisfies(parameter -> {
+                    Assertions.assertThat(parameter.reason()).isEqualTo(RuntimeResourcePool.UnresolvedReason.CAPTURED_VALUES_NOT_FOUND);
+                    Assertions.assertThat(parameter.producer().successes()).isEqualTo(1);
+                }));
+    }
+
+    @Test
+    void shouldReportUnresolvedBodyIdentifier() {
+        enableResourceReuse();
+        String payload = "{\"customerId\":\"generated\",\"quantity\":1}";
+        resourcePool.observe(postData("/orders", payload), request("POST", "/orders", payload), response(422, "{}"));
+
+        Assertions.assertThat(resourcePool.unresolvedOperations()).singleElement().satisfies(operation -> {
+            Assertions.assertThat(operation.outcome().method()).isEqualTo(HttpMethod.POST);
+            Assertions.assertThat(operation.parameters()).singleElement().satisfies(parameter -> {
+                Assertions.assertThat(parameter.target()).isEqualTo(RequestTarget.body("customerId"));
+                Assertions.assertThat(parameter.reason()).isEqualTo(RuntimeResourcePool.UnresolvedReason.NO_VALUE_CAPTURED);
+                Assertions.assertThat(parameter.producer()).isNull();
+            });
+        });
+    }
+
+    @Test
+    void shouldNotReportOperationsThatSucceededAtLeastOnce() {
+        enableResourceReuse();
+        ServiceData get = getData("/customers/{customerId}", "{\"customerId\":\"generated\"}");
+        resourcePool.observe(get, request("GET", "/customers/generated", "{}"), response(404, "{}"));
+        resourcePool.observe(get, request("GET", "/customers/generated", "{}"), response(200, "{\"id\":\"generated\"}"));
+
+        Assertions.assertThat(resourcePool.unresolvedOperations()).isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreFuzzedPathOverriddenAndSkippedHeaderRequestsInDiagnostics() {
+        enableResourceReuse();
+        ServiceData fuzzed = ServiceData.builder().relativePath("/customers/{customerId}").contractPath("/customers/{customerId}")
+                .payload("{\"customerId\":\"generated\"}").queryParams(Set.of()).httpMethod(HttpMethod.GET)
+                .contentType("application/json").mutationTarget(new RequestTarget(RequestTarget.Location.PATH, "customerId")).build();
+        ServiceData overriddenPath = ServiceData.builder().relativePath("/customers/123").contractPath("/customers/{customerId}")
+                .payload("{\"customerId\":\"generated\"}").queryParams(Set.of()).httpMethod(HttpMethod.GET)
+                .contentType("application/json").build();
+        ServiceData skippedHeaders = ServiceData.builder().relativePath("/customers/{customerId}").contractPath("/customers/{customerId}")
+                .payload("{\"customerId\":\"generated\"}").queryParams(Set.of()).httpMethod(HttpMethod.GET)
+                .skippedHeaders(Set.of("Authorization")).contentType("application/json").build();
+
+        resourcePool.observe(fuzzed, request("GET", "/customers/generated", "{}"), response(404, "{}"));
+        resourcePool.observe(overriddenPath, request("GET", "/customers/123", "{}"), response(404, "{}"));
+        resourcePool.observe(skippedHeaders, request("GET", "/customers/generated", "{}"), response(401, "{}"));
+
+        Assertions.assertThat(resourcePool.unresolvedOperations()).isEmpty();
+    }
+
+    @Test
+    void shouldNotReportOperationsFailingOnlyWithAuthErrors() {
+        enableResourceReuse();
+        ServiceData get = getData("/customers/{customerId}", "{\"customerId\":\"generated\"}");
+        resourcePool.observe(get, request("GET", "/customers/generated", "{}"), response(401, "{}"));
+        resourcePool.observe(get, request("GET", "/customers/generated", "{}"), response(403, "{}"));
+        Assertions.assertThat(resourcePool.unresolvedOperations()).isEmpty();
+
+        resourcePool.observe(get, request("GET", "/customers/generated", "{}"), response(404, "{}"));
+        Assertions.assertThat(resourcePool.unresolvedOperations()).hasSize(1);
+    }
+
+    @Test
+    void shouldNotReportParametersSuppliedThroughUrlParams() {
+        enableResourceReuse();
+        ReflectionTestUtils.setField(filesArguments, "params", List.of("customerId:supplied"));
+        filesArguments.loadURLParams();
+
+        resourcePool.observe(getData("/customers/{customerId}", "{\"customerId\":\"generated\"}"),
+                request("GET", "/customers/supplied", "{}"), response(404, "{}"));
+
+        Assertions.assertThat(resourcePool.unresolvedOperations()).isEmpty();
+    }
+
+    @Test
+    void shouldNotRecordDiagnosticsWhenReuseIsDisabledAndClearThemOnReset() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", false);
+        ServiceData get = getData("/customers/{customerId}", "{\"customerId\":\"generated\"}");
+        resourcePool.observe(get, request("GET", "/customers/generated", "{}"), response(404, "{}"));
+        Assertions.assertThat(resourcePool.unresolvedOperations()).isEmpty();
+
+        enableResourceReuse();
+        resourcePool.observe(get, request("GET", "/customers/generated", "{}"), response(404, "{}"));
+        Assertions.assertThat(resourcePool.unresolvedOperations()).hasSize(1);
+
+        resourcePool.clear();
+        Assertions.assertThat(resourcePool.unresolvedOperations()).isEmpty();
+    }
+
+    @Test
+    void shouldTreatNumericallyEqualPathValuesAsNotReplaced() {
+        enableResourceReuse();
+        resourcePool.observe(getData("/customers/{customerId}", "{\"customerId\":42.0}"),
+                request("GET", "/customers/42", "{}"), response(404, "{}"));
+
+        Assertions.assertThat(resourcePool.unresolvedOperations()).singleElement().satisfies(operation ->
+                Assertions.assertThat(operation.parameters()).singleElement().satisfies(parameter ->
+                        Assertions.assertThat(parameter.reason()).isEqualTo(RuntimeResourcePool.UnresolvedReason.NO_VALUE_CAPTURED)));
+    }
+
     private void enableResourceReuse() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
     }

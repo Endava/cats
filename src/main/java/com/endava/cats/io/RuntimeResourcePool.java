@@ -50,6 +50,7 @@ public class RuntimeResourcePool {
     private static final int MAX_COLLECTION_ITEMS = 50;
     private static final int MAX_SUCCESSFUL_BASELINES = 500;
     private static final int MAX_CORRELATION_FEEDBACK = 5_000;
+    private static final int MAX_OPERATION_DIAGNOSTICS = 2_000;
     private static final int MAX_FEEDBACK_REWARD = 500;
     private static final int MIN_FEEDBACK_PENALTY = -5_000;
     private static final int SUCCESS_REWARD = 100;
@@ -75,6 +76,7 @@ public class RuntimeResourcePool {
     private final Map<SuccessfulBaselineKey, String> successfulRequestBaselines = new LinkedHashMap<>();
     private final Map<CorrelationFeedbackKey, Integer> correlationFeedback = new LinkedHashMap<>();
     private final Map<ResolvedRequest, Map<ResourceCorrelation, Long>> pendingCorrelationSources = new IdentityHashMap<>();
+    private final Map<OperationKey, OperationDiagnostics> operationDiagnostics = new LinkedHashMap<>();
     private final AtomicLong sequence = new AtomicLong();
 
     /**
@@ -250,6 +252,7 @@ public class RuntimeResourcePool {
         if (!processingArguments.isReuseSuccessfulResources()) {
             return;
         }
+        recordOperationDiagnostics(data, request, response, resolvedRequest);
         updateCorrelationFeedback(data, response, resolvedRequest);
         if (!ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
             return;
@@ -326,7 +329,144 @@ public class RuntimeResourcePool {
         successfulRequestBaselines.clear();
         correlationFeedback.clear();
         pendingCorrelationSources.clear();
+        operationDiagnostics.clear();
         sequence.set(0);
+    }
+
+    /**
+     * Returns the operations that never succeeded with an unmodified (non-fuzzed) request and that rely on
+     * identifier parameters which could not be resolved from earlier responses, or whose resolved values
+     * always returned 404/410. Operations are returned in the order they were first observed.
+     *
+     * @return operations with unresolved identifier parameters
+     */
+    public synchronized List<UnresolvedOperation> unresolvedOperations() {
+        List<UnresolvedOperation> result = new ArrayList<>();
+        operationDiagnostics.forEach((key, diagnostics) -> {
+            if (diagnostics.successes > 0 || diagnostics.onlyAuthFailures()) {
+                return;
+            }
+            List<UnresolvedParameter> parameters = new ArrayList<>();
+            diagnostics.parameters.forEach((target, stats) -> stats.reason().ifPresent(reason ->
+                    parameters.add(new UnresolvedParameter(target, reason, producerOutcome(key.path(), target)))));
+            if (!parameters.isEmpty()) {
+                result.add(new UnresolvedOperation(diagnostics.outcome(key), List.copyOf(parameters)));
+            }
+        });
+        return List.copyOf(result);
+    }
+
+    private OperationOutcome producerOutcome(String path, RequestTarget target) {
+        if (target.location() != RequestTarget.Location.PATH) {
+            return null;
+        }
+        List<String> segments = pathSegments(path);
+        int index = segments.indexOf("{" + target.name() + "}");
+        if (index <= 0) {
+            return null;
+        }
+        OperationKey producerKey = new OperationKey("/" + String.join("/", segments.subList(0, index)), HttpMethod.POST);
+        return Optional.ofNullable(operationDiagnostics.get(producerKey)).map(producer -> producer.outcome(producerKey))
+                .orElse(null);
+    }
+
+    private void recordOperationDiagnostics(ServiceData data, CatsRequest request, CatsResponse response,
+                                            ResolvedRequest resolvedRequest) {
+        if (!isUnmodifiedContractRequest(data)) {
+            return;
+        }
+        OperationKey key = new OperationKey(data.getRelativePath(), data.getHttpMethod());
+        OperationDiagnostics diagnostics = operationDiagnostics.get(key);
+        if (diagnostics == null) {
+            if (operationDiagnostics.size() >= MAX_OPERATION_DIAGNOSTICS) {
+                return;
+            }
+            diagnostics = new OperationDiagnostics();
+            operationDiagnostics.put(key, diagnostics);
+        }
+        int responseCode = response.getResponseCode();
+        diagnostics.record(responseCode);
+        Set<RequestTarget> correlatedTargets = Optional.ofNullable(resolvedRequest).map(ResolvedRequest::correlations)
+                .orElse(List.of()).stream().map(ResourceCorrelation::getTarget).collect(Collectors.toSet());
+        Map<String, StoredValue> actualPathValues = extractPathValues(data.getRelativePath(), request.getUrl());
+        for (TargetField target : diagnosticTargets(data)) {
+            RequestTarget requestTarget = new RequestTarget(target.location(), target.path());
+            Optional<Boolean> resolved = correlatedTargets.contains(requestTarget) ? Optional.of(true) :
+                    valueReplaced(data, request, target, actualPathValues);
+            OperationDiagnostics current = diagnostics;
+            resolved.ifPresent(value -> current.recordParameter(requestTarget, value, responseCode));
+        }
+    }
+
+    private boolean isUnmodifiedContractRequest(ServiceData data) {
+        boolean contractPath = StringUtils.isBlank(data.getContractPath()) ||
+                data.getContractPath().equals(data.getRelativePath());
+        return contractPath && data.getRelativePath() != null && data.getHttpMethod() != null &&
+                data.isReplaceRefData() && data.isReplaceUrlParams() && data.isAddUserHeaders() &&
+                Optional.ofNullable(data.getSkippedHeaders()).orElse(Set.of()).isEmpty() && !isFuzzedRequest(data);
+    }
+
+    private List<TargetField> diagnosticTargets(ServiceData data) {
+        Map<RequestTarget, TargetField> targets = new LinkedHashMap<>();
+        List<TargetField> candidates = new ArrayList<>();
+        if (JsonUtils.isValidJson(data.getPayload())) {
+            candidates.addAll(reusableTargets(data.getPayload(), data, false));
+        }
+        if (JsonUtils.isValidJson(data.getPathParamsPayload())) {
+            candidates.addAll(reusableTargets(data.getPathParamsPayload(), data, true));
+        }
+        candidates.stream()
+                .filter(target -> target.location() == RequestTarget.Location.PATH || isIdentifierName(target.name()))
+                .filter(target -> !hasExplicitValue(data, target) && !shouldSkipOwnPostIdentifier(data, target))
+                .forEach(target -> targets.putIfAbsent(new RequestTarget(target.location(), target.path()), target));
+        return List.copyOf(targets.values());
+    }
+
+    private Optional<Boolean> valueReplaced(ServiceData data, CatsRequest request, TargetField target,
+                                            Map<String, StoredValue> actualPathValues) {
+        if (target.location() == RequestTarget.Location.PATH) {
+            StoredValue actual = actualPathValues.get(target.name());
+            Object generated = generatedPathValue(data, target.name());
+            if (actual == null || generated == null) {
+                return Optional.empty();
+            }
+            return Optional.of(!sameValue(generated, actual.value()));
+        }
+        if (!JsonUtils.isValidJson(request.getPayload())) {
+            return Optional.empty();
+        }
+        List<JsonElement> actual = valuesAtPath(request.getPayload(), target.path());
+        if (actual.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(!actual.equals(valuesAtPath(data.getPayload(), target.path())));
+    }
+
+    private Object generatedPathValue(ServiceData data, String name) {
+        for (String payload : List.of(Optional.ofNullable(data.getPathParamsPayload()).orElse(""),
+                Optional.ofNullable(data.getPayload()).orElse(""))) {
+            if (!JsonUtils.isValidJson(payload)) {
+                continue;
+            }
+            Object value = JsonUtils.getVariableFromJson(payload, name);
+            if (!JsonUtils.isNotSet(String.valueOf(value))) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private boolean sameValue(Object generated, Object actual) {
+        String generatedValue = String.valueOf(generated);
+        String actualValue = String.valueOf(actual);
+        if (generatedValue.equals(actualValue)) {
+            return true;
+        }
+        try {
+            return new BigDecimal(generatedValue).compareTo(new BigDecimal(actualValue)) == 0;
+        } catch (NumberFormatException _) {
+            return false;
+        }
     }
 
     synchronized void discard(ResolvedRequest resolvedRequest) {
@@ -1277,6 +1417,103 @@ public class RuntimeResourcePool {
         public ResolvedHeaders {
             headers = List.copyOf(headers);
             correlations = List.copyOf(correlations);
+        }
+    }
+
+    /** Why an identifier parameter is considered unresolved. */
+    public enum UnresolvedReason {
+        /** No matching value was captured from earlier successful responses. */
+        NO_VALUE_CAPTURED,
+        /** Values reused from earlier responses always returned 404 or 410. */
+        CAPTURED_VALUES_NOT_FOUND
+    }
+
+    /**
+     * Aggregated outcome of the unmodified requests sent to an operation.
+     *
+     * @param path        contract path
+     * @param method      HTTP method
+     * @param requests    number of unmodified requests
+     * @param successes   number of 2xx responses
+     * @param statusCodes response code counts
+     */
+    public record OperationOutcome(String path, HttpMethod method, int requests, int successes,
+                                   Map<Integer, Integer> statusCodes) {
+        public OperationOutcome {
+            statusCodes = Collections.unmodifiableMap(new LinkedHashMap<>(statusCodes));
+        }
+    }
+
+    /**
+     * An identifier parameter that could not be resolved at runtime.
+     *
+     * @param target   request location and name of the parameter
+     * @param reason   why the parameter is considered unresolved
+     * @param producer outcome of the likely producer operation (POST on the parent collection), or {@code null}
+     */
+    public record UnresolvedParameter(RequestTarget target, UnresolvedReason reason, OperationOutcome producer) {
+    }
+
+    /**
+     * An operation that never succeeded and depends on unresolved identifier parameters.
+     *
+     * @param outcome    outcome of the operation
+     * @param parameters unresolved identifier parameters
+     */
+    public record UnresolvedOperation(OperationOutcome outcome, List<UnresolvedParameter> parameters) {
+    }
+
+    private record OperationKey(String path, HttpMethod method) {
+    }
+
+    private static final class ParameterDiagnostics {
+        private int resolved;
+        private int unresolved;
+        private int resolvedNotFound;
+
+        Optional<UnresolvedReason> reason() {
+            if (resolved == 0 && unresolved > 0) {
+                return Optional.of(UnresolvedReason.NO_VALUE_CAPTURED);
+            }
+            if (resolved > 0 && resolvedNotFound == resolved) {
+                return Optional.of(UnresolvedReason.CAPTURED_VALUES_NOT_FOUND);
+            }
+            return Optional.empty();
+        }
+    }
+
+    private static final class OperationDiagnostics {
+        private final Map<Integer, Integer> statusCodes = new LinkedHashMap<>();
+        private final Map<RequestTarget, ParameterDiagnostics> parameters = new LinkedHashMap<>();
+        private int requests;
+        private int successes;
+
+        void record(int responseCode) {
+            requests++;
+            if (ResponseCodeFamily.is2xxCode(responseCode)) {
+                successes++;
+            }
+            statusCodes.merge(responseCode, 1, Integer::sum);
+        }
+
+        void recordParameter(RequestTarget target, boolean resolved, int responseCode) {
+            ParameterDiagnostics stats = parameters.computeIfAbsent(target, _ -> new ParameterDiagnostics());
+            if (!resolved) {
+                stats.unresolved++;
+                return;
+            }
+            stats.resolved++;
+            if (responseCode == 404 || responseCode == 410) {
+                stats.resolvedNotFound++;
+            }
+        }
+
+        boolean onlyAuthFailures() {
+            return statusCodes.keySet().stream().allMatch(code -> code == 401 || code == 403);
+        }
+
+        OperationOutcome outcome(OperationKey key) {
+            return new OperationOutcome(key.path(), key.method(), requests, successes, statusCodes);
         }
     }
 

@@ -41,7 +41,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -511,8 +510,9 @@ public class FilterArguments {
     public List<Fuzzer> getSecondPhaseFuzzers() {
         if (SECOND_PHASE_FUZZERS_TO_BE_RUN.isEmpty()) {
             List<String> secondPhaseFuzzersAsString = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SecondPhaseFuzzer.class);
-            List<String> fuzzersExcludingSkipped = secondPhaseFuzzersAsString.stream().filter(Predicate.not(this.getSkipFuzzers()::contains))
-                    .filter(fuzzer -> this.getSuppliedFuzzers().isEmpty() || this.getSuppliedFuzzers().contains(fuzzer))
+            List<String> suppliedFuzzerNames = this.getSuppliedFuzzers().stream().map(String::trim).toList();
+            List<String> fuzzersExcludingSkipped = this.removeSkippedFuzzersGlobally(secondPhaseFuzzersAsString).stream()
+                    .filter(fuzzer -> suppliedFuzzerNames.isEmpty() || suppliedFuzzerNames.stream().anyMatch(fuzzer::contains))
                     .toList();
             SECOND_PHASE_FUZZERS_TO_BE_RUN.addAll(this.getAllRegisteredFuzzers().stream()
                     .filter(fuzzer -> fuzzersExcludingSkipped.contains(fuzzer.toString()))
