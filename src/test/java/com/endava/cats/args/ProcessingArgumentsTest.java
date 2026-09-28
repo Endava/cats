@@ -32,6 +32,40 @@ class ProcessingArgumentsTest {
     }
 
     @Test
+    void shouldDefaultPreseedGetLimitToTwentyWithoutEnablingPreseed() {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+
+        new CommandLine(processingArguments).parseArgs();
+
+        Assertions.assertThat(processingArguments.isPreseedCollectionGets()).isFalse();
+        Assertions.assertThat(processingArguments.getMaxPreseedCollectionGets()).isEqualTo(20);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0", "1", "50"})
+    void shouldConfigurePreseedGetLimit(int limit) {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+        CommandLine commandLine = new CommandLine(processingArguments);
+
+        commandLine.parseArgs("--preseedCollectionGets", "--maxPreseedCollectionGets=" + limit);
+        processingArguments.validatePreseedCollectionGets(commandLine.getCommandSpec());
+
+        Assertions.assertThat(processingArguments.isPreseedCollectionGets()).isTrue();
+        Assertions.assertThat(processingArguments.getMaxPreseedCollectionGets()).isEqualTo(limit);
+    }
+
+    @Test
+    void shouldRejectNegativePreseedGetLimit() {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+        CommandLine commandLine = new CommandLine(processingArguments);
+        commandLine.parseArgs("--maxPreseedCollectionGets=-1");
+
+        Assertions.assertThatThrownBy(() -> processingArguments.validatePreseedCollectionGets(commandLine.getCommandSpec()))
+                .isInstanceOf(CommandLine.ParameterException.class)
+                .hasMessageContaining("--maxPreseedCollectionGets must be 0 or greater");
+    }
+
+    @Test
     void shouldMatchXxxSelectionWhenArgumentNotProvided() {
         ProcessingArguments processingArguments = new ProcessingArguments();
         Assertions.assertThat(processingArguments.matchesXxxSelection("")).isTrue();

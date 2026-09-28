@@ -1699,6 +1699,42 @@ class RuntimeResourcePoolTest {
                         Assertions.assertThat(parameter.reason()).isEqualTo(RuntimeResourcePool.UnresolvedReason.NO_VALUE_CAPTURED)));
     }
 
+    @Test
+    void shouldBoundSuccessfulExchangesAndKeepOnlyRelevantHeaders() {
+        enableResourceReuse();
+        ServiceData get = getData("/items/{id}", "{\"id\":\"generated\"}");
+        for (int i = 0; i < 7; i++) {
+            resourcePool.observe(get, request("GET", "/items/" + i, "{}"), CatsResponse.builder()
+                    .responseCode(200).body("{\"id\":\"" + i + "\"}")
+                    .headers(List.of(new KeyValuePair<>("ETag", "\"version-" + i + "\""),
+                            new KeyValuePair<>("Location", "/items/" + i),
+                            new KeyValuePair<>("Authorization", "secret"))).build());
+        }
+        Assertions.assertThat(resourcePool.successfulExchanges("/items/{id}", HttpMethod.GET))
+                .extracting(RuntimeResourcePool.SuccessfulExchange::url)
+                .containsExactly("http://localhost/items/3", "http://localhost/items/4",
+                        "http://localhost/items/5", "http://localhost/items/6");
+        Assertions.assertThat(resourcePool.successfulExchanges("/items/{id}", HttpMethod.GET).getLast().etag())
+                .isEqualTo("\"version-6\"");
+        Assertions.assertThat(resourcePool.successfulExchanges("/items/{id}", HttpMethod.GET).getLast().toString())
+                .doesNotContain("secret");
+        resourcePool.clear();
+        Assertions.assertThat(resourcePool.successfulExchanges("/items/{id}", HttpMethod.GET)).isEmpty();
+    }
+
+    @Test
+    void shouldNotStoreFuzzedOrTruncatedExchanges() {
+        enableResourceReuse();
+        ServiceData fuzzedGet = ServiceData.builder().relativePath("/items/{id}").contractPath("/items/{id}")
+                .payload("{\"id\":\"generated\"}").queryParams(Set.of()).httpMethod(HttpMethod.GET)
+                .contentType("application/json").mutationTarget(RequestTarget.path("id")).build();
+        resourcePool.observe(fuzzedGet, request("GET", "/items/fuzzed", "{}"), response(200, "{}"));
+        resourcePool.observe(getData("/items/{id}", "{\"id\":\"generated\"}"),
+                request("GET", "/items/1", "{}"), CatsResponse.builder().responseCode(200)
+                        .body("{}").bodyTruncated(true).build());
+        Assertions.assertThat(resourcePool.successfulExchanges("/items/{id}", HttpMethod.GET)).isEmpty();
+    }
+
     private void enableResourceReuse() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
     }

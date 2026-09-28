@@ -488,8 +488,14 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     void startFuzzing(OpenAPI openAPI) {
         List<String> suppliedPaths = filterArguments.getPathsToRun(openAPI);
         deferredHappyPathDeletes.clear();
+        List<Map.Entry<String, PathItem>> paths = new ArrayList<>(this.sortPathsAlphabetically(openAPI, filesArguments.getPathsOrder()));
+        if (processingArguments.isReuseSuccessfulResources() && filesArguments.getPathsOrder().isEmpty() &&
+                filterArguments.isHttpMethodSupplied(HttpMethod.POST)) {
+            paths = OperationDependencyOrder.order(openAPI, paths);
+        }
+        this.preseedCollectionGets(paths, suppliedPaths, openAPI);
 
-        for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI, filesArguments.getPathsOrder())) {
+        for (Map.Entry<String, PathItem> entry : paths) {
             CatsExecutionCancelledException.check();
             if (suppliedPaths.contains(entry.getKey())) {
                 this.fuzzPath(entry, openAPI);
@@ -498,6 +504,54 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             }
         }
         this.runDeferredHappyPathDeletes();
+    }
+
+    /**
+     * Optionally calls a bounded number of selected, unparameterized GETs before normal path fuzzing. Their
+     * collection responses can supply IDs to operations that otherwise run before the producing GET path.
+     */
+    private void preseedCollectionGets(List<Map.Entry<String, PathItem>> paths, List<String> suppliedPaths, OpenAPI openAPI) {
+        if (!processingArguments.isPreseedCollectionGets() || !processingArguments.isReuseSuccessfulResources() ||
+                filterArguments.isDryRun() || reportingArguments.isTui() || !filterArguments.isHttpMethodSupplied(HttpMethod.GET)) {
+            return;
+        }
+        int seeded = 0;
+        for (Map.Entry<String, PathItem> entry : paths) {
+            if (seeded >= processingArguments.getMaxPreseedCollectionGets()) {
+                return;
+            }
+            String path = entry.getKey();
+            PathItem item = entry.getValue();
+            if (!isEligibleForPreseed(path, item, suppliedPaths)) {
+                continue;
+            }
+            List<Fuzzer> configured = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Set.of(HttpMethod.GET), path);
+            Fuzzer happyPath = configured.stream().filter(HappyPathFuzzer.class::isInstance).findFirst().orElse(null);
+            if (happyPath == null) {
+                continue;
+            }
+            List<FuzzingData> getData = fuzzingDataFactory.fromPathItem(path, item, openAPI).stream()
+                    .filter(data -> data.getMethod() == HttpMethod.GET)
+                    .filter(data -> processingArguments.matchesXxxSelection(data.getPayload()))
+                    .limit(1).toList();
+            if (!getData.isEmpty()) {
+                runFuzzers(getData, List.of(happyPath));
+                seeded++;
+            }
+        }
+    }
+
+    /** Limits discovery to selected GETs that can run without an ID or a required query parameter. */
+    private boolean isEligibleForPreseed(String path, PathItem item, List<String> suppliedPaths) {
+        return suppliedPaths.contains(path) && !path.contains("{") && item.getGet() != null &&
+                !hasRequiredQueryParameters(item);
+    }
+
+    private boolean hasRequiredQueryParameters(PathItem item) {
+        return java.util.stream.Stream.concat(
+                        Optional.ofNullable(item.getParameters()).orElse(List.of()).stream(),
+                        Optional.ofNullable(item.getGet().getParameters()).orElse(List.of()).stream())
+                .anyMatch(parameter -> "query".equals(parameter.getIn()) && Boolean.TRUE.equals(parameter.getRequired()));
     }
 
     /**
@@ -567,6 +621,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         reportingArguments.processLogData();
         authArguments.getEnvironmentVariables();
         apiArguments.validateRequired(spec);
+        processingArguments.validatePreseedCollectionGets(spec);
         filesArguments.loadConfig();
         filterArguments.applyProfile(spec);
     }
@@ -587,6 +642,16 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         logger.config("{} configured fuzzers out of {} total fuzzers",
                 AnsiUtils.blue(filterArguments.getFirstPhaseFuzzersForPath().size()),
                 AnsiUtils.blue(filterArguments.getTotalFuzzersOrLinters()));
+        List<String> secondPhaseNames = filterArguments.getSecondPhaseFuzzers().stream().map(Object::toString).toList();
+        logger.config("{} second-phase fuzzers configured: {}", AnsiUtils.blue(secondPhaseNames.size()), AnsiUtils.blue(secondPhaseNames));
+        if (!secondPhaseNames.isEmpty()) {
+            logger.config("Second-phase checks only send requests when matching successful exchanges were observed; use --verbosity=detailed for skip reasons");
+            if (!processingArguments.isReuseSuccessfulResources()) {
+                logger.config("Second-phase checks requiring observed exchanges cannot run with --no-reuseSuccessfulResources");
+            } else if (!filterArguments.getFirstPhaseFuzzersForPath().contains(HappyPathFuzzer.class.getSimpleName())) {
+                logger.config("HappyPathFuzzer is not selected; phase-2 checks may have no successful POST/GET/PUT baselines to use");
+            }
+        }
         logger.config("{} configured paths out of {} total OpenAPI paths",
                 AnsiUtils.blue(filterArguments.getPathsToRun(openAPI).size()),
                 AnsiUtils.blue(openAPI.getPaths().size()));

@@ -575,6 +575,68 @@ class CatsCommandTest {
     }
 
     @Test
+    void shouldOnlyPreseedUnparameterizedCollectionGetsWhenEnabled() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        ReflectionTestUtils.setField(processingArguments, "preseedCollectionGets", true);
+        ReflectionTestUtils.setField(processingArguments, "maxPreseedCollectionGets", 1);
+        try {
+            List<String> order = new ArrayList<>();
+            HappyPathFuzzer happy = recordingHappyPathFuzzer(order);
+            PathItem collection = new PathItem().get(new Operation()).post(new Operation());
+            PathItem requiredQuery = new PathItem().get(new Operation().addParametersItem(
+                    new io.swagger.v3.oas.models.parameters.QueryParameter().name("q").required(true)));
+            PathItem anotherCollection = new PathItem().get(new Operation());
+            OpenAPI api = new OpenAPI().paths(new Paths().addPathItem("/items", collection)
+                    .addPathItem("/search", requiredQuery).addPathItem("/widgets", anotherCollection));
+            Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/items", "/search", "/widgets"));
+            Mockito.when(filterArguments.isHttpMethodSupplied(HttpMethod.GET)).thenReturn(true);
+            Mockito.when(filterArguments.isHttpMethodSupplied(HttpMethod.POST)).thenReturn(true);
+            Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                    .thenReturn(List.of(happy));
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/items"), fuzzingData(HttpMethod.POST, "/items")))
+                    .when(fuzzingDataFactory).fromPathItem(Mockito.eq("/items"), Mockito.eq(collection), Mockito.eq(api));
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/search")))
+                    .when(fuzzingDataFactory).fromPathItem(Mockito.eq("/search"), Mockito.eq(requiredQuery), Mockito.eq(api));
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/widgets")))
+                    .when(fuzzingDataFactory).fromPathItem(Mockito.eq("/widgets"), Mockito.eq(anotherCollection), Mockito.eq(api));
+            catsMain.startFuzzing(api);
+
+            Assertions.assertThat(order).containsExactly("happy-GET", "happy-GET", "happy-POST", "happy-GET", "happy-GET");
+            Mockito.verify(fuzzingDataFactory, Mockito.times(1)).fromPathItem("/widgets", anotherCollection, api);
+        } finally {
+            ReflectionTestUtils.setField(processingArguments, "preseedCollectionGets", false);
+            ReflectionTestUtils.setField(processingArguments, "maxPreseedCollectionGets", 20);
+        }
+    }
+
+    @Test
+    void shouldNotPreseedAnyGetsWhenConfiguredLimitIsZero() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        ReflectionTestUtils.setField(processingArguments, "preseedCollectionGets", true);
+        ReflectionTestUtils.setField(processingArguments, "maxPreseedCollectionGets", 0);
+        try {
+            List<String> order = new ArrayList<>();
+            HappyPathFuzzer happy = recordingHappyPathFuzzer(order);
+            PathItem collection = new PathItem().get(new Operation());
+            OpenAPI api = new OpenAPI().paths(new Paths().addPathItem("/items", collection));
+            Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/items"));
+            Mockito.when(filterArguments.isHttpMethodSupplied(HttpMethod.GET)).thenReturn(true);
+            Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                    .thenReturn(List.of(happy));
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/items")))
+                    .when(fuzzingDataFactory).fromPathItem("/items", collection, api);
+
+            catsMain.startFuzzing(api);
+
+            Assertions.assertThat(order).containsExactly("happy-GET");
+            Mockito.verify(fuzzingDataFactory).fromPathItem("/items", collection, api);
+        } finally {
+            ReflectionTestUtils.setField(processingArguments, "preseedCollectionGets", false);
+            ReflectionTestUtils.setField(processingArguments, "maxPreseedCollectionGets", 20);
+        }
+    }
+
+    @Test
     void shouldNotDeferDeletesWhenHappyPathIsNotConfigured() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
         List<String> executionOrder = new ArrayList<>();

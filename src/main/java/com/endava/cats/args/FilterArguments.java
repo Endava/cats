@@ -66,7 +66,6 @@ public class FilterArguments {
 
     /* local caches to avoid recompute */
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
-    static final List<Fuzzer> SECOND_PHASE_FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
     static final List<String> PATHS_TO_INCLUDE = new ArrayList<>();
     private static final String EXCLUDE_FROM_ALL_FUZZERS_MARK = "!";
@@ -508,20 +507,18 @@ public class FilterArguments {
      * @return a list of fuzzers to be run in phase 2
      */
     public List<Fuzzer> getSecondPhaseFuzzers() {
-        if (SECOND_PHASE_FUZZERS_TO_BE_RUN.isEmpty()) {
-            List<String> secondPhaseFuzzersAsString = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SecondPhaseFuzzer.class);
-            List<String> suppliedFuzzerNames = this.getSuppliedFuzzers().stream().map(String::trim).toList();
-            List<String> fuzzersExcludingSkipped = this.removeSkippedFuzzersGlobally(secondPhaseFuzzersAsString).stream()
-                    .filter(fuzzer -> suppliedFuzzerNames.isEmpty() || suppliedFuzzerNames.stream().anyMatch(fuzzer::contains))
-                    .toList();
-            SECOND_PHASE_FUZZERS_TO_BE_RUN.addAll(this.getAllRegisteredFuzzers().stream()
-                    .filter(fuzzer -> fuzzersExcludingSkipped.contains(fuzzer.toString()))
-                    .toList());
-        }
-        if (containsOnlySpecialFuzzers(this.getSuppliedFuzzers())) {
+        if (isLinting() || containsOnlySpecialFuzzers(this.getSuppliedFuzzers()) ||
+                !checkArguments.isCheckHttp() && (checkArguments.isCheckFields() || checkArguments.isCheckHeaders())) {
             return Collections.emptyList();
         }
-        return List.copyOf(SECOND_PHASE_FUZZERS_TO_BE_RUN);
+        List<String> secondPhaseFuzzersAsString = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SecondPhaseFuzzer.class);
+        List<String> suppliedFuzzerNames = this.getSuppliedFuzzers().stream().map(String::trim).toList();
+        List<String> fuzzersExcludingSkipped = this.removeSkippedFuzzersGlobally(secondPhaseFuzzersAsString).stream()
+                .filter(fuzzer -> suppliedFuzzerNames.isEmpty() || suppliedFuzzerNames.stream().anyMatch(fuzzer::contains))
+                .toList();
+        return this.getAllRegisteredFuzzers().stream()
+                .filter(fuzzer -> fuzzersExcludingSkipped.contains(fuzzer.toString()))
+                .toList();
     }
 
     private List<String> removeSpecialFuzzers(List<String> allowedFuzzers) {

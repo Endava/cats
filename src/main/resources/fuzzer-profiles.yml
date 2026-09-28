@@ -79,6 +79,11 @@ profiles:
       # Resource Manipulation
       - CheckDeletedResourcesNotAvailable
       - CheckReadsStillWork
+      - CrossParentResourceIsolation
+      - CreatedResourceLocation
+      - UpdateReadConsistency
+      - ConditionalEtag
+      - PutIdempotency
       - RandomResources
       - InvalidReferencesFields
 

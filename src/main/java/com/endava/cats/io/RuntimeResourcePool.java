@@ -24,6 +24,7 @@ import okhttp3.HttpUrl;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -51,6 +52,10 @@ public class RuntimeResourcePool {
     private static final int MAX_SUCCESSFUL_BASELINES = 500;
     private static final int MAX_CORRELATION_FEEDBACK = 5_000;
     private static final int MAX_OPERATION_DIAGNOSTICS = 2_000;
+    private static final int MAX_EXCHANGES = 256;
+    private static final int MAX_EXCHANGES_PER_OPERATION = 4;
+    private static final int MAX_EXCHANGE_BODY_LENGTH = 32_768;
+    private static final int MAX_EXCHANGE_HEADER_LENGTH = 2_048;
     private static final int MAX_FEEDBACK_REWARD = 500;
     private static final int MIN_FEEDBACK_PENALTY = -5_000;
     private static final int SUCCESS_REWARD = 100;
@@ -77,6 +82,7 @@ public class RuntimeResourcePool {
     private final Map<CorrelationFeedbackKey, Integer> correlationFeedback = new LinkedHashMap<>();
     private final Map<ResolvedRequest, Map<ResourceCorrelation, Long>> pendingCorrelationSources = new IdentityHashMap<>();
     private final Map<OperationKey, OperationDiagnostics> operationDiagnostics = new LinkedHashMap<>();
+    private final ArrayDeque<SuccessfulExchange> successfulExchanges = new ArrayDeque<>();
     private final AtomicLong sequence = new AtomicLong();
 
     /**
@@ -257,6 +263,7 @@ public class RuntimeResourcePool {
         if (!ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
             return;
         }
+        recordSuccessfulExchange(data, request, response);
         storeSuccessfulRequestBaseline(data, request);
         if (data.getHttpMethod() == HttpMethod.DELETE) {
             markDeleted(data, request.getUrl());
@@ -330,6 +337,7 @@ public class RuntimeResourcePool {
         correlationFeedback.clear();
         pendingCorrelationSources.clear();
         operationDiagnostics.clear();
+        successfulExchanges.clear();
         sequence.set(0);
     }
 
@@ -367,6 +375,81 @@ public class RuntimeResourcePool {
     public synchronized boolean hasSucceededWithUnmodifiedRequest(String path, HttpMethod method) {
         OperationDiagnostics diagnostics = operationDiagnostics.get(new OperationKey(path, method));
         return diagnostics != null && diagnostics.successes > 0;
+    }
+
+    /**
+     * Returns the bounded successful, unmodified exchanges observed for one documented operation in this run.
+     * Request headers are deliberately not retained; request/response bodies stay in memory and are length-limited.
+     *
+     * @param path contract path
+     * @param method HTTP method
+     * @return immutable snapshot in observation order
+     */
+    public synchronized List<SuccessfulExchange> successfulExchanges(String path, HttpMethod method) {
+        return successfulExchanges.stream()
+                .filter(exchange -> exchange.path().equals(path) && exchange.method() == method)
+                .toList();
+    }
+
+    /** Captures only bounded, unmodified successful exchanges; request headers are never retained. */
+    private void recordSuccessfulExchange(ServiceData data, CatsRequest request, CatsResponse response) {
+        if (!isEligibleExchange(data, request, response)) {
+            return;
+        }
+        OperationKey key = new OperationKey(data.getRelativePath(), data.getHttpMethod());
+        SuccessfulExchange exchange = new SuccessfulExchange(key.path(), key.method(), request.getUrl(),
+                request.getPayload(), response.getResponseCode(), response.getBody(),
+                boundedHeader(response, "Location"), boundedHeader(response, "ETag"));
+        evictOldestExchangeForOperationIfFull(key);
+        successfulExchanges.addLast(exchange);
+        if (successfulExchanges.size() > MAX_EXCHANGES) {
+            successfulExchanges.removeFirst();
+        }
+    }
+
+    private boolean isEligibleExchange(ServiceData data, CatsRequest request, CatsResponse response) {
+        return isUnmodifiedContractRequest(data) && !response.isBodyTruncated() &&
+                Set.of(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH).contains(data.getHttpMethod()) &&
+                response.getResponseCode() != 202 && StringUtils.isNotBlank(request.getUrl()) &&
+                request.getUrl().length() <= MAX_EXCHANGE_HEADER_LENGTH &&
+                !tooLong(request.getPayload()) && !tooLong(response.getBody());
+    }
+
+    private void evictOldestExchangeForOperationIfFull(OperationKey key) {
+        List<SuccessfulExchange> existing = successfulExchanges(key.path(), key.method());
+        if (existing.size() >= MAX_EXCHANGES_PER_OPERATION) {
+            successfulExchanges.remove(existing.getFirst());
+        }
+    }
+
+    private boolean tooLong(String value) {
+        return value != null && value.length() > MAX_EXCHANGE_BODY_LENGTH;
+    }
+
+    private String boundedHeader(CatsResponse response, String name) {
+        KeyValuePair<String, String> header = response.getHeader(name);
+        return header == null || header.getValue() == null || header.getValue().length() > MAX_EXCHANGE_HEADER_LENGTH
+                ? null : header.getValue();
+    }
+
+    /**
+     * Small in-memory evidence snapshot for second-phase checks. Request headers are never copied into this record.
+     *
+     * @param path OpenAPI path template
+     * @param method operation method
+     * @param url final request URL
+     * @param requestBody final request body, bounded in size
+     * @param status successful response status
+     * @param responseBody captured response body, bounded in size
+     * @param location Location response header, if present and short enough
+     * @param etag ETag response header, if present and short enough
+     */
+    public record SuccessfulExchange(String path, HttpMethod method, String url, String requestBody,
+                                     int status, String responseBody, String location, String etag) {
+        @Override
+        public String toString() {
+            return "SuccessfulExchange[method=%s, path=%s, status=%d]".formatted(method, path, status);
+        }
     }
 
     private OperationOutcome producerOutcome(String path, RequestTarget target) {

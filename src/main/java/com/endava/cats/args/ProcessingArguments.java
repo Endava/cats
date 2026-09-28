@@ -128,6 +128,13 @@ public class ProcessingArguments {
             description = "When set to @|bold true|@, successful request baselines and correlated resource values are reused in later requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean reuseSuccessfulResources = true;
 
+    @CommandLine.Option(names = {"--preseedCollectionGets"}, defaultValue = "false",
+            description = "Before fuzzing, run selected collection GET operations without required parameters to capture existing resource identifiers. The limit is controlled by --maxPreseedCollectionGets. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean preseedCollectionGets;
+
+    @CommandLine.Option(names = {"--maxPreseedCollectionGets"}, defaultValue = "20",
+            description = "Maximum number of collection GET requests sent by --preseedCollectionGets. Use 0 to send none. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private int maxPreseedCollectionGets = 20;
 
     @CommandLine.Option(names = {"--http2PriorKnowledge"},
             description = "If set to @|bold true|@, it will force a http2 connection, without fallback to HTTP 1.X . Default: @|bold,underline ${DEFAULT-VALUE}|@")
@@ -142,6 +149,17 @@ public class ProcessingArguments {
     @CommandLine.Option(names = {"--discriminatorCasing"},
             description = "The casing convention used for discriminator values when no explicit enum or mapping is defined. Supported values: @|bold PascalCase|@, @|bold camelCase|@, @|bold UPPER_SNAKE_CASE|@, @|bold lower_snake_case|@, @|bold kebab-case|@, @|bold lowercase|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private String discriminatorCasing = "UPPER_SNAKE_CASE";
+
+    /**
+     * Rejects a negative preseed request budget before fuzzing begins.
+     *
+     * @param spec command specification used to produce a CLI usage error
+     */
+    public void validatePreseedCollectionGets(CommandLine.Model.CommandSpec spec) {
+        if (maxPreseedCollectionGets < 0) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "--maxPreseedCollectionGets must be 0 or greater");
+        }
+    }
 
     /**
      * Checks if the payload matches any of the supplied --oneOfSelection or --anyOfSelection argument

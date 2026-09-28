@@ -59,7 +59,6 @@ class FilterArgumentsTest {
 
         FilterArguments.ALL_CATS_FUZZERS.clear();
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
-        FilterArguments.SECOND_PHASE_FUZZERS_TO_BE_RUN.clear();
         FilterArguments.PATHS_TO_INCLUDE.clear();
         filterArguments.getUserArguments().words = null;
     }
@@ -159,7 +158,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(212);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(217);
     }
 
     @Test
@@ -252,7 +251,9 @@ class FilterArgumentsTest {
     @Test
     void shouldNotAddFirstPhaseFuzzersInSecondPhase() {
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).extracting(Object::toString)
-                .containsExactlyInAnyOrder("CheckDeletedResourcesNotAvailableFuzzer", "CheckReadsStillWorkFuzzer");
+                .containsExactlyInAnyOrder("CheckDeletedResourcesNotAvailableFuzzer", "CheckReadsStillWorkFuzzer",
+                        "CrossParentResourceIsolationFuzzer", "CreatedResourceLocationFuzzer", "UpdateReadConsistencyFuzzer",
+                        "ConditionalEtagFuzzer", "PutIdempotencyFuzzer");
     }
 
     @ParameterizedTest
@@ -278,12 +279,28 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", List.of(skippedName));
 
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).extracting(Object::toString)
-                .containsExactly("CheckReadsStillWorkFuzzer");
+                .contains("CheckReadsStillWorkFuzzer").doesNotContain("CheckDeletedResourcesNotAvailableFuzzer");
+    }
+
+    @Test
+    void shouldRespectHttpCategoryForSecondPhaseFuzzers() {
+        checkArguments.setCheckFields(true);
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isEmpty();
+
+        checkArguments.setCheckHttp(true);
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(7);
+    }
+
+    @Test
+    void shouldNotCarrySecondPhaseSelectionIntoLintMode() {
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isNotEmpty();
+        filterArguments.customFilter("Linter");
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isEmpty();
     }
 
     @Test
     void shouldReturnEmptySecondPhaseWhenSpecialFuzzer() {
-        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(2);
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(7);
         filterArguments.customFilter("FunctionalFuzzer");
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isEmpty();
     }
@@ -450,7 +467,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldCountTotalFuzzers() {
-        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(155);
+        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(160);
     }
 
     @Test
@@ -459,7 +476,7 @@ class FilterArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"ALL,196", "FUZZERS,155", "LINTERS,41"})
+    @CsvSource({"ALL,201", "FUZZERS,160", "LINTERS,41"})
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);
