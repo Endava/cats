@@ -32,6 +32,7 @@ import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -838,6 +839,70 @@ class TestCaseListenerTest {
         schema.setTypes(Set.of("integer", "null"));
 
         assertSchemaMismatch(schema, "1", "\"wrong\"", SpecVersion.V31, new Components());
+    }
+
+    @Test
+    void shouldAcceptIssue211ProblemDetailsWithDottedErrorPath() throws IOException {
+        Schema<?> problemDetails = Json31.mapper().readValue("""
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {"type": ["null", "string"]},
+                    "title": {"type": ["null", "string"]},
+                    "status": {"pattern": "^-?(?:0|[1-9]\\\\d*)$", "type": "integer", "format": "int32"},
+                    "detail": {"type": ["null", "string"]},
+                    "errors": {"type": ["null", "object"], "additionalProperties": {"type": "array", "items": {"type": "string"}}},
+                    "traceId": {"type": ["null", "string"]},
+                    "code": {"type": ["null", "string"]},
+                    "isExpected": {"type": ["null", "boolean"]},
+                    "isExceptional": {"type": ["null", "boolean"]}
+                  }
+                }
+                """, Schema.class);
+        Schema<?> responseSchema = new Schema<>().$ref("#/components/schemas/ProblemDetails");
+        OpenAPI openAPI = new OpenAPI();
+        openAPI.setSpecVersion(SpecVersion.V31);
+        openAPI.setComponents(new Components().addSchemas("ProblemDetails", problemDetails));
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/test").openApi(openAPI)
+                .schemaMap(openAPI.getComponents().getSchemas())
+                .responseCodes(Set.of("400"))
+                .responseSchemaDefinitions(Map.of("400", Map.of("application/json", responseSchema)))
+                .responseContentTypes(Map.of("400", List.of("application/json")))
+                .build();
+        String body = """
+                {
+                  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                  "title": "The provided data is invalid in the context of the requested entity or operation",
+                  "status": 400,
+                  "detail": "The creationCommandDto field is required.",
+                  "errors": {
+                    "creationCommandDto": ["The creationCommandDto field is required."],
+                    "$.networkConfiguration.wan.enabled": ["The input was not valid."]
+                  },
+                  "traceId": "00-d892df3c78286c216b4311119a5ca83c-b863e808a034fe5c-01",
+                  "code": "000010000",
+                  "isExpected": true,
+                  "isExceptional": false
+                }
+                """;
+        CatsResponse response = CatsResponse.builder()
+                .body(body).jsonBody(JsonParser.parseString(body)).responseCode(400)
+                .responseContentType("application/json; charset=utf-8")
+                .responseValidationField("networkConfiguration#wan#enabled")
+                .build();
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("POST").build());
+            testCaseListener.addResponse(response);
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
+        }, data);
+
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails.getFirst().getResultDetails())
+                .startsWith("Response matches expected result");
+        Mockito.verify(executionStatisticsListener).increaseSuccess(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
     }
 
     @Test

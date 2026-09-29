@@ -1185,10 +1185,10 @@ public class TestCaseListener {
     private boolean isFuzzedFieldPresentInResponse(CatsResponse response) {
         return response.getResponseValidationField() == null ||
                 response.getBody()
-                        .replaceAll("[-_\\s]+", "")
+                        .replaceAll("[-_#.\\s]+", "")
                         .toLowerCase(Locale.ROOT)
                         .contains(response.getResponseValidationField()
-                                .replaceAll("[-_#\\s]+", "")
+                                .replaceAll("[-_#.\\s]+", "")
                                 .toLowerCase(Locale.ROOT));
     }
 
