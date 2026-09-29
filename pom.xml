@@ -68,7 +68,7 @@
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
-        <okhttp.version>5.4.0-CATS</okhttp.version>
+        <okhttp.version>5.5.0-CATS</okhttp.version>
         <swagger.parser.version>2.1.49-SNAPSHOT</swagger.parser.version>
         <okio.version>3.18.2</okio.version>
         <wiremock.version>3.12.1</wiremock.version>
@@ -85,6 +85,7 @@
         <timestamp>${maven.build.timestamp}</timestamp>
         <swagger-parser-v2.version>2.1.48</swagger-parser-v2.version>
         <tamboui.version>0.5.0</tamboui.version>
+        <json-schema-validator.version>2.0.7</json-schema-validator.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -126,12 +127,12 @@
                             <goal>install-file</goal>
                         </goals>
                         <configuration>
-                            <file>lib/okhttp-5.4.0-CATS.jar</file>
+                            <file>lib/okhttp-5.5.0-CATS.jar</file>
                             <groupId>com.squareup.okhttp3</groupId>
                             <artifactId>okhttp</artifactId>
-                            <version>5.4.0-CATS</version>
-                            <sources>lib/okhttp-5.4.0-CATS-sources.jar</sources>
-                            <javadoc>lib/okhttp-5.4.0-CATS-javadoc.jar</javadoc>
+                            <version>5.5.0-CATS</version>
+                            <sources>lib/okhttp-5.5.0-CATS-sources.jar</sources>
+                            <javadoc>lib/okhttp-5.5.0-CATS-javadoc.jar</javadoc>
                             <packaging>jar</packaging>
                         </configuration>
                     </execution>
@@ -142,13 +143,13 @@
                             <goal>install-file</goal>
                         </goals>
                         <configuration>
-                            <file>lib/swagger-parser-v3-2.1.46-CATS.jar</file>
+                            <file>lib/swagger-parser-v3-2.1.49-CATS.jar</file>
                             <groupId>io.swagger.parser.v3</groupId>
                             <artifactId>swagger-parser-v3</artifactId>
                             <version>${swagger.parser.version}</version>
-                            <sources>lib/swagger-parser-v3-2.1.46-CATS-sources.jar</sources>
-                            <javadoc>lib/swagger-parser-v3-2.1.46-CATS-javadoc.jar</javadoc>
-                            <pomFile>lib/swagger-parser-v3-2.1.46-CATS.pom</pomFile>
+                            <sources>lib/swagger-parser-v3-2.1.49-CATS-sources.jar</sources>
+                            <javadoc>lib/swagger-parser-v3-2.1.49-CATS-javadoc.jar</javadoc>
+                            <pomFile>lib/swagger-parser-v3-2.1.49-CATS.pom</pomFile>
                             <packaging>jar</packaging>
                         </configuration>
                     </execution>
@@ -655,6 +656,11 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${json-schema-validator.version}</version>
         </dependency>
     </dependencies>
 </project>
