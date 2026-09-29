@@ -444,6 +444,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     void printUnresolvedParameters() {
+        if (!reportingArguments.isDebug()) {
+            return;
+        }
         try {
             OpenAPI openAPI = globalContext.getOpenAPI();
             List<RuntimeResourcePool.UnresolvedOperation> operations = runtimeResourcePool.unresolvedOperations().stream()

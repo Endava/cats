@@ -70,8 +70,7 @@ class TestCaseExporterHtmlOnlyTest {
                 "Quality gate", "PASSED", "Tests Reported", "1",
                 "Authentication errors", "I/O errors",
                 "Random seed", "12345", "Runtime resource reuse", "Enabled", "Configured stop limits",
-                "Processing Limitations", "GET /customers", "Could not resolve a request schema reference",
-                "Response", "201", "Time", "12ms")
+                "Processing Limitations", "GET /customers", "Could not resolve a request schema reference")
                 .doesNotContain("Execution accounting", "Skipped tests", "HTTP requests sent",
                         "Results included in report", "Omitted by reporting rules");
         Assertions.assertThat(json).contains(

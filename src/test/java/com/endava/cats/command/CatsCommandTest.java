@@ -348,8 +348,10 @@ class CatsCommandTest {
                 new RuntimeResourcePool.UnresolvedOperation(new RuntimeResourcePool.OperationOutcome("/customers/{id}", HttpMethod.PUT, 1, 0, Map.of(405, 1)), List.of(parameter))));
         Object originalPool = ReflectionTestUtils.getField(catsMain, "runtimeResourcePool");
         Object originalContext = ReflectionTestUtils.getField(catsMain, "globalContext");
+        Object originalDebug = ReflectionTestUtils.getField(reportingArguments, "debug");
         try (MockedStatic<UnresolvedParametersSummary> summary = Mockito.mockStatic(UnresolvedParametersSummary.class)) {
             summary.when(() -> UnresolvedParametersSummary.render(Mockito.anyList())).thenReturn(List.of());
+            ReflectionTestUtils.setField(reportingArguments, "debug", true);
             ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", pool);
             ReflectionTestUtils.setField(catsMain, "globalContext", context);
 
@@ -360,6 +362,36 @@ class CatsCommandTest {
         } finally {
             ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", originalPool);
             ReflectionTestUtils.setField(catsMain, "globalContext", originalContext);
+            ReflectionTestUtils.setField(reportingArguments, "debug", originalDebug);
+        }
+    }
+
+    @Test
+    void shouldNotPrintUnresolvedParametersWhenNotInDebugMode() {
+        RuntimeResourcePool pool = Mockito.mock(RuntimeResourcePool.class);
+        CatsGlobalContext context = Mockito.mock(CatsGlobalContext.class);
+        OpenAPI openAPI = new OpenAPI().paths(new Paths().addPathItem("/customers/{id}", new PathItem().get(new Operation())));
+        Mockito.when(context.getOpenAPI()).thenReturn(openAPI);
+        RuntimeResourcePool.UnresolvedParameter parameter = new RuntimeResourcePool.UnresolvedParameter(
+                new RequestTarget(RequestTarget.Location.PATH, "id"), RuntimeResourcePool.UnresolvedReason.NO_VALUE_CAPTURED, null);
+        Mockito.when(pool.unresolvedOperations()).thenReturn(List.of(
+                new RuntimeResourcePool.UnresolvedOperation(new RuntimeResourcePool.OperationOutcome("/customers/{id}", HttpMethod.GET, 1, 0, Map.of(404, 1)), List.of(parameter))));
+        Object originalPool = ReflectionTestUtils.getField(catsMain, "runtimeResourcePool");
+        Object originalContext = ReflectionTestUtils.getField(catsMain, "globalContext");
+        Object originalDebug = ReflectionTestUtils.getField(reportingArguments, "debug");
+        try (MockedStatic<UnresolvedParametersSummary> summary = Mockito.mockStatic(UnresolvedParametersSummary.class)) {
+            ReflectionTestUtils.setField(reportingArguments, "debug", false);
+            ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", pool);
+            ReflectionTestUtils.setField(catsMain, "globalContext", context);
+
+            catsMain.printUnresolvedParameters();
+
+            summary.verifyNoInteractions();
+            Mockito.verify(pool, Mockito.never()).unresolvedOperations();
+        } finally {
+            ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", originalPool);
+            ReflectionTestUtils.setField(catsMain, "globalContext", originalContext);
+            ReflectionTestUtils.setField(reportingArguments, "debug", originalDebug);
         }
     }
 
