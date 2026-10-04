@@ -4,10 +4,10 @@ import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.auth.wfc.WfcAuthProvider;
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.api.Parser;
@@ -17,9 +17,8 @@ import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.io.util.HttpContent;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.PayloadFormat;
-import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.QueryParameterSerialization;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
@@ -72,7 +71,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -103,9 +101,9 @@ public class ServiceCaller {
     private final ApiArguments apiArguments;
     private final ProcessingArguments processingArguments;
     private final ReportingArguments reportingArguments;
-    private final CatsGlobalContext catsGlobalContext;
     private final WfcAuthProvider wfcAuthProvider;
     private final RuntimeResourcePool runtimeResourcePool;
+    private final FilterArguments filterArguments;
     OkHttpClient okHttpClient;
 
     private RateLimiter rateLimiter;
@@ -113,7 +111,6 @@ public class ServiceCaller {
     /**
      * Constructs a new {@code ServiceCaller} with the specified parameters.
      *
-     * @param context             The global context for CATS.
      * @param lr                  The listener for test cases.
      * @param filesArguments      The arguments related to files.
      * @param authArguments       The authentication arguments.
@@ -121,17 +118,17 @@ public class ServiceCaller {
      * @param processingArguments The processing arguments.
      */
     @Inject
-    public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments,
-                         ReportingArguments reportingArguments, WfcAuthProvider wfcAuthProvider, RuntimeResourcePool runtimeResourcePool) {
+    public ServiceCaller(TestCaseListener lr, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments,
+                         ReportingArguments reportingArguments, WfcAuthProvider wfcAuthProvider, RuntimeResourcePool runtimeResourcePool, FilterArguments filterArguments) {
         this.testCaseListener = lr;
         this.filesArguments = filesArguments;
         this.authArguments = authArguments;
         this.apiArguments = apiArguments;
         this.processingArguments = processingArguments;
         this.reportingArguments = reportingArguments;
-        this.catsGlobalContext = context;
         this.wfcAuthProvider = wfcAuthProvider;
         this.runtimeResourcePool = runtimeResourcePool;
+        this.filterArguments = filterArguments;
     }
 
     /**
@@ -462,8 +459,10 @@ public class ServiceCaller {
             case JSON -> new EncodedRequestBody(payload, data.getContentType());
             case FORM -> encodeFormPayload(payload, data);
             case TEXT -> new EncodedRequestBody(encodeTextPayload(payload, data.isValidJson()), data.getContentType());
-            case NDJSON -> new EncodedRequestBody(encodeNdjsonPayload(payload, data.isValidJson()), data.getContentType());
-            case UNKNOWN -> throw new IllegalArgumentException("Unsupported request Content-Type '" + data.getContentType() + "'");
+            case NDJSON ->
+                    new EncodedRequestBody(encodeNdjsonPayload(payload, data.isValidJson()), data.getContentType());
+            case UNKNOWN ->
+                    throw new IllegalArgumentException("Unsupported request Content-Type '" + data.getContentType() + "'");
         };
     }
 
@@ -505,7 +504,7 @@ public class ServiceCaller {
             JsonElement element = JsonUtils.parseAsJsonElement(payload);
             if (element.isJsonArray()) {
                 List<String> records = new ArrayList<>();
-                element.getAsJsonArray().forEach(record -> records.add(record.toString()));
+                element.getAsJsonArray().forEach(item -> records.add(item.toString()));
                 return records.isEmpty() ? "" : String.join("\n", records) + "\n";
             }
             if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
@@ -593,7 +592,7 @@ public class ServiceCaller {
     /**
      * Calls the service with the provided request and response-validation fields.
      *
-     * @param catsRequest  The CATS request to be sent to the service.
+     * @param catsRequest              The CATS request to be sent to the service.
      * @param responseValidationFields fields whose presence may be validated in error responses
      * @return The CATS response received from the service.
      * @throws IOException If an I/O error occurs during the service call.
@@ -775,7 +774,7 @@ public class ServiceCaller {
     }
 
     private List<KeyValuePair<String, String>> buildObjectQueryParameter(String name, JsonObject value,
-                                                                          QueryParameterSerialization serialization) {
+                                                                         QueryParameterSerialization serialization) {
         if (QueryParameterSerialization.DEEP_OBJECT.equals(serialization.style())) {
             List<KeyValuePair<String, String>> parameters = new ArrayList<>();
             value.entrySet().forEach(entry -> addDeepObjectQueryParameters(
@@ -813,7 +812,7 @@ public class ServiceCaller {
     }
 
     private void addDeepObjectQueryParameters(String name, JsonElement value,
-                                               List<KeyValuePair<String, String>> parameters) {
+                                              List<KeyValuePair<String, String>> parameters) {
         if (value.isJsonNull()) {
             return;
         }
@@ -926,7 +925,9 @@ public class ServiceCaller {
     }
 
     public Map<String, String> getEnvironmentVariables() {
-        return authArguments.getEnvironmentVariables();
+        Map<String, String> environmentVariables = new HashMap<>(authArguments.getEnvironmentVariables());
+        environmentVariables.put(Parser.DRY_RUN, String.valueOf(filterArguments.isDryRun()));
+        return environmentVariables;
     }
 
     /**

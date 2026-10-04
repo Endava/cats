@@ -229,6 +229,7 @@ class QualityGateArgumentsTest {
 
         @Override
         public void run() {
+            //test method
         }
     }
 }

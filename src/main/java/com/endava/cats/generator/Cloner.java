@@ -5,6 +5,7 @@ import com.endava.cats.model.CatsHeader;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Used to clone specific objects
@@ -22,12 +23,6 @@ public class Cloner {
      * @return A new set containing cloned copies of the provided CatsHeader objects.
      */
     public static Set<CatsHeader> cloneMe(Collection<CatsHeader> items) {
-        Set<CatsHeader> clones = new HashSet<>();
-
-        for (CatsHeader t : items) {
-            clones.add(t.copy());
-        }
-
-        return clones;
+        return items.stream().map(CatsHeader::copy).collect(Collectors.toCollection(HashSet::new));
     }
 }

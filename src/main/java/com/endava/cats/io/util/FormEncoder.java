@@ -90,7 +90,7 @@ public final class FormEncoder {
         }
 
         return nameValueCollection.stream()
-                .map(kvp -> String.format("%s=%s", urlEncode(kvp.getKey()), urlEncode(kvp.getValue())))
+                .map(kvp -> urlEncode(kvp.getKey()) + "=" + urlEncode(kvp.getValue()))
                 .collect(Collectors.joining("&"));
     }
 

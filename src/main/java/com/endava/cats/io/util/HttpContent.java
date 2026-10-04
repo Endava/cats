@@ -89,9 +89,8 @@ public final class HttpContent {
      */
     public static HttpContent buildMultipartFormDataContent(Collection<KeyValuePair<String, Object>> nameValueCollection, String boundary) throws IOException {
         requireNonNull(nameValueCollection);
-        MultipartProcessor multipartProcessor = null;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            multipartProcessor = new MultipartProcessor(baos, boundary, StandardCharsets.UTF_8);
+            MultipartProcessor multipartProcessor = new MultipartProcessor(baos, boundary, StandardCharsets.UTF_8);
             for (KeyValuePair<String, Object> entry : nameValueCollection) {
                 String key = entry.getKey();
                 Object value = entry.getValue();
@@ -101,11 +100,8 @@ public final class HttpContent {
                     default -> multipartProcessor.addFormField(key, (String) value);
                 }
             }
+            multipartProcessor.finish();
             return new HttpContent(baos.toByteArray(), String.format("multipart/form-data; boundary=%s", boundary));
-        } finally {
-            if (multipartProcessor != null) {
-                multipartProcessor.finish();
-            }
         }
     }
 }

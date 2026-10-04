@@ -34,7 +34,6 @@ import java.util.TreeMap;
 @Interceptor
 public class DryRunAspect {
     private static final Object PROCEED = new Object();
-    private static volatile boolean dryRun;
 
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
     /**
@@ -51,10 +50,6 @@ public class DryRunAspect {
     @Inject
     ExecutionSummaryProvider executionSummaryProvider;
 
-    public static boolean isDryRun() {
-        return dryRun;
-    }
-
     /**
      * Intercepts the startSession from the TestCaseListener.
      *
@@ -63,7 +58,6 @@ public class DryRunAspect {
      * @throws Exception if something goes wrong
      */
     public Object startSession(InvocationContext context) throws Exception {
-        dryRun = true;
         paths.clear();
         if (reportingArguments.isJsonOutput()) {
             CatsUtil.setCatsLogLevel("OFF");
@@ -97,28 +91,24 @@ public class DryRunAspect {
      * @return the final execution summary, without writing report files
      */
     public ExecutionSummary endSession() {
-        try {
-            if (reportingArguments.isJsonOutput()) {
-                List<DryRunEntry> pathTests = paths.entrySet().stream()
-                        .map(entry -> {
-                            int splitIndex = entry.getKey().lastIndexOf("_");
-                            String path = entry.getKey().substring(0, splitIndex);
-                            String httpMethod = entry.getKey().substring(splitIndex + 1);
+        if (reportingArguments.isJsonOutput()) {
+            List<DryRunEntry> pathTests = paths.entrySet().stream()
+                    .map(entry -> {
+                        int splitIndex = entry.getKey().lastIndexOf("_");
+                        String path = entry.getKey().substring(0, splitIndex);
+                        String httpMethod = entry.getKey().substring(splitIndex + 1);
 
-                            return new DryRunEntry(path, httpMethod, String.valueOf(entry.getValue()));
-                        })
-                        .toList();
-                logger.noFormat(JsonUtils.GSON.toJson(pathTests));
-            } else {
-                logger.noFormat("\n");
-                CatsUtil.setCatsLogLevel("INFO");
-                logger.noFormat("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
-                paths.forEach((s, integer) -> logger.noFormat(AnsiUtils.boldYellow(" -> path {}: {} tests"), s, integer));
-            }
-            return executionSummaryProvider.snapshot();
-        } finally {
-            dryRun = false;
+                        return new DryRunEntry(path, httpMethod, String.valueOf(entry.getValue()));
+                    })
+                    .toList();
+            logger.noFormat(JsonUtils.GSON.toJson(pathTests));
+        } else {
+            logger.noFormat("\n");
+            CatsUtil.setCatsLogLevel("INFO");
+            logger.noFormat("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
+            paths.forEach((s, integer) -> logger.noFormat(AnsiUtils.boldYellow(" -> path {}: {} tests"), s, integer));
         }
+        return executionSummaryProvider.snapshot();
     }
 
     /**

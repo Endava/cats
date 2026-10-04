@@ -36,6 +36,7 @@ class PayloadAffinityTest {
     private static final class StructuredFuzzer implements Fuzzer {
         @Override
         public void fuzz(FuzzingData data) {
+            //test only
         }
 
         @Override
@@ -47,6 +48,7 @@ class PayloadAffinityTest {
     private static final class GenericFuzzer implements Fuzzer {
         @Override
         public void fuzz(FuzzingData data) {
+            //test only
         }
 
         @Override

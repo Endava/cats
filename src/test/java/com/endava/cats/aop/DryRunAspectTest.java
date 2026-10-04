@@ -5,7 +5,6 @@ import com.endava.cats.execution.ExecutionSummaryProvider;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.RunOutcome;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.interceptor.InvocationContext;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -26,23 +25,6 @@ class DryRunAspectTest {
         Assertions.assertThat(longDefault).isEqualTo(0L);
         Assertions.assertThat(intDefault).isEqualTo(0);
         Assertions.assertThat(voidDefault).isNull();
-    }
-
-    @Test
-    void shouldExposeDryRunStateForTheAuthScriptParser() throws Exception {
-        ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
-        ExecutionSummaryProvider summaryProvider = Mockito.mock(ExecutionSummaryProvider.class);
-        DryRunAspect aspect = new DryRunAspect();
-        ReflectionTestUtils.setField(aspect, "reportingArguments", reportingArguments);
-        ReflectionTestUtils.setField(aspect, "executionSummaryProvider", summaryProvider);
-
-        aspect.startSession(Mockito.mock(InvocationContext.class));
-        try {
-            Assertions.assertThat(DryRunAspect.isDryRun()).isTrue();
-        } finally {
-            aspect.endSession();
-        }
-        Assertions.assertThat(DryRunAspect.isDryRun()).isFalse();
     }
 
     @Test

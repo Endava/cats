@@ -1,6 +1,8 @@
 package com.endava.cats.args;
 
+import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsException;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import picocli.CommandLine;
@@ -23,6 +25,9 @@ import java.util.Optional;
 @Singleton
 @Getter
 public class AuthArguments {
+    @Inject
+    FilterArguments filterArguments;
+
     @CommandLine.Option(names = {"--sslKeystore"},
             description = "Location of the JKS keystore holding the client certificate and private key for mutual TLS")
     private String sslKeystore;
@@ -154,6 +159,7 @@ public class AuthArguments {
     public Map<String, String> getDynamicVariablesContext() {
         Map<String, String> context = new LinkedHashMap<>(getEnvironmentVariables());
         context.putAll(getAuthScriptAsMap());
+        context.put(Parser.DRY_RUN, String.valueOf(filterArguments.isDryRun()));
         return Map.copyOf(context);
     }
 

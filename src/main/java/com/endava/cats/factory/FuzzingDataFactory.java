@@ -573,22 +573,11 @@ public class FuzzingDataFactory {
     private List<String> getCurrentRequestSchemaName(MediaType mediaType) {
         List<String> reqSchemas = new ArrayList<>();
         if (mediaType.getSchema() != null) {
-            String currentRequestSchema = mediaType.getSchema().get$ref();
-
-            if (currentRequestSchema == null && CatsModelUtils.isArraySchema(mediaType.getSchema())) {
-                Schema<?> items = mediaType.getSchema().getItems();
-                currentRequestSchema = items != null ? items.get$ref() : null;
-            }
+            String currentRequestSchema = requestSchemaRef(mediaType.getSchema());
             if (currentRequestSchema != null) {
                 reqSchemas.add(CatsModelUtils.getSimpleRef(currentRequestSchema));
             } else if (CatsModelUtils.isComposedSchema(mediaType.getSchema())) {
-                Schema<?> composedSchema = mediaType.getSchema();
-                if (composedSchema.getAnyOf() != null) {
-                    composedSchema.getAnyOf().forEach(innerSchema -> reqSchemas.add(calculateSchemaRef(innerSchema)));
-                }
-                if (composedSchema.getOneOf() != null) {
-                    composedSchema.getOneOf().forEach(innerSchema -> reqSchemas.add(calculateSchemaRef(innerSchema)));
-                }
+                addComposedSchemaNames(mediaType.getSchema(), reqSchemas);
             } else {
                 String refForSchema = SYNTH_SCHEMA_NAME + CatsRandom.alphabetic(5);
                 reqSchemas.add(refForSchema);
@@ -596,6 +585,24 @@ public class FuzzingDataFactory {
             }
         }
         return reqSchemas;
+    }
+
+    private static String requestSchemaRef(Schema<?> schema) {
+        String ref = schema.get$ref();
+        if (ref == null && CatsModelUtils.isArraySchema(schema)) {
+            Schema<?> items = schema.getItems();
+            ref = items != null ? items.get$ref() : null;
+        }
+        return ref;
+    }
+
+    private void addComposedSchemaNames(Schema<?> composedSchema, List<String> reqSchemas) {
+        if (composedSchema.getAnyOf() != null) {
+            composedSchema.getAnyOf().forEach(innerSchema -> reqSchemas.add(calculateSchemaRef(innerSchema)));
+        }
+        if (composedSchema.getOneOf() != null) {
+            composedSchema.getOneOf().forEach(innerSchema -> reqSchemas.add(calculateSchemaRef(innerSchema)));
+        }
     }
 
     private String calculateSchemaRef(Schema innerSchema) {

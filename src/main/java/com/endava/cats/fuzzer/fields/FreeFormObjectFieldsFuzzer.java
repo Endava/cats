@@ -64,11 +64,8 @@ public class FreeFormObjectFieldsFuzzer implements Fuzzer {
         }
 
         List<FreeFormMutation> mutations = createMutations();
-        for (JsonPayloadTarget target : targets) {
-            for (FreeFormMutation mutation : mutations) {
-                addProperties(payload, target, mutation).ifPresent(fuzzedPayload -> execute(data, target, mutation, fuzzedPayload));
-            }
-        }
+        targets.forEach(target -> mutations.forEach(mutation ->
+                addProperties(payload, target, mutation).ifPresent(fuzzedPayload -> execute(data, target, mutation, fuzzedPayload))));
     }
 
     private void execute(FuzzingData data, JsonPayloadTarget target, FreeFormMutation mutation, String payload) {
@@ -86,13 +83,9 @@ public class FreeFormObjectFieldsFuzzer implements Fuzzer {
     }
 
     private List<JsonPayloadTarget> findTargets(FuzzingData data, String payload) {
-        List<JsonPayloadTarget> targets = new ArrayList<>();
-        for (JsonPayloadTarget target : JsonPayloadTarget.candidatesFor(data)) {
-            if (isExplicitlyFreeForm(target.schema()) && target.objectFrom(payload).isPresent()) {
-                targets.add(target);
-            }
-        }
-        return targets;
+        return JsonPayloadTarget.candidatesFor(data).stream()
+                .filter(target -> isExplicitlyFreeForm(target.schema()) && target.objectFrom(payload).isPresent())
+                .toList();
     }
 
     private static boolean isExplicitlyFreeForm(Schema<?> schema) {

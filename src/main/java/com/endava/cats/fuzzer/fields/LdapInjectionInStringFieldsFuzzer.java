@@ -278,8 +278,54 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             return InjectionDetectionResult.notVulnerable();
         }
 
-        int score = 0;
         StringBuilder contributing = new StringBuilder();
+        int score = ldapEvidenceScore(responseBody, responseLower, contributing);
+
+        if (score >= 6) {
+            return InjectionDetectionResult.vulnerable(
+                    "Potential LDAP injection detected",
+                    "Evidence score=" + score + " (" + contributing.toString() + ") suggesting LDAP data leakage or filter injection"
+            );
+        }
+
+        if (hasLdifStructure(responseBody) && !isLikelyTokenResponse(responseLower)) {
+            return InjectionDetectionResult.vulnerable(
+                    "Potential LDAP data extraction detected",
+                    "Response contains LDIF-like structure suggesting directory data dump"
+            );
+        }
+
+        if (responseBody.length() > 50000 && containsMultipleUserIndicators(responseLower)) {
+            return InjectionDetectionResult.vulnerable(
+                    "Potential LDAP injection detected",
+                    "Response is unusually large and contains multiple user-like structures, " +
+                            "suggesting injection may have bypassed filters and returned all directory entries"
+            );
+        }
+
+        StringBuilder foundIndicators = new StringBuilder();
+        int explicitIndicators = countExplicitLdapSuccessIndicators(responseLower, foundIndicators);
+
+        if (explicitIndicators >= 6) {
+            return InjectionDetectionResult.vulnerable(
+                    "Potential LDAP injection detected",
+                    "Response contains multiple LDAP directory attributes (" + explicitIndicators + " indicators: " +
+                            foundIndicators + "), suggesting filter injection may have returned unauthorized directory data"
+            );
+        }
+
+        if (score > 0 && detectAuthenticationBypass(responseLower)) {
+            return InjectionDetectionResult.vulnerable(
+                    "Potential LDAP authentication bypass detected",
+                    "Response suggests authentication-related success combined with LDAP evidence"
+            );
+        }
+
+        return InjectionDetectionResult.notVulnerable();
+    }
+
+    private int ldapEvidenceScore(String responseBody, String responseLower, StringBuilder contributing) {
+        int score = 0;
 
         if (hasLdifStructure(responseBody)) {
             score += 6;
@@ -320,56 +366,18 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             appendContribution(contributing, "very large LDAP-like response");
         }
 
-        if (score >= 6) {
-            return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP injection detected",
-                    "Evidence score=" + score + " (" + contributing.toString() + ") suggesting LDAP data leakage or filter injection"
-            );
-        }
+        return score;
+    }
 
-        if (hasLdifStructure(responseBody) && !isLikelyTokenResponse(responseLower)) {
-            return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP data extraction detected",
-                    "Response contains LDIF-like structure suggesting directory data dump"
-            );
-        }
-
-        if (responseBody.length() > 50000 && containsMultipleUserIndicators(responseLower)) {
-            return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP injection detected",
-                    "Response is unusually large and contains multiple user-like structures, " +
-                            "suggesting injection may have bypassed filters and returned all directory entries"
-            );
-        }
-
+    private int countExplicitLdapSuccessIndicators(String responseLower, StringBuilder foundIndicators) {
         int explicitIndicators = 0;
-        StringBuilder foundIndicators = new StringBuilder();
         for (String indicator : LDAP_SUCCESS_INDICATORS) {
             if (responseLower.contains(indicator)) {
                 explicitIndicators++;
-                if (!foundIndicators.isEmpty()) {
-                    foundIndicators.append(", ");
-                }
-                foundIndicators.append(indicator);
+                appendContribution(foundIndicators, indicator);
             }
         }
-
-        if (explicitIndicators >= 6) {
-            return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP injection detected",
-                    "Response contains multiple LDAP directory attributes (" + explicitIndicators + " indicators: " +
-                            foundIndicators + "), suggesting filter injection may have returned unauthorized directory data"
-            );
-        }
-
-        if (score > 0 && detectAuthenticationBypass(responseLower)) {
-            return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP authentication bypass detected",
-                    "Response suggests authentication-related success combined with LDAP evidence"
-            );
-        }
-
-        return InjectionDetectionResult.notVulnerable();
+        return explicitIndicators;
     }
 
     private void appendContribution(StringBuilder sb, String part) {

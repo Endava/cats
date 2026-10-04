@@ -350,7 +350,6 @@ public class OpenAPIModelGeneratorV2 {
             return fromCacheOrExample;
         }
 
-        List<GeneratedExample> examples = new ArrayList<>();
         if (schema.get$ref() != null) {
             schema = globalContext.getSchemaFromReference(schema.get$ref());
         }
@@ -368,6 +367,16 @@ public class OpenAPIModelGeneratorV2 {
 
         recordRequestSchema(currentProperty, schema);
 
+        List<GeneratedExample> examples = buildExamplesForSchema(name, schema);
+        if (!bypassExamplesCache) {
+            examplesCache.put(cacheKey, examples);
+        }
+
+        return examples;
+    }
+
+    private List<GeneratedExample> buildExamplesForSchema(String name, Schema schema) {
+        List<GeneratedExample> examples = new ArrayList<>();
         boolean hasOneOfOrAnyOf = CatsModelUtils.hasOneOf(schema) || CatsModelUtils.hasAnyOf(schema);
         boolean hasPropertiesAndComposed = (schema.getProperties() != null && !schema.getProperties().isEmpty()) && hasOneOfOrAnyOf;
 
@@ -393,20 +402,20 @@ public class OpenAPIModelGeneratorV2 {
         }
 
         if (examples.isEmpty()) {
-            Object resolvedExample = resolvePropertyToExample(name, schema);
-            if (resolvedExample != null) {
-                Map<String, Object> defaultExample = new HashMap<>();
-                String key = name != null && name.endsWith(".items") ? name.substring(0, name.lastIndexOf('.')) : name;
-                defaultExample.put(key, resolvedExample);
-                examples.add(new GeneratedExample(defaultExample, Collections.emptySet()));
-            }
+            examples = defaultExampleFor(name, schema);
         }
-
-        if (!bypassExamplesCache) {
-            examplesCache.put(cacheKey, examples);
-        }
-
         return examples;
+    }
+
+    private List<GeneratedExample> defaultExampleFor(String name, Schema schema) {
+        Object resolvedExample = resolvePropertyToExample(name, schema);
+        if (resolvedExample == null) {
+            return new ArrayList<>();
+        }
+        Map<String, Object> defaultExample = new HashMap<>();
+        String key = name != null && name.endsWith(".items") ? name.substring(0, name.lastIndexOf('.')) : name;
+        defaultExample.put(key, resolvedExample);
+        return new ArrayList<>(List.of(new GeneratedExample(defaultExample, Collections.emptySet())));
     }
 
     /**
@@ -510,74 +519,74 @@ public class OpenAPIModelGeneratorV2 {
         keepOriginalSchema(propertyName, schema);
         mergeRequiredProperties(schema.getAllOf());
 
-        // Check if any parent schema in allOf has a discriminator
-        String discriminatorPropertyName = null;
-        for (Object allOfSchemaObj : schema.getAllOf()) {
+        Schema parentWithDiscriminator = firstSchemaWithDiscriminator(schema.getAllOf());
+        String discriminatorPropertyName = parentWithDiscriminator == null ? null
+                : parentWithDiscriminator.getDiscriminator().getPropertyName();
+
+        List<Schema> schemas = schema.getAllOf().stream().filter(iteratingSchema -> !isNullSchema((Schema<?>) iteratingSchema)).toList();
+        for (Schema subSchema : schemas) {
+            mergeAllOfExamples(subSchema, generateExamplesForSchema(propertyName, subSchema), examples);
+        }
+
+        // If a discriminator was found, ensure it's populated with the correct value
+        if (discriminatorPropertyName != null && !examples.isEmpty()) {
+            applyDiscriminatorValue(propertyName, parentWithDiscriminator, discriminatorPropertyName, examples);
+        }
+
+        return examples;
+    }
+
+    private Schema firstSchemaWithDiscriminator(List<?> schemas) {
+        for (Object allOfSchemaObj : schemas) {
             Schema allOfSchema = (Schema) allOfSchemaObj;
             Schema resolvedSchema = allOfSchema.get$ref() != null
                     ? globalContext.getSchemaFromReference(allOfSchema.get$ref())
                     : allOfSchema;
             if (resolvedSchema != null && resolvedSchema.getDiscriminator() != null) {
-                discriminatorPropertyName = resolvedSchema.getDiscriminator().getPropertyName();
-                break;
+                return resolvedSchema;
             }
         }
+        return null;
+    }
 
-        List<Schema> schemas = schema.getAllOf().stream().filter(iteratingSchema -> !isNullSchema((Schema<?>) iteratingSchema)).toList();
-        for (Schema subSchema : schemas) {
-            List<GeneratedExample> subExamples = generateExamplesForSchema(propertyName, subSchema);
-            List<GeneratedExample> interimExamples = new ArrayList<>();
+    private void mergeAllOfExamples(Schema subSchema, List<GeneratedExample> subExamples, List<GeneratedExample> examples) {
+        List<GeneratedExample> interimExamples = new ArrayList<>();
 
-            if (CatsModelUtils.isAnyOf(subSchema) || CatsModelUtils.isOneOf(subSchema)) {
-                interimExamples.addAll(subExamples);
-            } else if (examples.isEmpty()) {
-                examples.addAll(subExamples);
-            } else {
-                for (GeneratedExample subExample : subExamples) {
-                    for (GeneratedExample existingExample : examples) {
-                        interimExamples.add(mergeExamples(existingExample, subExample));
-                    }
-                }
-            }
-            if (!interimExamples.isEmpty()) {
-                examples.clear();
-            }
-            examples.addAll(interimExamples.stream()
-                    .limit(Math.min(interimExamples.size(), LIMIT_OF_EXAMPLES))
-                    .toList());
-        }
-
-        // If a discriminator was found, ensure it's populated with the correct value
-        if (discriminatorPropertyName != null && !examples.isEmpty()) {
-            // Detect casing convention and convert schema name accordingly
-            Schema parentWithDiscriminator = null;
-            for (Object allOfSchemaObj : schema.getAllOf()) {
-                Schema allOfSchema = (Schema) allOfSchemaObj;
-                Schema resolvedSchema = allOfSchema.get$ref() != null
-                        ? globalContext.getSchemaFromReference(allOfSchema.get$ref())
-                        : allOfSchema;
-                if (resolvedSchema != null && resolvedSchema.getDiscriminator() != null) {
-                    parentWithDiscriminator = resolvedSchema;
-                    break;
-                }
-            }
-
-            String detectedCasing = parentWithDiscriminator != null
-                    ? detectCasingConvention(parentWithDiscriminator)
-                    : this.discriminatorCasing;
-            String discriminatorValue = WordUtils.convertToDetectedCasing(propertyName, detectedCasing);
-
-            for (GeneratedExample generatedExample : examples) {
-                Map<String, Object> example = asMap(generatedExample);
-                // Only set if not already set or if it's empty
-                Object currentValue = example.get(discriminatorPropertyName);
-                if (currentValue == null || currentValue.toString().isEmpty()) {
-                    example.put(discriminatorPropertyName, discriminatorValue);
+        if (CatsModelUtils.isAnyOf(subSchema) || CatsModelUtils.isOneOf(subSchema)) {
+            interimExamples.addAll(subExamples);
+        } else if (examples.isEmpty()) {
+            examples.addAll(subExamples);
+        } else {
+            for (GeneratedExample subExample : subExamples) {
+                for (GeneratedExample existingExample : examples) {
+                    interimExamples.add(mergeExamples(existingExample, subExample));
                 }
             }
         }
+        if (!interimExamples.isEmpty()) {
+            examples.clear();
+        }
+        examples.addAll(interimExamples.stream()
+                .limit(Math.min(interimExamples.size(), LIMIT_OF_EXAMPLES))
+                .toList());
+    }
 
-        return examples;
+    private void applyDiscriminatorValue(String propertyName, Schema parentWithDiscriminator,
+                                          String discriminatorPropertyName, List<GeneratedExample> examples) {
+        // Detect casing convention and convert schema name accordingly
+        String detectedCasing = parentWithDiscriminator != null
+                ? detectCasingConvention(parentWithDiscriminator)
+                : this.discriminatorCasing;
+        String discriminatorValue = WordUtils.convertToDetectedCasing(propertyName, detectedCasing);
+
+        for (GeneratedExample generatedExample : examples) {
+            Map<String, Object> example = asMap(generatedExample);
+            // Only set if not already set or if it's empty
+            Object currentValue = example.get(discriminatorPropertyName);
+            if (currentValue == null || currentValue.toString().isEmpty()) {
+                example.put(discriminatorPropertyName, discriminatorValue);
+            }
+        }
     }
 
 
@@ -731,29 +740,21 @@ public class OpenAPIModelGeneratorV2 {
 
         recordRequestSchema(currentProperty, property);
 
+        resolveBySchemaType(propertyName, property, examples);
+
+        currentProperty = previousProperty;
+        currentRequiredProperty = previousRequiredProperty;
+
+        return examples;
+    }
+
+    private void resolveBySchemaType(String propertyName, Schema property, List<GeneratedExample> examples) {
         if (CatsModelUtils.isArraySchema(property)) {
             createExamplesArray(propertyName, property, examples);
         } else if (CatsModelUtils.isMapSchema(property)) {
-            Map<String, Object> mapExample = new HashMap<>();
-            Schema additionalProperties = CatsModelUtils.getAdditionalProperties(property);
-            List<GeneratedExample> valueExamples = resolvePropertyToExamples("value", additionalProperties);
-            GeneratedExample lastValue = null;
-            for (GeneratedExample valueExample : valueExamples) {
-                mapExample.put("key", valueExample.value());
-                lastValue = valueExample;
-            }
-            examples.add(new GeneratedExample(mapExample,
-                    lastValue == null ? Collections.emptySet() : lastValue.requiredFields()));
+            examples.add(createMapExample(property));
         } else if (!StringUtils.isEmpty(property.get$ref())) {
-            Schema<?> resolved = globalContext.getSchemaFromReference(property.get$ref());
-            if (resolved != null && CatsModelUtils.isPrimitiveSchema(resolved)) {
-                Object value = resolvePropertyToExample(propertyName, resolved);
-                if (value != null) {
-                    examples.add(GeneratedExample.of(value));
-                }
-            } else {
-                examples.addAll(generateExamplesForSchema(propertyName, property));
-            }
+            addRefExample(propertyName, property, examples);
         } else if (CatsModelUtils.isObjectSchemaUsingOAT(property)) {
             examples.addAll(generateExamplesForSchema(propertyName, property));
         } else if (CatsModelUtils.isAllOf(property) || CatsModelUtils.isAllOfWithProperties(property)) {
@@ -766,11 +767,31 @@ public class OpenAPIModelGeneratorV2 {
                 examples.add(GeneratedExample.of(example));
             }
         }
+    }
 
-        currentProperty = previousProperty;
-        currentRequiredProperty = previousRequiredProperty;
+    private GeneratedExample createMapExample(Schema property) {
+        Map<String, Object> mapExample = new HashMap<>();
+        Schema additionalProperties = CatsModelUtils.getAdditionalProperties(property);
+        List<GeneratedExample> valueExamples = resolvePropertyToExamples("value", additionalProperties);
+        GeneratedExample lastValue = null;
+        for (GeneratedExample valueExample : valueExamples) {
+            mapExample.put("key", valueExample.value());
+            lastValue = valueExample;
+        }
+        return new GeneratedExample(mapExample,
+                lastValue == null ? Collections.emptySet() : lastValue.requiredFields());
+    }
 
-        return examples;
+    private void addRefExample(String propertyName, Schema property, List<GeneratedExample> examples) {
+        Schema<?> resolved = globalContext.getSchemaFromReference(property.get$ref());
+        if (resolved != null && CatsModelUtils.isPrimitiveSchema(resolved)) {
+            Object value = resolvePropertyToExample(propertyName, resolved);
+            if (value != null) {
+                examples.add(GeneratedExample.of(value));
+            }
+            return;
+        }
+        examples.addAll(generateExamplesForSchema(propertyName, property));
     }
 
     private void createExamplesArray(String propertyName, Schema property, List<GeneratedExample> examples) {
@@ -802,35 +823,41 @@ public class OpenAPIModelGeneratorV2 {
         List<GeneratedExample> arrays = new ArrayList<>();
 
         for (int variantIndex = 0; variantIndex < templates.size(); variantIndex++) {
-            GeneratedExample template = templates.get(variantIndex);
-            List<Object> items = new ArrayList<>();
-            Set<String> requiredFields = new LinkedHashSet<>();
-
-            for (int itemIndex = 0; itemIndex < arraySize; itemIndex++) {
-                GeneratedExample itemExample = itemIndex == 0
-                        ? template
-                        : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, uniqueItems);
-                Object item = itemMapper.apply(itemExample.value());
-
-                int attempts = 0;
-                while (uniqueItems && containsEquivalent(items, item)
-                        && attempts++ < MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS) {
-                    itemExample = generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, true);
-                    item = itemMapper.apply(itemExample.value());
-                }
-
-                if (uniqueItems && containsEquivalent(items, item)) {
-                    logger.debug("Could not generate {} unique items for array {}", arraySize, propertyName);
-                    break;
-                }
-
-                items.add(item);
-                requiredFields.addAll(itemExample.requiredFields());
-            }
-            arrays.add(new GeneratedExample(items, requiredFields));
+            arrays.add(createArrayVariant(propertyName, itemSchema, arraySize, itemMapper, uniqueItems,
+                    templates.get(variantIndex), variantIndex));
         }
 
         return arrays;
+    }
+
+    private GeneratedExample createArrayVariant(String propertyName, Schema itemSchema, int arraySize,
+                                                 UnaryOperator<Object> itemMapper, boolean uniqueItems,
+                                                 GeneratedExample template, int variantIndex) {
+        List<Object> items = new ArrayList<>();
+        Set<String> requiredFields = new LinkedHashSet<>();
+
+        for (int itemIndex = 0; itemIndex < arraySize; itemIndex++) {
+            GeneratedExample itemExample = itemIndex == 0
+                    ? template
+                    : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, uniqueItems);
+            Object item = itemMapper.apply(itemExample.value());
+
+            int attempts = 0;
+            while (uniqueItems && containsEquivalent(items, item)
+                    && attempts++ < MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS) {
+                itemExample = generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, true);
+                item = itemMapper.apply(itemExample.value());
+            }
+
+            if (uniqueItems && containsEquivalent(items, item)) {
+                logger.debug("Could not generate {} unique items for array {}", arraySize, propertyName);
+                break;
+            }
+
+            items.add(item);
+            requiredFields.addAll(itemExample.requiredFields());
+        }
+        return new GeneratedExample(items, requiredFields);
     }
 
     private static Object getFreeFormArrayItem(int itemIndex) {

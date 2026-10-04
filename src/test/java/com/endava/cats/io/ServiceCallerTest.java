@@ -142,8 +142,8 @@ class ServiceCallerTest {
         wfcAuthProvider = new WfcAuthProvider(authArguments, apiArguments);
         testCaseListener = Mockito.mock(TestCaseListener.class);
         runtimeResourcePool = new RuntimeResourcePool(processingArguments, filesArguments);
-        serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments, apiArguments, processingArguments,
-                reportingArguments, wfcAuthProvider, runtimeResourcePool);
+        serviceCaller = new ServiceCaller(testCaseListener, filesArguments, authArguments, apiArguments, processingArguments,
+                reportingArguments, wfcAuthProvider, runtimeResourcePool, filterArguments);
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(authArguments, "wfcAuthFile", null);
@@ -199,8 +199,8 @@ class ServiceCallerTest {
         Mockito.when(resourcePool.applySuccessfulRequestBaseline(Mockito.any())).thenReturn(baseline);
         Mockito.when(resourcePool.enrich(Mockito.any(), Mockito.anyString())).thenAnswer(invocation ->
                 new RuntimeResourcePool.ResolvedRequest(invocation.getArgument(1), null, List.of()));
-        ServiceCaller caller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments,
-                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool);
+        ServiceCaller caller = new ServiceCaller(testCaseListener, filesArguments, authArguments,
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool, filterArguments);
         caller.initRateLimiter();
         caller.initHttpClient();
 
@@ -221,8 +221,8 @@ class ServiceCallerTest {
                 new RuntimeResourcePool.ResolvedRequest(invocation.getArgument(1), null, List.of()));
         Mockito.when(resourcePool.enrichHeaders(Mockito.any(), Mockito.anyList(), Mockito.any())).thenReturn(
                 new RuntimeResourcePool.ResolvedHeaders(List.of(new KeyValuePair<>("If-Match", "\"version-7\"")), List.of()));
-        ServiceCaller caller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments,
-                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool);
+        ServiceCaller caller = new ServiceCaller(testCaseListener, filesArguments, authArguments,
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool, filterArguments);
         caller.initRateLimiter();
         caller.initHttpClient();
 
@@ -243,8 +243,8 @@ class ServiceCallerTest {
         Mockito.doThrow(new IllegalStateException("observation failed"))
                 .when(failingPool).observe(Mockito.any(), Mockito.any(CatsRequest.class), Mockito.any(CatsResponse.class),
                         Mockito.any(RuntimeResourcePool.ResolvedRequest.class));
-        ServiceCaller caller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments,
-                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, failingPool);
+        ServiceCaller caller = new ServiceCaller(testCaseListener, filesArguments, authArguments,
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, failingPool, filterArguments);
         caller.initRateLimiter();
         caller.initHttpClient();
 
@@ -393,8 +393,8 @@ class ServiceCallerTest {
                 new RuntimeResourcePool.ResolvedRequest("{}", null, List.of());
         Mockito.when(resourcePool.applySuccessfulRequestBaseline(Mockito.any())).thenReturn("{}");
         Mockito.when(resourcePool.enrich(Mockito.any(), Mockito.anyString())).thenReturn(resolved);
-        ServiceCaller caller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments,
-                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool);
+        ServiceCaller caller = new ServiceCaller(testCaseListener, filesArguments, authArguments,
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool, filterArguments);
         caller.initHttpClient();
         caller.initRateLimiter();
 
@@ -406,9 +406,10 @@ class ServiceCallerTest {
 
     @Test
     void shouldRejectUrlFormEncodingFailure() {
-        Assertions.assertThatThrownBy(() -> serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'id':1}").httpMethod(HttpMethod.POST)
-                        .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
-                        .contentType("application/x-www-form-urlencoded").build()))
+        ServiceData serviceData = ServiceData.builder().relativePath("/pets").payload("{'id':1}").httpMethod(HttpMethod.POST)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
+                .contentType("application/x-www-form-urlencoded").build();
+        Assertions.assertThatThrownBy(() -> serviceCaller.call(serviceData))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("application/x-www-form-urlencoded");
     }
@@ -429,9 +430,10 @@ class ServiceCallerTest {
 
     @Test
     void shouldRejectUnsupportedRequestContentType() {
-        Assertions.assertThatThrownBy(() -> serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{\"id\":1}").httpMethod(HttpMethod.POST)
-                        .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
-                        .contentType("application/xml").build()))
+        ServiceData serviceData = ServiceData.builder().relativePath("/pets").payload("{\"id\":1}").httpMethod(HttpMethod.POST)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
+                .contentType("application/xml").build();
+        Assertions.assertThatThrownBy(() -> serviceCaller.call(serviceData))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unsupported request Content-Type", "application/xml");
     }

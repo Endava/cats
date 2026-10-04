@@ -59,7 +59,7 @@ import java.util.regex.Pattern;
         versionProvider = VersionProvider.class)
 @Unremovable
 public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
-    private static final Pattern ENV_PLACEHOLDER = Pattern.compile("\\$\\$[A-Za-z0-9_]+");
+    private static final Pattern ENV_PLACEHOLDER = Pattern.compile("\\$\\$\\w+");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;

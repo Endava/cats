@@ -19,7 +19,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,12 +60,9 @@ public class FreeFormArrayItemsFieldsFuzzer implements Fuzzer {
 
         List<FreeFormPayloadGenerator.HostileValue> hostileValues = FreeFormPayloadGenerator.generate(
                 processingArguments.getLargeStringsSize()).hostileValues();
-        for (JsonPayloadTarget target : targets) {
-            for (FreeFormPayloadGenerator.HostileValue hostileValue : hostileValues) {
+        targets.forEach(target -> hostileValues.forEach(hostileValue ->
                 replaceItem(payload, target, hostileValue.value())
-                        .ifPresent(fuzzedPayload -> execute(data, target, hostileValue, fuzzedPayload));
-            }
-        }
+                        .ifPresent(fuzzedPayload -> execute(data, target, hostileValue, fuzzedPayload))));
     }
 
     private void execute(FuzzingData data, JsonPayloadTarget target,
@@ -86,13 +82,9 @@ public class FreeFormArrayItemsFieldsFuzzer implements Fuzzer {
     }
 
     private static List<JsonPayloadTarget> findTargets(FuzzingData data, String payload) {
-        List<JsonPayloadTarget> targets = new ArrayList<>();
-        for (JsonPayloadTarget target : JsonPayloadTarget.candidatesFor(data)) {
-            if (isFreeFormArray(target, data.getSchemaMap()) && canMutate(payload, target)) {
-                targets.add(target);
-            }
-        }
-        return targets;
+        return JsonPayloadTarget.candidatesFor(data).stream()
+                .filter(target -> isFreeFormArray(target, data.getSchemaMap()) && canMutate(payload, target))
+                .toList();
     }
 
     private static boolean isFreeFormArray(JsonPayloadTarget target, Map<String, Schema> schemaMap) {

@@ -17,7 +17,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,30 +52,24 @@ public class DuplicateItemsInUniqueArraysFieldsFuzzer implements Fuzzer {
             return;
         }
 
-        for (JsonPayloadTarget target : targets) {
-            duplicateItem(payload, target).ifPresent(fuzzedPayload -> simpleExecutor.execute(
-                    SimpleExecutorContext.builder()
-                            .fuzzingData(data)
-                            .fuzzer(this)
-                            .logger(logger)
-                            .payload(fuzzedPayload)
-                            .mutationTarget(target.root() ? RequestTarget.requestBody() : RequestTarget.body(target.path()))
-                            .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
-                            .replaceRefData(false)
-                            .scenario("Duplicate an item in array [%s] declared with uniqueItems"
-                                    .formatted(target.displayName()))
-                            .build()));
-        }
+        targets.forEach(target -> duplicateItem(payload, target).ifPresent(fuzzedPayload -> simpleExecutor.execute(
+                SimpleExecutorContext.builder()
+                        .fuzzingData(data)
+                        .fuzzer(this)
+                        .logger(logger)
+                        .payload(fuzzedPayload)
+                        .mutationTarget(target.root() ? RequestTarget.requestBody() : RequestTarget.body(target.path()))
+                        .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                        .replaceRefData(false)
+                        .scenario("Duplicate an item in array [%s] declared with uniqueItems"
+                                .formatted(target.displayName()))
+                        .build())));
     }
 
     private static List<JsonPayloadTarget> findTargets(FuzzingData data, String payload) {
-        List<JsonPayloadTarget> targets = new ArrayList<>();
-        for (JsonPayloadTarget target : JsonPayloadTarget.candidatesFor(data)) {
-            if (canDuplicateItem(payload, target)) {
-                targets.add(target);
-            }
-        }
-        return targets;
+        return JsonPayloadTarget.candidatesFor(data).stream()
+                .filter(target -> canDuplicateItem(payload, target))
+                .toList();
     }
 
     private static boolean canDuplicateItem(String payload, JsonPayloadTarget target) {

@@ -165,38 +165,43 @@ public class RuntimeResourcePool {
                 pathResource == null) {
             return new ResolvedHeaders(List.copyOf(headers), List.of());
         }
-        headers.stream().map(KeyValuePair::getKey).distinct().forEach(name -> {
-            if (hasExplicitHeader(data, name)) {
+        headers.stream().map(KeyValuePair::getKey).distinct()
+                .forEach(name -> enrichHeader(data, headers, name, pathResource, requestBindings, enriched, correlations));
+        return new ResolvedHeaders(List.copyOf(enriched), List.copyOf(correlations));
+    }
+
+    private void enrichHeader(ServiceData data, List<KeyValuePair<String, Object>> headers, String name,
+                              ResourceInstance pathResource, Map<String, ResourceInstance> requestBindings,
+                              List<KeyValuePair<String, Object>> enriched, List<ResourceCorrelation> correlations) {
+        if (hasExplicitHeader(data, name)) {
+            return;
+        }
+        Object currentValue = headers.stream().filter(header -> header.getKey().equalsIgnoreCase(name))
+                .map(KeyValuePair::getValue).findFirst().orElse("");
+        TargetField target = new TargetField(name, name, RequestTarget.Location.HEADER, valueShape(currentValue));
+        String bindingKey = bindingKey(data.getRelativePath(), target);
+        ResourceInstance boundResource = pathResource == null ? requestBindings.get(bindingKey) : pathResource;
+        resolve(data.getRelativePath(), target, boundResource, pathResource != null).ifPresent(value -> {
+            Object replacement = data.isFuzzedHeader(name)
+                    ? FuzzingStrategy.mergeFuzzing(currentValue, value.value()) : value.value();
+            if (Objects.equals(currentValue, replacement)) {
                 return;
             }
-            Object currentValue = headers.stream().filter(header -> header.getKey().equalsIgnoreCase(name))
-                    .map(KeyValuePair::getValue).findFirst().orElse("");
-            TargetField target = new TargetField(name, name, RequestTarget.Location.HEADER, valueShape(currentValue));
-            String bindingKey = bindingKey(data.getRelativePath(), target);
-            ResourceInstance boundResource = pathResource == null ? requestBindings.get(bindingKey) : pathResource;
-            resolve(data.getRelativePath(), target, boundResource, pathResource != null).ifPresent(value -> {
-                Object replacement = data.isFuzzedHeader(name)
-                        ? FuzzingStrategy.mergeFuzzing(currentValue, value.value()) : value.value();
-                if (Objects.equals(currentValue, replacement)) {
-                    return;
+            for (int i = 0; i < enriched.size(); i++) {
+                KeyValuePair<String, Object> header = enriched.get(i);
+                if (header.getKey().equalsIgnoreCase(name)) {
+                    enriched.set(i, new KeyValuePair<>(header.getKey(), replacement));
                 }
-                for (int i = 0; i < enriched.size(); i++) {
-                    KeyValuePair<String, Object> header = enriched.get(i);
-                    if (header.getKey().equalsIgnoreCase(name)) {
-                        enriched.set(i, new KeyValuePair<>(header.getKey(), replacement));
-                    }
-                }
-                requestBindings.put(bindingKey, value.resource());
-                correlations.add(ResourceCorrelation.builder()
-                        .sourceMethod(value.resource().sourceMethod().name())
-                        .sourcePath(value.resource().sourcePath())
-                        .sourceLocation(value.storedValue().sourceLocation())
-                        .target(RequestTarget.header(name))
-                        .value(value.value())
-                        .build());
-            });
+            }
+            requestBindings.put(bindingKey, value.resource());
+            correlations.add(ResourceCorrelation.builder()
+                    .sourceMethod(value.resource().sourceMethod().name())
+                    .sourcePath(value.resource().sourcePath())
+                    .sourceLocation(value.storedValue().sourceLocation())
+                    .target(RequestTarget.header(name))
+                    .value(value.value())
+                    .build());
         });
-        return new ResolvedHeaders(List.copyOf(enriched), List.copyOf(correlations));
     }
 
     private Optional<ResourceInstance> resolvedPathResource(ResolvedRequest resolvedRequest) {
@@ -269,13 +274,9 @@ public class RuntimeResourcePool {
             markDeleted(data, request.getUrl());
             return;
         }
-
-        if (data.getHttpMethod() != HttpMethod.POST && data.getHttpMethod() != HttpMethod.PUT &&
-                data.getHttpMethod() != HttpMethod.PATCH && data.getHttpMethod() != HttpMethod.GET &&
-                data.getHttpMethod() != HttpMethod.HEAD) {
+        if (!isResourceProducingMethod(data.getHttpMethod())) {
             return;
         }
-
         Map<String, StoredValue> pathValues = extractPathValues(data.getRelativePath(), request.getUrl());
         List<JsonObject> requestObjects = HttpMethod.requiresBody(data.getHttpMethod()) && !isRequestBodyFuzzed(data)
                 ? requestObjects(request.getPayload()) : List.of();
@@ -283,25 +284,41 @@ public class RuntimeResourcePool {
             addFromLocation(data, response, pathValues, requestObjects);
             return;
         }
-        boolean collectionGet = data.getHttpMethod() == HttpMethod.GET;
-        if (collectionGet && (!isCollectionPath(data.getRelativePath()) || !isCollectionResponse(response.getBody()))) {
-            boolean reusableHeaders = collectResponseHeaders(response, pathValues);
-            boolean reusableItemPath = !isCollectionPath(data.getRelativePath()) && !pathValues.isEmpty() &&
-                    OpenApiUtils.getPathVariables(data.getRelativePath()).stream()
-                            .noneMatch(name -> data.isFuzzedField(name, RequestTarget.Location.PATH) ||
-                                    wasModifiedByFuzzer(data, name, false));
-            if (reusableHeaders || reusableItemPath) {
-                addResource(data, pathValues);
-            }
+        if (isUnmatchedCollectionGet(data, response)) {
+            addResourceFromReusableIndicators(data, response, pathValues);
             return;
         }
-        List<ResponseObject> responseObjects = responseObjects(response.getBody(), collectionGet);
+        observeResponseObjects(data, request, response, pathValues, requestObjects);
+    }
 
+    private static boolean isResourceProducingMethod(HttpMethod method) {
+        return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH ||
+                method == HttpMethod.GET || method == HttpMethod.HEAD;
+    }
+
+    private boolean isUnmatchedCollectionGet(ServiceData data, CatsResponse response) {
+        return data.getHttpMethod() == HttpMethod.GET &&
+                (!isCollectionPath(data.getRelativePath()) || !isCollectionResponse(response.getBody()));
+    }
+
+    private void addResourceFromReusableIndicators(ServiceData data, CatsResponse response, Map<String, StoredValue> pathValues) {
+        boolean reusableHeaders = collectResponseHeaders(response, pathValues);
+        boolean reusableItemPath = !isCollectionPath(data.getRelativePath()) && !pathValues.isEmpty() &&
+                OpenApiUtils.getPathVariables(data.getRelativePath()).stream()
+                        .noneMatch(name -> data.isFuzzedField(name, RequestTarget.Location.PATH) ||
+                                wasModifiedByFuzzer(data, name, false));
+        if (reusableHeaders || reusableItemPath) {
+            addResource(data, pathValues);
+        }
+    }
+
+    private void observeResponseObjects(ServiceData data, CatsRequest request, CatsResponse response,
+                                        Map<String, StoredValue> pathValues, List<JsonObject> requestObjects) {
+        List<ResponseObject> responseObjects = responseObjects(response.getBody(), data.getHttpMethod() == HttpMethod.GET);
         if (responseObjects.isEmpty()) {
             addFromLocation(data, response, pathValues, requestObjects);
             return;
         }
-
         boolean singleResponseObject = responseObjects.size() == 1;
         Optional<StoredValue> locationIdentifier = singleResponseObject ? locationIdentifier(response) : Optional.empty();
         boolean alignedRequestObjects = alignedObjectPayloads(request.getPayload(), response.getBody(),
@@ -481,7 +498,7 @@ public class RuntimeResourcePool {
             operationDiagnostics.put(key, diagnostics);
         }
         int responseCode = response.getResponseCode();
-        diagnostics.record(responseCode);
+        diagnostics.register(responseCode);
         Set<RequestTarget> correlatedTargets = Optional.ofNullable(resolvedRequest).map(ResolvedRequest::correlations)
                 .orElse(List.of()).stream().map(ResourceCorrelation::getTarget).collect(Collectors.toSet());
         Map<String, StoredValue> actualPathValues = extractPathValues(data.getRelativePath(), request.getUrl());
@@ -1235,13 +1252,11 @@ public class RuntimeResourcePool {
         if (!root.isJsonArray()) {
             return List.of();
         }
-        List<JsonObject> objects = new ArrayList<>();
-        for (JsonElement element : root.getAsJsonArray()) {
-            if (element.isJsonObject() && objects.size() < MAX_COLLECTION_ITEMS) {
-                objects.add(element.getAsJsonObject());
-            }
-        }
-        return objects;
+        return root.getAsJsonArray().asList().stream()
+                .filter(JsonElement::isJsonObject)
+                .limit(MAX_COLLECTION_ITEMS)
+                .map(JsonElement::getAsJsonObject)
+                .toList();
     }
 
     private List<ResponseObject> responseObjects(String body, boolean collectionOnly) {
@@ -1584,7 +1599,7 @@ public class RuntimeResourcePool {
         private int requests;
         private int successes;
 
-        void record(int responseCode) {
+        void register(int responseCode) {
             requests++;
             if (ResponseCodeFamily.is2xxCode(responseCode)) {
                 successes++;

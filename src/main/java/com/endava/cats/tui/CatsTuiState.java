@@ -151,6 +151,20 @@ final class CatsTuiState {
             searchEditing = true;
             return EventResult.HANDLED;
         }
+        EventResult screenSwitch = handleScreenSwitchKey(event);
+        if (screenSwitch != null) {
+            return screenSwitch;
+        }
+        if (event.isCharIgnoreCase('q')) {
+            if (running) {
+                status = "Cancellation requested";
+            }
+            return EventResult.UNHANDLED;
+        }
+        return handleScreenKey(event);
+    }
+
+    private EventResult handleScreenSwitchKey(KeyEvent event) {
         if (event.isChar('1')) {
             screen = Screen.OVERVIEW;
             clampFuzzerOffset();
@@ -180,12 +194,10 @@ final class CatsTuiState {
             ensureSlowestSelection();
             return EventResult.HANDLED;
         }
-        if (event.isCharIgnoreCase('q')) {
-            if (running) {
-                status = "Cancellation requested";
-            }
-            return EventResult.UNHANDLED;
-        }
+        return null;
+    }
+
+    private EventResult handleScreenKey(KeyEvent event) {
         if (screen == Screen.RESULTS) {
             return handleResultsKey(event);
         }
@@ -384,24 +396,9 @@ final class CatsTuiState {
             }
             return EventResult.HANDLED;
         }
-        if (event.isCharIgnoreCase('a')) {
-            setFilter(ResultFilter.ALL);
-            return EventResult.HANDLED;
-        }
-        if (event.isCharIgnoreCase('e')) {
-            setFilter(ResultFilter.ERROR);
-            return EventResult.HANDLED;
-        }
-        if (event.isCharIgnoreCase('w')) {
-            setFilter(ResultFilter.WARNING);
-            return EventResult.HANDLED;
-        }
-        if (event.isCharIgnoreCase('s')) {
-            setFilter(ResultFilter.SUCCESS);
-            return EventResult.HANDLED;
-        }
-        if (event.isCharIgnoreCase('i')) {
-            setFilter(ResultFilter.SKIPPED);
+        ResultFilter filter = filterFor(event);
+        if (filter != null) {
+            setFilter(filter);
             return EventResult.HANDLED;
         }
         if (event.isCancel() || event.isLeft()) {
@@ -414,6 +411,25 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         return EventResult.UNHANDLED;
+    }
+
+    private static ResultFilter filterFor(KeyEvent event) {
+        if (event.isCharIgnoreCase('a')) {
+            return ResultFilter.ALL;
+        }
+        if (event.isCharIgnoreCase('e')) {
+            return ResultFilter.ERROR;
+        }
+        if (event.isCharIgnoreCase('w')) {
+            return ResultFilter.WARNING;
+        }
+        if (event.isCharIgnoreCase('s')) {
+            return ResultFilter.SUCCESS;
+        }
+        if (event.isCharIgnoreCase('i')) {
+            return ResultFilter.SKIPPED;
+        }
+        return null;
     }
 
     private EventResult handleDetailKey(KeyEvent event) {
@@ -454,11 +470,7 @@ final class CatsTuiState {
             case ERROR -> errors++;
             case WARNING -> warnings++;
             case SUCCESS -> success++;
-            case SKIPPED -> {
-                if (isSkippedFromReporting(test.result())) {
-                    skippedFromReporting++;
-                }
-            }
+            case SKIPPED -> skippedFromReporting += isSkippedFromReporting(test.result()) ? 1 : 0;
             case ALL -> {
                 // Unknown results are still retained and counted in the total.
             }

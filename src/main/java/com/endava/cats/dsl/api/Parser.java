@@ -28,6 +28,10 @@ public interface Parser {
      * Holds the name for the auth script refresh interval variable.
      */
     String AUTH_REFRESH = "auth_refresh";
+    /**
+     * Holds the name for the dry run marker variable. When present and {@code true}, parsers suspend external side effects.
+     */
+    String DRY_RUN = "cats_dry_run";
 
     /**
      * Parses the given expression within the given context and returns the result.

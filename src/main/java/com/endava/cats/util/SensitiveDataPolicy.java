@@ -54,7 +54,7 @@ public final class SensitiveDataPolicy {
     }
 
     public static String queryEnvironmentVariable(String queryParam) {
-        String variable = queryParam.replaceAll("[^A-Za-z0-9_]", "_").toUpperCase(Locale.ROOT);
+        String variable = queryParam.replaceAll("\\W", "_").toUpperCase(Locale.ROOT);
         return variable.isEmpty() || Character.isDigit(variable.charAt(0)) ? "_" + variable : variable;
     }
 

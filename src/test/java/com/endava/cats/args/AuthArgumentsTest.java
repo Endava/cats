@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsException;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -26,11 +27,13 @@ class AuthArgumentsTest {
         Path envFile = tempDir.resolve("cats.env");
         Files.writeString(envFile, "# ignored\nTOKEN=from-file\nexport QUOTED='quoted value'\nWITH_EQUALS=a=b\n");
         AuthArguments args = new AuthArguments();
+        ReflectionTestUtils.setField(args, "filterArguments", new FilterArguments());
         new picocli.CommandLine(args).parseArgs("--envFile", envFile.toString());
 
         Assertions.assertThat(args.getEnvironmentVariables()).containsEntry("TOKEN", "from-file")
                 .containsEntry("QUOTED", "quoted value").containsEntry("WITH_EQUALS", "a=b");
-        Assertions.assertThat(args.getDynamicVariablesContext()).containsEntry("TOKEN", "from-file");
+        Assertions.assertThat(args.getDynamicVariablesContext()).containsEntry("TOKEN", "from-file")
+                .containsEntry(Parser.DRY_RUN, "false");
     }
 
     @Test

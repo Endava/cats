@@ -38,37 +38,6 @@ public class QualityGateArguments {
                     "Example: @|bold --qualityGate \"errors<5,warns<20\"|@ will exit 1 if errors >= 5 or warns >= 20")
     private String qualityGate;
 
-    private static void validateFailOn(String value) {
-        if (value == null || value.isBlank()) {
-            return;
-        }
-        List<String> invalidConditions = Arrays.stream(value.split(",", -1))
-                .map(String::trim)
-                .map(condition -> condition.toLowerCase(Locale.ROOT))
-                .filter(condition -> !VALID_FAIL_ON_CONDITIONS.contains(condition))
-                .toList();
-        if (!invalidConditions.isEmpty()) {
-            throw new CommandLine.TypeConversionException("Invalid --failOn value '" + value + "'. Valid values: error, warn");
-        }
-    }
-
-    private static void validateQualityGate(String value) {
-        if (value == null || value.isBlank()) {
-            return;
-        }
-        for (String condition : value.split(",", -1)) {
-            Matcher matcher = QUALITY_GATE_PATTERN.matcher(condition.trim());
-            if (!matcher.matches()) {
-                throw invalidQualityGate(condition);
-            }
-            try {
-                Long.parseLong(matcher.group(3));
-            } catch (NumberFormatException _) {
-                throw invalidQualityGate(condition);
-            }
-        }
-    }
-
     private static CommandLine.TypeConversionException invalidQualityGate(String condition) {
         return new CommandLine.TypeConversionException("Invalid --qualityGate condition '" + condition.trim() +
                 "'. Expected errors, warns, or warnings followed by < or > and a non-negative integer threshold");
@@ -80,6 +49,20 @@ public class QualityGateArguments {
             validateFailOn(value);
             return value;
         }
+
+        private static void validateFailOn(String value) {
+            if (value == null || value.isBlank()) {
+                return;
+            }
+            List<String> invalidConditions = Arrays.stream(value.split(",", -1))
+                    .map(String::trim)
+                    .map(condition -> condition.toLowerCase(Locale.ROOT))
+                    .filter(condition -> !VALID_FAIL_ON_CONDITIONS.contains(condition))
+                    .toList();
+            if (!invalidConditions.isEmpty()) {
+                throw new CommandLine.TypeConversionException("Invalid --failOn value '" + value + "'. Valid values: error, warn");
+            }
+        }
     }
 
     public static final class QualityGateConverter implements CommandLine.ITypeConverter<String> {
@@ -87,6 +70,23 @@ public class QualityGateArguments {
         public String convert(String value) {
             validateQualityGate(value);
             return value;
+        }
+
+        private static void validateQualityGate(String value) {
+            if (value == null || value.isBlank()) {
+                return;
+            }
+            for (String condition : value.split(",", -1)) {
+                Matcher matcher = QUALITY_GATE_PATTERN.matcher(condition.trim());
+                if (!matcher.matches()) {
+                    throw invalidQualityGate(condition);
+                }
+                try {
+                    Long.parseLong(matcher.group(3));
+                } catch (NumberFormatException _) {
+                    throw invalidQualityGate(condition);
+                }
+            }
         }
     }
 

@@ -523,25 +523,30 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             if (seeded >= processingArguments.getMaxPreseedCollectionGets()) {
                 return;
             }
-            String path = entry.getKey();
-            PathItem item = entry.getValue();
-            if (!isEligibleForPreseed(path, item, suppliedPaths)) {
-                continue;
-            }
-            List<Fuzzer> configured = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Set.of(HttpMethod.GET), path);
-            Fuzzer happyPath = configured.stream().filter(HappyPathFuzzer.class::isInstance).findFirst().orElse(null);
-            if (happyPath == null) {
-                continue;
-            }
-            List<FuzzingData> getData = fuzzingDataFactory.fromPathItem(path, item, openAPI).stream()
-                    .filter(data -> data.getMethod() == HttpMethod.GET)
-                    .filter(data -> processingArguments.matchesXxxSelection(data.getPayload()))
-                    .limit(1).toList();
-            if (!getData.isEmpty()) {
-                runFuzzers(getData, List.of(happyPath));
+            if (preseedPathIfEligible(entry.getKey(), entry.getValue(), suppliedPaths, openAPI)) {
                 seeded++;
             }
         }
+    }
+
+    private boolean preseedPathIfEligible(String path, PathItem item, List<String> suppliedPaths, OpenAPI openAPI) {
+        if (!isEligibleForPreseed(path, item, suppliedPaths)) {
+            return false;
+        }
+        List<Fuzzer> configured = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Set.of(HttpMethod.GET), path);
+        Fuzzer happyPath = configured.stream().filter(HappyPathFuzzer.class::isInstance).findFirst().orElse(null);
+        if (happyPath == null) {
+            return false;
+        }
+        List<FuzzingData> getData = fuzzingDataFactory.fromPathItem(path, item, openAPI).stream()
+                .filter(data -> data.getMethod() == HttpMethod.GET)
+                .filter(data -> processingArguments.matchesXxxSelection(data.getPayload()))
+                .limit(1).toList();
+        if (getData.isEmpty()) {
+            return false;
+        }
+        runFuzzers(getData, List.of(happyPath));
+        return true;
     }
 
     /** Limits discovery to selected GETs that can run without an ID or a required query parameter. */

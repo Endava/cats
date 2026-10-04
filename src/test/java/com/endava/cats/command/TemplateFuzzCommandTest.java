@@ -1,6 +1,5 @@
 package com.endava.cats.command;
 
-import com.endava.cats.aop.DryRunAspect;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
@@ -47,7 +46,6 @@ class TemplateFuzzCommandTest {
 
     @BeforeEach
     void setup() {
-        ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", false);
         templateFuzzer = Mockito.mock(TemplateFuzzer.class);
         ReflectionTestUtils.setField(templateFuzzCommand, "templateFuzzer", templateFuzzer);
         matchArguments = Mockito.mock(MatchArguments.class);
@@ -152,17 +150,13 @@ class TemplateFuzzCommandTest {
     void shouldNotRunAuthScriptWhenResolvingDryRunTemplateHeaders() {
         AuthArguments authArguments = Mockito.mock(AuthArguments.class);
         Mockito.when(authArguments.getDynamicVariablesContext()).thenReturn(Map.of(
-                Parser.AUTH_SCRIPT, "/script/that/must/not/run", Parser.AUTH_REFRESH, "0"));
+                Parser.AUTH_SCRIPT, "/script/that/must/not/run", Parser.AUTH_REFRESH, "0", Parser.DRY_RUN, "true"));
         ReflectionTestUtils.setField(templateFuzzCommand, "authArguments", authArguments);
         templateFuzzCommand.headers = Map.of("Authorization", "auth_script");
-        ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", true);
-        try {
-            Set<CatsHeader> resolvedHeaders = ReflectionTestUtils.invokeMethod(templateFuzzCommand, "getHeaders");
 
-            Assertions.assertThat(resolvedHeaders).singleElement().extracting(CatsHeader::getValue).isEqualTo("auth_script");
-        } finally {
-            ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", false);
-        }
+        Set<CatsHeader> resolvedHeaders = ReflectionTestUtils.invokeMethod(templateFuzzCommand, "getHeaders");
+
+        Assertions.assertThat(resolvedHeaders).singleElement().extracting(CatsHeader::getValue).isEqualTo("auth_script");
     }
 
     @Test

@@ -532,8 +532,10 @@ class CatsCommandTest {
 
         catsMain.runDeferredHappyPathDeletes();
 
-        Assertions.assertThat(executionOrder).last().isEqualTo("happy-DELETE");
-        Assertions.assertThat(executionOrder).hasSize(12);
+        Assertions.assertThat(executionOrder)
+                .hasSize(12)
+                .last()
+                .isEqualTo("happy-DELETE");
     }
 
     @Test
@@ -626,11 +628,11 @@ class CatsCommandTest {
             Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
                     .thenReturn(List.of(happy));
             Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/items"), fuzzingData(HttpMethod.POST, "/items")))
-                    .when(fuzzingDataFactory).fromPathItem(Mockito.eq("/items"), Mockito.eq(collection), Mockito.eq(api));
+                    .when(fuzzingDataFactory).fromPathItem("/items", collection, api);
             Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/search")))
-                    .when(fuzzingDataFactory).fromPathItem(Mockito.eq("/search"), Mockito.eq(requiredQuery), Mockito.eq(api));
+                    .when(fuzzingDataFactory).fromPathItem("/search", requiredQuery, api);
             Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/widgets")))
-                    .when(fuzzingDataFactory).fromPathItem(Mockito.eq("/widgets"), Mockito.eq(anotherCollection), Mockito.eq(api));
+                    .when(fuzzingDataFactory).fromPathItem("/widgets", anotherCollection, api);
             catsMain.startFuzzing(api);
 
             Assertions.assertThat(order).containsExactly("happy-GET", "happy-GET", "happy-POST", "happy-GET", "happy-GET");

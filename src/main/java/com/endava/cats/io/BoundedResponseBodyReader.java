@@ -31,17 +31,18 @@ public final class BoundedResponseBodyReader {
         }
 
         BufferedSource source = response.body().source();
-        Buffer buffer = new Buffer();
-        long captureLimit = maxResponseBytes + 1;
-        while (buffer.size() < captureLimit) {
-            long read = source.read(buffer, Math.min(8192, captureLimit - buffer.size()));
-            if (read == -1) {
-                break;
+        try (Buffer buffer = new Buffer()) {
+            long captureLimit = maxResponseBytes + 1;
+            while (buffer.size() < captureLimit) {
+                long read = source.read(buffer, Math.min(8192, captureLimit - buffer.size()));
+                if (read == -1) {
+                    break;
+                }
             }
+            boolean truncated = buffer.size() > maxResponseBytes;
+            byte[] bytes = buffer.readByteArray(Math.min(buffer.size(), maxResponseBytes));
+            return new CapturedBody(new String(bytes, charset), bytes.length, declaredContentLength, truncated);
         }
-        boolean truncated = buffer.size() > maxResponseBytes;
-        byte[] bytes = buffer.readByteArray(Math.min(buffer.size(), maxResponseBytes));
-        return new CapturedBody(new String(bytes, charset), bytes.length, declaredContentLength, truncated);
     }
 
     public record CapturedBody(String body, long capturedBytes, long declaredContentLength, boolean truncated) {

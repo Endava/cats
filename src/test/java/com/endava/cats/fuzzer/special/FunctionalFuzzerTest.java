@@ -1,6 +1,5 @@
 package com.endava.cats.fuzzer.special;
 
-import com.endava.cats.aop.DryRunAspect;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.api.Parser;
@@ -54,7 +53,6 @@ class FunctionalFuzzerTest {
 
     @BeforeEach
     void setup() {
-        ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", false);
         catsGlobalContext = Mockito.mock(CatsGlobalContext.class);
         Mockito.when(catsGlobalContext.getCatsConfiguration()).thenReturn(Mockito.mock(CatsConfiguration.class));
         serviceCaller = Mockito.mock(ServiceCaller.class);
@@ -534,17 +532,12 @@ class FunctionalFuzzerTest {
     @Test
     void shouldNotRunAuthScriptWhenResolvingDryRunGlobalVariables() {
         Mockito.when(serviceCaller.getEnvironmentVariables()).thenReturn(Map.of(
-                Parser.AUTH_SCRIPT, "/script/that/must/not/run", Parser.AUTH_REFRESH, "0"));
+                Parser.AUTH_SCRIPT, "/script/that/must/not/run", Parser.AUTH_REFRESH, "0", Parser.DRY_RUN, "true"));
         Map<String, Map<String, Object>> details = new HashMap<>();
         details.put(CatsDSLWords.CATS_GLOBAL_VARS, new HashMap<>(Map.of("authorization", "auth_script")));
-        ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", true);
-        try {
-            customFuzzerUtil.loadGlobalVariables(details);
+        customFuzzerUtil.loadGlobalVariables(details);
 
-            Assertions.assertThat(customFuzzerUtil.getVariables()).containsEntry("authorization", "auth_script");
-        } finally {
-            ReflectionTestUtils.setField(DryRunAspect.class, "dryRun", false);
-        }
+        Assertions.assertThat(customFuzzerUtil.getVariables()).containsEntry("authorization", "auth_script");
     }
 
     @Test
