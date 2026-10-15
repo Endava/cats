@@ -920,22 +920,17 @@ public class OpenAPIModelGeneratorV2 {
     private Object matchToEnumOrEmpty(String name, Schema innerSchema, String propertyName) {
         Schema resolveInnerSchema = Optional.ofNullable(globalContext.getSchemaFromReference(innerSchema.get$ref())).orElse(innerSchema);
 
-        // First, try to find the discriminator value using the mapping (schema name -> enum value)
+        // First, try to find the discriminator value using the mapping (schema name -> enum value).
+        // Every discriminator sharing the property name is searched, since unrelated oneOf/anyOf
+        // unions in the same contract may share one.
         String resultFromMapping = globalContext.getDiscriminators()
                 .stream()
-                .filter(discriminator -> discriminator.getPropertyName().equalsIgnoreCase(propertyName) && discriminator.getMapping() != null)
+                .filter(discriminator -> discriminator.getPropertyName().equalsIgnoreCase(propertyName)
+                        && discriminator.getMapping() != null)
+                .flatMap(discriminator -> discriminator.getMapping().entrySet().stream())
+                .filter(entry -> CatsModelUtils.getSimpleRef(entry.getValue()).equalsIgnoreCase(name))
+                .map(Map.Entry::getKey)
                 .findFirst()
-                .map(discriminator ->
-                        // Find the enum value that maps to this schema name
-                        discriminator.getMapping().entrySet().stream()
-                                .filter(entry -> {
-                                    String schemaRef = entry.getValue();
-                                    String schemaName = CatsModelUtils.getSimpleRef(schemaRef);
-                                    return schemaName.equalsIgnoreCase(name);
-                                })
-                                .map(Map.Entry::getKey)
-                                .findFirst()
-                                .orElse(""))
                 .orElse("");
 
         if (!resultFromMapping.isEmpty()) {

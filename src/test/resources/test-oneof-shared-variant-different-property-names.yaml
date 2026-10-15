@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: One variant in two oneOf unions discriminated on different property names
+  version: 1.0.0
+paths: { }
+components:
+  schemas:
+    Shape:
+      properties:
+        shape:
+          type: string
+      oneOf:
+        - $ref: '#/components/schemas/BigCircleShape'
+        - $ref: '#/components/schemas/SmallSquareShape'
+      discriminator:
+        propertyName: shape
+        mapping:
+          BIG_CIRCLE: '#/components/schemas/BigCircleShape'
+          SMALL_SQUARE: '#/components/schemas/SmallSquareShape'
+    Icon:
+      properties:
+        type:
+          type: string
+      oneOf:
+        - $ref: '#/components/schemas/BigCircleShape'
+        - $ref: '#/components/schemas/WarningIcon'
+      discriminator:
+        propertyName: type
+        mapping:
+          BIG_CIRCLE: '#/components/schemas/BigCircleShape'
+          WARNING: '#/components/schemas/WarningIcon'
+    BigCircleShape:
+      type: object
+      required: [ shape, type, radius ]
+      properties:
+        shape:
+          type: string
+        type:
+          type: string
+        radius:
+          type: integer
+    SmallSquareShape:
+      type: object
+      required: [ shape, side ]
+      properties:
+        shape:
+          type: string
+          pattern: "^SMALL_SQUARE$"
+        side:
+          type: integer
+    WarningIcon:
+      type: object
+      required: [ type, color ]
+      properties:
+        type:
+          type: string
+          pattern: "^WARNING"
+        color:
+          type: string

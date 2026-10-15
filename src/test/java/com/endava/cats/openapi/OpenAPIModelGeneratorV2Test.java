@@ -438,6 +438,58 @@ class OpenAPIModelGeneratorV2Test {
         }
     }
 
+    @Test
+    void shouldUseTheMappingOfTheOwningDiscriminatorWhenSeveralShareThePropertyName() throws Exception {
+        OpenAPIModelGeneratorV2 generator = generatorFor("test-oneof-shared-discriminator-property.yaml");
+
+        // Both unions are generated so that both discriminators are recorded: whichever one a
+        // lookup of the first "type" discriminator returned, the other union would previously
+        // miss its mapping and fall back to the casing of its schema name, e.g. BIG_CIRCLE_SHAPE.
+        List<String> shapeTypes = generator.generate("Shape").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+        List<String> vehicleTypes = generator.generate("Vehicle").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+
+        Assertions.assertThat(shapeTypes).containsExactlyInAnyOrder("BIG_CIRCLE", "SMALL_SQUARE");
+        Assertions.assertThat(vehicleTypes).containsExactlyInAnyOrder("SPORTS_CAR", "CARGO_TRUCK");
+    }
+
+    @Test
+    void shouldUseEachUnionsPropertyNameWhenOneVariantBelongsToUnionsWithDifferentPropertyNames() throws Exception {
+        OpenAPIModelGeneratorV2 generator = generatorFor("test-oneof-shared-variant-different-property-names.yaml");
+
+        // BigCircleShape is a variant of both unions, and each union marks a different one of its
+        // properties as the discriminator. Re-generate shapes to ensure nothing is cached or otherwise
+        // re-used based on order.
+        List<String> shapeShapes = generator.generate("Shape").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.shape").toString())
+                .toList();
+        List<String> iconTypes = generator.generate("Icon").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+        List<String> shapeShapesAfterIcon = generator.generate("Shape").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.shape").toString())
+                .toList();
+
+        Assertions.assertThat(shapeShapes).containsExactlyInAnyOrder("BIG_CIRCLE", "SMALL_SQUARE");
+        Assertions.assertThat(iconTypes).containsExactlyInAnyOrder("BIG_CIRCLE", "WARNING");
+        Assertions.assertThat(shapeShapesAfterIcon).containsExactlyInAnyOrder("BIG_CIRCLE", "SMALL_SQUARE");
+    }
+
+    private OpenAPIModelGeneratorV2 generatorFor(String testResource) throws IOException {
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+        OpenAPI openAPI = new OpenAPIParser()
+                .readContents(Files.readString(Paths.get("src/test/resources", testResource)), null, options)
+                .getOpenAPI();
+        globalContext.getSchemaMap().putAll(OpenApiUtils.getSchemas(openAPI, List.of("application/json")));
+        return new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
+    }
+
     private OpenAPIModelGeneratorV2 setupPayloadGenerator() throws IOException {
         OpenAPIParser openAPIV3Parser = new OpenAPIParser();
         ParseOptions options = new ParseOptions();
