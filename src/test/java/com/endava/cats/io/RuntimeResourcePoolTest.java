@@ -1599,6 +1599,22 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldInvalidateQualifiedResourceIdWhenDeletedViaGenericPathParameter() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"customerId\":\"customer-42\"}"));
+        ServiceData delete = ServiceData.builder().relativePath("/customers/{id}")
+                .httpMethod(HttpMethod.DELETE).contentType("application/json").build();
+        resourcePool.observe(delete, request("DELETE", "/customers/customer-42", "{}"), response(204, "{}"));
+
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(getData("/customers/{customerId}",
+                "{\"customerId\":\"generated\"}"), "{\"customerId\":\"generated\"}");
+
+        Assertions.assertThat(result.payload()).contains("generated").doesNotContain("customer-42");
+        Assertions.assertThat(result.correlations()).isEmpty();
+    }
+
+    @Test
     void shouldReportPathParameterWithoutCapturedValueAndFailingProducer() {
         enableResourceReuse();
         resourcePool.observe(postData("/customers", "{\"name\":\"x\"}"), request("POST", "/customers", "{\"name\":\"x\"}"),

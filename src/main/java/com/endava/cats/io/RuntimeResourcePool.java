@@ -1184,9 +1184,12 @@ public class RuntimeResourcePool {
         }
         for (int i = 0; i < resources.size(); i++) {
             ResourceInstance resource = resources.get(i);
-            boolean matches = deletedValues.entrySet().stream().allMatch(deleted -> resource.values().values().stream()
-                    .anyMatch(stored -> stored.aliases().contains(normalize(deleted.getKey())) &&
-                            String.valueOf(stored.value()).equals(String.valueOf(deleted.getValue().value()))));
+            boolean matches = deletedValues.entrySet().stream().allMatch(deleted -> {
+                Set<String> deletedAliases = deletedAliases(data.getRelativePath(), deleted.getKey(), deleted.getValue());
+                return resource.values().values().stream()
+                        .anyMatch(stored -> stored.aliases().stream().anyMatch(deletedAliases::contains) &&
+                                sameValue(stored.value(), deleted.getValue().value()));
+            });
             if (matches) {
                 resources.set(i, resource.deleted());
                 correlationFeedback.keySet().removeIf(key -> key.resourceSequence() == resource.sequence());
@@ -1196,6 +1199,17 @@ public class RuntimeResourcePool {
                 .map(StoredValue::value).map(String::valueOf).collect(Collectors.toSet());
         successfulRequestBaselines.entrySet().removeIf(entry ->
                 containsPrimitiveValue(entry.getValue(), deletedPrimitiveValues));
+    }
+
+    private Set<String> deletedAliases(String path, String deletedKey, StoredValue deletedValue) {
+        Set<String> aliases = new LinkedHashSet<>(deletedValue.aliases());
+        String normalizedKey = normalize(deletedKey);
+        aliases.add(normalizedKey);
+        if (SIMPLE_IDENTIFIERS.contains(normalizedKey)) {
+            aliases.addAll(primaryResourceIdentifierAliases(path));
+            aliases.addAll(resourceIdentifierAliases(path));
+        }
+        return aliases;
     }
 
     private Map<String, StoredValue> extractIdentifierQueryValues(ServiceData data, String actualUrl) {
