@@ -25,6 +25,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -209,9 +210,9 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
             alternatives.add("00000000-0000-0000-0000-000000000000");
             alternatives.add("11111111-1111-1111-1111-111111111111");
         } else if (NUMERIC_ID_PATTERN.matcher(valueStr).matches()) {
-            long numericValue = Long.parseLong(valueStr);
-            alternatives.add(numericValue + 1);
-            alternatives.add(numericValue - 1);
+            BigInteger numericValue = new BigInteger(valueStr);
+            alternatives.add(numericValue.add(BigInteger.ONE));
+            alternatives.add(numericValue.subtract(BigInteger.ONE));
             alternatives.add(1L);
             alternatives.add(0L);
             alternatives.add(NumberGenerator.generateRandomLong(1, 999999));

@@ -141,6 +141,30 @@ class InsecureDirectObjectReferencesFuzzerTest {
     }
 
     @Test
+    void shouldHandleNumericIdExceedingLongMaxValueWithoutNumberFormatException() {
+        Map<String, Schema> reqTypes = new HashMap<>();
+        reqTypes.put("userId", new StringSchema());
+        FuzzingData data = FuzzingData.builder()
+                .reqSchema(new StringSchema())
+                .requestPropertyTypes(reqTypes)
+                .requestContentTypes(List.of("application/json"))
+                .responseCodes(Set.of("200", "403"))
+                .method(HttpMethod.GET)
+                .build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"userId\":\"99999999999999999999999999\"}");
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().body("{}").responseCode(403).build());
+
+        idorFuzzer.fuzz(data);
+
+        ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.atLeastOnce()).call(captor.capture());
+        List<String> payloads = captor.getAllValues().stream().map(ServiceData::getPayload).toList();
+        Assertions.assertThat(payloads)
+                .anyMatch(payload -> payload.contains("100000000000000000000000000"))
+                .anyMatch(payload -> payload.contains("99999999999999999999999998"));
+    }
+
+    @Test
     void shouldFuzzUuidField() {
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("resourceId", new StringSchema());
