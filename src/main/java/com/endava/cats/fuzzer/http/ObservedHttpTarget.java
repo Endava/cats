@@ -43,6 +43,16 @@ final class ObservedHttpTarget {
         }
     }
 
+    /** Returns the API-relative path for a previously sent request URL, ignoring any query parameters. */
+    static Optional<String> relativeRequestPath(ApiArguments arguments, String requestUrl) {
+        if (StringUtils.isBlank(requestUrl)) {
+            return Optional.empty();
+        }
+        int queryIndex = requestUrl.indexOf('?');
+        String withoutQuery = queryIndex >= 0 ? requestUrl.substring(0, queryIndex) : requestUrl;
+        return relativePath(arguments, withoutQuery);
+    }
+
     private static boolean isSameOrigin(URI base, URI target) {
         return List.of("http", "https").contains(base.getScheme()) &&
                 base.getScheme().equalsIgnoreCase(target.getScheme()) &&
@@ -66,7 +76,7 @@ final class ObservedHttpTarget {
         }
         String collection = itemTemplate.substring(0, index);
         String parameterName = itemTemplate.substring(index + 2, itemTemplate.length() - 1);
-        Optional<String> target = relativePath(arguments, itemUrl);
+        Optional<String> target = relativeRequestPath(arguments, itemUrl);
         if (target.isEmpty() || !matchesTemplate(itemTemplate, target.get())) {
             return Optional.empty();
         }
@@ -89,7 +99,7 @@ final class ObservedHttpTarget {
         if ((exchange.status() != 200 && exchange.status() != 201) || !JsonUtils.isValidJson(exchange.responseBody())) {
             return Optional.empty();
         }
-        Optional<String> collectionPath = relativePath(arguments, exchange.url())
+        Optional<String> collectionPath = relativeRequestPath(arguments, exchange.url())
                 .map(path -> path.endsWith("/") && path.length() > 1 ? path.substring(0, path.length() - 1) : path)
                 .filter(path -> matchesTemplate(collectionTemplate, path));
         if (collectionPath.isEmpty()) {

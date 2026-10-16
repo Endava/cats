@@ -100,7 +100,7 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
 
     static String getRelativePath(String url, ApiArguments apiArguments) {
         if (apiArguments != null) {
-            var relative = ObservedHttpTarget.relativePath(apiArguments, url);
+            var relative = ObservedHttpTarget.relativeRequestPath(apiArguments, url);
             if (relative.isPresent()) {
                 return relative.get();
             }

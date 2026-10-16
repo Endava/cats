@@ -105,6 +105,27 @@ class SecondPhaseConsistencyFuzzersTest {
     }
 
     @Test
+    void conditionalGetAndStaleIfMatchMatchObservedRequestUrlsThatIncludeQueryParameters() {
+        FuzzingData getData = getData();
+        Mockito.when(pool.successfulExchanges(getData.getPath(), HttpMethod.GET)).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange(getData.getPath(), HttpMethod.GET,
+                        "https://api.example.com/items/1?expand=true", "{}", 200, "{}", null, "\"v1\"")));
+        new ConditionalEtagFuzzer(pool, arguments, executor, listener).fuzz(getData);
+
+        FuzzingData putData = writeData(HttpMethod.PUT);
+        Mockito.when(pool.successfulExchanges("/items", HttpMethod.POST)).thenReturn(List.of(post()));
+        Mockito.when(pool.successfulExchanges(putData.getPath(), HttpMethod.PUT)).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.PUT,
+                        "https://api.example.com/items/1", "{\"name\":\"same\"}", 200, "{}", null, "\"v2\"")));
+        new ConditionalEtagFuzzer(pool, arguments, executor, listener).fuzz(putData);
+
+        ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(executor, Mockito.times(2)).execute(captor.capture());
+        Assertions.assertThat(captor.getAllValues().get(0).getPath()).isEqualTo("/items/1");
+        Assertions.assertThat(captor.getAllValues().get(1).getPath()).isEqualTo("/items/1");
+    }
+
+    @Test
     void staleIfMatchSkipsWhenNoOwnedItemExists() {
         FuzzingData data = writeData(HttpMethod.PUT);
         Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(put()));

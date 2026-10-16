@@ -59,7 +59,7 @@ public class CrossParentResourceIsolationFuzzer implements Fuzzer {
             return;
         }
         List<List<String>> observed = pool.successfulExchanges(data.getPath(), HttpMethod.GET).stream()
-                .map(exchange -> ObservedHttpTarget.relativePath(arguments, exchange.url()))
+                .map(exchange -> ObservedHttpTarget.relativeRequestPath(arguments, exchange.url()))
                 .flatMap(Optional::stream)
                 .filter(path -> ObservedHttpTarget.matchesTemplate(data.getPath(), path))
                 .map(path -> Arrays.asList(path.split("/", -1)))

@@ -59,7 +59,7 @@ public class ConditionalEtagFuzzer implements Fuzzer {
     /** Replays a matching successful GET with If-None-Match; skips if no reusable ETag was observed. */
     private void checkConditionalGet(FuzzingData data) {
         Optional<ObservedGet> baseline = pool.successfulExchanges(data.getPath(), HttpMethod.GET).reversed().stream()
-                .map(exchange -> ObservedHttpTarget.relativePath(arguments, exchange.url())
+                .map(exchange -> ObservedHttpTarget.relativeRequestPath(arguments, exchange.url())
                         .filter(path -> ObservedHttpTarget.matchesTemplate(data.getPath(), path))
                         .filter(path -> validTag(exchange.etag()))
                         .map(path -> new ObservedGet(path, exchange.etag())))
@@ -147,17 +147,29 @@ public class ConditionalEtagFuzzer implements Fuzzer {
 
     private boolean hasDifferentEtagForSameUrl(RuntimeResourcePool.SuccessfulExchange current,
                                                RuntimeResourcePool.SuccessfulExchange previous) {
-        return current.url().equals(previous.url()) && validTag(previous.etag()) &&
+        return sameTargetResource(current.url(), previous.url()) && validTag(previous.etag()) &&
                 !current.etag().equals(previous.etag());
     }
 
     /** Returns a successful write to the ETagged URL only when a POST 201 Location proves ownership. */
     private Optional<OwnedWrite> latestWriteToCreatedResource(FuzzingData data, String observedUrl) {
         return pool.successfulExchanges(data.getPath(), data.getMethod()).reversed().stream()
-                .filter(write -> write.url().equals(observedUrl) && JsonUtils.isValidJson(write.requestBody()))
+                .filter(write -> sameTargetResource(write.url(), observedUrl) && JsonUtils.isValidJson(write.requestBody()))
                 .map(write -> ObservedHttpTarget.ownedPath(pool, arguments, data.getPath(), write.url())
                         .map(path -> new OwnedWrite(path, write.requestBody())))
                 .flatMap(Optional::stream).findFirst();
+    }
+
+    private boolean sameTargetResource(String firstUrl, String secondUrl) {
+        if (firstUrl == null || secondUrl == null) {
+            return false;
+        }
+        if (firstUrl.equals(secondUrl)) {
+            return true;
+        }
+        Optional<String> firstPath = ObservedHttpTarget.relativeRequestPath(arguments, firstUrl);
+        Optional<String> secondPath = ObservedHttpTarget.relativeRequestPath(arguments, secondUrl);
+        return firstPath.isPresent() && firstPath.equals(secondPath);
     }
 
     private boolean validTag(String tag) {
