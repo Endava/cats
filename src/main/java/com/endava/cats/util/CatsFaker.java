@@ -244,20 +244,15 @@ public class CatsFaker {
      * Provides fake address components.
      */
     public class AddressFaker {
-        private static final List<String> REAL_CITIES = List.of(
-                "New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia",
-                "San Antonio", "San Diego", "Dallas", "Austin", "Seattle", "Denver", "Boston",
-                "Miami", "Atlanta", "London", "Paris", "Berlin", "Madrid", "Rome");
-        private static final List<String> CORE_STREET_TYPES = List.of(
-                "Street", "Avenue", "Road", "Boulevard", "Drive", "Lane");
-
         /**
-         * Builds a synthetic city name using prefix/suffix combos.
+         * Picks a city name from the locale dataset.
          *
-         * @return synthetic city name.
+         * @return city name.
          */
         public String city() {
-            return randomElement(REAL_CITIES);
+            Map<String, Object> addressData = (Map<String, Object>) data.get("address");
+            List<String> cities = (List<String>) addressData.get("cities");
+            return randomElement(cities);
         }
 
         /**
@@ -330,8 +325,9 @@ public class CatsFaker {
          * @return street address.
          */
         public String streetAddress() {
-            return numerify(randomElement((List<String>) ((Map<String, Object>) data.get("address")).get("building_number"))) + " " +
-                    nameFaker.lastName() + " " + randomElement(CORE_STREET_TYPES);
+            Map<String, Object> addressData = (Map<String, Object>) data.get("address");
+            return numerify(randomElement((List<String>) addressData.get("building_number"))) + " " +
+                    nameFaker.lastName() + " " + randomElement((List<String>) addressData.get("street_types"));
         }
     }
 

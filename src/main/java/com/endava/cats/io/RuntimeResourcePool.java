@@ -431,15 +431,26 @@ public class RuntimeResourcePool {
     }
 
     private Optional<StoredValue> wrapperIdentifier(Map<String, StoredValue> values) {
-        for (String key : List.of("$.response", "$.data", "$.result", "$.value", "$.names[]", "$.ids[]", "$.items[]")) {
-            StoredValue candidate = values.get(key);
-            if (candidate != null && candidate.value() != null
-                    && StringUtils.isNotBlank(String.valueOf(candidate.value()))
-                    && !(candidate.value() instanceof Boolean)) {
-                return Optional.of(new StoredValue(candidate.value(), candidate.sourceLocation(), Set.of("id")));
-            }
+        List<StoredValue> candidates = values.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith("$.") && isTopLevelResponseKey(entry.getKey()))
+                .filter(entry -> !isMetadataKey(normalize(entry.getKey())))
+                .map(Map.Entry::getValue)
+                .filter(stored -> stored != null && stored.value() != null
+                        && !(stored.value() instanceof Boolean)
+                        && StringUtils.isNotBlank(String.valueOf(stored.value())))
+                .toList();
+        if (candidates.size() == 1) {
+            StoredValue candidate = candidates.getFirst();
+            return Optional.of(new StoredValue(candidate.value(), candidate.sourceLocation(), Set.of("id")));
         }
         return Optional.empty();
+    }
+
+    private boolean isMetadataKey(String normalizedKey) {
+        return normalizedKey.contains("time") || normalizedKey.contains("date") ||
+                normalizedKey.contains("status") || normalizedKey.contains("message") ||
+                normalizedKey.contains("error") || normalizedKey.equals("code") ||
+                normalizedKey.equals("version");
     }
 
     /** Clears all values captured by the current run. */
