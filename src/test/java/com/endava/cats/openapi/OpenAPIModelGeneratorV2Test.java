@@ -548,6 +548,32 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(shapeTypes).containsExactlyInAnyOrder("big-circle", "small-square-shape");
     }
 
+    @Test
+    void shouldGenerateFromExtensibleEnumAndNormalizeNumericPairs() {
+        StringSchema opSchema = new StringSchema();
+        opSchema.addExtension("x-extensible-enum", List.of("UNKNOWN", "SET"));
+        io.swagger.v3.oas.models.media.IntegerSchema bedsSchema = new io.swagger.v3.oas.models.media.IntegerSchema();
+        bedsSchema.setMinimum(java.math.BigDecimal.valueOf(10));
+        bedsSchema.setMaximum(java.math.BigDecimal.valueOf(20));
+        io.swagger.v3.oas.models.media.IntegerSchema availSchema = new io.swagger.v3.oas.models.media.IntegerSchema();
+        availSchema.setMinimum(java.math.BigDecimal.valueOf(50));
+        availSchema.setMaximum(java.math.BigDecimal.valueOf(60));
+        ObjectSchema schema = new ObjectSchema();
+        schema.addProperty("operation", opSchema);
+        schema.addProperty("beds", bedsSchema);
+        schema.addProperty("availableBeds", availSchema);
+        globalContext.getSchemaMap().put("HospitalConfig", schema);
+
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(false, false, false, false), 3, true, 2);
+        String json = generator.generate("HospitalConfig").getFirst();
+
+        Assertions.assertThat(JsonUtils.getVariableFromJson(json, "$.operation")).hasToString("SET");
+        int beds = Integer.parseInt(JsonUtils.getVariableFromJson(json, "$.beds").toString());
+        int availableBeds = Integer.parseInt(JsonUtils.getVariableFromJson(json, "$.availableBeds").toString());
+        Assertions.assertThat(availableBeds).isLessThanOrEqualTo(beds);
+    }
+
     private OpenAPIModelGeneratorV2 generatorFor(String testResource) throws IOException {
         ParseOptions options = new ParseOptions();
         options.setResolve(true);

@@ -514,8 +514,57 @@ public class OpenAPIModelGeneratorV2 {
                 currentPropertiesDepth--;
             }
         }
+        examples.forEach(example -> normalizeNumericPairRelationships(asMap(example)));
 
         return examples;
+    }
+
+    private static void normalizeNumericPairRelationships(Map<String, Object> map) {
+        if (map == null || map.size() < 2) {
+            return;
+        }
+        List<String> numericKeys = map.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && entry.getValue() instanceof Number)
+                .map(Map.Entry::getKey)
+                .toList();
+        for (int i = 0; i < numericKeys.size(); i++) {
+            for (int j = 0; j < numericKeys.size(); j++) {
+                if (i == j) {
+                    continue;
+                }
+                String lowerKey = numericKeys.get(i);
+                String upperKey = numericKeys.get(j);
+                if (isLowerBoundOf(lowerKey, upperKey)) {
+                    Number lowerVal = (Number) map.get(lowerKey);
+                    Number upperVal = (Number) map.get(upperKey);
+                    if (lowerVal != null && upperVal != null && lowerVal.doubleValue() > upperVal.doubleValue()) {
+                        map.put(lowerKey, upperVal);
+                        map.put(upperKey, lowerVal);
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean isLowerBoundOf(String candidateLower, String candidateUpper) {
+        String lower = candidateLower.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        String upper = candidateUpper.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        if (lower.equals(upper) || upper.length() < 3) {
+            return false;
+        }
+        for (String[] pair : List.of(
+                new String[]{"min", "max"},
+                new String[]{"minimum", "maximum"},
+                new String[]{"start", "end"},
+                new String[]{"from", "to"},
+                new String[]{"low", "high"})) {
+            if (lower.startsWith(pair[0]) && upper.startsWith(pair[1]) &&
+                    lower.substring(pair[0].length()).equals(upper.substring(pair[1].length()))) {
+                return true;
+            }
+        }
+        String upperStem = upper.startsWith("total") && upper.length() > 5 ? upper.substring(5) : upper;
+        return lower.length() > upperStem.length() + 2 && lower.endsWith(upperStem);
     }
 
     private List<GeneratedExample> resolveAllOfSchemaProperties(Schema schema, String propertyName) {
@@ -1168,8 +1217,18 @@ public class OpenAPIModelGeneratorV2 {
         return validDataFormat.generate(propertySchema, propertyForGeneration);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> Object getEnumOrDefault(Schema<T> propertySchema) {
         List<T> enumValues = propertySchema.getEnum();
+        if (CatsUtil.isEmpty(enumValues) && propertySchema.getExtensions() != null
+                && propertySchema.getExtensions().get("x-extensible-enum") instanceof List<?> extensibleEnum) {
+            List<T> candidates = (List<T>) extensibleEnum;
+            List<T> nonUnknown = candidates.stream()
+                    .filter(Objects::nonNull)
+                    .filter(val -> !"UNKNOWN".equalsIgnoreCase(String.valueOf(val)))
+                    .toList();
+            enumValues = nonUnknown.isEmpty() ? candidates : nonUnknown;
+        }
 
         if (!CatsUtil.isEmpty(enumValues)) {
             List<T> nonNullEnumValues = enumValues.stream()
@@ -1271,9 +1330,9 @@ public class OpenAPIModelGeneratorV2 {
         } else if (CatsModelUtils.isBooleanSchema(propertySchema)) {
             return this.getExampleFromBooleanSchema();
         } else if (CatsModelUtils.isNumberSchema(propertySchema)) {
-            return this.getExampleFromNumberSchema(propertySchema);
+            return this.getExampleFromNumberSchema(propertyName, propertySchema);
         } else if (CatsModelUtils.isIntegerSchema(propertySchema)) {
-            return this.getExampleFromIntegerSchema(propertySchema);
+            return this.getExampleFromIntegerSchema(propertyName, propertySchema);
         } else if (CatsModelUtils.isObjectSchema(propertySchema)) {
             return this.getExampleForObjectSchema(propertySchema);
         } else if (propertySchema.getAdditionalProperties() instanceof Schema) {
@@ -1291,19 +1350,48 @@ public class OpenAPIModelGeneratorV2 {
         return random.nextBoolean();
     }
 
-    private Object getExampleFromIntegerSchema(Schema<?> property) {
+    private Object getExampleFromIntegerSchema(String propertyName, Schema<?> property) {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
+        if (max == null) {
+            double lower = min != null ? min : 1.0;
+            if (propertyName != null && propertyName.toLowerCase(Locale.ROOT).endsWith("offset")) {
+                lower = min != null ? min : 0.0;
+            }
+            min = lower;
+            max = isPaginationPageProperty(propertyName) ? lower : lower + 19.0;
+        }
+        double value = randomNumber(min, max);
 
         if (CatsModelUtils.isShortIntegerSchema(property)) {
-            return (int) randomNumber(min, max);
+            return (int) value;
         }
-        return (long) randomNumber(min, max);
+        return (long) value;
     }
 
-    private Object getExampleFromNumberSchema(Schema<?> property) {
+    private static boolean isPaginationPageProperty(String propertyName) {
+        if (propertyName == null) {
+            return false;
+        }
+        String leaf = propertyName.substring(propertyName.lastIndexOf('#') + 1)
+                .replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        return leaf.equals("page") || leaf.equals("pagenumber") || leaf.equals("pageindex") || leaf.equals("offset");
+    }
+
+    private Object getExampleFromNumberSchema(String propertyName, Schema<?> property) {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
+        if (min == null && max == null && propertyName != null) {
+            String leaf = propertyName.substring(propertyName.lastIndexOf('#') + 1)
+                    .replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+            if (leaf.equals("lat") || leaf.endsWith("latitude")) {
+                min = -90.0;
+                max = 90.0;
+            } else if (leaf.equals("lon") || leaf.equals("lng") || leaf.endsWith("longitude")) {
+                min = -180.0;
+                max = 180.0;
+            }
+        }
 
         if (CatsModelUtils.isFloatSchema(property)) {
             return (float) randomNumber(min, max);

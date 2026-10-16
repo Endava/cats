@@ -18,10 +18,10 @@ class TimestampGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"timestamp,true", "other,false"})
-    void shouldApply(String format, boolean expected) {
+    @CsvSource({"timestamp,,true", "other,,false", ",createdAt,true", ",updated_at,true", ",cat,false", ",format,false"})
+    void shouldApply(String format, String property, boolean expected) {
         TimestampGenerator timestampGenerator = new TimestampGenerator();
-        Assertions.assertThat(timestampGenerator.appliesTo(format, "")).isEqualTo(expected);
+        Assertions.assertThat(timestampGenerator.appliesTo(format == null ? "" : format, property == null ? "" : property)).isEqualTo(expected);
     }
 
     @Test

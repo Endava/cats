@@ -12,8 +12,18 @@ class AddressGeneratorTest {
 
     @Test
     void shouldGenerate() {
+        com.endava.cats.util.CatsRandom.initRandom(0);
         AddressGenerator addressGenerator = new AddressGenerator();
         Assertions.assertThat(addressGenerator.generate(new Schema<>()).toString()).hasSizeGreaterThan(5);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"contractAddress", "owner_address", "walletAddress"})
+    void shouldGenerateHexAddressForBlockchainProperties(String property) {
+        com.endava.cats.util.CatsRandom.initRandom(0);
+        AddressGenerator addressGenerator = new AddressGenerator();
+        Assertions.assertThat(addressGenerator.appliesTo("", property)).isTrue();
+        Assertions.assertThat(addressGenerator.generate(new Schema<>()).toString()).matches("^0x[0-9a-f]{40}$");
     }
 
     @ParameterizedTest

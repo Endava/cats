@@ -26,7 +26,17 @@ public class TimestampGenerator implements ValidDataFormatGenerator, InvalidData
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return PropertySanitizer.sanitize(propertyName).endsWith("timestamp") ||
+                isTimestampAtProperty(propertyName) ||
                 "timestamp".equalsIgnoreCase(format);
+    }
+
+    private static boolean isTimestampAtProperty(String propertyName) {
+        if (propertyName == null) {
+            return false;
+        }
+        String leaf = propertyName.substring(propertyName.lastIndexOf('#') + 1);
+        return (leaf.length() > 2 && leaf.endsWith("At") && Character.isLowerCase(leaf.charAt(leaf.length() - 3))) ||
+                leaf.toLowerCase(java.util.Locale.ROOT).endsWith("_at");
     }
 
     @Override
