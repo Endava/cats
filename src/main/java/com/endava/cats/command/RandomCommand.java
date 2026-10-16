@@ -57,8 +57,12 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
     ReportingArguments reportingArguments;
 
     @Inject
-    @CommandLine.ArgGroup(heading = "%n@|bold,underline Match Options:|@%n", exclusive = false, multiplicity = "1")
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Match Options:|@%n", exclusive = false)
     MatchArguments matchArguments;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
+    com.endava.cats.args.IgnoreArguments ignoreArguments;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Files Options:|@%n", exclusive = false)
@@ -68,9 +72,9 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Stop Options:|@%n", exclusive = false, multiplicity = "1")
     StopArguments stopArguments;
 
-    @CommandLine.Option(names = {"--httpMethod", "-X"}, required = true,
-            description = "The HTTP method. For HTTP methods requiring a body a  @|bold,underline --template|@ must be supplied. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    HttpMethod httpMethod = HttpMethod.POST;
+    @CommandLine.Option(names = {"--httpMethod", "-X"},
+            description = "The HTTP method. If not supplied, all HTTP methods in the contract will be fuzzed.")
+    HttpMethod httpMethod;
 
     @CommandLine.Option(names = {"--contentType"},
             description = "A custom mime type if the OpenAPI contract/spec uses content type negotiation versioning")
@@ -80,8 +84,8 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     " which result in multiple payloads for a single endpoint and http method")
     Map<String, String> xxxOfSelections;
 
-    @CommandLine.Option(names = {"--path", "-p"}, required = true,
-            description = "An API path for continuous fuzzing")
+    @CommandLine.Option(names = {"--path", "-p"},
+            description = "An API path for continuous fuzzing. If not supplied, all paths in the contract will be fuzzed.")
     String path;
 
     @CommandLine.Option(names = {"--seed"},
@@ -105,8 +109,12 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
         context.setContentType(contentType);
         context.setXxxOfSelections(xxxOfSelections);
         context.setSeed(seed);
-        context.setPaths(List.of(path));
-        context.setHttpMethods(List.of(httpMethod));
+        if (path != null) {
+            context.setPaths(List.of(path));
+        }
+        if (httpMethod != null) {
+            context.setHttpMethods(List.of(httpMethod));
+        }
 
         catsCommand.runWithContext(context);
     }

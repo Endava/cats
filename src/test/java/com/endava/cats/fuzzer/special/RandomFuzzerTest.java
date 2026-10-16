@@ -156,6 +156,35 @@ class RandomFuzzerTest {
         Mockito.verify(randomFuzzerSpy, Mockito.times(1)).readValueFromFile(Mockito.endsWith("dict.txt"));
     }
 
+    @Test
+    void shouldApplyNewHighImpactMutatorsAndMultiFieldMutations() {
+        com.endava.cats.fuzzer.special.mutators.impl.RandomBoundaryNumbersMutator boundaryMutator =
+                new com.endava.cats.fuzzer.special.mutators.impl.RandomBoundaryNumbersMutator();
+        com.endava.cats.fuzzer.special.mutators.impl.RandomTypeConfusionMutator typeConfusionMutator =
+                new com.endava.cats.fuzzer.special.mutators.impl.RandomTypeConfusionMutator();
+        com.endava.cats.fuzzer.special.mutators.impl.RandomInjectionAndFormatCrashMutator injectionMutator =
+                new com.endava.cats.fuzzer.special.mutators.impl.RandomInjectionAndFormatCrashMutator();
+
+        String baseJson = "{\"a\":\"one\",\"b\":2,\"c\":\"three\"}";
+        Assertions.assertThat(boundaryMutator.mutate(baseJson, "b")).isNotEqualTo(baseJson);
+        Assertions.assertThat(boundaryMutator.description()).isNotBlank();
+        Assertions.assertThat(typeConfusionMutator.mutate(baseJson, "a")).isNotEqualTo(baseJson);
+        Assertions.assertThat(typeConfusionMutator.description()).isNotBlank();
+        Assertions.assertThat(injectionMutator.mutate(baseJson, "c")).isNotEqualTo(baseJson);
+        Assertions.assertThat(injectionMutator.description()).isNotBlank();
+
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn(baseJson);
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(data.getPath()).thenReturn("/path");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("a", "b", "c"));
+        Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong()))
+                .thenReturn(false).thenReturn(true);
+
+        randomFuzzer.fuzz(data);
+        Mockito.verify(simpleExecutor, Mockito.times(2)).execute(Mockito.any());
+    }
+
     @NotNull
     private FuzzingData mockData() {
         FuzzingData data = Mockito.mock(FuzzingData.class);

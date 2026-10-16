@@ -96,6 +96,8 @@ public class RandomFuzzer implements Fuzzer {
         long startTime = System.currentTimeMillis();
 
         boolean shouldStop = false;
+        int iterationsForOperation = 0;
+        boolean capPerOperation = stopArguments.getStopAfterTimeInSec() > 0 && stopArguments.getStopAfterMutations() <= 0;
         Set<String> allCatsFields = data.getAllFieldsByHttpMethod();
 
         testCaseListener.updateUnknownProgress(data);
@@ -113,6 +115,16 @@ public class RandomFuzzer implements Fuzzer {
             logger.debug("Selected mutator [{}]", selectedRandomMutator.getClass().getSimpleName());
 
             String mutatedPayload = selectedRandomMutator.mutate(data.getPayload(), targetField);
+            if (allCatsFields.size() > 1 && com.endava.cats.util.CatsRandom.instance().nextBoolean()) {
+                int extraMutations = 1 + com.endava.cats.util.CatsRandom.instance().nextInt(Math.min(3, allCatsFields.size() - 1));
+                for (int i = 0; i < extraMutations && JsonUtils.isValidJson(mutatedPayload); i++) {
+                    String extraField = CatsUtil.selectRandom(allCatsFields);
+                    if (JsonUtils.isFieldInJson(mutatedPayload, extraField)) {
+                        Mutator extraMutator = CatsUtil.selectRandom(mutatorsToRun);
+                        mutatedPayload = extraMutator.mutate(mutatedPayload, extraField);
+                    }
+                }
+            }
             Collection<CatsHeader> mutatedHeaders = selectedRandomMutator.mutate(data.getHeaders());
 
             simpleExecutor.execute(
@@ -129,7 +141,9 @@ public class RandomFuzzer implements Fuzzer {
                             .build());
 
             testCaseListener.updateUnknownProgress(data);
-            shouldStop = stopArguments.shouldStop(executionStatisticsListener.getErrors(), testCaseListener.getCurrentTestCaseNumber(), startTime);
+            iterationsForOperation++;
+            shouldStop = stopArguments.shouldStop(executionStatisticsListener.getErrors(), testCaseListener.getCurrentTestCaseNumber(), startTime)
+                    || (capPerOperation && iterationsForOperation >= 25);
         }
     }
 
