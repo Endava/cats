@@ -425,7 +425,7 @@ public class RuntimeResourcePool {
         }
         TargetField target = new TargetField(parameterName, parameterName, RequestTarget.Location.PATH,
                 stringShape(currentValue));
-        Set<String> targetAliases = semanticAliases(target.path(), target.name());
+        Set<String> targetAliases = targetAliases(targetPath, target);
         List<ResolvedValue> candidates = resources.stream()
                 .filter(ResourceInstance::active)
                 .filter(resource -> !resource.fuzzed())
@@ -924,7 +924,7 @@ public class RuntimeResourcePool {
 
     private Optional<ResolvedValue> resolve(String targetPath, TargetField target, ResourceInstance boundResource,
                                             boolean boundOnly) {
-        Set<String> targetAliases = semanticAliases(target.path(), target.name());
+        Set<String> targetAliases = targetAliases(targetPath, target);
         List<ResolvedValue> candidates = resources.stream()
                 .filter(ResourceInstance::active)
                 .filter(resource -> !boundOnly || boundResource != null &&
@@ -992,11 +992,23 @@ public class RuntimeResourcePool {
         return candidate.storedValue().aliases().stream().anyMatch(resourceAliases::contains) ? 2 : 0;
     }
 
+    private Set<String> targetAliases(String targetPath, TargetField target) {
+        Set<String> aliases = new LinkedHashSet<>(semanticAliases(target.path(), target.name()));
+        if (aliases.stream().anyMatch(SIMPLE_IDENTIFIERS::contains) &&
+                (target.location() == RequestTarget.Location.PATH || !target.path().contains("#"))) {
+            aliases.addAll(primaryResourceIdentifierAliases(targetPath));
+        }
+        return Set.copyOf(aliases);
+    }
+
     private Set<String> primaryResourceIdentifierAliases(String path) {
         String resource = resourceName(path);
+        String singular = singular(resource);
         Set<String> aliases = new LinkedHashSet<>();
-        aliases.add(resource + "id");
-        aliases.add(singular(resource) + "id");
+        for (String suffix : SIMPLE_IDENTIFIERS) {
+            aliases.add(resource + suffix);
+            aliases.add(singular + suffix);
+        }
         return aliases;
     }
 

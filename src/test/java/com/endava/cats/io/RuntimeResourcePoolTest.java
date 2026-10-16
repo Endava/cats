@@ -178,6 +178,18 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldResolveGenericPathIdFromQualifiedResponseFieldAndPreferItOverUnrelatedGenericId() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"),
+                response(201, "{\"id\":\"order-1\",\"customerId\":\"customer-42\"}"));
+
+        ServiceData customerGet = getData("/customers/{id}", "{\"id\":\"generated\"}");
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(customerGet, customerGet.getPayload());
+
+        Assertions.assertThat(result.payload()).contains("customer-42").doesNotContain("order-1", "generated");
+    }
+
+    @Test
     void shouldAssociateNestedGenericIdsWithIrregularResourceNames() {
         enableResourceReuse();
         resourcePool.observe(postData("/people", "{}"), request("POST", "/people", "{}"),
