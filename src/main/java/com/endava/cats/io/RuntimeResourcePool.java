@@ -397,6 +397,7 @@ public class RuntimeResourcePool {
             if (singleResponseObject) {
                 collectResponseHeaders(response, values);
             }
+            collectKeyedMapIdentifier(data.getRelativePath(), responseObject.value(), values);
             if (!hasResourceIdentifier(values, data.getRelativePath())) {
                 if (locationIdentifier.isPresent()) {
                     values.put("id", locationIdentifier.get());
@@ -414,8 +415,23 @@ public class RuntimeResourcePool {
         }
     }
 
+    private void collectKeyedMapIdentifier(String relativePath, JsonObject root, Map<String, StoredValue> values) {
+        String resource = resourceName(relativePath);
+        JsonElement mapCandidate = root.get(resource);
+        if (mapCandidate != null && mapCandidate.isJsonObject()) {
+            for (Map.Entry<String, JsonElement> entry : mapCandidate.getAsJsonObject().entrySet()) {
+                if (entry.getValue() != null && entry.getValue().isJsonObject() && StringUtils.isNotBlank(entry.getKey())) {
+                    values.putIfAbsent("$." + resource + ".@key", new StoredValue(entry.getKey(),
+                            "response.body.$." + resource + "." + entry.getKey(),
+                            Set.of("id", "name", resource + "id", singular(resource) + "id")));
+                    break;
+                }
+            }
+        }
+    }
+
     private Optional<StoredValue> wrapperIdentifier(Map<String, StoredValue> values) {
-        for (String key : List.of("$.response", "$.data", "$.result", "$.value")) {
+        for (String key : List.of("$.response", "$.data", "$.result", "$.value", "$.names[]", "$.ids[]", "$.items[]")) {
             StoredValue candidate = values.get(key);
             if (candidate != null && candidate.value() != null
                     && StringUtils.isNotBlank(String.valueOf(candidate.value()))
@@ -878,6 +894,12 @@ public class RuntimeResourcePool {
     private String enrichJson(String json, ServiceData data, List<ResourceCorrelation> correlations,
                               Map<ResourceCorrelation, Long> correlationSources,
                               Map<String, ResourceInstance> requestBindings, boolean pathParametersPayload) {
+        if (!pathParametersPayload && HttpMethod.requiresBody(data.getHttpMethod()) && !JsonUtils.isValidJson(json)) {
+            Optional<String> rootScalar = enrichRootScalarBody(json, data, correlations, correlationSources);
+            if (rootScalar.isPresent()) {
+                return rootScalar.get();
+            }
+        }
         if (!JsonUtils.isValidJson(json)) {
             return json;
         }
@@ -927,6 +949,35 @@ public class RuntimeResourcePool {
             }
         }
         return result;
+    }
+
+    private Optional<String> enrichRootScalarBody(String json, ServiceData data, List<ResourceCorrelation> correlations,
+                                                  Map<ResourceCorrelation, Long> correlationSources) {
+        if (data.hasDeclaredMutation() || StringUtils.isBlank(json) || StringUtils.isBlank(data.getRelativePath())) {
+            return Optional.empty();
+        }
+        String trimmed = json.trim().replace("\"", "");
+        if (trimmed.isEmpty() || trimmed.length() > 128 || trimmed.chars().anyMatch(Character::isWhitespace)) {
+            return Optional.empty();
+        }
+        List<String> segments = pathSegments(data.getRelativePath());
+        if (segments.size() < 2 || isTemplateSegment(segments.getLast()) || isTemplateSegment(segments.get(segments.size() - 2))) {
+            return Optional.empty();
+        }
+        String parentResource = normalize(segments.get(segments.size() - 2));
+        TargetField target = new TargetField(parentResource + "Id", parentResource + "Id", RequestTarget.Location.BODY, ValueShape.STRING);
+        return resolve(data.getRelativePath(), target, null).map(resolved -> {
+            ResourceCorrelation correlation = ResourceCorrelation.builder()
+                    .sourceMethod(resolved.resource().sourceMethod().name())
+                    .sourcePath(resolved.resource().sourcePath())
+                    .sourceLocation(resolved.storedValue().sourceLocation())
+                    .target(RequestTarget.requestBody())
+                    .value(resolved.value())
+                    .build();
+            correlations.add(correlation);
+            correlationSources.put(correlation, resolved.resource().sequence());
+            return String.valueOf(resolved.value());
+        });
     }
 
     private List<TargetField> orderPathTargetsLeafFirst(List<TargetField> targets, String relativePath) {
@@ -1090,6 +1141,9 @@ public class RuntimeResourcePool {
                                         sourcePriority(resource) + storedValuePriority(value) +
                                         correlationFeedbackScore(resource, targetPath, target))))
                 .toList();
+        if (candidates.isEmpty() && target.location() == RequestTarget.Location.PATH && !boundOnly) {
+            candidates = childPathFallbackCandidates(targetPath, boundResource);
+        }
         int bestQuality = candidates.stream()
                 .mapToInt(candidate -> candidateQuality(candidate, targetPath, target, targetAliases, boundResource))
                 .max().orElse(Integer.MIN_VALUE);
@@ -1097,6 +1151,30 @@ public class RuntimeResourcePool {
                 .filter(candidate -> candidateQuality(candidate, targetPath, target, targetAliases, boundResource) == bestQuality)
                 .max(Comparator.comparingInt(ResolvedValue::score)
                         .thenComparingLong(value -> value.resource().sequence()));
+    }
+
+    private List<ResolvedValue> childPathFallbackCandidates(String targetPath, ResourceInstance boundParentResource) {
+        List<String> targetSegs = pathSegments(targetPath);
+        if (targetSegs.size() < 2) {
+            return List.of();
+        }
+        String rootSegment = targetSegs.getFirst();
+        Set<String> boundValues = boundParentResource == null ? Set.of() : boundParentResource.values().values().stream()
+                .map(StoredValue::value).map(String::valueOf).collect(Collectors.toSet());
+        return resources.stream()
+                .filter(ResourceInstance::active)
+                .filter(resource -> !resource.fuzzed())
+                .filter(resource -> {
+                    List<String> srcSegs = pathSegments(resource.sourcePath());
+                    return srcSegs.size() >= 2 && srcSegs.getFirst().equalsIgnoreCase(rootSegment) &&
+                            srcSegs.stream().anyMatch(this::isTemplateSegment);
+                })
+                .flatMap(resource -> resource.values().values().stream()
+                        .filter(value -> value.aliases().contains("id"))
+                        .filter(value -> !boundValues.contains(String.valueOf(value.value())))
+                        .map(value -> new ResolvedValue(resource, value,
+                                pathAffinity(resource.sourcePath(), targetPath) * 1_000 + sourcePriority(resource))))
+                .toList();
     }
 
     private int candidateQuality(ResolvedValue candidate, String targetPath, TargetField target,
@@ -1570,6 +1648,9 @@ public class RuntimeResourcePool {
         } else if (root.isJsonObject()) {
             if (collectionOnly) {
                 collectNestedArrayObjects(root.getAsJsonObject(), "$.", objects);
+                if (objects.isEmpty()) {
+                    objects.add(new ResponseObject(root.getAsJsonObject(), "$."));
+                }
             } else {
                 objects.add(new ResponseObject(root.getAsJsonObject(), "$."));
                 if (!containsIdentifierOutsideArrays(root.getAsJsonObject())) {
@@ -1648,6 +1729,13 @@ public class RuntimeResourcePool {
                     if (item != null && item.isJsonObject()) {
                         collectPrimitiveValues(item.getAsJsonObject(), location + "[].", sourcePrefix, values);
                         break;
+                    } else if (item != null && item.isJsonPrimitive()) {
+                        Object value = primitiveValue(item.getAsJsonPrimitive());
+                        Set<String> aliases = new LinkedHashSet<>(semanticAliases(location, entry.getKey()));
+                        aliases.add(singular(normalize(entry.getKey())));
+                        values.putIfAbsent(location + "[]", new StoredValue(value, sourcePrefix + location + "[]",
+                                Set.copyOf(aliases)));
+                        break;
                     }
                 }
             }
@@ -1694,6 +1782,8 @@ public class RuntimeResourcePool {
             String fullNormalized = normalize(rawName);
             if ("address".equals(lastWord) && !fullNormalized.equals("contractaddress") && !fullNormalized.contains("email")) {
                 aliases.add("address");
+            } else if ("name".equals(lastWord)) {
+                aliases.add("name");
             }
         }
     }

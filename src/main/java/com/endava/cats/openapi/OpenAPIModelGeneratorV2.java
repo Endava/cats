@@ -935,9 +935,11 @@ public class OpenAPIModelGeneratorV2 {
         Set<String> requiredFields = new LinkedHashSet<>();
 
         for (int itemIndex = 0; itemIndex < arraySize; itemIndex++) {
+            boolean ignoreExamplesForItem = uniqueItems || (itemIndex > 0 && itemSchema.getExample() == null &&
+                    (itemSchema.getExamples() == null || itemSchema.getExamples().isEmpty()));
             GeneratedExample itemExample = itemIndex == 0
                     ? template
-                    : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, uniqueItems);
+                    : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, ignoreExamplesForItem);
             Object item = itemMapper.apply(itemExample.value());
 
             int attempts = 0;

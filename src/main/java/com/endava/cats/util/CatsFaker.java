@@ -244,16 +244,20 @@ public class CatsFaker {
      * Provides fake address components.
      */
     public class AddressFaker {
+        private static final List<String> REAL_CITIES = List.of(
+                "New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia",
+                "San Antonio", "San Diego", "Dallas", "Austin", "Seattle", "Denver", "Boston",
+                "Miami", "Atlanta", "London", "Paris", "Berlin", "Madrid", "Rome");
+        private static final List<String> CORE_STREET_TYPES = List.of(
+                "Street", "Avenue", "Road", "Boulevard", "Drive", "Lane");
+
         /**
          * Builds a synthetic city name using prefix/suffix combos.
          *
          * @return synthetic city name.
          */
         public String city() {
-            Map<String, Object> addressData = (Map<String, Object>) data.get("address");
-            List<String> cityPrefixes = (List<String>) addressData.get("city_prefix");
-            List<String> citySuffixes = (List<String>) addressData.get("city_suffix");
-            return randomElement(cityPrefixes) + randomElement(citySuffixes);
+            return randomElement(REAL_CITIES);
         }
 
         /**
@@ -317,18 +321,17 @@ public class CatsFaker {
          * @return formatted full street address.
          */
         public String fullAddress() {
-            return numerify(randomElement((List<String>) ((Map<String, Object>) data.get("address")).get("building_number"))) + " " +
-                    city() + ", " + stateAbbr() + " " + zipCode();
+            return streetAddress() + ", " + city() + ", " + zipCode();
         }
 
         /**
-         * Composes an abbreviated street address consisting of number and suffix.
+         * Composes a street address consisting of building number, street name, and street type.
          *
-         * @return simple street address.
+         * @return street address.
          */
         public String streetAddress() {
             return numerify(randomElement((List<String>) ((Map<String, Object>) data.get("address")).get("building_number"))) + " " +
-                    randomElement((List<String>) ((Map<String, Object>) data.get("address")).get("street_suffix"));
+                    nameFaker.lastName() + " " + randomElement(CORE_STREET_TYPES);
         }
     }
 
