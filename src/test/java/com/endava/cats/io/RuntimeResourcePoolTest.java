@@ -190,6 +190,26 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldCaptureNestedArrayChildIdsAndKeepNestedObjectIdsScopedToTheirOwnEntity() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"),
+                response(201, "{\"id\":\"order-1\",\"customer\":{\"id\":\"customer-42\"},\"lineItems\":[{\"id\":\"item-10\"}]}"));
+
+        ServiceData lineItemGet = getData("/orders/{orderId}/lineItems/{lineItemId}",
+                "{\"orderId\":\"generated-order\",\"lineItemId\":\"generated-item\"}");
+        RuntimeResourcePool.ResolvedRequest lineItemResult = resourcePool.enrich(lineItemGet, lineItemGet.getPayload());
+
+        Assertions.assertThat(lineItemResult.payload())
+                .contains("\"orderId\":\"order-1\"")
+                .contains("\"lineItemId\":\"item-10\"")
+                .doesNotContain("customer-42", "generated-order", "generated-item");
+
+        ServiceData customerGet = getData("/customers/{customerId}", "{\"customerId\":\"generated-customer\"}");
+        RuntimeResourcePool.ResolvedRequest customerResult = resourcePool.enrich(customerGet, customerGet.getPayload());
+        Assertions.assertThat(customerResult.payload()).contains("customer-42").doesNotContain("order-1", "item-10");
+    }
+
+    @Test
     void shouldAssociateNestedGenericIdsWithIrregularResourceNames() {
         enableResourceReuse();
         resourcePool.observe(postData("/people", "{}"), request("POST", "/people", "{}"),

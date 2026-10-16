@@ -1115,11 +1115,16 @@ public class RuntimeResourcePool {
             return;
         }
         Set<String> resourceIdentifierAliases = resourceIdentifierAliases(data.getRelativePath());
+        boolean hasRootSimpleIdentifier = values.entrySet().stream()
+                .anyMatch(entry -> isTopLevelResponseKey(entry.getKey()) &&
+                        entry.getValue().aliases().stream().anyMatch(SIMPLE_IDENTIFIERS::contains));
         Map<String, StoredValue> enrichedValues = new LinkedHashMap<>();
         values.forEach((key, value) -> {
             Set<String> aliases = new LinkedHashSet<>(value.aliases());
             aliases.add(normalize(key));
-            if (value.aliases().stream().anyMatch(SIMPLE_IDENTIFIERS::contains)) {
+            if (hasRootSimpleIdentifier && !isTopLevelResponseKey(key)) {
+                aliases.removeAll(SIMPLE_IDENTIFIERS);
+            } else if (value.aliases().stream().anyMatch(SIMPLE_IDENTIFIERS::contains)) {
                 aliases.addAll(resourceIdentifierAliases);
             }
             enrichedValues.put(key, value.withAliases(aliases));
@@ -1131,6 +1136,11 @@ public class RuntimeResourcePool {
             ResourceInstance removed = resources.remove(0);
             correlationFeedback.keySet().removeIf(key -> key.resourceSequence() == removed.sequence());
         }
+    }
+
+    private boolean isTopLevelResponseKey(String key) {
+        String stripped = key.startsWith("$[].") ? key.substring(4) : (key.startsWith("$.") ? key.substring(2) : key);
+        return !stripped.contains(".") && !stripped.contains("[]");
     }
 
     private void addFromLocation(ServiceData data, CatsResponse response, Map<String, StoredValue> pathValues,
@@ -1448,6 +1458,13 @@ public class RuntimeResourcePool {
                         semanticAliases(location, entry.getKey())));
             } else if (entry.getValue().isJsonObject()) {
                 collectPrimitiveValues(entry.getValue().getAsJsonObject(), location + ".", sourcePrefix, values);
+            } else if (entry.getValue().isJsonArray()) {
+                for (JsonElement item : entry.getValue().getAsJsonArray()) {
+                    if (item != null && item.isJsonObject()) {
+                        collectPrimitiveValues(item.getAsJsonObject(), location + "[].", sourcePrefix, values);
+                        break;
+                    }
+                }
             }
         }
     }
@@ -1489,6 +1506,13 @@ public class RuntimeResourcePool {
                     aliases.add(prefix + singularSuffix);
                     aliases.add(singular(prefix) + singularSuffix);
                 }
+                return;
+            }
+        }
+        for (String singularSuffix : SIMPLE_IDENTIFIERS) {
+            if (normalizedAlias.endsWith(singularSuffix) && normalizedAlias.length() > singularSuffix.length()) {
+                String prefix = normalizedAlias.substring(0, normalizedAlias.length() - singularSuffix.length());
+                aliases.add(singular(prefix) + singularSuffix);
                 return;
             }
         }
