@@ -719,16 +719,7 @@ public class RuntimeResourcePool {
             return mergeSuccessfulObject(original.getAsJsonObject(), current.getAsJsonObject(), successful.getAsJsonObject());
         }
         if (original.isJsonArray() && current.isJsonArray() && successful.isJsonArray()) {
-            JsonArray originalArray = original.getAsJsonArray();
-            JsonArray currentArray = current.getAsJsonArray();
-            JsonArray successfulArray = successful.getAsJsonArray();
-            if (originalArray.size() == currentArray.size() && currentArray.size() == successfulArray.size()) {
-                JsonArray result = new JsonArray();
-                for (int i = 0; i < currentArray.size(); i++) {
-                    result.add(mergeSuccessfulBaseline(originalArray.get(i), currentArray.get(i), successfulArray.get(i)));
-                }
-                return result;
-            }
+            return mergeSuccessfulArray(original.getAsJsonArray(), current.getAsJsonArray(), successful.getAsJsonArray());
         }
         if (current.isJsonPrimitive() && successful.isJsonPrimitive()) {
             Object merged = FuzzingStrategy.mergeFuzzing(primitiveValue(current.getAsJsonPrimitive()),
@@ -736,6 +727,34 @@ public class RuntimeResourcePool {
             return JsonUtils.parseAsJsonElement(JsonUtils.serialize(merged));
         }
         return current.deepCopy();
+    }
+
+    private JsonArray mergeSuccessfulArray(JsonArray originalArray, JsonArray currentArray, JsonArray successfulArray) {
+        if (originalArray.isEmpty() || originalArray.size() != successfulArray.size()) {
+            return currentArray.deepCopy();
+        }
+        JsonArray result = new JsonArray();
+        for (int i = 0; i < currentArray.size(); i++) {
+            JsonElement currentElement = currentArray.get(i);
+            int matchingOriginalIndex = findMatchingElementIndex(originalArray, currentElement);
+            if (matchingOriginalIndex >= 0) {
+                result.add(successfulArray.get(matchingOriginalIndex).deepCopy());
+            } else if (i < originalArray.size()) {
+                result.add(mergeSuccessfulBaseline(originalArray.get(i), currentElement, successfulArray.get(i)));
+            } else {
+                result.add(currentElement.deepCopy());
+            }
+        }
+        return result;
+    }
+
+    private int findMatchingElementIndex(JsonArray array, JsonElement target) {
+        for (int i = 0; i < array.size(); i++) {
+            if (array.get(i).equals(target)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private JsonObject mergeSuccessfulObject(JsonObject original, JsonObject current, JsonObject successful) {

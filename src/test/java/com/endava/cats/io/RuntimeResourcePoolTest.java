@@ -551,6 +551,24 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldPreserveBaselineElementsWhenArrayLengthChangesOrElementsAreDuplicated() {
+        enableResourceReuse();
+        String original = "{\"items\":[{\"customerId\":\"gen-1\",\"qty\":1},{\"customerId\":\"gen-2\",\"qty\":2}]}";
+        ServiceData clean = bodyData("/orders", HttpMethod.POST, original, original);
+        resourcePool.observe(clean, request("POST", "/orders",
+                        "{\"items\":[{\"customerId\":\"cust-1\",\"qty\":1},{\"customerId\":\"cust-2\",\"qty\":2}]}"),
+                response(201, "{\"id\":\"order-42\"}"));
+
+        ServiceData duplicatedAndExtended = bodyData("/orders", HttpMethod.POST, original,
+                "{\"items\":[{\"customerId\":\"gen-1\",\"qty\":1},{\"customerId\":\"gen-1\",\"qty\":1},{\"customerId\":\"extra\",\"qty\":9}]}");
+
+        String result = resourcePool.applySuccessfulRequestBaseline(duplicatedAndExtended);
+
+        Assertions.assertThat(result).isEqualTo(
+                "{\"items\":[{\"customerId\":\"cust-1\",\"qty\":1},{\"customerId\":\"cust-1\",\"qty\":1},{\"customerId\":\"extra\",\"qty\":9}]}");
+    }
+
+    @Test
     void shouldScopeSuccessfulBaselinesByOperationMethodContentTypeAndVariant() {
         enableResourceReuse();
         String original = "{\"variantA\":\"generated\"}";
