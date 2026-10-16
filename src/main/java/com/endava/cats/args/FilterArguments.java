@@ -526,8 +526,12 @@ public class FilterArguments {
             return allowedFuzzers;
         }
         List<String> specialFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SpecialFuzzer.class);
+        List<String> explicitlySupplied = this.getSuppliedFuzzers().stream().map(String::trim).toList();
 
-        return allowedFuzzers.stream().filter(fuzzer -> !specialFuzzers.contains(fuzzer)).toList();
+        return allowedFuzzers.stream()
+                .filter(fuzzer -> !specialFuzzers.contains(fuzzer) ||
+                        explicitlySupplied.stream().anyMatch(fuzzer::equalsIgnoreCase))
+                .toList();
     }
 
     private boolean containsOnlySpecialFuzzers(List<String> candidates) {
