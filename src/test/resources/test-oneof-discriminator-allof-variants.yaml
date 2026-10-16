@@ -1,0 +1,38 @@
+openapi: 3.0.3
+info:
+  title: oneOf with discriminator mapping and allOf variants
+  version: 1.0.0
+paths: { }
+components:
+  schemas:
+    Shape:
+      oneOf:
+        - $ref: '#/components/schemas/BigCircleShape'
+        - $ref: '#/components/schemas/SmallSquareShape'
+      discriminator:
+        propertyName: type
+        mapping:
+          BIG_CIRCLE: '#/components/schemas/BigCircleShape'
+          SMALL_SQUARE: '#/components/schemas/SmallSquareShape'
+    BaseShape:
+      type: object
+      required: [ type ]
+      properties:
+        type:
+          type: string
+    BigCircleShape:
+      allOf:
+        - $ref: '#/components/schemas/BaseShape'
+        - type: object
+          required: [ radius ]
+          properties:
+            radius:
+              type: integer
+    SmallSquareShape:
+      allOf:
+        - $ref: '#/components/schemas/BaseShape'
+        - type: object
+          required: [ side ]
+          properties:
+            side:
+              type: integer

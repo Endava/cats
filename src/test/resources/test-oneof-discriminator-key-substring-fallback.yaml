@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: Substring fallback across multiple discriminators with same propertyName
+  version: 1.0.0
+paths: { }
+components:
+  schemas:
+    Shape:
+      properties:
+        type:
+          type: string
+      oneOf:
+        - $ref: '#/components/schemas/BigCircleShape'
+      discriminator:
+        propertyName: type
+        mapping:
+          BigCircle: '#/components/schemas/OtherCircleRef'
+    BigCircleShape:
+      type: object
+      required: [ type, radius ]
+      properties:
+        type:
+          type: string
+        radius:
+          type: integer
+    Vehicle:
+      properties:
+        type:
+          type: string
+      oneOf:
+        - $ref: '#/components/schemas/SportsCarVehicle'
+      discriminator:
+        propertyName: type
+        mapping:
+          SportsCar: '#/components/schemas/OtherCarRef'
+    SportsCarVehicle:
+      type: object
+      required: [ type, topSpeed ]
+      properties:
+        type:
+          type: string
+        topSpeed:
+          type: integer

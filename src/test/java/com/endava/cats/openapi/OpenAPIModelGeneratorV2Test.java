@@ -461,8 +461,8 @@ class OpenAPIModelGeneratorV2Test {
         OpenAPIModelGeneratorV2 generator = generatorFor("test-oneof-shared-variant-different-property-names.yaml");
 
         // BigCircleShape is a variant of both unions, and each union marks a different one of its
-        // properties as the discriminator. Re-generate shapes to ensure nothing is cached or otherwise
-        // re-used based on order.
+        // properties as the discriminator. Re-generate shapes on both the same and a fresh generator
+        // instance (bypassing examplesCache) to ensure nothing is cached or left mutated based on order.
         List<String> shapeShapes = generator.generate("Shape").stream()
                 .map(example -> JsonUtils.getVariableFromJson(example, "$.shape").toString())
                 .toList();
@@ -472,10 +472,80 @@ class OpenAPIModelGeneratorV2Test {
         List<String> shapeShapesAfterIcon = generator.generate("Shape").stream()
                 .map(example -> JsonUtils.getVariableFromJson(example, "$.shape").toString())
                 .toList();
+        OpenAPIModelGeneratorV2 freshGenerator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
+        List<String> shapeShapesFromFreshGenerator = freshGenerator.generate("Shape").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.shape").toString())
+                .toList();
 
         Assertions.assertThat(shapeShapes).containsExactlyInAnyOrder("BIG_CIRCLE", "SMALL_SQUARE");
         Assertions.assertThat(iconTypes).containsExactlyInAnyOrder("BIG_CIRCLE", "WARNING");
         Assertions.assertThat(shapeShapesAfterIcon).containsExactlyInAnyOrder("BIG_CIRCLE", "SMALL_SQUARE");
+        Assertions.assertThat(shapeShapesFromFreshGenerator).containsExactlyInAnyOrder("BIG_CIRCLE", "SMALL_SQUARE");
+        Assertions.assertThat(globalContext.getSchemaFromReference("BigCircleShape").getDiscriminator()).isNull();
+    }
+
+    @Test
+    void shouldUseOwningUnionMappingWhenSharedVariantUsesDifferentMappingKeysForSamePropertyName() throws Exception {
+        OpenAPIModelGeneratorV2 generator = generatorFor("test-oneof-shared-variant-different-mapping-keys.yaml");
+
+        List<String> shapeTypes = generator.generate("Shape").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+        List<String> iconTypes = generator.generate("Icon").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+        OpenAPIModelGeneratorV2 freshGenerator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
+        List<String> shapeTypesFromFreshGenerator = freshGenerator.generate("Shape").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+
+        Assertions.assertThat(shapeTypes).containsExactlyInAnyOrder("BIG_CIRCLE", "SMALL_SQUARE");
+        Assertions.assertThat(iconTypes).containsExactlyInAnyOrder("CIRCLE_ICON", "WARNING_ICON");
+        Assertions.assertThat(shapeTypesFromFreshGenerator).containsExactlyInAnyOrder("BIG_CIRCLE", "SMALL_SQUARE");
+    }
+
+    @Test
+    void shouldMatchMappingKeyContainedInSchemaNameAcrossMultipleDiscriminatorsWithSamePropertyName() throws Exception {
+        OpenAPIModelGeneratorV2 generator = generatorFor("test-oneof-discriminator-key-substring-fallback.yaml");
+
+        List<String> shapeTypes = generator.generate("Shape").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+        List<String> vehicleTypes = generator.generate("Vehicle").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+
+        Assertions.assertThat(shapeTypes).containsExactly("BigCircle");
+        Assertions.assertThat(vehicleTypes).containsExactly("SportsCar");
+    }
+
+    @Test
+    void shouldResolveOneOfDiscriminatorMappingWhenVariantsInheritDiscriminatorPropertyViaAllOf() throws Exception {
+        OpenAPIModelGeneratorV2 generator = generatorFor("test-oneof-discriminator-allof-variants.yaml");
+
+        List<String> shapeTypes = generator.generate("Shape").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+
+        Assertions.assertThat(shapeTypes).containsExactlyInAnyOrder("BIG_CIRCLE", "SMALL_SQUARE");
+        Assertions.assertThat(globalContext.getSchemaFromReference("BaseShape").getDiscriminator()).isNull();
+    }
+
+    @Test
+    void shouldDetectCasingFromOwningUnionPartialMappingWhenUnionsShareDiscriminatorPropertyName() throws Exception {
+        OpenAPIModelGeneratorV2 generator = generatorFor("test-oneof-partial-mapping-casing.yaml");
+
+        List<String> vehicleTypes = generator.generate("Vehicle").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+        List<String> shapeTypes = generator.generate("Shape").stream()
+                .map(example -> JsonUtils.getVariableFromJson(example, "$.type").toString())
+                .toList();
+
+        Assertions.assertThat(vehicleTypes).containsExactly("SPORTS_CAR");
+        Assertions.assertThat(shapeTypes).containsExactlyInAnyOrder("big-circle", "small-square-shape");
     }
 
     private OpenAPIModelGeneratorV2 generatorFor(String testResource) throws IOException {

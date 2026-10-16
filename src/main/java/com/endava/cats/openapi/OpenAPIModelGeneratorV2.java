@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A modified version of {@code  org.openapitools.codegen.examples.ExampleGenerator} that takes into consideration several other request
@@ -70,6 +71,7 @@ public class OpenAPIModelGeneratorV2 {
     private final boolean useDefaults;
     private final int maxArraySize;
     private final Map<String, List<GeneratedExample>> examplesCache = new HashMap<>();
+    private final Deque<Discriminator> activeDiscriminators = new ArrayDeque<>();
 
     @Getter
     private final Map<String, Schema> requestDataTypes = new HashMap<>();
@@ -343,7 +345,10 @@ public class OpenAPIModelGeneratorV2 {
         if (JsonUtils.isCyclicReference(currentProperty, selfReferenceDepth) && globalContext.getSchemaFromReference(name) == null) {
             return List.of();
         }
-        String cacheKey = currentRequiredProperty + "_" + name + "_" + schema.hashCode();
+        Discriminator activeDiscriminator = activeDiscriminators.peek();
+        String discriminatorCacheKey = activeDiscriminator == null ? ""
+                : "_" + activeDiscriminator.getPropertyName() + "_" + activeDiscriminator.getMapping();
+        String cacheKey = currentRequiredProperty + "_" + name + "_" + schema.hashCode() + discriminatorCacheKey;
 
         List<GeneratedExample> fromCacheOrExample = getFromCacheOrExample(cacheKey, schema);
         if (!fromCacheOrExample.isEmpty()) {
@@ -519,21 +524,55 @@ public class OpenAPIModelGeneratorV2 {
         keepOriginalSchema(propertyName, schema);
         mergeRequiredProperties(schema.getAllOf());
 
-        Schema parentWithDiscriminator = firstSchemaWithDiscriminator(schema.getAllOf());
+        Schema parentWithDiscriminator = Optional.ofNullable(firstSchemaWithDiscriminator(schema.getAllOf()))
+                .orElse(schema.getDiscriminator() != null ? schema : null);
         String discriminatorPropertyName = parentWithDiscriminator == null ? null
                 : parentWithDiscriminator.getDiscriminator().getPropertyName();
 
-        List<Schema> schemas = schema.getAllOf().stream().filter(iteratingSchema -> !isNullSchema((Schema<?>) iteratingSchema)).toList();
-        for (Schema subSchema : schemas) {
-            mergeAllOfExamples(subSchema, generateExamplesForSchema(propertyName, subSchema), examples);
+        Discriminator allOfDiscriminator = parentWithDiscriminator == null ? null : parentWithDiscriminator.getDiscriminator();
+        boolean pushedDiscriminator = allOfDiscriminator != null && !allOfDiscriminator.equals(activeDiscriminators.peek());
+        if (pushedDiscriminator) {
+            activeDiscriminators.push(allOfDiscriminator);
         }
+        IdentityHashMap<Schema<?>, Discriminator> previousSubDiscriminators = propagateDiscriminatorToAllOfSubSchemas(schema, allOfDiscriminator);
+        try {
+            List<Schema> schemas = schema.getAllOf().stream().filter(iteratingSchema -> !isNullSchema((Schema<?>) iteratingSchema)).toList();
+            for (Schema subSchema : schemas) {
+                mergeAllOfExamples(subSchema, generateExamplesForSchema(propertyName, subSchema), examples);
+            }
 
-        // If a discriminator was found, ensure it's populated with the correct value
-        if (discriminatorPropertyName != null && !examples.isEmpty()) {
-            applyDiscriminatorValue(propertyName, parentWithDiscriminator, discriminatorPropertyName, examples);
+            // If a discriminator was found, ensure it's populated with the correct value
+            if (discriminatorPropertyName != null && !examples.isEmpty()) {
+                applyDiscriminatorValue(propertyName, parentWithDiscriminator, discriminatorPropertyName, examples);
+            }
+        } finally {
+            restoreDiscriminators(previousSubDiscriminators);
+            if (pushedDiscriminator) {
+                activeDiscriminators.pop();
+            }
         }
 
         return examples;
+    }
+
+    private IdentityHashMap<Schema<?>, Discriminator> propagateDiscriminatorToAllOfSubSchemas(Schema<?> schema, Discriminator discriminator) {
+        IdentityHashMap<Schema<?>, Discriminator> previousDiscriminators = new IdentityHashMap<>();
+        if (discriminator == null || schema.getAllOf() == null) {
+            return previousDiscriminators;
+        }
+        for (Object allOfSchemaObj : schema.getAllOf()) {
+            Schema<?> allOfSchema = (Schema<?>) allOfSchemaObj;
+            Schema<?> resolvedSchema = allOfSchema.get$ref() != null
+                    ? globalContext.getSchemaFromReference(allOfSchema.get$ref())
+                    : allOfSchema;
+            if (resolvedSchema != null && resolvedSchema.getDiscriminator() == null
+                    && resolvedSchema.getProperties() != null
+                    && resolvedSchema.getProperties().keySet().stream().anyMatch(discriminator.getPropertyName()::equalsIgnoreCase)) {
+                previousDiscriminators.put(resolvedSchema, null);
+                resolvedSchema.setDiscriminator(discriminator);
+            }
+        }
+        return previousDiscriminators;
     }
 
     private Schema firstSchemaWithDiscriminator(List<?> schemas) {
@@ -573,11 +612,10 @@ public class OpenAPIModelGeneratorV2 {
 
     private void applyDiscriminatorValue(String propertyName, Schema parentWithDiscriminator,
                                           String discriminatorPropertyName, List<GeneratedExample> examples) {
-        // Detect casing convention and convert schema name accordingly
-        String detectedCasing = parentWithDiscriminator != null
-                ? detectCasingConvention(parentWithDiscriminator)
-                : this.discriminatorCasing;
-        String discriminatorValue = WordUtils.convertToDetectedCasing(propertyName, detectedCasing);
+        String discriminatorValue = matchToEnumOrEmpty(
+                propertyName,
+                Optional.ofNullable(parentWithDiscriminator).orElseGet(Schema::new),
+                discriminatorPropertyName).toString();
 
         for (GeneratedExample generatedExample : examples) {
             Map<String, Object> example = asMap(generatedExample);
@@ -618,26 +656,37 @@ public class OpenAPIModelGeneratorV2 {
 
     private List<GeneratedExample> resolveAnyOfOneOfSchemaPropertiesWithMultipleSchemas(String propertyName, Schema<?> schema) {
         logger.trace("resolveAnyOfOneOfSchemaProperties for schema {}", propertyName);
-        mapDiscriminator(schema, Optional.ofNullable(schema.getAnyOf()).orElse(schema.getOneOf()));
+        IdentityHashMap<Schema<?>, Discriminator> previousDiscriminators = mapDiscriminator(schema, Optional.ofNullable(schema.getAnyOf()).orElse(schema.getOneOf()));
+        boolean pushedDiscriminator = schema.getDiscriminator() != null;
+        if (pushedDiscriminator) {
+            activeDiscriminators.push(schema.getDiscriminator());
+        }
         List<GeneratedExample> examples = new ArrayList<>();
-        List<Schema> schemas = CatsModelUtils.getInterfaces(schema).stream().filter(iteratingSchema -> !isNullSchema(iteratingSchema)).toList();
+        try {
+            List<Schema> schemas = CatsModelUtils.getInterfaces(schema).stream().filter(iteratingSchema -> !isNullSchema(iteratingSchema)).toList();
 
-        for (Schema subSchema : schemas) {
-            if (hasValidRef(subSchema)) {
-                Schema resolved = globalContext.getSchemaFromReference(subSchema.get$ref());
-                if (resolved != null) {
-                    String schemaName = CatsModelUtils.getSimpleRefUsingOAT(subSchema.get$ref());
-                    List<GeneratedExample> variantExamples = generateExamplesForSchema(schemaName, resolved);
-                    for (GeneratedExample variantExample : variantExamples) {
-                        Map<String, Object> wrappedExample = new HashMap<>();
-                        Map<String, Object> variantValue = asMap(variantExample);
-                        wrappedExample.put(propertyName, variantValue.getOrDefault(schemaName, variantValue));
-                        examples.add(new GeneratedExample(wrappedExample, variantExample.requiredFields()));
+            for (Schema subSchema : schemas) {
+                if (hasValidRef(subSchema)) {
+                    Schema resolved = globalContext.getSchemaFromReference(subSchema.get$ref());
+                    if (resolved != null) {
+                        String schemaName = CatsModelUtils.getSimpleRefUsingOAT(subSchema.get$ref());
+                        List<GeneratedExample> variantExamples = generateExamplesForSchema(schemaName, resolved);
+                        for (GeneratedExample variantExample : variantExamples) {
+                            Map<String, Object> wrappedExample = new HashMap<>();
+                            Map<String, Object> variantValue = asMap(variantExample);
+                            wrappedExample.put(propertyName, variantValue.getOrDefault(schemaName, variantValue));
+                            examples.add(new GeneratedExample(wrappedExample, variantExample.requiredFields()));
+                        }
                     }
+                } else {
+                    examples.addAll(generateExamplesForSchema(propertyName, subSchema));
                 }
-            } else {
-                examples.addAll(generateExamplesForSchema(propertyName, subSchema));
             }
+        } finally {
+            if (pushedDiscriminator) {
+                activeDiscriminators.pop();
+            }
+            restoreDiscriminators(previousDiscriminators);
         }
 
         Set<String> composedRequiredFields = Optional.ofNullable(schema.getRequired()).orElse(Collections.emptyList()).stream()
@@ -901,32 +950,49 @@ public class OpenAPIModelGeneratorV2 {
         return items.stream().anyMatch(item -> Objects.deepEquals(item, candidate));
     }
 
-    private void mapDiscriminator(Schema<?> composedSchema, List<Schema> anyOf) {
+    private IdentityHashMap<Schema<?>, Discriminator> mapDiscriminator(Schema<?> composedSchema, List<Schema> anyOf) {
+        IdentityHashMap<Schema<?>, Discriminator> previousDiscriminators = new IdentityHashMap<>();
         if (composedSchema.getDiscriminator() != null) {
             logger.trace("Mapping discriminator for schema {}", composedSchema.getName());
             globalContext.recordDiscriminator(currentProperty, composedSchema.getDiscriminator(), List.of());
             for (Schema<?> anyOfSchema : anyOf) {
                 Discriminator discriminator = new Discriminator();
                 discriminator.setPropertyName(composedSchema.getDiscriminator().getPropertyName());
-                if (anyOfSchema.get$ref() != null) {
-                    globalContext.getSchemaFromReference(anyOfSchema.get$ref()).setDiscriminator(discriminator);
-                } else {
-                    anyOfSchema.setDiscriminator(discriminator);
+                Schema<?> targetSchema = anyOfSchema.get$ref() != null
+                        ? globalContext.getSchemaFromReference(anyOfSchema.get$ref())
+                        : anyOfSchema;
+                if (targetSchema != null) {
+                    if (!previousDiscriminators.containsKey(targetSchema)) {
+                        previousDiscriminators.put(targetSchema, targetSchema.getDiscriminator());
+                    }
+                    targetSchema.setDiscriminator(discriminator);
                 }
             }
         }
+        return previousDiscriminators;
+    }
+
+    private void restoreDiscriminators(IdentityHashMap<Schema<?>, Discriminator> previousDiscriminators) {
+        previousDiscriminators.forEach(Schema::setDiscriminator);
+    }
+
+    private List<Discriminator> candidateDiscriminatorsFor(String propertyName) {
+        return Stream.concat(activeDiscriminators.stream(), globalContext.getDiscriminators().stream())
+                .filter(discriminator -> discriminator != null
+                        && propertyName.equalsIgnoreCase(discriminator.getPropertyName())
+                        && discriminator.getMapping() != null)
+                .distinct()
+                .toList();
     }
 
     private Object matchToEnumOrEmpty(String name, Schema innerSchema, String propertyName) {
         Schema resolveInnerSchema = Optional.ofNullable(globalContext.getSchemaFromReference(innerSchema.get$ref())).orElse(innerSchema);
+        List<Discriminator> candidateDiscriminators = candidateDiscriminatorsFor(propertyName);
 
         // First, try to find the discriminator value using the mapping (schema name -> enum value).
-        // Every discriminator sharing the property name is searched, since unrelated oneOf/anyOf
-        // unions in the same contract may share one.
-        String resultFromMapping = globalContext.getDiscriminators()
-                .stream()
-                .filter(discriminator -> discriminator.getPropertyName().equalsIgnoreCase(propertyName)
-                        && discriminator.getMapping() != null)
+        // Active union discriminators are searched first so a variant shared across unions uses its
+        // owning union's mapping; remaining global discriminators sharing the property name follow.
+        String resultFromMapping = candidateDiscriminators.stream()
                 .flatMap(discriminator -> discriminator.getMapping().entrySet().stream())
                 .filter(entry -> CatsModelUtils.getSimpleRef(entry.getValue()).equalsIgnoreCase(name))
                 .map(Map.Entry::getKey)
@@ -946,12 +1012,9 @@ public class OpenAPIModelGeneratorV2 {
                 .orElse("")
                 .toString();
         if (result.isEmpty()) {
-            result = globalContext.getDiscriminators()
-                    .stream()
-                    .filter(discriminator -> discriminator.getPropertyName().equalsIgnoreCase(propertyName) && discriminator.getMapping() != null)
-                    .findFirst()
-                    .orElse(new Discriminator().mapping(Collections.emptyMap()))
-                    .getMapping().keySet().stream().filter(key -> name.toLowerCase(Locale.ROOT).contains(key.toLowerCase(Locale.ROOT)))
+            result = candidateDiscriminators.stream()
+                    .flatMap(discriminator -> discriminator.getMapping().keySet().stream())
+                    .filter(key -> name.toLowerCase(Locale.ROOT).contains(key.toLowerCase(Locale.ROOT)))
                     .findFirst()
                     .orElse("");
         }
@@ -975,9 +1038,12 @@ public class OpenAPIModelGeneratorV2 {
             return WordUtils.detectCasingFromString(firstEnum);
         }
 
-        // Try to detect from the schema's own discriminator mapping only
-        if (schema.getDiscriminator() != null && schema.getDiscriminator().getMapping() != null) {
-            Optional<String> mappingKey = schema.getDiscriminator().getMapping().keySet().stream().findFirst();
+        // Try to detect from the schema's own (or active union's) discriminator mapping only
+        Discriminator discriminator = schema.getDiscriminator() != null
+                ? schema.getDiscriminator()
+                : activeDiscriminators.peek();
+        if (discriminator != null && discriminator.getMapping() != null) {
+            Optional<String> mappingKey = discriminator.getMapping().keySet().stream().findFirst();
             if (mappingKey.isPresent()) {
                 return WordUtils.detectCasingFromString(mappingKey.get());
             }
