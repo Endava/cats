@@ -1470,6 +1470,23 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldPreserveOwnPostUuidAndGuidFieldsWhileCorrelatingForeignIdentifiers() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"),
+                response(201, "{\"orderUuid\":\"existing-order-uuid\",\"orderGuid\":\"existing-order-guid\"}"));
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"customerUuid\":\"customer-uuid-42\"}"));
+
+        ServiceData orderPost = postData("/orders",
+                "{\"orderUuid\":\"new-order-uuid\",\"order\":{\"guid\":\"new-order-guid\"},\"customerUuid\":\"generated\"}");
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(orderPost, orderPost.getPayload());
+
+        Assertions.assertThat(result.payload())
+                .contains("\"orderUuid\":\"new-order-uuid\"", "\"guid\":\"new-order-guid\"", "\"customerUuid\":\"customer-uuid-42\"")
+                .doesNotContain("existing-order-uuid", "existing-order-guid");
+    }
+
+    @Test
     void shouldMatchNestedIdsToTheirQualifiedResponseFields() {
         enableResourceReuse();
         resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"),

@@ -973,12 +973,11 @@ public class RuntimeResourcePool {
         if (data.getHttpMethod() != HttpMethod.POST || target.location() != RequestTarget.Location.BODY) {
             return false;
         }
-        String resource = resourceName(data.getRelativePath());
         Set<String> targetAliases = semanticAliases(target.path(), target.name());
         boolean topLevelIdentifier = !target.path().contains("#") &&
                 SIMPLE_IDENTIFIERS.contains(normalize(target.name()));
-        return topLevelIdentifier || targetAliases.contains(resource + "id") ||
-                targetAliases.contains(singular(resource) + "id");
+        return topLevelIdentifier ||
+                primaryResourceIdentifierAliases(data.getRelativePath()).stream().anyMatch(targetAliases::contains);
     }
 
     private String bindingKey(String targetPath, TargetField target) {
