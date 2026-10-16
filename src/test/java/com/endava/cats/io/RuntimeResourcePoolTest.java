@@ -1676,6 +1676,24 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldNotInvalidateBaselineWhenDeletedIdMatchesNonIdentifierFieldValue() {
+        enableResourceReuse();
+        String original = "{\"customerId\":\"generated\",\"quantity\":99}";
+        ServiceData order = bodyData("/orders", HttpMethod.POST, original, original);
+        resourcePool.observe(order, request("POST", "/orders",
+                        "{\"customerId\":\"customer-42\",\"quantity\":1}"),
+                response(201, "{\"id\":\"order-42\"}"));
+        ServiceData delete = ServiceData.builder().relativePath("/items/{id}")
+                .httpMethod(HttpMethod.DELETE).contentType("application/json").build();
+
+        resourcePool.observe(delete, request("DELETE", "/items/1", "{}"), response(204, ""));
+        String result = resourcePool.applySuccessfulRequestBaseline(
+                bodyData("/orders", HttpMethod.POST, original, original));
+
+        Assertions.assertThat(result).contains("\"customerId\":\"customer-42\"", "\"quantity\":1");
+    }
+
+    @Test
     void shouldInvalidateResourceDeletedByIdentifierQueryParameter() {
         enableResourceReuse();
         resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),

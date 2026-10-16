@@ -1334,25 +1334,26 @@ public class RuntimeResourcePool {
             return false;
         }
         try {
-            return containsPrimitiveValue(JsonUtils.parseAsJsonElement(payload), values);
+            return containsPrimitiveValue(JsonUtils.parseAsJsonElement(payload), null, values);
         } catch (RuntimeException _) {
             return false;
         }
     }
 
-    private boolean containsPrimitiveValue(JsonElement element, Set<String> values) {
+    private boolean containsPrimitiveValue(JsonElement element, String fieldName, Set<String> values) {
         if (element == null || element.isJsonNull()) {
             return false;
         }
         if (element.isJsonPrimitive()) {
-            return values.contains(String.valueOf(primitiveValue(element.getAsJsonPrimitive())));
+            return (fieldName == null || isIdentifierName(fieldName)) &&
+                    values.stream().anyMatch(deleted -> sameValue(deleted, primitiveValue(element.getAsJsonPrimitive())));
         }
         if (element.isJsonArray()) {
             return element.getAsJsonArray().asList().stream()
-                    .anyMatch(item -> containsPrimitiveValue(item, values));
+                    .anyMatch(item -> containsPrimitiveValue(item, fieldName, values));
         }
         return element.getAsJsonObject().entrySet().stream()
-                .anyMatch(entry -> containsPrimitiveValue(entry.getValue(), values));
+                .anyMatch(entry -> containsPrimitiveValue(entry.getValue(), entry.getKey(), values));
     }
 
     private Map<String, StoredValue> extractPathValues(String templatePath, String actualUrl) {
