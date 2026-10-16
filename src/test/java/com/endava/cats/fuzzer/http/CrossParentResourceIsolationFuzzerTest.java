@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Optional;
 
 @QuarkusTest
 class CrossParentResourceIsolationFuzzerTest {
@@ -52,6 +53,20 @@ class CrossParentResourceIsolationFuzzerTest {
                 .body("{\"id\":\"order-1\"}").build(), data);
         Mockito.verify(listener).reportResultWarn(Mockito.any(), Mockito.eq(data),
                 Mockito.eq("Potential cross-parent resource exposure"), Mockito.anyString());
+    }
+
+    @Test
+    void usesAlternativeParentFromResourcePoolWhenOnlyOneNestedGetExchangeWasObserved() {
+        Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.GET)).thenReturn(List.of(
+                exchange("https://api.example.com/v1/users/a/orders/order-1")));
+        Mockito.when(pool.alternativePathParameterValue(data.getPath(), "userId", "a"))
+                .thenReturn(Optional.of("b"));
+
+        fuzzer.fuzz(data);
+
+        ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(executor).execute(captor.capture());
+        Assertions.assertThat(captor.getValue().getPath()).isEqualTo("/users/b/orders/order-1");
     }
 
     @Test

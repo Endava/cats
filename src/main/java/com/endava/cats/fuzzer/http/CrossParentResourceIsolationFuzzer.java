@@ -64,7 +64,8 @@ public class CrossParentResourceIsolationFuzzer implements Fuzzer {
                 .filter(path -> ObservedHttpTarget.matchesTemplate(data.getPath(), path))
                 .map(path -> Arrays.asList(path.split("/", -1)))
                 .distinct().toList();
-        Optional<SwappedChild> candidate = firstObservedChildUnderDifferentParent(observed, hierarchy.get());
+        Optional<SwappedChild> candidate = firstObservedChildUnderDifferentParent(observed, hierarchy.get())
+                .or(() -> firstObservedChildWithAlternativePoolParent(data.getPath(), observed, hierarchy.get()));
         if (candidate.isEmpty()) {
             logger.skip("GET {} needs two successful children under different observed parents", data.getPath());
             return;
@@ -105,6 +106,25 @@ public class CrossParentResourceIsolationFuzzer implements Fuzzer {
                         .map(other -> new SwappedChild(swappedPath(child, other, path.parentIndex()),
                                 path.parentName(), path.childName(), child.get(path.childIndex()))))
                 .findFirst();
+    }
+
+    private Optional<SwappedChild> firstObservedChildWithAlternativePoolParent(String templatePath,
+                                                                               List<List<String>> observed,
+                                                                               ParentChildPath path) {
+        for (List<String> child : observed) {
+            String currentParent = child.get(path.parentIndex());
+            Optional<String> alternativeParent = Optional.ofNullable(
+                            pool.alternativePathParameterValue(templatePath, path.parentName(), currentParent))
+                    .orElse(Optional.empty())
+                    .filter(parent -> !parent.equals(currentParent));
+            if (alternativeParent.isPresent()) {
+                List<String> segments = new java.util.ArrayList<>(child);
+                segments.set(path.parentIndex(), alternativeParent.get());
+                return Optional.of(new SwappedChild(String.join("/", segments),
+                        path.parentName(), path.childName(), child.get(path.childIndex())));
+            }
+        }
+        return Optional.empty();
     }
 
     private boolean hasDifferentParentAndChild(List<String> child, List<String> other, ParentChildPath path) {

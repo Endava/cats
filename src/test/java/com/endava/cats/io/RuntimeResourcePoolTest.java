@@ -162,6 +162,22 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldReturnAlternativePathParameterValueExcludingCurrentValue() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"id\":\"customer-1\"}"));
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"id\":\"customer-2\"}"));
+
+        Assertions.assertThat(resourcePool.alternativePathParameterValue(
+                        "/customers/{customerId}/orders/{orderId}", "customerId", "customer-2"))
+                .contains("customer-1");
+        Assertions.assertThat(resourcePool.alternativePathParameterValue(
+                        "/customers/{customerId}/orders/{orderId}", "customerId", "customer-1"))
+                .contains("customer-2");
+    }
+
+    @Test
     void shouldAssociateNestedGenericIdsWithIrregularResourceNames() {
         enableResourceReuse();
         resourcePool.observe(postData("/people", "{}"), request("POST", "/people", "{}"),

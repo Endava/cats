@@ -409,6 +409,50 @@ public class RuntimeResourcePool {
                 .toList();
     }
 
+    /**
+     * Returns an active, non-fuzzed, unpenalized identifier value for the given path parameter that differs from
+     * {@code currentValue}.
+     *
+     * @param targetPath    contract path template
+     * @param parameterName path parameter name
+     * @param currentValue  currently observed value to exclude
+     * @return alternative identifier value, if one was observed
+     */
+    public synchronized Optional<String> alternativePathParameterValue(String targetPath, String parameterName,
+                                                                       String currentValue) {
+        if (StringUtils.isBlank(targetPath) || StringUtils.isBlank(parameterName) || StringUtils.isBlank(currentValue)) {
+            return Optional.empty();
+        }
+        TargetField target = new TargetField(parameterName, parameterName, RequestTarget.Location.PATH,
+                stringShape(currentValue));
+        Set<String> targetAliases = semanticAliases(target.path(), target.name());
+        List<ResolvedValue> candidates = resources.stream()
+                .filter(ResourceInstance::active)
+                .filter(resource -> !resource.fuzzed())
+                .filter(resource -> correlationFeedbackScore(resource, targetPath, target) >= 0)
+                .flatMap(resource -> resource.values().values().stream()
+                        .filter(value -> value.aliases().stream().anyMatch(targetAliases::contains))
+                        .filter(value -> !sameValue(currentValue, value.value()))
+                        .map(value -> new ResolvedValue(resource, value,
+                                pathAffinity(resource.sourcePath(), targetPath) * 1_000 +
+                                        Math.min(50, matchSpecificity(value, targetAliases)) * 10 +
+                                        sourcePriority(resource) + storedValuePriority(value) +
+                                        correlationFeedbackScore(resource, targetPath, target))))
+                .filter(candidate -> semanticConfidence(candidate, targetPath, targetAliases) >= 2)
+                .filter(candidate -> compatibilityQuality(candidate.storedValue().value(), target) > 0)
+                .toList();
+        int bestQuality = candidates.stream()
+                .mapToInt(candidate -> candidateQuality(candidate, targetPath, target, targetAliases, null))
+                .max().orElse(Integer.MIN_VALUE);
+        return candidates.stream()
+                .filter(candidate -> candidateQuality(candidate, targetPath, target, targetAliases, null) == bestQuality)
+                .max(Comparator.comparingInt(ResolvedValue::score)
+                        .thenComparingLong(value -> value.resource().sequence()))
+                .map(ResolvedValue::value)
+                .map(String::valueOf)
+                .filter(value -> StringUtils.isNotBlank(value) && !value.contains("/"));
+    }
+
     /** Captures only bounded, unmodified successful exchanges; request headers are never retained. */
     private void recordSuccessfulExchange(ServiceData data, CatsRequest request, CatsResponse response) {
         if (!isEligibleExchange(data, request, response)) {
