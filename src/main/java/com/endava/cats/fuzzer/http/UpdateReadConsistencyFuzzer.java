@@ -17,15 +17,21 @@ import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Reads back a resource created and updated in this run, comparing only present, writable primitive fields.
@@ -35,6 +41,7 @@ import java.util.Optional;
 @SecondPhaseFuzzer
 @Singleton
 public class UpdateReadConsistencyFuzzer implements Fuzzer {
+    private static final int MAX_SCHEMA_DEPTH = 4;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(UpdateReadConsistencyFuzzer.class);
     private final RuntimeResourcePool pool;
     private final ApiArguments arguments;
@@ -123,7 +130,7 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
                 continue;
             }
             compared++;
-            if (!sent.get(name).equals(returned.get(name))) {
+            if (!samePrimitiveValue(sent.get(name).getAsJsonPrimitive(), returned.get(name).getAsJsonPrimitive())) {
                 mismatched.add(name);
             }
         }
@@ -138,13 +145,68 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
         }
     }
 
-    /** Resolves a direct request-schema reference before choosing comparable fields. */
+    /** Resolves direct and composed (allOf/oneOf/anyOf) request schemas before choosing comparable fields. */
     private Map<String, Schema> requestProperties(FuzzingData data) {
-        Schema<?> schema = data.getReqSchema();
-        if (schema.get$ref() != null && data.getSchemaMap() != null) {
-            schema = data.getSchemaMap().get(schema.get$ref().substring(schema.get$ref().lastIndexOf('/') + 1));
+        Map<String, Schema> properties = new LinkedHashMap<>();
+        Set<Schema<?>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        collectProperties(data.getReqSchema(), Optional.ofNullable(data.getSchemaMap()).orElse(Map.of()), 0, visited, properties);
+        if (data.getRequestPropertyTypes() != null) {
+            data.getRequestPropertyTypes().forEach((key, schema) -> {
+                if (key != null && !key.isBlank() && !key.contains("#") && schema != null) {
+                    properties.putIfAbsent(key, schema);
+                }
+            });
         }
-        return schema == null ? Map.of() : Optional.ofNullable(schema.getProperties()).orElse(Map.of());
+        return properties;
+    }
+
+    private void collectProperties(Schema<?> schema, Map<String, Schema> schemaMap, int depth,
+                                   Set<Schema<?>> visited, Map<String, Schema> properties) {
+        Schema<?> resolved = resolveSchema(schema, schemaMap);
+        if (resolved == null || depth > MAX_SCHEMA_DEPTH || !visited.add(resolved)) {
+            return;
+        }
+        try {
+            if (resolved.getProperties() != null) {
+                resolved.getProperties().forEach((name, propSchema) -> {
+                    Schema<?> resolvedProp = resolveSchema(propSchema, schemaMap);
+                    if (resolvedProp != null) {
+                        properties.putIfAbsent(name, resolvedProp);
+                    }
+                });
+            }
+            for (List<Schema> composed : List.of(
+                    Optional.ofNullable(resolved.getAllOf()).orElse(List.of()),
+                    Optional.ofNullable(resolved.getOneOf()).orElse(List.of()),
+                    Optional.ofNullable(resolved.getAnyOf()).orElse(List.of()))) {
+                for (Schema<?> subSchema : composed) {
+                    collectProperties(subSchema, schemaMap, depth + 1, visited, properties);
+                }
+            }
+        } finally {
+            visited.remove(resolved);
+        }
+    }
+
+    private Schema<?> resolveSchema(Schema<?> schema, Map<String, Schema> schemaMap) {
+        if (schema == null || schema.get$ref() == null) {
+            return schema;
+        }
+        return schemaMap.get(schema.get$ref().substring(schema.get$ref().lastIndexOf('/') + 1));
+    }
+
+    private boolean samePrimitiveValue(JsonPrimitive sent, JsonPrimitive returned) {
+        if (sent.equals(returned)) {
+            return true;
+        }
+        if (sent.isNumber() && returned.isNumber()) {
+            try {
+                return new BigDecimal(sent.getAsString()).compareTo(new BigDecimal(returned.getAsString())) == 0;
+            } catch (NumberFormatException _) {
+                return false;
+            }
+        }
+        return false;
     }
 
     /** Ignores readOnly/writeOnly, missing, and non-primitive fields rather than assuming they were persisted. */

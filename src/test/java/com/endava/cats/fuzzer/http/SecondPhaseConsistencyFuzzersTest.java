@@ -13,7 +13,10 @@ import com.endava.cats.util.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +26,7 @@ import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @QuarkusTest
@@ -143,6 +147,33 @@ class SecondPhaseConsistencyFuzzersTest {
         Mockito.verify(executor).execute(captor.capture());
         Assertions.assertThat(captor.getValue().getPath()).isEqualTo("/items/1");
         Assertions.assertThat(captor.getValue().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    }
+
+    @Test
+    void readBackComparesAllOfPropertiesAndTreatsNumericallyEqualValuesAsConsistent() {
+        Schema<?> baseItem = new ObjectSchema().addProperty("name", new StringSchema());
+        Schema<?> composed = new ComposedSchema()
+                .addAllOfItem(new Schema<>().$ref("#/components/schemas/BaseItem"))
+                .addAllOfItem(new ObjectSchema().addProperty("price", new NumberSchema()));
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.PUT).path("/items/{id}").contractPath("/items/{id}")
+                .pathItem(new PathItem().get(new Operation()).put(new Operation())).headers(Set.of())
+                .reqSchema(composed).schemaMap(Map.of("BaseItem", baseItem))
+                .payload("{\"name\":\"same\",\"price\":10}").build();
+        Mockito.when(pool.successfulExchanges("/items", HttpMethod.POST)).thenReturn(List.of(post()));
+        Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.PUT,
+                        "https://api.example.com/items/1", "{\"name\":\"same\",\"price\":10}", 200, "{}", null, null)));
+
+        new UpdateReadConsistencyFuzzer(pool, arguments, filters, executor, listener).fuzz(data);
+
+        ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(executor).execute(captor.capture());
+        captor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(200)
+                .body("{\"name\":\"same\",\"price\":10.00}").build(), data);
+        Mockito.verify(listener, Mockito.never()).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.<Object[]>any());
+        Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.eq(data),
+                Mockito.eq("Compared {} fields from a successful update with a later read"), Mockito.eq(2));
     }
 
     @Test
