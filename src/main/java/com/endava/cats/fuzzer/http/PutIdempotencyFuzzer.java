@@ -22,6 +22,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,7 +36,10 @@ import java.util.concurrent.atomic.AtomicReference;
 @SecondPhaseFuzzer
 @Singleton
 public class PutIdempotencyFuzzer implements Fuzzer {
-    private static final Set<String> VOLATILE_FIELDS = Set.of("updatedAt", "modifiedAt", "version", "revision");
+    private static final Set<String> VOLATILE_FIELDS = Set.of(
+            "updatedat", "modifiedat", "lastmodified", "lastmodifiedat",
+            "lastupdated", "lastupdatedat", "updatedon", "modifiedon",
+            "version", "revision", "etag");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(PutIdempotencyFuzzer.class);
     private final RuntimeResourcePool pool;
     private final ApiArguments arguments;
@@ -149,7 +153,7 @@ public class PutIdempotencyFuzzer implements Fuzzer {
             return;
         }
         JsonObject stable = state.getAsJsonObject().deepCopy();
-        VOLATILE_FIELDS.forEach(stable::remove);
+        stripVolatileFields(stable);
         snapshot.set(stable);
         if (before == null) {
             listener.reportResultInfo(logger, data, "Captured resource state after the first repeated PUT");
@@ -158,6 +162,29 @@ public class PutIdempotencyFuzzer implements Fuzzer {
         } else {
             listener.reportResultInfo(logger, data, "Resource state did not change after repeating the identical PUT");
         }
+    }
+
+    private void stripVolatileFields(JsonElement element) {
+        if (element == null || element.isJsonNull()) {
+            return;
+        }
+        if (element.isJsonArray()) {
+            element.getAsJsonArray().forEach(this::stripVolatileFields);
+            return;
+        }
+        if (!element.isJsonObject()) {
+            return;
+        }
+        JsonObject object = element.getAsJsonObject();
+        List<String> keysToRemove = object.keySet().stream()
+                .filter(key -> VOLATILE_FIELDS.contains(normalize(key)))
+                .toList();
+        keysToRemove.forEach(object::remove);
+        object.entrySet().forEach(entry -> stripVolatileFields(entry.getValue()));
+    }
+
+    private static String normalize(String key) {
+        return key == null ? "" : key.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
     }
 
     private boolean isSuccessful(CatsResponse response) {

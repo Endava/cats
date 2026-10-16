@@ -205,6 +205,32 @@ class SecondPhaseConsistencyFuzzersTest {
     }
 
     @Test
+    void putIdempotencyIgnoresSnakeCaseAndNestedVolatileFieldsAcrossRepeatedPuts() {
+        FuzzingData data = writeData(HttpMethod.PUT);
+        Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(put()));
+        Mockito.when(pool.successfulExchanges("/items", HttpMethod.POST)).thenReturn(List.of(post()));
+        int[] reads = {0};
+        Mockito.doAnswer(call -> {
+            SimpleExecutorContext step = call.getArgument(0);
+            int readIndex = ++reads[0];
+            CatsResponse response = step.getHttpMethod() == HttpMethod.PUT
+                    ? CatsResponse.builder().responseCode(200).body("{}").build()
+                    : CatsResponse.builder().responseCode(200).body(
+                            "{\"name\":\"same\",\"updated_at\":\"2026-10-16T00:00:0" + readIndex
+                                    + "Z\",\"meta\":{\"last_modified\":\"" + readIndex + "\",\"version\":" + readIndex + "}}")
+                            .build();
+            step.getResponseProcessor().accept(response, data);
+            return null;
+        }).when(executor).execute(Mockito.any());
+
+        new PutIdempotencyFuzzer(pool, arguments, filters, executor, listener).fuzz(data);
+
+        Mockito.verify(listener, Mockito.never()).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.eq(data),
+                Mockito.eq("Resource state did not change after repeating the identical PUT"));
+    }
+
+    @Test
     void putIdempotencyWarnsWhenSecondPutChangesState() {
         FuzzingData data = writeData(HttpMethod.PUT);
         Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(put()));
