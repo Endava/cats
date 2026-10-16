@@ -39,6 +39,7 @@ public class ServiceData {
     private final String originalPayload;
     private final HttpMethod httpMethod;
     private final String contentType;
+    private final String acceptHeader;
     private final String pathParamsPayload;
     @Builder.Default
     private final boolean replaceRefData = true;
@@ -90,7 +91,25 @@ public class ServiceData {
                 .queryParameterSerializations(data.getQueryParameterSerializations())
                 .httpMethod(data.getMethod())
                 .contentType(data.getFirstRequestContentType())
+                .acceptHeader(resolveAcceptHeader(data))
                 .pathParamsPayload(data.getPathParamsPayload());
+    }
+
+    private static String resolveAcceptHeader(FuzzingData data) {
+        if (data.getResponseContentTypes() == null || data.getResponseContentTypes().isEmpty()) {
+            return null;
+        }
+        List<String> twoXxMediaTypes = data.getResponseContentTypes().entrySet().stream()
+                .filter(entry -> entry.getKey() != null && entry.getKey().startsWith("2"))
+                .flatMap(entry -> entry.getValue().stream())
+                .filter(mt -> mt != null && !mt.isBlank())
+                .toList();
+        if (twoXxMediaTypes.isEmpty()) {
+            return null;
+        }
+        boolean supportsJsonOrWildcard = twoXxMediaTypes.stream()
+                .anyMatch(mt -> mt.contains("json") || mt.contains("*/*"));
+        return supportsJsonOrWildcard ? null : twoXxMediaTypes.getFirst();
     }
 
     /**

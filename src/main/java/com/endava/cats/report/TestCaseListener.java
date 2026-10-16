@@ -937,7 +937,7 @@ public class TestCaseListener {
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema, boolean shouldMatchContentType) {
         expectedResultCode = this.getExpectedResponseCodeConfiguredFor(MDC.get(FUZZER_KEY), data.getPath(), String.valueOf(data.getMethod()).toLowerCase(Locale.ROOT), expectedResultCode);
         boolean isHead = data.getMethod() == HttpMethod.HEAD;
-        ResponseSchemaValidator.ValidationResult schemaValidation = shouldMatchToResponseSchema && !isHead
+        ResponseSchemaValidator.ValidationResult schemaValidation = shouldMatchToResponseSchema && !isHead && !ignoreArguments.isIgnoreResponseBodyCheck()
                 ? this.validateResponseSchema(response, data) : ResponseSchemaValidator.ValidationResult.valid();
         boolean matchesResponseSchema = schemaValidation.isValid();
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);

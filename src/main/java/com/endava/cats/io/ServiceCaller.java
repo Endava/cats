@@ -709,7 +709,8 @@ public class ServiceCaller {
 
     private void addMandatoryHeaders(ServiceData data, String contentType, List<KeyValuePair<String, Object>> headers) {
         data.getHeaders().forEach(header -> headers.add(new KeyValuePair<>(header.getName(), header.getValue())));
-        addIfNotPresent(HttpHeaders.ACCEPT, processingArguments.getDefaultContentType(), data, headers);
+        String defaultAccept = Optional.ofNullable(data.getAcceptHeader()).orElseGet(processingArguments::getDefaultContentType);
+        addIfNotPresent(HttpHeaders.ACCEPT, defaultAccept, data, headers);
         addIfNotPresent(HttpHeaders.CONTENT_TYPE, contentType, data, headers);
         addIfNotPresent(HttpHeaders.USER_AGENT, apiArguments.getUserAgent(testCaseListener.getCurrentTestCaseNumber(), testCaseListener.getCurrentFuzzer()), data, headers);
         addIfNotPresent(CATS_HEADER_UUID, testCaseListener.getTestIdentifier(), data, headers);
