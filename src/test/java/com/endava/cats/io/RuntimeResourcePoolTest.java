@@ -126,6 +126,23 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldNotAliasChildResponseIdAsParentIdentifierOnNestedCollectionPath() {
+        enableResourceReuse();
+        ServiceData createOrder = postData("/customers/{customerId}/orders", "{}");
+        resourcePool.observe(createOrder,
+                request("POST", "/customers/100/orders", "{}"),
+                response(201, "{\"id\":\"order-uuid-999\"}"));
+
+        ServiceData invoicePost = postData("/invoices",
+                "{\"customerId\":\"00000000-0000-0000-0000-000000000000\",\"orderId\":\"generated-order\"}");
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(invoicePost, invoicePost.getPayload());
+
+        Assertions.assertThat(result.payload())
+                .contains("\"orderId\":\"order-uuid-999\"")
+                .doesNotContain("\"customerId\":\"order-uuid-999\"");
+    }
+
+    @Test
     void shouldAssociateNestedGenericIdsWithIrregularResourceNames() {
         enableResourceReuse();
         resourcePool.observe(postData("/people", "{}"), request("POST", "/people", "{}"),

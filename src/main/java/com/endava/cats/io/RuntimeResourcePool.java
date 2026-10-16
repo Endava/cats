@@ -1472,9 +1472,23 @@ public class RuntimeResourcePool {
     }
 
     private Set<String> resourceIdentifierAliases(String path) {
+        List<String> segments = pathSegments(path);
+        int lastResourceIndex = -1;
+        for (int i = segments.size() - 1; i >= 0; i--) {
+            if (!isTemplateSegment(segments.get(i))) {
+                lastResourceIndex = i;
+                break;
+            }
+        }
+        if (lastResourceIndex < 0) {
+            return Set.of();
+        }
+        int startIndex = lastResourceIndex;
+        while (startIndex > 0 && !isTemplateSegment(segments.get(startIndex - 1))) {
+            startIndex--;
+        }
         Set<String> aliases = new LinkedHashSet<>();
-        pathSegments(path).stream()
-                .filter(segment -> !isTemplateSegment(segment))
+        segments.subList(startIndex, lastResourceIndex + 1).stream()
                 .map(this::normalize)
                 .filter(StringUtils::isNotBlank)
                 .forEach(resource -> {
