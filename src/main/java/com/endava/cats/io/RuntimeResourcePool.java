@@ -114,9 +114,9 @@ public class RuntimeResourcePool {
         List<ResourceCorrelation> correlations = new ArrayList<>();
         Map<ResourceCorrelation, Long> correlationSources = new LinkedHashMap<>();
         Map<String, ResourceInstance> requestBindings = new LinkedHashMap<>();
-        String enrichedPayload = enrichJson(processedPayload, data, correlations, correlationSources, requestBindings, false);
         String enrichedPathParams = enrichJson(data.getPathParamsPayload(), data, correlations, correlationSources,
                 requestBindings, true);
+        String enrichedPayload = enrichJson(processedPayload, data, correlations, correlationSources, requestBindings, false);
         ResolvedRequest resolvedRequest = new ResolvedRequest(enrichedPayload, enrichedPathParams, List.copyOf(correlations));
         if (!correlationSources.isEmpty()) {
             pendingCorrelationSources.put(resolvedRequest, Map.copyOf(correlationSources));

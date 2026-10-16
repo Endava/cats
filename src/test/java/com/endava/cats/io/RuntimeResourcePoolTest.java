@@ -1342,6 +1342,31 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldBindPathParametersBeforeBodyFieldsToKeepSameResourceInstance() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"id\":42,\"externalId\":\"ext-42\"}"));
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"id\":\"not-an-int\",\"externalId\":\"ext-string\"}"));
+
+        ServiceData updateCustomer = ServiceData.builder()
+                .relativePath("/customers/{customerId}")
+                .contractPath("/customers/{customerId}")
+                .payload("{\"externalId\":\"generated\"}")
+                .pathParamsPayload("{\"customerId\":999}")
+                .queryParams(Set.of())
+                .httpMethod(HttpMethod.PUT)
+                .contentType("application/json")
+                .build();
+
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(updateCustomer, updateCustomer.getPayload());
+
+        Assertions.assertThat(result.pathParamsPayload()).contains("\"customerId\":42");
+        Assertions.assertThat(result.payload()).contains("\"externalId\":\"ext-42\"")
+                .doesNotContain("ext-string");
+    }
+
+    @Test
     void shouldUseNestedFieldSemanticsAndPreserveTheCreatedResourcesOwnId() {
         enableResourceReuse();
         resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
