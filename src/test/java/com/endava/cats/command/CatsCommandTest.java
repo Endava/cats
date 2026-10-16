@@ -518,9 +518,9 @@ class CatsCommandTest {
         Fuzzer otherFuzzer = recordingFuzzer(executionOrder);
         List<FuzzingData> data = List.of(
                 fuzzingData(HttpMethod.POST, "/customers"),
-                fuzzingData(HttpMethod.GET, "/customers/{id}"),
                 fuzzingData(HttpMethod.PUT, "/customers/{id}"),
                 fuzzingData(HttpMethod.PATCH, "/customers/{id}"),
+                fuzzingData(HttpMethod.GET, "/customers/{id}"),
                 fuzzingData(HttpMethod.HEAD, "/customers/{id}"),
                 fuzzingData(HttpMethod.DELETE, "/customers/{id}"));
 
@@ -528,7 +528,7 @@ class CatsCommandTest {
 
         Assertions.assertThat(executionOrder).containsExactly(
                 "happy-POST", "happy-GET", "happy-PUT", "happy-PATCH", "happy-HEAD",
-                "other-POST", "other-GET", "other-PUT", "other-PATCH", "other-HEAD", "other-DELETE");
+                "other-POST", "other-PUT", "other-PATCH", "other-GET", "other-HEAD", "other-DELETE");
 
         catsMain.runDeferredHappyPathDeletes();
 

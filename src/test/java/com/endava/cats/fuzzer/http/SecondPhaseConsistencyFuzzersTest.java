@@ -84,6 +84,23 @@ class SecondPhaseConsistencyFuzzersTest {
     }
 
     @Test
+    void staleIfMatchUsesPreUpdateGetTagWhenWriteExchangeReturnedUpdatedTag() {
+        FuzzingData data = writeData(HttpMethod.PUT);
+        Mockito.when(pool.successfulExchanges("/items", HttpMethod.POST)).thenReturn(List.of(post()));
+        Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.GET)).thenReturn(List.of(get("\"v1\"")));
+        Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.PUT,
+                        "https://api.example.com/items/1", "{\"name\":\"same\"}", 200, "{}", null, "\"v2\"")));
+        new ConditionalEtagFuzzer(pool, arguments, executor, listener).fuzz(data);
+        ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(executor).execute(captor.capture());
+        Assertions.assertThat(captor.getValue().getHeaders()).anySatisfy(header -> {
+            Assertions.assertThat(header.getName()).isEqualTo("If-Match");
+            Assertions.assertThat(header.getValue()).isEqualTo("\"v1\"");
+        });
+    }
+
+    @Test
     void staleIfMatchSkipsWhenNoOwnedItemExists() {
         FuzzingData data = writeData(HttpMethod.PUT);
         Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(put()));

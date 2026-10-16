@@ -131,6 +131,17 @@ public class ConditionalEtagFuzzer implements Fuzzer {
                 return Optional.of(new StaleTagPair(current.url(), older.get().etag()));
             }
         }
+        for (RuntimeResourcePool.SuccessfulExchange write : pool.successfulExchanges(data.getPath(), data.getMethod()).reversed()) {
+            if (!validTag(write.etag())) {
+                continue;
+            }
+            Optional<RuntimeResourcePool.SuccessfulExchange> olderGet = gets.reversed().stream()
+                    .filter(previous -> hasDifferentEtagForSameUrl(write, previous))
+                    .findFirst();
+            if (olderGet.isPresent()) {
+                return Optional.of(new StaleTagPair(write.url(), olderGet.get().etag()));
+            }
+        }
         return Optional.empty();
     }
 

@@ -737,7 +737,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             runFuzzers(fuzzingData, configuredFuzzers);
             return;
         }
-        List<FuzzingData> seedData = fuzzingData.stream().filter(this::isSafeResourceSeed).toList();
+        List<FuzzingData> seedData = fuzzingData.stream()
+                .filter(this::isSafeResourceSeed)
+                .sorted(Comparator.comparingInt(data -> seedMethodOrder(data.getMethod())))
+                .toList();
         List<FuzzingData> deleteData = fuzzingData.stream().filter(data -> data.getMethod() == HttpMethod.DELETE).toList();
         List<FuzzingData> deferredHappyPathData = fuzzingData.stream()
                 .filter(data -> !seedData.contains(data) && !deleteData.contains(data)).toList();
@@ -754,6 +757,16 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         return data.getMethod() == HttpMethod.POST || data.getMethod() == HttpMethod.PUT ||
                 data.getMethod() == HttpMethod.PATCH || data.getMethod() == HttpMethod.GET ||
                 data.getMethod() == HttpMethod.HEAD;
+    }
+
+    private static int seedMethodOrder(HttpMethod method) {
+        return switch (method) {
+            case POST, GET -> 0;
+            case PUT -> 1;
+            case PATCH -> 2;
+            case HEAD -> 3;
+            default -> 4;
+        };
     }
 
     private void runFuzzers(List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered, List<Fuzzer> configuredFuzzers) {
