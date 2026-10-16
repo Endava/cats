@@ -161,7 +161,7 @@ public class RuntimeResourcePool {
         List<KeyValuePair<String, Object>> enriched = new ArrayList<>(headers);
         List<ResourceCorrelation> correlations = new ArrayList<>();
         Map<String, ResourceInstance> requestBindings = new LinkedHashMap<>();
-        ResourceInstance pathResource = resolvedPathResource(resolvedRequest).orElse(null);
+        ResourceInstance pathResource = resolvedPathResource(data, resolvedRequest).orElse(null);
         if (resolvedRequest != null && !OpenApiUtils.getPathVariables(data.getRelativePath()).isEmpty() &&
                 pathResource == null) {
             return new ResolvedHeaders(List.copyOf(headers), List.of());
@@ -205,23 +205,42 @@ public class RuntimeResourcePool {
         });
     }
 
-    private Optional<ResourceInstance> resolvedPathResource(ResolvedRequest resolvedRequest) {
+    private Optional<ResourceInstance> resolvedPathResource(ServiceData data, ResolvedRequest resolvedRequest) {
         Map<ResourceCorrelation, Long> sources = pendingCorrelationSources.get(resolvedRequest);
         if (sources == null) {
             return Optional.empty();
         }
-        Set<Long> pathResourceSequences = new LinkedHashSet<>();
+        Map<String, Long> pathResourceByParam = new LinkedHashMap<>();
         sources.forEach((correlation, resourceSequence) -> {
             if (correlation.getTarget().location() == RequestTarget.Location.PATH) {
-                pathResourceSequences.add(resourceSequence);
+                pathResourceByParam.put(correlation.getTarget().name(), resourceSequence);
             }
         });
-        if (pathResourceSequences.size() != 1) {
+        if (pathResourceByParam.isEmpty()) {
             return Optional.empty();
         }
-        long resourceSequence = pathResourceSequences.iterator().next();
+        Long resourceSequence = selectLeafPathResourceSequence(data.getRelativePath(), pathResourceByParam);
+        if (resourceSequence == null) {
+            return Optional.empty();
+        }
         return resources.stream().filter(ResourceInstance::active)
                 .filter(resource -> resource.sequence() == resourceSequence).findFirst();
+    }
+
+    private Long selectLeafPathResourceSequence(String relativePath, Map<String, Long> pathResourceByParam) {
+        if (pathResourceByParam.size() == 1) {
+            return pathResourceByParam.values().iterator().next();
+        }
+        List<String> variables = new ArrayList<>(OpenApiUtils.getPathVariables(relativePath));
+        for (int i = variables.size() - 1; i >= 0; i--) {
+            String variable = variables.get(i);
+            for (Map.Entry<String, Long> entry : pathResourceByParam.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(variable)) {
+                    return entry.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     synchronized String applySuccessfulRequestBaseline(ServiceData data) {

@@ -1199,6 +1199,28 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldReuseConditionalHeaderFromLeafResourceOnNestedPathWithMultipleCorrelatedPathParameters() {
+        enableResourceReuse();
+        CatsResponse createdCustomer = CatsResponse.builder().responseCode(201).body("{\"id\":\"customer-1\"}")
+                .headers(List.of(new KeyValuePair<>("ETag", "\"customer-etag\""))).build();
+        CatsResponse createdOrder = CatsResponse.builder().responseCode(201).body("{\"id\":\"order-9\"}")
+                .headers(List.of(new KeyValuePair<>("ETag", "\"order-etag\""))).build();
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"), createdCustomer);
+        resourcePool.observe(postData("/customers/{customerId}/orders", "{}"),
+                request("POST", "/customers/customer-1/orders", "{}"), createdOrder);
+
+        ServiceData nestedGet = getData("/customers/{customerId}/orders/{orderId}",
+                "{\"customerId\":\"generated-customer\",\"orderId\":\"generated-order\"}");
+        RuntimeResourcePool.ResolvedRequest correlated = resourcePool.enrich(nestedGet, nestedGet.getPayload());
+        RuntimeResourcePool.ResolvedHeaders headers = resourcePool.enrichHeaders(nestedGet,
+                List.of(new KeyValuePair<>("If-Match", "generated")), correlated);
+
+        Assertions.assertThat(correlated.payload()).contains("customer-1", "order-9");
+        Assertions.assertThat(headers.headers()).singleElement().satisfies(header ->
+                Assertions.assertThat(header.getValue()).isEqualTo("\"order-etag\""));
+    }
+
+    @Test
     void shouldNotMixAConditionalHeaderFromAnotherPathResource() {
         enableResourceReuse();
         resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
