@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.SecondPhaseFuzzer;
+import com.endava.cats.args.ApiArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
@@ -14,6 +15,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.net.URI;
@@ -30,6 +32,7 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
     private final SimpleExecutor simpleExecutor;
     private final CatsGlobalContext catsGlobalContext;
     private final TestCaseListener testCaseListener;
+    private final ApiArguments apiArguments;
 
     /**
      * Creates a new CheckDeletedResourcesNotAvailableFuzzer instance.
@@ -39,9 +42,24 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
      * @param testCaseListener  the test case listener
      */
     public CheckDeletedResourcesNotAvailableFuzzer(SimpleExecutor simpleExecutor, CatsGlobalContext catsGlobalContext, TestCaseListener testCaseListener) {
+        this(simpleExecutor, catsGlobalContext, testCaseListener, new ApiArguments());
+    }
+
+    /**
+     * Creates a new CheckDeletedResourcesNotAvailableFuzzer instance.
+     *
+     * @param simpleExecutor    the executor
+     * @param catsGlobalContext the cats global context
+     * @param testCaseListener  the test case listener
+     * @param apiArguments      the API arguments used to resolve server-relative paths
+     */
+    @Inject
+    public CheckDeletedResourcesNotAvailableFuzzer(SimpleExecutor simpleExecutor, CatsGlobalContext catsGlobalContext,
+                                                   TestCaseListener testCaseListener, ApiArguments apiArguments) {
         this.simpleExecutor = simpleExecutor;
         this.catsGlobalContext = catsGlobalContext;
         this.testCaseListener = testCaseListener;
+        this.apiArguments = apiArguments;
     }
 
     @Override
@@ -59,7 +77,9 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
                             .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                             .fuzzingData(data)
                             .payload("{}")
-                            .path(getRelativePath(delete))
+                            .path(getRelativePath(delete, apiArguments))
+                            .replaceRefData(false)
+                            .replaceUrlParams(false)
                             .scenario("Check that previously deleted resource is not available")
                             .responseProcessor(this::checkResponse)
                             .build()
@@ -76,6 +96,16 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
             testCaseListener.reportResultError(logger, data, "Unexpected response code: %s".formatted(response.getResponseCode()), "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
                     data.getMethod(), "404, 410", response.responseCodeAsString());
         }
+    }
+
+    static String getRelativePath(String url, ApiArguments apiArguments) {
+        if (apiArguments != null) {
+            var relative = ObservedHttpTarget.relativePath(apiArguments, url);
+            if (relative.isPresent()) {
+                return relative.get();
+            }
+        }
+        return getRelativePath(url);
     }
 
     static String getRelativePath(String url) {

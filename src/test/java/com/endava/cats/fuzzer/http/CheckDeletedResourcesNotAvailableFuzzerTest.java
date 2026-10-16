@@ -1,8 +1,10 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.annotations.SecondPhaseFuzzer;
+import com.endava.cats.args.ApiArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -63,6 +66,25 @@ class CheckDeletedResourcesNotAvailableFuzzerTest {
     @ParameterizedTest
     void shouldReturnUrl(String url, String expected) {
         Assertions.assertThat(CheckDeletedResourcesNotAvailableFuzzer.getRelativePath(url)).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldStripServerBasePathAndDisableUrlAndRefDataReplacement() {
+        ApiArguments apiArguments = new ApiArguments();
+        apiArguments.setServer("http://localhost:8080/api/v1");
+        CheckDeletedResourcesNotAvailableFuzzer fuzzerWithBasePath =
+                new CheckDeletedResourcesNotAvailableFuzzer(simpleExecutor, catsGlobalContext, testCaseListener, apiArguments);
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.GET);
+        catsGlobalContext.getSuccessfulDeletes().add("http://localhost:8080/api/v1/users/42");
+
+        fuzzerWithBasePath.fuzz(data);
+
+        ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(simpleExecutor).execute(captor.capture());
+        Assertions.assertThat(captor.getValue().getPath()).isEqualTo("/users/42");
+        Assertions.assertThat(captor.getValue().isReplaceRefData()).isFalse();
+        Assertions.assertThat(captor.getValue().isReplaceUrlParams()).isFalse();
     }
 
     @Test
