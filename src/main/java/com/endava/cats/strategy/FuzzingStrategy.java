@@ -344,7 +344,7 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
             DocumentContext jsonDocument = JsonPath.parse(payload);
             Object oldValue = jsonDocument.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
             if (oldValue instanceof JSONArray && !jsonPropToGetValue.contains("[*]")) {
-                oldValue = jsonDocument.read("$." + jsonPropToGetValue + "[0]");
+                oldValue = jsonDocument.read(JsonUtils.sanitizeToJsonPath("$." + jsonPropToGetValue + "[0]"));
                 jsonPropertyForReplacement = "$." + jsonPropertyForReplacement + "[*]";
             }
             Object valueToSet = fuzzingStrategyToApply.process(oldValue);

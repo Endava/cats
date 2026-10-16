@@ -61,13 +61,14 @@ public class RuntimeResourcePool {
     private static final int SUCCESS_REWARD = 100;
     private static final int NOT_FOUND_PENALTY = -1_000;
     private static final int CONFLICT_PENALTY = -200;
-    private static final Pattern SEPARATED_ID = Pattern.compile("(?i).*(?:_|-)(?:id|uuid|guid)$");
+    private static final Pattern SEPARATED_ID = Pattern.compile("(?i).*(?:_|-)(?:id|uuid|guid)s?$");
     private static final Pattern UUID_VALUE = Pattern.compile(
             "(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
     private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^A-Za-z0-9]");
     private static final Splitter SEMANTIC_PATH_SPLITTER = Splitter.on(Pattern.compile("[.#]")).omitEmptyStrings();
     private static final Splitter FIELD_PATH_SPLITTER = Splitter.on('#').omitEmptyStrings();
     private static final Set<String> SIMPLE_IDENTIFIERS = Set.of("id", "uuid", "guid");
+    private static final Set<String> SIMPLE_PLURAL_IDENTIFIERS = Set.of("ids", "uuids", "guids");
     private static final Map<String, String> IRREGULAR_SINGULARS = Map.of(
             "children", "child",
             "men", "man",
@@ -788,10 +789,25 @@ public class RuntimeResourcePool {
                     targets.add(new TargetField(path, entry.getKey(), location,
                             valueShape(entry.getValue().getAsJsonPrimitive())));
                 }
+            } else if (isPrimitiveArray(entry.getValue())) {
+                JsonPrimitive firstElement = entry.getValue().getAsJsonArray().get(0).getAsJsonPrimitive();
+                RequestTarget.Location location = targetLocation(data, entry.getKey(), pathParametersPayload);
+                if (location == RequestTarget.Location.PATH || location == RequestTarget.Location.QUERY ||
+                        isIdentifierName(entry.getKey())) {
+                    targets.add(new TargetField(path, entry.getKey(), location, valueShape(firstElement)));
+                }
             } else {
                 collectReusableTargets(entry.getValue(), path, data, pathParametersPayload, targets);
             }
         }
+    }
+
+    private boolean isPrimitiveArray(JsonElement element) {
+        if (element == null || !element.isJsonArray()) {
+            return false;
+        }
+        JsonArray array = element.getAsJsonArray();
+        return !array.isEmpty() && array.get(0) != null && array.get(0).isJsonPrimitive();
     }
 
     private RequestTarget.Location targetLocation(ServiceData data, String name, boolean pathParametersPayload) {
@@ -843,7 +859,7 @@ public class RuntimeResourcePool {
             return normalize(segments.get(segments.size() - 2));
         }
         String key = normalize(target.name());
-        for (String suffix : List.of("uuid", "guid", "id")) {
+        for (String suffix : List.of("uuids", "guids", "ids", "uuid", "guid", "id")) {
             if (key.endsWith(suffix)) {
                 key = key.substring(0, key.length() - suffix.length());
                 break;
@@ -1364,21 +1380,43 @@ public class RuntimeResourcePool {
 
     private Set<String> semanticAliases(String path, String name) {
         Set<String> aliases = new LinkedHashSet<>();
-        aliases.add(normalize(name));
+        addWithSingularIdForms(normalize(name), aliases);
         List<String> segments = SEMANTIC_PATH_SPLITTER.splitToList(path.replace("$", ""));
         StringBuilder suffix = new StringBuilder();
         for (int i = segments.size() - 1; i >= 0; i--) {
             suffix.insert(0, segments.get(i));
-            aliases.add(normalize(suffix.toString()));
+            addWithSingularIdForms(normalize(suffix.toString()), aliases);
         }
         return Set.copyOf(aliases);
     }
 
+    private void addWithSingularIdForms(String normalizedAlias, Set<String> aliases) {
+        if (normalizedAlias.isEmpty()) {
+            return;
+        }
+        aliases.add(normalizedAlias);
+        for (String pluralSuffix : SIMPLE_PLURAL_IDENTIFIERS) {
+            if (normalizedAlias.endsWith(pluralSuffix)) {
+                String singularSuffix = pluralSuffix.substring(0, pluralSuffix.length() - 1);
+                String prefix = normalizedAlias.substring(0, normalizedAlias.length() - pluralSuffix.length());
+                if (prefix.isEmpty()) {
+                    aliases.add(singularSuffix);
+                } else {
+                    aliases.add(prefix + singularSuffix);
+                    aliases.add(singular(prefix) + singularSuffix);
+                }
+                return;
+            }
+        }
+    }
+
     private boolean isIdentifierName(String name) {
         String lower = name.toLowerCase(Locale.ROOT);
-        return SIMPLE_IDENTIFIERS.contains(lower) || SEPARATED_ID.matcher(name).matches() ||
-                name.endsWith("Id") || name.endsWith("ID") || name.endsWith("Uuid") || name.endsWith("UUID") ||
-                name.endsWith("Guid") || name.endsWith("GUID");
+        return SIMPLE_IDENTIFIERS.contains(lower) || SIMPLE_PLURAL_IDENTIFIERS.contains(lower) ||
+                SEPARATED_ID.matcher(name).matches() ||
+                name.endsWith("Id") || name.endsWith("ID") || name.endsWith("Ids") || name.endsWith("IDs") || name.endsWith("IDS") ||
+                name.endsWith("Uuid") || name.endsWith("UUID") || name.endsWith("Uuids") || name.endsWith("UUIDs") || name.endsWith("UUIDS") ||
+                name.endsWith("Guid") || name.endsWith("GUID") || name.endsWith("Guids") || name.endsWith("GUIDs") || name.endsWith("GUIDS");
     }
 
     private boolean wasModifiedByFuzzer(ServiceData data, String path, boolean pathParametersPayload) {

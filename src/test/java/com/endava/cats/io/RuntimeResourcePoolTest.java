@@ -143,6 +143,25 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldEnrichPrimitiveIdentifierArraysInTopLevelAndNestedRequestBodies() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"id\":\"customer-42\"}"));
+
+        ServiceData groupPost = postData("/groups",
+                "{\"customerIds\":[\"generated-1\",\"generated-2\"],\"filter\":{\"customer_ids\":[\"generated-3\"]}}");
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(groupPost, groupPost.getPayload());
+
+        Assertions.assertThat(result.payload())
+                .contains("\"customerIds\":[\"customer-42\",\"customer-42\"]")
+                .contains("\"customer_ids\":[\"customer-42\"]")
+                .doesNotContain("generated-1", "generated-2", "generated-3");
+        Assertions.assertThat(result.correlations())
+                .extracting(ResourceCorrelation::getTargetField)
+                .containsExactlyInAnyOrder("customerIds", "filter#customer_ids");
+    }
+
+    @Test
     void shouldAssociateNestedGenericIdsWithIrregularResourceNames() {
         enableResourceReuse();
         resourcePool.observe(postData("/people", "{}"), request("POST", "/people", "{}"),
