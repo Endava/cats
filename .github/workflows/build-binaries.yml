@@ -10,12 +10,10 @@ on:
 jobs:
   release:
     name: Creating Release for CATS ${{ github.event.inputs.releaseversion }}
-    runs-on: ubuntu-latest
-    outputs:
-      release_upload_url: ${{ steps.create_release.outputs.upload_url }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: cats-${{ github.event.inputs.releaseversion }}
@@ -25,81 +23,35 @@ jobs:
         run: |
           PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -E '^cats-[0-9]+\.[0-9]+(\.[0-9]+)?$' | grep -v "cats-${{ github.event.inputs.releaseversion }}" | head -n 1)
           echo "PREVIOUS_TAG=$PREVIOUS_TAG"
-          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_ENV
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> "$GITHUB_ENV"
 
       - name: Generate Changelog
         id: generate_changelog
         run: |
           echo "Generating changelog from ${{ env.PREVIOUS_TAG }} to ${{ github.ref_name }}"
-          CHANGELOG=$(git log ${{ env.PREVIOUS_TAG }}..cats-${{ github.event.inputs.releaseversion }} --pretty=format:"* %s" --no-merges | grep -vE "\[maven-release-plugin\]|chore:|docs:|test:|ci:|build:")
-          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          echo "$CHANGELOG" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          CHANGELOG=$(git log "${{ env.PREVIOUS_TAG }}..cats-${{ github.event.inputs.releaseversion }}" --pretty=format:"* %s" --no-merges | grep -vE "\[maven-release-plugin\]|chore:|docs:|test:|ci:|build:" || true)
+          {
+            echo "CHANGELOG<<EOF"
+            echo "$CHANGELOG"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
       - name: Create GitHub Release
         id: create_release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: cats-${{ github.event.inputs.releaseversion }}
-          release_name: cats-${{ github.event.inputs.releaseversion }}
-          draft: false
-          prerelease: false
-          body: ${{ env.CHANGELOG}}
-
-      - name: Print Release URL
-        id: print_release_url
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Release URL: ${{ steps.create_release.outputs.upload_url }}"
-
-  build_linux_arm64:
-    name: Building Linux arm64 for CATS ${{ github.event.inputs.releaseversion }}
-    needs: release
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: cats-${{ github.event.inputs.releaseversion }}
-
-      - name: Setup GraalVM
-        uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: '25'
-          distribution: 'graalvm-community'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and run CATS
-        run: |
-          ./mvnw -B clean --file pom.xml
-          ./mvnw clean package -Pnative -DskipTests=true
-
-      - name: Tar files for Linux arm64
-        run: |
-          cp target/cats-runner cats
-          tar -czf cats_linux_arm64_${{ github.event.inputs.releaseversion }}.tar.gz cats
-
-      - name: Upload Tar files for Linux arm64
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_URL: ${{ needs.release.outputs.release_upload_url }}
-        with:
-          upload_url: ${{ env.RELEASE_URL }}
-          asset_path: cats_linux_arm64_${{ github.event.inputs.releaseversion }}.tar.gz
-          asset_name: cats_linux_arm64_${{ github.event.inputs.releaseversion }}.tar.gz
-          asset_content_type: application/gzip
+          gh release create "cats-${{ github.event.inputs.releaseversion }}" \
+            --title "cats-${{ github.event.inputs.releaseversion }}" \
+            --notes "$CHANGELOG"
 
   build_uberjar:
     name: Building CATS uberjar for release ${{ github.event.inputs.releaseversion }}
     needs: release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: cats-${{ github.event.inputs.releaseversion }}
 
@@ -112,8 +64,7 @@ jobs:
 
       - name: Build Uberjar
         run: |
-          ./mvnw -B clean --file pom.xml
-          ./mvnw -B package --file pom.xml -Dquarkus.package.type=uber-jar -DskipTests=true
+          ./mvnw -B clean package --file pom.xml -Dquarkus.package.type=uber-jar -DskipTests=true
 
       - name: Tar jar file
         run: |
@@ -121,16 +72,12 @@ jobs:
           tar -czf cats_uberjar_${{ github.event.inputs.releaseversion }}.tar.gz cats.jar
 
       - name: Upload Uberjar
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_URL: ${{ needs.release.outputs.release_upload_url }}
-        with:
-          upload_url: ${{ env.RELEASE_URL }}
-          asset_path: cats_uberjar_${{ github.event.inputs.releaseversion }}.tar.gz
-          asset_name: cats_uberjar_${{ github.event.inputs.releaseversion }}.tar.gz
-          asset_content_type: application/gzip
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "cats-${{ github.event.inputs.releaseversion }}" \
+            "cats_uberjar_${{ github.event.inputs.releaseversion }}.tar.gz" \
+            --clobber
 
   build:
     name: Building CATS on ${{ matrix.os }} for release ${{ github.event.inputs.releaseversion }}
@@ -138,10 +85,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macos-latest, macos-15-intel, windows-latest, ubuntu-latest ]
+        os: [ macos-15, macos-15-intel, windows-2025, ubuntu-24.04, ubuntu-24.04-arm ]
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: cats-${{ github.event.inputs.releaseversion }}
 
@@ -152,66 +99,41 @@ jobs:
           distribution: 'graalvm-community'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Determine OS Architecture for Linux and MacOS
-        if: matrix.os != 'windows-latest'
-        id: determine_arch
+      - name: Determine OS and Architecture
+        id: determine_os_arch
+        shell: bash
         run: |
-          arch=$(uname -p)
-          if [[ "$arch" == "arm" ]]; then
-            echo "OS_ARCH=arm64" >> $GITHUB_ENV
+          if [[ "${{ runner.arch }}" == "ARM64" ]]; then
+            echo "OS_ARCH=arm64" >> "$GITHUB_ENV"
           else
-            echo "OS_ARCH=amd64" >> $GITHUB_ENV
+            echo "OS_ARCH=amd64" >> "$GITHUB_ENV"
           fi
-
-      - name: Determine OS Architecture for Windows
-        if: matrix.os == 'windows-latest'
-        id: determine_arch_windows
-        run: |
-          echo "OS_ARCH=amd64" >> $GITHUB_ENV
-
-      - name: Determine OS Name
-        id: determine_os
-        run: echo "RUNNER_OS=${{ matrix.os }}" | sed -e 's/-[^-]*$//' -e 's/ubuntu/linux/' >> $GITHUB_ENV
+          runner_os=$(echo "${{ matrix.os }}" | sed -e 's/-.*$//' -e 's/ubuntu/linux/')
+          echo "RUNNER_OS=$runner_os" >> "$GITHUB_ENV"
 
       - name: Build and run CATS
         run: |
-          ./mvnw -B clean --file pom.xml
-          ./mvnw -B package --file pom.xml -Pnative -DskipTests=true
+          ./mvnw -B clean package --file pom.xml -Pnative -DskipTests=true
 
       - name: Tar files for Linux and MacOS
-        if: matrix.os != 'windows-latest'
+        if: "!startsWith(matrix.os, 'windows')"
         run: |
           cp target/cats-runner cats
-          tar -czf cats_${{ env.RUNNER_OS }}_${{ env.OS_ARCH}}_${{ github.event.inputs.releaseversion }}.tar.gz cats
-
-      - name: Upload Tar files for Linux and MacOS
-        if: matrix.os != 'windows-latest'
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_URL: ${{ needs.release.outputs.release_upload_url }}
-        with:
-          upload_url: ${{ env.RELEASE_URL }}
-          asset_path: cats_${{ env.RUNNER_OS }}_${{ env.OS_ARCH}}_${{ github.event.inputs.releaseversion }}.tar.gz
-          asset_name: cats_${{ env.RUNNER_OS }}_${{ env.OS_ARCH}}_${{ github.event.inputs.releaseversion }}.tar.gz
-          asset_content_type: application/gzip
+          ASSET_FILE="cats_${{ env.RUNNER_OS }}_${{ env.OS_ARCH }}_${{ github.event.inputs.releaseversion }}.tar.gz"
+          tar -czf "$ASSET_FILE" cats
+          echo "ASSET_FILE=$ASSET_FILE" >> "$GITHUB_ENV"
 
       - name: Zip file for Windows
-        if: matrix.os == 'windows-latest'
+        if: startsWith(matrix.os, 'windows')
+        shell: pwsh
         run: |
           copy target\cats-runner.exe cats.exe
-          Compress-Archive -Path cats.exe -Destination cats_windows_amd64_${{ github.event.inputs.releaseversion }}.zip
+          $assetFile = "cats_${{ env.RUNNER_OS }}_${{ env.OS_ARCH }}_${{ github.event.inputs.releaseversion }}.zip"
+          Compress-Archive -Path cats.exe -Destination $assetFile
+          "ASSET_FILE=$assetFile" >> $env:GITHUB_ENV
 
-      - name: Upload Zip for Windows
-        if: matrix.os == 'windows-latest'
-        id: upload-release-asset-windows
-        uses: actions/upload-release-asset@v1
+      - name: Upload Release Asset
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_URL: ${{ needs.release.outputs.release_upload_url }}
-        with:
-          upload_url: ${{ env.RELEASE_URL }}
-          asset_path: cats_windows_amd64_${{ github.event.inputs.releaseversion }}.zip
-          asset_name: cats_windows_amd64_${{ github.event.inputs.releaseversion }}.zip
-          asset_content_type: application/zip
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "cats-${{ github.event.inputs.releaseversion }}" "${{ env.ASSET_FILE }}" --clobber
