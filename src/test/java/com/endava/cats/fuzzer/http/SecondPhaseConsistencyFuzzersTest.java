@@ -129,6 +129,23 @@ class SecondPhaseConsistencyFuzzersTest {
     }
 
     @Test
+    void readBackAndPutIdempotencyAcceptResourcesOwnedViaPostResponseBodyIdWithoutLocationHeader() {
+        FuzzingData data = writeData(HttpMethod.PUT);
+        RuntimeResourcePool.SuccessfulExchange postWithoutLocation = new RuntimeResourcePool.SuccessfulExchange(
+                "/items", HttpMethod.POST, "https://api.example.com/items", "{}", 200, "{\"id\":\"1\",\"name\":\"created\"}", null, null);
+        Mockito.when(pool.successfulExchanges("/items", HttpMethod.POST)).thenReturn(List.of(postWithoutLocation));
+        Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(put()));
+
+        UpdateReadConsistencyFuzzer updateReadFuzzer = new UpdateReadConsistencyFuzzer(pool, arguments, filters, executor, listener);
+        updateReadFuzzer.fuzz(data);
+
+        ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(executor).execute(captor.capture());
+        Assertions.assertThat(captor.getValue().getPath()).isEqualTo("/items/1");
+        Assertions.assertThat(captor.getValue().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    }
+
+    @Test
     void putIdempotencyRunsTwoIdenticalWritesAndReadsOnlyOnOwnedResource() {
         FuzzingData data = writeData(HttpMethod.PUT);
         Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(put()));

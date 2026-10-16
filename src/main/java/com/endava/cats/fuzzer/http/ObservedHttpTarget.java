@@ -3,12 +3,18 @@ package com.endava.cats.fuzzer.http;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.RuntimeResourcePool;
+import com.endava.cats.util.JsonUtils;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Restricts follow-up requests to observed, same-origin URLs under the configured API base path.
@@ -48,7 +54,10 @@ final class ObservedHttpTarget {
                 target.getRawPath() == null || target.getRawPath().matches("(?i).*%(?:2f|5c|2e).*");
     }
 
-    /** Returns the item path only when a POST 201 Location proves that this run created that exact item. */
+    /**
+     * Returns the item path only when a POST 201 Location or a POST 200/201 JSON response body identifier
+     * proves that this run created that exact item.
+     */
     static Optional<String> ownedPath(RuntimeResourcePool pool, ApiArguments arguments, String itemTemplate,
                                       String itemUrl) {
         int index = itemTemplate.lastIndexOf("/{");
@@ -56,16 +65,85 @@ final class ObservedHttpTarget {
             return Optional.empty();
         }
         String collection = itemTemplate.substring(0, index);
+        String parameterName = itemTemplate.substring(index + 2, itemTemplate.length() - 1);
         Optional<String> target = relativePath(arguments, itemUrl);
         if (target.isEmpty() || !matchesTemplate(itemTemplate, target.get())) {
             return Optional.empty();
         }
         return pool.successfulExchanges(collection, HttpMethod.POST).stream()
-                .filter(ObservedHttpTarget::hasCreatedResourceLocation)
-                .map(exchange -> resolvedLocation(exchange.url(), exchange.location())
-                        .flatMap(url -> relativePath(arguments, url)))
+                .map(exchange -> createdItemPath(arguments, collection, parameterName, exchange))
                 .flatMap(Optional::stream)
                 .filter(target.get()::equals).findFirst();
+    }
+
+    private static Optional<String> createdItemPath(ApiArguments arguments, String collectionTemplate,
+                                                    String parameterName,
+                                                    RuntimeResourcePool.SuccessfulExchange exchange) {
+        if (hasCreatedResourceLocation(exchange)) {
+            Optional<String> fromLocation = resolvedLocation(exchange.url(), exchange.location())
+                    .flatMap(url -> relativePath(arguments, url));
+            if (fromLocation.isPresent()) {
+                return fromLocation;
+            }
+        }
+        if ((exchange.status() != 200 && exchange.status() != 201) || !JsonUtils.isValidJson(exchange.responseBody())) {
+            return Optional.empty();
+        }
+        Optional<String> collectionPath = relativePath(arguments, exchange.url())
+                .map(path -> path.endsWith("/") && path.length() > 1 ? path.substring(0, path.length() - 1) : path)
+                .filter(path -> matchesTemplate(collectionTemplate, path));
+        if (collectionPath.isEmpty()) {
+            return Optional.empty();
+        }
+        return extractCreatedId(exchange.responseBody(), collectionTemplate, parameterName)
+                .map(id -> collectionPath.get() + "/" + id);
+    }
+
+    private static Optional<String> extractCreatedId(String responseBody, String collectionTemplate, String parameterName) {
+        try {
+            JsonElement element = JsonUtils.parseAsJsonElement(responseBody);
+            if (!element.isJsonObject()) {
+                return Optional.empty();
+            }
+            JsonObject object = element.getAsJsonObject();
+            Set<String> candidateNames = candidateIdNames(collectionTemplate, parameterName);
+            for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+                if (entry.getValue() != null && entry.getValue().isJsonPrimitive()
+                        && candidateNames.contains(normalize(entry.getKey()))) {
+                    String value = entry.getValue().getAsString();
+                    if (StringUtils.isNotBlank(value) && !value.contains("/")) {
+                        return Optional.of(value);
+                    }
+                }
+            }
+            return Optional.empty();
+        } catch (RuntimeException _) {
+            return Optional.empty();
+        }
+    }
+
+    private static Set<String> candidateIdNames(String collectionTemplate, String parameterName) {
+        String resource = normalize(collectionTemplate.substring(collectionTemplate.lastIndexOf('/') + 1));
+        String singular = resource.endsWith("ies") && resource.length() > 3
+                ? resource.substring(0, resource.length() - 3) + "y"
+                : (resource.endsWith("s") && !resource.endsWith("ss") && resource.length() > 1
+                ? resource.substring(0, resource.length() - 1) : resource);
+        return Set.copyOf(List.of(
+                normalize(parameterName),
+                "id",
+                "uuid",
+                "guid",
+                resource + "id",
+                singular + "id",
+                resource + "uuid",
+                singular + "uuid",
+                resource + "guid",
+                singular + "guid"
+        ));
+    }
+
+    private static String normalize(String name) {
+        return name == null ? "" : name.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
     }
 
     private static boolean hasCreatedResourceLocation(RuntimeResourcePool.SuccessfulExchange exchange) {
