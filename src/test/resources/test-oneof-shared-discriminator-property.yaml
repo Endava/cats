@@ -1,0 +1,67 @@
+openapi: 3.0.3
+info:
+  title: Two oneOf unions discriminated on the same property name
+  version: 1.0.0
+paths: { }
+components:
+  schemas:
+    Shape:
+      properties:
+        type:
+          type: string
+      oneOf:
+        - $ref: '#/components/schemas/BigCircleShape'
+        - $ref: '#/components/schemas/SmallSquareShape'
+      discriminator:
+        propertyName: type
+        mapping:
+          BIG_CIRCLE: '#/components/schemas/BigCircleShape'
+          SMALL_SQUARE: '#/components/schemas/SmallSquareShape'
+    BigCircleShape:
+      type: object
+      required: [ type, radius ]
+      properties:
+        type:
+          type: string
+          pattern: "^BIG_CIRCLE$"
+        radius:
+          type: integer
+    SmallSquareShape:
+      type: object
+      required: [ type, side ]
+      properties:
+        type:
+          type: string
+          pattern: "^SMALL_SQUARE$"
+        side:
+          type: integer
+    Vehicle:
+      properties:
+        type:
+          type: string
+      oneOf:
+        - $ref: '#/components/schemas/SportsCarVehicle'
+        - $ref: '#/components/schemas/CargoTruckVehicle'
+      discriminator:
+        propertyName: type
+        mapping:
+          SPORTS_CAR: '#/components/schemas/SportsCarVehicle'
+          CARGO_TRUCK: '#/components/schemas/CargoTruckVehicle'
+    SportsCarVehicle:
+      type: object
+      required: [ type, topSpeed ]
+      properties:
+        type:
+          type: string
+          pattern: "^SPORTS_CAR$"
+        topSpeed:
+          type: integer
+    CargoTruckVehicle:
+      type: object
+      required: [ type, payload ]
+      properties:
+        type:
+          type: string
+          pattern: "^CARGO_TRUCK$"
+        payload:
+          type: integer
