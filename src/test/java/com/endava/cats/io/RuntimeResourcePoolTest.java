@@ -114,6 +114,39 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldBindParentAndChildPathParametersFromSameResourceInstanceEvenWhenNewerParentExists() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"id\":\"customer-1\"}"));
+        resourcePool.observe(postData("/customers/{customerId}/orders", "{}"),
+                request("POST", "/customers/customer-1/orders", "{}"),
+                response(201, "{\"id\":\"order-1\"}"));
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"id\":\"customer-2-without-orders\"}"));
+
+        ServiceData getOrder = getData("/customers/{customerId}/orders/{orderId}",
+                "{\"customerId\":\"generated-customer\",\"orderId\":\"generated-order\"}");
+        RuntimeResourcePool.ResolvedRequest getResult = resourcePool.enrich(getOrder, getOrder.getPayload());
+
+        Assertions.assertThat(getResult.payload())
+                .contains("\"customerId\":\"customer-1\"", "\"orderId\":\"order-1\"")
+                .doesNotContain("customer-2-without-orders");
+
+        ServiceData deleteOrder = ServiceData.builder()
+                .relativePath("/customers/{customerId}/orders/{orderId}")
+                .contractPath("/customers/{customerId}/orders/{orderId}")
+                .payload("{\"customerId\":\"generated-customer\",\"orderId\":\"generated-order\"}")
+                .httpMethod(HttpMethod.DELETE)
+                .contentType("application/json")
+                .build();
+        Map<String, String> deleteParams = resourcePool.resolvePathParameters(deleteOrder);
+
+        Assertions.assertThat(deleteParams)
+                .containsEntry("customerId", "customer-1")
+                .containsEntry("orderId", "order-1");
+    }
+
+    @Test
     void shouldAssociateGenericIdsWithResourcesBeforeAnActionPathSegment() {
         enableResourceReuse();
         resourcePool.observe(postData("/customers/batch", "[]"), request("POST", "/customers/batch", "[]"),

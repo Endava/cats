@@ -152,16 +152,23 @@ public class RuntimeResourcePool {
         }
         Map<String, String> resolvedParameters = new LinkedHashMap<>();
         Map<String, ResourceInstance> requestBindings = new LinkedHashMap<>();
-        for (String name : OpenApiUtils.getPathVariables(data.getRelativePath())) {
+        ResourceInstance[] pathBoundResource = new ResourceInstance[1];
+        List<String> pathVariables = new ArrayList<>(OpenApiUtils.getPathVariables(data.getRelativePath()));
+        for (int i = pathVariables.size() - 1; i >= 0; i--) {
+            String name = pathVariables.get(i);
             TargetField target = new TargetField(name, name, RequestTarget.Location.PATH,
                     pathParameterShape(data, name));
             if (data.isFuzzedField(name, RequestTarget.Location.PATH) || hasExplicitValue(data, target)) {
                 continue;
             }
             String bindingKey = bindingKey(data.getRelativePath(), target);
-            resolve(data.getRelativePath(), target, requestBindings.get(bindingKey)).ifPresent(value -> {
+            ResourceInstance bound = requestBindings.getOrDefault(bindingKey, pathBoundResource[0]);
+            resolve(data.getRelativePath(), target, bound).ifPresent(value -> {
                 resolvedParameters.put(name, String.valueOf(value.value()));
                 requestBindings.put(bindingKey, value.resource());
+                if (pathBoundResource[0] == null) {
+                    pathBoundResource[0] = value.resource();
+                }
             });
         }
         return Map.copyOf(resolvedParameters);
@@ -839,14 +846,17 @@ public class RuntimeResourcePool {
         }
 
         String result = json;
-        for (TargetField target : reusableTargets(json, data, pathParametersPayload)) {
+        ResourceInstance pathBoundResource = null;
+        for (TargetField target : orderPathTargetsLeafFirst(reusableTargets(json, data, pathParametersPayload), data.getRelativePath())) {
             if ((target.location() == RequestTarget.Location.PATH && !data.isReplaceUrlParams()) ||
                     hasExplicitValue(data, target) || shouldSkipOwnPostIdentifier(data, target)) {
                 continue;
             }
 
             String bindingKey = bindingKey(data.getRelativePath(), target);
-            Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, requestBindings.get(bindingKey));
+            ResourceInstance boundResource = requestBindings.getOrDefault(bindingKey,
+                    target.location() == RequestTarget.Location.PATH ? pathBoundResource : null);
+            Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, boundResource);
             if (resolved.isEmpty()) {
                 continue;
             }
@@ -874,9 +884,32 @@ public class RuntimeResourcePool {
                 correlations.add(correlation);
                 correlationSources.put(correlation, value.resource().sequence());
                 requestBindings.put(bindingKey, value.resource());
+                if (target.location() == RequestTarget.Location.PATH && pathBoundResource == null) {
+                    pathBoundResource = value.resource();
+                }
             }
         }
         return result;
+    }
+
+    private List<TargetField> orderPathTargetsLeafFirst(List<TargetField> targets, String relativePath) {
+        List<String> pathVariables = new ArrayList<>(OpenApiUtils.getPathVariables(relativePath));
+        if (pathVariables.size() < 2) {
+            return targets;
+        }
+        List<TargetField> ordered = new ArrayList<>(targets);
+        ordered.sort(Comparator.comparingInt(target -> {
+            if (target.location() != RequestTarget.Location.PATH) {
+                return Integer.MAX_VALUE;
+            }
+            for (int i = pathVariables.size() - 1; i >= 0; i--) {
+                if (pathVariables.get(i).equalsIgnoreCase(target.name())) {
+                    return pathVariables.size() - 1 - i;
+                }
+            }
+            return pathVariables.size();
+        }));
+        return ordered;
     }
 
     private List<TargetField> reusableTargets(String json, ServiceData data, boolean pathParametersPayload) {
