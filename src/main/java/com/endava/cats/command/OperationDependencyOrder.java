@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 final class OperationDependencyOrder {
     private static final int MAX_SCHEMA_DEPTH = 4;
     private static final Pattern PATH_PARAMETER_PATTERN = Pattern.compile("\\{([^/]+)}");
-    private static final List<String> ID_SUFFIXES = List.of("id", "uuid", "guid");
+    private static final List<String> ID_SUFFIXES = List.of("id", "uuid", "guid", "token");
     private static final Map<String, String> IRREGULAR_SINGULARS = Map.of(
             "children", "child",
             "men", "man",
@@ -53,14 +53,36 @@ final class OperationDependencyOrder {
         }
         Map<String, Set<String>> producersByIdentifier = new HashMap<>();
         defaultOrder.stream().filter(OperationDependencyOrder::isRootCollectionProducer)
-                .forEach(entry -> producerIdentifiers(entry.getKey()).forEach(id ->
-                        producersByIdentifier.computeIfAbsent(id, _ -> new LinkedHashSet<>()).add(entry.getKey())));
+                .forEach(entry -> {
+                    producerIdentifiers(entry.getKey()).forEach(id ->
+                            producersByIdentifier.computeIfAbsent(id, _ -> new LinkedHashSet<>()).add(entry.getKey()));
+                    if (entry.getValue().getPost() != null) {
+                        responseIdentifiers(api, entry.getValue().getPost()).forEach(id ->
+                                producersByIdentifier.computeIfAbsent(id, _ -> new LinkedHashSet<>()).add(entry.getKey()));
+                    }
+                });
+        Map<String, Set<String>> postPropsByPath = new HashMap<>();
+        defaultOrder.stream()
+                .filter(entry -> entry.getValue().getPost() != null && !stripTrailingSlash(entry.getKey()).contains("{"))
+                .forEach(entry -> postPropsByPath.put(entry.getKey(), postRequestPropertyNames(api, entry.getValue().getPost())));
         Map<String, Set<String>> dependencies = new HashMap<>();
         defaultOrder.forEach(entry -> {
             Set<String> required = new LinkedHashSet<>();
             operationIdentifiers(api, entry.getKey(), entry.getValue()).stream()
                     .map(producersByIdentifier::get).filter(Objects::nonNull)
                     .forEach(required::addAll);
+            Set<String> myProps = postPropsByPath.getOrDefault(entry.getKey(), Set.of());
+            if (!myProps.isEmpty()) {
+                String parentDir = parentDirectory(entry.getKey());
+                if (!parentDir.isEmpty()) {
+                    postPropsByPath.forEach((otherPath, otherProps) -> {
+                        if (!otherPath.equals(entry.getKey()) && parentDir.equals(parentDirectory(otherPath)) &&
+                                otherProps.size() > myProps.size() && otherProps.containsAll(myProps)) {
+                            required.add(otherPath);
+                        }
+                    });
+                }
+            }
             required.remove(entry.getKey());
             dependencies.put(entry.getKey(), required);
         });
@@ -74,7 +96,15 @@ final class OperationDependencyOrder {
     }
 
     private static boolean isRootCollectionProducer(Map.Entry<String, PathItem> entry) {
-        return entry.getValue().getPost() != null && !entry.getKey().contains("{") && !entry.getKey().endsWith("/");
+        String trimmed = stripTrailingSlash(entry.getKey());
+        return (entry.getValue().getPost() != null || entry.getValue().getGet() != null) && !trimmed.contains("{");
+    }
+
+    private static String stripTrailingSlash(String path) {
+        if (path == null || path.length() <= 1) {
+            return path == null ? "" : path;
+        }
+        return path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
     }
 
     /** Traverses inferred dependencies first, but does not recurse into cycles. */
@@ -98,7 +128,9 @@ final class OperationDependencyOrder {
         Set<String> names = new LinkedHashSet<>();
         Matcher matcher = PATH_PARAMETER_PATTERN.matcher(path);
         while (matcher.find()) {
-            addIdentifierCandidate(matcher.group(1), "", names);
+            String paramName = matcher.group(1);
+            String precedingSegment = precedingSegment(path, matcher.start());
+            addIdentifierCandidate(paramName, precedingSegment, names);
         }
         Optional.ofNullable(pathItem.getParameters()).orElse(List.of())
                 .forEach(parameter -> addParameterIdentifier(api, parameter, names));
@@ -108,6 +140,12 @@ final class OperationDependencyOrder {
             names.addAll(requestIdentifiers(api, operation));
         }
         return names;
+    }
+
+    private static String precedingSegment(String path, int paramStartIndex) {
+        String prefix = stripTrailingSlash(path.substring(0, paramStartIndex));
+        int slash = prefix.lastIndexOf('/');
+        return slash >= 0 ? prefix.substring(slash + 1) : prefix;
     }
 
     private static void addParameterIdentifier(OpenAPI api, Parameter parameter, Set<String> names) {
@@ -138,6 +176,41 @@ final class OperationDependencyOrder {
             collectSchemaIdentifiers(api, media.getSchema(), "", 0, visited, names);
         }
         return names;
+    }
+
+    private static Set<String> responseIdentifiers(OpenAPI api, Operation operation) {
+        if (operation == null || operation.getResponses() == null) {
+            return Set.of();
+        }
+        Set<String> names = new LinkedHashSet<>();
+        operation.getResponses().entrySet().stream()
+                .filter(entry -> entry.getKey() != null && entry.getKey().startsWith("2") && entry.getValue() != null && entry.getValue().getContent() != null)
+                .flatMap(entry -> entry.getValue().getContent().values().stream())
+                .forEach(media -> {
+                    Set<Schema<?>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+                    collectSchemaIdentifiers(api, media.getSchema(), "", 0, visited, names);
+                });
+        return names;
+    }
+
+    private static Set<String> postRequestPropertyNames(OpenAPI api, Operation operation) {
+        if (operation == null || operation.getRequestBody() == null || operation.getRequestBody().getContent() == null) {
+            return Set.of();
+        }
+        Set<String> props = new LinkedHashSet<>();
+        for (MediaType media : operation.getRequestBody().getContent().values()) {
+            Schema<?> resolved = resolvedRequestSchema(api, media.getSchema());
+            if (resolved != null && resolved.getProperties() != null) {
+                resolved.getProperties().keySet().forEach(key -> props.add(normalize(key)));
+            }
+        }
+        return props;
+    }
+
+    private static String parentDirectory(String path) {
+        String trimmed = stripTrailingSlash(path);
+        int slash = trimmed.lastIndexOf('/');
+        return slash > 0 ? trimmed.substring(0, slash) : "";
     }
 
     private static void collectSchemaIdentifiers(OpenAPI api, Schema<?> schema, String parentProperty, int depth,
@@ -210,7 +283,8 @@ final class OperationDependencyOrder {
     }
 
     private static Set<String> producerIdentifiers(String path) {
-        String resource = normalize(path.substring(path.lastIndexOf('/') + 1));
+        String trimmed = stripTrailingSlash(path);
+        String resource = normalize(trimmed.substring(trimmed.lastIndexOf('/') + 1));
         String singular = singular(resource);
         Set<String> identifiers = new LinkedHashSet<>();
         for (String suffix : ID_SUFFIXES) {
@@ -224,6 +298,9 @@ final class OperationDependencyOrder {
         String irregular = IRREGULAR_SINGULARS.get(resource);
         if (irregular != null) {
             return irregular;
+        }
+        if (resource.endsWith("ais") && resource.length() > 3) {
+            return resource.substring(0, resource.length() - 3) + "al";
         }
         if (resource.endsWith("ies") && resource.length() > 3) {
             return resource.substring(0, resource.length() - 3) + "y";

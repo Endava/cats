@@ -2015,6 +2015,71 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(resourcePool.successfulExchanges("/items/{id}", HttpMethod.GET)).isEmpty();
     }
 
+    @Test
+    void shouldCorrelateWrapperResponseIdRolePrefixedIdsAndPortuguesePlurals() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/api/v1/airports", "{}"), request("POST", "/api/v1/airports", "{}"),
+                response(200, "{\"isSuccess\":true,\"response\":\"airport-uuid-1\"}"));
+        resourcePool.observe(getData("/v1/hospitais/", "{}"), request("GET", "/v1/hospitais/", "{}"),
+                response(200, "[{\"id\":\"hosp-1\"}]"));
+
+        ServiceData createFlight = postData("/api/v1/flights",
+                "{\"fromAirportId\":\"gen-from\",\"toAirportId\":\"gen-to\"}");
+        RuntimeResourcePool.ResolvedRequest flightResult = resourcePool.enrich(createFlight, createFlight.getPayload());
+        Assertions.assertThat(flightResult.payload()).contains("\"fromAirportId\":\"airport-uuid-1\"", "\"toAirportId\":\"airport-uuid-1\"");
+
+        ServiceData getHospital = getData("/v1/hospitais/{hospital_id}", "{\"hospital_id\":\"gen-hosp\"}");
+        RuntimeResourcePool.ResolvedRequest hospitalResult = resourcePool.enrich(getHospital, getHospital.getPayload());
+        Assertions.assertThat(hospitalResult.payload()).contains("\"hospital_id\":\"hosp-1\"");
+    }
+
+    @Test
+    void shouldReuseSiblingPostRequestFieldsAndSnakeOrCamelTokensAndAddresses() {
+        enableResourceReuse();
+        ServiceData register = postData("/api/v1/auth/user/register",
+                "{\"email\":\"alice@example.com\",\"password\":\"S3cret!\",\"firstName\":\"Alice\"}");
+        resourcePool.observe(register, request("POST", "/api/v1/auth/user/register", register.getPayload()),
+                response(200, "{\"isSuccess\":true}"));
+
+        ServiceData login = postData("/api/v1/auth/user/login",
+                "{\"email\":\"generated@example.com\",\"password\":\"generated\"}");
+        RuntimeResourcePool.ResolvedRequest loginResult = resourcePool.enrich(login, login.getPayload());
+        Assertions.assertThat(loginResult.payload())
+                .contains("\"email\":\"alice@example.com\"", "\"password\":\"S3cret!\"");
+
+        resourcePool.observe(login, request("POST", "/api/v1/auth/user/login", loginResult.payload()),
+                response(200, "{\"response\":{\"access_token\":\"jwt-access\",\"refreshToken\":\"jwt-refresh\"}}"));
+
+        ServiceData logout = postData("/api/v1/auth/user/logout",
+                "{\"access_token\":\"gen-a\",\"refresh_token\":\"gen-r\"}");
+        RuntimeResourcePool.ResolvedRequest logoutResult = resourcePool.enrich(logout, logout.getPayload());
+        Assertions.assertThat(logoutResult.payload())
+                .contains("\"access_token\":\"jwt-access\"", "\"refresh_token\":\"jwt-refresh\"");
+    }
+
+    @Test
+    void shouldExtractSingleObjectCollectionGetPrimitivesScalarPostIdAndScopeGenericDeletes() {
+        enableResourceReuse();
+        resourcePool.observe(getData("/api/users/me", "{}"), request("GET", "/api/users/me", "{}"),
+                response(200, "{\"id\":1,\"username\":\"alice_user\"}"));
+        resourcePool.observe(postData("/api/todos", "{}"), request("POST", "/api/todos", "{}"),
+                response(201, "{\"id\":1,\"title\":\"task\"}"));
+        resourcePool.observe(postData("/deploy", "{}"), request("POST", "/deploy", "{}"),
+                response(200, "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1"));
+
+        ServiceData deleteTodo = ServiceData.builder().relativePath("/api/todos/{id}")
+                .httpMethod(HttpMethod.DELETE).contentType("application/json").build();
+        resourcePool.observe(deleteTodo, request("DELETE", "/api/todos/1?id=1", "{}"), response(200, "{}"));
+
+        ServiceData userProfile = getData("/api/users/{username}/profile", "{\"username\":\"generated\"}");
+        Assertions.assertThat(resourcePool.enrich(userProfile, userProfile.getPayload()).payload())
+                .contains("\"username\":\"alice_user\"");
+
+        ServiceData contractCall = getData("/{contractAddress}/name", "{\"contractAddress\":\"generated\"}");
+        Assertions.assertThat(resourcePool.enrich(contractCall, contractCall.getPayload()).payload())
+                .contains("0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1");
+    }
+
     private void enableResourceReuse() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
     }

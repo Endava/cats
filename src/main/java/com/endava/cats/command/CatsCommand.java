@@ -737,6 +737,13 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             runFuzzers(fuzzingData, configuredFuzzers);
             return;
         }
+        Fuzzer onlyRequiredFieldsFuzzer = configuredFuzzers.stream()
+                .filter(fuzzer -> "OnlyRequiredFieldsFuzzer".equals(fuzzer.getClass().getSimpleName()))
+                .findFirst()
+                .orElse(null);
+        List<Fuzzer> seedFuzzers = onlyRequiredFieldsFuzzer != null
+                ? List.of(happyPathFuzzer, onlyRequiredFieldsFuzzer)
+                : List.of(happyPathFuzzer);
         List<FuzzingData> seedData = fuzzingData.stream()
                 .filter(this::isSafeResourceSeed)
                 .sorted(Comparator.comparingInt(data -> seedMethodOrder(data.getMethod())))
@@ -744,8 +751,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         List<FuzzingData> deleteData = fuzzingData.stream().filter(data -> data.getMethod() == HttpMethod.DELETE).toList();
         List<FuzzingData> deferredHappyPathData = fuzzingData.stream()
                 .filter(data -> !seedData.contains(data) && !deleteData.contains(data)).toList();
-        List<Fuzzer> otherFuzzers = configuredFuzzers.stream().filter(fuzzer -> fuzzer != happyPathFuzzer).toList();
-        runFuzzers(seedData, List.of(happyPathFuzzer));
+        List<Fuzzer> otherFuzzers = configuredFuzzers.stream()
+                .filter(fuzzer -> fuzzer != happyPathFuzzer && fuzzer != onlyRequiredFieldsFuzzer)
+                .toList();
+        runFuzzers(seedData, seedFuzzers);
         runFuzzers(fuzzingData, otherFuzzers);
         runFuzzers(deferredHappyPathData, List.of(happyPathFuzzer));
         if (!deleteData.isEmpty()) {

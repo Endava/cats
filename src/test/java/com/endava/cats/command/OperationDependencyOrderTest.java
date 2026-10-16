@@ -71,6 +71,55 @@ class OperationDependencyOrderTest {
                 .containsExactly("/people", "/appointments", "/boxes", "/recipients", "/shipments");
     }
 
+    @Test
+    void schedulesTrailingSlashAndGenericIdPathDependencies() {
+        OpenAPI api = new OpenAPI().paths(new Paths()
+                .addPathItem("/v1/hospitais/{hospital_id}", new PathItem().get(new Operation()))
+                .addPathItem("/v1/hospitais/", new PathItem().post(new Operation()))
+                .addPathItem("/api/flights/{id}", new PathItem().get(new Operation()))
+                .addPathItem("/api/flights", new PathItem().post(new Operation())));
+        List<Map.Entry<String, PathItem>> items = api.getPaths().entrySet().stream().toList();
+
+        Assertions.assertThat(OperationDependencyOrder.order(api, items)).extracting(Map.Entry::getKey)
+                .containsExactly("/v1/hospitais/", "/v1/hospitais/{hospital_id}", "/api/flights", "/api/flights/{id}");
+    }
+
+    @Test
+    void schedulesSupersetSiblingPostBeforeSubsetAndResponseTokenProducersBeforeConsumers() {
+        Schema<?> registerSchema = new ObjectSchema()
+                .addProperty("email", new StringSchema())
+                .addProperty("password", new StringSchema())
+                .addProperty("firstName", new StringSchema());
+        Schema<?> loginSchema = new ObjectSchema()
+                .addProperty("email", new StringSchema())
+                .addProperty("password", new StringSchema());
+        Schema<?> loginResponseSchema = new ObjectSchema()
+                .addProperty("accessToken", new StringSchema())
+                .addProperty("refreshToken", new StringSchema());
+        Schema<?> logoutSchema = new ObjectSchema()
+                .addProperty("accessToken", new StringSchema())
+                .addProperty("refreshToken", new StringSchema());
+        Operation loginOp = post(new Schema<>().$ref("#/components/schemas/LoginRequest"))
+                .responses(new io.swagger.v3.oas.models.responses.ApiResponses()
+                        .addApiResponse("200", new io.swagger.v3.oas.models.responses.ApiResponse()
+                                .content(new Content().addMediaType("application/json",
+                                        new MediaType().schema(new Schema<>().$ref("#/components/schemas/LoginResponse"))))));
+        OpenAPI api = new OpenAPI()
+                .components(new Components()
+                        .addSchemas("RegisterRequest", registerSchema)
+                        .addSchemas("LoginRequest", loginSchema)
+                        .addSchemas("LoginResponse", loginResponseSchema)
+                        .addSchemas("LogoutRequest", logoutSchema))
+                .paths(new Paths()
+                        .addPathItem("/api/auth/login", new PathItem().post(loginOp))
+                        .addPathItem("/api/auth/logout", new PathItem().post(post(new Schema<>().$ref("#/components/schemas/LogoutRequest"))))
+                        .addPathItem("/api/auth/register", new PathItem().post(post(new Schema<>().$ref("#/components/schemas/RegisterRequest")))));
+        List<Map.Entry<String, PathItem>> items = api.getPaths().entrySet().stream().toList();
+
+        Assertions.assertThat(OperationDependencyOrder.order(api, items)).extracting(Map.Entry::getKey)
+                .containsExactly("/api/auth/register", "/api/auth/login", "/api/auth/logout");
+    }
+
     private static Operation post(Schema<?> schema) {
         return new Operation().requestBody(new RequestBody().content(
                 new Content().addMediaType("application/json", new MediaType().schema(schema))));

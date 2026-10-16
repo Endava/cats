@@ -61,7 +61,10 @@ public class RuntimeResourcePool {
     private static final int SUCCESS_REWARD = 100;
     private static final int NOT_FOUND_PENALTY = -1_000;
     private static final int CONFLICT_PENALTY = -200;
-    private static final Pattern SEPARATED_ID = Pattern.compile("(?i).*(?:_|-)(?:id|uuid|guid)s?$");
+    private static final Pattern SEPARATED_ID = Pattern.compile("(?i).*(?:_|-)(?:id|uuid|guid|token|username|address)(?:s|es)?$");
+    private static final Pattern CAMEL_IDENTIFIER = Pattern.compile(
+            ".*(?:Id|ID|Uuid|UUID|Guid|GUID|Token|TOKEN|Username|USERNAME|Address|ADDRESS)(?:s|S|es|ES)?$");
+    private static final Pattern WORD_BOUNDARY_SPLITTER = Pattern.compile("(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[_\\-]+");
     private static final Pattern UUID_VALUE = Pattern.compile(
             "(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
     private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^A-Za-z0-9]");
@@ -353,6 +356,20 @@ public class RuntimeResourcePool {
                 OpenApiUtils.getPathVariables(data.getRelativePath()).stream()
                         .noneMatch(name -> data.isFuzzedField(name, RequestTarget.Location.PATH) ||
                                 wasModifiedByFuzzer(data, name, false));
+        if (isCollectionPath(data.getRelativePath()) && JsonUtils.isValidJson(response.getBody())) {
+            try {
+                JsonElement root = JsonUtils.parseAsJsonElement(response.getBody());
+                if (root != null && root.isJsonObject()) {
+                    collectPrimitiveValues(root.getAsJsonObject(), "$.", "response.body.", pathValues);
+                    if (!pathValues.isEmpty()) {
+                        addResource(data, pathValues);
+                        return;
+                    }
+                }
+            } catch (RuntimeException _) {
+                // ignore invalid json
+            }
+        }
         if (reusableHeaders || reusableItemPath) {
             addResource(data, pathValues);
         }
@@ -381,7 +398,11 @@ public class RuntimeResourcePool {
                 collectResponseHeaders(response, values);
             }
             if (!hasResourceIdentifier(values, data.getRelativePath())) {
-                locationIdentifier.ifPresent(value -> values.put("id", value));
+                if (locationIdentifier.isPresent()) {
+                    values.put("id", locationIdentifier.get());
+                } else {
+                    wrapperIdentifier(values).ifPresent(value -> values.put("id", value));
+                }
             }
             addResource(data, values);
         }
@@ -391,6 +412,18 @@ public class RuntimeResourcePool {
                 addResource(data, headerValues);
             }
         }
+    }
+
+    private Optional<StoredValue> wrapperIdentifier(Map<String, StoredValue> values) {
+        for (String key : List.of("$.response", "$.data", "$.result", "$.value")) {
+            StoredValue candidate = values.get(key);
+            if (candidate != null && candidate.value() != null
+                    && StringUtils.isNotBlank(String.valueOf(candidate.value()))
+                    && !(candidate.value() instanceof Boolean)) {
+                return Optional.of(new StoredValue(candidate.value(), candidate.sourceLocation(), Set.of("id")));
+            }
+        }
+        return Optional.empty();
     }
 
     /** Clears all values captured by the current run. */
@@ -703,12 +736,16 @@ public class RuntimeResourcePool {
 
     private void storeSuccessfulRequestBaseline(ServiceData data, CatsRequest request, ResolvedRequest resolvedRequest) {
         String effectivePayload = effectiveJsonPayload(request, resolvedRequest);
-        if (isRequestBodyFuzzed(data) || !data.isReplaceRefData() || !data.isValidJson() ||
+        boolean requiredOnlyFallback = data.getAllMutationTargets().equals(List.of(RequestTarget.requestBody()));
+        if ((isRequestBodyFuzzed(data) && !requiredOnlyFallback) || !data.isReplaceRefData() || !data.isValidJson() ||
                 !data.getPayloadFormat().supportsNamedFields() || !HttpMethod.requiresBody(data.getHttpMethod()) ||
                 !JsonUtils.isValidJson(effectivePayload)) {
             return;
         }
         successfulBaselineKey(data).ifPresent(key -> {
+            if (requiredOnlyFallback && successfulRequestBaselines.containsKey(key)) {
+                return;
+            }
             successfulRequestBaselines.put(key, JsonUtils.parseAsJsonElement(effectivePayload).toString());
             while (successfulRequestBaselines.size() > MAX_SUCCESSFUL_BASELINES) {
                 successfulRequestBaselines.remove(successfulRequestBaselines.keySet().iterator().next());
@@ -946,7 +983,7 @@ public class RuntimeResourcePool {
             if (entry.getValue().isJsonPrimitive()) {
                 RequestTarget.Location location = targetLocation(data, entry.getKey(), pathParametersPayload);
                 if (location == RequestTarget.Location.PATH || location == RequestTarget.Location.QUERY ||
-                        isIdentifierName(entry.getKey())) {
+                        isIdentifierName(entry.getKey()) || hasSiblingPostValue(data, entry.getKey())) {
                     targets.add(new TargetField(path, entry.getKey(), location,
                             valueShape(entry.getValue().getAsJsonPrimitive())));
                 }
@@ -1114,7 +1151,28 @@ public class RuntimeResourcePool {
                 (target.location() == RequestTarget.Location.PATH || !target.path().contains("#"))) {
             aliases.addAll(primaryResourceIdentifierAliases(targetPath));
         }
+        if (target.location() == RequestTarget.Location.PATH) {
+            aliases.addAll(precedingPathSegmentAliases(targetPath, target.name()));
+        }
         return Set.copyOf(aliases);
+    }
+
+    private Set<String> precedingPathSegmentAliases(String path, String paramName) {
+        List<String> segments = pathSegments(path);
+        String template = "{" + paramName + "}";
+        for (int i = 1; i < segments.size(); i++) {
+            if (segments.get(i).equalsIgnoreCase(template) && !isTemplateSegment(segments.get(i - 1))) {
+                String resource = normalize(segments.get(i - 1));
+                String singular = singular(resource);
+                Set<String> aliases = new LinkedHashSet<>();
+                for (String suffix : SIMPLE_IDENTIFIERS) {
+                    aliases.add(resource + suffix);
+                    aliases.add(singular + suffix);
+                }
+                return aliases;
+            }
+        }
+        return Set.of();
     }
 
     private Set<String> primaryResourceIdentifierAliases(String path) {
@@ -1252,8 +1310,26 @@ public class RuntimeResourcePool {
             collectPrimitiveValues(requestObjects.getFirst(), "$.", "request.body.", values);
         }
         collectResponseHeaders(response, values);
-        locationIdentifier(response).ifPresent(value -> values.put("id", value));
+        Optional<StoredValue> locId = locationIdentifier(response);
+        if (locId.isPresent()) {
+            values.put("id", locId.get());
+        } else if (data.getHttpMethod() == HttpMethod.POST && response.getBody() != null) {
+            String trimmedBody = response.getBody().trim().replace("\"", "");
+            if (isScalarIdentifierBody(trimmedBody)) {
+                Set<String> aliases = trimmedBody.matches("^0x[0-9a-fA-F]{40}$")
+                        ? Set.of("id", "address", "contractaddress")
+                        : Set.of("id");
+                values.put("id", new StoredValue(trimmedBody, "response.body.$", aliases));
+            }
+        }
         addResource(data, values);
+    }
+
+    private boolean isScalarIdentifierBody(String value) {
+        return !value.isEmpty() && value.length() <= 128 &&
+                !value.startsWith("{") && !value.startsWith("[") && !value.startsWith("<") &&
+                !"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value) && !"null".equalsIgnoreCase(value) &&
+                value.chars().noneMatch(Character::isWhitespace);
     }
 
     private boolean collectResponseHeaders(CatsResponse response, Map<String, StoredValue> values) {
@@ -1304,7 +1380,9 @@ public class RuntimeResourcePool {
     private void markDeleted(ServiceData data, String actualUrl) {
         Map<String, StoredValue> deletedValues = new LinkedHashMap<>(
                 extractPathValues(data.getRelativePath(), actualUrl));
-        extractIdentifierQueryValues(data, actualUrl).forEach(deletedValues::putIfAbsent);
+        if (deletedValues.isEmpty()) {
+            extractIdentifierQueryValues(data, actualUrl).forEach(deletedValues::putIfAbsent);
+        }
         if (deletedValues.isEmpty()) {
             return;
         }
@@ -1332,8 +1410,12 @@ public class RuntimeResourcePool {
         String normalizedKey = normalize(deletedKey);
         aliases.add(normalizedKey);
         if (SIMPLE_IDENTIFIERS.contains(normalizedKey)) {
-            aliases.addAll(primaryResourceIdentifierAliases(path));
-            aliases.addAll(resourceIdentifierAliases(path));
+            Set<String> qualified = new LinkedHashSet<>(primaryResourceIdentifierAliases(path));
+            qualified.addAll(precedingPathSegmentAliases(path, deletedKey));
+            if (!qualified.isEmpty()) {
+                aliases.removeAll(SIMPLE_IDENTIFIERS);
+                aliases.addAll(qualified);
+            }
         }
         return aliases;
     }
@@ -1585,6 +1667,7 @@ public class RuntimeResourcePool {
     private Set<String> semanticAliases(String path, String name) {
         Set<String> aliases = new LinkedHashSet<>();
         addWithSingularIdForms(normalize(name), aliases);
+        addWordBoundarySuffixAliases(name, aliases);
         List<String> segments = SEMANTIC_PATH_SPLITTER.splitToList(path.replace("$", ""));
         StringBuilder suffix = new StringBuilder();
         for (int i = segments.size() - 1; i >= 0; i--) {
@@ -1592,6 +1675,27 @@ public class RuntimeResourcePool {
             addWithSingularIdForms(normalize(suffix.toString()), aliases);
         }
         return Set.copyOf(aliases);
+    }
+
+    private void addWordBoundarySuffixAliases(String rawName, Set<String> aliases) {
+        if (StringUtils.isBlank(rawName)) {
+            return;
+        }
+        List<String> words = Splitter.on(WORD_BOUNDARY_SPLITTER).omitEmptyStrings().splitToList(rawName.trim());
+        if (words.size() >= 3) {
+            String lastWord = normalize(words.getLast());
+            if (SIMPLE_IDENTIFIERS.contains(lastWord) || SIMPLE_PLURAL_IDENTIFIERS.contains(lastWord)) {
+                String twoWordSuffix = normalize(words.get(words.size() - 2)) + lastWord;
+                addWithSingularIdForms(twoWordSuffix, aliases);
+            }
+        }
+        if (words.size() >= 2) {
+            String lastWord = normalize(words.getLast());
+            String fullNormalized = normalize(rawName);
+            if ("address".equals(lastWord) && !fullNormalized.equals("contractaddress") && !fullNormalized.contains("email")) {
+                aliases.add("address");
+            }
+        }
     }
 
     private void addWithSingularIdForms(String normalizedAlias, Set<String> aliases) {
@@ -1621,13 +1725,42 @@ public class RuntimeResourcePool {
         }
     }
 
+    private boolean hasSiblingPostValue(ServiceData data, String fieldName) {
+        if (data == null || data.getHttpMethod() != HttpMethod.POST) {
+            return false;
+        }
+        List<String> targetSegments = pathSegments(data.getRelativePath());
+        if (targetSegments.size() < 2) {
+            return false;
+        }
+        String normalizedField = normalize(fieldName);
+        return resources.stream()
+                .filter(ResourceInstance::active)
+                .filter(resource -> !resource.fuzzed() && resource.sourceMethod() == HttpMethod.POST)
+                .filter(resource -> sameParentPath(pathSegments(resource.sourcePath()), targetSegments))
+                .flatMap(resource -> resource.values().values().stream())
+                .filter(value -> value.sourceLocation().startsWith("request.body."))
+                .anyMatch(value -> value.aliases().contains(normalizedField));
+    }
+
+    private boolean sameParentPath(List<String> sourceSegments, List<String> targetSegments) {
+        if (sourceSegments.size() != targetSegments.size() || sourceSegments.size() < 2) {
+            return false;
+        }
+        for (int i = 0; i < sourceSegments.size() - 1; i++) {
+            if (!sourceSegments.get(i).equalsIgnoreCase(targetSegments.get(i))) {
+                return false;
+            }
+        }
+        return !sourceSegments.getLast().equalsIgnoreCase(targetSegments.getLast());
+    }
+
     private boolean isIdentifierName(String name) {
         String lower = name.toLowerCase(Locale.ROOT);
         return SIMPLE_IDENTIFIERS.contains(lower) || SIMPLE_PLURAL_IDENTIFIERS.contains(lower) ||
+                "username".equals(lower) || "token".equals(lower) ||
                 SEPARATED_ID.matcher(name).matches() ||
-                name.endsWith("Id") || name.endsWith("ID") || name.endsWith("Ids") || name.endsWith("IDs") || name.endsWith("IDS") ||
-                name.endsWith("Uuid") || name.endsWith("UUID") || name.endsWith("Uuids") || name.endsWith("UUIDs") || name.endsWith("UUIDS") ||
-                name.endsWith("Guid") || name.endsWith("GUID") || name.endsWith("Guids") || name.endsWith("GUIDs") || name.endsWith("GUIDS");
+                CAMEL_IDENTIFIER.matcher(name).matches();
     }
 
     private boolean wasModifiedByFuzzer(ServiceData data, String path, boolean pathParametersPayload) {
@@ -1706,6 +1839,9 @@ public class RuntimeResourcePool {
         String irregular = IRREGULAR_SINGULARS.get(resource);
         if (irregular != null) {
             return irregular;
+        }
+        if (resource.endsWith("ais") && resource.length() > 3) {
+            return resource.substring(0, resource.length() - 3) + "al";
         }
         if (resource.endsWith("ies") && resource.length() > 3) {
             return resource.substring(0, resource.length() - 3) + "y";
