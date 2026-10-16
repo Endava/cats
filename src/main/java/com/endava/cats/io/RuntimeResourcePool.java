@@ -127,6 +127,24 @@ public class RuntimeResourcePool {
         return resolvedRequest;
     }
 
+    /**
+     * Returns the payload enriched with captured runtime resource identifiers without registering pending feedback.
+     *
+     * @param data             service call data
+     * @param processedPayload payload to enrich
+     * @return enriched payload
+     */
+    public synchronized String previewEnrichedPayload(ServiceData data, String processedPayload) {
+        if (!processingArguments.isReuseSuccessfulResources() || !data.isReplaceRefData() || resources.isEmpty()) {
+            return processedPayload;
+        }
+        List<ResourceCorrelation> correlations = new ArrayList<>();
+        Map<ResourceCorrelation, Long> correlationSources = new LinkedHashMap<>();
+        Map<String, ResourceInstance> requestBindings = new LinkedHashMap<>();
+        enrichJson(data.getPathParamsPayload(), data, correlations, correlationSources, requestBindings, true);
+        return enrichJson(processedPayload, data, correlations, correlationSources, requestBindings, false);
+    }
+
     synchronized Map<String, String> resolvePathParameters(ServiceData data) {
         if (!processingArguments.isReuseSuccessfulResources() || data.getHttpMethod() != HttpMethod.DELETE ||
                 !data.isReplaceRefData() || !data.isReplaceUrlParams() || resources.isEmpty()) {

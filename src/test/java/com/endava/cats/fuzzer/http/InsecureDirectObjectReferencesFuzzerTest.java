@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.io.RuntimeResourcePool;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
@@ -20,12 +21,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -100,6 +103,41 @@ class InsecureDirectObjectReferencesFuzzerTest {
         idorFuzzer.fuzz(data);
 
         Mockito.verify(serviceCaller, Mockito.atLeastOnce()).call(Mockito.any());
+    }
+
+    @Test
+    void shouldUseRuntimeEnrichedIdAndAlternativePoolIdWhenGeneratingIdorPayloads() {
+        RuntimeResourcePool pool = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(pool.previewEnrichedPayload(Mockito.any(), Mockito.anyString()))
+                .thenReturn("{\"orderId\":\"100\"}");
+        Mockito.when(pool.alternativePathParameterValue("/orders/{orderId}", "orderId", "100"))
+                .thenReturn(Optional.of("200"));
+        InsecureDirectObjectReferencesFuzzer poolAwareFuzzer =
+                new InsecureDirectObjectReferencesFuzzer(simpleExecutor, testCaseListener, null, pool);
+
+        Map<String, Schema> reqTypes = new HashMap<>();
+        reqTypes.put("orderId", new StringSchema());
+        FuzzingData data = FuzzingData.builder()
+                .path("/orders/{orderId}")
+                .contractPath("/orders/{orderId}")
+                .reqSchema(new StringSchema())
+                .requestPropertyTypes(reqTypes)
+                .requestContentTypes(List.of("application/json"))
+                .responseCodes(Set.of("200", "403"))
+                .method(HttpMethod.GET)
+                .build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"orderId\":\"randomSchemaString\"}");
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().body("{}").responseCode(403).build());
+
+        poolAwareFuzzer.fuzz(data);
+
+        ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.atLeastOnce()).call(captor.capture());
+        List<String> payloads = captor.getAllValues().stream().map(ServiceData::getPayload).toList();
+        Assertions.assertThat(payloads)
+                .anyMatch(payload -> payload.contains("200"))
+                .anyMatch(payload -> payload.contains("101"))
+                .anyMatch(payload -> payload.contains("99"));
     }
 
     @Test

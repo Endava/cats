@@ -9,6 +9,8 @@ import com.endava.cats.generator.simple.NumberGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
+import com.endava.cats.io.RuntimeResourcePool;
+import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
@@ -20,12 +22,14 @@ import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -60,17 +64,34 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
     private final SimpleExecutor simpleExecutor;
     private final TestCaseListener testCaseListener;
     private final FilesArguments filesArguments;
+    private final RuntimeResourcePool runtimeResourcePool;
 
     /**
      * Creates a new InsecureDirectObjectReferencesFuzzer instance.
      *
      * @param simpleExecutor   the executor used to run the fuzz logic
      * @param testCaseListener the test case listener for reporting results
+     * @param filesArguments   the user supplied files configuration
      */
     public InsecureDirectObjectReferencesFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, FilesArguments filesArguments) {
+        this(simpleExecutor, testCaseListener, filesArguments, null);
+    }
+
+    /**
+     * Creates a new InsecureDirectObjectReferencesFuzzer instance.
+     *
+     * @param simpleExecutor      the executor used to run the fuzz logic
+     * @param testCaseListener    the test case listener for reporting results
+     * @param filesArguments      the user supplied files configuration
+     * @param runtimeResourcePool the pool holding captured runtime resource identifiers
+     */
+    @Inject
+    public InsecureDirectObjectReferencesFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener,
+                                                FilesArguments filesArguments, RuntimeResourcePool runtimeResourcePool) {
         this.simpleExecutor = simpleExecutor;
         this.testCaseListener = testCaseListener;
         this.filesArguments = filesArguments;
+        this.runtimeResourcePool = runtimeResourcePool;
     }
 
     @Override
@@ -126,14 +147,19 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
     }
 
     private void fuzzIdField(FuzzingData data, String idField) {
-        Object currentValue = JsonUtils.getVariableFromJson(data.getPayload(), idField);
+        String basePayload = resolveBasePayload(data);
+        Object currentValue = JsonUtils.getVariableFromJson(basePayload, idField);
+        if (JsonUtils.isNotSet(String.valueOf(currentValue))) {
+            currentValue = JsonUtils.getVariableFromJson(data.getPayload(), idField);
+        }
 
         if (JsonUtils.isNotSet(String.valueOf(currentValue))) {
             LOGGER.debug("Field {} has no value set, skipping", idField);
             return;
         }
 
-        List<Object> alternativeIds = generateAlternativeIds(currentValue);
+        Object resolvedCurrentValue = currentValue;
+        List<Object> alternativeIds = generateAlternativeIds(data, idField, resolvedCurrentValue);
 
         for (Object alternativeId : alternativeIds) {
             String fuzzedPayload = CatsUtil.justReplaceField(data.getPayload(), idField, alternativeId).json();
@@ -144,20 +170,39 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
                             .fuzzingData(data)
                             .logger(LOGGER)
                             .scenario("Replace ID field [%s] with alternative value [%s] to test for IDOR vulnerability. Original value: [%s]"
-                                    .formatted(idField, alternativeId, currentValue))
+                                    .formatted(idField, alternativeId, resolvedCurrentValue))
                             .fuzzer(this)
                             .payload(fuzzedPayload)
                             .mutationTargets(RequestTargetResolver.resolvePayloadField(data, idField))
                             .responseProcessor((response, fuzzingData) ->
-                                    checkForIdorVulnerability(response, fuzzingData, currentValue, alternativeId))
+                                    checkForIdorVulnerability(response, fuzzingData, resolvedCurrentValue, alternativeId))
                             .build()
             );
         }
     }
 
-    private List<Object> generateAlternativeIds(Object currentValue) {
+    private String resolveBasePayload(FuzzingData data) {
+        if (runtimeResourcePool == null || data.getPayload() == null) {
+            return data.getPayload();
+        }
+        try {
+            return Optional.ofNullable(runtimeResourcePool.previewEnrichedPayload(ServiceData.from(data).build(), data.getPayload()))
+                    .orElse(data.getPayload());
+        } catch (RuntimeException _) {
+            return data.getPayload();
+        }
+    }
+
+    private List<Object> generateAlternativeIds(FuzzingData data, String idField, Object currentValue) {
         List<Object> alternatives = new ArrayList<>();
         String valueStr = String.valueOf(currentValue);
+
+        if (runtimeResourcePool != null && data.getPath() != null) {
+            Optional.ofNullable(runtimeResourcePool.alternativePathParameterValue(
+                            data.getPath(), getSimpleFieldName(idField), valueStr))
+                    .orElse(Optional.empty())
+                    .ifPresent(alternatives::add);
+        }
 
         if (UUID_PATTERN.matcher(valueStr).matches()) {
             alternatives.add(UUID.randomUUID().toString());
