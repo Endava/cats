@@ -84,7 +84,7 @@ class LowercaseExpandingBytesInStringFieldsFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"5", "null"}, nullValues = "null")
+    @CsvSource(value = {"5", "2147483647", "null"}, nullValues = "null")
     void shouldReplaceIfStringSchemaAndFieldInPayload(Integer maxLength) {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().body("{}").responseCode(200).build());

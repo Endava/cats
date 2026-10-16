@@ -606,7 +606,9 @@ public class StringGenerator {
             return String.valueOf(property.getEnum().getFirst());
         }
         int minLength = property.getMinLength() != null ? property.getMinLength() : DEFAULT_MIN_WHEN_NOT_PRESENT;
-        int maxLength = property.getMaxLength() != null ? property.getMaxLength() : DEFAULT_MAX_WHEN_NOT_PRESENT;
+        int maxLength = property.getMaxLength() != null
+                ? (property.getMaxLength() > DEFAULT_MAX_LENGTH ? Math.max(minLength, DEFAULT_MAX_WHEN_NOT_PRESENT) : property.getMaxLength())
+                : DEFAULT_MAX_WHEN_NOT_PRESENT;
         String pattern = StringUtils.isNotBlank(property.getPattern()) ? property.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
         if (maxLength < minLength) {
             maxLength = minLength;

@@ -31,7 +31,7 @@ public class LowercaseExpandingBytesInStringFieldsFuzzer extends TwoXXorFourXXRe
     @Override
     protected BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer() {
         return (schema, s) -> {
-            int schemaLength = schema.getMaxLength() != null ? schema.getMaxLength() : 10;
+            int schemaLength = schema.getMaxLength() != null ? Math.min(schema.getMaxLength(), 50) : 10;
             return List.of(CatsUtil.selectRandom(UnicodeGenerator.getLowercaseExpandingBytes(), schemaLength));
         };
     }
