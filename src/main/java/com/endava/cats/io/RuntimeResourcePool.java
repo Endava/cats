@@ -264,7 +264,7 @@ public class RuntimeResourcePool {
     synchronized String applySuccessfulRequestBaseline(ServiceData data) {
         String currentPayload = data.getPayload();
         if (!processingArguments.isReuseSuccessfulResources() || !data.isReplaceRefData() || !data.isValidJson() ||
-                !data.isJsonContentType() || !HttpMethod.requiresBody(data.getHttpMethod()) ||
+                !data.getPayloadFormat().supportsNamedFields() || !HttpMethod.requiresBody(data.getHttpMethod()) ||
                 !JsonUtils.isValidJson(currentPayload)) {
             return currentPayload;
         }
@@ -307,7 +307,7 @@ public class RuntimeResourcePool {
             return;
         }
         recordSuccessfulExchange(data, request, response);
-        storeSuccessfulRequestBaseline(data, request);
+        storeSuccessfulRequestBaseline(data, request, resolvedRequest);
         if (data.getHttpMethod() == HttpMethod.DELETE) {
             markDeleted(data, request.getUrl());
             return;
@@ -316,8 +316,9 @@ public class RuntimeResourcePool {
             return;
         }
         Map<String, StoredValue> pathValues = extractPathValues(data.getRelativePath(), request.getUrl());
+        String effectiveRequestPayload = effectiveJsonPayload(request, resolvedRequest);
         List<JsonObject> requestObjects = HttpMethod.requiresBody(data.getHttpMethod()) && !isRequestBodyFuzzed(data)
-                ? requestObjects(request.getPayload()) : List.of();
+                ? requestObjects(effectiveRequestPayload) : List.of();
         if (response.isBodyTruncated()) {
             addFromLocation(data, response, pathValues, requestObjects);
             return;
@@ -326,7 +327,7 @@ public class RuntimeResourcePool {
             addResourceFromReusableIndicators(data, response, pathValues);
             return;
         }
-        observeResponseObjects(data, request, response, pathValues, requestObjects);
+        observeResponseObjects(data, effectiveRequestPayload, response, pathValues, requestObjects);
     }
 
     private static boolean isResourceProducingMethod(HttpMethod method) {
@@ -350,7 +351,7 @@ public class RuntimeResourcePool {
         }
     }
 
-    private void observeResponseObjects(ServiceData data, CatsRequest request, CatsResponse response,
+    private void observeResponseObjects(ServiceData data, String effectiveRequestPayload, CatsResponse response,
                                         Map<String, StoredValue> pathValues, List<JsonObject> requestObjects) {
         List<ResponseObject> responseObjects = responseObjects(response.getBody(), data.getHttpMethod() == HttpMethod.GET);
         if (responseObjects.isEmpty()) {
@@ -359,7 +360,7 @@ public class RuntimeResourcePool {
         }
         boolean singleResponseObject = responseObjects.size() == 1;
         Optional<StoredValue> locationIdentifier = singleResponseObject ? locationIdentifier(response) : Optional.empty();
-        boolean alignedRequestObjects = alignedObjectPayloads(request.getPayload(), response.getBody(),
+        boolean alignedRequestObjects = alignedObjectPayloads(effectiveRequestPayload, response.getBody(),
                 requestObjects.size(), responseObjects.size());
         int limit = Math.min(responseObjects.size(), MAX_COLLECTION_ITEMS);
         for (int i = 0; i < limit; i++) {
@@ -601,10 +602,20 @@ public class RuntimeResourcePool {
         for (TargetField target : diagnosticTargets(data)) {
             RequestTarget requestTarget = new RequestTarget(target.location(), target.path());
             Optional<Boolean> resolved = correlatedTargets.contains(requestTarget) ? Optional.of(true) :
-                    valueReplaced(data, request, target, actualPathValues);
+                    valueReplaced(data, request, resolvedRequest, target, actualPathValues);
             OperationDiagnostics current = diagnostics;
             resolved.ifPresent(value -> current.recordParameter(requestTarget, value, responseCode));
         }
+    }
+
+    private String effectiveJsonPayload(CatsRequest request, ResolvedRequest resolvedRequest) {
+        if (JsonUtils.isValidJson(request.getPayload())) {
+            return request.getPayload();
+        }
+        if (resolvedRequest != null && JsonUtils.isValidJson(resolvedRequest.payload())) {
+            return resolvedRequest.payload();
+        }
+        return request.getPayload();
     }
 
     private boolean isUnmodifiedContractRequest(ServiceData data) {
@@ -631,8 +642,8 @@ public class RuntimeResourcePool {
         return List.copyOf(targets.values());
     }
 
-    private Optional<Boolean> valueReplaced(ServiceData data, CatsRequest request, TargetField target,
-                                            Map<String, StoredValue> actualPathValues) {
+    private Optional<Boolean> valueReplaced(ServiceData data, CatsRequest request, ResolvedRequest resolvedRequest,
+                                            TargetField target, Map<String, StoredValue> actualPathValues) {
         if (target.location() == RequestTarget.Location.PATH) {
             StoredValue actual = actualPathValues.get(target.name());
             Object generated = generatedPathValue(data, target.name());
@@ -641,10 +652,11 @@ public class RuntimeResourcePool {
             }
             return Optional.of(!sameValue(generated, actual.value()));
         }
-        if (!JsonUtils.isValidJson(request.getPayload())) {
+        String effectivePayload = effectiveJsonPayload(request, resolvedRequest);
+        if (!JsonUtils.isValidJson(effectivePayload)) {
             return Optional.empty();
         }
-        List<JsonElement> actual = valuesAtPath(request.getPayload(), target.path());
+        List<JsonElement> actual = valuesAtPath(effectivePayload, target.path());
         if (actual.isEmpty()) {
             return Optional.empty();
         }
@@ -682,13 +694,15 @@ public class RuntimeResourcePool {
         pendingCorrelationSources.remove(resolvedRequest);
     }
 
-    private void storeSuccessfulRequestBaseline(ServiceData data, CatsRequest request) {
-        if (isRequestBodyFuzzed(data) || !data.isReplaceRefData() || !data.isValidJson() || !data.isJsonContentType() ||
-                !HttpMethod.requiresBody(data.getHttpMethod()) || !JsonUtils.isValidJson(request.getPayload())) {
+    private void storeSuccessfulRequestBaseline(ServiceData data, CatsRequest request, ResolvedRequest resolvedRequest) {
+        String effectivePayload = effectiveJsonPayload(request, resolvedRequest);
+        if (isRequestBodyFuzzed(data) || !data.isReplaceRefData() || !data.isValidJson() ||
+                !data.getPayloadFormat().supportsNamedFields() || !HttpMethod.requiresBody(data.getHttpMethod()) ||
+                !JsonUtils.isValidJson(effectivePayload)) {
             return;
         }
         successfulBaselineKey(data).ifPresent(key -> {
-            successfulRequestBaselines.put(key, JsonUtils.parseAsJsonElement(request.getPayload()).toString());
+            successfulRequestBaselines.put(key, JsonUtils.parseAsJsonElement(effectivePayload).toString());
             while (successfulRequestBaselines.size() > MAX_SUCCESSFUL_BASELINES) {
                 successfulRequestBaselines.remove(successfulRequestBaselines.keySet().iterator().next());
             }

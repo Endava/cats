@@ -607,6 +607,32 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldStoreAndApplySuccessfulBaselineForFormUrlEncodedRequests() {
+        enableResourceReuse();
+        String original = "{\"customerId\":\"generated\",\"name\":\"generated\"}";
+        ServiceData cleanForm = ServiceData.builder().relativePath("/orders").contractPath("/orders")
+                .payload(original).originalPayload(original).httpMethod(HttpMethod.POST)
+                .contentType("application/x-www-form-urlencoded").build();
+        RuntimeResourcePool.ResolvedRequest resolved = new RuntimeResourcePool.ResolvedRequest(
+                "{\"customerId\":\"customer-42\",\"name\":\"accepted\"}", null, List.of());
+        resourcePool.observe(cleanForm,
+                request("POST", "/orders", "customerId=customer-42&name=accepted"),
+                response(201, "{\"id\":\"order-42\"}"),
+                resolved);
+
+        ServiceData fuzzedForm = ServiceData.builder().relativePath("/orders").contractPath("/orders")
+                .payload("{\"customerId\":\"generated\",\"name\":\"mutated\"}").originalPayload(original)
+                .mutationTarget(RequestTarget.body("name")).httpMethod(HttpMethod.POST)
+                .contentType("application/x-www-form-urlencoded").build();
+
+        String baseline = resourcePool.applySuccessfulRequestBaseline(fuzzedForm);
+
+        Assertions.assertThat(baseline)
+                .contains("\"customerId\":\"customer-42\"", "\"name\":\"mutated\"")
+                .doesNotContain("\"customerId\":\"generated\"");
+    }
+
+    @Test
     void shouldNotReplaceCleanBaselineWithSuccessfulFuzzedRequest() {
         enableResourceReuse();
         String original = "{\"country\":\"generated\",\"name\":\"generated\"}";
