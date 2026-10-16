@@ -515,16 +515,30 @@ public class RuntimeResourcePool {
     }
 
     private OperationOutcome producerOutcome(String path, RequestTarget target) {
-        if (target.location() != RequestTarget.Location.PATH) {
+        if (target.location() == RequestTarget.Location.PATH) {
+            List<String> segments = pathSegments(path);
+            int index = segments.indexOf("{" + target.name() + "}");
+            if (index > 0) {
+                OperationKey producerKey = new OperationKey("/" + String.join("/", segments.subList(0, index)), HttpMethod.POST);
+                OperationDiagnostics directProducer = operationDiagnostics.get(producerKey);
+                if (directProducer != null) {
+                    return directProducer.outcome(producerKey);
+                }
+            }
+        }
+        String leafName = target.name().substring(target.name().lastIndexOf('#') + 1);
+        Set<String> qualifiedAliases = semanticAliases(target.name(), leafName).stream()
+                .filter(alias -> !SIMPLE_IDENTIFIERS.contains(alias))
+                .collect(Collectors.toSet());
+        if (qualifiedAliases.isEmpty()) {
             return null;
         }
-        List<String> segments = pathSegments(path);
-        int index = segments.indexOf("{" + target.name() + "}");
-        if (index <= 0) {
-            return null;
-        }
-        OperationKey producerKey = new OperationKey("/" + String.join("/", segments.subList(0, index)), HttpMethod.POST);
-        return Optional.ofNullable(operationDiagnostics.get(producerKey)).map(producer -> producer.outcome(producerKey))
+        return operationDiagnostics.entrySet().stream()
+                .filter(entry -> entry.getKey().method() == HttpMethod.POST && !entry.getKey().path().equals(path))
+                .filter(entry -> isCollectionPath(entry.getKey().path()))
+                .filter(entry -> primaryResourceIdentifierAliases(entry.getKey().path()).stream().anyMatch(qualifiedAliases::contains))
+                .findFirst()
+                .map(entry -> entry.getValue().outcome(entry.getKey()))
                 .orElse(null);
     }
 

@@ -1699,6 +1699,27 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldLinkUnresolvedBodyIdentifierToFailingCollectionProducer() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/customers", "{\"name\":\"Alice\"}"),
+                request("POST", "/customers", "{\"name\":\"Alice\"}"), response(400, "{}"));
+        String payload = "{\"customerId\":\"generated\",\"quantity\":1}";
+        resourcePool.observe(postData("/orders", payload), request("POST", "/orders", payload), response(422, "{}"));
+
+        Assertions.assertThat(resourcePool.unresolvedOperations())
+                .filteredOn(op -> op.outcome().path().equals("/orders"))
+                .singleElement()
+                .satisfies(operation -> Assertions.assertThat(operation.parameters()).singleElement().satisfies(parameter -> {
+                    Assertions.assertThat(parameter.target()).isEqualTo(RequestTarget.body("customerId"));
+                    Assertions.assertThat(parameter.reason()).isEqualTo(RuntimeResourcePool.UnresolvedReason.NO_VALUE_CAPTURED);
+                    Assertions.assertThat(parameter.producer()).isNotNull();
+                    Assertions.assertThat(parameter.producer().path()).isEqualTo("/customers");
+                    Assertions.assertThat(parameter.producer().method()).isEqualTo(HttpMethod.POST);
+                    Assertions.assertThat(parameter.producer().statusCodes()).containsExactly(Map.entry(400, 1));
+                }));
+    }
+
+    @Test
     void shouldNotReportOperationsThatSucceededAtLeastOnce() {
         enableResourceReuse();
         ServiceData get = getData("/customers/{customerId}", "{\"customerId\":\"generated\"}");
