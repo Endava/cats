@@ -72,6 +72,7 @@ public class RuntimeResourcePool {
     private static final Splitter FIELD_PATH_SPLITTER = Splitter.on('#').omitEmptyStrings();
     private static final Set<String> SIMPLE_IDENTIFIERS = Set.of("id", "uuid", "guid");
     private static final Set<String> SIMPLE_PLURAL_IDENTIFIERS = Set.of("ids", "uuids", "guids");
+    private static final Set<String> SELF_IDENTITY_SEGMENTS = Set.of("me", "self", "current", "whoami");
     private static final Map<String, String> IRREGULAR_SINGULARS = Map.of(
             "children", "child",
             "men", "man",
@@ -166,7 +167,7 @@ public class RuntimeResourcePool {
             }
             String bindingKey = bindingKey(data.getRelativePath(), target);
             ResourceInstance bound = requestBindings.getOrDefault(bindingKey, pathBoundResource[0]);
-            resolve(data.getRelativePath(), target, bound).ifPresent(value -> {
+            resolve(data.getRelativePath(), target, bound, false, data.getHttpMethod()).ifPresent(value -> {
                 resolvedParameters.put(name, String.valueOf(value.value()));
                 requestBindings.put(bindingKey, value.resource());
                 if (pathBoundResource[0] == null) {
@@ -927,7 +928,7 @@ public class RuntimeResourcePool {
             String bindingKey = bindingKey(data.getRelativePath(), target);
             ResourceInstance boundResource = requestBindings.getOrDefault(bindingKey,
                     target.location() == RequestTarget.Location.PATH ? pathBoundResource : null);
-            Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, boundResource);
+            Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, boundResource, false, data.getHttpMethod());
             if (resolved.isEmpty()) {
                 continue;
             }
@@ -1135,17 +1136,27 @@ public class RuntimeResourcePool {
     }
 
     private Optional<ResolvedValue> resolve(String targetPath, TargetField target, ResourceInstance boundResource) {
-        return resolve(targetPath, target, boundResource, false);
+        return resolve(targetPath, target, boundResource, false, null);
     }
 
     private Optional<ResolvedValue> resolve(String targetPath, TargetField target, ResourceInstance boundResource,
                                             boolean boundOnly) {
+        return resolve(targetPath, target, boundResource, boundOnly, null);
+    }
+
+    private Optional<ResolvedValue> resolve(String targetPath, TargetField target, ResourceInstance boundResource,
+                                            boolean boundOnly, HttpMethod targetMethod) {
         Set<String> targetAliases = targetAliases(targetPath, target);
+        boolean destructivePathTarget = target.location() == RequestTarget.Location.PATH &&
+                (targetMethod == HttpMethod.DELETE || targetMethod == HttpMethod.PUT || targetMethod == HttpMethod.PATCH);
+        Set<String> protectedSelfValues = destructivePathTarget ? selfIdentityValues(targetPath) : Set.of();
         List<ResolvedValue> candidates = resources.stream()
                 .filter(ResourceInstance::active)
+                .filter(resource -> !destructivePathTarget || !isSelfIdentityGetResource(resource))
                 .filter(resource -> !boundOnly || boundResource != null &&
                         resource.sequence() == boundResource.sequence())
                 .flatMap(resource -> resource.values().values().stream()
+                        .filter(value -> !protectedSelfValues.contains(String.valueOf(value.value())))
                         .filter(value -> value.aliases().stream().anyMatch(targetAliases::contains))
                         .map(value -> new ResolvedValue(resource, value,
                                 pathAffinity(resource.sourcePath(), targetPath) * 1_000 +
@@ -1163,6 +1174,22 @@ public class RuntimeResourcePool {
                 .filter(candidate -> candidateQuality(candidate, targetPath, target, targetAliases, boundResource) == bestQuality)
                 .max(Comparator.comparingInt(ResolvedValue::score)
                         .thenComparingLong(value -> value.resource().sequence()));
+    }
+
+    private boolean isSelfIdentityGetResource(ResourceInstance resource) {
+        return resource.sourceMethod() == HttpMethod.GET &&
+                SELF_IDENTITY_SEGMENTS.contains(resourceName(resource.sourcePath()));
+    }
+
+    private Set<String> selfIdentityValues(String targetPath) {
+        return resources.stream()
+                .filter(this::isSelfIdentityGetResource)
+                .filter(resource -> pathAffinity(resource.sourcePath(), targetPath) >= 2)
+                .flatMap(resource -> resource.values().values().stream())
+                .map(StoredValue::value)
+                .filter(Objects::nonNull)
+                .map(String::valueOf)
+                .collect(Collectors.toSet());
     }
 
     private List<ResolvedValue> childPathFallbackCandidates(String targetPath, ResourceInstance boundParentResource) {
