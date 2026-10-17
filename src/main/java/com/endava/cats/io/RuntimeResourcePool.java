@@ -399,13 +399,7 @@ public class RuntimeResourcePool {
                 collectResponseHeaders(response, values);
             }
             collectKeyedMapIdentifier(data.getRelativePath(), responseObject.value(), values);
-            if (!hasResourceIdentifier(values, data.getRelativePath())) {
-                if (locationIdentifier.isPresent()) {
-                    values.put("id", locationIdentifier.get());
-                } else {
-                    wrapperIdentifier(values).ifPresent(value -> values.put("id", value));
-                }
-            }
+            assignFallbackIdentifier(data.getRelativePath(), locationIdentifier, values);
             addResource(data, values);
         }
         if (!singleResponseObject) {
@@ -414,6 +408,15 @@ public class RuntimeResourcePool {
                 addResource(data, headerValues);
             }
         }
+    }
+
+    private void assignFallbackIdentifier(String relativePath, Optional<StoredValue> locationIdentifier,
+                                          Map<String, StoredValue> values) {
+        if (hasResourceIdentifier(values, relativePath)) {
+            return;
+        }
+        locationIdentifier.or(() -> wrapperIdentifier(values))
+                .ifPresent(value -> values.put("id", value));
     }
 
     private void collectKeyedMapIdentifier(String relativePath, JsonObject root, Map<String, StoredValue> values) {
@@ -918,50 +921,56 @@ public class RuntimeResourcePool {
         }
 
         String result = json;
-        ResourceInstance pathBoundResource = null;
+        ResourceInstance[] pathBoundResource = new ResourceInstance[1];
         for (TargetField target : orderPathTargetsLeafFirst(reusableTargets(json, data, pathParametersPayload), data.getRelativePath())) {
-            if ((target.location() == RequestTarget.Location.PATH && !data.isReplaceUrlParams()) ||
-                    hasExplicitValue(data, target) || shouldSkipOwnPostIdentifier(data, target)) {
-                continue;
-            }
-
-            String bindingKey = bindingKey(data.getRelativePath(), target);
-            ResourceInstance boundResource = requestBindings.getOrDefault(bindingKey,
-                    target.location() == RequestTarget.Location.PATH ? pathBoundResource : null);
-            Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, boundResource, false, data.getHttpMethod());
-            if (resolved.isEmpty()) {
-                continue;
-            }
-
-            String before = result;
-            ResolvedValue value = resolved.get();
-            boolean mergeFuzzing = data.isFuzzedField(target.path(), target.location()) ||
-                    wasModifiedByFuzzer(data, target.path(), pathParametersPayload);
-            try {
-                FuzzingResult fuzzingResult = FuzzingStrategy.replaceField(result, target.path(),
-                        FuzzingStrategy.replace().withData(value.value()), mergeFuzzing);
-                result = fuzzingResult.json();
-            } catch (RuntimeException _) {
-                continue;
-            }
-
-            if (!before.equals(result)) {
-                ResourceCorrelation correlation = ResourceCorrelation.builder()
-                        .sourceMethod(value.resource().sourceMethod().name())
-                        .sourcePath(value.resource().sourcePath())
-                        .sourceLocation(value.storedValue().sourceLocation())
-                        .target(new RequestTarget(target.location(), target.path()))
-                        .value(value.value())
-                        .build();
-                correlations.add(correlation);
-                correlationSources.put(correlation, value.resource().sequence());
-                requestBindings.put(bindingKey, value.resource());
-                if (target.location() == RequestTarget.Location.PATH && pathBoundResource == null) {
-                    pathBoundResource = value.resource();
-                }
-            }
+            result = enrichTargetField(result, target, data, correlations, correlationSources,
+                    requestBindings, pathBoundResource, pathParametersPayload);
         }
         return result;
+    }
+
+    private String enrichTargetField(String currentJson, TargetField target, ServiceData data,
+                                     List<ResourceCorrelation> correlations,
+                                     Map<ResourceCorrelation, Long> correlationSources,
+                                     Map<String, ResourceInstance> requestBindings,
+                                     ResourceInstance[] pathBoundResource, boolean pathParametersPayload) {
+        if ((target.location() == RequestTarget.Location.PATH && !data.isReplaceUrlParams()) ||
+                hasExplicitValue(data, target) || shouldSkipOwnPostIdentifier(data, target)) {
+            return currentJson;
+        }
+        String bindingKey = bindingKey(data.getRelativePath(), target);
+        ResourceInstance boundResource = requestBindings.getOrDefault(bindingKey,
+                target.location() == RequestTarget.Location.PATH ? pathBoundResource[0] : null);
+        Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, boundResource, false, data.getHttpMethod());
+        if (resolved.isEmpty()) {
+            return currentJson;
+        }
+        ResolvedValue value = resolved.get();
+        boolean mergeFuzzing = data.isFuzzedField(target.path(), target.location()) ||
+                wasModifiedByFuzzer(data, target.path(), pathParametersPayload);
+        String updated;
+        try {
+            updated = FuzzingStrategy.replaceField(currentJson, target.path(),
+                    FuzzingStrategy.replace().withData(value.value()), mergeFuzzing).json();
+        } catch (RuntimeException _) {
+            return currentJson;
+        }
+        if (!currentJson.equals(updated)) {
+            ResourceCorrelation correlation = ResourceCorrelation.builder()
+                    .sourceMethod(value.resource().sourceMethod().name())
+                    .sourcePath(value.resource().sourcePath())
+                    .sourceLocation(value.storedValue().sourceLocation())
+                    .target(new RequestTarget(target.location(), target.path()))
+                    .value(value.value())
+                    .build();
+            correlations.add(correlation);
+            correlationSources.put(correlation, value.resource().sequence());
+            requestBindings.put(bindingKey, value.resource());
+            if (target.location() == RequestTarget.Location.PATH && pathBoundResource[0] == null) {
+                pathBoundResource[0] = value.resource();
+            }
+        }
+        return updated;
     }
 
     private Optional<String> enrichRootScalarBody(String json, ServiceData data, List<ResourceCorrelation> correlations,
@@ -1764,19 +1773,25 @@ public class RuntimeResourcePool {
             } else if (entry.getValue().isJsonObject()) {
                 collectPrimitiveValues(entry.getValue().getAsJsonObject(), location + ".", sourcePrefix, values);
             } else if (entry.getValue().isJsonArray()) {
-                for (JsonElement item : entry.getValue().getAsJsonArray()) {
-                    if (item != null && item.isJsonObject()) {
-                        collectPrimitiveValues(item.getAsJsonObject(), location + "[].", sourcePrefix, values);
-                        break;
-                    } else if (item != null && item.isJsonPrimitive()) {
-                        Object value = primitiveValue(item.getAsJsonPrimitive());
-                        Set<String> aliases = new LinkedHashSet<>(semanticAliases(location, entry.getKey()));
-                        aliases.add(singular(normalize(entry.getKey())));
-                        values.putIfAbsent(location + "[]", new StoredValue(value, sourcePrefix + location + "[]",
-                                Set.copyOf(aliases)));
-                        break;
-                    }
+                collectFirstArrayElementValues(entry.getValue().getAsJsonArray(), entry.getKey(), location, sourcePrefix, values);
+            }
+        }
+    }
+
+    private void collectFirstArrayElementValues(JsonArray array, String key, String location, String sourcePrefix,
+                                                Map<String, StoredValue> values) {
+        for (JsonElement item : array) {
+            if (item != null && (item.isJsonObject() || item.isJsonPrimitive())) {
+                if (item.isJsonObject()) {
+                    collectPrimitiveValues(item.getAsJsonObject(), location + "[].", sourcePrefix, values);
+                } else {
+                    Object value = primitiveValue(item.getAsJsonPrimitive());
+                    Set<String> aliases = new LinkedHashSet<>(semanticAliases(location, key));
+                    aliases.add(singular(normalize(key)));
+                    values.putIfAbsent(location + "[]", new StoredValue(value, sourcePrefix + location + "[]",
+                            Set.copyOf(aliases)));
                 }
+                break;
             }
         }
     }

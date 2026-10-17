@@ -16,8 +16,8 @@ import java.util.List;
 public class RandomBoundaryNumbersMutator implements BodyMutator {
     private static final List<Object> BOUNDARY_VALUES = List.of(
             0, -1, 1, -0.0,
-            (long) Integer.MAX_VALUE + 1L,
-            (long) Integer.MIN_VALUE - 1L,
+            Integer.MAX_VALUE + 1L,
+            Integer.MIN_VALUE - 1L,
             -Double.MAX_VALUE,
             -Float.MAX_VALUE,
             65535, 65536, -65536,

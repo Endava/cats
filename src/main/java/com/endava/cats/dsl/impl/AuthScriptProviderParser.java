@@ -20,11 +20,12 @@ public class AuthScriptProviderParser implements Parser {
 
     @Override
     public String parse(String expression, Map<String, String> context) {
-        if (Boolean.parseBoolean(context.getOrDefault(Parser.DRY_RUN, "false"))) {
+        Map<String, String> safeContext = context == null ? Map.of() : context;
+        if (Boolean.parseBoolean(safeContext.getOrDefault(Parser.DRY_RUN, "false"))) {
             return expression;
         }
-        String script = context.get(Parser.AUTH_SCRIPT);
-        int authRefreshInterval = Integer.parseInt(context.getOrDefault(Parser.AUTH_REFRESH, "0"));
+        String script = safeContext.get(Parser.AUTH_SCRIPT);
+        int authRefreshInterval = Integer.parseInt(safeContext.getOrDefault(Parser.AUTH_REFRESH, "0"));
 
         if (authRefreshInterval > 0 && refreshIntervalElapsed(authRefreshInterval)) {
             logger.debug("Refresh interval passed.");

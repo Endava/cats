@@ -114,17 +114,7 @@ public class RandomFuzzer implements Fuzzer {
             Mutator selectedRandomMutator = CatsUtil.selectRandom(mutatorsToRun);
             logger.debug("Selected mutator [{}]", selectedRandomMutator.getClass().getSimpleName());
 
-            String mutatedPayload = selectedRandomMutator.mutate(data.getPayload(), targetField);
-            if (allCatsFields.size() > 1 && com.endava.cats.util.CatsRandom.instance().nextBoolean()) {
-                int extraMutations = 1 + com.endava.cats.util.CatsRandom.instance().nextInt(Math.min(3, allCatsFields.size() - 1));
-                for (int i = 0; i < extraMutations && JsonUtils.isValidJson(mutatedPayload); i++) {
-                    String extraField = CatsUtil.selectRandom(allCatsFields);
-                    if (JsonUtils.isFieldInJson(mutatedPayload, extraField)) {
-                        Mutator extraMutator = CatsUtil.selectRandom(mutatorsToRun);
-                        mutatedPayload = extraMutator.mutate(mutatedPayload, extraField);
-                    }
-                }
-            }
+            String mutatedPayload = applyMutations(data.getPayload(), targetField, selectedRandomMutator, allCatsFields, mutatorsToRun);
             Collection<CatsHeader> mutatedHeaders = selectedRandomMutator.mutate(data.getHeaders());
 
             simpleExecutor.execute(
@@ -142,9 +132,30 @@ public class RandomFuzzer implements Fuzzer {
 
             testCaseListener.updateUnknownProgress(data);
             iterationsForOperation++;
-            shouldStop = stopArguments.shouldStop(executionStatisticsListener.getErrors(), testCaseListener.getCurrentTestCaseNumber(), startTime)
-                    || (capPerOperation && iterationsForOperation >= 25);
+            shouldStop = shouldStopExecution(startTime, capPerOperation, iterationsForOperation);
         }
+    }
+
+    private String applyMutations(String basePayload, String targetField, Mutator primaryMutator,
+                                  Set<String> allCatsFields, List<Mutator> mutatorsToRun) {
+        String mutatedPayload = primaryMutator.mutate(basePayload, targetField);
+        if (allCatsFields.size() <= 1 || !com.endava.cats.util.CatsRandom.instance().nextBoolean()) {
+            return mutatedPayload;
+        }
+        int extraMutations = 1 + com.endava.cats.util.CatsRandom.instance().nextInt(Math.min(3, allCatsFields.size() - 1));
+        for (int i = 0; i < extraMutations && JsonUtils.isValidJson(mutatedPayload); i++) {
+            String extraField = CatsUtil.selectRandom(allCatsFields);
+            if (JsonUtils.isFieldInJson(mutatedPayload, extraField)) {
+                Mutator extraMutator = CatsUtil.selectRandom(mutatorsToRun);
+                mutatedPayload = extraMutator.mutate(mutatedPayload, extraField);
+            }
+        }
+        return mutatedPayload;
+    }
+
+    private boolean shouldStopExecution(long startTime, boolean capPerOperation, int iterationsForOperation) {
+        return stopArguments.shouldStop(executionStatisticsListener.getErrors(), testCaseListener.getCurrentTestCaseNumber(), startTime)
+                || (capPerOperation && iterationsForOperation >= 25);
     }
 
     private List<RequestTarget> getMutationTargets(FuzzingData data, String targetField, String mutatedPayload,

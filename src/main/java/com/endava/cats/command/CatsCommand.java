@@ -24,6 +24,7 @@ import com.endava.cats.exception.CatsExecutionLimitReachedException;
 import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -752,7 +753,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             return;
         }
         Fuzzer onlyRequiredFieldsFuzzer = configuredFuzzers.stream()
-                .filter(fuzzer -> "OnlyRequiredFieldsFuzzer".equals(fuzzer.getClass().getSimpleName()))
+                .filter(OnlyRequiredFieldsFuzzer.class::isInstance)
                 .findFirst()
                 .orElse(null);
         List<Fuzzer> seedFuzzers = onlyRequiredFieldsFuzzer != null

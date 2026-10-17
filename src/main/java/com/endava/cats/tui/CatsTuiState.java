@@ -396,9 +396,9 @@ final class CatsTuiState {
             }
             return EventResult.HANDLED;
         }
-        ResultFilter filter = filterFor(event);
-        if (filter != null) {
-            setFilter(filter);
+        ResultFilter selectedFilter = filterFor(event);
+        if (selectedFilter != null) {
+            setFilter(selectedFilter);
             return EventResult.HANDLED;
         }
         if (event.isCancel() || event.isLeft()) {

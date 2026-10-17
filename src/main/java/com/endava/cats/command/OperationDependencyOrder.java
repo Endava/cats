@@ -51,6 +51,18 @@ final class OperationDependencyOrder {
             entries.put(defaultOrder.get(i).getKey(), defaultOrder.get(i));
             rank.put(defaultOrder.get(i).getKey(), i);
         }
+        Map<String, Set<String>> producersByIdentifier = buildProducersByIdentifier(api, defaultOrder);
+        Map<String, Set<String>> dependencies = buildDependencies(api, defaultOrder, producersByIdentifier);
+        Set<String> visited = new HashSet<>();
+        Set<String> visiting = new HashSet<>();
+        List<Map.Entry<String, PathItem>> ordered = new ArrayList<>();
+        for (Map.Entry<String, PathItem> entry : defaultOrder) {
+            appendProducerFirst(entry.getKey(), entries, dependencies, rank, visited, visiting, ordered);
+        }
+        return ordered;
+    }
+
+    private static Map<String, Set<String>> buildProducersByIdentifier(OpenAPI api, List<Map.Entry<String, PathItem>> defaultOrder) {
         Map<String, Set<String>> producersByIdentifier = new HashMap<>();
         defaultOrder.stream().filter(OperationDependencyOrder::isRootCollectionProducer)
                 .forEach(entry -> {
@@ -61,38 +73,40 @@ final class OperationDependencyOrder {
                                 producersByIdentifier.computeIfAbsent(id, _ -> new LinkedHashSet<>()).add(entry.getKey()));
                     }
                 });
+        return producersByIdentifier;
+    }
+
+    private static Map<String, Set<String>> buildDependencies(OpenAPI api, List<Map.Entry<String, PathItem>> defaultOrder,
+                                                              Map<String, Set<String>> producersByIdentifier) {
         Map<String, Set<String>> postPropsByPath = new HashMap<>();
         defaultOrder.stream()
                 .filter(entry -> entry.getValue().getPost() != null && !stripTrailingSlash(entry.getKey()).contains("{"))
                 .forEach(entry -> postPropsByPath.put(entry.getKey(), postRequestPropertyNames(api, entry.getValue().getPost())));
         Map<String, Set<String>> dependencies = new HashMap<>();
-        defaultOrder.forEach(entry -> {
+        for (Map.Entry<String, PathItem> entry : defaultOrder) {
             Set<String> required = new LinkedHashSet<>();
             operationIdentifiers(api, entry.getKey(), entry.getValue()).stream()
                     .map(producersByIdentifier::get).filter(Objects::nonNull)
                     .forEach(required::addAll);
-            Set<String> myProps = postPropsByPath.getOrDefault(entry.getKey(), Set.of());
-            if (!myProps.isEmpty()) {
-                String parentDir = parentDirectory(entry.getKey());
-                if (!parentDir.isEmpty()) {
-                    postPropsByPath.forEach((otherPath, otherProps) -> {
-                        if (!otherPath.equals(entry.getKey()) && parentDir.equals(parentDirectory(otherPath)) &&
-                                otherProps.size() > myProps.size() && otherProps.containsAll(myProps)) {
-                            required.add(otherPath);
-                        }
-                    });
-                }
-            }
+            addSiblingSupersetProducers(entry.getKey(), postPropsByPath, required);
             required.remove(entry.getKey());
             dependencies.put(entry.getKey(), required);
-        });
-        Set<String> visited = new HashSet<>();
-        Set<String> visiting = new HashSet<>();
-        List<Map.Entry<String, PathItem>> ordered = new ArrayList<>();
-        for (Map.Entry<String, PathItem> entry : defaultOrder) {
-            appendProducerFirst(entry.getKey(), entries, dependencies, rank, visited, visiting, ordered);
         }
-        return ordered;
+        return dependencies;
+    }
+
+    private static void addSiblingSupersetProducers(String path, Map<String, Set<String>> postPropsByPath, Set<String> required) {
+        Set<String> myProps = postPropsByPath.getOrDefault(path, Set.of());
+        String parentDir = parentDirectory(path);
+        if (myProps.isEmpty() || parentDir.isEmpty()) {
+            return;
+        }
+        postPropsByPath.forEach((otherPath, otherProps) -> {
+            if (!otherPath.equals(path) && parentDir.equals(parentDirectory(otherPath)) &&
+                    otherProps.size() > myProps.size() && otherProps.containsAll(myProps)) {
+                required.add(otherPath);
+            }
+        });
     }
 
     private static boolean isRootCollectionProducer(Map.Entry<String, PathItem> entry) {

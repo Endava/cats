@@ -527,22 +527,22 @@ public class OpenAPIModelGeneratorV2 {
                 .filter(entry -> entry.getKey() != null && entry.getValue() instanceof Number)
                 .map(Map.Entry::getKey)
                 .toList();
-        for (int i = 0; i < numericKeys.size(); i++) {
-            for (int j = 0; j < numericKeys.size(); j++) {
-                if (i == j) {
-                    continue;
-                }
-                String lowerKey = numericKeys.get(i);
-                String upperKey = numericKeys.get(j);
-                if (isLowerBoundOf(lowerKey, upperKey)) {
-                    Number lowerVal = (Number) map.get(lowerKey);
-                    Number upperVal = (Number) map.get(upperKey);
-                    if (lowerVal != null && upperVal != null && lowerVal.doubleValue() > upperVal.doubleValue()) {
-                        map.put(lowerKey, upperVal);
-                        map.put(upperKey, lowerVal);
-                    }
-                }
+        for (String lowerKey : numericKeys) {
+            for (String upperKey : numericKeys) {
+                swapIfOutOfOrder(map, lowerKey, upperKey);
             }
+        }
+    }
+
+    private static void swapIfOutOfOrder(Map<String, Object> map, String lowerKey, String upperKey) {
+        if (lowerKey.equals(upperKey) || !isLowerBoundOf(lowerKey, upperKey)) {
+            return;
+        }
+        Number lowerVal = (Number) map.get(lowerKey);
+        Number upperVal = (Number) map.get(upperKey);
+        if (lowerVal != null && upperVal != null && lowerVal.doubleValue() > upperVal.doubleValue()) {
+            map.put(lowerKey, upperVal);
+            map.put(upperKey, lowerVal);
         }
     }
 
@@ -609,8 +609,7 @@ public class OpenAPIModelGeneratorV2 {
         if (discriminator == null || schema.getAllOf() == null) {
             return previousDiscriminators;
         }
-        for (Object allOfSchemaObj : schema.getAllOf()) {
-            Schema<?> allOfSchema = (Schema<?>) allOfSchemaObj;
+        for (Schema<?> allOfSchema : schema.getAllOf()) {
             Schema<?> resolvedSchema = allOfSchema.get$ref() != null
                     ? globalContext.getSchemaFromReference(allOfSchema.get$ref())
                     : allOfSchema;
@@ -1003,6 +1002,7 @@ public class OpenAPIModelGeneratorV2 {
 
     private IdentityHashMap<Schema<?>, Discriminator> mapDiscriminator(Schema<?> composedSchema, List<Schema> anyOf) {
         IdentityHashMap<Schema<?>, Discriminator> previousDiscriminators = new IdentityHashMap<>();
+        Set<Schema<?>> seenTargets = Collections.newSetFromMap(new IdentityHashMap<>());
         if (composedSchema.getDiscriminator() != null) {
             logger.trace("Mapping discriminator for schema {}", composedSchema.getName());
             globalContext.recordDiscriminator(currentProperty, composedSchema.getDiscriminator(), List.of());
@@ -1013,7 +1013,7 @@ public class OpenAPIModelGeneratorV2 {
                         ? globalContext.getSchemaFromReference(anyOfSchema.get$ref())
                         : anyOfSchema;
                 if (targetSchema != null) {
-                    if (!previousDiscriminators.containsKey(targetSchema)) {
+                    if (seenTargets.add(targetSchema)) {
                         previousDiscriminators.put(targetSchema, targetSchema.getDiscriminator());
                     }
                     targetSchema.setDiscriminator(discriminator);
