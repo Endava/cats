@@ -552,7 +552,21 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     /** Limits discovery to selected GETs that can run without an ID or a required query parameter. */
     private boolean isEligibleForPreseed(String path, PathItem item, List<String> suppliedPaths) {
         return suppliedPaths.contains(path) && !path.contains("{") && item.getGet() != null &&
-                !hasRequiredQueryParameters(item);
+                !hasRequiredQueryParameters(item) && !isBinaryStreamOnlyResponse(item.getGet());
+    }
+
+    private boolean isBinaryStreamOnlyResponse(io.swagger.v3.oas.models.Operation operation) {
+        if (operation.getResponses() == null) {
+            return false;
+        }
+        List<String> twoXxMediaTypes = operation.getResponses().entrySet().stream()
+                .filter(entry -> entry.getKey() != null && entry.getKey().startsWith("2") &&
+                        entry.getValue() != null && entry.getValue().getContent() != null)
+                .flatMap(entry -> entry.getValue().getContent().keySet().stream())
+                .toList();
+        return !twoXxMediaTypes.isEmpty() && twoXxMediaTypes.stream()
+                .allMatch(mt -> mt.contains("octet-stream") || mt.startsWith("image/") ||
+                        mt.startsWith("video/") || mt.startsWith("audio/"));
     }
 
     private boolean hasRequiredQueryParameters(PathItem item) {
