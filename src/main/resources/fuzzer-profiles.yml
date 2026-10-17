@@ -321,6 +321,7 @@ profiles:
     fuzzers:
       - HappyPath
       - OnlyRequiredFields
+      - RemoveFields
       - ExtremeNegativeNumbersInIntegerFields
       - ExtremePositiveNumbersInIntegerFields
       - ExtremeNegativeNumbersInDecimalFields
