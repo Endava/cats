@@ -18,8 +18,9 @@ public class DescriptionGenerator implements ValidDataFormatGenerator, OpenAPIFo
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
+        String sanitized = PropertySanitizer.sanitize(propertyName);
         return "description".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).endsWith("description");
+                sanitized.endsWith("description") || sanitized.endsWith("body");
     }
 
     @Override
@@ -30,6 +31,9 @@ public class DescriptionGenerator implements ValidDataFormatGenerator, OpenAPIFo
     @Override
     public Object generate(Schema<?> schema) {
         String generated = CatsUtil.catsFaker().chuckNorris().fact();
+        if (generated.length() < 55 && (schema.getMaxLength() == null || schema.getMaxLength() >= 120)) {
+            generated = generated + " " + CatsUtil.catsFaker().chuckNorris().fact();
+        }
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

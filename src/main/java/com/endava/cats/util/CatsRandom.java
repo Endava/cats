@@ -31,6 +31,9 @@ public abstract class CatsRandom {
      * @return the current random generator
      */
     public static Random instance() {
+        if (random == null) {
+            initRandom(0);
+        }
         return random;
     }
 
@@ -40,6 +43,9 @@ public abstract class CatsRandom {
      * @return the current regexp random generator.
      */
     public static RandomGen regexpRandomGen() {
+        if (regexpRandomGen == null) {
+            initRandom(0);
+        }
         return regexpRandomGen;
     }
 
