@@ -23,8 +23,8 @@ public class RandomTypeConfusionMutator implements BodyMutator {
             Map.of(),
             Map.of("$ne", "", "$gt", -1),
             Collections.singletonMap("id", null),
-            Boolean.TRUE,
-            Boolean.FALSE);
+            true,
+            false);
 
     @Override
     public String mutate(String inputJson, String selectedField) {

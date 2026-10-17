@@ -437,6 +437,7 @@ public class RuntimeResourcePool {
     private Optional<StoredValue> wrapperIdentifier(Map<String, StoredValue> values) {
         List<Map.Entry<String, StoredValue>> topLevelEntries = values.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith("$.") && isTopLevelResponseKey(entry.getKey()))
+                .filter(entry -> entry.getValue() != null && entry.getValue().sourceLocation().startsWith("response.body."))
                 .toList();
         List<Map.Entry<String, StoredValue>> candidates = topLevelEntries.stream()
                 .filter(entry -> !isMetadataKey(normalize(entry.getKey())))
