@@ -9,17 +9,19 @@ profiles:
   type-coercion:
     description: "Type coercion-focused fuzzers targeting issues where types are coerced automatically by frameworks/libraries"
     fuzzers:
-      - CoercionBooleanStringInBooleanFields
-      - CoercionBooleanValuesInStringFields
-      - CoercionEnumNumericOrdinalFields
-      - CoercionEpochNumberInDateTimeFields
-      - CoercionLeadingZerosInNumericFields
-      - CoercionNumericBooleansInBooleanFields
-      - CoercionNumericStringsInNumericFields
-      - CoercionNumericValuesInStringFields
-      - CoercionScientificNotationStringsInDecimalFields
-      - CoercionSingleElementArrayToScalarFields
-      - CoercionWhitespacePaddedNumericFields
+      - HappyPath
+      - OnlyRequiredFields
+      - BooleanStringInBooleanFields
+      - BooleanValuesInStringFields
+      - EnumNumericOrdinalFields
+      - EpochNumberInDateTimeFields
+      - LeadingZerosInNumericFields
+      - NumericBooleansInBooleanFields
+      - NumericStringsInNumericFields
+      - NumericValuesInStringFields
+      - ScientificNotationStringsInDecimalFields
+      - SingleElementArrayToScalarFields
+      - WhitespacePaddedNumericFields
 
   # ============================================
   # SECURITY PROFILE
@@ -117,10 +119,12 @@ profiles:
       - StringsInNumericFields
       - RandomStringsInBooleanFields
       - DecimalNumbersInIntegerFields
+      - NumericValuesInStringFields
 
       # Boundary Testing (Key ones only)
       - IntegerFieldsLeftBoundary
       - IntegerFieldsRightBoundary
+      - ZeroValuesInIntegerFields
       - StringFieldsLeftBoundary
       - StringFieldsRightBoundary
 
@@ -149,6 +153,10 @@ profiles:
   compliance:
     description: "OWASP API Security Top 10 compliance testing"
     fuzzers:
+      # Resource Seeding
+      - HappyPath
+      - OnlyRequiredFields
+
       # API1:2023 - Broken Object Level Authorization
       - InsecureDirectObjectReferences
       - RandomResources
@@ -241,6 +249,9 @@ profiles:
       # Boundary Testing
       - IntegerFieldsLeftBoundary
       - IntegerFieldsRightBoundary
+      - ExtremeNegativeNumbersInIntegerFields
+      - ExtremePositiveNumbersInIntegerFields
+      - ZeroValuesInIntegerFields
       - DecimalFieldsLeftBoundary
       - DecimalFieldsRightBoundary
       - StringFieldsLeftBoundary
@@ -249,6 +260,7 @@ profiles:
       - MaximumExactNumbersInNumericFields
       - MinLengthExactValuesInStringFields
       - MaxLengthExactValuesInStringFields
+      - NumericValuesInStringFields
 
       # Format & Enum Validation
       - StringFormatTotallyWrongValues
@@ -283,6 +295,65 @@ profiles:
       # Array/Object Validation
       - OverflowArraySizeFields
       - DuplicateKeysFields
+
+  # ============================================
+  # COVERAGE PROFILE
+  # Focus: Fast operation and branch coverage seeding
+  # ============================================
+  coverage:
+    description: "Fast positive and combinatorial field-removal blitz to maximize operation and code coverage"
+    fuzzers:
+      - HappyPath
+      - OnlyRequiredFields
+      - DefaultValuesInFields
+      - ExamplesFields
+      - EmptyJsonBody
+      - RemoveFields
+      - NumericValuesInStringFields
+      - ZeroValuesInDecimalFields
+
+  # ============================================
+  # CRASH PROFILE
+  # Focus: High-yield server fault (5XX) detection
+  # ============================================
+  crash:
+    description: "High-impact boundary, type-coercion, injection, and multi-mutator fuzzers targeting 5XX server crashes"
+    fuzzers:
+      - HappyPath
+      - OnlyRequiredFields
+      - ExtremeNegativeNumbersInIntegerFields
+      - ExtremePositiveNumbersInIntegerFields
+      - ExtremeNegativeNumbersInDecimalFields
+      - ExtremePositiveNumbersInDecimalFields
+      - ZeroValuesInIntegerFields
+      - ZeroValuesInDecimalFields
+      - MinLengthExactValuesInStringFields
+      - MaxLengthExactValuesInStringFields
+      - InvalidValuesInEnumsFields
+      - EpochNumberInDateTimeFields
+      - NumericValuesInStringFields
+      - StringFormatAlmostValidValues
+      - StringFormatTotallyWrongValues
+      - SqlInjectionInStringFields
+      - NoSqlInjectionInStringFields
+      - CommandInjectionInStringFields
+      - SstiInjectionInStringFields
+      - XssInjectionInStringFields
+      - BypassAuthentication
+      - InsecureDirectObjectReferences
+      - MassAssignment
+      - HttpMethods
+      - DummyRequest
+      - MalformedJson
+      - RandomResources
+      - CheckDeletedResourcesNotAvailable
+      - LeadingControlCharsInFields
+      - TrailingControlCharsInFields
+      - OnlyControlCharsInFields
+      - ZalgoTextInFields
+      - AbugidasInStringFields
+      - LowercaseExpandingBytesInStringFields
+      - UppercaseExpandingBytesInStringFields
 
   # ============================================
   # FULL PROFILE (Default)

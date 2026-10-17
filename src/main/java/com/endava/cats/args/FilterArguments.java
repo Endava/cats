@@ -182,7 +182,7 @@ public class FilterArguments {
 
     @CommandLine.Option(
             names = {"--profile"},
-            description = "Use a predefined fuzzer profile: security, quick, compliance, ci, full (default: full)")
+            description = "Use a predefined fuzzer profile: security, quick, compliance, ci, coverage, crash, type-coercion, health-check, full (default: full)")
     private String profile = "full";
 
     @CommandLine.Option(

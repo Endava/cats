@@ -65,7 +65,26 @@ class ProfileLoaderTest {
             Set<String> availableProfiles = profileLoader.getAvailableProfiles();
 
             Assertions.assertThat(availableProfiles)
-                    .containsExactlyInAnyOrder("type-coercion", "security", "quick", "compliance", "ci", "full", "health-check");
+                    .containsExactlyInAnyOrder("type-coercion", "security", "quick", "compliance", "ci", "coverage", "crash", "full", "health-check");
+        }
+
+        @Test
+        @DisplayName("Should load type-coercion, coverage, and crash profiles with valid fuzzer names")
+        void shouldLoadTypeCoercionCoverageAndCrashProfiles() {
+            Optional<ProfileLoader.Profile> typeCoercion = profileLoader.getProfile("type-coercion");
+            Optional<ProfileLoader.Profile> coverage = profileLoader.getProfile("coverage");
+            Optional<ProfileLoader.Profile> crash = profileLoader.getProfile("crash");
+
+            Assertions.assertThat(typeCoercion).isPresent();
+            Assertions.assertThat(typeCoercion.get().fuzzers())
+                    .contains("HappyPath", "NumericValuesInStringFields", "EpochNumberInDateTimeFields")
+                    .allMatch(name -> !name.startsWith("Coercion"));
+            Assertions.assertThat(coverage).isPresent();
+            Assertions.assertThat(coverage.get().fuzzers())
+                    .contains("HappyPath", "OnlyRequiredFields", "RemoveFields", "NumericValuesInStringFields");
+            Assertions.assertThat(crash).isPresent();
+            Assertions.assertThat(crash.get().fuzzers())
+                    .contains("HappyPath", "ExtremeNegativeNumbersInIntegerFields", "SqlInjectionInStringFields");
         }
 
         @Test
