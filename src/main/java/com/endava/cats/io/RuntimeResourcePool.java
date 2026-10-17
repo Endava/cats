@@ -431,16 +431,17 @@ public class RuntimeResourcePool {
     }
 
     private Optional<StoredValue> wrapperIdentifier(Map<String, StoredValue> values) {
-        List<StoredValue> candidates = values.entrySet().stream()
+        List<Map.Entry<String, StoredValue>> topLevelEntries = values.entrySet().stream()
                 .filter(entry -> entry.getKey().startsWith("$.") && isTopLevelResponseKey(entry.getKey()))
-                .filter(entry -> !isMetadataKey(normalize(entry.getKey())))
-                .map(Map.Entry::getValue)
-                .filter(stored -> stored != null && stored.value() != null
-                        && !(stored.value() instanceof Boolean)
-                        && StringUtils.isNotBlank(String.valueOf(stored.value())))
                 .toList();
-        if (candidates.size() == 1) {
-            StoredValue candidate = candidates.getFirst();
+        List<Map.Entry<String, StoredValue>> candidates = topLevelEntries.stream()
+                .filter(entry -> !isMetadataKey(normalize(entry.getKey())))
+                .filter(entry -> entry.getValue() != null && entry.getValue().value() != null
+                        && !(entry.getValue().value() instanceof Boolean)
+                        && StringUtils.isNotBlank(String.valueOf(entry.getValue().value())))
+                .toList();
+        if (candidates.size() == 1 && (topLevelEntries.size() >= 2 || candidates.getFirst().getKey().endsWith("[]"))) {
+            StoredValue candidate = candidates.getFirst().getValue();
             return Optional.of(new StoredValue(candidate.value(), candidate.sourceLocation(), Set.of("id")));
         }
         return Optional.empty();
