@@ -313,6 +313,7 @@ profiles:
       - NumericValuesInStringFields
       - ZeroValuesInDecimalFields
       - AlternativeDateTimeFormatsFields
+      - QueryObjectAsRequestBody
 
   # ============================================
   # CRASH PROFILE
@@ -326,6 +327,8 @@ profiles:
       - RemoveFields
       - NullElementsInArrayFields
       - AlternativeDateTimeFormatsFields
+      - QueryObjectAsRequestBody
+      - SmallNegativeAndInt32BoundaryFields
       - ExtremeNegativeNumbersInIntegerFields
       - ExtremePositiveNumbersInIntegerFields
       - ExtremeNegativeNumbersInDecimalFields

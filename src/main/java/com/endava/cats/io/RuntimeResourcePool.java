@@ -275,8 +275,7 @@ public class RuntimeResourcePool {
     synchronized String applySuccessfulRequestBaseline(ServiceData data) {
         String currentPayload = data.getPayload();
         if (!processingArguments.isReuseSuccessfulResources() || !data.isReplaceRefData() || !data.isValidJson() ||
-                !data.getPayloadFormat().supportsNamedFields() || !HttpMethod.requiresBody(data.getHttpMethod()) ||
-                !JsonUtils.isValidJson(currentPayload)) {
+                !data.getPayloadFormat().supportsNamedFields() || !JsonUtils.isValidJson(currentPayload)) {
             return currentPayload;
         }
         Optional<SuccessfulBaselineKey> key = successfulBaselineKey(data);
@@ -769,14 +768,18 @@ public class RuntimeResourcePool {
 
     private void storeSuccessfulRequestBaseline(ServiceData data, CatsRequest request, ResolvedRequest resolvedRequest) {
         String effectivePayload = effectiveJsonPayload(request, resolvedRequest);
-        boolean requiredOnlyFallback = data.getAllMutationTargets().equals(List.of(RequestTarget.requestBody()));
-        if ((isRequestBodyFuzzed(data) && !requiredOnlyFallback) || !data.isReplaceRefData() || !data.isValidJson() ||
-                !data.getPayloadFormat().supportsNamedFields() || !HttpMethod.requiresBody(data.getHttpMethod()) ||
+        boolean requiredOnlyFallback = data.getAllMutationTargets().equals(List.of(RequestTarget.requestBody())) ||
+                data.getAllMutationTargets().equals(List.of(RequestTarget.query("Optional parameters")));
+        boolean fieldRemovalFallback = HttpMethod.requiresBody(data.getHttpMethod()) && isSubsetOfOriginalPayload(data, effectivePayload);
+        boolean fallbackBaseline = requiredOnlyFallback || fieldRemovalFallback;
+        if ((isRequestBodyFuzzed(data) && !fallbackBaseline) || !data.isReplaceRefData() || !data.isValidJson() ||
+                !data.getPayloadFormat().supportsNamedFields() ||
+                (!HttpMethod.requiresBody(data.getHttpMethod()) && !requiredOnlyFallback) ||
                 !JsonUtils.isValidJson(effectivePayload)) {
             return;
         }
         successfulBaselineKey(data).ifPresent(key -> {
-            if (requiredOnlyFallback && successfulRequestBaselines.containsKey(key)) {
+            if (fallbackBaseline && successfulRequestBaselines.containsKey(key)) {
                 return;
             }
             successfulRequestBaselines.put(key, JsonUtils.parseAsJsonElement(effectivePayload).toString());
@@ -784,6 +787,21 @@ public class RuntimeResourcePool {
                 successfulRequestBaselines.remove(successfulRequestBaselines.keySet().iterator().next());
             }
         });
+    }
+
+    private boolean isSubsetOfOriginalPayload(ServiceData data, String effectivePayload) {
+        String originalPayload = originalPayload(data);
+        if (!JsonUtils.isValidJson(originalPayload) || !JsonUtils.isValidJson(effectivePayload)) {
+            return false;
+        }
+        JsonElement origEl = JsonUtils.parseAsJsonElement(originalPayload);
+        JsonElement effEl = JsonUtils.parseAsJsonElement(effectivePayload);
+        if (origEl == null || effEl == null || !origEl.isJsonObject() || !effEl.isJsonObject()) {
+            return false;
+        }
+        JsonObject origObj = origEl.getAsJsonObject();
+        JsonObject effObj = effEl.getAsJsonObject();
+        return effObj.size() < origObj.size() && origObj.keySet().containsAll(effObj.keySet());
     }
 
     private Optional<SuccessfulBaselineKey> successfulBaselineKey(ServiceData data) {

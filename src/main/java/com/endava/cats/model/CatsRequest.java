@@ -22,6 +22,7 @@ public class CatsRequest {
     String payload;
     String httpMethod;
     String url;
+    boolean sendBody;
 
     @Builder.Default
     String timestamp = DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneId.of("UTC")));

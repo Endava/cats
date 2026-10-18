@@ -259,6 +259,7 @@ public class ServiceCaller {
         CatsRequest catsRequest = CatsRequest.builder()
                 .headers(headers).payload(processedPayload)
                 .httpMethod(data.getHttpMethod().name())
+                .sendBody(data.getAllMutationTargets().contains(com.endava.cats.model.RequestTarget.requestBody()))
                 .build();
 
         long startTime = System.currentTimeMillis();
@@ -379,7 +380,9 @@ public class ServiceCaller {
 
         if (!HttpMethod.requiresBody(data.getHttpMethod())) {
             url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, processedPayload, apiArguments.getServer() + data.getRelativePath());
-            url = this.addUriParams(processedPayload, data, url);
+            if (!data.getAllMutationTargets().contains(com.endava.cats.model.RequestTarget.requestBody())) {
+                url = this.addUriParams(processedPayload, data, url);
+            }
         }
         url = this.addPathParamsIfNotReplaced(url, pathParamsPayload);
         if (HttpMethod.requiresBody(data.getHttpMethod())) {
@@ -604,7 +607,7 @@ public class ServiceCaller {
         Headers.Builder headers = new Headers.Builder();
         catsRequest.getHeaders().forEach(header -> headers.addUnsafeNonAscii(header.getKey(), String.valueOf(header.getValue())));
 
-        if (HttpMethod.requiresBody(catsRequest.getHttpMethod())) {
+        if (HttpMethod.requiresBody(catsRequest.getHttpMethod()) || catsRequest.isSendBody()) {
             String contentType = headers.get(HttpHeaders.CONTENT_TYPE);
             requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8),
                     contentType == null ? null : MediaType.parse(contentType));

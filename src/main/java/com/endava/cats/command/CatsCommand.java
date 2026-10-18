@@ -246,7 +246,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     private final List<DeferredHappyPathDelete> deferredHappyPathDeletes = new ArrayList<>();
 
     private record DeferredHappyPathDelete(List<FuzzingData> pathData, List<FuzzingData> deleteData,
-                                           Fuzzer happyPathFuzzer) {
+                                           List<Fuzzer> deleteFuzzers) {
     }
 
     /**
@@ -588,7 +588,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         deferredHappyPathDeletes.clear();
         for (DeferredHappyPathDelete delete : deferred.reversed()) {
             CatsExecutionCancelledException.check();
-            runFuzzers(delete.deleteData(), List.of(delete.happyPathFuzzer()));
+            runFuzzers(delete.deleteData(), delete.deleteFuzzers());
             runSecondPhaseFuzzers(delete.pathData(), SecondPhaseFuzzer.Trigger.PATH_RESOURCES_DELETED);
         }
     }
@@ -773,7 +773,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         runFuzzers(fuzzingData, otherFuzzers);
         runFuzzers(deferredHappyPathData, List.of(happyPathFuzzer));
         if (!deleteData.isEmpty()) {
-            deferredHappyPathDeletes.add(new DeferredHappyPathDelete(fuzzingData, deleteData, happyPathFuzzer));
+            deferredHappyPathDeletes.add(new DeferredHappyPathDelete(fuzzingData, deleteData, seedFuzzers));
         }
     }
 
