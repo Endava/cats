@@ -124,6 +124,9 @@ public class ApiArguments {
             if (!this.server.startsWith("http")) {
                 this.server = serverFromInput + this.server;
             }
+            if (!CatsUtil.isValidURL(this.server) && CatsUtil.isValidURL(serverFromInput)) {
+                this.server = serverFromInput;
+            }
         }
 
         this.validateURL(spec);

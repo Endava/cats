@@ -236,8 +236,7 @@ public class OpenAPIModelGeneratorV2 {
             // having additionalProperties i.e. MapSchema
             if (map.size() == 1) {
                 generatedExample = map.get(modelName);
-            } else {
-                Map additionalProperties = (Map) map.get(modelName);
+            } else if (map.get(modelName) instanceof Map additionalProperties) {
                 map.remove(modelName);
                 map.putAll(additionalProperties);
             }

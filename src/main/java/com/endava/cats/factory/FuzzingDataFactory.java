@@ -214,7 +214,8 @@ public class FuzzingDataFactory {
      */
     @SuppressWarnings("unchecked")
     private static Schema<?> copySchema(Schema<?> originalSchema) {
-        Schema<?> schemaCopy = Json.mapper().convertValue(originalSchema, Schema.class);
+        Schema<?> schemaCopy = Optional.ofNullable(Json.mapper().convertValue(originalSchema, Schema.class))
+                .orElseGet(Schema::new);
         Set<String> originalTypes = originalSchema.getTypes();
         if (originalTypes != null && !originalTypes.isEmpty()) {
             schemaCopy.setTypes(new HashSet<>(originalTypes));
