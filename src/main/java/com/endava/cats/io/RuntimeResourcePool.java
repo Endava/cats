@@ -1394,7 +1394,12 @@ public class RuntimeResourcePool {
 
     private int storedValuePriority(StoredValue value) {
         if (value.sourceLocation().startsWith("request.path.")) {
-            return 2;
+            return 3;
+        }
+        if (value.sourceLocation().startsWith("response.body.")) {
+            String jsonPath = value.sourceLocation().substring("response.body.".length());
+            String afterArrayRoot = jsonPath.replaceFirst("^\\$(?:\\.[^.\\[]+)?\\[\\]\\.", "\\$.");
+            return isTopLevelResponseKey(afterArrayRoot) ? 2 : 1;
         }
         return value.sourceLocation().startsWith("response.") ? 1 : 0;
     }
