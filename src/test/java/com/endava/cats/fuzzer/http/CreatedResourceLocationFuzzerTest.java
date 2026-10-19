@@ -89,6 +89,69 @@ class CreatedResourceLocationFuzzerTest {
         }
         Assertions.assertThat(ObservedHttpTarget.matchesTemplate("/users/{id}", "/users/2")).isTrue();
         Assertions.assertThat(ObservedHttpTarget.matchesTemplate("/users/{id}", "/users/2/nested")).isFalse();
+        Assertions.assertThat(ObservedHttpTarget.matchesTemplate("/users/{id}", "/users/")).isFalse();
+    }
+
+    @Test
+    void coversCreatedResourceLocationAndObservedHttpTargetEdgeCases() {
+        Assertions.assertThat(fuzzer.description()).isNotBlank();
+        Assertions.assertThat(fuzzer).hasToString("CreatedResourceLocationFuzzer");
+        Assertions.assertThat(fuzzer.skipForHttpMethods())
+                .containsExactly(HttpMethod.GET, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
+
+        fuzzer.fuzz(FuzzingData.builder().method(HttpMethod.GET).path("/users").build());
+        fuzzer.fuzz(FuzzingData.builder().method(HttpMethod.POST).path("/users").openApi(null).build());
+
+        FilterArguments noGetFilters = Mockito.mock(FilterArguments.class);
+        Mockito.when(noGetFilters.isHttpMethodSupplied(HttpMethod.GET)).thenReturn(false);
+        ApiArguments args = new ApiArguments();
+        args.setServer("http://api.example.com/v1/");
+        new CreatedResourceLocationFuzzer(executor, pool, args, noGetFilters, listener).fuzz(data);
+        Mockito.verifyNoInteractions(executor);
+
+        Mockito.when(pool.successfulExchanges("/users", HttpMethod.POST)).thenReturn(List.of(
+                exchange("https://api.example.com/v1/users", "/v1/users/1")));
+        fuzzer.fuzz(data);
+        ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(executor).execute(captor.capture());
+
+        captor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(410).build(), data);
+        captor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(200).build(), data);
+        captor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(500).build(), data);
+        Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.eq(data), Mockito.anyString(), Mockito.<Object[]>any());
+        Mockito.verify(listener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.eq(false));
+
+        ApiArguments blankArgs = new ApiArguments();
+        Assertions.assertThat(ObservedHttpTarget.relativePath(blankArgs, "http://api.example.com/v1/users/1")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.relativePath(args, "")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.relativePath(args, "http://[::1")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.relativePath(args, "ftp://api.example.com/v1/users/1")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.relativePath(args, "http://user@api.example.com/v1/users/1")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.relativePath(args, "http://api.example.com/v1/users/1#frag")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.relativePath(args, "http://api.example.com/v1/users%5c1")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.relativePath(args, "http://api.example.com/v1/users%2e1")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.relativePath(args, "http://api.example.com:80/v1/users/1")).contains("/users/1");
+        Assertions.assertThat(ObservedHttpTarget.relativeRequestPath(args, null)).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.resolvedLocation("http://api.example.com/v1/users", "://bad")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.ownedPath(pool, args, "users", "http://api.example.com/v1/users/1")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.ownedPath(pool, args, "/users/{id}/sub", "http://api.example.com/v1/users/1")).isEmpty();
+        Assertions.assertThat(ObservedHttpTarget.ownedPath(pool, args, "/users/{id}", "http://evil.example.com/v1/users/1")).isEmpty();
+
+        Mockito.when(pool.successfulExchanges("/categories", HttpMethod.POST)).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange("/categories", HttpMethod.POST,
+                        "http://evil.example.com/v1/categories/", "{}", 200, "{\"categoryId\":\"cat-1\"}", null, null),
+                new RuntimeResourcePool.SuccessfulExchange("/categories", HttpMethod.POST,
+                        "http://api.example.com/v1/categories/", "{}", 201, "{\"categoryId\":\"cat-2\"}", "http://evil.example.com/v1/categories/cat-2", null),
+                new RuntimeResourcePool.SuccessfulExchange("/categories", HttpMethod.POST,
+                        "http://api.example.com/v1/categories/", "{}", 200, "not-json", null, null),
+                new RuntimeResourcePool.SuccessfulExchange("/categories", HttpMethod.POST,
+                        "http://api.example.com/v1/categories/", "{}", 200, "[1,2]", null, null),
+                new RuntimeResourcePool.SuccessfulExchange("/categories", HttpMethod.POST,
+                        "http://api.example.com/v1/categories/", "{}", 200, "{\"categoryId\":\"a/b\",\"other\":\"x\"}", null, null),
+                new RuntimeResourcePool.SuccessfulExchange("/categories", HttpMethod.POST,
+                        "http://api.example.com/v1/categories/", "{}", 201, "{\"categoryId\":\"cat-9\"}", null, null)));
+        Assertions.assertThat(ObservedHttpTarget.ownedPath(pool, args, "/categories/{id}",
+                "http://api.example.com/v1/categories/cat-9")).contains("/categories/cat-9");
     }
 
     private static RuntimeResourcePool.SuccessfulExchange exchange(String url, String location) {

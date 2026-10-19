@@ -33,4 +33,10 @@ class DynamicValueResolverTest {
         Assertions.assertThat(DynamicValueResolver.resolve("Bearer ${missing}", Map.of()))
                 .isEqualTo("Bearer missing");
     }
+
+    @Test
+    void shouldHandleNullValueAndNullContext() {
+        Assertions.assertThat(DynamicValueResolver.resolve(null, Map.of("token", "123"))).isNull();
+        Assertions.assertThat(DynamicValueResolver.resolve("static-value", null)).isEqualTo("static-value");
+    }
 }

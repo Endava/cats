@@ -17,4 +17,14 @@ class CatsExecutionCancelledExceptionTest {
             Thread.interrupted();
         }
     }
+
+    @Test
+    void shouldCreateCatsReportExceptionWithMessageAndCause() {
+        IllegalStateException cause = new IllegalStateException("disk full");
+        CatsReportException exception = new CatsReportException("Failed to write report", cause);
+
+        Assertions.assertThat(exception)
+                .hasMessage("Failed to write report")
+                .hasCause(cause);
+    }
 }

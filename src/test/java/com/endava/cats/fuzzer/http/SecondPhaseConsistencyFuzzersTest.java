@@ -270,6 +270,156 @@ class SecondPhaseConsistencyFuzzersTest {
                 Mockito.eq("PUT is not idempotent"), Mockito.anyString());
     }
 
+    @Test
+    void coversConditionalEtagBranchesAndResponseProcessors() {
+        ConditionalEtagFuzzer fuzzer = new ConditionalEtagFuzzer(pool, arguments, executor, listener);
+        Assertions.assertThat(fuzzer.description()).isNotBlank();
+        Assertions.assertThat(fuzzer).hasToString("ConditionalEtagFuzzer");
+        Assertions.assertThat(fuzzer.skipForHttpMethods())
+                .containsExactly(HttpMethod.POST, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
+
+        fuzzer.fuzz(FuzzingData.builder().method(HttpMethod.POST).path("/items").build());
+
+        FuzzingData getData = FuzzingData.builder().method(HttpMethod.GET).path("/items/{id}").contractPath("/items/{id}")
+                .headers(Set.of(com.endava.cats.model.CatsHeader.from("If-None-Match", "\"old\"", false, null)))
+                .payload("{}").build();
+        Mockito.when(pool.successfulExchanges(getData.getPath(), HttpMethod.GET)).thenReturn(List.of(
+                get(null), get(""), get("\"bad\r\n\"")));
+        fuzzer.fuzz(getData);
+        Mockito.verifyNoInteractions(executor);
+
+        Mockito.when(pool.successfulExchanges(getData.getPath(), HttpMethod.GET)).thenReturn(List.of(get("\"v1\"")));
+        fuzzer.fuzz(getData);
+        ArgumentCaptor<SimpleExecutorContext> getCaptor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(executor).execute(getCaptor.capture());
+        getCaptor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(304).build(), getData);
+        getCaptor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(500).build(), getData);
+        getCaptor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(200)
+                .headers(List.of(new KeyValuePair<>("ETag", "\"v2\""))).build(), getData);
+        getCaptor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(400).build(), getData);
+
+        FuzzingData patchWithoutGet = FuzzingData.builder().method(HttpMethod.PATCH).path("/items/{id}")
+                .headers(Set.of(com.endava.cats.model.CatsHeader.from("If-Match", "\"v1\"", false, null))).build();
+        fuzzer.fuzz(patchWithoutGet);
+
+        FuzzingData patchData = writeData(HttpMethod.PATCH);
+        Mockito.when(pool.successfulExchanges(patchData.getPath(), HttpMethod.GET)).thenReturn(List.of(
+                get("\"v1\""),
+                new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.GET, null, "{}", 200, "{}", null, "\"v1\""),
+                get(null)));
+        Mockito.when(pool.successfulExchanges(patchData.getPath(), HttpMethod.PATCH)).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.PATCH,
+                        "https://api.example.com/items/1", "{\"name\":\"same\"}", 200, "{}", null, null),
+                new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.PATCH,
+                        "https://api.example.com/items/1", "{\"name\":\"same\"}", 200, "{}", null, "\"v1\"")));
+        fuzzer.fuzz(patchData);
+
+        Mockito.when(pool.successfulExchanges("/items", HttpMethod.POST)).thenReturn(List.of(post()));
+        Mockito.when(pool.successfulExchanges(patchData.getPath(), HttpMethod.GET)).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.GET,
+                        "https://api.example.com/items/1?a=1", "{}", 200, "{}", null, "\"v1\""),
+                new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.GET,
+                        "https://api.example.com/items/1?b=2", "{}", 200, "{}", null, "\"v2\"")));
+        Mockito.when(pool.successfulExchanges(patchData.getPath(), HttpMethod.PATCH)).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.PATCH,
+                        "https://api.example.com/items/1", "{\"name\":\"same\"}", 200, "{}", null, "\"v2\"")));
+        fuzzer.fuzz(patchData);
+        ArgumentCaptor<SimpleExecutorContext> patchCaptor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(executor, Mockito.times(2)).execute(patchCaptor.capture());
+        SimpleExecutorContext staleCtx = patchCaptor.getAllValues().getLast();
+        staleCtx.getResponseProcessor().accept(CatsResponse.builder().responseCode(409).build(), patchData);
+        staleCtx.getResponseProcessor().accept(CatsResponse.builder().responseCode(200).build(), patchData);
+        staleCtx.getResponseProcessor().accept(CatsResponse.builder().responseCode(500).build(), patchData);
+        staleCtx.getResponseProcessor().accept(CatsResponse.builder().responseCode(400).build(), patchData);
+    }
+
+    @Test
+    void coversPutIdempotencyAndUpdateReadConsistencyBranches() {
+        PutIdempotencyFuzzer putFuzzer = new PutIdempotencyFuzzer(pool, arguments, filters, executor, listener);
+        Assertions.assertThat(putFuzzer.description()).isNotBlank();
+        Assertions.assertThat(putFuzzer).hasToString("PutIdempotencyFuzzer");
+        Assertions.assertThat(putFuzzer.skipForHttpMethods())
+                .containsExactly(HttpMethod.GET, HttpMethod.POST, HttpMethod.PATCH, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
+
+        putFuzzer.fuzz(FuzzingData.builder().method(HttpMethod.GET).path("/items/{id}").build());
+        FuzzingData putWithIfMatch = FuzzingData.builder().method(HttpMethod.PUT).path("/items/{id}")
+                .pathItem(new PathItem().get(new Operation()).put(new Operation()))
+                .headers(Set.of(com.endava.cats.model.CatsHeader.from("If-Match", "\"1\"", false, null))).build();
+        putFuzzer.fuzz(putWithIfMatch);
+
+        FuzzingData data = writeData(HttpMethod.PUT);
+        Mockito.when(pool.successfulExchanges("/items", HttpMethod.POST)).thenReturn(List.of(post()));
+        Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(put()));
+
+        Mockito.doAnswer(call -> {
+            SimpleExecutorContext step = call.getArgument(0);
+            step.getResponseProcessor().accept(CatsResponse.builder().responseCode(500).build(), data);
+            step.getResponseProcessor().accept(CatsResponse.builder().responseCode(400).build(), data);
+            return null;
+        }).when(executor).execute(Mockito.any());
+        putFuzzer.fuzz(data);
+
+        Mockito.doAnswer(call -> {
+            SimpleExecutorContext step = call.getArgument(0);
+            if (step.getHttpMethod() == HttpMethod.PUT) {
+                step.getResponseProcessor().accept(CatsResponse.builder().responseCode(200).body("{}").build(), data);
+            } else {
+                step.getResponseProcessor().accept(CatsResponse.builder().responseCode(500).build(), data);
+                step.getResponseProcessor().accept(CatsResponse.builder().responseCode(404).build(), data);
+                step.getResponseProcessor().accept(CatsResponse.builder().responseCode(200).body("[1,2]").build(), data);
+            }
+            return null;
+        }).when(executor).execute(Mockito.any());
+        putFuzzer.fuzz(data);
+
+        int[] putAttempt = {0};
+        Mockito.doAnswer(call -> {
+            SimpleExecutorContext step = call.getArgument(0);
+            if (step.getHttpMethod() == HttpMethod.PUT) {
+                int code = (++putAttempt[0] == 1) ? 200 : 400;
+                step.getResponseProcessor().accept(CatsResponse.builder().responseCode(code).body("{}").build(), data);
+            } else {
+                step.getResponseProcessor().accept(CatsResponse.builder().responseCode(200)
+                        .body("{\"items\":[null,{\"updatedAt\":\"now\",\"name\":\"ok\"}]}").build(), data);
+            }
+            return null;
+        }).when(executor).execute(Mockito.any());
+        putFuzzer.fuzz(data);
+
+        UpdateReadConsistencyFuzzer updateFuzzer = new UpdateReadConsistencyFuzzer(pool, arguments, filters, executor, listener);
+        Assertions.assertThat(updateFuzzer.description()).isNotBlank();
+        Assertions.assertThat(updateFuzzer).hasToString("UpdateReadConsistencyFuzzer");
+        Assertions.assertThat(updateFuzzer.skipForHttpMethods())
+                .containsExactly(HttpMethod.GET, HttpMethod.POST, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
+
+        updateFuzzer.fuzz(FuzzingData.builder().method(HttpMethod.POST).path("/items").build());
+
+        Schema<?> oneOfSchema = new ComposedSchema()
+                .addOneOfItem(new Schema<>().$ref("#/components/schemas/MissingSchema"))
+                .addOneOfItem(new ObjectSchema().addProperty("readonlyField", new StringSchema().readOnly(true)))
+                .addAnyOfItem(new ObjectSchema().addProperty("count", new NumberSchema()));
+        FuzzingData patchData = FuzzingData.builder().method(HttpMethod.PATCH).path("/items/{id}").contractPath("/items/{id}")
+                .pathItem(new PathItem().get(new Operation()).patch(new Operation())).headers(Set.of())
+                .reqSchema(oneOfSchema)
+                .requestPropertyTypes(Map.of("", new StringSchema(), "extra", new StringSchema(), "nested#field", new StringSchema()))
+                .payload("{\"count\":5,\"extra\":\"abc\"}").build();
+        Mockito.when(pool.successfulExchanges(patchData.getPath(), HttpMethod.PATCH)).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.PATCH,
+                        "https://api.example.com/items/1", "{\"count\":5,\"extra\":\"abc\"}", 200, "{}", null, null)));
+
+        Mockito.doAnswer(call -> {
+            SimpleExecutorContext step = call.getArgument(0);
+            step.getResponseProcessor().accept(CatsResponse.builder().responseCode(404).build(), patchData);
+            step.getResponseProcessor().accept(CatsResponse.builder().responseCode(410).build(), patchData);
+            step.getResponseProcessor().accept(CatsResponse.builder().responseCode(500).build(), patchData);
+            step.getResponseProcessor().accept(CatsResponse.builder().responseCode(200).body("[1,2]").build(), patchData);
+            step.getResponseProcessor().accept(CatsResponse.builder().responseCode(200).body("{\"unmatched\":true}").build(), patchData);
+            step.getResponseProcessor().accept(CatsResponse.builder().responseCode(200).body("{\"count\":9,\"extra\":123}").build(), patchData);
+            return null;
+        }).when(executor).execute(Mockito.any());
+        updateFuzzer.fuzz(patchData);
+    }
+
     private FuzzingData getData() {
         return FuzzingData.builder().method(HttpMethod.GET).path("/items/{id}").contractPath("/items/{id}")
                 .headers(Set.of()).payload("{}").build();

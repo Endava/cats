@@ -73,5 +73,17 @@ class EmptyJsonArrayBodyFuzzerTest {
     @Test
     void shouldHaveNullPayload() {
         Assertions.assertThat(emptyJsonArrayBodyFuzzer.getPayload(null)).isEqualTo("[]");
+        Assertions.assertThat(emptyJsonArrayBodyFuzzer.getScenario()).isEqualTo("Send a request with an empty json array body");
+    }
+
+    @Test
+    void shouldCheckApplicabilityByPayloadFormat() {
+        FuzzingData jsonData = Mockito.mock(FuzzingData.class);
+        Mockito.when(jsonData.getPayloadFormat()).thenReturn(com.endava.cats.model.PayloadFormat.JSON);
+        FuzzingData xmlData = Mockito.mock(FuzzingData.class);
+        Mockito.when(xmlData.getPayloadFormat()).thenReturn(com.endava.cats.model.PayloadFormat.FORM);
+
+        Assertions.assertThat(emptyJsonArrayBodyFuzzer.isApplicableTo(jsonData)).isTrue();
+        Assertions.assertThat(emptyJsonArrayBodyFuzzer.isApplicableTo(xmlData)).isFalse();
     }
 }

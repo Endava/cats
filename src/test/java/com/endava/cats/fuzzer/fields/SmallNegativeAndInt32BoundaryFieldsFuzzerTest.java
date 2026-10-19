@@ -31,15 +31,18 @@ class SmallNegativeAndInt32BoundaryFieldsFuzzerTest {
     void shouldFuzzIntegerFieldsWithZeroMinusOneAndMaxInt32() {
         Mockito.when(processingArguments.isStrictTypes()).thenReturn(true);
         FuzzingData data = Mockito.mock(FuzzingData.class);
-        Mockito.when(data.getPayload()).thenReturn("{\"page\":1}");
+        Mockito.when(data.getPayload()).thenReturn("{\"page\":1,\"price\":9.5,\"name\":\"item\"}");
         Mockito.when(data.getMethod()).thenReturn(HttpMethod.GET);
         Mockito.when(data.getPath()).thenReturn("/items");
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("page"));
-        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("page", new IntegerSchema()));
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("page", "price", "name"));
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of(
+                "page", new IntegerSchema(),
+                "price", new io.swagger.v3.oas.models.media.NumberSchema(),
+                "name", new io.swagger.v3.oas.models.media.StringSchema()));
 
         fuzzer.fuzz(data);
 
-        Mockito.verify(simpleExecutor, Mockito.times(3)).execute(Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(6)).execute(Mockito.any());
         Assertions.assertThat(fuzzer.description()).isNotBlank();
         Assertions.assertThat(fuzzer).hasToString("SmallNegativeAndInt32BoundaryFieldsFuzzer");
         Assertions.assertThat(fuzzer.skipForHttpMethods()).containsExactly(HttpMethod.HEAD, HttpMethod.TRACE);

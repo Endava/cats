@@ -185,6 +185,60 @@ class RandomFuzzerTest {
         Mockito.verify(simpleExecutor, Mockito.times(2)).execute(Mockito.any());
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldHandleCapPerOperationMissingFieldsTruncatedResponseAndMutatorHeaders() throws Exception {
+        CatsResponse truncated = CatsResponse.empty();
+        FuzzingData emptyData = FuzzingData.builder().build();
+        Mockito.when(testCaseListener.reportTruncatedResponse(Mockito.any(), Mockito.eq(emptyData), Mockito.eq(truncated)))
+                .thenReturn(true);
+        randomFuzzer.processResponse(truncated, emptyData);
+        Mockito.verify(testCaseListener, Mockito.never()).skipTest(Mockito.any(), Mockito.anyString());
+
+        Instance<Mutator> headerAndBodyMutator = Mockito.mock(Instance.class);
+        Mockito.when(headerAndBodyMutator.stream()).thenReturn(Stream.of(new Mutator() {
+            @Override
+            public String mutate(String inputJson, String selectedField) {
+                return inputJson;
+            }
+
+            @Override
+            public java.util.Collection<com.endava.cats.model.CatsHeader> mutate(java.util.Collection<com.endava.cats.model.CatsHeader> headers) {
+                return java.util.List.of(
+                        com.endava.cats.model.CatsHeader.from("X-Same", "1", false, null),
+                        com.endava.cats.model.CatsHeader.from("X-Mutated", "2", false, null));
+            }
+
+            @Override
+            public String description() {
+                return "header mutator";
+            }
+        }));
+        Mockito.when(stopArguments.getStopAfterTimeInSec()).thenReturn(60L);
+        Mockito.when(stopArguments.getStopAfterMutations()).thenReturn(0L);
+        Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(false);
+
+        RandomFuzzer cappedFuzzer = new RandomFuzzer(simpleExecutor, testCaseListener, executionStatisticsListener,
+                matchArguments, headerAndBodyMutator, stopArguments, filesArguments);
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("{\"id\":\"value\"}");
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(data.getPath()).thenReturn("/path");
+        Mockito.when(data.getHeaders()).thenReturn(Set.of(com.endava.cats.model.CatsHeader.from("X-Same", "1", false, null)));
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("missingField", "id"));
+
+        cappedFuzzer.fuzz(data);
+        Mockito.verify(simpleExecutor, Mockito.times(25)).execute(Mockito.any());
+
+        java.nio.file.Path tempDir = java.nio.file.Files.createTempDirectory("bad-mutators");
+        java.nio.file.Path badFile = tempDir.resolve("bad.yml");
+        java.nio.file.Files.writeString(badFile, "name: test\ntype: INVALID_TYPE\nvalues: [1]\n");
+        Mockito.when(filesArguments.getMutatorsFolder()).thenReturn(tempDir.toFile());
+        cappedFuzzer.fuzz(data);
+        java.nio.file.Files.deleteIfExists(badFile);
+        java.nio.file.Files.deleteIfExists(tempDir);
+    }
+
     @NotNull
     private FuzzingData mockData() {
         FuzzingData data = Mockito.mock(FuzzingData.class);

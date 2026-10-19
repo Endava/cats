@@ -80,5 +80,21 @@ class EmptyJsonBodyFuzzerTest {
     @Test
     void shouldHaveNullPayload() {
         Assertions.assertThat(emptyJsonBodyFuzzer.getPayload(null)).isEqualTo("{}");
+        Assertions.assertThat(emptyJsonBodyFuzzer.getScenario()).isEqualTo("Send a request with an empty json body");
+    }
+
+    @Test
+    void shouldCheckApplicabilityAndNestedRequiredFields() {
+        FuzzingData jsonData = FuzzingData.builder()
+                .requestContentTypes(List.of("application/json"))
+                .allRequiredFields(List.of("nested#child"))
+                .build();
+        FuzzingData xmlData = Mockito.mock(FuzzingData.class);
+        Mockito.when(xmlData.getPayloadFormat()).thenReturn(com.endava.cats.model.PayloadFormat.FORM);
+
+        Assertions.assertThat(emptyJsonBodyFuzzer.isApplicableTo(jsonData)).isTrue();
+        Assertions.assertThat(emptyJsonBodyFuzzer.isApplicableTo(xmlData)).isFalse();
+        Assertions.assertThat(emptyJsonBodyFuzzer.getExpectedResponseCode(jsonData))
+                .isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
     }
 }
