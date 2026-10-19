@@ -144,13 +144,36 @@ public class ApiArguments {
 
             if (serverFromInput == null) {
                 // No CLI server provided, use OpenAPI server
-                return servers.stream().findFirst().orElse(null);
+                return servers.stream().findFirst()
+                        .map(s -> s.startsWith("//") ? "http:" + s : s)
+                        .orElse(null);
             } else {
                 // CLI server provided, check if OpenAPI server has placeholders or relative paths
                 return servers.stream().findFirst()
-                        .filter(openApiServer -> openApiServer.contains("{") || !openApiServer.startsWith("http"))
+                        .map(openApiServer -> resolveOpenApiServerWithInput(openApiServer, serverFromInput))
                         .orElse(serverFromInput);
             }
+        }
+        return serverFromInput;
+    }
+
+    /**
+     * Resolves the effective server URL when both an OpenAPI {@code servers} entry and a CLI {@code --server} are present.
+     * <p>
+     * Swagger 2.0 specs with {@code host} and {@code basePath} but no {@code schemes} are converted by SwaggerParser
+     * into protocol-relative URLs ({@code //host/basePath}). Stripping the {@code //host} authority leaves only the
+     * relative {@code basePath} (if any) to be appended to the CLI {@code --server}, while concrete {@code http(s)://}
+     * OpenAPI servers always yield to the explicit CLI {@code --server}.
+     */
+    private String resolveOpenApiServerWithInput(String openApiServer, String serverFromInput) {
+        if (openApiServer.contains("{")) {
+            return openApiServer;
+        }
+        if (openApiServer.startsWith("//")) {
+            return openApiServer.replaceFirst("^//[^/]+", "");
+        }
+        if (!openApiServer.startsWith("http")) {
+            return openApiServer;
         }
         return serverFromInput;
     }

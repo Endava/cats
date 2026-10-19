@@ -20,7 +20,8 @@ class CityGeneratorTest {
     @Test
     void shouldGenerate() {
         CityGenerator cityGenerator = new CityGenerator();
-        Assertions.assertThat(cityGenerator.generate(new Schema<>()).toString()).hasSizeGreaterThan(5);
+        // data.yml address.cities includes 4- and 5-letter city names ("Rome", "Miami", "Paris").
+        Assertions.assertThat(cityGenerator.generate(new Schema<>()).toString()).hasSizeGreaterThanOrEqualTo(4);
     }
 
     @ParameterizedTest

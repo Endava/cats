@@ -217,7 +217,8 @@ public class OpenAPIModelGeneratorV2 {
                 }
                 return examples.isEmpty() ? List.of(new GeneratedPayload("{}", List.of())) : examples;
             } else {
-                throw new IllegalArgumentException("Scheme is not declared: " + modelName);
+                this.globalContext.recordError("Schema is not declared: " + modelName);
+                return List.of(new GeneratedPayload("{}", List.of()));
             }
         }
 

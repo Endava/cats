@@ -191,6 +191,11 @@ public class FuzzingDataFactory {
                 String newParameterName = parameter.getName() + "|" + parameter.getIn();
                 Schema<?> originalSchema = Optional.ofNullable(parameter.getSchema()).orElse(new Schema<>());
                 Schema<?> schemaCopy = copySchema(originalSchema);
+                if (schemaCopy.get$ref() != null && globalContext.getSchemaFromReference(schemaCopy.get$ref()) == null) {
+                    globalContext.recordError("Parameter schema %s is not declared; falling back to string".formatted(schemaCopy.get$ref()));
+                    schemaCopy.set$ref(null);
+                    schemaCopy.setType("string");
+                }
                 schemaCopy.setName(newParameterName);
 
                 Object effectiveExample = schemaCopy.getExample() != null ? schemaCopy.getExample() : parameter.getExample();
@@ -333,7 +338,7 @@ public class FuzzingDataFactory {
                             .payload(generatedPayload.payload())
                             .allRequiredFields(generatedPayload.requiredFields())
                             .responseCodes(operation.getResponses().keySet())
-                            .reqSchema(globalContext.getSchemaFromReference(reqSchemaName))
+                            .reqSchema(Optional.ofNullable(globalContext.getSchemaFromReference(reqSchemaName)).orElseGet(Schema::new))
                             .pathItem(item).responseContentTypes(responsesContentTypes)
                             .requestContentTypes(requestContentTypes)
                             .selectedRequestContentType(selectedMediaType.contentType())
@@ -751,7 +756,7 @@ public class FuzzingDataFactory {
 
         if (processingArguments.getLimitXxxOfCombinations() > 0) {
             int maxCombinations = Math.min(processingArguments.getLimitXxxOfCombinations(), examples.size());
-            return examples.stream()
+            examples = examples.stream()
                     .limit(maxCombinations)
                     .toList();
         }

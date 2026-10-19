@@ -1094,8 +1094,34 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenSchemeDoesNotExist() {
-        Assertions.assertThatThrownBy(() -> setupFuzzingData("/pet-types", "src/test/resources/petstore-no-schema.yml")).isInstanceOf(IllegalArgumentException.class);
+    void shouldRecordErrorAndFallbackWhenSchemeDoesNotExist() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/pet-types", "src/test/resources/petstore-no-schema.yml");
+        Assertions.assertThat(dataList).hasSize(2);
+        Assertions.assertThat(catsGlobalContext.getRecordedErrors())
+                .anySatisfy(err -> Assertions.assertThat(err.message()).contains("Schema is not declared: #/components/schemas/Pet"));
+    }
+
+    @Test
+    void shouldFallbackToStringSchemaWhenParameterRefIsNotDeclared() {
+        io.swagger.v3.oas.models.OpenAPI openAPI = new io.swagger.v3.oas.models.OpenAPI();
+        io.swagger.v3.oas.models.PathItem pathItem = new io.swagger.v3.oas.models.PathItem();
+        io.swagger.v3.oas.models.Operation getOp = new io.swagger.v3.oas.models.Operation();
+        io.swagger.v3.oas.models.parameters.Parameter param = new io.swagger.v3.oas.models.parameters.Parameter()
+                .name("principal").in("query").schema(new Schema<>().$ref("#/definitions/Principal"));
+        getOp.setParameters(List.of(param));
+        io.swagger.v3.oas.models.responses.ApiResponses responses = new io.swagger.v3.oas.models.responses.ApiResponses();
+        responses.addApiResponse("200", new io.swagger.v3.oas.models.responses.ApiResponse().description("ok"));
+        getOp.setResponses(responses);
+        pathItem.setGet(getOp);
+        Mockito.when(filterArguments.isHttpMethodSupplied(HttpMethod.GET)).thenReturn(true);
+        Mockito.when(filesArguments.isNotUrlParam(Mockito.anyString())).thenReturn(true);
+
+        List<FuzzingData> dataList = fuzzingDataFactory.fromPathItem("/items", pathItem, openAPI);
+
+        Assertions.assertThat(dataList).hasSize(1);
+        Assertions.assertThat(dataList.getFirst().getQueryParams()).contains("principal");
+        Assertions.assertThat(catsGlobalContext.getRecordedErrors())
+                .anySatisfy(err -> Assertions.assertThat(err.message()).contains("Parameter schema #/definitions/Principal is not declared"));
     }
 
     @Test

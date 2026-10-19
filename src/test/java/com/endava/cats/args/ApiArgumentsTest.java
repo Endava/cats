@@ -107,8 +107,11 @@ class ApiArgumentsTest {
     private static Stream<Arguments> serverResolutionArguments() {
         return Stream.of(
                 Arguments.of("should set server from OpenAPI when CLI server is null", null, "http://fromopenapi.com", "http://fromopenapi.com"),
+                Arguments.of("should set protocol-relative server from OpenAPI when CLI server is null", null, "//localhost:8080/app", "http://localhost:8080/app"),
                 Arguments.of("should replace OpenAPI placeholder with CLI server", "http://api.com", "{apiRoot}/v2", "http://api.com/v2"),
-                Arguments.of("should prefer CLI server over concrete OpenAPI server", "http://localhost:8080", "https://api.example.com", "http://localhost:8080")
+                Arguments.of("should prefer CLI server over concrete OpenAPI server", "http://localhost:8080", "https://api.example.com", "http://localhost:8080"),
+                Arguments.of("should ignore root protocol-relative Swagger 2 server when CLI server is supplied", "http://localhost:10003", "//localhost:8090", "http://localhost:10003"),
+                Arguments.of("should preserve basePath from protocol-relative Swagger 2 server when CLI server has no path", "http://localhost:10003", "//localhost:31106/app", "http://localhost:10003/app")
         );
     }
 

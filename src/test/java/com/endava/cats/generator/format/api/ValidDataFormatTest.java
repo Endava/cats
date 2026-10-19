@@ -35,4 +35,15 @@ class ValidDataFormatTest {
         List<ValidDataFormatGenerator> validDataFormatList = validDataFormat.getGenerators(schema, "");
         Assertions.assertThat(validDataFormatList).hasSize(1);
     }
+
+    @org.junit.jupiter.api.Test
+    void shouldUseSubstringMatchingForSchemaPatternAndReturnNullWhenPatternDoesNotMatch() {
+        Schema<String> matchingUnanchoredSchema = new Schema<>();
+        matchingUnanchoredSchema.setPattern("[a-z]+");
+        Assertions.assertThat(validDataFormat.generate(matchingUnanchoredSchema, "password")).isNotNull();
+
+        Schema<String> nonMatchingSchema = new Schema<>();
+        nonMatchingSchema.setPattern("^[0-9]+$");
+        Assertions.assertThat(validDataFormat.generate(nonMatchingSchema, "password")).isNull();
+    }
 }
