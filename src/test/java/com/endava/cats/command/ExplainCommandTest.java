@@ -62,4 +62,24 @@ class ExplainCommandTest {
         verify(explainCommand, never()).displayMutatorInfo();
         verify(explainCommand, never()).displayResponseCodeInfo();
     }
+
+    @Test
+    void testRun_LinterType_CallsDisplayLinterInfo() {
+        explainCommand.type = ExplainCommand.Type.LINTER;
+        explainCommand.info = "Linter";
+        explainCommand.run();
+        verify(explainCommand).displayLinterInfo();
+        verify(explainCommand, never()).displayFuzzerInfo();
+        verify(explainCommand, never()).displayProfileInfo();
+    }
+
+    @Test
+    void testRun_ProfileType_CallsDisplayProfileInfo() {
+        explainCommand.type = ExplainCommand.Type.PROFILE;
+        explainCommand.info = "security";
+        explainCommand.run();
+        verify(explainCommand).displayProfileInfo();
+        verify(explainCommand, never()).displayFuzzerInfo();
+        verify(explainCommand, never()).displayLinterInfo();
+    }
 }

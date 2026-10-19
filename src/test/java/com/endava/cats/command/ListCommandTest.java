@@ -114,6 +114,24 @@ class ListCommandTest {
     }
 
     @Test
+    void shouldListPathsInExecutionOrder() {
+        ListCommand spyListCommand = Mockito.spy(listCommand);
+        CommandLine commandLine = new CommandLine(spyListCommand);
+        commandLine.execute("-p", "--executionOrder", "-c", "src/test/resources/openapi.yml");
+        Mockito.verify(spyListCommand, Mockito.times(1)).listContractPaths();
+        commandLine.execute("-p", "--executionOrder", "-j", "-c", "src/test/resources/openapi.yml");
+        Mockito.verify(spyListCommand, Mockito.times(2)).listContractPaths();
+
+        io.swagger.v3.oas.models.OpenAPI api = new io.swagger.v3.oas.models.OpenAPI().paths(new io.swagger.v3.oas.models.Paths()
+                .addPathItem("/items/{id}", new io.swagger.v3.oas.models.PathItem().get(new io.swagger.v3.oas.models.Operation()))
+                .addPathItem("/items", new io.swagger.v3.oas.models.PathItem().post(new io.swagger.v3.oas.models.Operation())));
+        var ordered = spyListCommand.createPathEntryList(api).getPathDetailsList();
+        org.assertj.core.api.Assertions.assertThat(ordered)
+                .extracting(com.endava.cats.command.model.PathListEntry.PathDetails::getPath)
+                .containsExactly("/items", "/items/{id}");
+    }
+
+    @Test
     void shouldListPathDetails() {
         ListCommand spyListCommand = Mockito.spy(listCommand);
         PrettyLogger spyLogger = Mockito.spy(PrettyLogger.class);

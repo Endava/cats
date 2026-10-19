@@ -5,7 +5,9 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.impl.EnvVariableParser;
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.report.TestCaseListener;
@@ -122,6 +124,10 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "The folder containing the cats-summary-report.json file when using --errors/--warnings. Default: @|bold,underline cats-report|@")
     private String reportFolder = "cats-report";
 
+    @CommandLine.Option(names = {"--curl"},
+            description = "Print equivalent curl command(s) for the selected test case(s) without executing HTTP calls")
+    private boolean curl;
+
 
     /**
      * Constructs a new instance of the {@code ReplayCommand} class.
@@ -233,9 +239,13 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     private void executeTestCase(String testCaseFileName, ReplayStats stats) throws IOException {
         CatsTestCase testCase = this.loadTestCaseFile(testCaseFileName);
-        logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
         this.loadHeadersIfSupplied(testCase);
         testCase.getRequest().setUrl(resolveReplayUrl(testCase.getRequest().getUrl()));
+        if (curl) {
+            PrettyLoggerFactory.getConsoleLogger().noFormat(buildCurlCommand(testCase.getRequest()));
+            return;
+        }
+        logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
 
         CatsResponse response;
         try {
@@ -387,10 +397,14 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
         for (String testCaseFileName : testCases) {
             try {
-                logger.noFormat("");
-                logger.start("Executing {}", testCaseFileName);
+                if (!curl) {
+                    logger.noFormat("");
+                    logger.start("Executing {}", testCaseFileName);
+                }
                 this.executeTestCase(testCaseFileName, stats);
-                logger.complete("Finish executing {}", testCaseFileName);
+                if (!curl) {
+                    logger.complete("Finish executing {}", testCaseFileName);
+                }
             } catch (IOException e) {
                 logger.debug("Exception while replaying test!", e);
                 logger.error("Something went wrong while replaying {}. If the test name ends with .json it is searched as a full path. " +
@@ -403,9 +417,29 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
             }
         }
 
-        if (stats != null) {
+        if (stats != null && !curl) {
             printSummary(stats, testCases.size());
         }
+    }
+
+    String buildCurlCommand(CatsRequest request) {
+        String method = Optional.ofNullable(request.getHttpMethod()).orElse("GET");
+        StringBuilder cmd = new StringBuilder("curl -i -X ").append(method);
+        for (KeyValuePair<String, Object> header : Optional.ofNullable(request.getHeaders()).orElse(Collections.emptyList())) {
+            if (StringUtils.isNotBlank(header.getKey())) {
+                cmd.append(" -H ").append(shellQuote(header.getKey() + ": " + header.getValue()));
+            }
+        }
+        if (StringUtils.isNotBlank(request.getPayload()) &&
+                (HttpMethod.requiresBody(method) || request.isSendBody())) {
+            cmd.append(" -d ").append(shellQuote(request.getPayload()));
+        }
+        cmd.append(" ").append(shellQuote(Optional.ofNullable(request.getUrl()).orElse("")));
+        return cmd.toString();
+    }
+
+    private static String shellQuote(String value) {
+        return "'" + value.replace("'", "'\\''") + "'";
     }
 
     @Override

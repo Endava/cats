@@ -290,4 +290,33 @@ class ReplayCommandTest {
         replayCommand.run();
         Mockito.verify(serviceCaller, Mockito.times(2)).callService(Mockito.any(), Mockito.eq(Collections.emptySet()));
     }
+
+    @Test
+    void shouldPrintCurlCommandWithoutCallingServiceWhenCurlEnabled() {
+        replayCommand.tests = new String[]{"src/test/resources/Test12.json"};
+        replayCommand.headersMap = new HashMap<>(Map.of("X-Note", "it's a test"));
+        ReflectionTestUtils.setField(replayCommand, "curl", true);
+
+        replayCommand.run();
+
+        Mockito.verifyNoInteractions(serviceCaller);
+        CatsRequest postReq = CatsRequest.builder()
+                .httpMethod("POST")
+                .url("https://api.example.com/items")
+                .headers(List.of(new KeyValuePair<>("Content-Type", "application/json"),
+                        new KeyValuePair<>("X-Note", "it's a test")))
+                .payload("{\"name\":\"item\"}")
+                .build();
+        String curlCmd = replayCommand.buildCurlCommand(postReq);
+        Assertions.assertThat(curlCmd)
+                .isEqualTo("curl -i -X POST -H 'Content-Type: application/json' -H 'X-Note: it'\\''s a test' -d '{\"name\":\"item\"}' 'https://api.example.com/items'");
+
+        CatsRequest getReq = CatsRequest.builder()
+                .httpMethod("GET")
+                .url("https://api.example.com/items")
+                .payload("{}")
+                .build();
+        Assertions.assertThat(replayCommand.buildCurlCommand(getReq))
+                .isEqualTo("curl -i -X GET 'https://api.example.com/items'");
+    }
 }

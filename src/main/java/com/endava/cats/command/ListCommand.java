@@ -20,6 +20,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.AnnotationUtils;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
+import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
@@ -247,20 +248,22 @@ public class ListCommand implements Runnable {
 
     private void listAllPaths(OpenAPI openAPI) {
         PathListEntry pathListEntry = createPathEntryList(openAPI);
+        boolean preserveExecutionOrder = listCommandGroups.listContractOptions.executionOrder;
 
         if (json) {
             PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(pathListEntry));
         } else {
             logger.noFormat("{} paths and {} operations:", pathListEntry.getNumberOfPaths(), pathListEntry.getNumberOfOperations());
-            pathListEntry.getPathDetailsList()
-                    .stream()
-                    .sorted()
-                    .map(item -> " ◼ " + item.getPath() + ": " + item.getMethods())
+            var stream = pathListEntry.getPathDetailsList().stream();
+            if (!preserveExecutionOrder) {
+                stream = stream.sorted();
+            }
+            stream.map(item -> " ◼ " + item.getPath() + ": " + item.getMethods())
                     .forEach(logger::noFormat);
         }
     }
 
-    private PathListEntry createPathEntryList(OpenAPI openAPI) {
+    PathListEntry createPathEntryList(OpenAPI openAPI) {
         Map<String, PathItem> filteredPaths = Optional.ofNullable(openAPI.getPaths()).orElse(new io.swagger.v3.oas.models.Paths())
                 .entrySet()
                 .stream()
@@ -274,21 +277,28 @@ public class ListCommand implements Runnable {
         int numberOfPaths = filteredPaths.size();
         int numberOfOperations = filteredPaths.values().stream().mapToInt(OpenApiUtils::countPathOperations).sum();
         List<PathListEntry.PathDetails> pathDetailsList = new ArrayList<>();
+        boolean orderByDependency = listCommandGroups.listContractOptions.executionOrder;
+        List<Map.Entry<String, PathItem>> pathEntries = new ArrayList<>(filteredPaths.entrySet());
+        if (orderByDependency) {
+            pathEntries.sort(CatsUtil.createCustomComparatorBasedOnPathsOrder(Collections.emptyList()));
+            pathEntries = OperationDependencyOrder.order(openAPI, pathEntries);
+        }
 
-        filteredPaths
-                .forEach((pathName, pathItem) -> {
-                    List<HttpMethod> httpMethods = HttpMethod.OPERATIONS.entrySet()
-                            .stream()
-                            .filter(entry -> entry.getValue().apply(pathItem) != null)
-                            .map(Map.Entry::getKey)
-                            .toList();
+        for (Map.Entry<String, PathItem> pathEntry : pathEntries) {
+            String pathName = pathEntry.getKey();
+            PathItem pathItem = pathEntry.getValue();
+            List<HttpMethod> httpMethods = HttpMethod.OPERATIONS.entrySet()
+                    .stream()
+                    .filter(entry -> entry.getValue().apply(pathItem) != null)
+                    .map(Map.Entry::getKey)
+                    .toList();
 
-                    pathDetailsList.add(PathListEntry.PathDetails
-                            .builder()
-                            .methods(httpMethods)
-                            .path(pathName)
-                            .build());
-                });
+            pathDetailsList.add(PathListEntry.PathDetails
+                    .builder()
+                    .methods(httpMethods)
+                    .path(pathName)
+                    .build());
+        }
         return PathListEntry.builder()
                 .numberOfPaths(numberOfPaths)
                 .numberOfOperations(numberOfOperations)
@@ -419,6 +429,10 @@ public class ListCommand implements Runnable {
         @CommandLine.Option(names = {"--tag"},
                 description = "Tag to filter paths")
         private String tag;
+
+        @CommandLine.Option(names = {"--executionOrder", "--dependencyOrder"},
+                description = "Display paths and operations in the producer-to-consumer execution order computed by CATS")
+        boolean executionOrder;
 
         @CommandLine.Option(
                 names = {"-c", "--contract"},
