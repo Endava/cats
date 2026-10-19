@@ -1,7 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.io.RuntimeResourcePool;
+import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.RequestTarget;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;

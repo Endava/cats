@@ -19,7 +19,7 @@ import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.fuzzer.http.CheckReadsStillWorkFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.io.RuntimeResourcePool;
+import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;

@@ -1,8 +1,9 @@
-package com.endava.cats.io;
+package com.endava.cats.pool;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.RequestTarget;

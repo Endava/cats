@@ -1,6 +1,6 @@
 package com.endava.cats.report;
 
-import com.endava.cats.io.RuntimeResourcePool;
+import com.endava.cats.pool.RuntimeResourcePool;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

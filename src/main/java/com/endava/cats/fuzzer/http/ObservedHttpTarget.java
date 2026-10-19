@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.io.RuntimeResourcePool;
+import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
