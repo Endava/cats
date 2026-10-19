@@ -172,6 +172,9 @@ final class ResourceValueExtractor {
     static void collectPrimitiveValues(JsonObject object, String prefix, String sourcePrefix,
                                        Map<String, StoredValue> values) {
         for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+            if (entry.getKey().startsWith("_")) {
+                continue;
+            }
             String location = prefix + entry.getKey();
             if (entry.getValue().isJsonPrimitive()) {
                 JsonPrimitive primitive = entry.getValue().getAsJsonPrimitive();
@@ -192,6 +195,14 @@ final class ResourceValueExtractor {
             if (item != null && (item.isJsonObject() || item.isJsonPrimitive())) {
                 if (item.isJsonObject()) {
                     collectPrimitiveValues(item.getAsJsonObject(), location + "[].", sourcePrefix, values);
+                    List<JsonObject> arrayObjects = new ArrayList<>();
+                    for (JsonElement el : array) {
+                        if (el != null && el.isJsonObject() && arrayObjects.size() < MAX_COLLECTION_ITEMS) {
+                            arrayObjects.add(el.getAsJsonObject());
+                        }
+                    }
+                    inferObjectArrayKeyField(arrayObjects, key).ifPresent(keyProp ->
+                            applyInferredKeyAlias(key, location + "[]." + keyProp, values));
                 } else {
                     Object value = ResourceSemanticNaming.primitiveValue(item.getAsJsonPrimitive());
                     Set<String> aliases = new LinkedHashSet<>(ResourceSemanticNaming.semanticAliases(location, key));
@@ -202,6 +213,112 @@ final class ResourceValueExtractor {
                 break;
             }
         }
+    }
+
+    static void applyInferredKeyAlias(String collectionOrArrayName, String keyLocation, Map<String, StoredValue> values) {
+        StoredValue existing = values.get(keyLocation);
+        String normCollection = ResourceSemanticNaming.normalize(collectionOrArrayName);
+        if (existing == null || normCollection.isEmpty() ||
+                ResourceSemanticNaming.COLLECTION_WRAPPER_SEGMENTS.contains(normCollection)) {
+            return;
+        }
+        String singularCollection = ResourceSemanticNaming.singular(normCollection);
+        if (!singularCollection.isEmpty()) {
+            Set<String> aliases = new LinkedHashSet<>(existing.aliases());
+            aliases.add(singularCollection);
+            values.put(keyLocation, existing.withAliases(aliases));
+        }
+    }
+
+    /**
+     * Infers the natural key property of an array of objects when no explicit {@code id}/{@code uuid}/{@code guid}
+     * or self-resource identifier field is present. Requires at least two object items so uniqueness can be verified
+     * across items, and considers only string properties whose values are short (at most 32 characters), contain no
+     * whitespace or path/scheme separators, include at least one ASCII alphanumeric character, and are distinct
+     * across the observed items.
+     * <p>
+     * Picking the shortest unique string is a heuristic: when an item has multiple short unique string fields
+     * (e.g. {@code {slug, title, email}}), it may initially select a non-key candidate, which outcome feedback
+     * subsequently demotes if rejected by the service.
+     */
+    static Optional<String> inferObjectArrayKeyField(List<JsonObject> objects, String collectionOrArrayName) {
+        if (objects == null || objects.size() < 2) {
+            return Optional.empty();
+        }
+        String normCollection = ResourceSemanticNaming.normalize(collectionOrArrayName);
+        if (ResourceSemanticNaming.COLLECTION_WRAPPER_SEGMENTS.contains(normCollection)) {
+            return Optional.empty();
+        }
+        Set<String> ownIdAliases = new LinkedHashSet<>(ResourceSemanticNaming.SIMPLE_IDENTIFIERS);
+        if (!normCollection.isEmpty()) {
+            String singCollection = ResourceSemanticNaming.singular(normCollection);
+            ResourceSemanticNaming.SIMPLE_IDENTIFIERS.forEach(suffix -> {
+                ownIdAliases.add(normCollection + suffix);
+                ownIdAliases.add(singCollection + suffix);
+            });
+        }
+        JsonObject first = objects.getFirst();
+        for (String prop : first.keySet()) {
+            if (ownIdAliases.contains(ResourceSemanticNaming.normalize(prop))) {
+                return Optional.empty();
+            }
+        }
+        String bestProp = null;
+        double bestAvgLen = Double.MAX_VALUE;
+        for (String prop : first.keySet()) {
+            String normProp = ResourceSemanticNaming.normalize(prop);
+            if (normProp.isEmpty() || ResourceSemanticNaming.isItemMetadataKey(normProp)) {
+                continue;
+            }
+            Set<String> distinct = new LinkedHashSet<>();
+            int count = 0;
+            int totalLen = 0;
+            boolean valid = true;
+            for (JsonObject obj : objects) {
+                JsonElement el = obj.get(prop);
+                if (el == null || el.isJsonNull()) {
+                    continue;
+                }
+                if (!el.isJsonPrimitive() || !el.getAsJsonPrimitive().isString()) {
+                    valid = false;
+                    break;
+                }
+                String str = el.getAsString();
+                if (!isCandidateKeyValue(str)) {
+                    valid = false;
+                    break;
+                }
+                count++;
+                totalLen += str.length();
+                distinct.add(str);
+            }
+            if (!valid || count < 2 || distinct.size() < count) {
+                continue;
+            }
+            double avgLen = (double) totalLen / count;
+            if (avgLen < bestAvgLen) {
+                bestAvgLen = avgLen;
+                bestProp = prop;
+            }
+        }
+        return Optional.ofNullable(bestProp);
+    }
+
+    private static boolean isCandidateKeyValue(String str) {
+        if (str == null || str.isEmpty() || str.length() > 32) {
+            return false;
+        }
+        boolean hasAsciiAlnum = false;
+        for (int i = 0; i < str.length(); i++) {
+            char ch = str.charAt(i);
+            if (Character.isWhitespace(ch) || ch == '/' || ch == ':') {
+                return false;
+            }
+            if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')) {
+                hasAsciiAlnum = true;
+            }
+        }
+        return hasAsciiAlnum;
     }
 
     static List<ResponseObject> responseObjects(String body, boolean collectionOnly) {

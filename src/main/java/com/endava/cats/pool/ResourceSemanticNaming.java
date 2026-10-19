@@ -11,10 +11,10 @@ import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -29,21 +29,18 @@ final class ResourceSemanticNaming {
     private static final Set<String> SINGLE_WORD_IDENTIFIERS = Set.of("id", "uuid", "guid", "username", "token");
     private static final Set<String> MULTI_WORD_IDENTIFIER_SUFFIXES = Set.of(
             "id", "uuid", "guid", "username", "token", "address");
-    private static final Set<String> RESOURCE_KEY_SUFFIXES = Set.of("code");
     private static final Set<String> GENERIC_FALLBACK_SUFFIXES = Set.of(
             "id", "ids", "uuid", "uuids", "guid", "guids", "name", "address", "token", "username");
     private static final Set<String> NON_ENTITY_ADDRESS_PREFIXES = Set.of("email", "ip", "ipv4", "ipv6", "mac");
+    private static final Set<String> COMPOUND_SUFFIX_GUARD = Stream.concat(
+            GENERIC_FALLBACK_SUFFIXES.stream(),
+            Stream.of("code", "codes", "type")).collect(Collectors.toUnmodifiableSet());
+    static final Set<String> COLLECTION_WRAPPER_SEGMENTS = Set.of(
+            "content", "data", "items", "results", "records", "elements", "entries", "list", "rows", "values", "response");
     private static final Set<String> ENVELOPE_METADATA_TOKENS = Set.of(
             "time", "timestamp", "date", "createdat", "updatedat", "status", "httpstatus", "statuscode", "errorcode",
             "message", "error", "errors", "code", "version", "path", "success", "issuccess", "ok",
             "kind", "meta", "metadata", "self", "next", "prev");
-    private static final Map<String, String> COMMON_ABBREVIATIONS = Map.of(
-            "language", "lang",
-            "configuration", "config",
-            "organization", "org",
-            "repository", "repo",
-            "environment", "env",
-            "specification", "spec");
 
     private static final Pattern WORD_BOUNDARY_SPLITTER = Pattern.compile(
             "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[_\\-]+");
@@ -84,6 +81,10 @@ final class ResourceSemanticNaming {
         if (ENVELOPE_METADATA_TOKENS.contains(normalizedKey)) {
             return true;
         }
+        return isItemMetadataKey(normalizedKey);
+    }
+
+    static boolean isItemMetadataKey(String normalizedKey) {
         return normalizedKey.contains("time") || normalizedKey.contains("date") ||
                 normalizedKey.contains("status") || normalizedKey.contains("message") ||
                 normalizedKey.contains("error");
@@ -155,6 +156,10 @@ final class ResourceSemanticNaming {
     static Set<String> semanticAliases(String path, String name) {
         Set<String> aliases = new LinkedHashSet<>();
         addWithSingularIdForms(normalize(name), aliases);
+        String singularName = singular(normalize(name));
+        if (!singularName.isEmpty()) {
+            aliases.add(singularName);
+        }
         addWordBoundarySuffixAliases(name, aliases);
         List<String> segments = SEMANTIC_PATH_SPLITTER.splitToList(path.replace("$", ""));
         StringBuilder suffix = new StringBuilder();
@@ -164,15 +169,11 @@ final class ResourceSemanticNaming {
             addWithSingularIdForms(normalize(suffix.toString()), aliases);
             if (segment.contains("[]")) {
                 String cleanSeg = normalize(segment);
-                if (!cleanSeg.isEmpty()) {
+                if (!cleanSeg.isEmpty() && !COLLECTION_WRAPPER_SEGMENTS.contains(cleanSeg)) {
                     String singSeg = singular(cleanSeg);
                     aliases.add(singSeg + normalize(name));
-                    if (RESOURCE_KEY_SUFFIXES.contains(normalize(name)) || isIdentifierName(name)) {
+                    if (isIdentifierName(name)) {
                         aliases.add(singSeg);
-                    }
-                    String abbreviated = COMMON_ABBREVIATIONS.get(singSeg);
-                    if (abbreviated != null) {
-                        aliases.add(abbreviated);
                     }
                 }
             }
@@ -188,27 +189,7 @@ final class ResourceSemanticNaming {
         if (StringUtils.isBlank(rawName)) {
             return;
         }
-        String normRaw = singular(normalize(rawName));
-        String abbreviated = COMMON_ABBREVIATIONS.get(normRaw);
-        if (abbreviated != null) {
-            aliases.add(abbreviated);
-        }
         List<String> words = splitWords(rawName);
-        // When a multi-word identifier or resource key includes a numeric version/length qualifier before the suffix
-        // (e.g. alpha2Code, iso639_1Code), also register the digit-stripped stem while preserving non-identifier
-        // tokens such as ipv4, ipv6, md5, or sha256.
-        if (words.size() >= 2 &&
-                (isIdentifierName(rawName) || RESOURCE_KEY_SUFFIXES.contains(singular(normalize(words.getLast()))))) {
-            StringBuilder stripped = new StringBuilder();
-            for (int i = 0; i < words.size() - 1; i++) {
-                stripped.append(normalize(words.get(i)).replaceAll("\\d+$", ""));
-            }
-            stripped.append(normalize(words.getLast()));
-            String candidate = stripped.toString();
-            if (!candidate.equals(normalize(rawName))) {
-                addWithSingularIdForms(candidate, aliases);
-            }
-        }
         if (words.size() >= 3) {
             String lastWord = normalize(words.getLast());
             if (SIMPLE_IDENTIFIERS.contains(lastWord) || SIMPLE_PLURAL_IDENTIFIERS.contains(lastWord)) {
@@ -325,12 +306,15 @@ final class ResourceSemanticNaming {
                 (target.location() == RequestTarget.Location.PATH || !target.path().contains("#"))) {
             aliases.addAll(primaryResourceIdentifierAliases(targetPath));
         }
-        String singularKey = singular(normalize(target.name()));
-        if ((target.location() == RequestTarget.Location.PATH || target.location() == RequestTarget.Location.QUERY) &&
-                RESOURCE_KEY_SUFFIXES.contains(singularKey)) {
+        if (target.location() == RequestTarget.Location.PATH || target.location() == RequestTarget.Location.QUERY) {
+            String singularKey = singular(normalize(target.name()));
             String resource = resourceName(targetPath);
-            aliases.add(resource + singularKey);
-            aliases.add(singular(resource) + singularKey);
+            String singularResource = singular(resource);
+            if (!singularKey.isEmpty() && !SIMPLE_IDENTIFIERS.contains(singularKey) &&
+                    !singularKey.equals(resource) && !singularKey.equals(singularResource)) {
+                aliases.add(resource + singularKey);
+                aliases.add(singularResource + singularKey);
+            }
         }
         if (target.location() == RequestTarget.Location.PATH) {
             aliases.addAll(precedingPathSegmentAliases(targetPath, target.name()));
@@ -396,26 +380,144 @@ final class ResourceSemanticNaming {
         return common;
     }
 
+    record TargetMatchContext(Set<String> targetAliases, Set<String> targetSingulars,
+                              Set<String> primaryResourceAliases, String digitMatchResource,
+                              String singleWordTargetPrefix) {
+    }
+
+    static TargetMatchContext createTargetMatchContext(String targetPath, TargetField target, Set<String> targetAliases) {
+        Set<String> targetSingulars = targetAliases.stream()
+                .filter(alias -> !GENERIC_FALLBACK_SUFFIXES.contains(alias))
+                .map(ResourceSemanticNaming::singular)
+                .collect(Collectors.toUnmodifiableSet());
+        Set<String> primaryResourceAliases = targetAliases.stream().anyMatch(SIMPLE_IDENTIFIERS::contains)
+                ? primaryResourceIdentifierAliases(targetPath)
+                : Set.of();
+        String resource = singular(resourceName(targetPath));
+        String digitMatchResource = (!resource.isEmpty() && !"resource".equals(resource) &&
+                targetAliases.stream().anyMatch(a -> a.startsWith(resource) && a.length() > resource.length()))
+                ? resource
+                : null;
+        String singleWordTargetPrefix = null;
+        if (target != null && target.location() != RequestTarget.Location.HEADER &&
+                splitWords(target.name()).size() == 1) {
+            String normTarget = normalize(target.name());
+            if (isPrefixCandidate(normTarget)) {
+                singleWordTargetPrefix = singular(normTarget);
+            }
+        }
+        return new TargetMatchContext(targetAliases, targetSingulars,
+                primaryResourceAliases, digitMatchResource, singleWordTargetPrefix);
+    }
+
+    /**
+     * Computes a graduated name-similarity score between a stored candidate value and a target field:
+     * <ul>
+     *   <li>{@code 100} — Exact match on a non-generic alias</li>
+     *   <li>{@code 90} — Singular/plural match on a non-generic alias</li>
+     *   <li>{@code 80} — Resource-qualified identifier match on the target path</li>
+     *   <li>{@code 50} — Head-word prefix match of at least 4 characters (e.g. {@code lang} ↔ {@code language})</li>
+     *   <li>{@code 30} — Generic suffix match (e.g. {@code id}, {@code token}, {@code username}, {@code address})</li>
+     *   <li>{@code 0} — No semantic match</li>
+     * </ul>
+     */
+    static int nameSimilarity(StoredValue value, String targetPath, TargetField target, Set<String> targetAliases) {
+        return nameSimilarity(value, createTargetMatchContext(targetPath, target, targetAliases));
+    }
+
+    static int nameSimilarity(StoredValue value, TargetMatchContext ctx) {
+        Set<String> sourceAliases = value.aliases();
+        boolean hasExactAliasMatch = false;
+        for (String alias : sourceAliases) {
+            if (ctx.targetAliases().contains(alias)) {
+                if (!GENERIC_FALLBACK_SUFFIXES.contains(alias)) {
+                    return 100;
+                }
+                hasExactAliasMatch = true;
+            }
+        }
+        for (String alias : sourceAliases) {
+            if (!GENERIC_FALLBACK_SUFFIXES.contains(alias) && ctx.targetSingulars().contains(singular(alias))) {
+                return 90;
+            }
+        }
+        if ((!ctx.primaryResourceAliases().isEmpty() && sourceAliases.stream().anyMatch(ctx.primaryResourceAliases()::contains)) ||
+                hasResourceQualifiedDigitMatch(sourceAliases, ctx.digitMatchResource(), ctx.targetAliases())) {
+            return 80;
+        }
+        if (ctx.singleWordTargetPrefix() != null && hasHeadWordPrefixMatch(sourceAliases, ctx.singleWordTargetPrefix())) {
+            return 50;
+        }
+        return hasExactAliasMatch ? 30 : 0;
+    }
+
+    private static boolean hasResourceQualifiedDigitMatch(Set<String> sourceAliases, String resource, Set<String> targetAliases) {
+        if (resource == null) {
+            return false;
+        }
+        for (String alias : sourceAliases) {
+            if (alias.startsWith(resource) && alias.length() > resource.length() &&
+                    Character.isDigit(alias.charAt(resource.length()))) {
+                String stripped = resource + alias.substring(resource.length()).replaceFirst("^\\d+", "");
+                if (targetAliases.contains(stripped)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasHeadWordPrefixMatch(Set<String> sourceAliases, String singleWordTargetPrefix) {
+        for (String src : sourceAliases) {
+            if (isPrefixCandidate(src) && isHeadPrefixOf(src, singleWordTargetPrefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isPrefixCandidate(String alias) {
+        if (alias == null || alias.length() < 4 || GENERIC_FALLBACK_SUFFIXES.contains(alias) ||
+                ENVELOPE_METADATA_TOKENS.contains(alias)) {
+            return false;
+        }
+        for (String suffix : COMPOUND_SUFFIX_GUARD) {
+            if (alias.length() > suffix.length() && alias.endsWith(suffix)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isHeadPrefixOf(String first, String second) {
+        String shorter = singular(first.length() <= second.length() ? first : second);
+        String longer = singular(first.length() <= second.length() ? second : first);
+        return shorter.length() >= 4 && longer.length() >= shorter.length() + 2 && longer.startsWith(shorter);
+    }
+
     static int matchSpecificity(StoredValue value, Set<String> targetAliases) {
         return value.aliases().stream().filter(targetAliases::contains)
                 .mapToInt(String::length).max().orElse(0);
     }
 
-    static int semanticConfidence(ResolvedValue candidate, String targetPath, Set<String> targetAliases) {
-        boolean qualifiedAlias = candidate.storedValue().aliases().stream()
-                .filter(alias -> !GENERIC_FALLBACK_SUFFIXES.contains(alias))
-                .anyMatch(targetAliases::contains);
-        if (qualifiedAlias) {
+    static int semanticConfidence(ResolvedValue candidate, TargetMatchContext ctx) {
+        int similarity = nameSimilarity(candidate.storedValue(), ctx);
+        if (similarity >= 90) {
+            return 4;
+        }
+        if (similarity >= 80) {
             return 3;
         }
-        Set<String> resourceAliases = primaryResourceIdentifierAliases(targetPath);
-        if (candidate.storedValue().aliases().stream().anyMatch(resourceAliases::contains)) {
+        if (similarity >= 50) {
             return 2;
         }
-        boolean nonIdFallback = candidate.storedValue().aliases().stream()
-                .filter(alias -> !SIMPLE_IDENTIFIERS.contains(alias) && !SIMPLE_PLURAL_IDENTIFIERS.contains(alias))
-                .anyMatch(targetAliases::contains);
-        return nonIdFallback ? 1 : 0;
+        if (similarity >= 30) {
+            boolean nonIdFallback = candidate.storedValue().aliases().stream()
+                    .filter(alias -> !SIMPLE_IDENTIFIERS.contains(alias) && !SIMPLE_PLURAL_IDENTIFIERS.contains(alias))
+                    .anyMatch(ctx.targetAliases()::contains);
+            return nonIdFallback ? 1 : 0;
+        }
+        return 0;
     }
 
     static int compatibilityQuality(Object candidateValue, TargetField target) {

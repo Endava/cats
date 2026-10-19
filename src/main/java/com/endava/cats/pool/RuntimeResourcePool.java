@@ -17,6 +17,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,6 +52,8 @@ public class RuntimeResourcePool {
     private final SuccessfulExchangeRecorder exchangeRecorder = new SuccessfulExchangeRecorder();
     private final ResourceRequestEnricher enricher;
     private final Map<CorrelationFeedbackKey, Integer> correlationFeedback = new LinkedHashMap<>();
+    private final Map<PairFeedbackKey, Integer> pairFeedback = new LinkedHashMap<>();
+    private final Set<String> observedProducers = new LinkedHashSet<>();
     private final IdentityHashMap<ResolvedRequest, Map<ResourceCorrelation, Long>> pendingCorrelationSources = new IdentityHashMap<>();
     private final AtomicLong sequence = new AtomicLong();
 
@@ -64,7 +67,8 @@ public class RuntimeResourcePool {
     public RuntimeResourcePool(ProcessingArguments processingArguments, FilesArguments filesArguments) {
         this.processingArguments = processingArguments;
         this.enricher = new ResourceRequestEnricher(filesArguments, resources,
-                (resource, lookup) -> correlationFeedbackScore(resource, lookup.targetPath(), lookup.target()));
+                (resource, lookup) -> correlationFeedbackScore(
+                        resource, lookup.sourceLocation(), lookup.targetPath(), lookup.target()));
     }
 
     /**
@@ -343,6 +347,13 @@ public class RuntimeResourcePool {
         boolean alignedRequestObjects = ResourceValueExtractor.alignedObjectPayloads(
                 effectiveRequestPayload, response.getBody(), requestObjects.size(), responseObjects.size());
         int limit = Math.min(responseObjects.size(), ResourceValueExtractor.MAX_COLLECTION_ITEMS);
+        String collectionResource = ResourceSemanticNaming.resourceName(data.getRelativePath());
+        Optional<String> inferredCollectionKey = data.getHttpMethod() == HttpMethod.GET &&
+                ResourceSemanticNaming.isCollectionPath(data.getRelativePath())
+                ? ResourceValueExtractor.inferObjectArrayKeyField(
+                        responseObjects.subList(0, limit).stream().map(ResponseObject::value).toList(),
+                        collectionResource)
+                : Optional.empty();
         for (int i = 0; i < limit; i++) {
             Map<String, StoredValue> values = new LinkedHashMap<>(pathValues);
             ResponseObject responseObject = responseObjects.get(i);
@@ -355,6 +366,10 @@ public class RuntimeResourcePool {
                 ResourceValueExtractor.collectResponseHeaders(response, values);
             }
             ResourceValueExtractor.collectKeyedMapIdentifier(data.getRelativePath(), responseObject.value(), values);
+            if (!ResourceValueExtractor.hasResourceIdentifier(values, data.getRelativePath()) && inferredCollectionKey.isPresent()) {
+                ResourceValueExtractor.applyInferredKeyAlias(
+                        collectionResource, responseObject.sourcePrefix() + inferredCollectionKey.get(), values);
+            }
             assignFallbackIdentifier(data.getRelativePath(), locationIdentifier, values);
             addResource(data, values);
         }
@@ -425,6 +440,9 @@ public class RuntimeResourcePool {
             enrichedValues.put(key, value.withAliases(aliases));
         });
 
+        if (data.getHttpMethod() == HttpMethod.POST) {
+            observedProducers.add(data.getRelativePath());
+        }
         resources.add(new ResourceInstance(sequence.incrementAndGet(), data.getRelativePath(), data.getHttpMethod(),
                 Collections.unmodifiableMap(enrichedValues), ResourceValueExtractor.isFuzzedRequest(data), true));
         if (resources.size() > MAX_RESOURCES) {
@@ -468,9 +486,20 @@ public class RuntimeResourcePool {
         resources.clear();
         baselineStore.clear();
         correlationFeedback.clear();
+        pairFeedback.clear();
+        observedProducers.clear();
         pendingCorrelationSources.clear();
         exchangeRecorder.clear();
         sequence.set(0);
+    }
+
+    /**
+     * Returns the monotonic count of distinct {@code (method, path)} operations that have produced at least one
+     * resource in this pool. Unlike {@code resources.size()}, this count is unaffected by {@code MAX_RESOURCES}
+     * eviction and only advances when a previously non-producing operation yields a resource for the first time.
+     */
+    public synchronized long observedResourceCount() {
+        return observedProducers.size();
     }
 
     public synchronized List<UnresolvedOperation> unresolvedOperations() {
@@ -509,17 +538,27 @@ public class RuntimeResourcePool {
             return;
         }
         Map<ResourceCorrelation, Long> correlationSources = pendingCorrelationSources.remove(resolvedRequest);
-        int adjustment = feedbackAdjustment(data, response.getResponseCode());
-        if (adjustment == 0 || correlationSources == null || correlationSources.isEmpty()) {
+        if (correlationSources == null || correlationSources.isEmpty()) {
+            return;
+        }
+        int adjustment = feedbackAdjustment(data, response.getResponseCode(), correlationSources.size());
+        if (adjustment == 0) {
             return;
         }
         Set<CorrelationFeedbackKey> keys = new LinkedHashSet<>();
-        correlationSources.forEach((correlation, resourceSequence) -> keys.add(
-                new CorrelationFeedbackKey(resourceSequence, data.getRelativePath(), correlation.getTarget())));
+        Set<PairFeedbackKey> pairKeys = new LinkedHashSet<>();
+        correlationSources.forEach((correlation, resourceSequence) -> {
+            keys.add(new CorrelationFeedbackKey(resourceSequence, data.getRelativePath(), correlation.getTarget()));
+            if (correlation.getSourcePath() != null && correlation.getSourceLocation() != null) {
+                pairKeys.add(new PairFeedbackKey(correlation.getSourcePath(), correlation.getSourceLocation(),
+                        data.getRelativePath(), correlation.getTarget()));
+            }
+        });
         keys.forEach(key -> updateCorrelationFeedback(key, adjustment));
+        pairKeys.forEach(pairKey -> updatePairFeedback(pairKey, adjustment));
     }
 
-    private int feedbackAdjustment(ServiceData data, int responseCode) {
+    private int feedbackAdjustment(ServiceData data, int responseCode, int correlatedTargetsCount) {
         if (ResponseCodeFamily.is2xxCode(responseCode)) {
             return SUCCESS_REWARD;
         }
@@ -529,8 +568,21 @@ public class RuntimeResourcePool {
         return switch (responseCode) {
             case 404, 410 -> NOT_FOUND_PENALTY;
             case 409, 422 -> CONFLICT_PENALTY;
+            case 400 -> correlatedTargetsCount == 1 && isSingleInputRequest(data) ? CONFLICT_PENALTY : 0;
             default -> 0;
         };
+    }
+
+    private boolean isSingleInputRequest(ServiceData data) {
+        if (HttpMethod.requiresBody(data.getHttpMethod()) && StringUtils.isNotBlank(data.getPathParamsPayload()) &&
+                !JsonUtils.isEmptyPayload(data.getPayload())) {
+            return false;
+        }
+        if (!JsonUtils.isValidJson(data.getPayload())) {
+            return false;
+        }
+        JsonElement el = JsonUtils.parseAsJsonElement(data.getPayload());
+        return el.isJsonObject() && el.getAsJsonObject().size() == 1;
     }
 
     private void updateCorrelationFeedback(CorrelationFeedbackKey key, int adjustment) {
@@ -546,10 +598,27 @@ public class RuntimeResourcePool {
         }
     }
 
-    private int correlationFeedbackScore(ResourceInstance resource, String targetPath, TargetField target) {
-        CorrelationFeedbackKey key = new CorrelationFeedbackKey(resource.sequence(), targetPath,
-                new RequestTarget(target.location(), target.path()));
-        return correlationFeedback.getOrDefault(key, 0);
+    private void updatePairFeedback(PairFeedbackKey key, int adjustment) {
+        pairFeedback.compute(key, (_, current) -> {
+            int previous = Optional.ofNullable(current).orElse(0);
+            if (adjustment > 0) {
+                return Math.min(MAX_FEEDBACK_REWARD, Math.max(0, previous) + adjustment);
+            }
+            return Math.max(MIN_FEEDBACK_PENALTY, Math.min(0, previous) + adjustment);
+        });
+        while (pairFeedback.size() > MAX_CORRELATION_FEEDBACK) {
+            pairFeedback.remove(pairFeedback.keySet().iterator().next());
+        }
+    }
+
+    private int correlationFeedbackScore(ResourceInstance resource, String sourceLocation,
+                                         String targetPath, TargetField target) {
+        RequestTarget reqTarget = new RequestTarget(target.location(), target.path());
+        CorrelationFeedbackKey key = new CorrelationFeedbackKey(resource.sequence(), targetPath, reqTarget);
+        int instanceScore = correlationFeedback.getOrDefault(key, 0);
+        int pairScore = sourceLocation == null ? 0 : pairFeedback.getOrDefault(
+                new PairFeedbackKey(resource.sourcePath(), sourceLocation, targetPath, reqTarget), 0);
+        return Math.clamp((long) instanceScore + pairScore, MIN_FEEDBACK_PENALTY, MAX_FEEDBACK_REWARD);
     }
 
     /**
@@ -616,5 +685,8 @@ public class RuntimeResourcePool {
     }
 
     private record CorrelationFeedbackKey(long resourceSequence, String targetPath, RequestTarget target) {
+    }
+
+    private record PairFeedbackKey(String sourcePath, String sourceLocation, String targetPath, RequestTarget target) {
     }
 }

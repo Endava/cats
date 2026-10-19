@@ -33,7 +33,7 @@ final class ResourceRequestEnricher {
     private final List<ResourceInstance> resources;
     private final ToIntBiFunction<ResourceInstance, FeedbackLookup> feedbackLookup;
 
-    record FeedbackLookup(String targetPath, TargetField target) {
+    record FeedbackLookup(String targetPath, TargetField target, String sourceLocation) {
     }
 
     ResourceRequestEnricher(FilesArguments filesArguments,
@@ -249,6 +249,8 @@ final class ResourceRequestEnricher {
     Optional<ResolvedValue> resolve(String targetPath, TargetField target, ResourceInstance boundResource,
                                     boolean boundOnly, HttpMethod targetMethod) {
         Set<String> targetAliases = ResourceSemanticNaming.targetAliases(targetPath, target);
+        ResourceSemanticNaming.TargetMatchContext matchCtx =
+                ResourceSemanticNaming.createTargetMatchContext(targetPath, target, targetAliases);
         boolean destructivePathTarget = target.location() == RequestTarget.Location.PATH &&
                 (targetMethod == HttpMethod.DELETE || targetMethod == HttpMethod.PUT || targetMethod == HttpMethod.PATCH);
         Set<String> protectedSelfValues = destructivePathTarget ? selfIdentityValues(targetPath) : Set.of();
@@ -259,21 +261,22 @@ final class ResourceRequestEnricher {
                         resource.sequence() == boundResource.sequence()))
                 .flatMap(resource -> resource.values().values().stream()
                         .filter(value -> !protectedSelfValues.contains(String.valueOf(value.value())))
-                        .filter(value -> value.aliases().stream().anyMatch(targetAliases::contains))
+                        .filter(value -> matchesTarget(value, target, matchCtx))
                         .map(value -> new ResolvedValue(resource, value,
                                 ResourceSemanticNaming.pathAffinity(resource.sourcePath(), targetPath) * 1_000 +
+                                        ResourceSemanticNaming.nameSimilarity(value, matchCtx) * 5 +
                                         Math.min(50, ResourceSemanticNaming.matchSpecificity(value, targetAliases)) * 10 +
                                         sourcePriority(resource) + storedValuePriority(value) +
-                                        feedbackScore(resource, targetPath, target))))
+                                        feedbackScore(resource, value, targetPath, target))))
                 .toList();
         if (candidates.isEmpty() && target.location() == RequestTarget.Location.PATH && !boundOnly) {
             candidates = childPathFallbackCandidates(targetPath, boundResource);
         }
         int bestQuality = candidates.stream()
-                .mapToInt(candidate -> candidateQuality(candidate, targetPath, target, targetAliases, boundResource))
+                .mapToInt(candidate -> candidateQuality(candidate, targetPath, target, matchCtx, boundResource))
                 .max().orElse(Integer.MIN_VALUE);
         return candidates.stream()
-                .filter(candidate -> candidateQuality(candidate, targetPath, target, targetAliases, boundResource) == bestQuality)
+                .filter(candidate -> candidateQuality(candidate, targetPath, target, matchCtx, boundResource) == bestQuality)
                 .max(Comparator.comparingInt(ResolvedValue::score)
                         .thenComparingLong(value -> value.resource().sequence()));
     }
@@ -285,26 +288,30 @@ final class ResourceRequestEnricher {
         TargetField target = new TargetField(parameterName, parameterName, RequestTarget.Location.PATH,
                 ResourceSemanticNaming.stringShape(currentValue));
         Set<String> targetAliases = ResourceSemanticNaming.targetAliases(targetPath, target);
+        ResourceSemanticNaming.TargetMatchContext matchCtx =
+                ResourceSemanticNaming.createTargetMatchContext(targetPath, target, targetAliases);
         List<ResolvedValue> candidates = resources.stream()
                 .filter(ResourceInstance::active)
                 .filter(resource -> !resource.fuzzed())
-                .filter(resource -> feedbackScore(resource, targetPath, target) >= 0)
+                .filter(resource -> feedbackScore(resource, null, targetPath, target) >= 0)
                 .flatMap(resource -> resource.values().values().stream()
-                        .filter(value -> value.aliases().stream().anyMatch(targetAliases::contains))
+                        .filter(value -> matchesTarget(value, target, matchCtx))
+                        .filter(value -> feedbackScore(resource, value, targetPath, target) >= 0)
                         .filter(value -> !ResourceSemanticNaming.sameValue(currentValue, value.value()))
                         .map(value -> new ResolvedValue(resource, value,
                                 ResourceSemanticNaming.pathAffinity(resource.sourcePath(), targetPath) * 1_000 +
+                                        ResourceSemanticNaming.nameSimilarity(value, matchCtx) * 5 +
                                         Math.min(50, ResourceSemanticNaming.matchSpecificity(value, targetAliases)) * 10 +
                                         sourcePriority(resource) + storedValuePriority(value) +
-                                        feedbackScore(resource, targetPath, target))))
-                .filter(candidate -> ResourceSemanticNaming.semanticConfidence(candidate, targetPath, targetAliases) >= 2)
+                                        feedbackScore(resource, value, targetPath, target))))
+                .filter(candidate -> ResourceSemanticNaming.semanticConfidence(candidate, matchCtx) >= 2)
                 .filter(candidate -> ResourceSemanticNaming.compatibilityQuality(candidate.storedValue().value(), target) > 0)
                 .toList();
         int bestQuality = candidates.stream()
-                .mapToInt(candidate -> candidateQuality(candidate, targetPath, target, targetAliases, null))
+                .mapToInt(candidate -> candidateQuality(candidate, targetPath, target, matchCtx, null))
                 .max().orElse(Integer.MIN_VALUE);
         return candidates.stream()
-                .filter(candidate -> candidateQuality(candidate, targetPath, target, targetAliases, null) == bestQuality)
+                .filter(candidate -> candidateQuality(candidate, targetPath, target, matchCtx, null) == bestQuality)
                 .max(Comparator.comparingInt(ResolvedValue::score)
                         .thenComparingLong(value -> value.resource().sequence()))
                 .map(ResolvedValue::value)
@@ -396,19 +403,35 @@ final class ResourceRequestEnricher {
                 .toList();
     }
 
+    private boolean matchesTarget(StoredValue value, TargetField target,
+                                  ResourceSemanticNaming.TargetMatchContext matchCtx) {
+        if (value.aliases().stream().anyMatch(matchCtx.targetAliases()::contains)) {
+            return true;
+        }
+        if (value.aliases().stream().anyMatch(matchCtx.targetSingulars()::contains)) {
+            return ResourceSemanticNaming.compatibilityQuality(value.value(), target) > 0;
+        }
+        if (matchCtx.digitMatchResource() == null && matchCtx.singleWordTargetPrefix() == null) {
+            return false;
+        }
+        int similarity = ResourceSemanticNaming.nameSimilarity(value, matchCtx);
+        return similarity >= 30 && ResourceSemanticNaming.compatibilityQuality(value.value(), target) > 0;
+    }
+
     private int candidateQuality(ResolvedValue candidate, String targetPath, TargetField target,
-                                 Set<String> targetAliases, ResourceInstance boundResource) {
-        int feedbackScore = feedbackScore(candidate.resource(), targetPath, target);
+                                 ResourceSemanticNaming.TargetMatchContext matchCtx, ResourceInstance boundResource) {
+        int feedbackScore = feedbackScore(candidate.resource(), candidate.storedValue(), targetPath, target);
         int feedbackQuality = feedbackScore < 0 ? feedbackScore - MIN_FEEDBACK_PENALTY : -MIN_FEEDBACK_PENALTY;
         int compatibilityQuality = ResourceSemanticNaming.compatibilityQuality(candidate.storedValue().value(), target);
-        int semanticConfidence = ResourceSemanticNaming.semanticConfidence(candidate, targetPath, targetAliases);
+        int semanticConfidence = ResourceSemanticNaming.semanticConfidence(candidate, matchCtx);
         int bindingQuality = boundResource != null && candidate.resource().sequence() == boundResource.sequence() ? 1 : 0;
         return feedbackQuality * 10_000 + compatibilityQuality * 1_000 + semanticConfidence * 100 +
                 bindingQuality * 10 + (candidate.resource().fuzzed() ? 0 : 1);
     }
 
-    private int feedbackScore(ResourceInstance resource, String targetPath, TargetField target) {
-        return feedbackLookup.applyAsInt(resource, new FeedbackLookup(targetPath, target));
+    private int feedbackScore(ResourceInstance resource, StoredValue value, String targetPath, TargetField target) {
+        return feedbackLookup.applyAsInt(resource,
+                new FeedbackLookup(targetPath, target, value != null ? value.sourceLocation() : null));
     }
 
     private int sourcePriority(ResourceInstance resource) {

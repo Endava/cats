@@ -8,7 +8,9 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
+import com.google.gson.JsonObject;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -2087,7 +2089,7 @@ class RuntimeResourcePoolTest {
         resourcePool.observe(getData("/countries", "{}"), request("GET", "/countries", "{}"),
                 response(200, "[\"Norway\",\"Sweden\"]"));
         resourcePool.observe(getData("/v2/all", "{}"), request("GET", "/v2/all", "{}"),
-                response(200, "[{\"alpha2Code\":\"NO\",\"currencies\":[{\"code\":\"NOK\"}],\"languages\":[\"no\"]}]"));
+                response(200, "[{\"alpha2Code\":\"NO\",\"currencies\":[{\"code\":\"NOK\",\"name\":\"Norwegian krone\"},{\"code\":\"SEK\",\"name\":\"Swedish krona\"}],\"languages\":[\"no\"]}]"));
 
         ServiceData createNews = postData("/news", "{\"country\":\"generated\",\"text\":\"hello\"}");
         Assertions.assertThat(resourcePool.enrich(createNews, createNews.getPayload()).payload())
@@ -2113,6 +2115,12 @@ class RuntimeResourcePoolTest {
                 .doesNotContain("");
         Assertions.assertThat(ResourceSemanticNaming.semanticAliases("$.ipv4", "ipv4"))
                 .containsExactly("ipv4");
+        Assertions.assertThat(ResourceSemanticNaming.semanticAliases("$.s3Bucket", "s3Bucket"))
+                .containsExactly("s3bucket");
+        Assertions.assertThat(ResourceSemanticNaming.semanticAliases("$.base64Data", "base64Data"))
+                .containsExactly("base64data");
+        Assertions.assertThat(ResourceSemanticNaming.semanticAliases("$.ipv4Address", "ipv4Address"))
+                .containsExactly("ipv4address");
 
         // Negative cases: postalCode must not correlate with languages[].code or currencies[].code,
         // and top-level envelope 'code' must remain metadata.
@@ -2121,6 +2129,65 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(enrichedAddress)
                 .contains("\"postalCode\":\"generated-zip\"", "\"promoCode\":\"generated-promo\"");
         Assertions.assertThat(ResourceSemanticNaming.isMetadataKey("code")).isTrue();
+    }
+
+    @Test
+    void shouldScoreNameSimilarityInferCollectionKeysAndApplyFeedbackInFreshPool() {
+        enableResourceReuse();
+        TargetField langTarget = new TargetField("lang", "lang", RequestTarget.Location.PATH, ValueShape.STRING);
+        StoredValue langValue = new StoredValue("en", "response.body.$[].code", Set.of("code", "language"));
+        Assertions.assertThat(ResourceSemanticNaming.nameSimilarity(langValue, "/check", langTarget, Set.of("language")))
+                .isEqualTo(100);
+        Assertions.assertThat(ResourceSemanticNaming.nameSimilarity(langValue, "/check", langTarget, Set.of("languages")))
+                .isEqualTo(90);
+        Assertions.assertThat(ResourceSemanticNaming.nameSimilarity(langValue, "/check", langTarget, Set.of("lang")))
+                .isEqualTo(50);
+
+        // Prefix guards: user ↛ username, and 3-char cat ↛ category
+        StoredValue usernameValue = new StoredValue("alice", "response.body.$.username", Set.of("username"));
+        TargetField userTarget = new TargetField("user", "user", RequestTarget.Location.PATH, ValueShape.STRING);
+        Assertions.assertThat(ResourceSemanticNaming.nameSimilarity(usernameValue, "/users/{user}", userTarget, Set.of("user")))
+                .isEqualTo(0);
+        StoredValue categoryValue = new StoredValue("books", "response.body.$.category", Set.of("category"));
+        TargetField catTarget = new TargetField("cat", "cat", RequestTarget.Location.PATH, ValueShape.STRING);
+        Assertions.assertThat(ResourceSemanticNaming.nameSimilarity(categoryValue, "/items/{cat}", catTarget, Set.of("cat")))
+                .isEqualTo(0);
+
+        // inferObjectArrayKeyField negative cases: unique numbers, single item, wrapper segments, own id vs foreign ownerId
+        JsonObject numItem1 = JsonUtils.parseAsJsonElement("{\"name\":\"Alice Smith\",\"age\":30}").getAsJsonObject();
+        JsonObject numItem2 = JsonUtils.parseAsJsonElement("{\"name\":\"Bob Jones\",\"age\":41}").getAsJsonObject();
+        Assertions.assertThat(ResourceValueExtractor.inferObjectArrayKeyField(List.of(numItem1, numItem2), "people")).isEmpty();
+
+        JsonObject singleItem = JsonUtils.parseAsJsonElement("{\"name\":\"x\",\"code\":\"abc\"}").getAsJsonObject();
+        Assertions.assertThat(ResourceValueExtractor.inferObjectArrayKeyField(List.of(singleItem), "currencies")).isEmpty();
+
+        JsonObject fkItem1 = JsonUtils.parseAsJsonElement("{\"ownerId\":1,\"code\":\"NOK\",\"name\":\"Norwegian krone\"}").getAsJsonObject();
+        JsonObject fkItem2 = JsonUtils.parseAsJsonElement("{\"ownerId\":2,\"code\":\"SEK\",\"name\":\"Swedish krona\"}").getAsJsonObject();
+        Assertions.assertThat(ResourceValueExtractor.inferObjectArrayKeyField(List.of(fkItem1, fkItem2), "currencies")).contains("code");
+        Assertions.assertThat(ResourceValueExtractor.inferObjectArrayKeyField(List.of(fkItem1, fkItem2), "content")).isEmpty();
+
+        JsonObject ownId1 = JsonUtils.parseAsJsonElement("{\"currencyId\":1,\"code\":\"NOK\"}").getAsJsonObject();
+        JsonObject ownId2 = JsonUtils.parseAsJsonElement("{\"currencyId\":2,\"code\":\"SEK\"}").getAsJsonObject();
+        Assertions.assertThat(ResourceValueExtractor.inferObjectArrayKeyField(List.of(ownId1, ownId2), "currencies")).isEmpty();
+
+        // Collection key inference on GET /languages, prefix survival in alternativePathParameterValue, and 400 feedback
+        ServiceData listLanguages = getData("/languages", "{}");
+        resourcePool.observe(listLanguages, request("GET", "/languages", "{}"), response(200,
+                "[{\"name\":\"English (US)\",\"code\":\"en\",\"longCode\":\"en-US\"}," +
+                        "{\"name\":\"German (Germany)\",\"code\":\"de\",\"longCode\":\"de-DE\"}]"));
+        ServiceData checkByLang = getData("/check/{lang}", "{\"lang\":\"generated\"}");
+        RuntimeResourcePool.ResolvedRequest firstAttempt = resourcePool.enrich(checkByLang, checkByLang.getPayload());
+        Assertions.assertThat(firstAttempt.payload()).contains("\"lang\":\"de\"");
+
+        // Bug 1 check: prefix-matched candidate survives alternativePathParameterValue
+        Assertions.assertThat(resourcePool.alternativePathParameterValue("/check/{lang}", "lang", "de"))
+                .contains("en");
+
+        // Single-target 400 feedback on an unmutated baseline request demotes 'de' and switches to 'en'
+        resourcePool.observe(checkByLang, request("GET", "/check/de", firstAttempt.payload()),
+                response(400, "{\"error\":\"unsupported\"}"), firstAttempt);
+        RuntimeResourcePool.ResolvedRequest secondAttempt = resourcePool.enrich(checkByLang, checkByLang.getPayload());
+        Assertions.assertThat(secondAttempt.payload()).contains("\"lang\":\"en\"");
     }
 
     private void enableResourceReuse() {
