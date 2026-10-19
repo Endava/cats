@@ -816,29 +816,37 @@ class CatsCommandTest {
                     .addApiResponse("200", new io.swagger.v3.oas.models.responses.ApiResponse()
                             .content(new io.swagger.v3.oas.models.media.Content()
                                     .addMediaType("application/octet-stream", new io.swagger.v3.oas.models.media.MediaType()))));
-            PathItem binaryPath = new PathItem().get(binaryGet);
+            PathItem templatedBinaryPath = new PathItem().get(binaryGet);
+            PathItem dumpBinaryPath = new PathItem().get(binaryGet);
             PathItem itemPath = new PathItem().post(new Operation()).delete(new Operation());
             OpenAPI api = new OpenAPI().paths(new Paths()
-                    .addPathItem("/files/{id}/content", binaryPath)
+                    .addPathItem("/actuator/heapdump", dumpBinaryPath)
+                    .addPathItem("/files/{id}/content", templatedBinaryPath)
                     .addPathItem("/files/{id}", itemPath));
-            Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/files/{id}/content", "/files/{id}"));
+            Mockito.when(filterArguments.getPathsToRun(api))
+                    .thenReturn(List.of("/actuator/heapdump", "/files/{id}/content", "/files/{id}"));
             Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
             Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
                     .thenReturn(List.of(happy));
             FuzzingData postData = fuzzingData(HttpMethod.POST, "/files/{id}");
             Mockito.when(postData.getPayload()).thenReturn("{\"name\":\"doc.pdf\"}");
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/actuator/heapdump")))
+                    .when(fuzzingDataFactory).fromPathItem("/actuator/heapdump", dumpBinaryPath, api);
             Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/files/{id}/content")))
-                    .when(fuzzingDataFactory).fromPathItem("/files/{id}/content", binaryPath, api);
+                    .when(fuzzingDataFactory).fromPathItem("/files/{id}/content", templatedBinaryPath, api);
             Mockito.doReturn(List.of(postData, fuzzingData(HttpMethod.DELETE, "/files/{id}")))
                     .when(fuzzingDataFactory).fromPathItem("/files/{id}", itemPath, api);
 
             Assertions.assertThatThrownBy(() -> catsMain.startFuzzing(api))
                     .isInstanceOf(com.endava.cats.exception.CatsExecutionLimitReachedException.class);
 
+            // Parameterized binary path (/files/{id}/content) runs before deferred DELETE,
+            // while unparameterized binary dump (/actuator/heapdump) runs after deferred DELETE.
             Assertions.assertThat(executionOrder).containsExactly(
                     "HappyPath:POST /files/{id}",
                     "HappyPath:GET /files/{id}/content",
                     "HappyPath:DELETE /files/{id}",
+                    "HappyPath:GET /actuator/heapdump",
                     "RandomContinuous:POST /files/{id}");
 
             // Also verify that if the stop limit is hit during a wave (before normal deferred deletes),
@@ -859,6 +867,42 @@ class CatsCommandTest {
             Assertions.assertThat(executionOrder).containsExactly(
                     "HappyPath:POST /files/{id}",
                     "HappyPath:DELETE /files/{id}");
+
+            // Bug 2 check: retryUnresolvedSeedOperations still runs even when RuntimeResourcePool is at MAX_RESOURCES (500)
+            executionOrder.clear();
+            RuntimeResourcePool fullPool = Mockito.mock(RuntimeResourcePool.class);
+            java.util.concurrent.atomic.AtomicLong obsCount = new java.util.concurrent.atomic.AtomicLong(500L);
+            Mockito.when(fullPool.observedResourceCount()).thenAnswer(_ -> obsCount.get());
+            Mockito.when(fullPool.hasSucceededWithUnmodifiedRequest(Mockito.anyString(), Mockito.any())).thenReturn(false);
+            Object origPool = ReflectionTestUtils.getField(catsMain, "runtimeResourcePool");
+            ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", fullPool);
+            ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 0L);
+            try {
+                Fuzzer coverageProducer = Mockito.mock(Fuzzer.class);
+                Mockito.when(coverageProducer.skipForHttpMethods()).thenReturn(List.of());
+                Mockito.when(coverageProducer.isApplicableTo(Mockito.any())).thenReturn(true);
+                Mockito.when(coverageProducer.toString()).thenReturn("RemoveFields");
+                Mockito.doAnswer(inv -> {
+                    FuzzingData d = inv.getArgument(0);
+                    executionOrder.add("RemoveFields:" + d.getMethod() + " " + d.getPath());
+                    obsCount.incrementAndGet();
+                    return null;
+                }).when(coverageProducer).fuzz(Mockito.any());
+                Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/files/{id}"));
+                Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                        .thenReturn(List.of(happy, coverageProducer));
+
+                catsMain.startFuzzing(api);
+
+                Assertions.assertThat(executionOrder).containsExactly(
+                        "HappyPath:POST /files/{id}",
+                        "RemoveFields:POST /files/{id}",
+                        "RemoveFields:DELETE /files/{id}",
+                        "HappyPath:POST /files/{id}",
+                        "HappyPath:DELETE /files/{id}");
+            } finally {
+                ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", origPool);
+            }
         } finally {
             ReflectionTestUtils.setField(catsMain, "randomFuzzer", originalRandom);
             ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 0L);

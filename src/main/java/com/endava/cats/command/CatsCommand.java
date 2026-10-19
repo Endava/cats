@@ -251,9 +251,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     static final Set<String> COVERAGE_WAVE_FUZZERS = Set.of(
             "happypath", "onlyrequiredfields", "defaultvaluesinfields", "examplesfields",
-            "emptyjsonbody", "smallnegativeandint32boundaryfields",
-            "numericvaluesinstringfields", "removefields",
+            "emptyjsonbody", "numericvaluesinstringfields", "removefields",
             "alternativedatetimeformatsfields", "queryobjectasrequestbody");
+    private static final List<String> COMBINATORIAL_COVERAGE_FUZZERS = List.of(
+            "removefields", "numericvaluesinstringfields");
     static final Set<String> CRASH_WAVE_FUZZERS = Set.of(
             "nullelementsinarrayfields", "smallnegativeandint32boundaryfields",
             "extremenegativenumbersinintegerfields", "extremepositivenumbersinintegerfields",
@@ -550,8 +551,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
         try {
             runPhasedWavesAcrossPaths(preparedPaths);
-            runBinaryStreamPaths(preparedPaths);
+            runBinaryStreamPaths(preparedPaths, true);
             this.runDeferredHappyPathDeletes();
+            runBinaryStreamPaths(preparedPaths, false);
             this.runContinuousRandomUntilTimeLimit(preparedPaths);
         } catch (CatsExecutionLimitReachedException e) {
             this.runDeferredHappyPathDeletes();
@@ -609,15 +611,33 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                 runSeedFuzzersForPath(path.filteredFuzzingData(), path.fuzzersToRun());
             }
         }
+        long resourcesBeforeCoverageWave = runtimeResourcePool != null ? runtimeResourcePool.observedResourceCount() : 0;
         for (PreparedPath path : preparedPaths) {
             if (path.binaryStreamOnly()) {
                 continue;
             }
             CatsExecutionCancelledException.check();
-            List<Fuzzer> coverageRest = nonSeedFuzzers(path.fuzzersToRun()).stream()
-                    .filter(fuzzer -> isInWave(fuzzer, COVERAGE_WAVE_FUZZERS))
+            List<Fuzzer> fastCoverage = nonSeedFuzzers(path.fuzzersToRun()).stream()
+                    .filter(fuzzer -> isInWave(fuzzer, COVERAGE_WAVE_FUZZERS) &&
+                            !isInWave(fuzzer, Set.copyOf(COMBINATORIAL_COVERAGE_FUZZERS)))
                     .toList();
-            runFuzzers(path.filteredFuzzingData(), coverageRest);
+            runFuzzers(path.filteredFuzzingData(), fastCoverage);
+        }
+        for (String combinatorialName : COMBINATORIAL_COVERAGE_FUZZERS) {
+            Set<String> singleWave = Set.of(combinatorialName);
+            for (PreparedPath path : preparedPaths) {
+                if (path.binaryStreamOnly()) {
+                    continue;
+                }
+                CatsExecutionCancelledException.check();
+                List<Fuzzer> combinatorialCoverage = nonSeedFuzzers(path.fuzzersToRun()).stream()
+                        .filter(fuzzer -> isInWave(fuzzer, singleWave))
+                        .toList();
+                runFuzzers(path.filteredFuzzingData(), combinatorialCoverage);
+            }
+        }
+        if (runtimeResourcePool != null && runtimeResourcePool.observedResourceCount() > resourcesBeforeCoverageWave) {
+            retryUnresolvedSeedOperations(preparedPaths);
         }
         for (PreparedPath path : preparedPaths) {
             if (path.binaryStreamOnly()) {
@@ -643,9 +663,35 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         }
     }
 
-    private void runBinaryStreamPaths(List<PreparedPath> preparedPaths) {
+    private void retryUnresolvedSeedOperations(List<PreparedPath> preparedPaths) {
+        if (runtimeResourcePool == null) {
+            return;
+        }
         for (PreparedPath path : preparedPaths) {
-            if (!path.binaryStreamOnly()) {
+            if (path.binaryStreamOnly()) {
+                continue;
+            }
+            Fuzzer happyPath = path.fuzzersToRun().stream()
+                    .filter(HappyPathFuzzer.class::isInstance)
+                    .findFirst()
+                    .orElse(null);
+            if (happyPath == null) {
+                continue;
+            }
+            List<FuzzingData> unresolvedSeedData = path.filteredFuzzingData().stream()
+                    .filter(this::isSafeResourceSeed)
+                    .filter(data -> !runtimeResourcePool.hasSucceededWithUnmodifiedRequest(data.getPath(), data.getMethod()))
+                    .sorted(Comparator.comparingInt(data -> seedMethodOrder(data.getMethod())))
+                    .toList();
+            if (!unresolvedSeedData.isEmpty()) {
+                runFuzzers(unresolvedSeedData, List.of(happyPath));
+            }
+        }
+    }
+
+    private void runBinaryStreamPaths(List<PreparedPath> preparedPaths, boolean parameterized) {
+        for (PreparedPath path : preparedPaths) {
+            if (!path.binaryStreamOnly() || path.pathKey().contains("{") != parameterized) {
                 continue;
             }
             CatsExecutionCancelledException.check();

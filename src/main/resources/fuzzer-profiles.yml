@@ -311,7 +311,6 @@ profiles:
       - EmptyJsonBody
       - RemoveFields
       - NumericValuesInStringFields
-      - SmallNegativeAndInt32BoundaryFields
       - AlternativeDateTimeFormatsFields
       - QueryObjectAsRequestBody
 
