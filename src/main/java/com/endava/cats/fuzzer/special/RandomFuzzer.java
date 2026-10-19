@@ -65,6 +65,7 @@ public class RandomFuzzer implements Fuzzer {
     private final StopArguments stopArguments;
     private final FilesArguments filesArguments;
     private final Instance<Mutator> mutators;
+    private boolean reportServerErrorsWhenUnmatched;
 
     @Inject
     public RandomFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener,
@@ -78,6 +79,22 @@ public class RandomFuzzer implements Fuzzer {
         this.mutators = mutators;
         this.stopArguments = stopArguments;
         this.filesArguments = filesArguments;
+    }
+
+    /**
+     * Runs {@link #fuzz(FuzzingData)} while treating HTTP 5XX responses as errors when no explicit
+     * {@code --matchXXX} criteria were configured on the CLI.
+     *
+     * @param data the fuzzing context
+     */
+    public void fuzzContinuous(FuzzingData data) {
+        boolean previous = this.reportServerErrorsWhenUnmatched;
+        this.reportServerErrorsWhenUnmatched = true;
+        try {
+            fuzz(data);
+        } finally {
+            this.reportServerErrorsWhenUnmatched = previous;
+        }
     }
 
     @Override
@@ -181,6 +198,10 @@ public class RandomFuzzer implements Fuzzer {
         }
         if (matchArguments.isMatchResponse(catsResponse)) {
             testCaseListener.reportResultError(logger, fuzzingData, CatsResultFactory.Reason.RESPONSE_MATCHES_ARGUMENTS.value(), "Response matches" + matchArguments.getMatchString());
+        } else if (reportServerErrorsWhenUnmatched && !matchArguments.isAnyMatchArgumentSupplied() &&
+                catsResponse.getResponseCode() >= 500 && catsResponse.getResponseCode() < 600) {
+            testCaseListener.reportResultError(logger, fuzzingData, CatsResultFactory.Reason.UNEXPECTED_RESPONSE_CODE.value(),
+                    "Response status code %s indicates a server error".formatted(catsResponse.responseCodeAsString()));
         } else {
             testCaseListener.skipTest(logger, "Skipping test as response does not match given matchers!");
         }

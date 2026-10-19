@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.annotations.Linter;
 import com.endava.cats.annotations.SecondPhaseFuzzer;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.CheckArguments;
@@ -32,6 +33,8 @@ import com.endava.cats.report.UnresolvedParametersSummary;
 import com.endava.cats.tui.CatsTuiLauncher;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
+import com.endava.cats.util.AnnotationUtils;
+import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.VersionChecker;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -39,6 +42,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,14 +57,21 @@ import picocli.CommandLine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @QuarkusTest
 class CatsCommandTest {
 
     @Inject
     CatsCommand catsMain;
+    @Inject
+    @Any
+    Instance<Fuzzer> registeredFuzzers;
     @InjectSpy
     ExecutionStatisticsListener executionStatisticsListener;
     @Inject
@@ -697,6 +709,175 @@ class CatsCommandTest {
         Assertions.assertThat(executionOrder).containsExactly(
                 "other-POST", "other-DELETE", "happy-POST", "happy-DELETE");
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+    }
+
+    @Test
+    void shouldRunCoverageWaveAcrossAllPathsBeforeRemainingFuzzers() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> executionOrder = new ArrayList<>();
+        HappyPathFuzzer happy = Mockito.mock(HappyPathFuzzer.class);
+        Mockito.when(happy.skipForHttpMethods()).thenReturn(List.of());
+        Mockito.when(happy.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(happy.toString()).thenReturn("HappyPath");
+        Mockito.doAnswer(inv -> {
+            FuzzingData d = inv.getArgument(0);
+            executionOrder.add("HappyPath:" + d.getMethod() + " " + d.getPath());
+            return null;
+        }).when(happy).fuzz(Mockito.any());
+
+        Fuzzer coverageWaveFuzzer = Mockito.mock(Fuzzer.class);
+        Mockito.when(coverageWaveFuzzer.skipForHttpMethods()).thenReturn(List.of());
+        Mockito.when(coverageWaveFuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(coverageWaveFuzzer.toString()).thenReturn("RemoveFields");
+        Mockito.doAnswer(inv -> {
+            FuzzingData d = inv.getArgument(0);
+            executionOrder.add("RemoveFields:" + d.getMethod() + " " + d.getPath());
+            return null;
+        }).when(coverageWaveFuzzer).fuzz(Mockito.any());
+
+        Fuzzer crashWaveFuzzer = Mockito.mock(Fuzzer.class);
+        Mockito.when(crashWaveFuzzer.skipForHttpMethods()).thenReturn(List.of());
+        Mockito.when(crashWaveFuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(crashWaveFuzzer.toString()).thenReturn("MassAssignment");
+        Mockito.doAnswer(inv -> {
+            FuzzingData d = inv.getArgument(0);
+            executionOrder.add("MassAssignment:" + d.getMethod() + " " + d.getPath());
+            return null;
+        }).when(crashWaveFuzzer).fuzz(Mockito.any());
+
+        Fuzzer other = Mockito.mock(Fuzzer.class);
+        Mockito.when(other.skipForHttpMethods()).thenReturn(List.of());
+        Mockito.when(other.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(other.toString()).thenReturn("CustomNegativeFuzzer");
+        Mockito.doAnswer(inv -> {
+            FuzzingData d = inv.getArgument(0);
+            executionOrder.add("CustomNegative:" + d.getMethod() + " " + d.getPath());
+            return null;
+        }).when(other).fuzz(Mockito.any());
+
+        PathItem itemPath = new PathItem().get(new Operation()).delete(new Operation());
+        PathItem collectionPath = new PathItem().post(new Operation());
+        OpenAPI api = new OpenAPI().paths(new Paths()
+                .addPathItem("/items/{id}", itemPath)
+                .addPathItem("/items", collectionPath));
+        Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/items/{id}", "/items"));
+        Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
+        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                .thenReturn(List.of(other, crashWaveFuzzer, coverageWaveFuzzer, happy));
+        Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/items/{id}"), fuzzingData(HttpMethod.DELETE, "/items/{id}")))
+                .when(fuzzingDataFactory).fromPathItem("/items/{id}", itemPath, api);
+        Mockito.doReturn(List.of(fuzzingData(HttpMethod.POST, "/items")))
+                .when(fuzzingDataFactory).fromPathItem("/items", collectionPath, api);
+
+        catsMain.startFuzzing(api);
+
+        Assertions.assertThat(executionOrder).containsExactly(
+                "HappyPath:POST /items",
+                "HappyPath:GET /items/{id}",
+                "RemoveFields:POST /items",
+                "RemoveFields:GET /items/{id}",
+                "RemoveFields:DELETE /items/{id}",
+                "MassAssignment:POST /items",
+                "MassAssignment:GET /items/{id}",
+                "MassAssignment:DELETE /items/{id}",
+                "CustomNegative:POST /items",
+                "CustomNegative:GET /items/{id}",
+                "CustomNegative:DELETE /items/{id}",
+                "HappyPath:DELETE /items/{id}");
+    }
+
+    @Test
+    void shouldRunBinaryStreamPathsBeforeDeferredDeletesAndExecuteDeletesAndRandomTailUnderTimeLimit() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> executionOrder = new ArrayList<>();
+        HappyPathFuzzer happy = Mockito.mock(HappyPathFuzzer.class);
+        Mockito.when(happy.skipForHttpMethods()).thenReturn(List.of());
+        Mockito.when(happy.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(happy.toString()).thenReturn("HappyPath");
+        Mockito.doAnswer(inv -> {
+            FuzzingData d = inv.getArgument(0);
+            executionOrder.add("HappyPath:" + d.getMethod() + " " + d.getPath());
+            return null;
+        }).when(happy).fuzz(Mockito.any());
+
+        com.endava.cats.fuzzer.special.RandomFuzzer randomMock = Mockito.mock(com.endava.cats.fuzzer.special.RandomFuzzer.class);
+        Mockito.when(randomMock.toString()).thenReturn("RandomFuzzer");
+        Mockito.doAnswer(inv -> {
+            FuzzingData d = inv.getArgument(0);
+            executionOrder.add("RandomContinuous:" + d.getMethod() + " " + d.getPath());
+            throw new com.endava.cats.exception.CatsExecutionLimitReachedException("time limit reached");
+        }).when(randomMock).fuzzContinuous(Mockito.any());
+
+        Object originalRandom = ReflectionTestUtils.getField(catsMain, "randomFuzzer");
+        ReflectionTestUtils.setField(catsMain, "randomFuzzer", randomMock);
+        ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 10L);
+        try {
+            Operation binaryGet = new Operation().responses(new io.swagger.v3.oas.models.responses.ApiResponses()
+                    .addApiResponse("200", new io.swagger.v3.oas.models.responses.ApiResponse()
+                            .content(new io.swagger.v3.oas.models.media.Content()
+                                    .addMediaType("application/octet-stream", new io.swagger.v3.oas.models.media.MediaType()))));
+            PathItem binaryPath = new PathItem().get(binaryGet);
+            PathItem itemPath = new PathItem().post(new Operation()).delete(new Operation());
+            OpenAPI api = new OpenAPI().paths(new Paths()
+                    .addPathItem("/files/{id}/content", binaryPath)
+                    .addPathItem("/files/{id}", itemPath));
+            Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/files/{id}/content", "/files/{id}"));
+            Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
+            Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                    .thenReturn(List.of(happy));
+            FuzzingData postData = fuzzingData(HttpMethod.POST, "/files/{id}");
+            Mockito.when(postData.getPayload()).thenReturn("{\"name\":\"doc.pdf\"}");
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/files/{id}/content")))
+                    .when(fuzzingDataFactory).fromPathItem("/files/{id}/content", binaryPath, api);
+            Mockito.doReturn(List.of(postData, fuzzingData(HttpMethod.DELETE, "/files/{id}")))
+                    .when(fuzzingDataFactory).fromPathItem("/files/{id}", itemPath, api);
+
+            Assertions.assertThatThrownBy(() -> catsMain.startFuzzing(api))
+                    .isInstanceOf(com.endava.cats.exception.CatsExecutionLimitReachedException.class);
+
+            Assertions.assertThat(executionOrder).containsExactly(
+                    "HappyPath:POST /files/{id}",
+                    "HappyPath:GET /files/{id}/content",
+                    "HappyPath:DELETE /files/{id}",
+                    "RandomContinuous:POST /files/{id}");
+
+            // Also verify that if the stop limit is hit during a wave (before normal deferred deletes),
+            // the catch block still executes the deferred HappyPath DELETEs before rethrowing.
+            executionOrder.clear();
+            Fuzzer limitFuzzer = Mockito.mock(Fuzzer.class);
+            Mockito.when(limitFuzzer.skipForHttpMethods()).thenReturn(List.of());
+            Mockito.when(limitFuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
+            Mockito.when(limitFuzzer.toString()).thenReturn("RemoveFields");
+            Mockito.doAnswer(_ -> {
+                throw new com.endava.cats.exception.CatsExecutionLimitReachedException("time limit reached in wave");
+            }).when(limitFuzzer).fuzz(Mockito.any());
+            Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                    .thenReturn(List.of(happy, limitFuzzer));
+
+            Assertions.assertThatThrownBy(() -> catsMain.startFuzzing(api))
+                    .isInstanceOf(com.endava.cats.exception.CatsExecutionLimitReachedException.class);
+            Assertions.assertThat(executionOrder).containsExactly(
+                    "HappyPath:POST /files/{id}",
+                    "HappyPath:DELETE /files/{id}");
+        } finally {
+            ReflectionTestUtils.setField(catsMain, "randomFuzzer", originalRandom);
+            ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 0L);
+        }
+    }
+
+    @Test
+    void shouldMatchEveryWaveFuzzerNameAgainstARegisteredFirstPhaseFuzzer() {
+        Set<String> registeredFirstPhaseNames = registeredFuzzers.stream()
+                .filter(f -> AnnotationUtils.findAnnotation(f.getClass(), SecondPhaseFuzzer.class) == null)
+                .filter(f -> AnnotationUtils.findAnnotation(f.getClass(), Linter.class) == null)
+                .flatMap(f -> Stream.of(
+                        ConsoleUtils.removeTrimSanitize(f.toString()).toLowerCase(Locale.ROOT),
+                        f.getClass().getSimpleName().replace("Fuzzer", "").toLowerCase(Locale.ROOT)))
+                .collect(Collectors.toSet());
+
+        Assertions.assertThat(registeredFirstPhaseNames)
+                .containsAll(CatsCommand.COVERAGE_WAVE_FUZZERS)
+                .containsAll(CatsCommand.CRASH_WAVE_FUZZERS);
     }
 
     @Test

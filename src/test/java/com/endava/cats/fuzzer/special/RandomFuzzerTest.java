@@ -196,7 +196,7 @@ class RandomFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.never()).skipTest(Mockito.any(), Mockito.anyString());
 
         Instance<Mutator> headerAndBodyMutator = Mockito.mock(Instance.class);
-        Mockito.when(headerAndBodyMutator.stream()).thenReturn(Stream.of(new Mutator() {
+        Mockito.when(headerAndBodyMutator.stream()).thenAnswer(_ -> Stream.of(new Mutator() {
             @Override
             public String mutate(String inputJson, String selectedField) {
                 return inputJson;
@@ -227,8 +227,19 @@ class RandomFuzzerTest {
         Mockito.when(data.getHeaders()).thenReturn(Set.of(com.endava.cats.model.CatsHeader.from("X-Same", "1", false, null)));
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("missingField", "id"));
 
-        cappedFuzzer.fuzz(data);
+        cappedFuzzer.fuzzContinuous(data);
         Mockito.verify(simpleExecutor, Mockito.times(25)).execute(Mockito.any());
+
+        Mockito.doAnswer(inv -> {
+            com.endava.cats.fuzzer.executor.SimpleExecutorContext ctx = inv.getArgument(0);
+            ctx.getResponseProcessor().accept(CatsResponse.builder().responseCode(500).build(), data);
+            return null;
+        }).when(simpleExecutor).execute(Mockito.any());
+        Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong()))
+                .thenReturn(false).thenReturn(true);
+        cappedFuzzer.fuzzContinuous(data);
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResultError(Mockito.any(), Mockito.eq(data),
+                Mockito.anyString(), Mockito.contains("500"));
 
         java.nio.file.Path tempDir = java.nio.file.Files.createTempDirectory("bad-mutators");
         java.nio.file.Path badFile = tempDir.resolve("bad.yml");

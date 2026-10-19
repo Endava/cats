@@ -311,7 +311,7 @@ profiles:
       - EmptyJsonBody
       - RemoveFields
       - NumericValuesInStringFields
-      - ZeroValuesInDecimalFields
+      - SmallNegativeAndInt32BoundaryFields
       - AlternativeDateTimeFormatsFields
       - QueryObjectAsRequestBody
 
@@ -333,8 +333,8 @@ profiles:
       - ExtremePositiveNumbersInIntegerFields
       - ExtremeNegativeNumbersInDecimalFields
       - ExtremePositiveNumbersInDecimalFields
-      - ZeroValuesInIntegerFields
-      - ZeroValuesInDecimalFields
+      - ZeroIntegerBody
+      - ZeroDecimalBody
       - MinLengthExactValuesInStringFields
       - MaxLengthExactValuesInStringFields
       - InvalidValuesInEnumsFields

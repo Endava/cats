@@ -27,6 +27,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
+import com.endava.cats.fuzzer.special.RandomFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.io.ServiceCaller;
@@ -48,6 +49,7 @@ import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiRefExtractor;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.SensitiveDataPolicy;
@@ -71,6 +73,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -80,6 +83,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -238,15 +242,45 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     @Inject
     WfcAuthProvider wfcAuthProvider;
 
+    @Inject
+    RandomFuzzer randomFuzzer;
+
     @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
+
+    static final Set<String> COVERAGE_WAVE_FUZZERS = Set.of(
+            "happypath", "onlyrequiredfields", "defaultvaluesinfields", "examplesfields",
+            "emptyjsonbody", "smallnegativeandint32boundaryfields",
+            "numericvaluesinstringfields", "removefields",
+            "alternativedatetimeformatsfields", "queryobjectasrequestbody");
+    static final Set<String> CRASH_WAVE_FUZZERS = Set.of(
+            "nullelementsinarrayfields", "smallnegativeandint32boundaryfields",
+            "extremenegativenumbersinintegerfields", "extremepositivenumbersinintegerfields",
+            "extremenegativenumbersindecimalfields", "extremepositivenumbersindecimalfields",
+            "minlengthexactvaluesinstringfields", "maxlengthexactvaluesinstringfields",
+            "invalidvaluesinenumsfields", "epochnumberindatetimefields",
+            "stringformatalmostvalidvalues", "stringformattotallywrongvalues",
+            "sqlinjectioninstringfields", "nosqlinjectioninstringfields",
+            "commandinjectioninstringfields", "sstiinjectioninstringfields",
+            "xssinjectioninstringfields", "bypassauthentication",
+            "insecuredirectobjectreferences", "massassignment",
+            "httpmethods", "dummyrequest", "malformedjson",
+            "randomresources", "leadingcontrolcharsinfields",
+            "trailingcontrolcharsinfields", "onlycontrolcharsinfields",
+            "zalgotextinfields", "abugidasinstringfields",
+            "lowercaseexpandingbytesinstringfields", "uppercaseexpandingbytesinstringfields");
+    private static final int MAX_CONTINUOUS_RANDOM_ROUNDS = 200;
 
     private int exitCodeDueToErrors = CommandLine.ExitCode.OK;
     private final List<DeferredHappyPathDelete> deferredHappyPathDeletes = new ArrayList<>();
 
     private record DeferredHappyPathDelete(List<FuzzingData> pathData, List<FuzzingData> deleteData,
                                            List<Fuzzer> deleteFuzzers) {
+    }
+
+    private record PreparedPath(String pathKey, List<FuzzingData> filteredFuzzingData,
+                                List<Fuzzer> fuzzersToRun, boolean binaryStreamOnly) {
     }
 
     /**
@@ -499,15 +533,165 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         }
         this.preseedCollectionGets(paths, suppliedPaths, openAPI);
 
+        if (!processingArguments.isReuseSuccessfulResources() || filterArguments.isDryRun()) {
+            for (Map.Entry<String, PathItem> entry : paths) {
+                CatsExecutionCancelledException.check();
+                if (suppliedPaths.contains(entry.getKey())) {
+                    this.fuzzPath(entry, openAPI);
+                } else {
+                    logger.skip("Skipping path {}", entry.getKey());
+                }
+            }
+            this.runDeferredHappyPathDeletes();
+            return;
+        }
+
+        List<PreparedPath> preparedPaths = preparePathsForExecution(paths, suppliedPaths, openAPI);
+
+        try {
+            runPhasedWavesAcrossPaths(preparedPaths);
+            runBinaryStreamPaths(preparedPaths);
+            this.runDeferredHappyPathDeletes();
+            this.runContinuousRandomUntilTimeLimit(preparedPaths);
+        } catch (CatsExecutionLimitReachedException e) {
+            this.runDeferredHappyPathDeletes();
+            throw e;
+        }
+    }
+
+    private List<PreparedPath> preparePathsForExecution(List<Map.Entry<String, PathItem>> paths,
+                                                        List<String> suppliedPaths, OpenAPI openAPI) {
+        List<PreparedPath> preparedPaths = new ArrayList<>();
         for (Map.Entry<String, PathItem> entry : paths) {
             CatsExecutionCancelledException.check();
-            if (suppliedPaths.contains(entry.getKey())) {
-                this.fuzzPath(entry, openAPI);
-            } else {
+            if (!suppliedPaths.contains(entry.getKey())) {
                 logger.skip("Skipping path {}", entry.getKey());
+                continue;
+            }
+            List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(entry.getKey(), entry.getValue(), openAPI);
+            if (fuzzingDataList.isEmpty()) {
+                logger.warning("There was a problem fuzzing path {}. You might want to enable debug mode for more details. Additionally, you can log a GitHub issue at: https://github.com/Endava/cats/issues.", entry.getKey());
+                continue;
+            }
+            List<FuzzingData> filteredFuzzingData = fuzzingDataList.stream()
+                    .filter(fuzzingData -> filterArguments.isHttpMethodSupplied(fuzzingData.getMethod()))
+                    .filter(fuzzingData -> processingArguments.matchesXxxSelection(fuzzingData.getPayload()))
+                    .toList();
+            Set<HttpMethod> allHttpMethodsFromFuzzingData = filteredFuzzingData.stream()
+                    .map(FuzzingData::getMethod)
+                    .collect(Collectors.toSet());
+            List<Fuzzer> fuzzersToRun = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(
+                    allHttpMethodsFromFuzzingData, entry.getKey());
+            boolean binaryStreamOnly = entry.getValue().getGet() != null &&
+                    entry.getValue().readOperationsMap().size() == 1 &&
+                    isBinaryStreamOnlyResponse(entry.getValue().getGet());
+            preparedPaths.add(new PreparedPath(entry.getKey(), filteredFuzzingData, fuzzersToRun, binaryStreamOnly));
+        }
+        return preparedPaths;
+    }
+
+    /**
+     * Executes configured fuzzers in breadth-first waves across all prepared paths:
+     * <ol>
+     *   <li>Seed wave ({@code HappyPath} and {@code OnlyRequiredFields}) so runtime resources and baselines
+     *       are populated across all endpoints before negative mutations run.</li>
+     *   <li>Remaining coverage-wave fuzzers across all paths.</li>
+     *   <li>Crash-wave fuzzers across all paths.</li>
+     *   <li>All remaining first-phase fuzzers and path-level second-phase fuzzers.</li>
+     * </ol>
+     */
+    private void runPhasedWavesAcrossPaths(List<PreparedPath> preparedPaths) {
+        for (PreparedPath path : preparedPaths) {
+            if (!path.binaryStreamOnly()) {
+                CatsExecutionCancelledException.check();
+                logger.start(AnsiUtils.bold("Start fuzzing path {}"), path.pathKey());
+                executionEventPublisher.publish(new CatsExecutionEvent.PathStarted(Instant.now(), path.pathKey()));
+                runSeedFuzzersForPath(path.filteredFuzzingData(), path.fuzzersToRun());
             }
         }
-        this.runDeferredHappyPathDeletes();
+        for (PreparedPath path : preparedPaths) {
+            if (path.binaryStreamOnly()) {
+                continue;
+            }
+            CatsExecutionCancelledException.check();
+            List<Fuzzer> coverageRest = nonSeedFuzzers(path.fuzzersToRun()).stream()
+                    .filter(fuzzer -> isInWave(fuzzer, COVERAGE_WAVE_FUZZERS))
+                    .toList();
+            runFuzzers(path.filteredFuzzingData(), coverageRest);
+        }
+        for (PreparedPath path : preparedPaths) {
+            if (path.binaryStreamOnly()) {
+                continue;
+            }
+            CatsExecutionCancelledException.check();
+            List<Fuzzer> crashWave = nonSeedFuzzers(path.fuzzersToRun()).stream()
+                    .filter(fuzzer -> !isInWave(fuzzer, COVERAGE_WAVE_FUZZERS) && isInWave(fuzzer, CRASH_WAVE_FUZZERS))
+                    .toList();
+            runFuzzers(path.filteredFuzzingData(), crashWave);
+        }
+        for (PreparedPath path : preparedPaths) {
+            if (path.binaryStreamOnly()) {
+                continue;
+            }
+            CatsExecutionCancelledException.check();
+            List<Fuzzer> remainingWave = nonSeedFuzzers(path.fuzzersToRun()).stream()
+                    .filter(fuzzer -> !isInWave(fuzzer, COVERAGE_WAVE_FUZZERS) && !isInWave(fuzzer, CRASH_WAVE_FUZZERS))
+                    .toList();
+            runFuzzers(path.filteredFuzzingData(), remainingWave);
+            this.runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
+            executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));
+        }
+    }
+
+    private void runBinaryStreamPaths(List<PreparedPath> preparedPaths) {
+        for (PreparedPath path : preparedPaths) {
+            if (!path.binaryStreamOnly()) {
+                continue;
+            }
+            CatsExecutionCancelledException.check();
+            logger.start(AnsiUtils.bold("Start fuzzing path {}"), path.pathKey());
+            executionEventPublisher.publish(new CatsExecutionEvent.PathStarted(Instant.now(), path.pathKey()));
+            this.runFirstPhaseFuzzers(path.filteredFuzzingData(), path.fuzzersToRun());
+            this.runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
+            executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));
+        }
+    }
+
+    private void runContinuousRandomUntilTimeLimit(List<PreparedPath> preparedPaths) {
+        if (stopArguments == null || stopArguments.getStopAfterTimeInSec() <= 0 ||
+                filterArguments.isDryRun() || reportingArguments.isTui() || randomFuzzer == null) {
+            return;
+        }
+        List<FuzzingData> nonEmptyData = preparedPaths.stream()
+                .flatMap(path -> path.filteredFuzzingData().stream())
+                .filter(data -> !JsonUtils.isEmptyPayload(data.getPayload()))
+                .toList();
+        if (nonEmptyData.isEmpty()) {
+            return;
+        }
+        for (int round = 0; round < MAX_CONTINUOUS_RANDOM_ROUNDS; round++) {
+            for (FuzzingData data : nonEmptyData) {
+                CatsExecutionCancelledException.check();
+                runSingleFuzzer(randomFuzzer, data, randomFuzzer::fuzzContinuous);
+            }
+        }
+    }
+
+    private static boolean isSeedFuzzer(Fuzzer fuzzer) {
+        return fuzzer instanceof HappyPathFuzzer || fuzzer instanceof OnlyRequiredFieldsFuzzer;
+    }
+
+    private static List<Fuzzer> nonSeedFuzzers(List<Fuzzer> configuredFuzzers) {
+        if (!configuredFuzzers.stream().anyMatch(HappyPathFuzzer.class::isInstance)) {
+            return configuredFuzzers;
+        }
+        return configuredFuzzers.stream().filter(fuzzer -> !isSeedFuzzer(fuzzer)).toList();
+    }
+
+    private boolean isInWave(Fuzzer fuzzer, Set<String> waveLowerNames) {
+        String sanitized = ConsoleUtils.removeTrimSanitize(fuzzer.toString()).toLowerCase(Locale.ROOT);
+        String simple = fuzzer.getClass().getSimpleName().replace("Fuzzer", "").toLowerCase(Locale.ROOT);
+        return waveLowerNames.contains(sanitized) || waveLowerNames.contains(simple);
     }
 
     /**
@@ -740,16 +924,21 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     void runFirstPhaseFuzzers(List<FuzzingData> fuzzingData, List<Fuzzer> configuredFuzzers) {
-        if (!processingArguments.isReuseSuccessfulResources()) {
+        if (!processingArguments.isReuseSuccessfulResources() ||
+                configuredFuzzers.stream().noneMatch(HappyPathFuzzer.class::isInstance)) {
             runFuzzers(fuzzingData, configuredFuzzers);
             return;
         }
+        runSeedFuzzersForPath(fuzzingData, configuredFuzzers);
+        runFuzzers(fuzzingData, nonSeedFuzzers(configuredFuzzers));
+    }
+
+    private void runSeedFuzzersForPath(List<FuzzingData> fuzzingData, List<Fuzzer> configuredFuzzers) {
         Fuzzer happyPathFuzzer = configuredFuzzers.stream()
                 .filter(HappyPathFuzzer.class::isInstance)
                 .findFirst()
                 .orElse(null);
         if (happyPathFuzzer == null) {
-            runFuzzers(fuzzingData, configuredFuzzers);
             return;
         }
         Fuzzer onlyRequiredFieldsFuzzer = configuredFuzzers.stream()
@@ -766,11 +955,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         List<FuzzingData> deleteData = fuzzingData.stream().filter(data -> data.getMethod() == HttpMethod.DELETE).toList();
         List<FuzzingData> deferredHappyPathData = fuzzingData.stream()
                 .filter(data -> !seedData.contains(data) && !deleteData.contains(data)).toList();
-        List<Fuzzer> otherFuzzers = configuredFuzzers.stream()
-                .filter(fuzzer -> fuzzer != happyPathFuzzer && fuzzer != onlyRequiredFieldsFuzzer)
-                .toList();
         runFuzzers(seedData, seedFuzzers);
-        runFuzzers(fuzzingData, otherFuzzers);
         runFuzzers(deferredHappyPathData, List.of(happyPathFuzzer));
         if (!deleteData.isEmpty()) {
             deferredHappyPathDeletes.add(new DeferredHappyPathDelete(fuzzingData, deleteData, seedFuzzers));
@@ -807,6 +992,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     private void runSingleFuzzer(Fuzzer fuzzer, FuzzingData data) {
+        runSingleFuzzer(fuzzer, data, fuzzer::fuzz);
+    }
+
+    private void runSingleFuzzer(Fuzzer fuzzer, FuzzingData data, Consumer<FuzzingData> action) {
         CatsExecutionCancelledException.check();
         if (data.shouldSkipFuzzerForPath(fuzzer.toString())) {
             logger.skip("Skipping Fuzzer {} for path {} due to OpenAPI extension configuration",
@@ -822,7 +1011,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         }
 
         try {
-            fuzzer.fuzz(data);
+            action.accept(data);
         } finally {
             if (reportsFuzzerLifecycle) {
                 testCaseListener.afterFuzz(data.getContractPath());
