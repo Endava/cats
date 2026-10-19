@@ -64,7 +64,8 @@ jobs:
 
       - name: Build Uberjar
         run: |
-          ./mvnw -B clean package --file pom.xml -Dquarkus.package.type=uber-jar -DskipTests=true
+          ./mvnw -B clean --file pom.xml
+          ./mvnw -B package --file pom.xml -Dquarkus.package.jar.type=uber-jar -DskipTests=true
 
       - name: Tar jar file
         run: |
@@ -113,7 +114,8 @@ jobs:
 
       - name: Build and run CATS
         run: |
-          ./mvnw -B clean package --file pom.xml -Pnative -DskipTests=true
+          ./mvnw -B clean --file pom.xml
+          ./mvnw -B package --file pom.xml -Pnative -DskipTests=true
 
       - name: Tar files for Linux and MacOS
         if: "!startsWith(matrix.os, 'windows')"
