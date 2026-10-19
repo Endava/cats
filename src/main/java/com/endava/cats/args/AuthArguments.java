@@ -83,7 +83,7 @@ public class AuthArguments {
     private File wfcAuthFile;
 
     @CommandLine.Option(names = {"--wfcAuthName"},
-            description = "The name of the authentication entry to use from the Web Fuzzing Commons auth file. If omitted, CATS uses the first entry.")
+            description = "The name of the authentication entry to use from the Web Fuzzing Commons auth file. If omitted, CATS starts with the first entry and switches to subsequent entries on HTTP 401/403.")
     private String wfcAuthName;
 
 

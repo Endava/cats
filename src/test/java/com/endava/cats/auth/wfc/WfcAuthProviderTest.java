@@ -158,6 +158,11 @@ class WfcAuthProviderTest {
         enable(config, "cookie-auth");
         Mockito.when(apiArguments.getServer()).thenReturn("https://example.com/base");
         OkHttpClient client = Mockito.mock(OkHttpClient.class);
+        OkHttpClient.Builder builder = Mockito.mock(OkHttpClient.Builder.class);
+        Mockito.when(client.newBuilder()).thenReturn(builder);
+        Mockito.when(builder.followRedirects(false)).thenReturn(builder);
+        Mockito.when(builder.followSslRedirects(false)).thenReturn(builder);
+        Mockito.when(builder.build()).thenReturn(client);
         Call call = Mockito.mock(Call.class);
         Response response = response("", Map.of());
         Mockito.when(response.isSuccessful()).thenReturn(true);
@@ -173,6 +178,121 @@ class WfcAuthProviderTest {
         Assertions.assertThat(request.getValue().url()).hasToString("https://example.com/base/login");
         Assertions.assertThat(request.getValue().header("X-Login")).isEqualTo("yes");
         Assertions.assertThat(requestBody(request.getValue())).isEqualTo("user=user+name&password=p%40ss+word");
+    }
+
+    @Test
+    void shouldHandleRealRedirectingServerForCookieLoginWithoutFollowingRedirects() throws IOException {
+        com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress(0), 0);
+        server.createContext("/WebGoat/login", exchange -> {
+            exchange.getResponseHeaders().add("Set-Cookie", "JSESSIONID=authenticated-session; Path=/WebGoat");
+            exchange.getResponseHeaders().add("Location", "/WebGoat/start.mvc");
+            exchange.sendResponseHeaders(302, -1);
+            exchange.close();
+        });
+        server.createContext("/WebGoat/start.mvc", exchange -> {
+            exchange.getResponseHeaders().add("Set-Cookie", "JSESSIONID=anonymous-session; Path=/WebGoat");
+            exchange.sendResponseHeaders(200, 0);
+            exchange.close();
+        });
+        server.createContext("/login", exchange -> {
+            exchange.getResponseHeaders().add("Set-Cookie", "JSESSIONID=anonymous-session; Path=/");
+            exchange.getResponseHeaders().add("Location", "/login?error");
+            exchange.sendResponseHeaders(302, -1);
+            exchange.close();
+        });
+        server.start();
+        try {
+            int port = server.getAddress().getPort();
+            OkHttpClient realClient = new OkHttpClient();
+
+            File successConfig = config("""
+                    auth:
+                      - name: redirect-cookie
+                        loginEndpointAuth:
+                          endpoint: /WebGoat/login
+                          verb: POST
+                          contentType: application/x-www-form-urlencoded
+                          payloadRaw: "username=u&password=p"
+                          expectCookies: true
+                    """);
+            enable(successConfig, "redirect-cookie");
+            Mockito.when(apiArguments.getServer()).thenReturn("http://localhost:" + port + "/WebGoat");
+            Mockito.when(apiArguments.getMaxResponseBytes()).thenReturn(10240L);
+
+            Assertions.assertThat(provider.getHeaders(realClient))
+                    .containsEntry("Cookie", "JSESSIONID=authenticated-session");
+
+            File errorConfig = config("""
+                    auth:
+                      - name: redirect-error
+                        loginEndpointAuth:
+                          endpoint: /login
+                          verb: POST
+                          contentType: application/x-www-form-urlencoded
+                          payloadRaw: "username=u&password=wrong"
+                          expectCookies: true
+                    """);
+            enable(errorConfig, "redirect-error");
+            Mockito.when(apiArguments.getServer()).thenReturn("http://localhost:" + port);
+
+            Assertions.assertThatThrownBy(() -> provider.getHeaders(realClient))
+                    .isInstanceOf(CatsException.class)
+                    .hasMessageContaining("HTTP 302");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void shouldRotateWfcAuthEntriesOnlyOn401And403AndReturnUnionOfHeaderAndQueryNames() throws IOException {
+        File config = config("""
+                auth:
+                  - name: admin
+                    fixedHeaders:
+                      - name: Authorization
+                        value: Basic admin
+                  - name: customer
+                    fixedHeaders:
+                      - name: X-Api-Key
+                        value: customer-key
+                  - name: queryUser
+                    loginEndpointAuth:
+                      externalEndpointURL: https://login.example.com/token
+                      verb: GET
+                      expectCookies: true
+                      token:
+                        extractFrom: header
+                        extractSelector: X-Token
+                        sendIn: query
+                        sendName: api_token
+                """);
+        enable(config, null);
+
+        Assertions.assertThat(provider.getAuthenticationHeaderNames())
+                .containsExactly("Authorization", "X-Api-Key", "Cookie");
+        Assertions.assertThat(provider.getAuthenticationQueryParamNames())
+                .containsExactly("api_token");
+        Assertions.assertThat(provider.isAuthenticationHeader("x-api-key")).isTrue();
+        Assertions.assertThat(provider.isAuthenticationHeader("cookie")).isTrue();
+
+        Assertions.assertThat(provider.getHeaders(null, "/customer", "GET"))
+                .containsEntry("Authorization", "Basic admin");
+
+        provider.recordOutcome("/customer", "GET", 404);
+        provider.recordOutcome("/customer", "GET", 500);
+        Assertions.assertThat(provider.getHeaders(null, "/customer", "GET"))
+                .containsEntry("Authorization", "Basic admin");
+
+        provider.recordOutcome("/customer", "GET", 403);
+        Assertions.assertThat(provider.getHeaders(null, "/customer", "GET"))
+                .containsEntry("X-Api-Key", "customer-key");
+
+        provider.recordOutcome("/customer", "GET", 200);
+        provider.recordOutcome("/customer", "GET", 401);
+        Assertions.assertThat(provider.getHeaders(null, "/customer", "GET"))
+                .containsEntry("X-Api-Key", "customer-key");
+        Assertions.assertThat(provider.getHeaders(null, "/customer/cart", "GET"))
+                .containsEntry("X-Api-Key", "customer-key");
     }
 
     @Test

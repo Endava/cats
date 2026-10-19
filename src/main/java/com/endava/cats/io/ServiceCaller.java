@@ -260,7 +260,7 @@ public class ServiceCaller {
         CatsRequest catsRequest = CatsRequest.builder()
                 .headers(headers).payload(processedPayload)
                 .httpMethod(data.getHttpMethod().name())
-                .sendBody(data.getAllMutationTargets().contains(com.endava.cats.model.RequestTarget.requestBody()))
+                .sendBody(data.getAllMutationTargets().contains(RequestTarget.requestBody()))
                 .build();
 
         long startTime = System.currentTimeMillis();
@@ -276,6 +276,11 @@ public class ServiceCaller {
 
             startTime = System.currentTimeMillis();
             CatsResponse response = this.callService(catsRequest, data.getResponseValidationFields());
+            if (!data.hasDeclaredMutation()) {
+                wfcAuthProvider.recordOutcome(
+                        data.getRelativePath(), data.getHttpMethod() == null ? "" : data.getHttpMethod().name(),
+                        response.getResponseCode());
+            }
 
             this.recordResponse(response);
             this.observeRuntimeResources(data, catsRequest, response, resolvedRequest);
@@ -374,14 +379,14 @@ public class ServiceCaller {
         logger.debug("Decoded URL: {}", SensitiveDataPolicy.maskUrl(decodedUrl, reportingArguments));
         if (!data.isReplaceUrlParams()) {
             String actualUrl = this.replacePathParams(decodedUrl, processedPayload, data);
-            return this.addWfcAuthQueryParams(this.replaceRemovedParams(actualUrl));
+            return this.addWfcAuthQueryParams(this.replaceRemovedParams(actualUrl), data);
         }
 
         String url = this.getPathWithRefDataReplacedForHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
 
         if (!HttpMethod.requiresBody(data.getHttpMethod())) {
             url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, processedPayload, apiArguments.getServer() + data.getRelativePath());
-            if (!data.getAllMutationTargets().contains(com.endava.cats.model.RequestTarget.requestBody())) {
+            if (!data.getAllMutationTargets().contains(RequestTarget.requestBody())) {
                 url = this.addUriParams(processedPayload, data, url);
             }
         }
@@ -390,7 +395,7 @@ public class ServiceCaller {
             url = this.addQueryParamsFromPathParamsPayload(url, data, pathParamsPayload);
         }
         url = this.addAdditionalQueryParams(url, data);
-        url = this.addWfcAuthQueryParams(url);
+        url = this.addWfcAuthQueryParams(url, data);
         logger.debug("Replaced URL: {}", SensitiveDataPolicy.maskUrl(url, reportingArguments));
         return url;
     }
@@ -542,7 +547,7 @@ public class ServiceCaller {
         if (!data.isFuzzedHeader(HttpHeaders.CONTENT_TYPE)) {
             replaceHeaderWithUserSuppliedHeader(headers, HttpHeaders.CONTENT_TYPE, effectiveContentType);
         }
-        this.addWfcAuthHeaders(headers);
+        this.addWfcAuthHeaders(data, headers);
         reportingArguments.registerSensitiveHeaders(wfcAuthProvider.getAuthenticationHeaderNames());
         reportingArguments.registerSensitiveQueryParams(wfcAuthProvider.getAuthenticationQueryParamNames());
         this.removeSkippedHeaders(data, headers);
@@ -944,13 +949,15 @@ public class ServiceCaller {
         return wfcAuthProvider.getAuthenticationHeaderNames();
     }
 
-    private void addWfcAuthHeaders(List<KeyValuePair<String, Object>> headers) {
-        wfcAuthProvider.getHeaders(okHttpClient)
+    private void addWfcAuthHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
+        String method = data.getHttpMethod() == null ? "" : data.getHttpMethod().name();
+        wfcAuthProvider.getHeaders(okHttpClient, data.getRelativePath(), method)
                 .forEach((name, value) -> replaceHeaderWithUserSuppliedHeader(headers, name, value));
     }
 
-    private String addWfcAuthQueryParams(String url) {
-        return wfcAuthProvider.applyQueryParams(url, okHttpClient);
+    private String addWfcAuthQueryParams(String url, ServiceData data) {
+        String method = data.getHttpMethod() == null ? "" : data.getHttpMethod().name();
+        return wfcAuthProvider.applyQueryParams(url, okHttpClient, data.getRelativePath(), method);
     }
 
     private void replaceHeaderIfNotFuzzed(List<KeyValuePair<String, Object>> headers, ServiceData data, Map.Entry<String, String> suppliedHeader) {

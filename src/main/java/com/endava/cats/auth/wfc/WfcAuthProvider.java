@@ -23,13 +23,16 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,6 +51,7 @@ public class WfcAuthProvider {
     private static final String APPLICATION_JSON = "application/json";
     private static final String APPLICATION_FORM_URLENCODED = "application/x-www-form-urlencoded";
     private static final String COOKIE = "Cookie";
+    private static final String LOCATION = "Location";
     private static final String SET_COOKIE = "Set-Cookie";
     private static final String TOKEN_PLACEHOLDER = "{token}";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(WfcAuthProvider.class);
@@ -58,8 +62,12 @@ public class WfcAuthProvider {
     private File loadedFile;
     private String loadedAuthName;
     private AuthenticationInfo selectedAuth;
-    private WfcCredentials cachedCredentials;
-    private long lastRefreshTimeMillis;
+    private List<AuthenticationInfo> authEntries = List.of();
+    private final Map<String, WfcCredentials> cachedCredentialsByName = new HashMap<>();
+    private final Map<String, Long> lastRefreshByName = new HashMap<>();
+    private final Map<String, Integer> activeIndexByOperation = new HashMap<>();
+    private final Set<String> lockedOperations = new HashSet<>();
+    private int lastSuccessfulIndex;
 
     /**
      * Creates a new WFC auth provider.
@@ -91,7 +99,7 @@ public class WfcAuthProvider {
         if (!isEnabled()) {
             return "";
         }
-        return selectedAuth().getName();
+        return selectedAuth("").getName();
     }
 
     /**
@@ -101,7 +109,19 @@ public class WfcAuthProvider {
      * @return headers resolved from WFC Auth
      */
     public synchronized Map<String, String> getHeaders(OkHttpClient okHttpClient) {
-        return resolveCredentials(okHttpClient).headers();
+        return getHeaders(okHttpClient, "", "");
+    }
+
+    /**
+     * Gets WFC auth headers for the specified operation.
+     *
+     * @param okHttpClient HTTP client to use for dynamic login
+     * @param path         contract path
+     * @param method       HTTP method
+     * @return headers resolved from WFC Auth
+     */
+    public synchronized Map<String, String> getHeaders(OkHttpClient okHttpClient, String path, String method) {
+        return resolveCredentials(okHttpClient, operationKey(path, method)).headers();
     }
 
     /**
@@ -111,50 +131,76 @@ public class WfcAuthProvider {
      * @return query parameters resolved from WFC Auth
      */
     public synchronized Map<String, String> getQueryParams(OkHttpClient okHttpClient) {
-        return resolveCredentials(okHttpClient).queryParams();
+        return getQueryParams(okHttpClient, "", "");
     }
 
     /**
-     * WFC auth header names, without triggering a login request.
+     * Gets WFC auth query parameters for the specified operation.
      *
-     * @return auth header names declared or implied by the selected WFC entry
+     * @param okHttpClient HTTP client to use for dynamic login
+     * @param path         contract path
+     * @param method       HTTP method
+     * @return query parameters resolved from WFC Auth
+     */
+    public synchronized Map<String, String> getQueryParams(OkHttpClient okHttpClient, String path, String method) {
+        return resolveCredentials(okHttpClient, operationKey(path, method)).queryParams();
+    }
+
+    /**
+     * WFC auth header names across all candidate entries when entry switching is active,
+     * or for the pinned entry when {@code --wfcAuthName} is specified, without triggering a login request.
+     *
+     * @return auth header names declared or implied by the WFC configuration
      */
     public synchronized Set<String> getAuthenticationHeaderNames() {
         if (!isEnabled()) {
             return Set.of();
         }
 
-        AuthenticationInfo auth = selectedAuth();
         Set<String> headerNames = new LinkedHashSet<>();
-        headers(auth.getFixedHeaders()).stream().map(Header::getName).forEach(headerNames::add);
+        for (AuthenticationInfo auth : candidateEntries()) {
+            headers(auth.getFixedHeaders()).stream().map(Header::getName).forEach(headerNames::add);
 
-        LoginEndpoint login = auth.getLoginEndpointAuth();
-        if (login != null) {
-            if (login.getToken() != null && TokenHandling.SendIn.HEADER.equals(login.getToken().getSendIn())) {
-                headerNames.add(login.getToken().getSendName());
-            }
-            if (Boolean.TRUE.equals(login.getExpectCookies())) {
-                headerNames.add(COOKIE);
+            LoginEndpoint login = auth.getLoginEndpointAuth();
+            if (login != null) {
+                if (login.getToken() != null && TokenHandling.SendIn.HEADER.equals(login.getToken().getSendIn())) {
+                    headerNames.add(login.getToken().getSendName());
+                }
+                if (Boolean.TRUE.equals(login.getExpectCookies())) {
+                    headerNames.add(COOKIE);
+                }
             }
         }
-        return Set.copyOf(headerNames);
+        return Collections.unmodifiableSet(headerNames);
     }
 
     /**
-     * WFC auth query parameter names, without triggering a login request.
+     * WFC auth query parameter names across all candidate entries when entry switching is active,
+     * or for the pinned entry when {@code --wfcAuthName} is specified, without triggering a login request.
      *
-     * @return auth query parameter names declared by the selected WFC entry
+     * @return auth query parameter names declared by the WFC configuration
      */
     public synchronized Set<String> getAuthenticationQueryParamNames() {
         if (!isEnabled()) {
             return Set.of();
         }
 
-        LoginEndpoint login = selectedAuth().getLoginEndpointAuth();
-        if (login == null || login.getToken() == null || !TokenHandling.SendIn.QUERY.equals(login.getToken().getSendIn())) {
-            return Set.of();
+        Set<String> queryNames = new LinkedHashSet<>();
+        for (AuthenticationInfo auth : candidateEntries()) {
+            LoginEndpoint login = auth.getLoginEndpointAuth();
+            if (login != null && login.getToken() != null && TokenHandling.SendIn.QUERY.equals(login.getToken().getSendIn())) {
+                queryNames.add(login.getToken().getSendName());
+            }
         }
-        return Set.of(login.getToken().getSendName());
+        return Collections.unmodifiableSet(queryNames);
+    }
+
+    private List<AuthenticationInfo> candidateEntries() {
+        AuthenticationInfo primary = selectedAuth("");
+        if (StringUtils.isBlank(authArguments.getWfcAuthName()) && authEntries.size() > 1) {
+            return authEntries;
+        }
+        return List.of(primary);
     }
 
     /**
@@ -167,38 +213,83 @@ public class WfcAuthProvider {
         return getAuthenticationHeaderNames().stream().anyMatch(authHeader -> authHeader.equalsIgnoreCase(header));
     }
 
-    private WfcCredentials resolveCredentials(OkHttpClient okHttpClient) {
+    /**
+     * Records the HTTP status code of an unmutated baseline request so multi-entry WFC files
+     * can lock in a working entry on 2XX or advance to the next entry on 401/403.
+     *
+     * @param path       contract path
+     * @param method     HTTP method
+     * @param statusCode HTTP response code
+     */
+    public synchronized void recordOutcome(String path, String method, int statusCode) {
+        if (!isEnabled() || StringUtils.isNotBlank(authArguments.getWfcAuthName())) {
+            return;
+        }
+        String opKey = operationKey(path, method);
+        selectedAuth(opKey);
+        if (authEntries.size() <= 1) {
+            return;
+        }
+        int currentIdx = activeIndexByOperation.getOrDefault(opKey, lastSuccessfulIndex);
+        if (statusCode >= 200 && statusCode < 300) {
+            lockedOperations.add(opKey);
+            activeIndexByOperation.put(opKey, currentIdx);
+            lastSuccessfulIndex = currentIdx;
+        } else if (!lockedOperations.contains(opKey) && (statusCode == 401 || statusCode == 403)) {
+            int nextIdx = (currentIdx + 1) % authEntries.size();
+            activeIndexByOperation.put(opKey, nextIdx);
+        }
+    }
+
+    private static String operationKey(String path, String method) {
+        return (path == null ? "" : path) + ":" + (method == null ? "" : method);
+    }
+
+    private WfcCredentials resolveCredentials(OkHttpClient okHttpClient, String opKey) {
         if (!isEnabled()) {
             return WfcCredentials.empty();
         }
 
-        AuthenticationInfo auth = selectedAuth();
+        AuthenticationInfo auth = selectedAuth(opKey);
         if (auth.getLoginEndpointAuth() == null) {
             return fixedCredentials(auth);
         }
-        if (cachedCredentials != null && !refreshIntervalElapsed()) {
-            return cachedCredentials;
+        String entryName = auth.getName();
+        WfcCredentials existing = cachedCredentialsByName.get(entryName);
+        long lastRefresh = lastRefreshByName.getOrDefault(entryName, 0L);
+        if (existing != null && !refreshIntervalElapsed(lastRefresh)) {
+            return existing;
         }
 
         if (okHttpClient == null) {
             throw new CatsException("WFC Auth requires an initialized HTTP client before resolving dynamic credentials");
         }
 
-        cachedCredentials = login(auth, okHttpClient);
-        lastRefreshTimeMillis = System.currentTimeMillis();
-        return cachedCredentials;
+        WfcCredentials resolved = login(auth, okHttpClient);
+        long now = System.currentTimeMillis();
+        cachedCredentialsByName.put(entryName, resolved);
+        lastRefreshByName.put(entryName, now);
+        return resolved;
     }
 
-    private AuthenticationInfo selectedAuth() {
+    private AuthenticationInfo selectedAuth(String opKey) {
         File currentFile = authArguments.getWfcAuthFile();
         String currentAuthName = authArguments.getWfcAuthName();
         if (selectedAuth == null || !Objects.equals(loadedFile, currentFile) || !Objects.equals(loadedAuthName, currentAuthName)) {
             Auth config = loader.load(currentFile);
+            authEntries = config.getAuth() == null ? List.of() : List.copyOf(config.getAuth());
             selectedAuth = loader.select(config, currentAuthName);
             loadedFile = currentFile;
             loadedAuthName = currentAuthName;
-            cachedCredentials = null;
-            lastRefreshTimeMillis = 0;
+            cachedCredentialsByName.clear();
+            lastRefreshByName.clear();
+            activeIndexByOperation.clear();
+            lockedOperations.clear();
+            lastSuccessfulIndex = 0;
+        }
+        if (StringUtils.isBlank(currentAuthName) && authEntries.size() > 1 && StringUtils.isNotBlank(opKey) && !":".equals(opKey)) {
+            int idx = activeIndexByOperation.getOrDefault(opKey, lastSuccessfulIndex);
+            return authEntries.get(Math.floorMod(idx, authEntries.size()));
         }
         return selectedAuth;
     }
@@ -213,14 +304,27 @@ public class WfcAuthProvider {
         String payload = loginPayload(login);
         Request request = loginRequest(login, loginUrl, payload);
 
+        // Disable automatic redirect following for cookie logins so the Set-Cookie header on a 302 login
+        // response is captured directly without making an unauthenticated follow-up request that could
+        // overwrite the session cookie or mask a redirect to /login?error.
+        OkHttpClient clientToUse = Boolean.TRUE.equals(login.getExpectCookies())
+                ? okHttpClient.newBuilder().followRedirects(false).followSslRedirects(false).build()
+                : okHttpClient;
+
         logger.note("Running WFC Auth login for entry {} at {}", auth.getName(), loginUrl);
-        try (Response response = okHttpClient.newCall(request).execute()) {
+        try (Response response = clientToUse.newCall(request).execute()) {
             BoundedResponseBodyReader.CapturedBody capturedBody = BoundedResponseBodyReader.read(response, apiArguments.getMaxResponseBytes());
             if (capturedBody.truncated()) {
                 throw new CatsException("WFC Auth login response exceeded --maxResponseBytes=" + apiArguments.getMaxResponseBytes());
             }
             String responseBody = capturedBody.body();
-            if (!response.isSuccessful()) {
+            List<String> cookies = response.headers(SET_COOKIE);
+            boolean cookieRedirect = Boolean.TRUE.equals(login.getExpectCookies()) &&
+                    login.getToken() == null &&
+                    response.code() >= 300 && response.code() < 400 &&
+                    cookies != null && !cookies.isEmpty() &&
+                    !isErrorRedirect(response);
+            if (!response.isSuccessful() && !cookieRedirect) {
                 throw new CatsException("WFC Auth login failed for entry %s with HTTP %s and body %s".formatted(auth.getName(), response.code(), responseBody));
             }
 
@@ -231,13 +335,18 @@ public class WfcAuthProvider {
                 addTokenCredential(login.getToken(), response, responseBody, headers, queryParams);
             }
             if (Boolean.TRUE.equals(login.getExpectCookies())) {
-                headers.put(COOKIE, extractCookieHeader(response.headers(SET_COOKIE), auth.getName()));
+                headers.put(COOKIE, extractCookieHeader(cookies, auth.getName()));
             }
 
             return new WfcCredentials(headers, queryParams);
         } catch (IOException e) {
             throw new CatsException("WFC Auth login failed for entry " + auth.getName(), e);
         }
+    }
+
+    private boolean isErrorRedirect(Response response) {
+        String location = response.header(LOCATION);
+        return location != null && location.toLowerCase(Locale.ROOT).contains("error");
     }
 
     private Request loginRequest(LoginEndpoint login, String loginUrl, String payload) {
@@ -349,10 +458,14 @@ public class WfcAuthProvider {
         }
 
         String normalizedServer = Strings.CS.removeEnd(server, "/");
-        if (login.getEndpoint().startsWith("/")) {
-            return normalizedServer + login.getEndpoint();
+        HttpUrl baseUrl = HttpUrl.parse(normalizedServer + "/");
+        if (baseUrl != null) {
+            HttpUrl resolved = baseUrl.resolve(login.getEndpoint());
+            if (resolved != null) {
+                return resolved.toString();
+            }
         }
-        return normalizedServer + "/" + login.getEndpoint();
+        return normalizedServer + (login.getEndpoint().startsWith("/") ? login.getEndpoint() : "/" + login.getEndpoint());
     }
 
     private Map<String, String> fixedHeaders(AuthenticationInfo auth) {
@@ -367,9 +480,9 @@ public class WfcAuthProvider {
         return headers == null ? List.of() : headers;
     }
 
-    private boolean refreshIntervalElapsed() {
+    private boolean refreshIntervalElapsed(long lastRefreshMillis) {
         int refreshInterval = authArguments.getAuthRefreshInterval();
-        return refreshInterval > 0 && (System.currentTimeMillis() - lastRefreshTimeMillis) / 1000 >= refreshInterval;
+        return refreshInterval > 0 && (System.currentTimeMillis() - lastRefreshMillis) / 1000 >= refreshInterval;
     }
 
     /**
@@ -380,7 +493,20 @@ public class WfcAuthProvider {
      * @return URL with WFC auth query params applied
      */
     public String applyQueryParams(String url, OkHttpClient okHttpClient) {
-        Map<String, String> queryParams = getQueryParams(okHttpClient);
+        return applyQueryParams(url, okHttpClient, "", "");
+    }
+
+    /**
+     * Adds WFC auth query params to the supplied URL for the specified operation.
+     *
+     * @param url          starting URL
+     * @param okHttpClient HTTP client to use for dynamic login
+     * @param path         contract path
+     * @param method       HTTP method
+     * @return URL with WFC auth query params applied
+     */
+    public String applyQueryParams(String url, OkHttpClient okHttpClient, String path, String method) {
+        Map<String, String> queryParams = getQueryParams(okHttpClient, path, method);
         if (queryParams.isEmpty()) {
             return url;
         }
