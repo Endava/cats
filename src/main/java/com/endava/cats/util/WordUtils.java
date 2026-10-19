@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.UnaryOperator;
@@ -14,6 +15,31 @@ import java.util.stream.Collectors;
  * Helper class for words operations.
  */
 public abstract class WordUtils {
+    private static final Map<String, String> IRREGULAR_SINGULARS = Map.ofEntries(
+            Map.entry("children", "child"),
+            Map.entry("men", "man"),
+            Map.entry("women", "woman"),
+            Map.entry("people", "person"),
+            Map.entry("mice", "mouse"),
+            Map.entry("geese", "goose"),
+            Map.entry("teeth", "tooth"),
+            Map.entry("feet", "foot"),
+            Map.entry("oxen", "ox"),
+            Map.entry("indices", "index"),
+            Map.entry("matrices", "matrix"),
+            Map.entry("vertices", "vertex"),
+            Map.entry("appendices", "appendix"),
+            Map.entry("criteria", "criterion"),
+            Map.entry("phenomena", "phenomenon"),
+            Map.entry("media", "medium"),
+            Map.entry("curricula", "curriculum"),
+            Map.entry("alumni", "alumnus"),
+            Map.entry("nuclei", "nucleus"),
+            Map.entry("stimuli", "stimulus"),
+            Map.entry("syllabi", "syllabus"),
+            Map.entry("radii", "radius"),
+            Map.entry("foci", "focus"),
+            Map.entry("quizzes", "quiz"));
     private static final Set<String> ERROR_KEYWORDS = Set.of(
             "StackTrace", "BadRequest", "InternalServerError", "Unauthorized",
             "Forbidden", "ServiceUnavailable", "SocketTimeout", "PermissionDenied", "InvalidToken",
@@ -210,5 +236,44 @@ public abstract class WordUtils {
                     .replaceAll("([A-Z])([A-Z][a-z])", "$1_$2")
                     .toUpperCase(Locale.ROOT);
         };
+    }
+
+    /**
+     * Converts a lowercase plural resource noun into its singular stem.
+     *
+     * @param resource lowercase normalized noun
+     * @return singularized noun
+     */
+    public static String singularize(String resource) {
+        if (resource == null || resource.isEmpty()) {
+            return "";
+        }
+        String irregular = IRREGULAR_SINGULARS.get(resource);
+        if (irregular != null) {
+            return irregular;
+        }
+        if (resource.endsWith("ais") && resource.length() > 3) {
+            return resource.substring(0, resource.length() - 3) + "al";
+        }
+        if (resource.endsWith("ies") && resource.length() > 3) {
+            return resource.substring(0, resource.length() - 3) + "y";
+        }
+        if (resource.endsWith("eses") && resource.length() > 4) {
+            return resource.substring(0, resource.length() - 2) + "is";
+        }
+        if (resource.endsWith("ves") && resource.length() > 3) {
+            String stem = resource.substring(0, resource.length() - 3);
+            return (stem.endsWith("i") || stem.endsWith("a")) ? stem + "fe" : stem + "f";
+        }
+        if ((resource.endsWith("sses") || resource.endsWith("xes") || resource.endsWith("zes") ||
+                resource.endsWith("ches") || resource.endsWith("shes") || resource.endsWith("uses") ||
+                resource.endsWith("ases")) && resource.length() > 3) {
+            return resource.substring(0, resource.length() - 2);
+        }
+        if (resource.endsWith("s") && !resource.endsWith("ss") && !resource.endsWith("us") &&
+                !resource.endsWith("is") && resource.length() > 1) {
+            return resource.substring(0, resource.length() - 1);
+        }
+        return resource;
     }
 }

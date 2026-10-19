@@ -35,7 +35,8 @@ public class OnlyRequiredFieldsFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        String payload = RequiredOnlyPayloadGenerator.generate(data.getPayload(), data.getAllRequiredFields());
+        String payload = RequiredOnlyPayloadGenerator.generate(
+                data.getPayload(), data.getAllRequiredFields(), data.getPath(), HttpMethod.requiresBody(data.getMethod()));
 
         simpleExecutor.execute(SimpleExecutorContext.builder()
                 .fuzzingData(data)

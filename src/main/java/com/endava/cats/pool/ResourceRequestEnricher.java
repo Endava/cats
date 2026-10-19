@@ -174,7 +174,9 @@ final class ResourceRequestEnricher {
             if (entry.getValue().isJsonPrimitive()) {
                 RequestTarget.Location location = targetLocation(data, entry.getKey(), pathParametersPayload);
                 if (location == RequestTarget.Location.PATH || location == RequestTarget.Location.QUERY ||
-                        ResourceSemanticNaming.isIdentifierName(entry.getKey()) || hasSiblingPostValue(data, entry.getKey())) {
+                        ResourceSemanticNaming.isIdentifierName(entry.getKey()) ||
+                        hasSiblingPostValue(data, entry.getKey()) ||
+                        hasMatchingResourceCollection(entry.getKey())) {
                     targets.add(new TargetField(path, entry.getKey(), location,
                             ResourceSemanticNaming.valueShape(entry.getValue().getAsJsonPrimitive())));
                 }
@@ -444,5 +446,25 @@ final class ResourceRequestEnricher {
                 .flatMap(resource -> resource.values().values().stream())
                 .filter(value -> value.sourceLocation().startsWith("request.body."))
                 .anyMatch(value -> value.aliases().contains(normalizedField));
+    }
+
+    private boolean hasMatchingResourceCollection(String fieldName) {
+        String normalizedField = ResourceSemanticNaming.normalize(fieldName);
+        if (normalizedField.isEmpty() || ResourceSemanticNaming.SIMPLE_IDENTIFIERS.contains(normalizedField) ||
+                ResourceSemanticNaming.isMetadataKey(normalizedField)) {
+            return false;
+        }
+        String singularField = ResourceSemanticNaming.singular(normalizedField);
+        return resources.stream()
+                .filter(ResourceInstance::active)
+                .filter(resource -> !resource.fuzzed())
+                .filter(resource -> ResourceSemanticNaming.isCollectionPath(resource.sourcePath()))
+                .anyMatch(resource -> {
+                    String resName = ResourceSemanticNaming.resourceName(resource.sourcePath());
+                    String singRes = ResourceSemanticNaming.singular(resName);
+                    return (resName.equals(normalizedField) || singRes.equals(singularField)) &&
+                            resource.values().values().stream().anyMatch(v ->
+                                    v.aliases().contains(normalizedField) || v.aliases().contains(singularField));
+                });
     }
 }

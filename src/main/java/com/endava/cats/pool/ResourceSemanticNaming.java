@@ -1,6 +1,7 @@
 package com.endava.cats.pool;
 
 import com.endava.cats.model.RequestTarget;
+import com.endava.cats.util.WordUtils;
 import com.google.common.base.Splitter;
 import com.google.gson.JsonPrimitive;
 import okhttp3.HttpUrl;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Handles semantic naming, path morphology, singularization, alias generation, and value-shape classification
@@ -27,13 +29,21 @@ final class ResourceSemanticNaming {
     private static final Set<String> SINGLE_WORD_IDENTIFIERS = Set.of("id", "uuid", "guid", "username", "token");
     private static final Set<String> MULTI_WORD_IDENTIFIER_SUFFIXES = Set.of(
             "id", "uuid", "guid", "username", "token", "address");
+    private static final Set<String> RESOURCE_KEY_SUFFIXES = Set.of("code");
     private static final Set<String> GENERIC_FALLBACK_SUFFIXES = Set.of(
             "id", "ids", "uuid", "uuids", "guid", "guids", "name", "address", "token", "username");
     private static final Set<String> NON_ENTITY_ADDRESS_PREFIXES = Set.of("email", "ip", "ipv4", "ipv6", "mac");
     private static final Set<String> ENVELOPE_METADATA_TOKENS = Set.of(
-            "time", "timestamp", "date", "createdat", "updatedat", "status", "httpstatus", "statuscode",
+            "time", "timestamp", "date", "createdat", "updatedat", "status", "httpstatus", "statuscode", "errorcode",
             "message", "error", "errors", "code", "version", "path", "success", "issuccess", "ok",
             "kind", "meta", "metadata", "self", "next", "prev");
+    private static final Map<String, String> COMMON_ABBREVIATIONS = Map.of(
+            "language", "lang",
+            "configuration", "config",
+            "organization", "org",
+            "repository", "repo",
+            "environment", "env",
+            "specification", "spec");
 
     private static final Pattern WORD_BOUNDARY_SPLITTER = Pattern.compile(
             "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[_\\-]+");
@@ -41,31 +51,6 @@ final class ResourceSemanticNaming {
             "(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
     private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^A-Za-z0-9]");
     private static final Splitter SEMANTIC_PATH_SPLITTER = Splitter.on(Pattern.compile("[.#]")).omitEmptyStrings();
-    private static final Map<String, String> IRREGULAR_SINGULARS = Map.ofEntries(
-            Map.entry("children", "child"),
-            Map.entry("men", "man"),
-            Map.entry("women", "woman"),
-            Map.entry("people", "person"),
-            Map.entry("mice", "mouse"),
-            Map.entry("geese", "goose"),
-            Map.entry("teeth", "tooth"),
-            Map.entry("feet", "foot"),
-            Map.entry("oxen", "ox"),
-            Map.entry("indices", "index"),
-            Map.entry("matrices", "matrix"),
-            Map.entry("vertices", "vertex"),
-            Map.entry("appendices", "appendix"),
-            Map.entry("criteria", "criterion"),
-            Map.entry("phenomena", "phenomenon"),
-            Map.entry("media", "medium"),
-            Map.entry("curricula", "curriculum"),
-            Map.entry("alumni", "alumnus"),
-            Map.entry("nuclei", "nucleus"),
-            Map.entry("stimuli", "stimulus"),
-            Map.entry("syllabi", "syllabus"),
-            Map.entry("radii", "radius"),
-            Map.entry("foci", "focus"),
-            Map.entry("quizzes", "quiz"));
 
     private ResourceSemanticNaming() {
         // utility class
@@ -120,41 +105,14 @@ final class ResourceSemanticNaming {
     }
 
     static String singular(String resource) {
-        String irregular = IRREGULAR_SINGULARS.get(resource);
-        if (irregular != null) {
-            return irregular;
-        }
-        if (resource.endsWith("ais") && resource.length() > 3) {
-            return resource.substring(0, resource.length() - 3) + "al";
-        }
-        if (resource.endsWith("ies") && resource.length() > 3) {
-            return resource.substring(0, resource.length() - 3) + "y";
-        }
-        if (resource.endsWith("eses") && resource.length() > 4) {
-            return resource.substring(0, resource.length() - 2) + "is";
-        }
-        if (resource.endsWith("ves") && resource.length() > 3) {
-            String stem = resource.substring(0, resource.length() - 3);
-            return (stem.endsWith("i") || stem.endsWith("a")) ? stem + "fe" : stem + "f";
-        }
-        if ((resource.endsWith("sses") || resource.endsWith("xes") || resource.endsWith("zes") ||
-                resource.endsWith("ches") || resource.endsWith("shes") || resource.endsWith("uses") ||
-                resource.endsWith("ases")) && resource.length() > 3) {
-            return resource.substring(0, resource.length() - 2);
-        }
-        if (resource.endsWith("s") && !resource.endsWith("ss") && !resource.endsWith("us") &&
-                !resource.endsWith("is") && resource.length() > 1) {
-            return resource.substring(0, resource.length() - 1);
-        }
-        return resource;
+        return WordUtils.singularize(resource);
     }
 
     static List<String> pathSegments(String path) {
         if (path == null) {
             return List.of();
         }
-        return List.of(path.split("/"))
-                .stream().filter(StringUtils::isNotBlank).toList();
+        return Stream.of(path.split("/")).filter(StringUtils::isNotBlank).toList();
     }
 
     static boolean isTemplateSegment(String segment) {
@@ -201,8 +159,23 @@ final class ResourceSemanticNaming {
         List<String> segments = SEMANTIC_PATH_SPLITTER.splitToList(path.replace("$", ""));
         StringBuilder suffix = new StringBuilder();
         for (int i = segments.size() - 1; i >= 0; i--) {
-            suffix.insert(0, segments.get(i));
+            String segment = segments.get(i);
+            suffix.insert(0, segment);
             addWithSingularIdForms(normalize(suffix.toString()), aliases);
+            if (segment.contains("[]")) {
+                String cleanSeg = normalize(segment);
+                if (!cleanSeg.isEmpty()) {
+                    String singSeg = singular(cleanSeg);
+                    aliases.add(singSeg + normalize(name));
+                    if (RESOURCE_KEY_SUFFIXES.contains(normalize(name)) || isIdentifierName(name)) {
+                        aliases.add(singSeg);
+                    }
+                    String abbreviated = COMMON_ABBREVIATIONS.get(singSeg);
+                    if (abbreviated != null) {
+                        aliases.add(abbreviated);
+                    }
+                }
+            }
         }
         return Set.copyOf(aliases);
     }
@@ -215,7 +188,27 @@ final class ResourceSemanticNaming {
         if (StringUtils.isBlank(rawName)) {
             return;
         }
+        String normRaw = singular(normalize(rawName));
+        String abbreviated = COMMON_ABBREVIATIONS.get(normRaw);
+        if (abbreviated != null) {
+            aliases.add(abbreviated);
+        }
         List<String> words = splitWords(rawName);
+        // When a multi-word identifier or resource key includes a numeric version/length qualifier before the suffix
+        // (e.g. alpha2Code, iso639_1Code), also register the digit-stripped stem while preserving non-identifier
+        // tokens such as ipv4, ipv6, md5, or sha256.
+        if (words.size() >= 2 &&
+                (isIdentifierName(rawName) || RESOURCE_KEY_SUFFIXES.contains(singular(normalize(words.getLast()))))) {
+            StringBuilder stripped = new StringBuilder();
+            for (int i = 0; i < words.size() - 1; i++) {
+                stripped.append(normalize(words.get(i)).replaceAll("\\d+$", ""));
+            }
+            stripped.append(normalize(words.getLast()));
+            String candidate = stripped.toString();
+            if (!candidate.equals(normalize(rawName))) {
+                addWithSingularIdForms(candidate, aliases);
+            }
+        }
         if (words.size() >= 3) {
             String lastWord = normalize(words.getLast());
             if (SIMPLE_IDENTIFIERS.contains(lastWord) || SIMPLE_PLURAL_IDENTIFIERS.contains(lastWord)) {
@@ -229,6 +222,9 @@ final class ResourceSemanticNaming {
             if (GENERIC_FALLBACK_SUFFIXES.contains(lastWord) && !SIMPLE_IDENTIFIERS.contains(lastWord) &&
                     !("address".equals(lastWord) && NON_ENTITY_ADDRESS_PREFIXES.contains(prevWord))) {
                 aliases.add(lastWord);
+                if (SIMPLE_PLURAL_IDENTIFIERS.contains(lastWord + "s")) {
+                    aliases.add(lastWord + "s");
+                }
             }
         }
     }
@@ -328,6 +324,13 @@ final class ResourceSemanticNaming {
         if (aliases.stream().anyMatch(SIMPLE_IDENTIFIERS::contains) &&
                 (target.location() == RequestTarget.Location.PATH || !target.path().contains("#"))) {
             aliases.addAll(primaryResourceIdentifierAliases(targetPath));
+        }
+        String singularKey = singular(normalize(target.name()));
+        if ((target.location() == RequestTarget.Location.PATH || target.location() == RequestTarget.Location.QUERY) &&
+                RESOURCE_KEY_SUFFIXES.contains(singularKey)) {
+            String resource = resourceName(targetPath);
+            aliases.add(resource + singularKey);
+            aliases.add(singular(resource) + singularKey);
         }
         if (target.location() == RequestTarget.Location.PATH) {
             aliases.addAll(precedingPathSegmentAliases(targetPath, target.name()));

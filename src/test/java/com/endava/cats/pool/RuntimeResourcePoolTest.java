@@ -2081,6 +2081,48 @@ class RuntimeResourcePoolTest {
                 .contains("0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1");
     }
 
+    @Test
+    void shouldExtractPrimitiveCollectionArrayWithResourceScopedAliasesAndCorrelateAbbreviationsAndCodes() {
+        enableResourceReuse();
+        resourcePool.observe(getData("/countries", "{}"), request("GET", "/countries", "{}"),
+                response(200, "[\"Norway\",\"Sweden\"]"));
+        resourcePool.observe(getData("/v2/all", "{}"), request("GET", "/v2/all", "{}"),
+                response(200, "[{\"alpha2Code\":\"NO\",\"currencies\":[{\"code\":\"NOK\"}],\"languages\":[\"no\"]}]"));
+
+        ServiceData createNews = postData("/news", "{\"country\":\"generated\",\"text\":\"hello\"}");
+        Assertions.assertThat(resourcePool.enrich(createNews, createNews.getPayload()).payload())
+                .contains("\"country\":\"Norway\"");
+
+        ServiceData unrelatedItem = getData("/items/{id}", "{\"id\":\"generated\"}");
+        Assertions.assertThat(resourcePool.enrich(unrelatedItem, unrelatedItem.getPayload()).payload())
+                .contains("\"id\":\"generated\"");
+
+        ServiceData byAlphaCode = getData("/v2/alpha/{alphacode}", "{\"alphacode\":\"gen\"}");
+        Assertions.assertThat(resourcePool.enrich(byAlphaCode, byAlphaCode.getPayload()).payload())
+                .contains("\"alphacode\":\"NO\"");
+
+        ServiceData byCurrency = getData("/v2/currency/{currency}", "{\"currency\":\"gen\"}");
+        Assertions.assertThat(resourcePool.enrich(byCurrency, byCurrency.getPayload()).payload())
+                .contains("\"currency\":\"NOK\"");
+
+        ServiceData byLang = getData("/v2/lang/{lang}", "{\"lang\":\"gen\"}");
+        Assertions.assertThat(resourcePool.enrich(byLang, byLang.getPayload()).payload())
+                .contains("\"lang\":\"no\"");
+
+        Assertions.assertThat(ResourceSemanticNaming.semanticAliases("$[].code", "code"))
+                .doesNotContain("");
+        Assertions.assertThat(ResourceSemanticNaming.semanticAliases("$.ipv4", "ipv4"))
+                .containsExactly("ipv4");
+
+        // Negative cases: postalCode must not correlate with languages[].code or currencies[].code,
+        // and top-level envelope 'code' must remain metadata.
+        ServiceData createAddress = postData("/addresses", "{\"postalCode\":\"generated-zip\",\"promoCode\":\"generated-promo\"}");
+        String enrichedAddress = resourcePool.enrich(createAddress, createAddress.getPayload()).payload();
+        Assertions.assertThat(enrichedAddress)
+                .contains("\"postalCode\":\"generated-zip\"", "\"promoCode\":\"generated-promo\"");
+        Assertions.assertThat(ResourceSemanticNaming.isMetadataKey("code")).isTrue();
+    }
+
     private void enableResourceReuse() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
     }

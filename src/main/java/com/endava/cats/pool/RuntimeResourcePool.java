@@ -390,6 +390,17 @@ public class RuntimeResourcePool {
             if (ResourceValueExtractor.isScalarIdentifierBody(trimmedBody)) {
                 values.put("id", new StoredValue(trimmedBody, "response.body.$", Set.of("id")));
             }
+        } else if (data.getHttpMethod() == HttpMethod.GET &&
+                ResourceSemanticNaming.isCollectionPath(data.getRelativePath()) &&
+                JsonUtils.isValidJson(response.getBody())) {
+            JsonElement root = JsonUtils.parseAsJsonElement(response.getBody());
+            if (ResourceValueExtractor.isPrimitiveArray(root)) {
+                Object val = ResourceSemanticNaming.primitiveValue(root.getAsJsonArray().get(0).getAsJsonPrimitive());
+                String resource = ResourceSemanticNaming.resourceName(data.getRelativePath());
+                String singular = ResourceSemanticNaming.singular(resource);
+                Set<String> aliases = new LinkedHashSet<>(List.of(resource, singular, resource + "id", singular + "id"));
+                values.put("$[]", new StoredValue(val, "response.body.$[]", Set.copyOf(aliases)));
+            }
         }
         addResource(data, values);
     }

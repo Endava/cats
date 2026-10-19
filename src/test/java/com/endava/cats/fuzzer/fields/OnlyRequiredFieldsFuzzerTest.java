@@ -201,6 +201,68 @@ class OnlyRequiredFieldsFuzzerTest {
         Assertions.assertThat(fuzzer.description()).contains("only required fields", "2XX");
     }
 
+    @Test
+    void shouldStripRootServerGeneratedMetadataWhenNoRequiredFieldsDeclaredOnBodyMethod() {
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.POST)
+                .path("/news")
+                .payload("""
+                        {
+                          "id": "10",
+                          "newsId": "10",
+                          "creationTime": "2026-01-01T00:00:00Z",
+                          "updatedAt": "2026-01-01T00:00:00Z",
+                          "_links": [{"href": "/news/10"}],
+                          "authorId": "author-1",
+                          "country": "Norway",
+                          "text": "Breaking"
+                        }
+                        """)
+                .reqSchema(new ObjectSchema())
+                .schemaMap(Map.of())
+                .allRequiredFields(List.of())
+                .requestPropertyTypes(Map.of())
+                .requestContentTypes(List.of("application/json"))
+                .build();
+
+        fuzzer.fuzz(data);
+
+        Assertions.assertThat(JsonUtils.equalAsJson(capturedContext().getPayload(), """
+                {
+                  "authorId": "author-1",
+                  "country": "Norway",
+                  "text": "Breaking"
+                }
+                """)).isTrue();
+
+        Mockito.reset(simpleExecutor);
+        FuzzingData nestedResourceData = FuzzingData.builder()
+                .method(HttpMethod.POST)
+                .path("/v1/users/{userId}/orders")
+                .payload("""
+                        {
+                          "orderId": "ord-1",
+                          "userId": "usr-1",
+                          "v1Id": "keep-v1",
+                          "amount": 42
+                        }
+                        """)
+                .reqSchema(new ObjectSchema())
+                .schemaMap(Map.of())
+                .allRequiredFields(List.of())
+                .requestPropertyTypes(Map.of())
+                .requestContentTypes(List.of("application/json"))
+                .build();
+        fuzzer.fuzz(nestedResourceData);
+        Assertions.assertThat(JsonUtils.equalAsJson(capturedContext().getPayload(), """
+                {
+                  "userId": "usr-1",
+                  "v1Id": "keep-v1",
+                  "amount": 42
+                }
+                """)).isTrue();
+    }
+
     private FuzzingData fuzzingData(String payload, Schema<?> schema, Map<String, Schema> schemaMap,
                                     List<String> requiredFields) {
         return FuzzingData.builder()
