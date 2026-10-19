@@ -388,10 +388,7 @@ public class RuntimeResourcePool {
         } else if (data.getHttpMethod() == HttpMethod.POST && response.getBody() != null) {
             String trimmedBody = response.getBody().trim().replace("\"", "");
             if (ResourceValueExtractor.isScalarIdentifierBody(trimmedBody)) {
-                Set<String> aliases = trimmedBody.matches("^0x[0-9a-fA-F]{40}$")
-                        ? Set.of("id", "address", "contractaddress")
-                        : Set.of("id");
-                values.put("id", new StoredValue(trimmedBody, "response.body.$", aliases));
+                values.put("id", new StoredValue(trimmedBody, "response.body.$", Set.of("id")));
             }
         }
         addResource(data, values);
@@ -420,7 +417,7 @@ public class RuntimeResourcePool {
         resources.add(new ResourceInstance(sequence.incrementAndGet(), data.getRelativePath(), data.getHttpMethod(),
                 Collections.unmodifiableMap(enrichedValues), ResourceValueExtractor.isFuzzedRequest(data), true));
         if (resources.size() > MAX_RESOURCES) {
-            ResourceInstance removed = resources.remove(0);
+            ResourceInstance removed = resources.removeFirst();
             correlationFeedback.keySet().removeIf(key -> key.resourceSequence() == removed.sequence());
         }
     }
@@ -453,7 +450,9 @@ public class RuntimeResourcePool {
         baselineStore.evictContainingPrimitiveValues(deletedPrimitiveValues);
     }
 
-    /** Clears all values captured by the current run. */
+    /**
+     * Clears all values captured by the current run.
+     */
     public synchronized void clear() {
         resources.clear();
         baselineStore.clear();
@@ -542,7 +541,9 @@ public class RuntimeResourcePool {
         return correlationFeedback.getOrDefault(key, 0);
     }
 
-    /** Result of applying runtime resource correlations to request data. */
+    /**
+     * Result of applying runtime resource correlations to request data.
+     */
     public record ResolvedRequest(String payload, String pathParamsPayload, List<ResourceCorrelation> correlations) {
         public ResolvedRequest {
             correlations = List.copyOf(correlations);
@@ -567,11 +568,17 @@ public class RuntimeResourcePool {
         }
     }
 
-    /** Why an identifier parameter is considered unresolved. */
+    /**
+     * Why an identifier parameter is considered unresolved.
+     */
     public enum UnresolvedReason {
-        /** No matching value was captured from earlier successful responses. */
+        /**
+         * No matching value was captured from earlier successful responses.
+         */
         NO_VALUE_CAPTURED,
-        /** Values reused from earlier responses always returned 404 or 410. */
+        /**
+         * Values reused from earlier responses always returned 404 or 410.
+         */
         CAPTURED_VALUES_NOT_FOUND
     }
 
