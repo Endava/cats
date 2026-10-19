@@ -71,9 +71,13 @@ final class ResponseSchemaValidator {
                     ? Dialects.getOpenApi31() : Dialects.getOpenApi30(),
                     builder -> builder.schemas(schemaDocuments(mapper, data.getSchemaMap(), schemasUri))
                             .schemaLoader(loader -> loader.fetchRemoteResources(false)));
-            com.networknt.schema.Schema compiled = registry.getSchema(root);
-            compiled.initializeValidators();
-            return compiled;
+            try {
+                com.networknt.schema.Schema compiled = registry.getSchema(mapper.writeValueAsString(root));
+                compiled.initializeValidators();
+                return compiled;
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Unable to serialize OpenAPI response schema", e);
+            }
         });
     }
 
