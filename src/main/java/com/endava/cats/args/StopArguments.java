@@ -24,6 +24,10 @@ public class StopArguments {
             description = "Number of test cases after which fuzzing will stop")
     private long stopAfterMutations;
 
+    @CommandLine.Option(names = {"--fillTimeBudget", "--withRandom"},
+            description = "When used with --stopAfterTimeInSec, continues fuzzing with RandomFuzzer after the deterministic fuzzers finish until the time budget expires")
+    private boolean fillTimeBudget;
+
     /**
      * The configured condition that caused execution to stop.
      */

@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+@QuarkusTest
 class NounFormsCorpusTest {
     private static final double RECALL_FLOOR = 0.985;
     private static final Pattern PATH_PARAM = Pattern.compile("/([A-Za-z][A-Za-z0-9_-]*)/\\{([A-Za-z][A-Za-z0-9_-]*)}");

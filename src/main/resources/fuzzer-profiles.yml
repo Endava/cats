@@ -309,10 +309,10 @@ profiles:
       - DefaultValuesInFields
       - ExamplesFields
       - EmptyJsonBody
-      - RemoveFields
-      - NumericValuesInStringFields
       - AlternativeDateTimeFormatsFields
       - QueryObjectAsRequestBody
+      - RemoveFields
+      - NumericValuesInStringFields
 
   # ============================================
   # CRASH PROFILE

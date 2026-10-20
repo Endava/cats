@@ -811,6 +811,7 @@ class CatsCommandTest {
         Object originalRandom = ReflectionTestUtils.getField(catsMain, "randomFuzzer");
         ReflectionTestUtils.setField(catsMain, "randomFuzzer", randomMock);
         ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 10L);
+        ReflectionTestUtils.setField(catsMain.stopArguments, "fillTimeBudget", true);
         try {
             Operation binaryGet = new Operation().responses(new io.swagger.v3.oas.models.responses.ApiResponses()
                     .addApiResponse("200", new io.swagger.v3.oas.models.responses.ApiResponse()
@@ -906,28 +907,17 @@ class CatsCommandTest {
         } finally {
             ReflectionTestUtils.setField(catsMain, "randomFuzzer", originalRandom);
             ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 0L);
+            ReflectionTestUtils.setField(catsMain.stopArguments, "fillTimeBudget", false);
         }
     }
 
     @Test
     void shouldMatchEveryWaveFuzzerNameAgainstARegisteredFirstPhaseFuzzer() {
-        Set<String> registeredFirstPhaseNames = registeredFuzzers.stream()
-                .filter(f -> AnnotationUtils.findAnnotation(f.getClass(), SecondPhaseFuzzer.class) == null)
-                .filter(f -> AnnotationUtils.findAnnotation(f.getClass(), Linter.class) == null)
-                .flatMap(f -> Stream.of(
-                        ConsoleUtils.removeTrimSanitize(f.toString()).toLowerCase(Locale.ROOT),
-                        f.getClass().getSimpleName().replace("Fuzzer", "").toLowerCase(Locale.ROOT)))
-                .collect(Collectors.toSet());
-
         Set<String> allRegisteredFuzzerNames = registeredFuzzers.stream()
                 .flatMap(f -> Stream.of(
                         ConsoleUtils.removeTrimSanitize(f.toString()).toLowerCase(Locale.ROOT),
                         f.getClass().getSimpleName().replace("Fuzzer", "").toLowerCase(Locale.ROOT)))
                 .collect(Collectors.toSet());
-
-        Assertions.assertThat(registeredFirstPhaseNames)
-                .containsAll(CatsCommand.COVERAGE_WAVE_FUZZERS)
-                .containsAll(CatsCommand.CRASH_WAVE_FUZZERS);
 
         com.endava.cats.args.util.ProfileLoader profileLoader = new com.endava.cats.args.util.ProfileLoader();
         for (com.endava.cats.args.util.ProfileLoader.Profile profile : profileLoader.getAvailableProfilesDetails()) {
@@ -939,21 +929,9 @@ class CatsCommandTest {
                     .containsAll(profileLower);
         }
 
-        Set<String> coverageProfileFirstPhase = profileLoader.getProfile("coverage").orElseThrow().fuzzers().stream()
-                .map(n -> n.toLowerCase(Locale.ROOT))
-                .filter(registeredFirstPhaseNames::contains)
-                .collect(Collectors.toSet());
-        Set<String> crashProfileFirstPhase = profileLoader.getProfile("crash").orElseThrow().fuzzers().stream()
-                .map(n -> n.toLowerCase(Locale.ROOT))
-                .filter(registeredFirstPhaseNames::contains)
-                .collect(Collectors.toSet());
-
-        Assertions.assertThat(CatsCommand.COVERAGE_WAVE_FUZZERS)
-                .containsExactlyInAnyOrderElementsOf(coverageProfileFirstPhase);
-        Assertions.assertThat(Stream.concat(
-                        CatsCommand.COVERAGE_WAVE_FUZZERS.stream(),
-                        CatsCommand.CRASH_WAVE_FUZZERS.stream()).collect(Collectors.toSet()))
-                .containsAll(crashProfileFirstPhase);
+        Assertions.assertThat(allRegisteredFuzzerNames)
+                .containsAll(FuzzerWaveExecutor.loadWaveFuzzers(profileLoader, "coverage"))
+                .containsAll(FuzzerWaveExecutor.loadWaveFuzzers(profileLoader, "crash"));
     }
 
     @Test
