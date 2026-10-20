@@ -130,7 +130,8 @@ import java.util.concurrent.TimeUnit;
                 GenerateCommand.class,
                 ExplainCommand.class,
                 SmokeCommand.class,
-                CompareCommand.class
+                CompareCommand.class,
+                InitCommand.class
         })
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, AutoCloseable {
 
