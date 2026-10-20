@@ -787,8 +787,8 @@ class FilterArgumentsTest {
         List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
         Assertions.assertThat(suppliedFuzzers)
                 .isNotEmpty()
-                .contains("SqlInjectionInStringFields", "MassAssignment")
-                .doesNotContain("HappyPath");
+                .contains("HappyPath", "OnlyRequiredFields", "SqlInjectionInStringFields", "MassAssignment")
+                .doesNotContain("BooleanStringInBooleanFields");
     }
 
     @Test

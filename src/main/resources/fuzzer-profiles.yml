@@ -31,6 +31,10 @@ profiles:
   security:
     description: "Security-focused fuzzers targeting OWASP vulnerabilities and attack vectors"
     fuzzers:
+      # Resource Seeding
+      - HappyPath
+      - OnlyRequiredFields
+
       # Injection Attacks
       - SqlInjectionInStringFields
       - NoSqlInjectionInStringFields
@@ -160,6 +164,7 @@ profiles:
 
       # API1:2023 - Broken Object Level Authorization
       - InsecureDirectObjectReferences
+      - CrossParentResourceIsolation
       - RandomResources
       - InvalidReferencesFields
       - CheckDeletedResourcesNotAvailable
@@ -171,6 +176,7 @@ profiles:
       # API3:2023 - Broken Object Property Level Authorization
       - MassAssignment
       - AdditionalPropertiesMassAssignmentFields
+      - SensitiveDataExposure
       - NewFields
 
       # API4:2023 - Unrestricted Resource Consumption
