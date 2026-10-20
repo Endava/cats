@@ -587,6 +587,14 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.selectedTest().id()).isEqualTo("Test 2");
         state.handleKey(KeyEvent.ofChar('p'));
         Assertions.assertThat(state.selectedTest().id()).isEqualTo("Test 1");
+        state.handleKey(KeyEvent.ofChar('c'));
+        Assertions.assertThat(state.lastCopiedCurl()).isEqualTo("curl -X POST http://localhost/orders");
+
+        state.handleKey(KeyEvent.ofChar('?'));
+        Assertions.assertThat(state.helpVisible()).isTrue();
+        Assertions.assertThat(CatsTuiView.render(state)).isNotNull();
+        state.handleKey(KeyEvent.ofKey(KeyCode.ESCAPE));
+        Assertions.assertThat(state.helpVisible()).isFalse();
 
         state.handleKey(KeyEvent.ofKey(KeyCode.ESCAPE));
         Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.RESULTS);

@@ -42,6 +42,10 @@ final class CatsTuiView {
     }
 
     static Element render(CatsTuiState state) {
+        if (state.helpVisible()) {
+            return column(header(state), helpOverlay(), footer(state))
+                    .spacing(1).focusable().id("cats-root").onKeyEvent(state::handleKey);
+        }
         if (state.screen() == CatsTuiState.Screen.DETAIL) {
             return column(detail(state), footer(state))
                     .spacing(1).focusable().id("cats-root").onKeyEvent(state::handleKey);
@@ -59,6 +63,19 @@ final class CatsTuiView {
                 },
                 footer(state)
         ).spacing(1).focusable().id("cats-root").onKeyEvent(state::handleKey);
+    }
+
+    private static Element helpOverlay() {
+        return panel("CATS TUI — Keyboard Shortcuts & Navigation (? or Esc to close)", richLines(
+                labelled("1 Overview:      ", "Live path/wave progress, configuration, and Fuzzers run (Enter drills down)"),
+                labelled("2 Tests:         ", "Browse retained test cases (/ search, a/e/w/s/i filter, c copy cURL, Enter details)"),
+                labelled("3 Summary:       ", "Quality gate status, HTTP code distribution, top failing paths, and fuzzers"),
+                labelled("4 Reasons:       ", "Errors & Warnings grouped by Result Reason (Enter drills down)"),
+                labelled("5 Paths:         ", "Per-path test counts and response times (Enter drills down)"),
+                labelled("6 Timings:       ", "Tests ranked by slowest response time (Enter opens details)"),
+                labelled("Detail View:     ", "j/k or PgUp/PgDn scroll, n/p next/prev test, c copy cURL, Esc return"),
+                labelled("Quit / Cancel:   ", "Press q at any time to cancel a live run or exit the TUI")))
+                .rounded().borderColor(Color.CYAN).fill();
     }
 
     private static Element header(CatsTuiState state) {

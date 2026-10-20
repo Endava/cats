@@ -83,6 +83,8 @@ final class CatsTuiState {
     private String drilldownIssue;
     private String drilldownPath;
     private String drilldownFuzzer;
+    private boolean helpVisible;
+    private String lastCopiedCurl;
     private Screen resultsReturnScreen = Screen.OVERVIEW;
     private Screen detailReturnScreen = Screen.RESULTS;
 
@@ -164,12 +166,21 @@ final class CatsTuiState {
         if (searchEditing) {
             return handleSearchInput(event);
         }
+        if (event.isChar('?')) {
+            helpVisible = !helpVisible;
+            return EventResult.HANDLED;
+        }
+        if (helpVisible && event.isCancel()) {
+            helpVisible = false;
+            return EventResult.HANDLED;
+        }
         if (screen == Screen.RESULTS && event.isChar('/')) {
             searchEditing = true;
             return EventResult.HANDLED;
         }
         EventResult screenSwitch = handleScreenSwitchKey(event);
         if (screenSwitch != null) {
+            helpVisible = false;
             return screenSwitch;
         }
         if (event.isCharIgnoreCase('q')) {
@@ -432,6 +443,10 @@ final class CatsTuiState {
             }
             return EventResult.HANDLED;
         }
+        if (event.isCharIgnoreCase('c')) {
+            copySelectedTestCurl();
+            return EventResult.HANDLED;
+        }
         ResultFilter selectedFilter = filterFor(event);
         if (selectedFilter != null) {
             setFilter(selectedFilter);
@@ -471,6 +486,10 @@ final class CatsTuiState {
     private EventResult handleDetailKey(KeyEvent event) {
         if (event.isCancel() || event.isLeft()) {
             screen = detailReturnScreen;
+            return EventResult.HANDLED;
+        }
+        if (event.isCharIgnoreCase('c')) {
+            copySelectedTestCurl();
             return EventResult.HANDLED;
         }
         if (event.isCharIgnoreCase('n') || event.isChar(']')) {
@@ -1139,6 +1158,27 @@ final class CatsTuiState {
 
     boolean running() {
         return running;
+    }
+
+    boolean helpVisible() {
+        return helpVisible;
+    }
+
+    String lastCopiedCurl() {
+        return lastCopiedCurl;
+    }
+
+    private void copySelectedTestCurl() {
+        TestResultSnapshot test = selectedTest();
+        if (test == null) {
+            return;
+        }
+        String cmd = test.curlCommand() != null && !test.curlCommand().isBlank()
+                ? test.curlCommand()
+                : test.replayCommand();
+        if (cmd != null && !cmd.isBlank()) {
+            lastCopiedCurl = cmd;
+        }
     }
 
     enum Screen {
