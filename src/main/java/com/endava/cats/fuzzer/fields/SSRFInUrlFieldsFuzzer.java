@@ -205,8 +205,8 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
     private Set<String> getUrlFields(FuzzingData data) {
         return data.getAllFieldsByHttpMethod()
                 .stream()
-                .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
                 .filter(field -> isUrlField(field, data))
+                .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
                 .collect(Collectors.toSet());
     }
 

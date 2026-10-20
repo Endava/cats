@@ -395,7 +395,7 @@ public abstract class JsonUtils {
      * @return {@code true} if the JSON payload is a JSON array, {@code false} otherwise.
      */
     public static boolean isJsonArray(String payload) {
-        if (!isValidJson(payload)) {
+        if (payload == null || !payload.stripLeading().startsWith("[") || !isValidJson(payload)) {
             return false;
         }
         return JsonPath.parse(payload).read("$") instanceof JSONArray;

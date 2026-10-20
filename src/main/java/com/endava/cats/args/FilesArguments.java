@@ -287,7 +287,7 @@ public class FilesArguments {
      * @return true if the parameter is not present in the --urlParams argument, false otherwise
      */
     public boolean isNotUrlParam(String parameter) {
-        return this.getUrlParamsList()
+        return parameter != null && this.getUrlParamsList()
                 .stream()
                 .map(FilesArguments::getUrlParamName)
                 .noneMatch(parameter::equals);

@@ -155,7 +155,7 @@ public class FuzzingDataFactory {
 
     Map<String, QueryParameterSerialization> extractQueryParameterSerializations(List<Parameter> parameters) {
         return getResolvedParameters(parameters).stream()
-                .filter(parameter -> "query".equalsIgnoreCase(parameter.getIn()))
+                .filter(parameter -> "query".equalsIgnoreCase(parameter.getIn()) && StringUtils.isNotBlank(parameter.getName()))
                 .collect(Collectors.toMap(Parameter::getName, parameter -> {
                     String style = Optional.ofNullable(parameter.getStyle())
                             .map(Parameter.StyleEnum::toString)
@@ -163,7 +163,7 @@ public class FuzzingDataFactory {
                     boolean explode = Optional.ofNullable(parameter.getExplode())
                             .orElse(QueryParameterSerialization.FORM.equals(style));
                     return new QueryParameterSerialization(style, explode);
-                }));
+                }, (_, replacement) -> replacement));
     }
 
     /**
@@ -187,7 +187,7 @@ public class FuzzingDataFactory {
             boolean isPathParam = "path".equalsIgnoreCase(parameter.getIn());
             boolean isQueryParam = "query".equalsIgnoreCase(parameter.getIn());
 
-            if ((isPathParam || isQueryParam) && filesArguments.isNotUrlParam(parameter.getName()) && StringUtils.isNotBlank(parameter.getName())) {
+            if ((isPathParam || isQueryParam) && StringUtils.isNotBlank(parameter.getName()) && filesArguments.isNotUrlParam(parameter.getName())) {
                 String newParameterName = parameter.getName() + "|" + parameter.getIn();
                 Schema<?> originalSchema = Optional.ofNullable(parameter.getSchema()).orElse(new Schema<>());
                 Schema<?> schemaCopy = copySchema(originalSchema);
