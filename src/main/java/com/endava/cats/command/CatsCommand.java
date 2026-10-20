@@ -537,13 +537,32 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             logger.config("WFC Auth file: {}", AnsiUtils.blue(authArguments.getWfcAuthFile()));
             logger.config("WFC Auth entry: {}", AnsiUtils.blue(wfcAuthProvider.getSelectedAuthenticationName()));
         }
-        logger.config("{} configured fuzzers out of {} total fuzzers",
+        String activeProfile = processingArguments.isHealthCheck() ? "health-check" : filterArguments.getProfile();
+        logger.config("{} configured fuzzers out of {} total fuzzers (profile: {})",
                 AnsiUtils.blue(filterArguments.getFirstPhaseFuzzersForPath().size() + filterArguments.getSecondPhaseFuzzers().size()),
-                AnsiUtils.blue(filterArguments.getTotalFuzzersOrLinters()));
+                AnsiUtils.blue(filterArguments.getTotalFuzzersOrLinters()),
+                AnsiUtils.blue(activeProfile));
         logger.config("{} configured paths out of {} total OpenAPI paths",
                 AnsiUtils.blue(filterArguments.getPathsToRun(openAPI).size()),
                 AnsiUtils.blue(openAPI.getPaths().size()));
         logger.config("HTTP methods in scope: {}", AnsiUtils.blue(filterArguments.getHttpMethods()));
+        if (stopArguments != null && stopArguments.isAnyStopConditionProvided()) {
+            logger.config("Stop conditions: time={}s (fillTimeBudget={}), maxErrors={}, maxTests={}",
+                    AnsiUtils.blue(stopArguments.getStopAfterTimeInSec()),
+                    AnsiUtils.blue(stopArguments.isFillTimeBudget()),
+                    AnsiUtils.blue(stopArguments.getStopAfterErrors()),
+                    AnsiUtils.blue(stopArguments.getStopAfterMutations()));
+        }
+        if (ignoreArguments != null && (!ignoreArguments.getIgnoreResponseCodes().isEmpty() ||
+                ignoreArguments.isSkipReportingForIgnoredCodes() ||
+                ignoreArguments.isSkipReportingForSuccess() ||
+                ignoreArguments.isSkipReportingForWarnings())) {
+            logger.config("Ignored response codes: {}, skipReportingForIgnored: {}, skipReportingForSuccess: {}, skipReportingForWarnings: {}",
+                    AnsiUtils.blue(ignoreArguments.getIgnoreResponseCodes()),
+                    AnsiUtils.blue(ignoreArguments.isSkipReportingForIgnoredCodes()),
+                    AnsiUtils.blue(ignoreArguments.isSkipReportingForSuccess()),
+                    AnsiUtils.blue(ignoreArguments.isSkipReportingForWarnings()));
+        }
         logger.config("Example flags: useRequestBodyExamples {}, useSchemaExamples {}, usePropertyExamples {}, useResponseBodyExamples {}, useDefaults {}",
                 AnsiUtils.blue(processingArguments.isUseRequestBodyExamples()),
                 AnsiUtils.blue(processingArguments.isUseSchemaExamples()),
