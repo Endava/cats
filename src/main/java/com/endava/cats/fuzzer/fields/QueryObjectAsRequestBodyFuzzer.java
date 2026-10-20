@@ -32,7 +32,6 @@ import java.util.Set;
 public class QueryObjectAsRequestBodyFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final SimpleExecutor simpleExecutor;
-    private final ProcessingArguments processingArguments;
 
     /**
      * Creates a new QueryObjectAsRequestBodyFuzzer instance.
@@ -42,7 +41,6 @@ public class QueryObjectAsRequestBodyFuzzer implements Fuzzer {
      */
     public QueryObjectAsRequestBodyFuzzer(SimpleExecutor simpleExecutor, ProcessingArguments processingArguments) {
         this.simpleExecutor = simpleExecutor;
-        this.processingArguments = processingArguments;
     }
 
     @Override

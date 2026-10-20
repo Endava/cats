@@ -4,6 +4,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
+import com.google.common.base.Splitter;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -22,6 +23,8 @@ import java.util.Set;
  * Identifies either the request root or a nested field for JSON payload mutations.
  */
 record JsonPayloadTarget(String path, boolean root, Schema<?> schema) {
+    private static final Splitter PATH_SPLITTER = Splitter.on('#').omitEmptyStrings();
+
     static List<JsonPayloadTarget> candidatesFor(FuzzingData data) {
         Map<String, Schema> schemaMap = data.getSchemaMap();
         List<JsonPayloadTarget> targets = new ArrayList<>();
@@ -43,23 +46,54 @@ record JsonPayloadTarget(String path, boolean root, Schema<?> schema) {
     }
 
     Optional<JsonElement> valueFrom(String payload) {
-        if (root) {
-            return Optional.of(JsonParser.parseString(payload));
-        }
-
-        String serialized = JsonUtils.serialize(JsonUtils.getVariableFromJson(payload, path));
-        if (serialized == null) {
+        if (!JsonUtils.isValidJson(payload)) {
             return Optional.empty();
         }
-        return Optional.of(JsonParser.parseString(serialized));
+        return valueFrom(JsonParser.parseString(payload));
+    }
+
+    Optional<JsonElement> valueFrom(JsonElement parsedRoot) {
+        if (parsedRoot == null || parsedRoot.isJsonNull()) {
+            return Optional.empty();
+        }
+        if (root) {
+            return Optional.of(parsedRoot);
+        }
+        JsonElement current = parsedRoot;
+        for (String segment : PATH_SPLITTER.split(path)) {
+            if (current.isJsonArray()) {
+                JsonArray arr = current.getAsJsonArray();
+                if (arr.isEmpty()) {
+                    return Optional.empty();
+                }
+                current = arr.get(0);
+            }
+            if (current == null || !current.isJsonObject()) {
+                return Optional.empty();
+            }
+            String cleanSegment = segment.endsWith("[*]") ? segment.substring(0, segment.length() - 3) : segment;
+            current = current.getAsJsonObject().get(cleanSegment);
+            if (current == null || current.isJsonNull()) {
+                return Optional.empty();
+            }
+        }
+        return Optional.of(current);
     }
 
     Optional<JsonArray> arrayFrom(String payload) {
         return valueFrom(payload).filter(JsonElement::isJsonArray).map(JsonElement::getAsJsonArray);
     }
 
+    Optional<JsonArray> arrayFrom(JsonElement parsedRoot) {
+        return valueFrom(parsedRoot).filter(JsonElement::isJsonArray).map(JsonElement::getAsJsonArray);
+    }
+
     Optional<JsonObject> objectFrom(String payload) {
         return valueFrom(payload).filter(JsonElement::isJsonObject).map(JsonElement::getAsJsonObject);
+    }
+
+    Optional<JsonObject> objectFrom(JsonElement parsedRoot) {
+        return valueFrom(parsedRoot).filter(JsonElement::isJsonObject).map(JsonElement::getAsJsonObject);
     }
 
     String replaceValueIn(String payload, JsonElement value) {

@@ -160,7 +160,7 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
         }
 
         Object resolvedCurrentValue = currentValue;
-        List<Object> alternativeIds = generateAlternativeIds(data, idField, resolvedCurrentValue);
+        List<Object> alternativeIds = generateAlternativeIds(resolvedCurrentValue);
 
         for (Object alternativeId : alternativeIds) {
             String fuzzedPayload = CatsUtil.justReplaceField(data.getPayload(), idField, alternativeId).json();
@@ -194,7 +194,7 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
         }
     }
 
-    private List<Object> generateAlternativeIds(FuzzingData data, String idField, Object currentValue) {
+    private List<Object> generateAlternativeIds(Object currentValue) {
         List<Object> alternatives = new ArrayList<>();
         String valueStr = String.valueOf(currentValue);
 
@@ -218,6 +218,7 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
 
         return alternatives.stream()
                 .filter(alternative -> !String.valueOf(alternative).equals(valueStr))
+                .filter(alternative -> runtimeResourcePool == null || !runtimeResourcePool.isKnownPoolValue(alternative))
                 .distinct()
                 .toList();
     }

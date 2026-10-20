@@ -110,8 +110,13 @@ public class SensitiveDataExposureFuzzer implements Fuzzer {
         Optional.ofNullable(data.getAllFieldsAsCatsFields()).orElse(Set.of()).stream()
                 .filter(CatsField::isWriteOnly)
                 .map(CatsField::getName)
-                .map(name -> name.substring(name.lastIndexOf('#') + 1))
-                .forEach(fields::add);
+                .forEach(name -> {
+                    fields.add(name.replace('#', '.'));
+                    String leaf = name.substring(name.lastIndexOf('#') + 1);
+                    if (!name.contains("#") || isSensitiveName(leaf)) {
+                        fields.add(leaf);
+                    }
+                });
         return fields;
     }
 
@@ -122,7 +127,7 @@ public class SensitiveDataExposureFuzzer implements Fuzzer {
             return new SchemaFields(false, false, Set.of(), Set.of());
         }
         SchemaWalk walk = new SchemaWalk(Optional.ofNullable(data.getSchemaMap()).orElse(Map.of()));
-        walk.visit(responseSchema.get(), 0);
+        walk.visit(responseSchema.get(), "", 0);
         return new SchemaFields(true, walk.freeForm, walk.declared, walk.writeOnly);
     }
 
@@ -141,8 +146,9 @@ public class SensitiveDataExposureFuzzer implements Fuzzer {
         }
         for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
             String fieldPath = path.isEmpty() ? entry.getKey() : path + "." + entry.getKey();
+            String normalizedPath = fieldPath.replace("[*]", "");
             JsonElement value = entry.getValue();
-            if (writeOnlyFields.contains(entry.getKey()) && hasValue(value)) {
+            if ((writeOnlyFields.contains(normalizedPath) || writeOnlyFields.contains(entry.getKey())) && hasValue(value)) {
                 exposures.writeOnly().add(fieldPath);
             } else if (schemaFields.canDetectUndeclared() && !schemaFields.declared().contains(entry.getKey()) &&
                     isSensitiveName(entry.getKey()) && isUnmaskedPrimitive(value)) {
@@ -215,34 +221,35 @@ public class SensitiveDataExposureFuzzer implements Fuzzer {
             this.schemaMap = schemaMap;
         }
 
-        private void visit(Schema<?> schema, int depth) {
+        private void visit(Schema<?> schema, String pathPrefix, int depth) {
             if (schema == null || depth > MAX_SCHEMA_DEPTH) {
                 return;
             }
             if (schema.get$ref() != null) {
                 String name = schema.get$ref().substring(schema.get$ref().lastIndexOf('/') + 1);
                 if (visitedRefs.add(name)) {
-                    visit(schemaMap.get(name), depth + 1);
+                    visit(schemaMap.get(name), pathPrefix, depth + 1);
                 }
                 return;
             }
             Map<String, Schema> properties = Optional.ofNullable(schema.getProperties()).orElse(Map.of());
             properties.forEach((name, property) -> {
+                String propPath = pathPrefix.isEmpty() ? name : pathPrefix + "." + name;
                 declared.add(name);
                 if (Boolean.TRUE.equals(property.getWriteOnly())) {
-                    writeOnly.add(name);
+                    writeOnly.add(propPath);
                 }
-                visit(property, depth + 1);
+                visit(property, propPath, depth + 1);
             });
-            visit(schema.getItems(), depth + 1);
+            visit(schema.getItems(), pathPrefix, depth + 1);
             Stream.of(schema.getAllOf(), schema.getAnyOf(), schema.getOneOf())
                     .filter(Objects::nonNull)
                     .flatMap(List::stream)
-                    .forEach(item -> visit(item, depth + 1));
+                    .forEach(item -> visit(item, pathPrefix, depth + 1));
             Object additionalProperties = schema.getAdditionalProperties();
             if (additionalProperties instanceof Schema<?> additionalSchema) {
                 freeForm = true;
-                visit(additionalSchema, depth + 1);
+                visit(additionalSchema, pathPrefix, depth + 1);
             } else if (Boolean.TRUE.equals(additionalProperties) || CatsModelUtils.isFreeFormSchema(schema) ||
                     CatsModelUtils.isEmptyObjectSchema(schema)) {
                 freeForm = true;

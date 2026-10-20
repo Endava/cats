@@ -83,8 +83,9 @@ public class FreeFormObjectFieldsFuzzer implements Fuzzer {
     }
 
     private List<JsonPayloadTarget> findTargets(FuzzingData data, String payload) {
+        JsonElement parsedRoot = JsonUtils.parseAsJsonElement(payload);
         return JsonPayloadTarget.candidatesFor(data).stream()
-                .filter(target -> isExplicitlyFreeForm(target.schema()) && target.objectFrom(payload).isPresent())
+                .filter(target -> isExplicitlyFreeForm(target.schema()) && target.objectFrom(parsedRoot).isPresent())
                 .toList();
     }
 

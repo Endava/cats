@@ -2338,6 +2338,20 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(resolved).isIn("lang-english", "lang-german1");
     }
 
+    @Test
+    void shouldNotMergeDistinctOrdersThatShareTheSameNestedCustomerId() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"),
+                response(201, "{\"orderCode\":\"ORD-1\",\"customer\":{\"id\":\"cust-shared\"}}"));
+        resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"),
+                response(201, "{\"orderCode\":\"ORD-2\",\"customer\":{\"id\":\"cust-shared\"}}"));
+
+        Assertions.assertThat(resourcePool.isKnownPoolValue("ORD-1")).isTrue();
+        Assertions.assertThat(resourcePool.isKnownPoolValue("ORD-2")).isTrue();
+        Assertions.assertThat(resourcePool.isKnownPoolValue("cust-shared")).isTrue();
+        Assertions.assertThat(resourcePool.isKnownPoolValue("non-existent")).isFalse();
+    }
+
     private void enableResourceReuse() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
     }

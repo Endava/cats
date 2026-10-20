@@ -199,14 +199,27 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
         if (sent.equals(returned)) {
             return true;
         }
-        if (sent.isNumber() && returned.isNumber()) {
+        String sentStr = sent.getAsString().trim();
+        String returnedStr = returned.getAsString().trim();
+        if (sentStr.equalsIgnoreCase(returnedStr)) {
+            return true;
+        }
+        if ((sent.isNumber() || returned.isNumber()) ||
+                (!sentStr.isEmpty() && Character.isDigit(sentStr.charAt(0)) && !returnedStr.isEmpty() && Character.isDigit(returnedStr.charAt(0)))) {
             try {
-                return new BigDecimal(sent.getAsString()).compareTo(new BigDecimal(returned.getAsString())) == 0;
+                if (new BigDecimal(sentStr).compareTo(new BigDecimal(returnedStr)) == 0) {
+                    return true;
+                }
             } catch (NumberFormatException _) {
-                return false;
+                // not a number
             }
         }
-        return false;
+        try {
+            return java.time.OffsetDateTime.parse(sentStr).toInstant()
+                    .equals(java.time.OffsetDateTime.parse(returnedStr).toInstant());
+        } catch (java.time.format.DateTimeParseException _) {
+            return false;
+        }
     }
 
     /** Ignores readOnly/writeOnly, missing, and non-primitive fields rather than assuming they were persisted. */

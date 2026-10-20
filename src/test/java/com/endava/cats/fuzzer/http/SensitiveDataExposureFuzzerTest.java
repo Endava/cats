@@ -161,6 +161,22 @@ class SensitiveDataExposureFuzzerTest {
         verifyError(Set.of("password"));
     }
 
+    @Test
+    void shouldNotFlagUnrelatedResponseFieldSharingNonSensitiveNestedWriteOnlyLeafName() {
+        Schema<?> filterSchema = new ObjectSchema().addProperty("value", new StringSchema().writeOnly(true));
+        Schema<?> requestSchema = new ObjectSchema().addProperty("filter", filterSchema);
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.POST)
+                .reqSchema(requestSchema)
+                .requestPropertyTypes(Map.of("filter", filterSchema, "filter#value", new StringSchema().writeOnly(true)))
+                .responseSchemaDefinitions(Map.of("200", Map.of("application/json",
+                        new ObjectSchema().addProperty("metric", new ObjectSchema().addProperty("value", new StringSchema())))))
+                .build();
+
+        fuzzer.checkResponse(response(200, "{\"metric\":{\"value\":\"42\"}}"), data);
+
+        verifyPassed();
+    }
+
     private void verifyError(Set<String> fields) {
         Mockito.verify(testCaseListener).reportResultError(Mockito.any(), Mockito.any(),
                 Mockito.eq(CatsResultFactory.Reason.WRITE_ONLY_FIELDS_EXPOSED.value()), Mockito.anyString(),

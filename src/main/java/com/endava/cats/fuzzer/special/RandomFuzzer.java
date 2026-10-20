@@ -83,6 +83,16 @@ public class RandomFuzzer implements Fuzzer {
     }
 
     /**
+     * Configures whether multiple operations are in scope for the current run, enabling the per-operation
+     * iteration slice during time-bounded execution so a single operation does not consume the entire budget.
+     *
+     * @param multipleOperationsInScope true when more than one operation is being fuzzed
+     */
+    public void setMultipleOperationsInScope(boolean multipleOperationsInScope) {
+        this.capPerOperationSlice = multipleOperationsInScope;
+    }
+
+    /**
      * Runs {@link #fuzz(FuzzingData)} while treating HTTP 5XX responses as errors when no explicit
      * {@code --matchXXX} criteria were configured on the CLI.
      *

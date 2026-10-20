@@ -33,6 +33,7 @@ final class ResponseSchemaValidator {
     private final IdentityHashMap<OpenAPI, DocumentSchemas> documentCaches = new IdentityHashMap<>();
 
     private record DocumentSchemas(ObjectMapper mapper, SchemaRegistry registry,
+                                   IdentityHashMap<Schema<?>, com.networknt.schema.Schema> compiledByIdentity,
                                    Map<String, com.networknt.schema.Schema> compiledByKey) {
     }
 
@@ -69,14 +70,19 @@ final class ResponseSchemaValidator {
                             ? Dialects.getOpenApi31() : Dialects.getOpenApi30(),
                     builder -> builder.schemas(schemaDocuments(mapper, data.getSchemaMap(), SCHEMAS_URI))
                             .schemaLoader(loader -> loader.fetchRemoteResources(false)));
-            return new DocumentSchemas(mapper, registry, new LinkedHashMap<>());
+            return new DocumentSchemas(mapper, registry, new IdentityHashMap<>(), new LinkedHashMap<>());
         });
+        com.networknt.schema.Schema byIdentity = docSchemas.compiledByIdentity().get(schema);
+        if (byIdentity != null) {
+            return byIdentity;
+        }
         String refKey = schema.get$ref() != null && schema.get$ref().startsWith(COMPONENTS_REF_PREFIX)
                 ? "$ref:" + CatsModelUtils.getSimpleRef(schema.get$ref())
                 : null;
         if (refKey != null) {
             com.networknt.schema.Schema cached = docSchemas.compiledByKey().get(refKey);
             if (cached != null) {
+                docSchemas.compiledByIdentity().put(schema, cached);
                 return cached;
             }
         }
@@ -89,11 +95,13 @@ final class ResponseSchemaValidator {
         try {
             String serializedRoot = docSchemas.mapper().writeValueAsString(root);
             String cacheKey = refKey != null ? refKey : serializedRoot;
-            return docSchemas.compiledByKey().computeIfAbsent(cacheKey, ignored -> {
-                com.networknt.schema.Schema compiled = docSchemas.registry().getSchema(serializedRoot);
-                compiled.initializeValidators();
-                return compiled;
+            com.networknt.schema.Schema compiled = docSchemas.compiledByKey().computeIfAbsent(cacheKey, ignored -> {
+                com.networknt.schema.Schema created = docSchemas.registry().getSchema(serializedRoot);
+                created.initializeValidators();
+                return created;
             });
+            docSchemas.compiledByIdentity().put(schema, compiled);
+            return compiled;
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to serialize OpenAPI response schema", e);
         }

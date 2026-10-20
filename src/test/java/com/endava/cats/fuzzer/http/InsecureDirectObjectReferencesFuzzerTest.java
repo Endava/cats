@@ -110,6 +110,7 @@ class InsecureDirectObjectReferencesFuzzerTest {
         RuntimeResourcePool pool = Mockito.mock(RuntimeResourcePool.class);
         Mockito.when(pool.previewEnrichedPayload(Mockito.any(), Mockito.anyString()))
                 .thenReturn("{\"orderId\":\"100\"}");
+        Mockito.when(pool.isKnownPoolValue(java.math.BigInteger.valueOf(101))).thenReturn(true);
         InsecureDirectObjectReferencesFuzzer poolAwareFuzzer =
                 new InsecureDirectObjectReferencesFuzzer(simpleExecutor, testCaseListener, null, pool);
 
@@ -134,7 +135,7 @@ class InsecureDirectObjectReferencesFuzzerTest {
         Mockito.verify(serviceCaller, Mockito.atLeastOnce()).call(captor.capture());
         List<String> payloads = captor.getAllValues().stream().map(ServiceData::getPayload).toList();
         Assertions.assertThat(payloads)
-                .anyMatch(payload -> payload.contains("101"))
+                .noneMatch(payload -> payload.contains("101"))
                 .anyMatch(payload -> payload.contains("99"));
     }
 

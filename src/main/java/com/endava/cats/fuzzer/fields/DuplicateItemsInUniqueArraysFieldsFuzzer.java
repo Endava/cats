@@ -67,18 +67,19 @@ public class DuplicateItemsInUniqueArraysFieldsFuzzer implements Fuzzer {
     }
 
     private static List<JsonPayloadTarget> findTargets(FuzzingData data, String payload) {
+        JsonElement parsedRoot = JsonUtils.parseAsJsonElement(payload);
         return JsonPayloadTarget.candidatesFor(data).stream()
-                .filter(target -> canDuplicateItem(payload, target))
+                .filter(target -> canDuplicateItem(parsedRoot, target))
                 .toList();
     }
 
-    private static boolean canDuplicateItem(String payload, JsonPayloadTarget target) {
+    private static boolean canDuplicateItem(JsonElement parsedRoot, JsonPayloadTarget target) {
         Schema<?> schema = target.schema();
         if (schema == null || !Boolean.TRUE.equals(schema.getUniqueItems())) {
             return false;
         }
 
-        Optional<JsonArray> array = getArray(payload, target);
+        Optional<JsonArray> array = target.arrayFrom(parsedRoot);
         if (array.isEmpty() || array.get().isEmpty()) {
             return false;
         }

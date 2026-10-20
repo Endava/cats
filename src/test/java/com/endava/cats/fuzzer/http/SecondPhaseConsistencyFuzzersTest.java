@@ -172,29 +172,31 @@ class SecondPhaseConsistencyFuzzersTest {
 
     @Test
     void readBackComparesAllOfPropertiesAndTreatsNumericallyEqualValuesAsConsistent() {
-        Schema<?> baseItem = new ObjectSchema().addProperty("name", new StringSchema());
+        Schema<?> baseItem = new ObjectSchema().addProperty("name", new StringSchema())
+                .addProperty("scheduledAt", new StringSchema());
         Schema<?> composed = new ComposedSchema()
                 .addAllOfItem(new Schema<>().$ref("#/components/schemas/BaseItem"))
                 .addAllOfItem(new ObjectSchema().addProperty("price", new NumberSchema()));
         FuzzingData data = FuzzingData.builder().method(HttpMethod.PUT).path("/items/{id}").contractPath("/items/{id}")
                 .pathItem(new PathItem().get(new Operation()).put(new Operation())).headers(Set.of())
                 .reqSchema(composed).schemaMap(Map.of("BaseItem", baseItem))
-                .payload("{\"name\":\"same\",\"price\":10}").build();
+                .payload("{\"name\":\"Same \",\"price\":10,\"scheduledAt\":\"2026-01-01T00:00:00Z\"}").build();
         Mockito.when(pool.successfulExchanges("/items", HttpMethod.POST)).thenReturn(List.of(post()));
         Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(
                 new RuntimeResourcePool.SuccessfulExchange("/items/{id}", HttpMethod.PUT,
-                        "https://api.example.com/items/1", "{\"name\":\"same\",\"price\":10}", 200, "{}", null, null)));
+                        "https://api.example.com/items/1",
+                        "{\"name\":\"Same \",\"price\":10,\"scheduledAt\":\"2026-01-01T00:00:00Z\"}", 200, "{}", null, null)));
 
         new UpdateReadConsistencyFuzzer(pool, arguments, filters, executor, listener).fuzz(data);
 
         ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
         Mockito.verify(executor).execute(captor.capture());
         captor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(200)
-                .body("{\"name\":\"same\",\"price\":10.00}").build(), data);
+                .body("{\"name\":\"same\",\"price\":10.00,\"scheduledAt\":\"2026-01-01T00:00:00+00:00\"}").build(), data);
         Mockito.verify(listener, Mockito.never()).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(),
                 Mockito.anyString(), Mockito.<Object[]>any());
         Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.eq(data),
-                Mockito.eq("Compared {} fields from a successful update with a later read"), Mockito.eq(2));
+                Mockito.eq("Compared {} fields from a successful update with a later read"), Mockito.eq(3));
     }
 
     @Test

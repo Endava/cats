@@ -590,19 +590,31 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         this.preseedCollectionGets(paths, suppliedPaths, openAPI);
 
         if (!processingArguments.isReuseSuccessfulResources() || filterArguments.isDryRun()) {
-            for (Map.Entry<String, PathItem> entry : paths) {
-                CatsExecutionCancelledException.check();
-                if (suppliedPaths.contains(entry.getKey())) {
-                    this.fuzzPath(entry, openAPI);
-                } else {
-                    logger.skip("Skipping path {}", entry.getKey());
+            if (randomFuzzer != null) {
+                randomFuzzer.setMultipleOperationsInScope(suppliedPaths.size() > 1);
+            }
+            try {
+                for (Map.Entry<String, PathItem> entry : paths) {
+                    CatsExecutionCancelledException.check();
+                    if (suppliedPaths.contains(entry.getKey())) {
+                        this.fuzzPath(entry, openAPI);
+                    } else {
+                        logger.skip("Skipping path {}", entry.getKey());
+                    }
+                }
+                this.runDeferredHappyPathDeletes();
+            } finally {
+                if (randomFuzzer != null) {
+                    randomFuzzer.setMultipleOperationsInScope(false);
                 }
             }
-            this.runDeferredHappyPathDeletes();
             return;
         }
 
         List<PreparedPath> preparedPaths = preparePathsForExecution(paths, suppliedPaths, openAPI);
+        if (randomFuzzer != null) {
+            randomFuzzer.setMultipleOperationsInScope(preparedPaths.size() > 1);
+        }
 
         try {
             runPhasedWavesAcrossPaths(preparedPaths);
@@ -613,6 +625,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         } catch (CatsExecutionLimitReachedException e) {
             this.runDeferredHappyPathDeletes();
             throw e;
+        } finally {
+            if (randomFuzzer != null) {
+                randomFuzzer.setMultipleOperationsInScope(false);
+            }
         }
     }
 

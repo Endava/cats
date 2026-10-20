@@ -475,13 +475,30 @@ public class RuntimeResourcePool {
                 return String.valueOf(entry.getValue().value());
             }
         }
-        for (StoredValue value : values.values()) {
-            if (value.aliases().stream().anyMatch(a ->
-                    ResourceSemanticNaming.SIMPLE_IDENTIFIERS.contains(a) || resourceIdAliases.contains(a))) {
-                return String.valueOf(value.value());
+        return null;
+    }
+
+    /**
+     * Checks whether the given value matches any stored value in an active resource in this pool.
+     *
+     * @param candidate candidate value to check
+     * @return true if the value is already present in the pool
+     */
+    public synchronized boolean isKnownPoolValue(Object candidate) {
+        if (candidate == null) {
+            return false;
+        }
+        for (ResourceInstance resource : resources) {
+            if (!resource.active()) {
+                continue;
+            }
+            for (StoredValue stored : resource.values().values()) {
+                if (ResourceSemanticNaming.sameValue(candidate, stored.value())) {
+                    return true;
+                }
             }
         }
-        return null;
+        return false;
     }
 
     private boolean deduplicateExistingResource(ServiceData data, Map<String, StoredValue> enrichedValues,

@@ -82,8 +82,9 @@ public class FreeFormArrayItemsFieldsFuzzer implements Fuzzer {
     }
 
     private static List<JsonPayloadTarget> findTargets(FuzzingData data, String payload) {
+        JsonElement parsedRoot = JsonUtils.parseAsJsonElement(payload);
         return JsonPayloadTarget.candidatesFor(data).stream()
-                .filter(target -> isFreeFormArray(target, data.getSchemaMap()) && canMutate(payload, target))
+                .filter(target -> isFreeFormArray(target, data.getSchemaMap()) && canMutate(parsedRoot, target))
                 .toList();
     }
 
@@ -93,8 +94,8 @@ public class FreeFormArrayItemsFieldsFuzzer implements Fuzzer {
                 JsonPayloadTarget.resolveSchema(schema.getItems(), schemaMap));
     }
 
-    private static boolean canMutate(String payload, JsonPayloadTarget target) {
-        return getTargetArray(payload, target)
+    private static boolean canMutate(JsonElement parsedRoot, JsonPayloadTarget target) {
+        return target.arrayFrom(parsedRoot)
                 .filter(array -> !array.isEmpty() || target.schema().getMaxItems() == null ||
                         target.schema().getMaxItems() > 0)
                 .isPresent();
