@@ -115,6 +115,27 @@ public abstract class ConsoleUtils {
     }
 
     /**
+     * Render a progress row in-place {@code linesUp} rows above the current bottom cursor row,
+     * then return the cursor to the bottom row.
+     *
+     * @param path     The path being processed.
+     * @param progress The progress character to be displayed.
+     * @param linesUp  Number of rows above the bottom row (0 means the current row).
+     */
+    public static void renderSameRowAtOffset(String path, char progress, int linesUp) {
+        if (linesUp <= 0) {
+            renderSameRow(path, progress);
+            return;
+        }
+        String withoutAnsi = ANSI_REMOVE_PATTERN.matcher(path).replaceAll("");
+        int dots = Math.max(terminalWidth - withoutAnsi.length() - 2, 1);
+        String firstPart = path.substring(0, path.indexOf(SEPARATOR));
+        String secondPart = path.substring(path.indexOf(SEPARATOR) + 1);
+        String row = AnsiUtils.bold("\r" + firstPart + " " + ".".repeat(dots) + secondPart + " " + progress);
+        System.out.print("\033[" + linesUp + "A" + row + "\r\033[" + linesUp + "B");
+    }
+
+    /**
      * Render a progress row on a new console row.
      *
      * @param path     The path being processed.

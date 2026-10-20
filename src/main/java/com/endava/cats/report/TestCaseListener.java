@@ -118,6 +118,7 @@ public class TestCaseListener {
     String appBuildTime;
 
     private final Deque<String> runPerPathListener = new ArrayDeque<>();
+    private String lastActivePath;
 
     /**
      * Constructs a TestCaseListener with the provided dependencies and configuration.
@@ -479,17 +480,45 @@ public class TestCaseListener {
         if (!reportingArguments.isSummaryInConsole()) {
             return;
         }
+        if (lastActivePath != null && !lastActivePath.equals(path)) {
+            renderPathDoneAtOffset(lastActivePath);
+        }
+        lastActivePath = path;
         String fuzzer = MDC.get(FUZZER);
-        String prefix = AnsiUtils.blue("(" + runPerPathListener.size() + "/" + globalContext.getCatsConfiguration().pathsToRun() + ") ");
-        String printPath = prefix + path + " " + fuzzer + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
 
         if (runPerPathListener.contains(path)) {
-            ConsoleUtils.renderSameRow(printPath, cycle.next());
+            int linesUp = linesUpFromBottom(path);
+            int pathIndex = runPerPathListener.size() - linesUp;
+            String prefix = AnsiUtils.blue("(" + pathIndex + "/" + globalContext.getCatsConfiguration().pathsToRun() + ") ");
+            String printPath = prefix + path + " " + fuzzer + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
+            ConsoleUtils.renderSameRowAtOffset(printPath, cycle.next(), linesUp);
         } else {
             this.markPreviousPathAsDone();
             runPerPathListener.push(path);
+            String prefix = AnsiUtils.blue("(" + runPerPathListener.size() + "/" + globalContext.getCatsConfiguration().pathsToRun() + ") ");
+            String printPath = prefix + path + " " + fuzzer + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
             ConsoleUtils.renderNewRow(printPath, cycle.next());
         }
+    }
+
+    private int linesUpFromBottom(String path) {
+        int index = 0;
+        for (String existing : runPerPathListener) {
+            if (existing.equals(path)) {
+                return index;
+            }
+            index++;
+        }
+        return 0;
+    }
+
+    private void renderPathDoneAtOffset(String path) {
+        if (!reportingArguments.isSummaryInConsole() || !runPerPathListener.contains(path)) {
+            return;
+        }
+        int linesUp = linesUpFromBottom(path);
+        String toRender = path + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
+        ConsoleUtils.renderSameRowAtOffset(toRender, '✔', linesUp);
     }
 
     private void renderGlobalFuzzersStatistics() {
@@ -507,10 +536,11 @@ public class TestCaseListener {
         if (!reportingArguments.isSummaryInConsole()) {
             return;
         }
-        String previousPath = runPerPathListener.peek();
-        if (previousPath != null) {
-            String toRenderPreviousPath = previousPath + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(previousPath);
-            ConsoleUtils.renderSameRow(toRenderPreviousPath, '✔');
+        List<String> paths = new ArrayList<>(runPerPathListener);
+        for (int linesUp = paths.size() - 1; linesUp >= 0; linesUp--) {
+            String path = paths.get(linesUp);
+            String toRender = path + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
+            ConsoleUtils.renderSameRowAtOffset(toRender, '✔', linesUp);
         }
     }
 
@@ -535,6 +565,7 @@ public class TestCaseListener {
         testCaseSummaryDetails.clear();
         testCaseExecutionDetails.clear();
         runPerPathListener.clear();
+        lastActivePath = null;
         TEST.set(0);
         MDC.remove(ID);
         MDC.put(ID_ANSI, this.getKeyDefault());

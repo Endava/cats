@@ -538,18 +538,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             logger.config("WFC Auth entry: {}", AnsiUtils.blue(wfcAuthProvider.getSelectedAuthenticationName()));
         }
         logger.config("{} configured fuzzers out of {} total fuzzers",
-                AnsiUtils.blue(filterArguments.getFirstPhaseFuzzersForPath().size()),
+                AnsiUtils.blue(filterArguments.getFirstPhaseFuzzersForPath().size() + filterArguments.getSecondPhaseFuzzers().size()),
                 AnsiUtils.blue(filterArguments.getTotalFuzzersOrLinters()));
-        List<String> secondPhaseNames = filterArguments.getSecondPhaseFuzzers().stream().map(Object::toString).toList();
-        logger.config("{} second-phase fuzzers configured: {}", AnsiUtils.blue(secondPhaseNames.size()), AnsiUtils.blue(secondPhaseNames));
-        if (!secondPhaseNames.isEmpty()) {
-            logger.config("Second-phase checks only send requests when matching successful exchanges were observed; use --verbosity=detailed for skip reasons");
-            if (!processingArguments.isReuseSuccessfulResources()) {
-                logger.config("Second-phase checks requiring observed exchanges cannot run with --no-reuseSuccessfulResources");
-            } else if (!filterArguments.getFirstPhaseFuzzersForPath().contains(HappyPathFuzzer.class.getSimpleName())) {
-                logger.config("HappyPathFuzzer is not selected; phase-2 checks may have no successful POST/GET/PUT baselines to use");
-            }
-        }
         logger.config("{} configured paths out of {} total OpenAPI paths",
                 AnsiUtils.blue(filterArguments.getPathsToRun(openAPI).size()),
                 AnsiUtils.blue(openAPI.getPaths().size()));
