@@ -267,7 +267,7 @@ final class ResourceValueExtractor {
         double bestAvgLen = Double.MAX_VALUE;
         for (String prop : first.keySet()) {
             String normProp = ResourceSemanticNaming.normalize(prop);
-            if (normProp.isEmpty() || ResourceSemanticNaming.isItemMetadataKey(normProp)) {
+            if (normProp.isEmpty() || ResourceSemanticNaming.isItemMetadataKey(prop)) {
                 continue;
             }
             Set<String> distinct = new LinkedHashSet<>();

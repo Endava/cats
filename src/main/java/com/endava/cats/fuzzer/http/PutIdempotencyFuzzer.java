@@ -15,6 +15,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
+import com.google.common.base.Splitter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -27,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 /**
  * Repeats the same successful PUT twice on a resource created in this run and compares the two GET representations.
@@ -36,10 +38,16 @@ import java.util.concurrent.atomic.AtomicReference;
 @SecondPhaseFuzzer
 @Singleton
 public class PutIdempotencyFuzzer implements Fuzzer {
-    private static final Set<String> VOLATILE_FIELDS = Set.of(
+    private static final Splitter WORD_BOUNDARY_SPLITTER = Splitter.on(
+            Pattern.compile("(?<!(^|[A-Z]))(?=[A-Z])|(?<!^)(?=[A-Z][a-z])|[^A-Za-z0-9]+")).omitEmptyStrings();
+    private static final Set<String> VOLATILE_EXACT_FIELDS = Set.of(
             "updatedat", "modifiedat", "lastmodified", "lastmodifiedat",
             "lastupdated", "lastupdatedat", "updatedon", "modifiedon",
-            "version", "revision", "etag");
+            "version", "revision", "etag", "timestamp");
+    private static final Set<String> VOLATILE_AUDIT_PREFIX_WORDS = Set.of(
+            "updated", "modified", "created", "last", "modification", "update");
+    private static final Set<String> VOLATILE_AUDIT_SUFFIX_WORDS = Set.of(
+            "at", "on", "time", "date", "timestamp", "modified", "updated");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(PutIdempotencyFuzzer.class);
     private final RuntimeResourcePool pool;
     private final ApiArguments arguments;
@@ -177,10 +185,27 @@ public class PutIdempotencyFuzzer implements Fuzzer {
         }
         JsonObject object = element.getAsJsonObject();
         List<String> keysToRemove = object.keySet().stream()
-                .filter(key -> VOLATILE_FIELDS.contains(normalize(key)))
+                .filter(PutIdempotencyFuzzer::isVolatileField)
                 .toList();
         keysToRemove.forEach(object::remove);
         object.entrySet().forEach(entry -> stripVolatileFields(entry.getValue()));
+    }
+
+    static boolean isVolatileField(String key) {
+        if (key == null || key.isBlank()) {
+            return false;
+        }
+        String normalized = normalize(key);
+        if (VOLATILE_EXACT_FIELDS.contains(normalized)) {
+            return true;
+        }
+        List<String> words = WORD_BOUNDARY_SPLITTER.splitToList(key.trim()).stream()
+                .map(PutIdempotencyFuzzer::normalize)
+                .filter(w -> !w.isEmpty())
+                .toList();
+        return words.size() >= 2 &&
+                VOLATILE_AUDIT_PREFIX_WORDS.contains(words.getFirst()) &&
+                VOLATILE_AUDIT_SUFFIX_WORDS.contains(words.getLast());
     }
 
     private static String normalize(String key) {

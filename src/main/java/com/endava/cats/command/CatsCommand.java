@@ -259,6 +259,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             "nullelementsinarrayfields", "smallnegativeandint32boundaryfields",
             "extremenegativenumbersinintegerfields", "extremepositivenumbersinintegerfields",
             "extremenegativenumbersindecimalfields", "extremepositivenumbersindecimalfields",
+            "zerointegerbody", "zerodecimalbody",
             "minlengthexactvaluesinstringfields", "maxlengthexactvaluesinstringfields",
             "invalidvaluesinenumsfields", "epochnumberindatetimefields",
             "stringformatalmostvalidvalues", "stringformattotallywrongvalues",

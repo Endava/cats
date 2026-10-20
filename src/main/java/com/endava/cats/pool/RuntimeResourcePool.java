@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class RuntimeResourcePool {
     private static final int MAX_RESOURCES = 500;
+    private static final int MAX_RESOURCES_PER_PATH = 50;
     private static final int MAX_CORRELATION_FEEDBACK = 5_000;
     private static final int MAX_FEEDBACK_REWARD = 500;
     private static final int MIN_FEEDBACK_PENALTY = -5_000;
@@ -448,12 +449,129 @@ public class RuntimeResourcePool {
         if (data.getHttpMethod() == HttpMethod.POST) {
             observedProducers.add(data.getRelativePath());
         }
+        String primaryId = extractPrimaryIdentifierValue(enrichedValues, resourceIdentifierAliases);
+        if (deduplicateExistingResource(data, enrichedValues, fuzzedRequest, resourceIdentifierAliases, primaryId)) {
+            return;
+        }
+        if (!enforcePerPathCap(data.getRelativePath(), data.getHttpMethod(), fuzzedRequest)) {
+            return;
+        }
         resources.add(new ResourceInstance(sequence.incrementAndGet(), data.getRelativePath(), data.getHttpMethod(),
                 Collections.unmodifiableMap(enrichedValues), fuzzedRequest, true));
         if (resources.size() > MAX_RESOURCES) {
-            ResourceInstance removed = resources.removeFirst();
-            correlationFeedback.keySet().removeIf(key -> key.resourceSequence() == removed.sequence());
+            evictLeastValuableResource();
         }
+    }
+
+    private String extractPrimaryIdentifierValue(Map<String, StoredValue> values, Set<String> resourceIdAliases) {
+        for (Map.Entry<String, StoredValue> entry : values.entrySet()) {
+            if (ResourceSemanticNaming.isTopLevelResponseKey(entry.getKey()) &&
+                    entry.getValue().aliases().stream().anyMatch(a ->
+                            ResourceSemanticNaming.SIMPLE_IDENTIFIERS.contains(a) || resourceIdAliases.contains(a))) {
+                return String.valueOf(entry.getValue().value());
+            }
+        }
+        for (StoredValue value : values.values()) {
+            if (value.aliases().stream().anyMatch(a ->
+                    ResourceSemanticNaming.SIMPLE_IDENTIFIERS.contains(a) || resourceIdAliases.contains(a))) {
+                return String.valueOf(value.value());
+            }
+        }
+        return null;
+    }
+
+    private boolean deduplicateExistingResource(ServiceData data, Map<String, StoredValue> enrichedValues,
+                                                boolean fuzzedRequest, Set<String> resourceIdAliases, String primaryId) {
+        if (primaryId == null) {
+            return false;
+        }
+        String singularResource = ResourceSemanticNaming.singular(ResourceSemanticNaming.resourceName(data.getRelativePath()));
+        for (int i = 0; i < resources.size(); i++) {
+            ResourceInstance existing = resources.get(i);
+            if (!existing.active() || !existing.singularResourceName().equals(singularResource)) {
+                continue;
+            }
+            String existingId = extractPrimaryIdentifierValue(existing.values(), resourceIdAliases);
+            if (!primaryId.equals(existingId)) {
+                continue;
+            }
+            if (fuzzedRequest && data.getHttpMethod() == HttpMethod.GET &&
+                    (!existing.fuzzed() || existing.sourceMethod() != HttpMethod.GET)) {
+                return true;
+            }
+            existing.values().forEach(enrichedValues::putIfAbsent);
+            HttpMethod mergedMethod = existing.sourceMethod() == HttpMethod.POST ? HttpMethod.POST : data.getHttpMethod();
+            boolean mergedFuzzed = existing.fuzzed() && fuzzedRequest;
+            String mergedPath = existing.sourceMethod() == HttpMethod.POST ? existing.sourcePath() : data.getRelativePath();
+            resources.remove(i);
+            resources.add(new ResourceInstance(existing.sequence(), mergedPath, mergedMethod,
+                    Collections.unmodifiableMap(enrichedValues), mergedFuzzed, true));
+            return true;
+        }
+        return false;
+    }
+
+    private boolean enforcePerPathCap(String path, HttpMethod method, boolean fuzzedRequest) {
+        int pathCount = 0;
+        int evictIndex = -1;
+        int bestEvictRank = -1;
+        for (int i = 0; i < resources.size(); i++) {
+            ResourceInstance r = resources.get(i);
+            if (r.sourcePath().equals(path)) {
+                pathCount++;
+                int rank = evictionRank(r);
+                if (rank > bestEvictRank) {
+                    bestEvictRank = rank;
+                    evictIndex = i;
+                }
+            }
+        }
+        if (pathCount < MAX_RESOURCES_PER_PATH) {
+            return true;
+        }
+        int incomingRank = (!fuzzedRequest && method == HttpMethod.POST) ? 0
+                : (!fuzzedRequest && method != HttpMethod.GET) ? 1
+                : !fuzzedRequest ? 2
+                : (method != HttpMethod.GET) ? 3 : 4;
+        if (incomingRank > bestEvictRank) {
+            return false;
+        }
+        removeResourceAt(evictIndex);
+        return true;
+    }
+
+    private void evictLeastValuableResource() {
+        int evictIndex = 0;
+        int bestRank = -1;
+        for (int i = 0; i < resources.size(); i++) {
+            int rank = evictionRank(resources.get(i));
+            if (rank > bestRank) {
+                bestRank = rank;
+                evictIndex = i;
+            }
+        }
+        removeResourceAt(evictIndex);
+    }
+
+    private static int evictionRank(ResourceInstance r) {
+        if (!r.active()) {
+            return 5;
+        }
+        if (r.fuzzed() && r.sourceMethod() == HttpMethod.GET) {
+            return 4;
+        }
+        if (r.fuzzed()) {
+            return 3;
+        }
+        if (r.sourceMethod() == HttpMethod.GET) {
+            return 2;
+        }
+        return r.sourceMethod() == HttpMethod.POST ? 0 : 1;
+    }
+
+    private void removeResourceAt(int index) {
+        ResourceInstance removed = resources.remove(index);
+        correlationFeedback.keySet().removeIf(key -> key.resourceSequence() == removed.sequence());
     }
 
     private void markDeleted(ServiceData data, String actualUrl) {

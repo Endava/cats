@@ -919,9 +919,41 @@ class CatsCommandTest {
                         f.getClass().getSimpleName().replace("Fuzzer", "").toLowerCase(Locale.ROOT)))
                 .collect(Collectors.toSet());
 
+        Set<String> allRegisteredFuzzerNames = registeredFuzzers.stream()
+                .flatMap(f -> Stream.of(
+                        ConsoleUtils.removeTrimSanitize(f.toString()).toLowerCase(Locale.ROOT),
+                        f.getClass().getSimpleName().replace("Fuzzer", "").toLowerCase(Locale.ROOT)))
+                .collect(Collectors.toSet());
+
         Assertions.assertThat(registeredFirstPhaseNames)
                 .containsAll(CatsCommand.COVERAGE_WAVE_FUZZERS)
                 .containsAll(CatsCommand.CRASH_WAVE_FUZZERS);
+
+        com.endava.cats.args.util.ProfileLoader profileLoader = new com.endava.cats.args.util.ProfileLoader();
+        for (com.endava.cats.args.util.ProfileLoader.Profile profile : profileLoader.getAvailableProfilesDetails()) {
+            Set<String> profileLower = profile.fuzzers().stream()
+                    .map(n -> n.toLowerCase(Locale.ROOT))
+                    .collect(Collectors.toSet());
+            Assertions.assertThat(allRegisteredFuzzerNames)
+                    .as("Profile '%s' must only reference registered fuzzers", profile.name())
+                    .containsAll(profileLower);
+        }
+
+        Set<String> coverageProfileFirstPhase = profileLoader.getProfile("coverage").orElseThrow().fuzzers().stream()
+                .map(n -> n.toLowerCase(Locale.ROOT))
+                .filter(registeredFirstPhaseNames::contains)
+                .collect(Collectors.toSet());
+        Set<String> crashProfileFirstPhase = profileLoader.getProfile("crash").orElseThrow().fuzzers().stream()
+                .map(n -> n.toLowerCase(Locale.ROOT))
+                .filter(registeredFirstPhaseNames::contains)
+                .collect(Collectors.toSet());
+
+        Assertions.assertThat(CatsCommand.COVERAGE_WAVE_FUZZERS)
+                .containsExactlyInAnyOrderElementsOf(coverageProfileFirstPhase);
+        Assertions.assertThat(Stream.concat(
+                        CatsCommand.COVERAGE_WAVE_FUZZERS.stream(),
+                        CatsCommand.CRASH_WAVE_FUZZERS.stream()).collect(Collectors.toSet()))
+                .containsAll(crashProfileFirstPhase);
     }
 
     @Test

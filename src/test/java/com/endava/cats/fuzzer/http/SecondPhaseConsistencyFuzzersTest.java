@@ -249,6 +249,12 @@ class SecondPhaseConsistencyFuzzersTest {
         Mockito.verify(listener, Mockito.never()).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString());
         Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.eq(data),
                 Mockito.eq("Resource state did not change after repeating the identical PUT"));
+        for (String volatileField : List.of("lastModifiedDate", "updatedDate", "modifiedTime", "createdDate", "updated_at", "etag")) {
+            Assertions.assertThat(PutIdempotencyFuzzer.isVolatileField(volatileField)).as(volatileField).isTrue();
+        }
+        for (String stableField : List.of("candidateId", "updateId", "birthDate", "name")) {
+            Assertions.assertThat(PutIdempotencyFuzzer.isVolatileField(stableField)).as(stableField).isFalse();
+        }
     }
 
     @Test

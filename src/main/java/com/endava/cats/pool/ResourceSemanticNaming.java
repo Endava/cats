@@ -39,9 +39,17 @@ final class ResourceSemanticNaming {
     static final Set<String> COLLECTION_WRAPPER_SEGMENTS = Set.of(
             "content", "data", "items", "results", "records", "elements", "entries", "list", "rows", "values", "response");
     private static final Set<String> ENVELOPE_METADATA_TOKENS = Set.of(
-            "time", "timestamp", "date", "createdat", "updatedat", "status", "httpstatus", "statuscode", "errorcode",
-            "message", "error", "errors", "code", "version", "path", "success", "issuccess", "ok",
+            "time", "timestamp", "date", "createdat", "updatedat", "modifiedat", "deletedat",
+            "lastmodified", "lastupdated", "status", "httpstatus", "statuscode", "errorcode",
+            "message", "messages", "error", "errors", "code", "version", "path", "success", "issuccess", "ok",
             "kind", "meta", "metadata", "self", "next", "prev");
+    private static final Set<String> ITEM_METADATA_WORDS = Set.of(
+            "time", "timestamp", "date", "datetime", "createdat", "updatedat", "modifiedat", "deletedat",
+            "lastmodified", "lastupdated", "status", "httpstatus", "statuscode", "errorcode",
+            "message", "messages", "error", "errors");
+    private static final Set<String> NON_METADATA_DATE_TIME_STEMS = Set.of(
+            "candidate", "mandate", "validate", "invalidate", "liquidate", "consolidate",
+            "accommodate", "update", "runtime", "lifetime", "uptime", "downtime", "overtime", "pastime");
 
     private static final Pattern WORD_BOUNDARY_SPLITTER = Pattern.compile(
             "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[_\\-]+");
@@ -78,17 +86,59 @@ final class ResourceSemanticNaming {
         return MULTI_WORD_IDENTIFIER_SUFFIXES.contains(lastWord);
     }
 
-    static boolean isMetadataKey(String normalizedKey) {
+    static boolean isMetadataKey(String rawOrNormalizedKey) {
+        if (StringUtils.isBlank(rawOrNormalizedKey) || isIdentifierLikeKey(rawOrNormalizedKey)) {
+            return false;
+        }
+        String normalizedKey = normalize(rawOrNormalizedKey);
         if (ENVELOPE_METADATA_TOKENS.contains(normalizedKey)) {
             return true;
         }
-        return isItemMetadataKey(normalizedKey);
+        return isItemMetadataKey(rawOrNormalizedKey);
     }
 
-    static boolean isItemMetadataKey(String normalizedKey) {
-        return normalizedKey.contains("time") || normalizedKey.contains("date") ||
-                normalizedKey.contains("status") || normalizedKey.contains("message") ||
-                normalizedKey.contains("error");
+    static boolean isItemMetadataKey(String rawOrNormalizedKey) {
+        if (StringUtils.isBlank(rawOrNormalizedKey) || isIdentifierLikeKey(rawOrNormalizedKey)) {
+            return false;
+        }
+        String normalized = normalize(rawOrNormalizedKey);
+        String singularNorm = singular(normalized);
+        if (NON_METADATA_DATE_TIME_STEMS.contains(normalized) || NON_METADATA_DATE_TIME_STEMS.contains(singularNorm) ||
+                NON_METADATA_DATE_TIME_STEMS.stream().anyMatch(stem -> singularNorm.endsWith(stem))) {
+            return false;
+        }
+        if (ITEM_METADATA_WORDS.contains(normalized) || ITEM_METADATA_WORDS.contains(singularNorm)) {
+            return true;
+        }
+        List<String> words = splitWords(rawOrNormalizedKey);
+        if (words.size() >= 2) {
+            for (String word : words) {
+                String normWord = singular(normalize(word));
+                if (ITEM_METADATA_WORDS.contains(normWord)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return normalized.endsWith("timestamp") || normalized.endsWith("datetime") ||
+                normalized.endsWith("status") || normalized.endsWith("statuscode") ||
+                normalized.endsWith("errorcode") || normalized.endsWith("message") ||
+                normalized.endsWith("error") || normalized.endsWith("time") ||
+                normalized.endsWith("date");
+    }
+
+    private static boolean isIdentifierLikeKey(String key) {
+        if (isIdentifierName(key)) {
+            return true;
+        }
+        String norm = normalize(key);
+        for (String suffix : MULTI_WORD_IDENTIFIER_SUFFIXES) {
+            if (norm.length() > suffix.length() && (norm.endsWith(suffix) || norm.endsWith(suffix + "s")) &&
+                    !"address".equals(suffix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static boolean isTopLevelResponseKey(String key) {

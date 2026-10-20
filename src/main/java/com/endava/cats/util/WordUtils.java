@@ -39,7 +39,45 @@ public abstract class WordUtils {
             Map.entry("syllabi", "syllabus"),
             Map.entry("radii", "radius"),
             Map.entry("foci", "focus"),
-            Map.entry("quizzes", "quiz"));
+            Map.entry("quizzes", "quiz"),
+            Map.entry("statuses", "status"),
+            Map.entry("aliases", "alias"),
+            Map.entry("buses", "bus"),
+            Map.entry("campuses", "campus"),
+            Map.entry("viruses", "virus"),
+            Map.entry("bonuses", "bonus"),
+            Map.entry("censuses", "census"),
+            Map.entry("consensuses", "consensus"),
+            Map.entry("focuses", "focus"),
+            Map.entry("sinuses", "sinus"),
+            Map.entry("surpluses", "surplus"),
+            Map.entry("syllabuses", "syllabus"),
+            Map.entry("octopuses", "octopus"),
+            Map.entry("axes", "axis"));
+    private static final Map<String, String> VES_TO_F_OR_FE_SUFFIXES = Map.ofEntries(
+            Map.entry("knives", "knife"),
+            Map.entry("wives", "wife"),
+            Map.entry("lives", "life"),
+            Map.entry("leaves", "leaf"),
+            Map.entry("halves", "half"),
+            Map.entry("wolves", "wolf"),
+            Map.entry("calves", "calf"),
+            Map.entry("shelves", "shelf"),
+            Map.entry("selves", "self"),
+            Map.entry("thieves", "thief"),
+            Map.entry("loaves", "loaf"),
+            Map.entry("sheaves", "sheaf"),
+            Map.entry("elves", "elf"),
+            Map.entry("scarves", "scarf"),
+            Map.entry("wharves", "wharf"),
+            Map.entry("dwarves", "dwarf"),
+            Map.entry("hooves", "hoof"));
+    private static final Set<String> IE_SINGULAR_SUFFIXES = Set.of(
+            "movies", "cookies", "rookies", "zombies", "goodies", "brownies",
+            "calories", "ties", "pies", "lies", "dies", "vies");
+    private static final Set<String> SILENT_E_CH_SUFFIXES = Set.of(
+            "caches", "niches", "avalanches", "headaches", "earaches", "toothaches",
+            "backaches", "stomachaches", "aches", "brioches", "creches", "quiches", "douches");
     private static final Set<String> ERROR_KEYWORDS = Set.of(
             "StackTrace", "BadRequest", "InternalServerError", "Unauthorized",
             "Forbidden", "ServiceUnavailable", "SocketTimeout", "PermissionDenied", "InvalidToken",
@@ -256,18 +294,30 @@ public abstract class WordUtils {
             return resource.substring(0, resource.length() - 3) + "al";
         }
         if (resource.endsWith("ies") && resource.length() > 3) {
+            if (IE_SINGULAR_SUFFIXES.stream().anyMatch(resource::endsWith)) {
+                return resource.substring(0, resource.length() - 1);
+            }
             return resource.substring(0, resource.length() - 3) + "y";
         }
         if (resource.endsWith("eses") && resource.length() > 4) {
             return resource.substring(0, resource.length() - 2) + "is";
         }
         if (resource.endsWith("ves") && resource.length() > 3) {
-            String stem = resource.substring(0, resource.length() - 3);
-            return (stem.endsWith("i") || stem.endsWith("a")) ? stem + "fe" : stem + "f";
+            for (Map.Entry<String, String> entry : VES_TO_F_OR_FE_SUFFIXES.entrySet()) {
+                if (resource.endsWith(entry.getKey())) {
+                    return resource.substring(0, resource.length() - entry.getKey().length()) + entry.getValue();
+                }
+            }
+            return resource.substring(0, resource.length() - 1);
         }
-        if ((resource.endsWith("sses") || resource.endsWith("xes") || resource.endsWith("zes") ||
-                resource.endsWith("ches") || resource.endsWith("shes") || resource.endsWith("uses") ||
-                resource.endsWith("ases")) && resource.length() > 3) {
+        if (resource.endsWith("ches") && resource.length() > 4) {
+            if (SILENT_E_CH_SUFFIXES.stream().anyMatch(resource::endsWith)) {
+                return resource.substring(0, resource.length() - 1);
+            }
+            return resource.substring(0, resource.length() - 2);
+        }
+        if ((resource.endsWith("sses") || resource.endsWith("xes") ||
+                resource.endsWith("zzes") || resource.endsWith("shes")) && resource.length() > 3) {
             return resource.substring(0, resource.length() - 2);
         }
         if (resource.endsWith("s") && !resource.endsWith("ss") && !resource.endsWith("us") &&

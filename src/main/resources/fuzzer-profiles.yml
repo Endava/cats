@@ -125,7 +125,7 @@ profiles:
       # Boundary Testing (Key ones only)
       - IntegerFieldsLeftBoundary
       - IntegerFieldsRightBoundary
-      - ZeroValuesInIntegerFields
+      - SmallNegativeAndInt32BoundaryFields
       - StringFieldsLeftBoundary
       - StringFieldsRightBoundary
 
@@ -252,7 +252,7 @@ profiles:
       - IntegerFieldsRightBoundary
       - ExtremeNegativeNumbersInIntegerFields
       - ExtremePositiveNumbersInIntegerFields
-      - ZeroValuesInIntegerFields
+      - SmallNegativeAndInt32BoundaryFields
       - DecimalFieldsLeftBoundary
       - DecimalFieldsRightBoundary
       - StringFieldsLeftBoundary

@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.util.WordUtils;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -33,12 +34,6 @@ final class OperationDependencyOrder {
     private static final int MAX_SCHEMA_DEPTH = 4;
     private static final Pattern PATH_PARAMETER_PATTERN = Pattern.compile("\\{([^/]+)}");
     private static final List<String> ID_SUFFIXES = List.of("id", "uuid", "guid", "token");
-    private static final Map<String, String> IRREGULAR_SINGULARS = Map.of(
-            "children", "child",
-            "men", "man",
-            "people", "person",
-            "statuses", "status",
-            "women", "woman");
 
     private OperationDependencyOrder() {
     }
@@ -309,24 +304,7 @@ final class OperationDependencyOrder {
     }
 
     private static String singular(String resource) {
-        String irregular = IRREGULAR_SINGULARS.get(resource);
-        if (irregular != null) {
-            return irregular;
-        }
-        if (resource.endsWith("ais") && resource.length() > 3) {
-            return resource.substring(0, resource.length() - 3) + "al";
-        }
-        if (resource.endsWith("ies") && resource.length() > 3) {
-            return resource.substring(0, resource.length() - 3) + "y";
-        }
-        if ((resource.endsWith("sses") || resource.endsWith("xes") || resource.endsWith("zes") ||
-                resource.endsWith("ches") || resource.endsWith("shes")) && resource.length() > 2) {
-            return resource.substring(0, resource.length() - 2);
-        }
-        if (resource.endsWith("s") && !resource.endsWith("ss") && resource.length() > 1) {
-            return resource.substring(0, resource.length() - 1);
-        }
-        return resource;
+        return WordUtils.singularize(resource);
     }
 
     private static String normalize(String value) {

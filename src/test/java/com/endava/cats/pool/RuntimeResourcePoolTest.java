@@ -2222,6 +2222,65 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(avgMs).isLessThan(10.0);
     }
 
+    @Test
+    void shouldRetainPostResourcesAcrossRepeatedFuzzedCollectionGetsAndCorrelateSingularizedAndDateTimeNamedIds() {
+        enableResourceReuse();
+        ServiceData createCustomer = postData("/customers", "{\"name\":\"Alice\"}");
+        resourcePool.observe(createCustomer, request("POST", "/customers", "{\"name\":\"Alice\"}"),
+                response(201, "{\"id\":\"cust-1\",\"name\":\"Alice\"}"));
+
+        // 11 fuzzed 50-item GET /products responses (550 items total) must not evict POST /customers
+        StringBuilder items = new StringBuilder("[");
+        for (int i = 1; i <= 50; i++) {
+            if (i > 1) {
+                items.append(',');
+            }
+            items.append("{\"id\":\"prod-").append(i).append("\",\"name\":\"Product ").append(i).append("\"}");
+        }
+        items.append(']');
+        String productsJson = items.toString();
+        for (int round = 0; round < 11; round++) {
+            ServiceData fuzzedGet = bodyData("/products", HttpMethod.GET,
+                    "{\"filter\":\"orig\"}", "{\"filter\":\"fuzzed-" + round + "\"}");
+            resourcePool.observe(fuzzedGet, request("GET", "/products?filter=fuzzed-" + round, "{}"),
+                    response(200, productsJson));
+        }
+
+        ServiceData createInvoice = postData("/invoices", "{\"customerId\":\"gen\"}");
+        Assertions.assertThat(resourcePool.enrich(createInvoice, createInvoice.getPayload()).payload())
+                .contains("\"customerId\":\"cust-1\"");
+
+        // B.6: Singularization for purchases, orders, archives, movies, databases, releases, caches, sizes
+        for (String[] pair : new String[][]{
+                {"/purchases", "pur-1"}, {"/orders", "ord-1"}, {"/archives", "arc-1"},
+                {"/movies", "mov-1"}, {"/databases", "db-1"}, {"/releases", "rel-1"},
+                {"/caches", "cch-1"}, {"/sizes", "sz-1"}}) {
+            ServiceData post = postData(pair[0], "{}");
+            resourcePool.observe(post, request("POST", pair[0], "{}"),
+                    response(201, "{\"id\":\"" + pair[1] + "\"}"));
+        }
+        ServiceData checkForeignKeys = postData("/audits",
+                "{\"purchaseId\":\"g\",\"orderId\":\"g\",\"archiveId\":\"g\",\"movieId\":\"g\"," +
+                        "\"databaseId\":\"g\",\"releaseId\":\"g\",\"cacheId\":\"g\",\"sizeId\":\"g\"}");
+        String enrichedFks = resourcePool.enrich(checkForeignKeys, checkForeignKeys.getPayload()).payload();
+        Assertions.assertThat(enrichedFks).contains(
+                "\"purchaseId\":\"pur-1\"", "\"orderId\":\"ord-1\"", "\"archiveId\":\"arc-1\"",
+                "\"movieId\":\"mov-1\"", "\"databaseId\":\"db-1\"", "\"releaseId\":\"rel-1\"",
+                "\"cacheId\":\"cch-1\"", "\"sizeId\":\"sz-1\"");
+
+        // B.7: candidateId, mandateId, updateId, runtimeId, lifetimeToken, and /candidates are not metadata
+        for (String nonMeta : List.of("candidateId", "mandateId", "updateId", "runtimeId", "lifetimeToken", "candidate", "candidates", "mandate")) {
+            Assertions.assertThat(ResourceSemanticNaming.isMetadataKey(nonMeta)).as(nonMeta).isFalse();
+            Assertions.assertThat(ResourceSemanticNaming.isItemMetadataKey(nonMeta)).as(nonMeta).isFalse();
+        }
+        ServiceData listCandidates = getData("/candidates", "{}");
+        resourcePool.observe(listCandidates, request("GET", "/candidates", "{}"),
+                response(200, "[{\"code\":\"CAND-1\",\"name\":\"Jane Doe\"},{\"code\":\"CAND-2\",\"name\":\"John Roe\"}]"));
+        ServiceData interview = postData("/interviews", "{\"candidate\":\"gen\"}");
+        Assertions.assertThat(resourcePool.enrich(interview, interview.getPayload()).payload())
+                .contains("\"candidate\":\"CAND-2\"");
+    }
+
     private void enableResourceReuse() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
     }
