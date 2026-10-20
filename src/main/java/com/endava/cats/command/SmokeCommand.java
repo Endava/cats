@@ -77,8 +77,6 @@ public class SmokeCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "Include DELETE operations during the smoke check. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     boolean includeDelete;
 
-    @CommandLine.Option(names = {"-j", "--json"},
-            description = "Output the smoke check diagnostic report as JSON.")
     boolean json;
 
     @CommandLine.ParentCommand
@@ -220,7 +218,7 @@ public class SmokeCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void renderReport(SmokeReport report) {
-        if (json) {
+        if (json || (reportingArguments != null && reportingArguments.isJsonOutput())) {
             logger.noFormat(JsonUtils.GSON.toJson(report));
             return;
         }
