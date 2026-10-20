@@ -106,12 +106,10 @@ class InsecureDirectObjectReferencesFuzzerTest {
     }
 
     @Test
-    void shouldUseRuntimeEnrichedIdAndAlternativePoolIdWhenGeneratingIdorPayloads() {
+    void shouldUseRuntimeEnrichedIdWithoutUsingSameUserAlternativePoolIdWhenGeneratingIdorPayloads() {
         RuntimeResourcePool pool = Mockito.mock(RuntimeResourcePool.class);
         Mockito.when(pool.previewEnrichedPayload(Mockito.any(), Mockito.anyString()))
                 .thenReturn("{\"orderId\":\"100\"}");
-        Mockito.when(pool.alternativePathParameterValue("/orders/{orderId}", "orderId", "100"))
-                .thenReturn(Optional.of("200"));
         InsecureDirectObjectReferencesFuzzer poolAwareFuzzer =
                 new InsecureDirectObjectReferencesFuzzer(simpleExecutor, testCaseListener, null, pool);
 
@@ -131,11 +129,11 @@ class InsecureDirectObjectReferencesFuzzerTest {
 
         poolAwareFuzzer.fuzz(data);
 
+        Mockito.verify(pool, Mockito.never()).alternativePathParameterValue(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
         ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
         Mockito.verify(serviceCaller, Mockito.atLeastOnce()).call(captor.capture());
         List<String> payloads = captor.getAllValues().stream().map(ServiceData::getPayload).toList();
         Assertions.assertThat(payloads)
-                .anyMatch(payload -> payload.contains("200"))
                 .anyMatch(payload -> payload.contains("101"))
                 .anyMatch(payload -> payload.contains("99"));
     }
@@ -329,11 +327,9 @@ class InsecureDirectObjectReferencesFuzzerTest {
     }
 
     @Test
-    void shouldSkipForAllMethodsExceptGet() {
+    void shouldSkipOnlyHeadAndTrace() {
         Assertions.assertThat(idorFuzzer.skipForHttpMethods())
-                .containsExactlyInAnyOrderElementsOf(Stream.of(HttpMethod.values())
-                        .filter(method -> method != HttpMethod.GET)
-                        .toList());
+                .containsExactly(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 
     @Test

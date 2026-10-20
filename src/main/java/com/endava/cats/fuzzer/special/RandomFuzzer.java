@@ -66,6 +66,7 @@ public class RandomFuzzer implements Fuzzer {
     private final FilesArguments filesArguments;
     private final Instance<Mutator> mutators;
     private boolean reportServerErrorsWhenUnmatched;
+    private boolean capPerOperationSlice;
 
     @Inject
     public RandomFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener,
@@ -88,12 +89,15 @@ public class RandomFuzzer implements Fuzzer {
      * @param data the fuzzing context
      */
     public void fuzzContinuous(FuzzingData data) {
-        boolean previous = this.reportServerErrorsWhenUnmatched;
+        boolean previousReport = this.reportServerErrorsWhenUnmatched;
+        boolean previousCap = this.capPerOperationSlice;
         this.reportServerErrorsWhenUnmatched = true;
+        this.capPerOperationSlice = true;
         try {
             fuzz(data);
         } finally {
-            this.reportServerErrorsWhenUnmatched = previous;
+            this.reportServerErrorsWhenUnmatched = previousReport;
+            this.capPerOperationSlice = previousCap;
         }
     }
 
@@ -114,7 +118,8 @@ public class RandomFuzzer implements Fuzzer {
 
         boolean shouldStop = false;
         int iterationsForOperation = 0;
-        boolean capPerOperation = stopArguments.getStopAfterTimeInSec() > 0 && stopArguments.getStopAfterMutations() <= 0;
+        boolean capPerOperation = this.capPerOperationSlice &&
+                stopArguments.getStopAfterTimeInSec() > 0 && stopArguments.getStopAfterMutations() <= 0;
         Set<String> allCatsFields = data.getAllFieldsByHttpMethod();
 
         testCaseListener.updateUnknownProgress(data);
@@ -131,7 +136,10 @@ public class RandomFuzzer implements Fuzzer {
             Mutator selectedRandomMutator = CatsUtil.selectRandom(mutatorsToRun);
             logger.debug("Selected mutator [{}]", selectedRandomMutator.getClass().getSimpleName());
 
-            String mutatedPayload = applyMutations(data.getPayload(), targetField, selectedRandomMutator, allCatsFields, mutatorsToRun);
+            Set<String> mutatedFields = new java.util.LinkedHashSet<>();
+            mutatedFields.add(targetField);
+            String mutatedPayload = applyMutations(data.getPayload(), targetField, selectedRandomMutator,
+                    allCatsFields, mutatorsToRun, mutatedFields);
             Collection<CatsHeader> mutatedHeaders = selectedRandomMutator.mutate(data.getHeaders());
 
             simpleExecutor.execute(
@@ -141,7 +149,7 @@ public class RandomFuzzer implements Fuzzer {
                             .logger(logger)
                             .payload(mutatedPayload)
                             .headers(mutatedHeaders)
-                            .mutationTargets(getMutationTargets(data, targetField, mutatedPayload, mutatedHeaders))
+                            .mutationTargets(getMutationTargets(data, mutatedFields, mutatedPayload, mutatedHeaders))
                             .scenario("Send a random payload mutating field [%s] with [%s] mutator".formatted(targetField, selectedRandomMutator.description()))
                             .expectedSpecificResponseCode("a response that doesn't match given --matchXXX arguments")
                             .responseProcessor(this::processResponse)
@@ -154,7 +162,7 @@ public class RandomFuzzer implements Fuzzer {
     }
 
     private String applyMutations(String basePayload, String targetField, Mutator primaryMutator,
-                                  Set<String> allCatsFields, List<Mutator> mutatorsToRun) {
+                                  Set<String> allCatsFields, List<Mutator> mutatorsToRun, Set<String> mutatedFields) {
         String mutatedPayload = primaryMutator.mutate(basePayload, targetField);
         if (allCatsFields.size() <= 1 || !com.endava.cats.util.CatsRandom.instance().nextBoolean()) {
             return mutatedPayload;
@@ -164,7 +172,11 @@ public class RandomFuzzer implements Fuzzer {
             String extraField = CatsUtil.selectRandom(allCatsFields);
             if (JsonUtils.isFieldInJson(mutatedPayload, extraField)) {
                 Mutator extraMutator = CatsUtil.selectRandom(mutatorsToRun);
-                mutatedPayload = extraMutator.mutate(mutatedPayload, extraField);
+                String nextPayload = extraMutator.mutate(mutatedPayload, extraField);
+                if (!Objects.equals(mutatedPayload, nextPayload)) {
+                    mutatedFields.add(extraField);
+                }
+                mutatedPayload = nextPayload;
             }
         }
         return mutatedPayload;
@@ -175,12 +187,14 @@ public class RandomFuzzer implements Fuzzer {
                 || (capPerOperation && iterationsForOperation >= 25);
     }
 
-    private List<RequestTarget> getMutationTargets(FuzzingData data, String targetField, String mutatedPayload,
+    private List<RequestTarget> getMutationTargets(FuzzingData data, Set<String> mutatedFields, String mutatedPayload,
                                                      Collection<CatsHeader> mutatedHeaders) {
         List<RequestTarget> targets = new ArrayList<>();
         Collection<CatsHeader> originalHeaders = data.getHeaders() == null ? List.of() : data.getHeaders();
         if (!Objects.equals(data.getPayload(), mutatedPayload)) {
-            targets.addAll(RequestTargetResolver.resolvePayloadField(data, targetField));
+            for (String mutatedField : mutatedFields) {
+                targets.addAll(RequestTargetResolver.resolvePayloadField(data, mutatedField));
+            }
         }
         Collection<CatsHeader> finalMutatedHeaders = mutatedHeaders == null ? List.of() : mutatedHeaders;
         finalMutatedHeaders.stream()

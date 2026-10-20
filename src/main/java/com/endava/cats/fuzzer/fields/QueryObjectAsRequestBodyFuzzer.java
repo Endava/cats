@@ -80,8 +80,7 @@ public class QueryObjectAsRequestBodyFuzzer implements Fuzzer {
         for (String body : bodies) {
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
-                            .expectedResponseCode(processingArguments.isStrictTypes()
-                                    ? ResponseCodeFamilyPredefined.FOURXX : ResponseCodeFamilyPredefined.FOURXX_TWOXX)
+                            .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX_TWOXX)
                             .fuzzingData(data)
                             .logger(logger)
                             .scenario("Send query object parameter [%s] as JSON request body on %s"

@@ -6,6 +6,7 @@ import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -16,8 +17,8 @@ import java.util.List;
 public class RandomBoundaryNumbersMutator implements BodyMutator {
     private static final List<Object> BOUNDARY_VALUES = List.of(
             0, -1, 1, -0.0,
-            Integer.MAX_VALUE + 1L,
-            Integer.MIN_VALUE - 1L,
+            BigInteger.valueOf(Integer.MAX_VALUE + 1L),
+            BigInteger.valueOf(Integer.MIN_VALUE - 1L),
             -Double.MAX_VALUE,
             -Float.MAX_VALUE,
             65535, 65536, -65536,

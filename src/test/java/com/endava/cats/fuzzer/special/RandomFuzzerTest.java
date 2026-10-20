@@ -166,7 +166,13 @@ class RandomFuzzerTest {
                 new com.endava.cats.fuzzer.special.mutators.impl.RandomInjectionAndFormatCrashMutator();
 
         String baseJson = "{\"a\":\"one\",\"b\":2,\"c\":\"three\"}";
-        Assertions.assertThat(boundaryMutator.mutate(baseJson, "b")).isNotEqualTo(baseJson);
+        for (int i = 0; i < 30; i++) {
+            String mutatedB = boundaryMutator.mutate(baseJson, "b");
+            Assertions.assertThat(mutatedB)
+                    .isNotEqualTo(baseJson)
+                    .doesNotContain("\"2147483648\"")
+                    .doesNotContain("\"-2147483649\"");
+        }
         Assertions.assertThat(boundaryMutator.description()).isNotBlank();
         Assertions.assertThat(typeConfusionMutator.mutate(baseJson, "a")).isNotEqualTo(baseJson);
         Assertions.assertThat(typeConfusionMutator.description()).isNotBlank();

@@ -5,6 +5,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
@@ -79,8 +80,7 @@ public abstract class BaseTypeCoercionFuzzer implements Fuzzer {
 
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
-                            .expectedResponseCode(processingArguments.isStrictTypes() ?
-                                    ResponseCodeFamilyPredefined.FOURXX : ResponseCodeFamilyPredefined.FOURXX_TWOXX)
+                            .expectedResponseCode(expectedResponseCode(data, field, fuzzedValue))
                             .fuzzingData(data)
                             .logger(logger)
                             .scenario("Send %s fields encoded as %s: field [%s], fuzzed value [%s], original [%s]. This tests type validation and potential type coercion issues."
@@ -91,6 +91,15 @@ public abstract class BaseTypeCoercionFuzzer implements Fuzzer {
                             .build()
             );
         }
+    }
+
+    protected ResponseCodeFamily expectedResponseCode(FuzzingData data, String field, Object fuzzedValue) {
+        return processingArguments.isStrictTypes() ?
+                ResponseCodeFamilyPredefined.FOURXX : ResponseCodeFamilyPredefined.FOURXX_TWOXX;
+    }
+
+    protected ProcessingArguments getProcessingArguments() {
+        return processingArguments;
     }
 
     /**

@@ -198,13 +198,6 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
         List<Object> alternatives = new ArrayList<>();
         String valueStr = String.valueOf(currentValue);
 
-        if (runtimeResourcePool != null && data.getPath() != null) {
-            Optional.ofNullable(runtimeResourcePool.alternativePathParameterValue(
-                            data.getPath(), getSimpleFieldName(idField), valueStr))
-                    .orElse(Optional.empty())
-                    .ifPresent(alternatives::add);
-        }
-
         if (UUID_PATTERN.matcher(valueStr).matches()) {
             alternatives.add(UUID.randomUUID().toString());
             alternatives.add("00000000-0000-0000-0000-000000000000");
@@ -323,7 +316,7 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
 
     @Override
     public String description() {
-        return "detects heuristic IDOR signals in GET requests by replacing ID fields and verifying alternative IDs in successful responses";
+        return "detects heuristic IDOR signals by replacing ID fields and verifying alternative IDs in successful responses";
     }
 
     @Override
@@ -333,8 +326,6 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
 
     @Override
     public List<HttpMethod> skipForHttpMethods() {
-        return Arrays.stream(HttpMethod.values())
-                .filter(method -> method != HttpMethod.GET)
-                .toList();
+        return List.of(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 }

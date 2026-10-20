@@ -51,5 +51,15 @@ class NullElementsInArrayFieldsFuzzerTest {
         nullElementsInArrayFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(1))
                 .reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+
+        // When array items are nullable, [null] is valid and must be skipped
+        io.swagger.v3.oas.models.media.ArraySchema nullableArray = new io.swagger.v3.oas.models.media.ArraySchema();
+        io.swagger.v3.oas.models.media.StringSchema nullableItem = new io.swagger.v3.oas.models.media.StringSchema();
+        nullableItem.setNullable(true);
+        nullableArray.setItems(nullableItem);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(java.util.Map.of("arrayField", nullableArray));
+        nullElementsInArrayFieldsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
     }
 }

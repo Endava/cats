@@ -36,13 +36,23 @@ class SmallNegativeAndInt32BoundaryFieldsFuzzerTest {
         Mockito.when(data.getPath()).thenReturn("/items");
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("page", "price", "name"));
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of(
-                "page", new IntegerSchema(),
+                "page", new IntegerSchema().minimum(java.math.BigDecimal.ONE).maximum(java.math.BigDecimal.TEN),
                 "price", new io.swagger.v3.oas.models.media.NumberSchema(),
                 "name", new io.swagger.v3.oas.models.media.StringSchema()));
 
         fuzzer.fuzz(data);
 
-        Mockito.verify(simpleExecutor, Mockito.times(6)).execute(Mockito.any());
+        org.mockito.ArgumentCaptor<com.endava.cats.fuzzer.executor.SimpleExecutorContext> captor =
+                org.mockito.ArgumentCaptor.forClass(com.endava.cats.fuzzer.executor.SimpleExecutorContext.class);
+        Mockito.verify(simpleExecutor, Mockito.times(6)).execute(captor.capture());
+        // 'page' has [1, 10] bounds, so 0, -1, and Integer.MAX_VALUE all violate schema bounds -> FOURXX
+        // 'price' has no bounds, so 0, -1, and Integer.MAX_VALUE are valid -> FOURXX_TWOXX
+        Assertions.assertThat(captor.getAllValues())
+                .filteredOn(ctx -> ctx.getScenario().contains("field [page]"))
+                .allMatch(ctx -> ctx.getExpectedResponseCode() == com.endava.cats.http.ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(captor.getAllValues())
+                .filteredOn(ctx -> ctx.getScenario().contains("field [price]"))
+                .allMatch(ctx -> ctx.getExpectedResponseCode() == com.endava.cats.http.ResponseCodeFamilyPredefined.FOURXX_TWOXX);
         Assertions.assertThat(fuzzer.description()).isNotBlank();
         Assertions.assertThat(fuzzer).hasToString("SmallNegativeAndInt32BoundaryFieldsFuzzer");
         Assertions.assertThat(fuzzer.skipForHttpMethods()).containsExactly(HttpMethod.HEAD, HttpMethod.TRACE);

@@ -31,9 +31,22 @@ public class NullElementsInArrayFieldsFuzzer extends BaseReplaceFieldsFuzzer {
         return BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext.builder()
                 .replaceWhat("array")
                 .replaceWith("array containing null element")
-                .skipMessage("Fuzzer only runs for arrays")
-                .fieldFilter(field -> JsonUtils.isArray(data.getPayload(), field))
+                .skipMessage("Fuzzer only runs for non-nullable item arrays")
+                .fieldFilter(field -> JsonUtils.isArray(data.getPayload(), field) && !areArrayItemsNullable(data, field))
                 .fuzzValueProducer((schema, field) -> List.of(Collections.singletonList(null)))
                 .build();
+    }
+
+    private static boolean areArrayItemsNullable(FuzzingData data, String field) {
+        if (data.getRequestPropertyTypes() == null) {
+            return false;
+        }
+        io.swagger.v3.oas.models.media.Schema<?> arraySchema = data.getRequestPropertyTypes().get(field);
+        if (arraySchema == null || arraySchema.getItems() == null) {
+            return false;
+        }
+        io.swagger.v3.oas.models.media.Schema<?> itemSchema = arraySchema.getItems();
+        return Boolean.TRUE.equals(itemSchema.getNullable()) ||
+                (itemSchema.getTypes() != null && itemSchema.getTypes().contains("null"));
     }
 }

@@ -748,8 +748,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     private void runContinuousRandomUntilTimeLimit(List<PreparedPath> preparedPaths) {
-        if (stopArguments == null || stopArguments.getStopAfterTimeInSec() <= 0 ||
-                filterArguments.isDryRun() || reportingArguments.isTui() || randomFuzzer == null) {
+        if (!shouldRunContinuousRandom()) {
             return;
         }
         List<FuzzingData> nonEmptyData = preparedPaths.stream()
@@ -765,6 +764,21 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                 runSingleFuzzer(randomFuzzer, data, randomFuzzer::fuzzContinuous);
             }
         }
+    }
+
+    private boolean shouldRunContinuousRandom() {
+        if (stopArguments == null || stopArguments.getStopAfterTimeInSec() <= 0 ||
+                filterArguments.isDryRun() || reportingArguments.isTui() || randomFuzzer == null) {
+            return false;
+        }
+        boolean skipped = Optional.ofNullable(filterArguments.getSkipFuzzers()).orElse(List.of()).stream()
+                .anyMatch(name -> "randomfuzzer".equalsIgnoreCase(name) || "random".equalsIgnoreCase(name));
+        if (skipped) {
+            return false;
+        }
+        List<String> supplied = Optional.ofNullable(filterArguments.getSuppliedFuzzers()).orElse(List.of());
+        return supplied.isEmpty() ||
+                supplied.stream().anyMatch(name -> "randomfuzzer".equalsIgnoreCase(name) || "random".equalsIgnoreCase(name));
     }
 
     private static boolean isSeedFuzzer(Fuzzer fuzzer) {
