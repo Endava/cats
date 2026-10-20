@@ -150,7 +150,8 @@ final class CatsTuiView {
         TableElement resultTable = table()
                 .header("Fuzzer", "Tests", "Success", "Warnings", "Errors", "Skipped", "Average Response Time")
                 .widths(fill(), length(7), length(8), length(9), length(7), length(8), length(21))
-                .title("Fuzzers run • %d-%d of %d".formatted(first, last, state.fuzzerCount()))
+                .state(state.fuzzerTableState()).highlightColor(Color.CYAN).highlightSymbol("› ")
+                .title("Fuzzers run • %d-%d of %d • Enter shows retained tests".formatted(first, last, state.fuzzerCount()))
                 .rounded()
                 .borderColor(Color.BLUE)
                 .fill();
@@ -235,11 +236,11 @@ final class CatsTuiView {
         String exitControl = state.running() ? "q cancel" : "q quit";
         String navigation = "1 overview  2 tests  3 summary  4 reasons  5 paths  6 timings  " + exitControl;
         String controls = switch (state.screen()) {
-            case OVERVIEW, SUMMARY -> "j/k scroll fuzzers  PgUp/PgDn page";
+            case OVERVIEW, SUMMARY -> "j/k scroll fuzzers  PgUp/PgDn page  Enter fuzzer tests";
             case RESULTS -> state.searchEditing()
                     ? "Search mode: type query  Enter apply  Backspace edit  Esc clear"
                     : "j/k select  Enter details  / search  a/e/w/s/i filter  Esc back";
-            case DETAIL -> "j/k scroll  PgUp/PgDn page  Esc back";
+            case DETAIL -> "j/k scroll  PgUp/PgDn page  n/p next/prev test  Esc back";
             case ISSUES, PATHS -> "j/k select  PgUp/PgDn page  Enter matching tests  Esc home";
             case SLOWEST -> "j/k select  PgUp/PgDn page  Enter details  Esc home";
         };

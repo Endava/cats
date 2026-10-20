@@ -44,6 +44,13 @@ public sealed interface CatsExecutionEvent {
     }
 
     /**
+     * Signals that CATS started a breadth-first fuzzing wave across paths.
+     */
+    record WaveStarted(Instant occurredAt, int waveIndex, int totalWaves,
+                       String waveName) implements CatsExecutionEvent {
+    }
+
+    /**
      * Signals that a fuzzer started for a path and HTTP method.
      */
     record FuzzerStarted(Instant occurredAt, String fuzzer, String path,

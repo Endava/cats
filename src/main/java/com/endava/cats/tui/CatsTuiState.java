@@ -35,11 +35,15 @@ final class CatsTuiState {
     private final Map<String, IssueStatistics> issues = new LinkedHashMap<>();
     private final Map<Integer, Long> liveResponseCodes = new LinkedHashMap<>();
     private final TableState tableState = new TableState();
+    private final TableState fuzzerTableState = new TableState();
     private final TableState issuesTableState = new TableState();
     private final TableState pathsTableState = new TableState();
     private final TableState slowestTableState = new TableState();
     private List<TestResultSnapshot> filteredResults = List.of();
     private List<TestResultSnapshot> cachedSlowestResults = List.of();
+    private TestResultSnapshot cachedDetailTest;
+    private int cachedDetailColumns = -1;
+    private List<String> cachedDetailLines = List.of();
     private Instant startedAt;
     private Instant finishedAt;
     private RunConfigurationSnapshot configuration;
@@ -49,6 +53,9 @@ final class CatsTuiState {
     private String status = "Starting CATS";
     private String currentPath = "Waiting for contract";
     private String currentFuzzer = "Waiting for execution";
+    private String currentWaveLabel;
+    private int currentWaveIndex;
+    private int totalWaves;
     private String failureMessage;
     private int completedPaths;
     private int selectedIndex;
@@ -75,6 +82,7 @@ final class CatsTuiState {
     private String searchQuery = "";
     private String drilldownIssue;
     private String drilldownPath;
+    private String drilldownFuzzer;
     private Screen resultsReturnScreen = Screen.OVERVIEW;
     private Screen detailReturnScreen = Screen.RESULTS;
 
@@ -111,8 +119,17 @@ final class CatsTuiState {
                 status = "Fuzzing";
             }
             case CatsExecutionEvent.PathCompleted _ -> completedPaths++;
-            case CatsExecutionEvent.FuzzerStarted fuzzer ->
-                    currentFuzzer = singleLine(fuzzer.fuzzer()) + " (" + singleLine(fuzzer.httpMethod()) + ")";
+            case CatsExecutionEvent.WaveStarted wave -> {
+                currentWaveIndex = wave.waveIndex();
+                totalWaves = wave.totalWaves();
+                currentWaveLabel = "Wave %d/%d (%s)".formatted(wave.waveIndex(), wave.totalWaves(), singleLine(wave.waveName()));
+            }
+            case CatsExecutionEvent.FuzzerStarted fuzzer -> {
+                if (fuzzer.path() != null && !fuzzer.path().isBlank()) {
+                    currentPath = singleLine(fuzzer.path());
+                }
+                currentFuzzer = singleLine(fuzzer.fuzzer()) + " (" + singleLine(fuzzer.httpMethod()) + ")";
+            }
             case CatsExecutionEvent.FuzzerCompleted _ -> {
                 // The next fuzzer event replaces the current label.
             }
@@ -362,21 +379,40 @@ final class CatsTuiState {
         int maximumOffset = Math.max(0, fuzzerCount() - pageSize);
         if (event.isUp() || event.isCharIgnoreCase('k')) {
             fuzzerOffset = Math.max(0, fuzzerOffset - 1);
+            syncFuzzerSelection();
             return EventResult.HANDLED;
         }
         if (event.isDown() || event.isCharIgnoreCase('j')) {
             fuzzerOffset = Math.min(maximumOffset, fuzzerOffset + 1);
+            syncFuzzerSelection();
             return EventResult.HANDLED;
         }
         if (event.isPageUp()) {
             fuzzerOffset = Math.max(0, fuzzerOffset - pageSize);
+            syncFuzzerSelection();
             return EventResult.HANDLED;
         }
         if (event.isPageDown()) {
             fuzzerOffset = Math.min(maximumOffset, fuzzerOffset + pageSize);
+            syncFuzzerSelection();
+            return EventResult.HANDLED;
+        }
+        if (event.isConfirm() || event.isSelect()) {
+            List<FuzzerStatisticsRow> visible = fuzzerStatistics(fuzzerOffset, pageSize);
+            if (!visible.isEmpty()) {
+                openFuzzerResults(screen, visible.getFirst().fuzzer());
+            }
             return EventResult.HANDLED;
         }
         return EventResult.UNHANDLED;
+    }
+
+    private void syncFuzzerSelection() {
+        if (categories.isEmpty()) {
+            fuzzerTableState.clearSelection();
+        } else {
+            fuzzerTableState.select(0);
+        }
     }
 
     private EventResult handleResultsKey(KeyEvent event) {
@@ -437,6 +473,22 @@ final class CatsTuiState {
             screen = detailReturnScreen;
             return EventResult.HANDLED;
         }
+        if (event.isCharIgnoreCase('n') || event.isChar(']')) {
+            if (selectedIndex + 1 < filteredResults().size()) {
+                selectedIndex++;
+                syncTableSelection();
+                detailOffset = 0;
+            }
+            return EventResult.HANDLED;
+        }
+        if (event.isCharIgnoreCase('p') || event.isChar('[')) {
+            if (selectedIndex > 0) {
+                selectedIndex--;
+                syncTableSelection();
+                detailOffset = 0;
+            }
+            return EventResult.HANDLED;
+        }
         if (event.isUp() || event.isCharIgnoreCase('k')) {
             detailOffset = Math.max(0, detailOffset - 1);
             return EventResult.HANDLED;
@@ -457,7 +509,8 @@ final class CatsTuiState {
     }
 
     private void register(TestResultSnapshot test) {
-        TestResultSnapshot previousSelection = selectedTest();
+        boolean preserveLiveSelection = screen == Screen.RESULTS || screen == Screen.DETAIL;
+        TestResultSnapshot previousSelection = preserveLiveSelection ? selectedTest() : null;
         if (results.size() == maximumRetainedResults) {
             results.removeFirst();
             discardedResults++;
@@ -484,6 +537,7 @@ final class CatsTuiState {
             liveResponseCodes.merge(test.response().responseCode(), 1L, Long::sum);
         }
         categories.computeIfAbsent(display(test.fuzzer()), _ -> new CategoryStatistics()).register(outcome, responseTime);
+        syncFuzzerSelection();
         String contractPath = display(test.contractPath());
         paths.computeIfAbsent(contractPath, _ -> new CategoryStatistics()).register(outcome, responseTime);
         if ((outcome == ResultFilter.ERROR || outcome == ResultFilter.WARNING)
@@ -491,7 +545,9 @@ final class CatsTuiState {
             issues.computeIfAbsent(singleLine(test.resultReason()), _ -> new IssueStatistics())
                     .register(outcome, contractPath, test.response().responseCode());
         }
-        restoreSelection(previousSelection);
+        if (preserveLiveSelection) {
+            restoreSelection(previousSelection);
+        }
     }
 
     private static boolean isSkippedFromReporting(String result) {
@@ -518,10 +574,19 @@ final class CatsTuiState {
     }
 
     private void openResults(Screen returnScreen, String issue, String path) {
+        openResults(returnScreen, issue, path, null);
+    }
+
+    private void openFuzzerResults(Screen returnScreen, String fuzzer) {
+        openResults(returnScreen, null, null, fuzzer);
+    }
+
+    private void openResults(Screen returnScreen, String issue, String path, String fuzzer) {
         resultsReturnScreen = returnScreen;
         drilldownIssue = issue;
         drilldownPath = path;
-        if (issue != null || path != null || returnScreen == Screen.SLOWEST) {
+        drilldownFuzzer = fuzzer;
+        if (issue != null || path != null || fuzzer != null || returnScreen == Screen.SLOWEST) {
             // A filter selected on the general test screen must not hide a drill-down target.
             filter = ResultFilter.ALL;
         }
@@ -623,12 +688,20 @@ final class CatsTuiState {
 
     double pathProgress() {
         int totalPaths = configuration == null ? 0 : configuration.configuredPaths();
-        return totalPaths == 0 ? 0 : Math.min(1.0, (double) completedPaths / totalPaths);
+        if (totalPaths == 0) {
+            return 0;
+        }
+        double completedRatio = Math.min(1.0, (double) completedPaths / totalPaths);
+        if (completedPaths == 0 && totalWaves > 0 && currentWaveIndex > 1) {
+            return Math.min(0.95, (currentWaveIndex - 1.0) / totalWaves);
+        }
+        return completedRatio;
     }
 
     String pathProgressLabel() {
         int totalPaths = configuration == null ? 0 : configuration.configuredPaths();
-        return completedPaths + " / " + (totalPaths == 0 ? "?" : totalPaths) + " paths";
+        String base = completedPaths + " / " + (totalPaths == 0 ? "?" : totalPaths) + " paths";
+        return currentWaveLabel == null ? base : base + " • " + currentWaveLabel;
     }
 
     String elapsed() {
@@ -733,6 +806,9 @@ final class CatsTuiState {
         if (drilldownPath != null) {
             return "Path: " + drilldownPath;
         }
+        if (drilldownFuzzer != null) {
+            return "Fuzzer: " + drilldownFuzzer;
+        }
         return "All Tests";
     }
 
@@ -765,7 +841,8 @@ final class CatsTuiState {
 
     private boolean matchesDrilldown(TestResultSnapshot test) {
         return (drilldownIssue == null || drilldownIssue.equals(singleLine(test.resultReason())))
-                && (drilldownPath == null || drilldownPath.equals(display(test.contractPath())));
+                && (drilldownPath == null || drilldownPath.equals(display(test.contractPath())))
+                && (drilldownFuzzer == null || drilldownFuzzer.equals(display(test.fuzzer())));
     }
 
     private boolean matchesSearch(TestResultSnapshot test) {
@@ -776,7 +853,7 @@ final class CatsTuiState {
         return java.util.stream.Stream.of(test.id(), test.fuzzer(), test.contractPath(), test.path(), test.scenario(),
                         test.resultReason(), test.result(), test.request().httpMethod(),
                         String.valueOf(test.response().responseCode()))
-                .map(CatsTuiState::safe).map(value -> value.toLowerCase(Locale.ROOT))
+                .map(CatsTuiDetailFormatter::safe).map(value -> value.toLowerCase(Locale.ROOT))
                 .anyMatch(value -> value.contains(needle));
     }
 
@@ -793,6 +870,16 @@ final class CatsTuiState {
     }
 
     private List<String> detailLines() {
+        TestResultSnapshot test = selectedTest();
+        if (test != cachedDetailTest || terminalColumns != cachedDetailColumns) {
+            cachedDetailTest = test;
+            cachedDetailColumns = terminalColumns;
+            cachedDetailLines = CatsTuiDetailFormatter.format(test, terminalColumns);
+        }
+        return cachedDetailLines;
+    }
+
+    private List<String> unusedLegacyDetailLines() {
         TestResultSnapshot test = selectedTest();
         if (test == null) {
             return List.of("No test selected");
@@ -928,6 +1015,10 @@ final class CatsTuiState {
         return tableState;
     }
 
+    TableState fuzzerTableState() {
+        return fuzzerTableState;
+    }
+
     TableState issuesTableState() {
         return issuesTableState;
     }
@@ -1017,13 +1108,21 @@ final class CatsTuiState {
     }
 
     String topFailingPaths() {
-        if (summary == null || summary.topFailingPaths().isEmpty()) {
-            return "No failing paths yet";
+        if (summary != null && !summary.topFailingPaths().isEmpty()) {
+            return summary.topFailingPaths().entrySet().stream()
+                    .limit(5)
+                    .map(entry -> singleLine(entry.getKey()) + " (" + entry.getValue() + ")")
+                    .collect(Collectors.joining(", "));
         }
-        return summary.topFailingPaths().entrySet().stream()
+        String liveFailing = paths.entrySet().stream()
+                .filter(entry -> entry.getValue().errors() > 0)
+                .sorted(Map.Entry.<String, CategoryStatistics>comparingByValue(
+                        Comparator.comparingLong(CategoryStatistics::errors)).reversed()
+                        .thenComparing(Map.Entry::getKey))
                 .limit(5)
-                .map(entry -> singleLine(entry.getKey()) + " (" + entry.getValue() + ")")
+                .map(entry -> singleLine(entry.getKey()) + " (" + entry.getValue().errors() + ")")
                 .collect(Collectors.joining(", "));
+        return liveFailing.isEmpty() ? "No failing paths yet" : liveFailing;
     }
 
     long retainedResults() {

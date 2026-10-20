@@ -211,6 +211,7 @@ final class FuzzerWaveExecutor {
         ProfileLoader profileLoader = activeProfileLoader();
         Set<String> coverageWaveFuzzers = loadWaveFuzzers(profileLoader, "coverage");
         Set<String> crashWaveFuzzers = loadWaveFuzzers(profileLoader, "crash");
+        command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 1, 4, "Seed"));
         for (PreparedPath path : preparedPaths) {
             if (!path.binaryStreamOnly()) {
                 CatsExecutionCancelledException.check();
@@ -223,6 +224,7 @@ final class FuzzerWaveExecutor {
             }
         }
         long resourcesBeforeCoverageWave = command.runtimeResourcePool != null ? command.runtimeResourcePool.observedResourceCount() : 0;
+        command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 2, 4, "Coverage"));
         for (String coverageFuzzerName : coverageWaveFuzzers) {
             Set<String> singleWave = Set.of(coverageFuzzerName);
             for (PreparedPath path : preparedPaths) {
@@ -239,6 +241,7 @@ final class FuzzerWaveExecutor {
         if (command.runtimeResourcePool != null && command.runtimeResourcePool.observedResourceCount() > resourcesBeforeCoverageWave) {
             retryUnresolvedSeedOperations(preparedPaths);
         }
+        command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 3, 4, "Crash"));
         for (PreparedPath path : preparedPaths) {
             if (path.binaryStreamOnly()) {
                 continue;
@@ -249,6 +252,7 @@ final class FuzzerWaveExecutor {
                     .toList();
             runFuzzers(path.filteredFuzzingData(), crashWave);
         }
+        command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 4, 4, "Full"));
         for (PreparedPath path : preparedPaths) {
             if (path.binaryStreamOnly() || (path.filteredFuzzingData().isEmpty() && path.fuzzersToRun().isEmpty())) {
                 continue;

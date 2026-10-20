@@ -17,7 +17,19 @@ public record TestResultSnapshot(String id, String traceId, String scenario, Str
                                  String resultReason, String resultDetails, String resultIgnoreDetails, String fuzzer,
                                  String path, String contractPath, String fullRequestPath, String server,
                                  boolean validJson, RequestSnapshot request, ResponseSnapshot response,
-                                 String replayCommand) {
+                                 String replayCommand, String curlCommand,
+                                 List<String> mutationTargets, List<String> resourceCorrelations) {
+
+    public TestResultSnapshot(String id, String traceId, String scenario, String expectedResult, String result,
+                              String resultReason, String resultDetails, String resultIgnoreDetails, String fuzzer,
+                              String path, String contractPath, String fullRequestPath, String server,
+                              boolean validJson, RequestSnapshot request, ResponseSnapshot response,
+                              String replayCommand) {
+        this(id, traceId, scenario, expectedResult, result, resultReason, resultDetails, resultIgnoreDetails,
+                fuzzer, path, contractPath, fullRequestPath, server, validJson, request, response,
+                replayCommand, null, List.of(), List.of());
+    }
+
     /**
      * Creates a snapshot and applies the same configured header masking convention used by reports.
      *
@@ -27,12 +39,39 @@ public record TestResultSnapshot(String id, String traceId, String scenario, Str
      */
     public static TestResultSnapshot from(CatsTestCase testCase, Set<String> maskedHeaders) {
         Set<String> headersToMask = Optional.ofNullable(maskedHeaders).orElse(Set.of());
+        List<String> targets = Optional.ofNullable(testCase.getMutationTargets()).orElse(List.of()).stream()
+                .map(target -> target.location().getDisplayName() + ": " + target.name())
+                .toList();
+        List<String> correlations = Optional.ofNullable(testCase.getRuntimeCorrelations()).orElse(List.of()).stream()
+                .map(corr -> "%s:%s <- %s %s (%s)".formatted(
+                        corr.getTargetLocation(), corr.getTargetField(),
+                        corr.getSourceMethod(), corr.getSourcePath(), corr.getSourceLocation()))
+                .toList();
+        RequestSnapshot reqSnapshot = RequestSnapshot.from(testCase.getRequest(), headersToMask);
         return new TestResultSnapshot(testCase.getTestId(), testCase.getTraceId(), testCase.getScenario(),
                 testCase.getExpectedResult(), testCase.getResult(), testCase.getResultReason(),
                 testCase.getResultDetails(), testCase.getResultIgnoreDetails(), testCase.getFuzzer(),
                 testCase.getPath(), testCase.getContractPath(), testCase.getFullRequestPath(), testCase.getServer(),
-                testCase.isValidJson(), RequestSnapshot.from(testCase.getRequest(), headersToMask),
-                ResponseSnapshot.from(testCase.getResponse(), headersToMask), testCase.getCatsReplay());
+                testCase.isValidJson(), reqSnapshot,
+                ResponseSnapshot.from(testCase.getResponse(), headersToMask), testCase.getCatsReplay(),
+                buildCurlCommand(reqSnapshot), targets, correlations);
+    }
+
+    private static String buildCurlCommand(RequestSnapshot req) {
+        if (req == null || req.httpMethod() == null || "####".equals(req.httpMethod())) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder("curl -X ").append(req.httpMethod());
+        for (HeaderSnapshot header : Optional.ofNullable(req.headers()).orElse(List.of())) {
+            sb.append(" -H \"").append(header.name()).append(": ").append(header.value()).append("\"");
+        }
+        if (req.payload() != null && !req.payload().isBlank() && !"{}".equals(req.payload().trim())) {
+            sb.append(" -d '").append(req.payload().replace("'", "'\\''")).append("'");
+        }
+        if (req.url() != null && !req.url().isBlank()) {
+            sb.append(" \"").append(req.url()).append("\"");
+        }
+        return sb.toString();
     }
 
     /**
