@@ -310,6 +310,10 @@ final class ResourceRequestEnricher {
                 continue;
             }
             int affinityScore = ResourceSemanticNaming.pathAffinity(resource.pathSegments(), matchCtx.targetPathSegments()) * 1_000;
+            if (targetMethod == HttpMethod.DELETE && resource.sourceMethod() == HttpMethod.POST &&
+                    !Collections.disjoint(resource.resourceNameForms(), matchCtx.targetResourceForms())) {
+                affinityScore += 1_500;
+            }
             int srcPriority = sourcePriority(resource);
             for (StoredValue value : resource.values().values()) {
                 if (!protectedSelfValues.isEmpty() && protectedSelfValues.contains(String.valueOf(value.value()))) {

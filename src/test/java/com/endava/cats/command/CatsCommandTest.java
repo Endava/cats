@@ -867,7 +867,8 @@ class CatsCommandTest {
                     .isInstanceOf(com.endava.cats.exception.CatsExecutionLimitReachedException.class);
             Assertions.assertThat(executionOrder).containsExactly(
                     "HappyPath:POST /files/{id}",
-                    "HappyPath:DELETE /files/{id}");
+                    "HappyPath:DELETE /files/{id}",
+                    "HappyPath:GET /actuator/heapdump");
 
             // Bug 2 check: retryUnresolvedSeedOperations still runs even when RuntimeResourcePool is at MAX_RESOURCES (500)
             executionOrder.clear();

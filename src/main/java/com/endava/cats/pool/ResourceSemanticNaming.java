@@ -424,8 +424,8 @@ final class ResourceSemanticNaming {
 
     record TargetMatchContext(Set<String> targetAliases, Set<String> targetSingulars,
                               Set<String> primaryResourceAliases, Set<String> allDirectAliases,
-                              List<String> targetPathSegments, String digitMatchResource,
-                              String singleWordTargetPrefix) {
+                              List<String> targetPathSegments, Set<String> targetResourceForms,
+                              String digitMatchResource, String singleWordTargetPrefix) {
     }
 
     static TargetMatchContext createTargetMatchContext(String targetPath, TargetField target, Set<String> targetAliases) {
@@ -440,7 +440,9 @@ final class ResourceSemanticNaming {
         allDirectAliases.addAll(targetSingulars);
         allDirectAliases.addAll(primaryResourceAliases);
         List<String> targetPathSegments = pathSegments(targetPath);
-        String resource = singular(resourceName(targetPath));
+        String rawResource = resourceName(targetPath);
+        Set<String> targetResourceForms = WordUtils.nounForms(rawResource);
+        String resource = singular(rawResource);
         String digitMatchResource = (!resource.isEmpty() && !"resource".equals(resource) &&
                 targetAliases.stream().anyMatch(a -> a.startsWith(resource) && a.length() > resource.length()))
                 ? resource
@@ -454,7 +456,8 @@ final class ResourceSemanticNaming {
             }
         }
         return new TargetMatchContext(targetAliases, targetSingulars, primaryResourceAliases,
-                Set.copyOf(allDirectAliases), targetPathSegments, digitMatchResource, singleWordTargetPrefix);
+                Set.copyOf(allDirectAliases), targetPathSegments, targetResourceForms,
+                digitMatchResource, singleWordTargetPrefix);
     }
 
     /**

@@ -162,14 +162,19 @@ final class FuzzerWaveExecutor {
             return;
         }
 
+        boolean unparameterizedBinaryRan = false;
         try {
             runPhasedWavesAcrossPaths(preparedPaths);
             runBinaryStreamPaths(preparedPaths, true);
             runDeferredHappyPathDeletes();
             runBinaryStreamPaths(preparedPaths, false);
+            unparameterizedBinaryRan = true;
             runContinuousRandomUntilTimeLimit(preparedPaths);
         } catch (CatsExecutionLimitReachedException e) {
             runDeferredHappyPathDeletes();
+            if (!unparameterizedBinaryRan) {
+                runBinaryStreamHappyPathOnly(preparedPaths);
+            }
             throw e;
         } finally {
             if (command.randomFuzzer != null) {
@@ -295,6 +300,19 @@ final class FuzzerWaveExecutor {
             runFirstPhaseFuzzers(path.filteredFuzzingData(), path.fuzzersToRun());
             runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
             command.executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));
+        }
+    }
+
+    private void runBinaryStreamHappyPathOnly(List<PreparedPath> preparedPaths) {
+        for (PreparedPath path : preparedPaths) {
+            if (!path.binaryStreamOnly() || path.pathKey().contains("{")) {
+                continue;
+            }
+            CatsExecutionCancelledException.check();
+            List<Fuzzer> happyOnly = path.fuzzersToRun().stream().filter(HappyPathFuzzer.class::isInstance).toList();
+            if (!happyOnly.isEmpty()) {
+                runFuzzers(path.filteredFuzzingData(), happyOnly);
+            }
         }
     }
 
