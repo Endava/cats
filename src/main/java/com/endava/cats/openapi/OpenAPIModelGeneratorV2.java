@@ -84,6 +84,7 @@ public class OpenAPIModelGeneratorV2 {
     private String currentRequiredProperty = "";
     private boolean bypassExamplesCache;
     private boolean bypassDeclaredExamples;
+    private int arrayItemVariantDepth;
 
     /**
      * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
@@ -916,7 +917,9 @@ public class OpenAPIModelGeneratorV2 {
             return List.of(new GeneratedExample(items, Collections.emptySet()));
         }
 
-        List<GeneratedExample> templates = generateFreshArrayItemExamples(propertyName, itemSchema);
+        List<GeneratedExample> templates = arrayItemVariantDepth == 0
+                ? resolvePropertyToExamples(propertyName, itemSchema, true)
+                : generateFreshArrayItemExamples(propertyName, itemSchema);
         List<GeneratedExample> arrays = new ArrayList<>();
 
         for (int variantIndex = 0; variantIndex < templates.size(); variantIndex++) {
@@ -932,20 +935,26 @@ public class OpenAPIModelGeneratorV2 {
                                                  GeneratedExample template, int variantIndex) {
         List<Object> items = new ArrayList<>();
         Set<String> requiredFields = new LinkedHashSet<>();
+        boolean generateDistinctNestedItems = uniqueItems || arrayItemVariantDepth == 0;
 
         for (int itemIndex = 0; itemIndex < arraySize; itemIndex++) {
-            GeneratedExample itemExample = itemIndex == 0
+            GeneratedExample itemExample = (itemIndex == 0 || !generateDistinctNestedItems)
                     ? template
                     : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, uniqueItems);
             Object item = itemMapper.apply(itemExample.value());
 
             boolean avoidDuplicateObjectItems = uniqueItems ||
-                    (item instanceof Map<?, ?> && itemSchema.getOneOf() == null && itemSchema.getAnyOf() == null);
+                    (generateDistinctNestedItems && item instanceof Map<?, ?> &&
+                            itemSchema.getOneOf() == null && itemSchema.getAnyOf() == null);
+            int maxAttempts = uniqueItems ? MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS : 1;
             int attempts = 0;
-            while (avoidDuplicateObjectItems && containsEquivalent(items, item)
-                    && attempts++ < MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS) {
+            while (avoidDuplicateObjectItems && containsEquivalent(items, item) && attempts++ < maxAttempts) {
+                Object previousAttempt = item;
                 itemExample = generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, true);
                 item = itemMapper.apply(itemExample.value());
+                if (Objects.deepEquals(previousAttempt, item)) {
+                    break;
+                }
             }
 
             if (uniqueItems && containsEquivalent(items, item)) {
@@ -973,9 +982,14 @@ public class OpenAPIModelGeneratorV2 {
 
     private GeneratedExample generateArrayItemVariant(String propertyName, Schema itemSchema, int variantIndex,
                                                        GeneratedExample fallback, boolean ignoreDeclaredExamples) {
-        List<GeneratedExample> generated = generateFreshArrayItemExamples(propertyName, itemSchema,
-                ignoreDeclaredExamples);
-        return variantIndex < generated.size() ? generated.get(variantIndex) : fallback;
+        arrayItemVariantDepth++;
+        try {
+            List<GeneratedExample> generated = generateFreshArrayItemExamples(propertyName, itemSchema,
+                    ignoreDeclaredExamples);
+            return variantIndex < generated.size() ? generated.get(variantIndex) : fallback;
+        } finally {
+            arrayItemVariantDepth--;
+        }
     }
 
     private List<GeneratedExample> generateFreshArrayItemExamples(String propertyName, Schema itemSchema) {

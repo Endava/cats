@@ -574,6 +574,31 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(availableBeds).isLessThanOrEqualTo(beds);
     }
 
+    @Test
+    void shouldGenerateDeeplyNestedDeterministicObjectArraysWithoutExponentialBacktracking() {
+        StringSchema fixedEnum = new StringSchema();
+        fixedEnum.setEnum(List.of("ONLY_VALUE"));
+        Schema<?> current = new ObjectSchema().addProperty("kind", fixedEnum);
+        for (int depth = 1; depth <= 5; depth++) {
+            ArraySchema arraySchema = new ArraySchema();
+            arraySchema.setItems(current);
+            current = new ObjectSchema()
+                    .addProperty("kind", fixedEnum)
+                    .addProperty("items" + depth, arraySchema);
+        }
+        globalContext.getSchemaMap().put("NestedRoot", current);
+
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
+        long startNanos = System.nanoTime();
+        List<String> generated = generator.generate("NestedRoot");
+        long elapsedMs = (System.nanoTime() - startNanos) / 1_000_000;
+
+        Assertions.assertThat(generated).isNotEmpty();
+        Assertions.assertThat(generated.getFirst()).contains("ONLY_VALUE", "items5");
+        Assertions.assertThat(elapsedMs).isLessThan(500L);
+    }
+
     private OpenAPIModelGeneratorV2 generatorFor(String testResource) throws IOException {
         ParseOptions options = new ParseOptions();
         options.setResolve(true);

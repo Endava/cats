@@ -460,7 +460,13 @@ final class ResourceValueExtractor {
         } catch (RuntimeException _) {
             return List.of();
         }
+        return valuesAtPath(root, path);
+    }
 
+    static List<JsonElement> valuesAtPath(JsonElement root, String path) {
+        if (root == null || root.isJsonNull()) {
+            return List.of();
+        }
         List<JsonElement> current = List.of(root);
         for (String segment : FIELD_PATH_SPLITTER.split(path)) {
             List<JsonElement> next = new ArrayList<>();
@@ -496,11 +502,14 @@ final class ResourceValueExtractor {
         if (hasDeclaredBodyMutation || StringUtils.isBlank(data.getOriginalPayload())) {
             return hasDeclaredBodyMutation;
         }
+        if (data.getOriginalPayload().equals(data.getPayload())) {
+            return false;
+        }
         if (JsonUtils.isValidJson(data.getOriginalPayload()) && JsonUtils.isValidJson(data.getPayload())) {
             return !JsonUtils.parseAsJsonElement(data.getOriginalPayload())
                     .equals(JsonUtils.parseAsJsonElement(data.getPayload()));
         }
-        return !data.getOriginalPayload().equals(data.getPayload());
+        return true;
     }
 
     static boolean isFuzzedRequest(ServiceData data) {
@@ -508,10 +517,13 @@ final class ResourceValueExtractor {
         if (hasDeclaredMutation || StringUtils.isBlank(data.getOriginalPayload())) {
             return hasDeclaredMutation;
         }
+        if (data.getOriginalPayload().equals(data.getPayload())) {
+            return false;
+        }
         if (JsonUtils.isValidJson(data.getOriginalPayload()) && JsonUtils.isValidJson(data.getPayload())) {
             return !JsonUtils.parseAsJsonElement(data.getOriginalPayload())
                     .equals(JsonUtils.parseAsJsonElement(data.getPayload()));
         }
-        return !data.getOriginalPayload().equals(data.getPayload());
+        return true;
     }
 }

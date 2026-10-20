@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -365,8 +366,10 @@ final class ResourceSemanticNaming {
     }
 
     static int pathAffinity(String sourcePath, String targetPath) {
-        List<String> source = pathSegments(sourcePath);
-        List<String> target = pathSegments(targetPath);
+        return pathAffinity(pathSegments(sourcePath), pathSegments(targetPath));
+    }
+
+    static int pathAffinity(List<String> source, List<String> target) {
         int common = 0;
         for (int i = 0; i < Math.min(source.size(), target.size()); i++) {
             String sourceSegment = source.get(i);
@@ -380,8 +383,24 @@ final class ResourceSemanticNaming {
         return common;
     }
 
+    static boolean isCorrelatableHeader(String rawHeaderName) {
+        if (StringUtils.isBlank(rawHeaderName)) {
+            return false;
+        }
+        if (isIdentifierName(rawHeaderName)) {
+            return true;
+        }
+        String normalized = normalize(rawHeaderName);
+        return Set.of("ifmatch", "ifnonematch", "etag", "location", "contentlocation", "operationlocation").contains(normalized) ||
+                normalized.contains("version") || normalized.contains("token") || normalized.contains("key") ||
+                normalized.contains("auth") || normalized.contains("session") || normalized.contains("cookie") ||
+                normalized.contains("csrf") || normalized.contains("xsrf") || normalized.contains("tenant") ||
+                normalized.contains("account") || normalized.contains("user") || normalized.contains("client");
+    }
+
     record TargetMatchContext(Set<String> targetAliases, Set<String> targetSingulars,
-                              Set<String> primaryResourceAliases, String digitMatchResource,
+                              Set<String> primaryResourceAliases, Set<String> allDirectAliases,
+                              List<String> targetPathSegments, String digitMatchResource,
                               String singleWordTargetPrefix) {
     }
 
@@ -393,6 +412,10 @@ final class ResourceSemanticNaming {
         Set<String> primaryResourceAliases = targetAliases.stream().anyMatch(SIMPLE_IDENTIFIERS::contains)
                 ? primaryResourceIdentifierAliases(targetPath)
                 : Set.of();
+        Set<String> allDirectAliases = new LinkedHashSet<>(targetAliases);
+        allDirectAliases.addAll(targetSingulars);
+        allDirectAliases.addAll(primaryResourceAliases);
+        List<String> targetPathSegments = pathSegments(targetPath);
         String resource = singular(resourceName(targetPath));
         String digitMatchResource = (!resource.isEmpty() && !"resource".equals(resource) &&
                 targetAliases.stream().anyMatch(a -> a.startsWith(resource) && a.length() > resource.length()))
@@ -406,8 +429,8 @@ final class ResourceSemanticNaming {
                 singleWordTargetPrefix = singular(normTarget);
             }
         }
-        return new TargetMatchContext(targetAliases, targetSingulars,
-                primaryResourceAliases, digitMatchResource, singleWordTargetPrefix);
+        return new TargetMatchContext(targetAliases, targetSingulars, primaryResourceAliases,
+                Set.copyOf(allDirectAliases), targetPathSegments, digitMatchResource, singleWordTargetPrefix);
     }
 
     /**
@@ -500,8 +523,7 @@ final class ResourceSemanticNaming {
                 .mapToInt(String::length).max().orElse(0);
     }
 
-    static int semanticConfidence(ResolvedValue candidate, TargetMatchContext ctx) {
-        int similarity = nameSimilarity(candidate.storedValue(), ctx);
+    static int semanticConfidence(ResolvedValue candidate, int similarity, TargetMatchContext ctx) {
         if (similarity >= 90) {
             return 4;
         }
@@ -520,8 +542,15 @@ final class ResourceSemanticNaming {
         return 0;
     }
 
+    static int compatibilityQuality(StoredValue candidate, TargetField target) {
+        return compatibilityQuality(candidate.shape(), target);
+    }
+
     static int compatibilityQuality(Object candidateValue, TargetField target) {
-        ValueShape candidateShape = valueShape(candidateValue);
+        return compatibilityQuality(valueShape(candidateValue), target);
+    }
+
+    static int compatibilityQuality(ValueShape candidateShape, TargetField target) {
         if (target.shape() == candidateShape ||
                 (target.shape() == ValueShape.STRING && candidateShape.isString())) {
             return 3;
@@ -555,6 +584,9 @@ final class ResourceSemanticNaming {
         if (value instanceof Boolean) {
             return ValueShape.BOOLEAN;
         }
+        if (value instanceof BigDecimal decimal) {
+            return numberShape(decimal);
+        }
         if (value instanceof Number number) {
             return numberShape(new BigDecimal(number.toString()));
         }
@@ -562,8 +594,14 @@ final class ResourceSemanticNaming {
     }
 
     static ValueShape stringShape(String value) {
-        if (UUID_VALUE.matcher(value).matches()) {
+        if (value == null || value.isEmpty()) {
+            return ValueShape.STRING;
+        }
+        if (value.length() == 36 && value.charAt(8) == '-' && UUID_VALUE.matcher(value).matches()) {
             return ValueShape.UUID_STRING;
+        }
+        if (!looksLikeNumber(value)) {
+            return ValueShape.STRING;
         }
         try {
             BigDecimal number = new BigDecimal(value);
@@ -571,6 +609,26 @@ final class ResourceSemanticNaming {
         } catch (NumberFormatException _) {
             return ValueShape.STRING;
         }
+    }
+
+    private static boolean looksLikeNumber(String value) {
+        if (value == null || value.isEmpty() || value.length() > 64) {
+            return false;
+        }
+        int start = (value.charAt(0) == '-' || value.charAt(0) == '+') ? 1 : 0;
+        if (start == value.length()) {
+            return false;
+        }
+        boolean hasDigit = false;
+        for (int i = start; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (ch >= '0' && ch <= '9') {
+                hasDigit = true;
+            } else if (ch != '.' && ch != 'e' && ch != 'E' && ch != '-' && ch != '+') {
+                return false;
+            }
+        }
+        return hasDigit;
     }
 
     static ValueShape numberShape(BigDecimal value) {
@@ -588,10 +646,16 @@ final class ResourceSemanticNaming {
     }
 
     static boolean sameValue(Object generated, Object actual) {
+        if (Objects.equals(generated, actual)) {
+            return true;
+        }
         String generatedValue = String.valueOf(generated);
         String actualValue = String.valueOf(actual);
         if (generatedValue.equals(actualValue)) {
             return true;
+        }
+        if (!looksLikeNumber(generatedValue) || !looksLikeNumber(actualValue)) {
+            return false;
         }
         try {
             return new BigDecimal(generatedValue).compareTo(new BigDecimal(actualValue)) == 0;

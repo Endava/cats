@@ -280,8 +280,62 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                                            List<Fuzzer> deleteFuzzers) {
     }
 
-    private record PreparedPath(String pathKey, List<FuzzingData> filteredFuzzingData,
-                                List<Fuzzer> fuzzersToRun, boolean binaryStreamOnly) {
+    private final class PreparedPath {
+        private final String pathKey;
+        private final PathItem pathItem;
+        private final OpenAPI openAPI;
+        private final boolean binaryStreamOnly;
+        private List<FuzzingData> filteredFuzzingData;
+        private List<Fuzzer> fuzzersToRun;
+        private boolean initialized;
+
+        PreparedPath(String pathKey, PathItem pathItem, OpenAPI openAPI, boolean binaryStreamOnly) {
+            this.pathKey = pathKey;
+            this.pathItem = pathItem;
+            this.openAPI = openAPI;
+            this.binaryStreamOnly = binaryStreamOnly;
+        }
+
+        String pathKey() {
+            return pathKey;
+        }
+
+        boolean binaryStreamOnly() {
+            return binaryStreamOnly;
+        }
+
+        private void ensureInitialized() {
+            if (initialized) {
+                return;
+            }
+            initialized = true;
+            List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathKey, pathItem, openAPI);
+            if (fuzzingDataList.isEmpty()) {
+                logger.warning("There was a problem fuzzing path {}. You might want to enable debug mode for more details. Additionally, you can log a GitHub issue at: https://github.com/Endava/cats/issues.", pathKey);
+                this.filteredFuzzingData = List.of();
+                this.fuzzersToRun = List.of();
+                return;
+            }
+            this.filteredFuzzingData = fuzzingDataList.stream()
+                    .filter(fuzzingData -> filterArguments.isHttpMethodSupplied(fuzzingData.getMethod()))
+                    .filter(fuzzingData -> processingArguments.matchesXxxSelection(fuzzingData.getPayload()))
+                    .toList();
+            Set<HttpMethod> allHttpMethodsFromFuzzingData = filteredFuzzingData.stream()
+                    .map(FuzzingData::getMethod)
+                    .collect(Collectors.toSet());
+            this.fuzzersToRun = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(
+                    allHttpMethodsFromFuzzingData, pathKey);
+        }
+
+        List<FuzzingData> filteredFuzzingData() {
+            ensureInitialized();
+            return filteredFuzzingData;
+        }
+
+        List<Fuzzer> fuzzersToRun() {
+            ensureInitialized();
+            return fuzzersToRun;
+        }
     }
 
     /**
@@ -570,24 +624,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                 logger.skip("Skipping path {}", entry.getKey());
                 continue;
             }
-            List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(entry.getKey(), entry.getValue(), openAPI);
-            if (fuzzingDataList.isEmpty()) {
-                logger.warning("There was a problem fuzzing path {}. You might want to enable debug mode for more details. Additionally, you can log a GitHub issue at: https://github.com/Endava/cats/issues.", entry.getKey());
-                continue;
-            }
-            List<FuzzingData> filteredFuzzingData = fuzzingDataList.stream()
-                    .filter(fuzzingData -> filterArguments.isHttpMethodSupplied(fuzzingData.getMethod()))
-                    .filter(fuzzingData -> processingArguments.matchesXxxSelection(fuzzingData.getPayload()))
-                    .toList();
-            Set<HttpMethod> allHttpMethodsFromFuzzingData = filteredFuzzingData.stream()
-                    .map(FuzzingData::getMethod)
-                    .collect(Collectors.toSet());
-            List<Fuzzer> fuzzersToRun = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(
-                    allHttpMethodsFromFuzzingData, entry.getKey());
             boolean binaryStreamOnly = entry.getValue().getGet() != null &&
                     entry.getValue().readOperationsMap().size() == 1 &&
                     isBinaryStreamOnlyResponse(entry.getValue().getGet());
-            preparedPaths.add(new PreparedPath(entry.getKey(), filteredFuzzingData, fuzzersToRun, binaryStreamOnly));
+            preparedPaths.add(new PreparedPath(entry.getKey(), entry.getValue(), openAPI, binaryStreamOnly));
         }
         return preparedPaths;
     }
@@ -606,6 +646,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         for (PreparedPath path : preparedPaths) {
             if (!path.binaryStreamOnly()) {
                 CatsExecutionCancelledException.check();
+                if (path.filteredFuzzingData().isEmpty() && path.fuzzersToRun().isEmpty()) {
+                    continue;
+                }
                 logger.start(AnsiUtils.bold("Start fuzzing path {}"), path.pathKey());
                 executionEventPublisher.publish(new CatsExecutionEvent.PathStarted(Instant.now(), path.pathKey()));
                 runSeedFuzzersForPath(path.filteredFuzzingData(), path.fuzzersToRun());
@@ -650,7 +693,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             runFuzzers(path.filteredFuzzingData(), crashWave);
         }
         for (PreparedPath path : preparedPaths) {
-            if (path.binaryStreamOnly()) {
+            if (path.binaryStreamOnly() || (path.filteredFuzzingData().isEmpty() && path.fuzzersToRun().isEmpty())) {
                 continue;
             }
             CatsExecutionCancelledException.check();

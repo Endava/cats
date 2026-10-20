@@ -2190,6 +2190,38 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(secondAttempt.payload()).contains("\"lang\":\"en\"");
     }
 
+    @Test
+    void shouldEnrichQuicklyWithFullResourcePoolAndSkipNonCorrelatableHeaders() {
+        enableResourceReuse();
+        StringBuilder props = new StringBuilder();
+        for (int f = 1; f <= 30; f++) {
+            props.append(",\"field").append(f).append("\":\"value").append(f).append("\"");
+        }
+        for (int i = 1; i <= 500; i++) {
+            String body = "{\"id\":\"item-" + i + "\"" + props + "}";
+            ServiceData post = postData("/items", body);
+            resourcePool.observe(post, request("POST", "/items", body), response(201, body));
+        }
+
+        ServiceData consumer = postData("/orders", "{\"itemId\":\"gen\",\"notes\":\"text\",\"count\":3}");
+        List<KeyValuePair<String, Object>> headers = List.of(
+                new KeyValuePair<>("Accept", "application/json"),
+                new KeyValuePair<>("User-Agent", "cats"),
+                new KeyValuePair<>("Content-Type", "application/json"),
+                new KeyValuePair<>("X-Trace", "trace-1"));
+
+        long startNanos = System.nanoTime();
+        RuntimeResourcePool.ResolvedRequest enriched = null;
+        for (int r = 0; r < 20; r++) {
+            enriched = resourcePool.enrich(consumer, consumer.getPayload());
+            resourcePool.enrichHeaders(consumer, headers, enriched);
+        }
+        double avgMs = (System.nanoTime() - startNanos) / 1_000_000.0 / 20.0;
+
+        Assertions.assertThat(enriched.payload()).contains("\"itemId\":\"item-500\"");
+        Assertions.assertThat(avgMs).isLessThan(10.0);
+    }
+
     private void enableResourceReuse() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
     }

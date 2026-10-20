@@ -173,7 +173,7 @@ public class RuntimeResourcePool {
     private void enrichHeader(ServiceData data, List<KeyValuePair<String, Object>> headers, String name,
                               ResourceInstance pathResource, Map<String, ResourceInstance> requestBindings,
                               List<KeyValuePair<String, Object>> enriched, List<ResourceCorrelation> correlations) {
-        if (enricher.hasExplicitHeader(data, name)) {
+        if (!ResourceSemanticNaming.isCorrelatableHeader(name) || enricher.hasExplicitHeader(data, name)) {
             return;
         }
         Object currentValue = headers.stream().filter(header -> header.getKey().equalsIgnoreCase(name))
@@ -346,6 +346,7 @@ public class RuntimeResourcePool {
                 ? ResourceValueExtractor.locationIdentifier(response) : Optional.empty();
         boolean alignedRequestObjects = ResourceValueExtractor.alignedObjectPayloads(
                 effectiveRequestPayload, response.getBody(), requestObjects.size(), responseObjects.size());
+        boolean fuzzedRequest = ResourceValueExtractor.isFuzzedRequest(data);
         int limit = Math.min(responseObjects.size(), ResourceValueExtractor.MAX_COLLECTION_ITEMS);
         String collectionResource = ResourceSemanticNaming.resourceName(data.getRelativePath());
         Optional<String> inferredCollectionKey = data.getHttpMethod() == HttpMethod.GET &&
@@ -371,12 +372,12 @@ public class RuntimeResourcePool {
                         collectionResource, responseObject.sourcePrefix() + inferredCollectionKey.get(), values);
             }
             assignFallbackIdentifier(data.getRelativePath(), locationIdentifier, values);
-            addResource(data, values);
+            addResource(data, values, fuzzedRequest);
         }
         if (!singleResponseObject) {
             Map<String, StoredValue> headerValues = new LinkedHashMap<>(pathValues);
             if (ResourceValueExtractor.collectResponseHeaders(response, headerValues)) {
-                addResource(data, headerValues);
+                addResource(data, headerValues, fuzzedRequest);
             }
         }
     }
@@ -417,10 +418,14 @@ public class RuntimeResourcePool {
                 values.put("$[]", new StoredValue(val, "response.body.$[]", Set.copyOf(aliases)));
             }
         }
-        addResource(data, values);
+        addResource(data, values, ResourceValueExtractor.isFuzzedRequest(data));
     }
 
     private void addResource(ServiceData data, Map<String, StoredValue> values) {
+        addResource(data, values, ResourceValueExtractor.isFuzzedRequest(data));
+    }
+
+    private void addResource(ServiceData data, Map<String, StoredValue> values, boolean fuzzedRequest) {
         if (values.isEmpty()) {
             return;
         }
@@ -444,7 +449,7 @@ public class RuntimeResourcePool {
             observedProducers.add(data.getRelativePath());
         }
         resources.add(new ResourceInstance(sequence.incrementAndGet(), data.getRelativePath(), data.getHttpMethod(),
-                Collections.unmodifiableMap(enrichedValues), ResourceValueExtractor.isFuzzedRequest(data), true));
+                Collections.unmodifiableMap(enrichedValues), fuzzedRequest, true));
         if (resources.size() > MAX_RESOURCES) {
             ResourceInstance removed = resources.removeFirst();
             correlationFeedback.keySet().removeIf(key -> key.resourceSequence() == removed.sequence());

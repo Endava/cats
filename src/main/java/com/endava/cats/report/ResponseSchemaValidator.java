@@ -27,7 +27,14 @@ import java.util.Map;
 import java.util.Optional;
 
 final class ResponseSchemaValidator {
-    private final IdentityHashMap<OpenAPI, IdentityHashMap<Schema<?>, com.networknt.schema.Schema>> schemas = new IdentityHashMap<>();
+    private static final String SCHEMAS_URI = "https://cats.invalid/schemas/";
+    private static final String COMPONENTS_REF_PREFIX = "#/components/schemas/";
+
+    private final IdentityHashMap<OpenAPI, DocumentSchemas> documentCaches = new IdentityHashMap<>();
+
+    private record DocumentSchemas(ObjectMapper mapper, SchemaRegistry registry,
+                                   Map<String, com.networknt.schema.Schema> compiledByKey) {
+    }
 
     ValidationResult validate(CatsResponse response, FuzzingData data) {
         if (data == null || data.getOpenApi() == null) {
@@ -55,30 +62,41 @@ final class ResponseSchemaValidator {
 
     private com.networknt.schema.Schema compiledSchema(Schema<?> schema, FuzzingData data) {
         OpenAPI openAPI = data.getOpenApi();
-        IdentityHashMap<Schema<?>, com.networknt.schema.Schema> documentSchemas = schemas.computeIfAbsent(openAPI,
-                ignored -> new IdentityHashMap<>());
-        return documentSchemas.computeIfAbsent(schema, ignored -> {
+        DocumentSchemas docSchemas = documentCaches.computeIfAbsent(openAPI, ignored -> {
             boolean openApi31 = openAPI.getSpecVersion() == SpecVersion.V31;
             ObjectMapper mapper = openApi31 ? Json31.mapper() : Json.mapper();
-            JsonNode serializedSchema = mapper.valueToTree(schema);
-            if (!(serializedSchema instanceof ObjectNode schemaDocument)) {
-                throw new IllegalArgumentException("OpenAPI response schema is not an object");
-            }
-            ObjectNode root = schemaDocument.deepCopy();
-            String schemasUri = "https://cats.invalid/schemas/";
-            rewriteSchemaReferences(root, "#/components/schemas/", schemasUri);
             SchemaRegistry registry = SchemaRegistry.withDialect(openApi31
-                    ? Dialects.getOpenApi31() : Dialects.getOpenApi30(),
-                    builder -> builder.schemas(schemaDocuments(mapper, data.getSchemaMap(), schemasUri))
+                            ? Dialects.getOpenApi31() : Dialects.getOpenApi30(),
+                    builder -> builder.schemas(schemaDocuments(mapper, data.getSchemaMap(), SCHEMAS_URI))
                             .schemaLoader(loader -> loader.fetchRemoteResources(false)));
-            try {
-                com.networknt.schema.Schema compiled = registry.getSchema(mapper.writeValueAsString(root));
+            return new DocumentSchemas(mapper, registry, new LinkedHashMap<>());
+        });
+        String refKey = schema.get$ref() != null && schema.get$ref().startsWith(COMPONENTS_REF_PREFIX)
+                ? "$ref:" + CatsModelUtils.getSimpleRef(schema.get$ref())
+                : null;
+        if (refKey != null) {
+            com.networknt.schema.Schema cached = docSchemas.compiledByKey().get(refKey);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        JsonNode serializedSchema = docSchemas.mapper().valueToTree(schema);
+        if (!(serializedSchema instanceof ObjectNode schemaDocument)) {
+            throw new IllegalArgumentException("OpenAPI response schema is not an object");
+        }
+        ObjectNode root = schemaDocument.deepCopy();
+        rewriteSchemaReferences(root, COMPONENTS_REF_PREFIX, SCHEMAS_URI);
+        try {
+            String serializedRoot = docSchemas.mapper().writeValueAsString(root);
+            String cacheKey = refKey != null ? refKey : serializedRoot;
+            return docSchemas.compiledByKey().computeIfAbsent(cacheKey, ignored -> {
+                com.networknt.schema.Schema compiled = docSchemas.registry().getSchema(serializedRoot);
                 compiled.initializeValidators();
                 return compiled;
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Unable to serialize OpenAPI response schema", e);
-            }
-        });
+            });
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Unable to serialize OpenAPI response schema", e);
+        }
     }
 
     private Map<String, String> schemaDocuments(ObjectMapper mapper, Map<String, Schema> schemaMap, String schemasUri) {
