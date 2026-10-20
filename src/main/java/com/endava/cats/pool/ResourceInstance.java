@@ -1,6 +1,7 @@
 package com.endava.cats.pool;
 
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.util.WordUtils;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.Set;
 
 record ResourceInstance(long sequence, String sourcePath, HttpMethod sourceMethod,
                         Map<String, StoredValue> values, boolean fuzzed, boolean active,
-                        List<String> pathSegments, String resourceName, String singularResourceName,
+                        List<String> pathSegments, String resourceName, Set<String> resourceNameForms,
                         boolean collectionPath, Set<String> allAliases, Set<String> requestBodyAliases) {
 
     ResourceInstance(long sequence, String sourcePath, HttpMethod sourceMethod,
@@ -17,7 +18,7 @@ record ResourceInstance(long sequence, String sourcePath, HttpMethod sourceMetho
         this(sequence, sourcePath, sourceMethod, values, fuzzed, active,
                 ResourceSemanticNaming.pathSegments(sourcePath),
                 ResourceSemanticNaming.resourceName(sourcePath),
-                ResourceSemanticNaming.singular(ResourceSemanticNaming.resourceName(sourcePath)),
+                WordUtils.nounForms(ResourceSemanticNaming.resourceName(sourcePath)),
                 ResourceSemanticNaming.isCollectionPath(sourcePath),
                 collectAliases(values, false),
                 collectAliases(values, true));
@@ -47,6 +48,6 @@ record ResourceInstance(long sequence, String sourcePath, HttpMethod sourceMetho
 
     ResourceInstance deleted() {
         return new ResourceInstance(sequence, sourcePath, sourceMethod, values, fuzzed, false,
-                pathSegments, resourceName, singularResourceName, collectionPath, allAliases, requestBodyAliases);
+                pathSegments, resourceName, resourceNameForms, collectionPath, allAliases, requestBodyAliases);
     }
 }

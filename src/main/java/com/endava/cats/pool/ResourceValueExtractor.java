@@ -5,6 +5,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
+import com.endava.cats.util.WordUtils;
 import com.google.common.base.Splitter;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -127,8 +128,9 @@ final class ResourceValueExtractor {
                 .filter(entry -> entry.getValue() != null && entry.getValue().sourceLocation().startsWith("response.body."))
                 .toList();
         List<Map.Entry<String, StoredValue>> candidates = topLevelEntries.stream()
-                .filter(entry -> !ResourceSemanticNaming.isMetadataKey(ResourceSemanticNaming.normalize(entry.getKey())))
+                .filter(entry -> !ResourceSemanticNaming.isMetadataKey(entry.getKey().substring(2)))
                 .filter(entry -> entry.getValue() != null && entry.getValue().value() != null
+                        && !ResourceSemanticNaming.isTemporalValue(entry.getValue().value())
                         && !(entry.getValue().value() instanceof Boolean)
                         && StringUtils.isNotBlank(String.valueOf(entry.getValue().value())))
                 .toList();
@@ -147,11 +149,19 @@ final class ResourceValueExtractor {
                 if (entry.getValue() != null && entry.getValue().isJsonObject() && StringUtils.isNotBlank(entry.getKey())) {
                     values.putIfAbsent("$." + resource + ".@key", new StoredValue(entry.getKey(),
                             "response.body.$." + resource + "." + entry.getKey(),
-                            Set.of("id", "name", resource + "id", ResourceSemanticNaming.singular(resource) + "id")));
+                            keyedMapAliases(resource)));
                     break;
                 }
             }
         }
+    }
+
+    private static Set<String> keyedMapAliases(String resource) {
+        Set<String> aliases = new LinkedHashSet<>(Set.of("id", "name"));
+        for (String form : WordUtils.nounForms(resource)) {
+            aliases.add(form + "id");
+        }
+        return Set.copyOf(aliases);
     }
 
     static boolean isScalarIdentifierBody(String value) {
@@ -206,7 +216,7 @@ final class ResourceValueExtractor {
                 } else {
                     Object value = ResourceSemanticNaming.primitiveValue(item.getAsJsonPrimitive());
                     Set<String> aliases = new LinkedHashSet<>(ResourceSemanticNaming.semanticAliases(location, key));
-                    aliases.add(ResourceSemanticNaming.singular(ResourceSemanticNaming.normalize(key)));
+                    aliases.addAll(WordUtils.nounForms(ResourceSemanticNaming.normalize(key)));
                     values.putIfAbsent(location + "[]", new StoredValue(value, sourcePrefix + location + "[]",
                             Set.copyOf(aliases)));
                 }
@@ -222,12 +232,9 @@ final class ResourceValueExtractor {
                 ResourceSemanticNaming.COLLECTION_WRAPPER_SEGMENTS.contains(normCollection)) {
             return;
         }
-        String singularCollection = ResourceSemanticNaming.singular(normCollection);
-        if (!singularCollection.isEmpty()) {
-            Set<String> aliases = new LinkedHashSet<>(existing.aliases());
-            aliases.add(singularCollection);
-            values.put(keyLocation, existing.withAliases(aliases));
-        }
+        Set<String> aliases = new LinkedHashSet<>(existing.aliases());
+        aliases.addAll(WordUtils.nounForms(normCollection));
+        values.put(keyLocation, existing.withAliases(aliases));
     }
 
     /**
@@ -251,11 +258,9 @@ final class ResourceValueExtractor {
         }
         Set<String> ownIdAliases = new LinkedHashSet<>(ResourceSemanticNaming.SIMPLE_IDENTIFIERS);
         if (!normCollection.isEmpty()) {
-            String singCollection = ResourceSemanticNaming.singular(normCollection);
-            ResourceSemanticNaming.SIMPLE_IDENTIFIERS.forEach(suffix -> {
-                ownIdAliases.add(normCollection + suffix);
-                ownIdAliases.add(singCollection + suffix);
-            });
+            Set<String> collectionForms = WordUtils.nounForms(normCollection);
+            ResourceSemanticNaming.SIMPLE_IDENTIFIERS.forEach(suffix ->
+                    collectionForms.forEach(form -> ownIdAliases.add(form + suffix)));
         }
         JsonObject first = objects.getFirst();
         for (String prop : first.keySet()) {
@@ -284,7 +289,7 @@ final class ResourceValueExtractor {
                     break;
                 }
                 String str = el.getAsString();
-                if (!isCandidateKeyValue(str)) {
+                if (ResourceSemanticNaming.isTemporalValue(str) || !isCandidateKeyValue(str)) {
                     valid = false;
                     break;
                 }

@@ -1,14 +1,19 @@
 package com.endava.cats.util;
 
+import com.google.common.base.Splitter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -40,44 +45,18 @@ public abstract class WordUtils {
             Map.entry("radii", "radius"),
             Map.entry("foci", "focus"),
             Map.entry("quizzes", "quiz"),
-            Map.entry("statuses", "status"),
-            Map.entry("aliases", "alias"),
-            Map.entry("buses", "bus"),
-            Map.entry("campuses", "campus"),
-            Map.entry("viruses", "virus"),
-            Map.entry("bonuses", "bonus"),
-            Map.entry("censuses", "census"),
-            Map.entry("consensuses", "consensus"),
-            Map.entry("focuses", "focus"),
-            Map.entry("sinuses", "sinus"),
-            Map.entry("surpluses", "surplus"),
-            Map.entry("syllabuses", "syllabus"),
-            Map.entry("octopuses", "octopus"),
             Map.entry("axes", "axis"));
-    private static final Map<String, String> VES_TO_F_OR_FE_SUFFIXES = Map.ofEntries(
-            Map.entry("knives", "knife"),
-            Map.entry("wives", "wife"),
-            Map.entry("lives", "life"),
-            Map.entry("leaves", "leaf"),
-            Map.entry("halves", "half"),
-            Map.entry("wolves", "wolf"),
-            Map.entry("calves", "calf"),
-            Map.entry("shelves", "shelf"),
-            Map.entry("selves", "self"),
-            Map.entry("thieves", "thief"),
-            Map.entry("loaves", "loaf"),
-            Map.entry("sheaves", "sheaf"),
-            Map.entry("elves", "elf"),
-            Map.entry("scarves", "scarf"),
-            Map.entry("wharves", "wharf"),
-            Map.entry("dwarves", "dwarf"),
-            Map.entry("hooves", "hoof"));
-    private static final Set<String> IE_SINGULAR_SUFFIXES = Set.of(
-            "movies", "cookies", "rookies", "zombies", "goodies", "brownies",
-            "calories", "ties", "pies", "lies", "dies", "vies");
-    private static final Set<String> SILENT_E_CH_SUFFIXES = Set.of(
-            "caches", "niches", "avalanches", "headaches", "earaches", "toothaches",
-            "backaches", "stomachaches", "aches", "brioches", "creches", "quiches", "douches");
+    private static final int MAX_FORMS_CACHE_SIZE = 20_000;
+    private static final Map<String, Set<String>> NOUN_FORMS_CACHE = new ConcurrentHashMap<>();
+    private static final Splitter WORD_BOUNDARY_SPLITTER = Splitter.on(
+            Pattern.compile("(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[^A-Za-z0-9]+")).omitEmptyStrings();
+    private static final Set<String> AUDIT_TIMESTAMP_PREFIX_WORDS = Set.of(
+            "create", "created", "creation", "update", "updated", "modify", "modified", "modification", "deleted", "last");
+    private static final Set<String> AUDIT_TIMESTAMP_SUFFIX_WORDS = Set.of(
+            "at", "on", "time", "date", "timestamp", "modified", "updated");
+    private static final Set<String> AUDIT_TIMESTAMP_NORMALIZED = Set.of(
+            "createdat", "updatedat", "modifiedat", "deletedat", "lastmodified", "lastmodifiedat",
+            "lastupdated", "lastupdatedat", "updatedon", "modifiedon");
     private static final Set<String> ERROR_KEYWORDS = Set.of(
             "StackTrace", "BadRequest", "InternalServerError", "Unauthorized",
             "Forbidden", "ServiceUnavailable", "SocketTimeout", "PermissionDenied", "InvalidToken",
@@ -277,10 +256,12 @@ public abstract class WordUtils {
     }
 
     /**
-     * Converts a lowercase plural resource noun into its singular stem.
+     * Best-effort canonical singular form of a lowercase normalized noun. Intended only for map keys and
+     * prefix heuristics. It is not reliable for equality: matching code must use
+     * {@link #nounForms(String)} or {@link #sameNoun(String, String)}.
      *
      * @param resource lowercase normalized noun
-     * @return singularized noun
+     * @return best-effort singular form
      */
     public static String singularize(String resource) {
         if (resource == null || resource.isEmpty()) {
@@ -290,40 +271,114 @@ public abstract class WordUtils {
         if (irregular != null) {
             return irregular;
         }
-        if (resource.endsWith("ais") && resource.length() > 3) {
-            return resource.substring(0, resource.length() - 3) + "al";
+        int length = resource.length();
+        if (resource.endsWith("ies") && length > 3) {
+            return resource.substring(0, length - 3) + "y";
         }
-        if (resource.endsWith("ies") && resource.length() > 3) {
-            if (IE_SINGULAR_SUFFIXES.stream().anyMatch(resource::endsWith)) {
-                return resource.substring(0, resource.length() - 1);
-            }
-            return resource.substring(0, resource.length() - 3) + "y";
-        }
-        if (resource.endsWith("eses") && resource.length() > 4) {
-            return resource.substring(0, resource.length() - 2) + "is";
-        }
-        if (resource.endsWith("ves") && resource.length() > 3) {
-            for (Map.Entry<String, String> entry : VES_TO_F_OR_FE_SUFFIXES.entrySet()) {
-                if (resource.endsWith(entry.getKey())) {
-                    return resource.substring(0, resource.length() - entry.getKey().length()) + entry.getValue();
-                }
-            }
-            return resource.substring(0, resource.length() - 1);
-        }
-        if (resource.endsWith("ches") && resource.length() > 4) {
-            if (SILENT_E_CH_SUFFIXES.stream().anyMatch(resource::endsWith)) {
-                return resource.substring(0, resource.length() - 1);
-            }
-            return resource.substring(0, resource.length() - 2);
-        }
-        if ((resource.endsWith("sses") || resource.endsWith("xes") ||
-                resource.endsWith("zzes") || resource.endsWith("shes")) && resource.length() > 3) {
-            return resource.substring(0, resource.length() - 2);
+        if ((resource.endsWith("sses") || resource.endsWith("shes") || resource.endsWith("ches") ||
+                resource.endsWith("xes") || resource.endsWith("zzes")) && length > 3) {
+            return resource.substring(0, length - 2);
         }
         if (resource.endsWith("s") && !resource.endsWith("ss") && !resource.endsWith("us") &&
-                !resource.endsWith("is") && resource.length() > 1) {
-            return resource.substring(0, resource.length() - 1);
+                !resource.endsWith("is") && length > 1) {
+            return resource.substring(0, length - 1);
         }
         return resource;
+    }
+
+    /**
+     * Plausible base forms of a lowercase alphanumeric noun token. The set always includes the token itself and
+     * may contain non-words, which is harmless as long as forms are only compared with each other.
+     *
+     * @param token lowercase alphanumeric token
+     * @return unmodifiable set of plausible base forms
+     */
+    public static Set<String> nounForms(String token) {
+        if (token == null || token.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> cached = NOUN_FORMS_CACHE.get(token);
+        if (cached != null) {
+            return cached;
+        }
+        Set<String> forms = computeNounForms(token);
+        if (NOUN_FORMS_CACHE.size() > MAX_FORMS_CACHE_SIZE) {
+            NOUN_FORMS_CACHE.clear();
+        }
+        NOUN_FORMS_CACHE.put(token, forms);
+        return forms;
+    }
+
+    private static Set<String> computeNounForms(String token) {
+        Set<String> forms = new LinkedHashSet<>();
+        forms.add(token);
+        int length = token.length();
+        String irregular = IRREGULAR_SINGULARS.get(token);
+        if (irregular != null) {
+            forms.add(irregular);
+        }
+        if (token.endsWith("ies") && length > 3) {
+            addStem(forms, token.substring(0, length - 3) + "y");
+        }
+        if (token.endsWith("ais") && length > 3) {
+            addStem(forms, token.substring(0, length - 3) + "al");
+        }
+        if (token.endsWith("ves") && length > 3) {
+            String stem = token.substring(0, length - 3);
+            addStem(forms, stem + "f");
+            addStem(forms, stem + "fe");
+        }
+        if ((token.endsWith("ses") || token.endsWith("xes") || token.endsWith("zes") ||
+                token.endsWith("ches") || token.endsWith("shes") || token.endsWith("oes")) && length > 3) {
+            addStem(forms, token.substring(0, length - 2));
+            if (token.endsWith("ses")) {
+                addStem(forms, token.substring(0, length - 2) + "is");
+            }
+        }
+        if (token.endsWith("s") && !token.endsWith("ss") && length > 2) {
+            addStem(forms, token.substring(0, length - 1));
+        }
+        return Collections.unmodifiableSet(forms);
+    }
+
+    private static void addStem(Set<String> forms, String stem) {
+        if (stem.length() >= 2) {
+            forms.add(stem);
+        }
+    }
+
+    /**
+     * Checks whether two tokens can be forms of the same noun, i.e. their form sets intersect.
+     *
+     * @param first  first lowercase alphanumeric token
+     * @param second second lowercase alphanumeric token
+     * @return true when the tokens may refer to the same noun
+     */
+    public static boolean sameNoun(String first, String second) {
+        return !Collections.disjoint(nounForms(first), nounForms(second));
+    }
+
+    /**
+     * Checks whether a raw or normalized field name represents an audit timestamp (such as {@code createdAt},
+     * {@code updatedDate}, {@code lastModifiedTime}, {@code modified_on}).
+     *
+     * @param rawKey property name
+     * @return true when the field name follows an audit-timestamp naming pattern
+     */
+    public static boolean isAuditTimestampField(String rawKey) {
+        if (rawKey == null || rawKey.isBlank()) {
+            return false;
+        }
+        String normalized = rawKey.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        if (AUDIT_TIMESTAMP_NORMALIZED.contains(normalized)) {
+            return true;
+        }
+        List<String> words = WORD_BOUNDARY_SPLITTER.splitToList(rawKey.trim());
+        if (words.size() < 2) {
+            return false;
+        }
+        String first = words.getFirst().toLowerCase(Locale.ROOT);
+        String last = words.getLast().toLowerCase(Locale.ROOT);
+        return AUDIT_TIMESTAMP_PREFIX_WORDS.contains(first) && AUDIT_TIMESTAMP_SUFFIX_WORDS.contains(last);
     }
 }

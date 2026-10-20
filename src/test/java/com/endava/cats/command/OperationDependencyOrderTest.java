@@ -120,6 +120,18 @@ class OperationDependencyOrderTest {
                 .containsExactly("/api/auth/register", "/api/auth/login", "/api/auth/logout");
     }
 
+    @Test
+    void schedulesIeSingularProducerBeforeConsumer() {
+        Schema<?> booking = new ObjectSchema().addProperty("propertyId", new StringSchema());
+        OpenAPI api = new OpenAPI().paths(new Paths()
+                .addPathItem("/bookings", new PathItem().post(post(booking)))
+                .addPathItem("/properties", new PathItem().post(new Operation())));
+        List<Map.Entry<String, PathItem>> alphabetical = api.getPaths().entrySet().stream().toList();
+
+        Assertions.assertThat(OperationDependencyOrder.order(api, alphabetical)).extracting(Map.Entry::getKey)
+                .containsExactly("/properties", "/bookings");
+    }
+
     private static Operation post(Schema<?> schema) {
         return new Operation().requestBody(new RequestBody().content(
                 new Content().addMediaType("application/json", new MediaType().schema(schema))));

@@ -49,4 +49,96 @@ class WordUtilsTest {
     void shouldConvertToDetectedCasing(String name, String casingConvention, String expected) {
         Assertions.assertThat(WordUtils.convertToDetectedCasing(name, casingConvention)).isEqualTo(expected);
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "properties,property",
+            "entities,entity",
+            "activities,activity",
+            "parties,party",
+            "cities,city",
+            "studies,study",
+            "copies,copy",
+            "policies,policy",
+            "categories,category",
+            "movies,movie",
+            "cookies,cookie",
+            "purchases,purchase",
+            "releases,release",
+            "cases,case",
+            "databases,database",
+            "houses,house",
+            "caches,cache",
+            "matches,match",
+            "sizes,size",
+            "archives,archive",
+            "objectives,objective",
+            "knives,knife",
+            "wolves,wolf",
+            "leaves,leaf",
+            "leaves,leave",
+            "addresses,address",
+            "statuses,status",
+            "buses,bus",
+            "boxes,box",
+            "taxes,tax",
+            "analyses,analysis",
+            "aliases,alias",
+            "canvases,canvas",
+            "campuses,campus",
+            "processes,process",
+            "businesses,business",
+            "quizzes,quiz",
+            "children,child",
+            "people,person",
+            "criteria,criterion",
+            "indices,index",
+            "indexes,index",
+            "axes,axis",
+            "orders,order",
+            "ids,id",
+            "uuids,uuid",
+            "bankaccounts,bankaccount",
+            "heroes,hero",
+            "potatoes,potato",
+            "photos,photo",
+            "hospitais,hospital",
+            "animais,animal"
+    })
+    void shouldMatchSameNounForms(String first, String second) {
+        Assertions.assertThat(WordUtils.sameNoun(first, second)).isTrue();
+        Assertions.assertThat(WordUtils.sameNoun(second, first)).isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "objective,object",
+            "organization,organ",
+            "settings,set",
+            "activity,active",
+            "generation,general",
+            "business,bus",
+            "case,cache",
+            "status,state",
+            "policy,police",
+            "product,production",
+            "states,stats",
+            "cares,car",
+            "pines,pin",
+            "mines,min",
+            "sites,sit",
+            "notes,not"
+    })
+    void shouldNotMatchDifferentNouns(String first, String second) {
+        Assertions.assertThat(WordUtils.sameNoun(first, second)).isFalse();
+        Assertions.assertThat(WordUtils.sameNoun(second, first)).isFalse();
+    }
+
+    @Test
+    void shouldReturnNounForms() {
+        Assertions.assertThat(WordUtils.nounForms(null)).isEmpty();
+        Assertions.assertThat(WordUtils.nounForms("")).isEmpty();
+        Assertions.assertThat(WordUtils.nounForms("address")).containsExactly("address");
+        Assertions.assertThat(WordUtils.nounForms("properties")).contains("properties", "property");
+    }
 }

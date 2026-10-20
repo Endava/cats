@@ -13,6 +13,7 @@ import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.util.WordUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -414,8 +415,11 @@ public class RuntimeResourcePool {
             if (ResourceValueExtractor.isPrimitiveArray(root)) {
                 Object val = ResourceSemanticNaming.primitiveValue(root.getAsJsonArray().get(0).getAsJsonPrimitive());
                 String resource = ResourceSemanticNaming.resourceName(data.getRelativePath());
-                String singular = ResourceSemanticNaming.singular(resource);
-                Set<String> aliases = new LinkedHashSet<>(List.of(resource, singular, resource + "id", singular + "id"));
+                Set<String> aliases = new LinkedHashSet<>(List.of(resource, resource + "id"));
+                for (String form : WordUtils.nounForms(resource)) {
+                    aliases.add(form);
+                    aliases.add(form + "id");
+                }
                 values.put("$[]", new StoredValue(val, "response.body.$[]", Set.copyOf(aliases)));
             }
         }
@@ -485,10 +489,10 @@ public class RuntimeResourcePool {
         if (primaryId == null) {
             return false;
         }
-        String singularResource = ResourceSemanticNaming.singular(ResourceSemanticNaming.resourceName(data.getRelativePath()));
+        Set<String> incomingForms = WordUtils.nounForms(ResourceSemanticNaming.resourceName(data.getRelativePath()));
         for (int i = 0; i < resources.size(); i++) {
             ResourceInstance existing = resources.get(i);
-            if (!existing.active() || !existing.singularResourceName().equals(singularResource)) {
+            if (!existing.active() || Collections.disjoint(existing.resourceNameForms(), incomingForms)) {
                 continue;
             }
             String existingId = extractPrimaryIdentifierValue(existing.values(), resourceIdAliases);

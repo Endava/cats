@@ -8,12 +8,14 @@ import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.util.WordUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -564,14 +566,14 @@ final class ResourceRequestEnricher {
     private boolean hasMatchingResourceCollection(String fieldName) {
         String normalizedField = ResourceSemanticNaming.normalize(fieldName);
         if (normalizedField.isEmpty() || ResourceSemanticNaming.SIMPLE_IDENTIFIERS.contains(normalizedField) ||
-                ResourceSemanticNaming.isMetadataKey(normalizedField)) {
+                ResourceSemanticNaming.isMetadataKey(fieldName)) {
             return false;
         }
-        String singularField = ResourceSemanticNaming.singular(normalizedField);
+        Set<String> fieldForms = WordUtils.nounForms(normalizedField);
         for (ResourceInstance resource : resources) {
             if (resource.active() && !resource.fuzzed() && resource.collectionPath() &&
-                    (resource.resourceName().equals(normalizedField) || resource.singularResourceName().equals(singularField)) &&
-                    (resource.allAliases().contains(normalizedField) || resource.allAliases().contains(singularField))) {
+                    !Collections.disjoint(resource.resourceNameForms(), fieldForms) &&
+                    !Collections.disjoint(resource.allAliases(), fieldForms)) {
                 return true;
             }
         }

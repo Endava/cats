@@ -260,8 +260,7 @@ final class OperationDependencyOrder {
         if (ID_SUFFIXES.contains(normalized)) {
             String normalizedParent = normalize(parentProperty);
             if (!normalizedParent.isEmpty()) {
-                names.add(singular(normalizedParent) + normalized);
-                names.add(normalizedParent + normalized);
+                WordUtils.nounForms(normalizedParent).forEach(form -> names.add(form + normalized));
             }
             return;
         }
@@ -273,8 +272,7 @@ final class OperationDependencyOrder {
             String pluralSuffix = suffix + "s";
             if (normalized.endsWith(pluralSuffix) && normalized.length() > pluralSuffix.length()) {
                 String prefix = normalized.substring(0, normalized.length() - pluralSuffix.length());
-                names.add(singular(prefix) + suffix);
-                names.add(prefix + suffix);
+                WordUtils.nounForms(prefix).forEach(form -> names.add(form + suffix));
                 return;
             }
         }
@@ -294,17 +292,11 @@ final class OperationDependencyOrder {
     private static Set<String> producerIdentifiers(String path) {
         String trimmed = stripTrailingSlash(path);
         String resource = normalize(trimmed.substring(trimmed.lastIndexOf('/') + 1));
-        String singular = singular(resource);
         Set<String> identifiers = new LinkedHashSet<>();
         for (String suffix : ID_SUFFIXES) {
-            identifiers.add(singular + suffix);
-            identifiers.add(resource + suffix);
+            WordUtils.nounForms(resource).forEach(form -> identifiers.add(form + suffix));
         }
         return identifiers;
-    }
-
-    private static String singular(String resource) {
-        return WordUtils.singularize(resource);
     }
 
     private static String normalize(String value) {

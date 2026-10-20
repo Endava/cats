@@ -15,6 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Creates request payloads containing only properties marked as required for the generated payload,
@@ -23,12 +24,6 @@ import java.util.regex.Pattern;
 final class RequiredOnlyPayloadGenerator {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RequiredOnlyPayloadGenerator.class);
     private static final Set<String> PRIMARY_ID_FIELDS = Set.of("id", "uuid", "guid");
-    private static final Set<String> AUDIT_TIMESTAMP_PREFIX_WORDS = Set.of(
-            "create", "created", "creation", "update", "updated", "modify", "modified", "last");
-    private static final Set<String> AUDIT_TIMESTAMP_SUFFIX_WORDS = Set.of(
-            "at", "on", "time", "date", "timestamp");
-    private static final Pattern WORD_BOUNDARY_SPLITTER = Pattern.compile(
-            "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[_\\-]+");
 
     private RequiredOnlyPayloadGenerator() {
         // utility class
@@ -105,13 +100,7 @@ final class RequiredOnlyPayloadGenerator {
         if (PRIMARY_ID_FIELDS.contains(normalized) || resourceIdNames.contains(normalized)) {
             return true;
         }
-        List<String> words = Splitter.on(WORD_BOUNDARY_SPLITTER).omitEmptyStrings().splitToList(rawKey.trim());
-        if (words.size() >= 2) {
-            String firstWord = normalize(words.getFirst());
-            String lastWord = normalize(words.getLast());
-            return AUDIT_TIMESTAMP_PREFIX_WORDS.contains(firstWord) && AUDIT_TIMESTAMP_SUFFIX_WORDS.contains(lastWord);
-        }
-        return false;
+        return WordUtils.isAuditTimestampField(rawKey);
     }
 
     private static Set<String> extractResourceIdNames(String contractPath) {
@@ -124,7 +113,8 @@ final class RequiredOnlyPayloadGenerator {
             if (!seg.startsWith("{")) {
                 String norm = normalize(seg);
                 if (!norm.isEmpty()) {
-                    return Set.of(norm + "id", WordUtils.singularize(norm) + "id");
+                    return WordUtils.nounForms(norm).stream()
+                            .map(form -> form + "id").collect(Collectors.toUnmodifiableSet());
                 }
             }
         }

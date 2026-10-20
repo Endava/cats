@@ -11,6 +11,7 @@ import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -2279,6 +2280,62 @@ class RuntimeResourcePoolTest {
         ServiceData interview = postData("/interviews", "{\"candidate\":\"gen\"}");
         Assertions.assertThat(resourcePool.enrich(interview, interview.getPayload()).payload())
                 .contains("\"candidate\":\"CAND-2\"");
+    }
+
+    @Test
+    void shouldCorrelateForeignKeysWithRegularAndIeEsVeSingularPlurals() {
+        enableResourceReuse();
+        for (String resource : List.of("properties", "entities", "parties", "purchases", "archives", "movies", "caches")) {
+            resourcePool.observe(postData("/" + resource, "{}"), request("POST", "/" + resource, "{}"),
+                    response(201, "{\"id\":\"" + resource + "-1\"}"));
+        }
+        String payload = "{\"propertyId\":\"gen\",\"entityId\":\"gen\",\"partyId\":\"gen\",\"purchaseId\":\"gen\","
+                + "\"archiveId\":\"gen\",\"movieId\":\"gen\",\"cacheId\":\"gen\"}";
+
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(postData("/bookings", payload), payload);
+
+        Assertions.assertThat(JsonParser.parseString(result.payload()).getAsJsonObject().asMap())
+                .extractingByKeys("propertyId", "entityId", "partyId", "purchaseId", "archiveId", "movieId", "cacheId")
+                .extracting(element -> element.getAsString())
+                .containsExactly("properties-1", "entities-1", "parties-1", "purchases-1", "archives-1", "movies-1", "caches-1");
+    }
+
+    @Test
+    void shouldReuseIeSingularPluralResourceIdForPathParameter() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/properties", "{}"), request("POST", "/properties", "{}"),
+                response(201, "{\"id\":\"properties-1\"}"));
+
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(getData("/properties/{propertyId}",
+                "{\"propertyId\":\"generated\"}"), "{\"propertyId\":\"generated\"}");
+
+        Assertions.assertThat(result.payload()).contains("properties-1");
+    }
+
+    @Test
+    void shouldNotCorrelateObjectIdWithObjectiveForeignKey() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/objects", "{}"), request("POST", "/objects", "{}"),
+                response(201, "{\"id\":\"o-1\"}"));
+        String payload = "{\"objectiveId\":\"gen\"}";
+
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(postData("/goals", payload), payload);
+
+        Assertions.assertThat(result.payload()).contains("\"objectiveId\":\"gen\"");
+    }
+
+    @Test
+    void shouldNotInferTemporalPropertyAsNaturalKeyOfCollectionItems() {
+        enableResourceReuse();
+        resourcePool.observe(getData("/languages", "{}"), request("GET", "/languages", "{}"),
+                response(200, "[{\"name\":\"EnglishLanguage\",\"day\":\"2024-01-01\",\"code\":\"lang-english\"},"
+                        + "{\"name\":\"GermanLanguage\",\"day\":\"2024-01-02\",\"code\":\"lang-german1\"}]"));
+
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(getData("/check/{lang}",
+                "{\"lang\":\"gen\"}"), "{\"lang\":\"gen\"}");
+
+        String resolved = JsonParser.parseString(result.payload()).getAsJsonObject().get("lang").getAsString();
+        Assertions.assertThat(resolved).isIn("lang-english", "lang-german1");
     }
 
     private void enableResourceReuse() {
