@@ -932,6 +932,8 @@ class CatsCommandTest {
         Assertions.assertThat(allRegisteredFuzzerNames)
                 .containsAll(FuzzerWaveExecutor.loadWaveFuzzers(profileLoader, "coverage"))
                 .containsAll(FuzzerWaveExecutor.loadWaveFuzzers(profileLoader, "crash"));
+        Assertions.assertThat(FuzzerWaveExecutor.loadWaveFuzzers(profileLoader, "coverage"))
+                .contains("removefields", "numericvaluesinstringfields");
     }
 
     @Test

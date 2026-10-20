@@ -84,6 +84,7 @@ public class FilterArguments {
     @Getter
     UserArguments userArguments;
     @Inject
+    @Getter
     ProfileLoader profileLoader;
 
     enum FieldType {

@@ -2342,13 +2342,20 @@ class RuntimeResourcePoolTest {
     void shouldNotMergeDistinctOrdersThatShareTheSameNestedCustomerId() {
         enableResourceReuse();
         resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"),
-                response(201, "{\"orderCode\":\"ORD-1\",\"customer\":{\"id\":\"cust-shared\"}}"));
+                response(201, "{\"invoiceId\":\"INV-1\",\"version\":1,\"page\":0,\"customer\":{\"id\":\"cust-shared\"}}"));
         resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"),
-                response(201, "{\"orderCode\":\"ORD-2\",\"customer\":{\"id\":\"cust-shared\"}}"));
+                response(201, "{\"invoiceId\":\"INV-2\",\"version\":1,\"page\":0,\"customer\":{\"id\":\"cust-shared\"}}"));
 
-        Assertions.assertThat(resourcePool.isKnownPoolValue("ORD-1")).isTrue();
-        Assertions.assertThat(resourcePool.isKnownPoolValue("ORD-2")).isTrue();
+        // Both invoices remain in the pool (not collapsed by shared nested customer.id),
+        // and non-identifier values like version:1 or page:0 are not treated as known pool IDs.
+        ServiceData payInvoice = postData("/payments", "{\"invoiceId\":\"gen\"}");
+        Assertions.assertThat(resourcePool.enrich(payInvoice, payInvoice.getPayload()).payload())
+                .contains("\"invoiceId\":\"INV-2\"");
+        Assertions.assertThat(resourcePool.isKnownPoolValue("INV-1")).isTrue();
+        Assertions.assertThat(resourcePool.isKnownPoolValue("INV-2")).isTrue();
         Assertions.assertThat(resourcePool.isKnownPoolValue("cust-shared")).isTrue();
+        Assertions.assertThat(resourcePool.isKnownPoolValue(1)).isFalse();
+        Assertions.assertThat(resourcePool.isKnownPoolValue(0)).isFalse();
         Assertions.assertThat(resourcePool.isKnownPoolValue("non-existent")).isFalse();
     }
 

@@ -42,13 +42,9 @@ import java.util.stream.Stream;
 final class FuzzerWaveExecutor {
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
     private static final int MAX_CONTINUOUS_RANDOM_ROUNDS = 200;
-    private static final List<String> COMBINATORIAL_COVERAGE_FUZZERS = List.of(
-            "removefields", "numericvaluesinstringfields");
 
     private final CatsCommand command;
     private final PrettyLogger logger;
-    private final Set<String> coverageWaveFuzzers;
-    private final Set<String> crashWaveFuzzers;
     private final List<DeferredHappyPathDelete> deferredHappyPathDeletes = new ArrayList<>();
 
     private record DeferredHappyPathDelete(List<FuzzingData> pathData, List<FuzzingData> deleteData,
@@ -116,25 +112,22 @@ final class FuzzerWaveExecutor {
     FuzzerWaveExecutor(CatsCommand command, PrettyLogger logger) {
         this.command = command;
         this.logger = logger;
-        ProfileLoader profileLoader = new ProfileLoader();
-        this.coverageWaveFuzzers = loadWaveFuzzers(profileLoader, "coverage");
-        this.crashWaveFuzzers = loadWaveFuzzers(profileLoader, "crash");
+    }
+
+    private ProfileLoader activeProfileLoader() {
+        if (command.filterArguments != null && command.filterArguments.getProfileLoader() != null) {
+            return command.filterArguments.getProfileLoader();
+        }
+        return new ProfileLoader();
     }
 
     static Set<String> loadWaveFuzzers(ProfileLoader profileLoader, String profileName) {
         return profileLoader.getProfile(profileName)
                 .map(profile -> profile.fuzzers().stream()
                         .map(name -> name.toLowerCase(Locale.ROOT))
-                        .collect(Collectors.toUnmodifiableSet()))
+                        .collect(Collectors.toCollection(LinkedHashSet::new)))
+                .map( java.util.Collections::unmodifiableSet)
                 .orElse(Set.of());
-    }
-
-    Set<String> coverageWaveFuzzers() {
-        return coverageWaveFuzzers;
-    }
-
-    Set<String> crashWaveFuzzers() {
-        return crashWaveFuzzers;
     }
 
     void startFuzzing(OpenAPI openAPI) {
@@ -147,31 +140,26 @@ final class FuzzerWaveExecutor {
         }
         preseedCollectionGets(paths, suppliedPaths, openAPI);
 
+        List<PreparedPath> preparedPaths = preparePathsForExecution(paths, suppliedPaths, openAPI);
+        boolean slicePerOperation = shouldRunContinuousRandom() && hasMultipleOperationsInScope(preparedPaths);
+        if (command.randomFuzzer != null) {
+            command.randomFuzzer.setMultipleOperationsInScope(slicePerOperation);
+        }
+
         if (!command.processingArguments.isReuseSuccessfulResources() || command.filterArguments.isDryRun()) {
-            if (command.randomFuzzer != null) {
-                command.randomFuzzer.setMultipleOperationsInScope(suppliedPaths.size() > 1);
-            }
             try {
-                for (Map.Entry<String, PathItem> entry : paths) {
+                for (PreparedPath path : preparedPaths) {
                     CatsExecutionCancelledException.check();
-                    if (suppliedPaths.contains(entry.getKey())) {
-                        fuzzPath(entry, openAPI);
-                    } else {
-                        logger.skip("Skipping path {}", entry.getKey());
-                    }
+                    fuzzPreparedPath(path);
                 }
                 runDeferredHappyPathDeletes();
+                runContinuousRandomUntilTimeLimit(preparedPaths);
             } finally {
                 if (command.randomFuzzer != null) {
                     command.randomFuzzer.setMultipleOperationsInScope(false);
                 }
             }
             return;
-        }
-
-        List<PreparedPath> preparedPaths = preparePathsForExecution(paths, suppliedPaths, openAPI);
-        if (command.randomFuzzer != null) {
-            command.randomFuzzer.setMultipleOperationsInScope(preparedPaths.size() > 1);
         }
 
         try {
@@ -188,6 +176,13 @@ final class FuzzerWaveExecutor {
                 command.randomFuzzer.setMultipleOperationsInScope(false);
             }
         }
+    }
+
+    private boolean hasMultipleOperationsInScope(List<PreparedPath> preparedPaths) {
+        if (preparedPaths.size() > 1) {
+            return true;
+        }
+        return preparedPaths.size() == 1 && preparedPaths.getFirst().filteredFuzzingData().size() > 1;
     }
 
     private List<PreparedPath> preparePathsForExecution(List<Map.Entry<String, PathItem>> paths,
@@ -208,6 +203,9 @@ final class FuzzerWaveExecutor {
     }
 
     private void runPhasedWavesAcrossPaths(List<PreparedPath> preparedPaths) {
+        ProfileLoader profileLoader = activeProfileLoader();
+        Set<String> coverageWaveFuzzers = loadWaveFuzzers(profileLoader, "coverage");
+        Set<String> crashWaveFuzzers = loadWaveFuzzers(profileLoader, "crash");
         for (PreparedPath path : preparedPaths) {
             if (!path.binaryStreamOnly()) {
                 CatsExecutionCancelledException.check();
@@ -220,28 +218,17 @@ final class FuzzerWaveExecutor {
             }
         }
         long resourcesBeforeCoverageWave = command.runtimeResourcePool != null ? command.runtimeResourcePool.observedResourceCount() : 0;
-        Set<String> combinatorialSet = Set.copyOf(COMBINATORIAL_COVERAGE_FUZZERS);
-        for (PreparedPath path : preparedPaths) {
-            if (path.binaryStreamOnly()) {
-                continue;
-            }
-            CatsExecutionCancelledException.check();
-            List<Fuzzer> fastCoverage = nonSeedFuzzers(path.fuzzersToRun()).stream()
-                    .filter(fuzzer -> isInWave(fuzzer, coverageWaveFuzzers) && !isInWave(fuzzer, combinatorialSet))
-                    .toList();
-            runFuzzers(path.filteredFuzzingData(), fastCoverage);
-        }
-        for (String combinatorialName : COMBINATORIAL_COVERAGE_FUZZERS) {
-            Set<String> singleWave = Set.of(combinatorialName);
+        for (String coverageFuzzerName : coverageWaveFuzzers) {
+            Set<String> singleWave = Set.of(coverageFuzzerName);
             for (PreparedPath path : preparedPaths) {
                 if (path.binaryStreamOnly()) {
                     continue;
                 }
                 CatsExecutionCancelledException.check();
-                List<Fuzzer> combinatorialCoverage = nonSeedFuzzers(path.fuzzersToRun()).stream()
+                List<Fuzzer> matchingCoverage = nonSeedFuzzers(path.fuzzersToRun()).stream()
                         .filter(fuzzer -> isInWave(fuzzer, singleWave))
                         .toList();
-                runFuzzers(path.filteredFuzzingData(), combinatorialCoverage);
+                runFuzzers(path.filteredFuzzingData(), matchingCoverage);
             }
         }
         if (command.runtimeResourcePool != null && command.runtimeResourcePool.observedResourceCount() > resourcesBeforeCoverageWave) {
@@ -352,7 +339,7 @@ final class FuzzerWaveExecutor {
     }
 
     private static List<Fuzzer> nonSeedFuzzers(List<Fuzzer> configuredFuzzers) {
-        if (!configuredFuzzers.stream().anyMatch(HappyPathFuzzer.class::isInstance)) {
+        if (configuredFuzzers.stream().noneMatch(HappyPathFuzzer.class::isInstance)) {
             return configuredFuzzers;
         }
         return configuredFuzzers.stream().filter(fuzzer -> !isSeedFuzzer(fuzzer)).toList();
@@ -458,30 +445,14 @@ final class FuzzerWaveExecutor {
         return pathsOrderedAlphabetically;
     }
 
-    private void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
-        command.executionEventPublisher.publish(new CatsExecutionEvent.PathStarted(Instant.now(), pathItemEntry.getKey()));
-        fuzzPathInternal(pathItemEntry, openAPI);
-        command.executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), pathItemEntry.getKey()));
-    }
-
-    private void fuzzPathInternal(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
-        logger.start(AnsiUtils.bold("Start fuzzing path {}"), pathItemEntry.getKey());
-        List<FuzzingData> fuzzingDataList = command.fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), openAPI);
-        if (fuzzingDataList.isEmpty()) {
-            logger.warning("There was a problem fuzzing path {}. You might want to enable debug mode for more details. Additionally, you can log a GitHub issue at: https://github.com/Endava/cats/issues.", pathItemEntry.getKey());
-            return;
+    private void fuzzPreparedPath(PreparedPath path) {
+        command.executionEventPublisher.publish(new CatsExecutionEvent.PathStarted(Instant.now(), path.pathKey()));
+        logger.start(AnsiUtils.bold("Start fuzzing path {}"), path.pathKey());
+        if (!path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty()) {
+            runFirstPhaseFuzzers(path.filteredFuzzingData(), path.fuzzersToRun());
+            runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
         }
-        List<FuzzingData> filteredFuzzingData = fuzzingDataList.stream()
-                .filter(fuzzingData -> command.filterArguments.isHttpMethodSupplied(fuzzingData.getMethod()))
-                .filter(fuzzingData -> command.processingArguments.matchesXxxSelection(fuzzingData.getPayload()))
-                .toList();
-        Set<HttpMethod> allHttpMethodsFromFuzzingData = filteredFuzzingData.stream()
-                .map(FuzzingData::getMethod)
-                .collect(Collectors.toSet());
-        List<Fuzzer> fuzzersToRun = command.filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(
-                allHttpMethodsFromFuzzingData, pathItemEntry.getKey());
-        runFirstPhaseFuzzers(filteredFuzzingData, fuzzersToRun);
-        runSecondPhaseFuzzers(filteredFuzzingData, SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
+        command.executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));
     }
 
     void runFirstPhaseFuzzers(List<FuzzingData> fuzzingData, List<Fuzzer> configuredFuzzers) {

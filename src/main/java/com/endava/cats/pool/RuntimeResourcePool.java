@@ -479,10 +479,10 @@ public class RuntimeResourcePool {
     }
 
     /**
-     * Checks whether the given value matches any stored value in an active resource in this pool.
+     * Checks whether the given value matches any identifier-like stored value in an active resource in this pool.
      *
      * @param candidate candidate value to check
-     * @return true if the value is already present in the pool
+     * @return true if the value is already present as a resource identifier in the pool
      */
     public synchronized boolean isKnownPoolValue(Object candidate) {
         if (candidate == null) {
@@ -493,9 +493,19 @@ public class RuntimeResourcePool {
                 continue;
             }
             for (StoredValue stored : resource.values().values()) {
-                if (ResourceSemanticNaming.sameValue(candidate, stored.value())) {
+                if (isIdentifierStoredValue(stored) && ResourceSemanticNaming.sameValue(candidate, stored.value())) {
                     return true;
                 }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isIdentifierStoredValue(StoredValue stored) {
+        for (String alias : stored.aliases()) {
+            if (ResourceSemanticNaming.SIMPLE_IDENTIFIERS.contains(alias) ||
+                    alias.endsWith("id") || alias.endsWith("uuid") || alias.endsWith("guid")) {
+                return true;
             }
         }
         return false;

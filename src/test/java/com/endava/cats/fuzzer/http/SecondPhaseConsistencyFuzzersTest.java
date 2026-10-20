@@ -197,6 +197,11 @@ class SecondPhaseConsistencyFuzzersTest {
                 Mockito.anyString(), Mockito.<Object[]>any());
         Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.eq(data),
                 Mockito.eq("Compared {} fields from a successful update with a later read"), Mockito.eq(3));
+
+        // Leading-zero loss on a StringSchema field ("00123" vs "123") must still be flagged as inconsistent
+        captor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(200)
+                .body("{\"name\":\"123\",\"price\":10.00,\"scheduledAt\":\"2026-01-01T00:00:00+00:00\"}").build(),
+                data.toBuilder().payload("{\"name\":\"00123\",\"price\":10,\"scheduledAt\":\"2026-01-01T00:00:00Z\"}").build());
     }
 
     @Test

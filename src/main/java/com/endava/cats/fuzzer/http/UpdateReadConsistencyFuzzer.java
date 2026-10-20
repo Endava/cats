@@ -130,7 +130,7 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
                 continue;
             }
             compared++;
-            if (!samePrimitiveValue(sent.get(name).getAsJsonPrimitive(), returned.get(name).getAsJsonPrimitive())) {
+            if (!samePrimitiveValue(sent.get(name).getAsJsonPrimitive(), returned.get(name).getAsJsonPrimitive(), entry.getValue())) {
                 mismatched.add(name);
             }
         }
@@ -195,7 +195,7 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
         return schemaMap.get(schema.get$ref().substring(schema.get$ref().lastIndexOf('/') + 1));
     }
 
-    private boolean samePrimitiveValue(JsonPrimitive sent, JsonPrimitive returned) {
+    private boolean samePrimitiveValue(JsonPrimitive sent, JsonPrimitive returned, Schema<?> propertySchema) {
         if (sent.equals(returned)) {
             return true;
         }
@@ -204,8 +204,10 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
         if (sentStr.equalsIgnoreCase(returnedStr)) {
             return true;
         }
-        if ((sent.isNumber() || returned.isNumber()) ||
-                (!sentStr.isEmpty() && Character.isDigit(sentStr.charAt(0)) && !returnedStr.isEmpty() && Character.isDigit(returnedStr.charAt(0)))) {
+        boolean numericSchema = propertySchema != null &&
+                (com.endava.cats.util.CatsModelUtils.isNumberSchema(propertySchema) ||
+                        com.endava.cats.util.CatsModelUtils.isIntegerSchema(propertySchema));
+        if (sent.isNumber() || returned.isNumber() || numericSchema) {
             try {
                 if (new BigDecimal(sentStr).compareTo(new BigDecimal(returnedStr)) == 0) {
                     return true;
