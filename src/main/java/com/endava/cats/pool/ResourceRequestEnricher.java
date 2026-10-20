@@ -71,12 +71,34 @@ final class ResourceRequestEnricher {
         JsonElement payloadRoot = checkFuzzerDiff ? parseJsonOrNull(data.getPayload()) : null;
 
         String result = json;
-        ResourceInstance[] pathBoundResource = new ResourceInstance[1];
+        EnrichmentSession session = new EnrichmentSession(data, correlations, correlationSources,
+                requestBindings, originalRoot, payloadRoot);
         for (TargetField target : targets) {
-            result = enrichTargetField(result, target, data, correlations, correlationSources,
-                    requestBindings, pathBoundResource, originalRoot, payloadRoot);
+            result = enrichTargetField(result, target, session);
         }
         return result;
+    }
+
+    private static final class EnrichmentSession {
+        private final ServiceData data;
+        private final List<ResourceCorrelation> correlations;
+        private final Map<ResourceCorrelation, Long> correlationSources;
+        private final Map<String, ResourceInstance> requestBindings;
+        private final JsonElement originalRoot;
+        private final JsonElement payloadRoot;
+        private ResourceInstance pathBoundResource;
+
+        private EnrichmentSession(ServiceData data, List<ResourceCorrelation> correlations,
+                                  Map<ResourceCorrelation, Long> correlationSources,
+                                  Map<String, ResourceInstance> requestBindings,
+                                  JsonElement originalRoot, JsonElement payloadRoot) {
+            this.data = data;
+            this.correlations = correlations;
+            this.correlationSources = correlationSources;
+            this.requestBindings = requestBindings;
+            this.originalRoot = originalRoot;
+            this.payloadRoot = payloadRoot;
+        }
     }
 
     private static JsonElement parseJsonOrNull(String json) {
@@ -95,28 +117,21 @@ final class ResourceRequestEnricher {
         }
     }
 
-    private String enrichTargetField(String currentJson, TargetField target, ServiceData data,
-                                     List<ResourceCorrelation> correlations,
-                                     Map<ResourceCorrelation, Long> correlationSources,
-                                     Map<String, ResourceInstance> requestBindings,
-                                     ResourceInstance[] pathBoundResource,
-                                     JsonElement originalRoot, JsonElement payloadRoot) {
+    private String enrichTargetField(String currentJson, TargetField target, EnrichmentSession session) {
+        ServiceData data = session.data;
         if ((target.location() == RequestTarget.Location.PATH && !data.isReplaceUrlParams()) ||
                 hasExplicitValue(data, target) || shouldSkipOwnPostIdentifier(data, target)) {
             return currentJson;
         }
         String bindingKey = ResourceSemanticNaming.bindingKey(data.getRelativePath(), target);
-        ResourceInstance boundResource = requestBindings.getOrDefault(bindingKey,
-                target.location() == RequestTarget.Location.PATH ? pathBoundResource[0] : null);
+        ResourceInstance boundResource = session.requestBindings.getOrDefault(bindingKey,
+                target.location() == RequestTarget.Location.PATH ? session.pathBoundResource : null);
         Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, boundResource, false, data.getHttpMethod());
         if (resolved.isEmpty()) {
             return currentJson;
         }
         ResolvedValue value = resolved.get();
-        boolean mergeFuzzing = data.isFuzzedField(target.path(), target.location()) ||
-                (originalRoot != null && payloadRoot != null &&
-                        !ResourceValueExtractor.valuesAtPath(originalRoot, target.path())
-                                .equals(ResourceValueExtractor.valuesAtPath(payloadRoot, target.path())));
+        boolean mergeFuzzing = isFieldModifiedOrFuzzed(data, target, session.originalRoot, session.payloadRoot);
         String updated;
         try {
             updated = FuzzingStrategy.replaceField(currentJson, target.path(),
@@ -125,21 +140,34 @@ final class ResourceRequestEnricher {
             return currentJson;
         }
         if (!currentJson.equals(updated)) {
-            ResourceCorrelation correlation = ResourceCorrelation.builder()
-                    .sourceMethod(value.resource().sourceMethod().name())
-                    .sourcePath(value.resource().sourcePath())
-                    .sourceLocation(value.storedValue().sourceLocation())
-                    .target(new RequestTarget(target.location(), target.path()))
-                    .value(value.value())
-                    .build();
-            correlations.add(correlation);
-            correlationSources.put(correlation, value.resource().sequence());
-            requestBindings.put(bindingKey, value.resource());
-            if (target.location() == RequestTarget.Location.PATH && pathBoundResource[0] == null) {
-                pathBoundResource[0] = value.resource();
-            }
+            recordEnrichmentCorrelation(target, bindingKey, value, session);
         }
         return updated;
+    }
+
+    private static boolean isFieldModifiedOrFuzzed(ServiceData data, TargetField target,
+                                                   JsonElement originalRoot, JsonElement payloadRoot) {
+        return data.isFuzzedField(target.path(), target.location()) ||
+                (originalRoot != null && payloadRoot != null &&
+                        !ResourceValueExtractor.valuesAtPath(originalRoot, target.path())
+                                .equals(ResourceValueExtractor.valuesAtPath(payloadRoot, target.path())));
+    }
+
+    private static void recordEnrichmentCorrelation(TargetField target, String bindingKey,
+                                                    ResolvedValue value, EnrichmentSession session) {
+        ResourceCorrelation correlation = ResourceCorrelation.builder()
+                .sourceMethod(value.resource().sourceMethod().name())
+                .sourcePath(value.resource().sourcePath())
+                .sourceLocation(value.storedValue().sourceLocation())
+                .target(new RequestTarget(target.location(), target.path()))
+                .value(value.value())
+                .build();
+        session.correlations.add(correlation);
+        session.correlationSources.put(correlation, value.resource().sequence());
+        session.requestBindings.put(bindingKey, value.resource());
+        if (target.location() == RequestTarget.Location.PATH && session.pathBoundResource == null) {
+            session.pathBoundResource = value.resource();
+        }
     }
 
     private Optional<String> enrichRootScalarBody(String json, ServiceData data, List<ResourceCorrelation> correlations,
@@ -207,28 +235,43 @@ final class ResourceRequestEnricher {
         }
 
         for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
-            String path = prefix.isEmpty() ? entry.getKey() : prefix + "#" + entry.getKey();
-            if (entry.getValue().isJsonPrimitive()) {
-                RequestTarget.Location location = targetLocation(data, entry.getKey(), pathParametersPayload);
-                if (location == RequestTarget.Location.PATH || location == RequestTarget.Location.QUERY ||
-                        ResourceSemanticNaming.isIdentifierName(entry.getKey()) ||
-                        hasSiblingPostValue(targetSegments, entry.getKey()) ||
-                        hasMatchingResourceCollection(entry.getKey())) {
-                    targets.add(new TargetField(path, entry.getKey(), location,
-                            ResourceSemanticNaming.valueShape(entry.getValue().getAsJsonPrimitive())));
-                }
-            } else if (ResourceValueExtractor.isPrimitiveArray(entry.getValue())) {
-                JsonPrimitive firstElement = entry.getValue().getAsJsonArray().get(0).getAsJsonPrimitive();
-                RequestTarget.Location location = targetLocation(data, entry.getKey(), pathParametersPayload);
-                if (location == RequestTarget.Location.PATH || location == RequestTarget.Location.QUERY ||
-                        ResourceSemanticNaming.isIdentifierName(entry.getKey())) {
-                    targets.add(new TargetField(path, entry.getKey(), location,
-                            ResourceSemanticNaming.valueShape(firstElement)));
-                }
-            } else {
-                collectReusableTargets(entry.getValue(), path, data, pathParametersPayload, targetSegments, targets);
-            }
+            collectEntryTarget(entry, prefix, data, pathParametersPayload, targetSegments, targets);
         }
+    }
+
+    private void collectEntryTarget(Map.Entry<String, JsonElement> entry, String prefix, ServiceData data,
+                                    boolean pathParametersPayload, List<String> targetSegments,
+                                    List<TargetField> targets) {
+        String path = prefix.isEmpty() ? entry.getKey() : prefix + "#" + entry.getKey();
+        JsonElement value = entry.getValue();
+        if (value.isJsonPrimitive()) {
+            RequestTarget.Location location = targetLocation(data, entry.getKey(), pathParametersPayload);
+            if (shouldCollectPrimitiveTarget(location, entry.getKey(), targetSegments)) {
+                targets.add(new TargetField(path, entry.getKey(), location,
+                        ResourceSemanticNaming.valueShape(value.getAsJsonPrimitive())));
+            }
+        } else if (ResourceValueExtractor.isPrimitiveArray(value)) {
+            JsonPrimitive firstElement = value.getAsJsonArray().get(0).getAsJsonPrimitive();
+            RequestTarget.Location location = targetLocation(data, entry.getKey(), pathParametersPayload);
+            if (isParameterOrIdentifier(location, entry.getKey())) {
+                targets.add(new TargetField(path, entry.getKey(), location,
+                        ResourceSemanticNaming.valueShape(firstElement)));
+            }
+        } else {
+            collectReusableTargets(value, path, data, pathParametersPayload, targetSegments, targets);
+        }
+    }
+
+    private boolean shouldCollectPrimitiveTarget(RequestTarget.Location location, String key, List<String> targetSegments) {
+        return isParameterOrIdentifier(location, key) ||
+                hasSiblingPostValue(targetSegments, key) ||
+                hasMatchingResourceCollection(key);
+    }
+
+    private static boolean isParameterOrIdentifier(RequestTarget.Location location, String key) {
+        return location == RequestTarget.Location.PATH ||
+                location == RequestTarget.Location.QUERY ||
+                ResourceSemanticNaming.isIdentifierName(key);
     }
 
     private RequestTarget.Location targetLocation(ServiceData data, String name, boolean pathParametersPayload) {
@@ -283,6 +326,24 @@ final class ResourceRequestEnricher {
         return resolve(targetPath, target, boundResource, boundOnly, null);
     }
 
+    private record ResolutionQuery(String targetPath, TargetField target, Set<String> targetAliases,
+                                   ResourceSemanticNaming.TargetMatchContext matchCtx,
+                                   ResourceInstance boundResource, boolean boundOnly, HttpMethod targetMethod,
+                                   boolean destructivePathTarget, Set<String> protectedSelfValues,
+                                   boolean canSkipByDirectAlias) {
+    }
+
+    private record RankedCandidate(ResolvedValue value, int quality) {
+        static final RankedCandidate NONE = new RankedCandidate(null, Integer.MIN_VALUE);
+
+        RankedCandidate pickBetter(ResolvedValue candidate, int candidateQuality) {
+            if (candidateQuality > quality || (candidateQuality == quality && isHigherRanked(candidate, value))) {
+                return new RankedCandidate(candidate, candidateQuality);
+            }
+            return this;
+        }
+    }
+
     Optional<ResolvedValue> resolve(String targetPath, TargetField target, ResourceInstance boundResource,
                                     boolean boundOnly, HttpMethod targetMethod) {
         Set<String> targetAliases = ResourceSemanticNaming.targetAliases(targetPath, target);
@@ -292,62 +353,84 @@ final class ResourceRequestEnricher {
                 (targetMethod == HttpMethod.DELETE || targetMethod == HttpMethod.PUT || targetMethod == HttpMethod.PATCH);
         Set<String> protectedSelfValues = destructivePathTarget ? selfIdentityValues(matchCtx.targetPathSegments()) : Set.of();
         boolean canSkipByDirectAlias = matchCtx.digitMatchResource() == null && matchCtx.singleWordTargetPrefix() == null;
+        ResolutionQuery query = new ResolutionQuery(targetPath, target, targetAliases, matchCtx,
+                boundResource, boundOnly, targetMethod, destructivePathTarget, protectedSelfValues, canSkipByDirectAlias);
 
-        ResolvedValue bestCandidate = null;
-        int bestQuality = Integer.MIN_VALUE;
-
+        RankedCandidate best = RankedCandidate.NONE;
         for (ResourceInstance resource : resources) {
-            if (!resource.active()) {
-                continue;
-            }
-            if (boundOnly && (boundResource == null || resource.sequence() != boundResource.sequence())) {
-                continue;
-            }
-            if (destructivePathTarget && isSelfIdentityGetResource(resource)) {
-                continue;
-            }
-            if (canSkipByDirectAlias && !resource.hasAnyAlias(matchCtx.allDirectAliases())) {
-                continue;
-            }
-            int affinityScore = ResourceSemanticNaming.pathAffinity(resource.pathSegments(), matchCtx.targetPathSegments()) * 1_000;
-            if (targetMethod == HttpMethod.DELETE && resource.sourceMethod() == HttpMethod.POST &&
-                    !Collections.disjoint(resource.resourceNameForms(), matchCtx.targetResourceForms())) {
-                affinityScore += 1_500;
-            }
-            int srcPriority = sourcePriority(resource);
-            for (StoredValue value : resource.values().values()) {
-                if (!protectedSelfValues.isEmpty() && protectedSelfValues.contains(String.valueOf(value.value()))) {
-                    continue;
-                }
-                int similarity = matchedSimilarity(value, target, matchCtx);
-                if (similarity == 0) {
-                    continue;
-                }
-                int feedback = feedbackScore(resource, value, targetPath, target);
-                int score = affinityScore +
-                        similarity * 5 +
-                        Math.min(50, ResourceSemanticNaming.matchSpecificity(value, targetAliases)) * 10 +
-                        srcPriority + storedValuePriority(value) + feedback;
-                ResolvedValue candidate = new ResolvedValue(resource, value, score);
-                int quality = candidateQuality(candidate, similarity, feedback, target, matchCtx, boundResource);
-                if (quality > bestQuality || (quality == bestQuality && isHigherRanked(candidate, bestCandidate))) {
-                    bestQuality = quality;
-                    bestCandidate = candidate;
-                }
+            if (isResourceEligibleForResolve(resource, query)) {
+                best = evaluateResourceForResolve(resource, query, best);
             }
         }
-        if (bestCandidate == null && target.location() == RequestTarget.Location.PATH && !boundOnly) {
-            for (ResolvedValue candidate : childPathFallbackCandidates(matchCtx.targetPathSegments(), boundResource)) {
-                int similarity = ResourceSemanticNaming.nameSimilarity(candidate.storedValue(), matchCtx);
-                int feedback = feedbackScore(candidate.resource(), candidate.storedValue(), targetPath, target);
-                int quality = candidateQuality(candidate, similarity, feedback, target, matchCtx, boundResource);
-                if (quality > bestQuality || (quality == bestQuality && isHigherRanked(candidate, bestCandidate))) {
-                    bestQuality = quality;
-                    bestCandidate = candidate;
-                }
-            }
+        if (best.value() == null && target.location() == RequestTarget.Location.PATH && !boundOnly) {
+            best = evaluateChildPathFallbacks(query, best);
         }
-        return Optional.ofNullable(bestCandidate);
+        return Optional.ofNullable(best.value());
+    }
+
+    private boolean isResourceEligibleForResolve(ResourceInstance resource, ResolutionQuery query) {
+        if (!resource.active()) {
+            return false;
+        }
+        if (query.boundOnly() && (query.boundResource() == null || resource.sequence() != query.boundResource().sequence())) {
+            return false;
+        }
+        if (query.destructivePathTarget() && isSelfIdentityGetResource(resource)) {
+            return false;
+        }
+        return !query.canSkipByDirectAlias() || resource.hasAnyAlias(query.matchCtx().allDirectAliases());
+    }
+
+    private RankedCandidate evaluateResourceForResolve(ResourceInstance resource, ResolutionQuery query,
+                                                       RankedCandidate currentBest) {
+        int affinityScore = computeAffinityScore(resource, query);
+        int srcPriority = sourcePriority(resource);
+        RankedCandidate best = currentBest;
+        for (StoredValue value : resource.values().values()) {
+            best = evaluateStoredValueForResolve(resource, value, affinityScore, srcPriority, query, best);
+        }
+        return best;
+    }
+
+    private static int computeAffinityScore(ResourceInstance resource, ResolutionQuery query) {
+        int affinityScore = ResourceSemanticNaming.pathAffinity(
+                resource.pathSegments(), query.matchCtx().targetPathSegments()) * 1_000;
+        if (query.targetMethod() == HttpMethod.DELETE && resource.sourceMethod() == HttpMethod.POST &&
+                !Collections.disjoint(resource.resourceNameForms(), query.matchCtx().targetResourceForms())) {
+            affinityScore += 1_500;
+        }
+        return affinityScore;
+    }
+
+    private RankedCandidate evaluateStoredValueForResolve(ResourceInstance resource, StoredValue value,
+                                                          int affinityScore, int srcPriority,
+                                                          ResolutionQuery query, RankedCandidate currentBest) {
+        if (!query.protectedSelfValues().isEmpty() && query.protectedSelfValues().contains(String.valueOf(value.value()))) {
+            return currentBest;
+        }
+        int similarity = matchedSimilarity(value, query.target(), query.matchCtx());
+        if (similarity == 0) {
+            return currentBest;
+        }
+        int feedback = feedbackScore(resource, value, query.targetPath(), query.target());
+        int score = affinityScore +
+                similarity * 5 +
+                Math.min(50, ResourceSemanticNaming.matchSpecificity(value, query.targetAliases())) * 10 +
+                srcPriority + storedValuePriority(value) + feedback;
+        ResolvedValue candidate = new ResolvedValue(resource, value, score);
+        int quality = candidateQuality(candidate, similarity, feedback, query.target(), query.matchCtx(), query.boundResource());
+        return currentBest.pickBetter(candidate, quality);
+    }
+
+    private RankedCandidate evaluateChildPathFallbacks(ResolutionQuery query, RankedCandidate currentBest) {
+        RankedCandidate best = currentBest;
+        for (ResolvedValue candidate : childPathFallbackCandidates(query.matchCtx().targetPathSegments(), query.boundResource())) {
+            int similarity = ResourceSemanticNaming.nameSimilarity(candidate.storedValue(), query.matchCtx());
+            int feedback = feedbackScore(candidate.resource(), candidate.storedValue(), query.targetPath(), query.target());
+            int quality = candidateQuality(candidate, similarity, feedback, query.target(), query.matchCtx(), query.boundResource());
+            best = best.pickBetter(candidate, quality);
+        }
+        return best;
     }
 
     private static boolean isHigherRanked(ResolvedValue candidate, ResolvedValue currentBest) {
@@ -360,6 +443,11 @@ final class ResourceRequestEnricher {
         return candidate.resource().sequence() > currentBest.resource().sequence();
     }
 
+    private record AlternativeQuery(String targetPath, TargetField target, Set<String> targetAliases,
+                                    ResourceSemanticNaming.TargetMatchContext matchCtx,
+                                    String currentValue, boolean canSkipByDirectAlias) {
+    }
+
     Optional<String> alternativePathParameterValue(String targetPath, String parameterName, String currentValue) {
         if (StringUtils.isBlank(targetPath) || StringUtils.isBlank(parameterName) || StringUtils.isBlank(currentValue)) {
             return Optional.empty();
@@ -370,50 +458,56 @@ final class ResourceRequestEnricher {
         ResourceSemanticNaming.TargetMatchContext matchCtx =
                 ResourceSemanticNaming.createTargetMatchContext(targetPath, target, targetAliases);
         boolean canSkipByDirectAlias = matchCtx.digitMatchResource() == null && matchCtx.singleWordTargetPrefix() == null;
+        AlternativeQuery query = new AlternativeQuery(targetPath, target, targetAliases, matchCtx, currentValue, canSkipByDirectAlias);
 
-        ResolvedValue bestCandidate = null;
-        int bestQuality = Integer.MIN_VALUE;
-
+        RankedCandidate best = RankedCandidate.NONE;
         for (ResourceInstance resource : resources) {
-            if (!resource.active() || resource.fuzzed()) {
-                continue;
-            }
-            if (canSkipByDirectAlias && !resource.hasAnyAlias(matchCtx.allDirectAliases())) {
-                continue;
-            }
-            if (feedbackScore(resource, null, targetPath, target) < 0) {
-                continue;
-            }
-            int affinityScore = ResourceSemanticNaming.pathAffinity(resource.pathSegments(), matchCtx.targetPathSegments()) * 1_000;
-            int srcPriority = sourcePriority(resource);
-            for (StoredValue value : resource.values().values()) {
-                int similarity = matchedSimilarity(value, target, matchCtx);
-                if (similarity == 0 || ResourceSemanticNaming.compatibilityQuality(value, target) <= 0) {
-                    continue;
-                }
-                int feedback = feedbackScore(resource, value, targetPath, target);
-                if (feedback < 0 || ResourceSemanticNaming.sameValue(currentValue, value.value())) {
-                    continue;
-                }
-                int score = affinityScore +
-                        similarity * 5 +
-                        Math.min(50, ResourceSemanticNaming.matchSpecificity(value, targetAliases)) * 10 +
-                        srcPriority + storedValuePriority(value) + feedback;
-                ResolvedValue candidate = new ResolvedValue(resource, value, score);
-                if (ResourceSemanticNaming.semanticConfidence(candidate, similarity, matchCtx) < 2) {
-                    continue;
-                }
-                int quality = candidateQuality(candidate, similarity, feedback, target, matchCtx, null);
-                if (quality > bestQuality || (quality == bestQuality && isHigherRanked(candidate, bestCandidate))) {
-                    bestQuality = quality;
-                    bestCandidate = candidate;
+            if (isResourceEligibleForAlternative(resource, query)) {
+                int affinityScore = ResourceSemanticNaming.pathAffinity(
+                        resource.pathSegments(), matchCtx.targetPathSegments()) * 1_000;
+                int srcPriority = sourcePriority(resource);
+                for (StoredValue value : resource.values().values()) {
+                    best = evaluateStoredValueForAlternative(resource, value, affinityScore, srcPriority, query, best);
                 }
             }
         }
-        return Optional.ofNullable(bestCandidate)
+        return Optional.ofNullable(best.value())
                 .map(ResolvedValue::value)
                 .map(String::valueOf)
                 .filter(value -> StringUtils.isNotBlank(value) && !value.contains("/"));
+    }
+
+    private boolean isResourceEligibleForAlternative(ResourceInstance resource, AlternativeQuery query) {
+        if (!resource.active() || resource.fuzzed()) {
+            return false;
+        }
+        if (query.canSkipByDirectAlias() && !resource.hasAnyAlias(query.matchCtx().allDirectAliases())) {
+            return false;
+        }
+        return feedbackScore(resource, null, query.targetPath(), query.target()) >= 0;
+    }
+
+    private RankedCandidate evaluateStoredValueForAlternative(ResourceInstance resource, StoredValue value,
+                                                              int affinityScore, int srcPriority,
+                                                              AlternativeQuery query, RankedCandidate currentBest) {
+        int similarity = matchedSimilarity(value, query.target(), query.matchCtx());
+        if (similarity == 0 || ResourceSemanticNaming.compatibilityQuality(value, query.target()) <= 0) {
+            return currentBest;
+        }
+        int feedback = feedbackScore(resource, value, query.targetPath(), query.target());
+        if (feedback < 0 || ResourceSemanticNaming.sameValue(query.currentValue(), value.value())) {
+            return currentBest;
+        }
+        int score = affinityScore +
+                similarity * 5 +
+                Math.min(50, ResourceSemanticNaming.matchSpecificity(value, query.targetAliases())) * 10 +
+                srcPriority + storedValuePriority(value) + feedback;
+        ResolvedValue candidate = new ResolvedValue(resource, value, score);
+        if (ResourceSemanticNaming.semanticConfidence(candidate, similarity, query.matchCtx()) < 2) {
+            return currentBest;
+        }
+        int quality = candidateQuality(candidate, similarity, feedback, query.target(), query.matchCtx(), null);
+        return currentBest.pickBetter(candidate, quality);
     }
 
     ValueShape pathParameterShape(ServiceData data, String name) {

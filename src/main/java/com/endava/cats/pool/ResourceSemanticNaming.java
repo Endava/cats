@@ -54,8 +54,9 @@ final class ResourceSemanticNaming {
             "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[_\\-]+");
     private static final Pattern UUID_VALUE = Pattern.compile(
             "(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
-    private static final Pattern TEMPORAL_VALUE = Pattern.compile(
-            "^\\d{4}-\\d{2}-\\d{2}([T ]\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})?)?$");
+    private static final Pattern DATE_PART = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}$");
+    private static final Pattern TIME_PART = Pattern.compile(
+            "^\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})?$");
     private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^A-Za-z0-9]");
     private static final Splitter SEMANTIC_PATH_SPLITTER = Splitter.on(Pattern.compile("[.#]")).omitEmptyStrings();
 
@@ -110,7 +111,14 @@ final class ResourceSemanticNaming {
     }
 
     static boolean isTemporalValue(Object value) {
-        return value instanceof String text && TEMPORAL_VALUE.matcher(text).matches();
+        if (!(value instanceof String text) || text.length() < 10 || !DATE_PART.matcher(text.substring(0, 10)).matches()) {
+            return false;
+        }
+        if (text.length() == 10) {
+            return true;
+        }
+        char sep = text.charAt(10);
+        return (sep == 'T' || sep == ' ') && TIME_PART.matcher(text.substring(11)).matches();
     }
 
     private static boolean isIdentifierLikeKey(String key) {
@@ -202,19 +210,25 @@ final class ResourceSemanticNaming {
             suffix.insert(0, segment);
             addWithSingularIdForms(normalize(suffix.toString()), aliases);
             if (segment.contains("[]")) {
-                String cleanSeg = normalize(segment);
-                if (!cleanSeg.isEmpty() && !COLLECTION_WRAPPER_SEGMENTS.contains(cleanSeg)) {
-                    boolean identifier = isIdentifierName(name);
-                    for (String form : WordUtils.nounForms(cleanSeg)) {
-                        aliases.add(form + normalize(name));
-                        if (identifier) {
-                            aliases.add(form);
-                        }
-                    }
-                }
+                addArraySegmentAliases(segment, name, aliases);
             }
         }
         return Set.copyOf(aliases);
+    }
+
+    private static void addArraySegmentAliases(String segment, String name, Set<String> aliases) {
+        String cleanSeg = normalize(segment);
+        if (cleanSeg.isEmpty() || COLLECTION_WRAPPER_SEGMENTS.contains(cleanSeg)) {
+            return;
+        }
+        boolean identifier = isIdentifierName(name);
+        String normName = normalize(name);
+        for (String form : WordUtils.nounForms(cleanSeg)) {
+            aliases.add(form + normName);
+            if (identifier) {
+                aliases.add(form);
+            }
+        }
     }
 
     private static List<String> splitWords(String rawName) {
@@ -332,15 +346,7 @@ final class ResourceSemanticNaming {
             aliases.addAll(primaryResourceIdentifierAliases(targetPath));
         }
         if (target.location() == RequestTarget.Location.PATH || target.location() == RequestTarget.Location.QUERY) {
-            String key = normalize(target.name());
-            String resource = resourceName(targetPath);
-            if (!key.isEmpty() && !SIMPLE_IDENTIFIERS.contains(key) && !WordUtils.sameNoun(key, resource)) {
-                for (String resourceForm : WordUtils.nounForms(resource)) {
-                    for (String keyForm : WordUtils.nounForms(key)) {
-                        aliases.add(resourceForm + keyForm);
-                    }
-                }
-            }
+            addResourceQualifiedTargetAliases(targetPath, target.name(), aliases);
         }
         if (target.location() == RequestTarget.Location.PATH) {
             aliases.addAll(precedingPathSegmentAliases(targetPath, target.name()));
@@ -348,30 +354,49 @@ final class ResourceSemanticNaming {
         return Set.copyOf(aliases);
     }
 
+    private static void addResourceQualifiedTargetAliases(String targetPath, String targetName, Set<String> aliases) {
+        String key = normalize(targetName);
+        String resource = resourceName(targetPath);
+        if (key.isEmpty() || SIMPLE_IDENTIFIERS.contains(key) || WordUtils.sameNoun(key, resource)) {
+            return;
+        }
+        for (String resourceForm : WordUtils.nounForms(resource)) {
+            for (String keyForm : WordUtils.nounForms(key)) {
+                aliases.add(resourceForm + keyForm);
+            }
+        }
+    }
+
     static String bindingKey(String targetPath, TargetField target) {
         List<String> segments = SEMANTIC_PATH_SPLITTER.splitToList(target.path());
         if (segments.size() >= 2) {
             return singular(normalize(segments.get(segments.size() - 2)));
         }
-        String key = normalize(target.name());
+        String key = stripIdentifierSuffix(normalize(target.name()));
+        key = stripFirstMatchingSuffix(key, List.of("external", "internal", "public", "reference", "ref"));
+        return key.isEmpty() ? singular(resourceName(targetPath)) : key;
+    }
+
+    private static String stripIdentifierSuffix(String key) {
         for (String suffix : SIMPLE_IDENTIFIERS) {
             String pluralSuffix = suffix + "s";
             if (key.endsWith(pluralSuffix)) {
-                key = key.substring(0, key.length() - pluralSuffix.length());
-                break;
+                return key.substring(0, key.length() - pluralSuffix.length());
             }
             if (key.endsWith(suffix)) {
-                key = key.substring(0, key.length() - suffix.length());
-                break;
+                return key.substring(0, key.length() - suffix.length());
             }
         }
-        for (String qualifier : List.of("external", "internal", "public", "reference", "ref")) {
-            if (key.endsWith(qualifier)) {
-                key = key.substring(0, key.length() - qualifier.length());
-                break;
+        return key;
+    }
+
+    private static String stripFirstMatchingSuffix(String key, List<String> suffixes) {
+        for (String suffix : suffixes) {
+            if (key.endsWith(suffix)) {
+                return key.substring(0, key.length() - suffix.length());
             }
         }
-        return key.isEmpty() ? singular(resourceName(targetPath)) : key;
+        return key;
     }
 
     static Set<String> deletedAliases(String path, String deletedKey, StoredValue deletedValue) {
@@ -477,39 +502,72 @@ final class ResourceSemanticNaming {
 
     static int nameSimilarity(StoredValue value, TargetMatchContext ctx) {
         Set<String> sourceAliases = value.aliases();
-        boolean hasExactAliasMatch = false;
-        for (String alias : sourceAliases) {
-            if (ctx.targetAliases().contains(alias)) {
-                if (!GENERIC_FALLBACK_SUFFIXES.contains(alias)) {
-                    return 100;
-                }
-                hasExactAliasMatch = true;
-            }
+        int exactScore = exactAliasSimilarity(sourceAliases, ctx.targetAliases());
+        if (exactScore == 100) {
+            return 100;
         }
-        for (String alias : sourceAliases) {
-            if (!GENERIC_FALLBACK_SUFFIXES.contains(alias) && !Collections.disjoint(WordUtils.nounForms(alias), ctx.targetSingulars())) {
-                return 90;
-            }
+        if (hasSingularNounFormMatch(sourceAliases, ctx.targetSingulars())) {
+            return 90;
         }
-        for (String alias : sourceAliases) {
-            if (!GENERIC_FALLBACK_SUFFIXES.contains(alias)) {
-                for (String aliasForm : WordUtils.nounForms(alias)) {
-                    for (String targetForm : ctx.targetSingulars()) {
-                        if (WordUtils.matchesWithInsertedMiddleQualifier(aliasForm, targetForm)) {
-                            return 85;
-                        }
-                    }
-                }
-            }
+        if (hasInsertedMiddleQualifierMatch(sourceAliases, ctx.targetSingulars())) {
+            return 85;
         }
-        if ((!ctx.primaryResourceAliases().isEmpty() && sourceAliases.stream().anyMatch(ctx.primaryResourceAliases()::contains)) ||
-                hasResourceQualifiedDigitMatch(sourceAliases, ctx.digitMatchResource(), ctx.targetAliases())) {
+        if (hasPrimaryOrDigitResourceMatch(sourceAliases, ctx)) {
             return 80;
         }
         if (ctx.singleWordTargetPrefix() != null && hasHeadWordPrefixMatch(sourceAliases, ctx.singleWordTargetPrefix())) {
             return 50;
         }
-        return hasExactAliasMatch ? 30 : 0;
+        return exactScore;
+    }
+
+    private static int exactAliasSimilarity(Set<String> sourceAliases, Set<String> targetAliases) {
+        boolean hasGenericExact = false;
+        for (String alias : sourceAliases) {
+            if (targetAliases.contains(alias)) {
+                if (!GENERIC_FALLBACK_SUFFIXES.contains(alias)) {
+                    return 100;
+                }
+                hasGenericExact = true;
+            }
+        }
+        return hasGenericExact ? 30 : 0;
+    }
+
+    private static boolean hasSingularNounFormMatch(Set<String> sourceAliases, Set<String> targetSingulars) {
+        for (String alias : sourceAliases) {
+            if (!GENERIC_FALLBACK_SUFFIXES.contains(alias) &&
+                    !Collections.disjoint(WordUtils.nounForms(alias), targetSingulars)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasInsertedMiddleQualifierMatch(Set<String> sourceAliases, Set<String> targetSingulars) {
+        for (String alias : sourceAliases) {
+            if (!GENERIC_FALLBACK_SUFFIXES.contains(alias) &&
+                    matchesAnyTargetWithMiddleQualifier(WordUtils.nounForms(alias), targetSingulars)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchesAnyTargetWithMiddleQualifier(Set<String> aliasForms, Set<String> targetSingulars) {
+        for (String aliasForm : aliasForms) {
+            for (String targetForm : targetSingulars) {
+                if (WordUtils.matchesWithInsertedMiddleQualifier(aliasForm, targetForm)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasPrimaryOrDigitResourceMatch(Set<String> sourceAliases, TargetMatchContext ctx) {
+        return (!ctx.primaryResourceAliases().isEmpty() && sourceAliases.stream().anyMatch(ctx.primaryResourceAliases()::contains)) ||
+                hasResourceQualifiedDigitMatch(sourceAliases, ctx.digitMatchResource(), ctx.targetAliases());
     }
 
     private static boolean hasResourceQualifiedDigitMatch(Set<String> sourceAliases, String resource, Set<String> targetAliases) {

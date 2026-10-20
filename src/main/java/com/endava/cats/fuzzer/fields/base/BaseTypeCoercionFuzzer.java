@@ -98,6 +98,9 @@ public abstract class BaseTypeCoercionFuzzer implements Fuzzer {
     }
 
     protected ResponseCodeFamily expectedResponseCode(FuzzingData data, String field, Object fuzzedValue) {
+        if (data == null || field == null || fuzzedValue == null) {
+            return ResponseCodeFamilyPredefined.FOURXX_TWOXX;
+        }
         return processingArguments.isStrictTypes() ?
                 ResponseCodeFamilyPredefined.FOURXX : ResponseCodeFamilyPredefined.FOURXX_TWOXX;
     }

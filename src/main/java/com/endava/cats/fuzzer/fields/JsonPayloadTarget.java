@@ -61,23 +61,28 @@ record JsonPayloadTarget(String path, boolean root, Schema<?> schema) {
         }
         JsonElement current = parsedRoot;
         for (String segment : PATH_SPLITTER.split(path)) {
-            if (current.isJsonArray()) {
-                JsonArray arr = current.getAsJsonArray();
-                if (arr.isEmpty()) {
-                    return Optional.empty();
-                }
-                current = arr.get(0);
-            }
-            if (current == null || !current.isJsonObject()) {
-                return Optional.empty();
-            }
-            String cleanSegment = segment.endsWith("[*]") ? segment.substring(0, segment.length() - 3) : segment;
-            current = current.getAsJsonObject().get(cleanSegment);
+            current = stepThroughSegment(current, segment);
             if (current == null || current.isJsonNull()) {
                 return Optional.empty();
             }
         }
         return Optional.of(current);
+    }
+
+    private static JsonElement stepThroughSegment(JsonElement current, String segment) {
+        JsonElement node = current;
+        if (node.isJsonArray()) {
+            JsonArray arr = node.getAsJsonArray();
+            if (arr.isEmpty()) {
+                return null;
+            }
+            node = arr.get(0);
+        }
+        if (node == null || !node.isJsonObject()) {
+            return null;
+        }
+        String cleanSegment = segment.endsWith("[*]") ? segment.substring(0, segment.length() - 3) : segment;
+        return node.getAsJsonObject().get(cleanSegment);
     }
 
     Optional<JsonArray> arrayFrom(String payload) {

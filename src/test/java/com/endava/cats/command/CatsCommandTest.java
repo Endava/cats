@@ -1,6 +1,5 @@
 package com.endava.cats.command;
 
-import com.endava.cats.annotations.Linter;
 import com.endava.cats.annotations.SecondPhaseFuzzer;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.CheckArguments;
@@ -33,7 +32,6 @@ import com.endava.cats.report.UnresolvedParametersSummary;
 import com.endava.cats.tui.CatsTuiLauncher;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
-import com.endava.cats.util.AnnotationUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.VersionChecker;
 import io.quarkus.test.junit.QuarkusTest;

@@ -130,54 +130,7 @@ class TestReportsGeneratorTest {
                     Map.of(100, 1, 200, 7, 302, 1, 404, 1, 500, 1, 600, 1),
                     Map.of("/items", 1L), false, "failed gate", outcome);
             SummaryReportContext ctx = SummaryReportContext.create(failingReport, execSummary, config, true, "macOS", 12.34);
-            Assertions.assertThat(ctx.getQualityGateStatus()).isEqualTo("FAILED");
-            Assertions.assertThat(ctx.getQualityGateResult()).isEqualTo("error");
-            Assertions.assertThat(ctx.getResourceReuseStatus()).isEqualTo("Enabled");
-            Assertions.assertThat(ctx.isHasStopLimits()).isTrue();
-            Assertions.assertThat(ctx.getStopLimits()).hasSize(3);
-            Assertions.assertThat(ctx.isHasProcessingErrors()).isTrue();
-            Assertions.assertThat(ctx.getProcessingErrors()).extracting(SummaryReportContext.ProcessingErrorEntry::operation)
-                    .containsExactly("Global", "/items", "POST", "GET /items");
-            Assertions.assertThat(ctx.isHasResponseCodes()).isTrue();
-            Assertions.assertThat(ctx.getResponseCodeDistribution()).extracting(SummaryReportContext.ResponseCodeEntry::family)
-                    .containsExactly("other", "2xx", "3xx", "4xx", "5xx", "other");
-            Assertions.assertThat(ctx.isHasFailingPaths()).isTrue();
-            Assertions.assertThat(ctx.getContractName()).isEqualTo("openapi.yaml");
-            Assertions.assertThat(ctx.getBaseUrl()).isEqualTo("http://localhost:8080");
-            Assertions.assertThat(ctx.getHttpMethods()).containsExactly("get");
-            Assertions.assertThat(ctx.getFuzzers()).isEqualTo(5);
-            Assertions.assertThat(ctx.getTotalFuzzers()).isEqualTo(10);
-            Assertions.assertThat(ctx.getPaths()).isEqualTo(2);
-            Assertions.assertThat(ctx.getTotalPaths()).isEqualTo(4);
-            Assertions.assertThat(ctx.getWarnings()).isEqualTo("2");
-            Assertions.assertThat(ctx.getSuccess()).isEqualTo("7");
-            Assertions.assertThat(ctx.getErrors()).isEqualTo("1");
-            Assertions.assertThat(ctx.getErrorsJunit()).isEqualTo("0");
-            Assertions.assertThat(ctx.getFailuresJunit()).isEqualTo("0");
-            Assertions.assertThat(ctx.getTestsReported()).isEqualTo("10");
-            Assertions.assertThat(ctx.getReportedResults()).isEqualTo("10");
-            Assertions.assertThat(ctx.getAuthErrors()).isEqualTo("1");
-            Assertions.assertThat(ctx.getIoErrors()).isEqualTo("2");
-            Assertions.assertThat(ctx.getTimestamp()).isEqualTo("2026-10-19");
-            Assertions.assertThat(ctx.getTimestampIso()).isNotBlank();
-            Assertions.assertThat(ctx.getTestCases()).isEmpty();
-            Assertions.assertThat(ctx.getTestSuites()).isEmpty();
-            Assertions.assertThat(ctx.getExecution()).isNotBlank();
-            Assertions.assertThat(ctx.getTime()).isEqualTo(15);
-            Assertions.assertThat(ctx.getVersion()).isEqualTo("14.0.1");
-            Assertions.assertThat(ctx.isJavascript()).isTrue();
-            Assertions.assertThat(ctx.getOs()).isEqualTo("macOS");
-            Assertions.assertThat(ctx.getAverageResponseTime()).isNotBlank();
-            Assertions.assertThat(ctx.getRunStatus()).isEqualTo("Limit reached");
-            Assertions.assertThat(ctx.getRunStatusDetails()).isEqualTo("stopped");
-            Assertions.assertThat(ctx.getRunStatusResult()).isNotBlank();
-            Assertions.assertThat(ctx.getQualityGateDescription()).isEqualTo("failed gate");
-            Assertions.assertThat(ctx.getRandomSeed()).isEqualTo(42L);
-            Assertions.assertThat(ctx.getWarnPercentage()).isEqualTo(20.0);
-            Assertions.assertThat(ctx.getErrorPercentage()).isEqualTo(10.0);
-            Assertions.assertThat(ctx.getSuccessPercentage()).isEqualTo(70.0);
-            Assertions.assertThat(ctx.getGroupedTestCases()).isEmpty();
-            Assertions.assertThat(ctx.getTopFailingPaths()).hasSize(1);
+            assertPopulatedSummaryReportContext(ctx);
         }
 
         com.endava.cats.model.CatsTestReport emptyReport = com.endava.cats.model.CatsTestReport.builder()
@@ -195,5 +148,60 @@ class TestReportsGeneratorTest {
         Assertions.assertThat(emptyCtx.isHasResponseCodes()).isFalse();
         Assertions.assertThat(emptyCtx.isHasFailingPaths()).isFalse();
         Assertions.assertThat(emptyCtx.getSuccessPercentage()).isZero();
+    }
+
+    private static void assertPopulatedSummaryReportContext(SummaryReportContext ctx) {
+        Assertions.assertThat(ctx.getQualityGateStatus()).isEqualTo("FAILED");
+        Assertions.assertThat(ctx.getQualityGateResult()).isEqualTo("error");
+        Assertions.assertThat(ctx.getResourceReuseStatus()).isEqualTo("Enabled");
+        Assertions.assertThat(ctx.isHasStopLimits()).isTrue();
+        Assertions.assertThat(ctx.getStopLimits()).hasSize(3);
+        Assertions.assertThat(ctx.isHasProcessingErrors()).isTrue();
+        Assertions.assertThat(ctx.getProcessingErrors()).extracting(SummaryReportContext.ProcessingErrorEntry::operation)
+                .containsExactly("Global", "/items", "POST", "GET /items");
+        Assertions.assertThat(ctx.isHasResponseCodes()).isTrue();
+        Assertions.assertThat(ctx.getResponseCodeDistribution()).extracting(SummaryReportContext.ResponseCodeEntry::family)
+                .containsExactly("other", "2xx", "3xx", "4xx", "5xx", "other");
+        Assertions.assertThat(ctx.isHasFailingPaths()).isTrue();
+        Assertions.assertThat(ctx.getContractName()).isEqualTo("openapi.yaml");
+        Assertions.assertThat(ctx.getBaseUrl()).isEqualTo("http://localhost:8080");
+        Assertions.assertThat(ctx.getHttpMethods()).containsExactly("get");
+        Assertions.assertThat(ctx.getFuzzers()).isEqualTo(5);
+        Assertions.assertThat(ctx.getTotalFuzzers()).isEqualTo(10);
+        Assertions.assertThat(ctx.getPaths()).isEqualTo(2);
+        Assertions.assertThat(ctx.getTotalPaths()).isEqualTo(4);
+        assertPopulatedSummaryMetrics(ctx);
+    }
+
+    private static void assertPopulatedSummaryMetrics(SummaryReportContext ctx) {
+        Assertions.assertThat(ctx.getWarnings()).isEqualTo("2");
+        Assertions.assertThat(ctx.getSuccess()).isEqualTo("7");
+        Assertions.assertThat(ctx.getErrors()).isEqualTo("1");
+        Assertions.assertThat(ctx.getErrorsJunit()).isEqualTo("0");
+        Assertions.assertThat(ctx.getFailuresJunit()).isEqualTo("0");
+        Assertions.assertThat(ctx.getTestsReported()).isEqualTo("10");
+        Assertions.assertThat(ctx.getReportedResults()).isEqualTo("10");
+        Assertions.assertThat(ctx.getAuthErrors()).isEqualTo("1");
+        Assertions.assertThat(ctx.getIoErrors()).isEqualTo("2");
+        Assertions.assertThat(ctx.getTimestamp()).isEqualTo("2026-10-19");
+        Assertions.assertThat(ctx.getTimestampIso()).isNotBlank();
+        Assertions.assertThat(ctx.getTestCases()).isEmpty();
+        Assertions.assertThat(ctx.getTestSuites()).isEmpty();
+        Assertions.assertThat(ctx.getExecution()).isNotBlank();
+        Assertions.assertThat(ctx.getTime()).isEqualTo(15);
+        Assertions.assertThat(ctx.getVersion()).isEqualTo("14.0.1");
+        Assertions.assertThat(ctx.isJavascript()).isTrue();
+        Assertions.assertThat(ctx.getOs()).isEqualTo("macOS");
+        Assertions.assertThat(ctx.getAverageResponseTime()).isNotBlank();
+        Assertions.assertThat(ctx.getRunStatus()).isEqualTo("Limit reached");
+        Assertions.assertThat(ctx.getRunStatusDetails()).isEqualTo("stopped");
+        Assertions.assertThat(ctx.getRunStatusResult()).isNotBlank();
+        Assertions.assertThat(ctx.getQualityGateDescription()).isEqualTo("failed gate");
+        Assertions.assertThat(ctx.getRandomSeed()).isEqualTo(42L);
+        Assertions.assertThat(ctx.getWarnPercentage()).isEqualTo(20.0);
+        Assertions.assertThat(ctx.getErrorPercentage()).isEqualTo(10.0);
+        Assertions.assertThat(ctx.getSuccessPercentage()).isEqualTo(70.0);
+        Assertions.assertThat(ctx.getGroupedTestCases()).isEmpty();
+        Assertions.assertThat(ctx.getTopFailingPaths()).hasSize(1);
     }
 }

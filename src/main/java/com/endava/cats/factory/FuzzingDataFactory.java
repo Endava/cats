@@ -181,34 +181,36 @@ public class FuzzingDataFactory {
         syntheticSchema.setProperties(new LinkedHashMap<>());
         List<String> required = new ArrayList<>();
 
-        List<Parameter> resolvedParameters = this.getResolvedParameters(operationParameters);
-
-        for (Parameter parameter : resolvedParameters) {
-            boolean isPathParam = "path".equalsIgnoreCase(parameter.getIn());
-            boolean isQueryParam = "query".equalsIgnoreCase(parameter.getIn());
-
-            if ((isPathParam || isQueryParam) && StringUtils.isNotBlank(parameter.getName()) && filesArguments.isNotUrlParam(parameter.getName())) {
-                String newParameterName = parameter.getName() + "|" + parameter.getIn();
-                Schema<?> originalSchema = Optional.ofNullable(parameter.getSchema()).orElse(new Schema<>());
-                Schema<?> schemaCopy = copySchema(originalSchema);
-                if (schemaCopy.get$ref() != null && globalContext.getSchemaFromReference(schemaCopy.get$ref()) == null) {
-                    globalContext.recordError("Parameter schema %s is not declared; falling back to string".formatted(schemaCopy.get$ref()));
-                    schemaCopy.set$ref(null);
-                    schemaCopy.setType("string");
-                }
-                schemaCopy.setName(newParameterName);
-
-                Object effectiveExample = schemaCopy.getExample() != null ? schemaCopy.getExample() : parameter.getExample();
-                schemaCopy.setExample(effectiveExample);
-
+        for (Parameter parameter : this.getResolvedParameters(operationParameters)) {
+            if (isFuzzableGetParameter(parameter)) {
+                Schema<?> schemaCopy = buildParameterSchemaCopy(parameter);
                 syntheticSchema.addProperty(parameter.getName(), schemaCopy);
-                if (parameter.getRequired() != null && parameter.getRequired()) {
+                if (Boolean.TRUE.equals(parameter.getRequired())) {
                     required.add(parameter.getName());
                 }
             }
         }
         syntheticSchema.setRequired(required);
         return syntheticSchema;
+    }
+
+    private boolean isFuzzableGetParameter(Parameter parameter) {
+        boolean isPathOrQuery = "path".equalsIgnoreCase(parameter.getIn()) || "query".equalsIgnoreCase(parameter.getIn());
+        return isPathOrQuery && StringUtils.isNotBlank(parameter.getName()) && filesArguments.isNotUrlParam(parameter.getName());
+    }
+
+    private Schema<?> buildParameterSchemaCopy(Parameter parameter) {
+        Schema<?> originalSchema = Optional.ofNullable(parameter.getSchema()).orElse(new Schema<>());
+        Schema<?> schemaCopy = copySchema(originalSchema);
+        if (schemaCopy.get$ref() != null && globalContext.getSchemaFromReference(schemaCopy.get$ref()) == null) {
+            globalContext.recordError("Parameter schema %s is not declared; falling back to string".formatted(schemaCopy.get$ref()));
+            schemaCopy.set$ref(null);
+            schemaCopy.setType("string");
+        }
+        schemaCopy.setName(parameter.getName() + "|" + parameter.getIn());
+        Object effectiveExample = schemaCopy.getExample() != null ? schemaCopy.getExample() : parameter.getExample();
+        schemaCopy.setExample(effectiveExample);
+        return schemaCopy;
     }
 
     /**

@@ -943,9 +943,8 @@ public class OpenAPIModelGeneratorV2 {
                     : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, uniqueItems);
             Object item = itemMapper.apply(itemExample.value());
 
-            boolean avoidDuplicateObjectItems = uniqueItems ||
-                    (generateDistinctNestedItems && item instanceof Map<?, ?> &&
-                            itemSchema.getOneOf() == null && itemSchema.getAnyOf() == null);
+            boolean avoidDuplicateObjectItems = shouldAvoidDuplicateObjectItems(
+                    uniqueItems, generateDistinctNestedItems, item, itemSchema);
             int maxAttempts = uniqueItems ? MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS : 1;
             int attempts = 0;
             while (avoidDuplicateObjectItems && containsEquivalent(items, item) && attempts++ < maxAttempts) {
@@ -966,6 +965,15 @@ public class OpenAPIModelGeneratorV2 {
             requiredFields.addAll(itemExample.requiredFields());
         }
         return new GeneratedExample(items, requiredFields);
+    }
+
+    private static boolean shouldAvoidDuplicateObjectItems(boolean uniqueItems, boolean generateDistinctNestedItems,
+                                                           Object item, Schema itemSchema) {
+        if (uniqueItems) {
+            return true;
+        }
+        return generateDistinctNestedItems && item instanceof Map<?, ?> &&
+                itemSchema.getOneOf() == null && itemSchema.getAnyOf() == null;
     }
 
     private static Object getFreeFormArrayItem(int itemIndex) {

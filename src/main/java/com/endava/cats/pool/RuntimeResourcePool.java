@@ -270,7 +270,10 @@ public class RuntimeResourcePool {
         exchangeRecorder.recordOperationDiagnostics(data, request, response, resolvedRequest, effectiveRequestPayload,
                 d -> exchangeRecorder.buildDiagnosticTargets(d,
                         (sd, tf) -> enricher.hasExplicitValue(sd, tf) || enricher.shouldSkipOwnPostIdentifier(sd, tf),
-                        pathParams -> enricher.reusableTargets(pathParams ? d.getPathParamsPayload() : d.getPayload(), d, pathParams)));
+                        pathParams -> {
+                            boolean isPathParams = Boolean.TRUE.equals(pathParams);
+                            return enricher.reusableTargets(isPathParams ? d.getPathParamsPayload() : d.getPayload(), d, isPathParams);
+                        }));
         updateCorrelationFeedback(data, response, resolvedRequest);
         if (!ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
             return;
@@ -517,29 +520,38 @@ public class RuntimeResourcePool {
             return false;
         }
         Set<String> incomingForms = WordUtils.nounForms(ResourceSemanticNaming.resourceName(data.getRelativePath()));
-        for (int i = 0; i < resources.size(); i++) {
-            ResourceInstance existing = resources.get(i);
-            if (!existing.active() || Collections.disjoint(existing.resourceNameForms(), incomingForms)) {
-                continue;
-            }
-            String existingId = extractPrimaryIdentifierValue(existing.values(), resourceIdAliases);
-            if (!primaryId.equals(existingId)) {
-                continue;
-            }
-            if (fuzzedRequest && data.getHttpMethod() == HttpMethod.GET &&
-                    (!existing.fuzzed() || existing.sourceMethod() != HttpMethod.GET)) {
-                return true;
-            }
-            existing.values().forEach(enrichedValues::putIfAbsent);
-            HttpMethod mergedMethod = existing.sourceMethod() == HttpMethod.POST ? HttpMethod.POST : data.getHttpMethod();
-            boolean mergedFuzzed = existing.fuzzed() && fuzzedRequest;
-            String mergedPath = existing.sourceMethod() == HttpMethod.POST ? existing.sourcePath() : data.getRelativePath();
-            resources.remove(i);
-            resources.add(new ResourceInstance(existing.sequence(), mergedPath, mergedMethod,
-                    Collections.unmodifiableMap(enrichedValues), mergedFuzzed, true));
+        int index = findMatchingResourceIndex(incomingForms, resourceIdAliases, primaryId);
+        if (index < 0) {
+            return false;
+        }
+        ResourceInstance existing = resources.get(index);
+        if (shouldIgnoreFuzzedGetUpdate(data, fuzzedRequest, existing)) {
             return true;
         }
-        return false;
+        existing.values().forEach(enrichedValues::putIfAbsent);
+        HttpMethod mergedMethod = existing.sourceMethod() == HttpMethod.POST ? HttpMethod.POST : data.getHttpMethod();
+        boolean mergedFuzzed = existing.fuzzed() && fuzzedRequest;
+        String mergedPath = existing.sourceMethod() == HttpMethod.POST ? existing.sourcePath() : data.getRelativePath();
+        resources.remove(index);
+        resources.add(new ResourceInstance(existing.sequence(), mergedPath, mergedMethod,
+                Collections.unmodifiableMap(enrichedValues), mergedFuzzed, true));
+        return true;
+    }
+
+    private int findMatchingResourceIndex(Set<String> incomingForms, Set<String> resourceIdAliases, String primaryId) {
+        for (int i = 0; i < resources.size(); i++) {
+            ResourceInstance existing = resources.get(i);
+            if (existing.active() && !Collections.disjoint(existing.resourceNameForms(), incomingForms) &&
+                    primaryId.equals(extractPrimaryIdentifierValue(existing.values(), resourceIdAliases))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean shouldIgnoreFuzzedGetUpdate(ServiceData data, boolean fuzzedRequest, ResourceInstance existing) {
+        return fuzzedRequest && data.getHttpMethod() == HttpMethod.GET &&
+                (!existing.fuzzed() || existing.sourceMethod() != HttpMethod.GET);
     }
 
     private boolean enforcePerPathCap(String path, HttpMethod method, boolean fuzzedRequest) {
@@ -560,15 +572,21 @@ public class RuntimeResourcePool {
         if (pathCount < MAX_RESOURCES_PER_PATH) {
             return true;
         }
-        int incomingRank = (!fuzzedRequest && method == HttpMethod.POST) ? 0
-                : (!fuzzedRequest && method != HttpMethod.GET) ? 1
-                : !fuzzedRequest ? 2
-                : (method != HttpMethod.GET) ? 3 : 4;
-        if (incomingRank > bestEvictRank) {
+        if (incomingEvictionRank(method, fuzzedRequest) > bestEvictRank) {
             return false;
         }
         removeResourceAt(evictIndex);
         return true;
+    }
+
+    private static int incomingEvictionRank(HttpMethod method, boolean fuzzedRequest) {
+        if (fuzzedRequest) {
+            return method == HttpMethod.GET ? 4 : 3;
+        }
+        if (method == HttpMethod.GET) {
+            return 2;
+        }
+        return method == HttpMethod.POST ? 0 : 1;
     }
 
     private void evictLeastValuableResource() {

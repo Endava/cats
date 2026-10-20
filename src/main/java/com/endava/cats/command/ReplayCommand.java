@@ -396,29 +396,37 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
 
         for (String testCaseFileName : testCases) {
-            try {
-                if (!curl) {
-                    logger.noFormat("");
-                    logger.start("Executing {}", testCaseFileName);
-                }
-                this.executeTestCase(testCaseFileName, stats);
-                if (!curl) {
-                    logger.complete("Finish executing {}", testCaseFileName);
-                }
-            } catch (IOException e) {
-                logger.debug("Exception while replaying test!", e);
-                logger.error("Something went wrong while replaying {}. If the test name ends with .json it is searched as a full path. " +
-                        "If it doesn't have an extension it will be searched in the {} folder. Error message: {}", testCaseFileName, reportFolder, e.toString());
-            } catch (CatsException e) {
-                exitCode = CommandLine.ExitCode.SOFTWARE;
-                logger.error(e.getMessage());
-                logger.debug("Replay environment resolution failed", e);
+            if (!executeSingleReplayTest(testCaseFileName, stats)) {
                 return;
             }
         }
 
         if (stats != null && !curl) {
             printSummary(stats, testCases.size());
+        }
+    }
+
+    private boolean executeSingleReplayTest(String testCaseFileName, ReplayStats stats) {
+        try {
+            if (!curl) {
+                logger.noFormat("");
+                logger.start("Executing {}", testCaseFileName);
+            }
+            this.executeTestCase(testCaseFileName, stats);
+            if (!curl) {
+                logger.complete("Finish executing {}", testCaseFileName);
+            }
+            return true;
+        } catch (IOException e) {
+            logger.debug("Exception while replaying test!", e);
+            logger.error("Something went wrong while replaying {}. If the test name ends with .json it is searched as a full path. " +
+                    "If it doesn't have an extension it will be searched in the {} folder. Error message: {}", testCaseFileName, reportFolder, e.toString());
+            return true;
+        } catch (CatsException e) {
+            exitCode = CommandLine.ExitCode.SOFTWARE;
+            logger.error(e.getMessage());
+            logger.debug("Replay environment resolution failed", e);
+            return false;
         }
     }
 

@@ -2148,11 +2148,11 @@ class RuntimeResourcePoolTest {
         StoredValue usernameValue = new StoredValue("alice", "response.body.$.username", Set.of("username"));
         TargetField userTarget = new TargetField("user", "user", RequestTarget.Location.PATH, ValueShape.STRING);
         Assertions.assertThat(ResourceSemanticNaming.nameSimilarity(usernameValue, "/users/{user}", userTarget, Set.of("user")))
-                .isEqualTo(0);
+                .isZero();
         StoredValue categoryValue = new StoredValue("books", "response.body.$.category", Set.of("category"));
         TargetField catTarget = new TargetField("cat", "cat", RequestTarget.Location.PATH, ValueShape.STRING);
         Assertions.assertThat(ResourceSemanticNaming.nameSimilarity(categoryValue, "/items/{cat}", catTarget, Set.of("cat")))
-                .isEqualTo(0);
+                .isZero();
 
         // inferObjectArrayKeyField negative cases: unique numbers, single item, wrapper segments, own id vs foreign ownerId
         JsonObject numItem1 = JsonUtils.parseAsJsonElement("{\"name\":\"Alice Smith\",\"age\":30}").getAsJsonObject();
@@ -2296,7 +2296,7 @@ class RuntimeResourcePoolTest {
 
         Assertions.assertThat(JsonParser.parseString(result.payload()).getAsJsonObject().asMap())
                 .extractingByKeys("propertyId", "entityId", "partyId", "purchaseId", "archiveId", "movieId", "cacheId")
-                .extracting(element -> element.getAsString())
+                .extracting(com.google.gson.JsonElement::getAsString)
                 .containsExactly("properties-1", "entities-1", "parties-1", "purchases-1", "archives-1", "movies-1", "caches-1");
     }
 

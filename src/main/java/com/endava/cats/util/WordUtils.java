@@ -315,11 +315,18 @@ public abstract class WordUtils {
     private static Set<String> computeNounForms(String token) {
         Set<String> forms = new LinkedHashSet<>();
         forms.add(token);
-        int length = token.length();
         String irregular = IRREGULAR_SINGULARS.get(token);
         if (irregular != null) {
             forms.add(irregular);
         }
+        int length = token.length();
+        addPrimarySuffixForms(forms, token, length);
+        addSibilantAndStandardSuffixForms(forms, token, length);
+        addCompoundPrepositionForms(forms, token, length);
+        return Collections.unmodifiableSet(forms);
+    }
+
+    private static void addPrimarySuffixForms(Set<String> forms, String token, int length) {
         if (token.endsWith("ices") && length > 4) {
             String stem = token.substring(0, length - 4);
             addStem(forms, stem + "ix");
@@ -336,8 +343,10 @@ public abstract class WordUtils {
             addStem(forms, stem + "f");
             addStem(forms, stem + "fe");
         }
-        if ((token.endsWith("ses") || token.endsWith("xes") || token.endsWith("zes") ||
-                token.endsWith("ches") || token.endsWith("shes") || token.endsWith("oes")) && length > 3) {
+    }
+
+    private static void addSibilantAndStandardSuffixForms(Set<String> forms, String token, int length) {
+        if (isSibilantOrOesPlural(token) && length > 3) {
             addStem(forms, token.substring(0, length - 2));
             if (token.endsWith("ses")) {
                 addStem(forms, token.substring(0, length - 2) + "is");
@@ -346,19 +355,27 @@ public abstract class WordUtils {
         if (token.endsWith("s") && !token.endsWith("ss") && length > 2) {
             addStem(forms, token.substring(0, length - 1));
         }
-        if (length > 6) {
-            for (String prep : COMPOUND_PREPOSITIONS) {
-                int idx = token.indexOf(prep);
-                if (idx >= 3 && idx + prep.length() + 2 <= length) {
-                    String head = token.substring(0, idx + 1);
-                    String tail = token.substring(idx + 1);
-                    for (String headForm : computeSimpleSingulars(head)) {
-                        addStem(forms, headForm + tail);
-                    }
+    }
+
+    private static boolean isSibilantOrOesPlural(String token) {
+        return token.endsWith("ses") || token.endsWith("xes") || token.endsWith("zes") ||
+                token.endsWith("ches") || token.endsWith("shes") || token.endsWith("oes");
+    }
+
+    private static void addCompoundPrepositionForms(Set<String> forms, String token, int length) {
+        if (length <= 6) {
+            return;
+        }
+        for (String prep : COMPOUND_PREPOSITIONS) {
+            int idx = token.indexOf(prep);
+            if (idx >= 3 && idx + prep.length() + 2 <= length) {
+                String head = token.substring(0, idx + 1);
+                String tail = token.substring(idx + 1);
+                for (String headForm : computeSimpleSingulars(head)) {
+                    addStem(forms, headForm + tail);
                 }
             }
         }
-        return Collections.unmodifiableSet(forms);
     }
 
     private static Set<String> computeSimpleSingulars(String head) {
