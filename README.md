@@ -1,8 +1,6 @@
 <p align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Endava/cats/master/images/cats_logo_dark.svg" />
-  <img alt="CATS logo" src="https://raw.githubusercontent.com/Endava/cats/master/images/cats_logo_light.svg" width="400">
-</picture>
+  <img alt="CATS logo" src="https://raw.githubusercontent.com/Endava/cats/master/images/cats_logo_light.svg#gh-light-mode-only" width="400">
+  <img alt="CATS logo" src="https://raw.githubusercontent.com/Endava/cats/master/images/cats_logo_dark.svg#gh-dark-mode-only" width="400">
 </p>
 <p align="center">
 
@@ -36,9 +34,34 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**PI **T**esting and **S**ecurity) enables you to generate thousands of API tests within minutes with **no coding effort**.
-All tests are **generated, run and reported automatically** based on a pre-defined set of **100+ Fuzzers**. 
-The Fuzzers cover a wide range of boundary testing and negative scenarios from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
-Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional tests.
+All tests are **generated, run and reported automatically** based on a pre-defined set of **160+ Fuzzers** (plus 31 random mutators for continuous fuzzing).
+The Fuzzers cover a wide range of boundary testing, type coercion, injection, and negative scenarios: from large Unicode and control-character payloads to context-dependent values derived from request data types and constraints, as well as stateful checks for IDOR, `PUT` idempotency, update-read consistency, conditional `ETag` handling, deleted resource availability, and sensitive data exposure.
+
+Out of the box, CATS orders producer `POST` paths before dependent operations, executes fuzzers in breadth-first waves across paths, **reuses identifiers and baselines learned** from `2XX` responses in subsequent requests, postpones `HappyPath` `DELETE` calls until the end of the run, and validates responses against OpenAPI 3.0 and 3.1 schemas. You can also write end-to-end functional tests in YAML using `cats run`.
+
+## Quick start
+
+```shell
+# Run the full suite against an OpenAPI contract
+cats -c openapi.yml -s http://localhost:8080
+
+# Run a built-in profile (quick, security, compliance, ci, coverage, crash, type-coercion, health-check)
+cats -c openapi.yml -s http://localhost:8080 --profile quick
+
+# Run for a fixed time budget, continuing with random mutations if deterministic fuzzers finish early, and enforce a quality gate
+cats -c openapi.yml -s http://localhost:8080 --stopAfterTimeInSec 60 --fillTimeBudget --qualityGate "errors<1"
+
+# Lint the OpenAPI contract
+cats lint -c openapi.yml
+
+# Inspect dependency-ordered paths or explain a profile/fuzzer
+cats list --paths --executionOrder -c openapi.yml
+cats explain --type profile security
+
+# Replay a test case or print the equivalent curl command
+cats replay Test12
+cats replay Test12 --curl
+```
 
 ## HTML Report
 
@@ -99,15 +122,19 @@ After downloading your OS native binary, you can add it to PATH so that you can 
 sudo cp cats /usr/local/bin/cats
 ```
 
-You can also get autocomplete by downloading the [cats_autocomplete](cats_autocomplete) script and do:
+You can enable shell completion in `bash` or `zsh` directly from the binary:
+
+```shell
+source <(cats generate-completion)
+```
+
+Alternatively, you can source the [cats_autocomplete](cats_autocomplete) script from the repository:
 
 ```shell
 source cats_autocomplete
 ```
 
-To get persistent autocomplete, add the above line in `.zshrc` or `.bashrc`, but make sure you put the fully qualified path for the `cats_autocomplete` script.
-
-You can also check the `cats_autocomplete` source for alternative setup.
+To make completion persistent, add the command to `.zshrc` or `.bashrc`.
 
 There is no native binary for Windows, but you can use the uberjar version. This requires Java 25+ to be installed.
 
@@ -115,35 +142,15 @@ You can run it as `java -jar cats.jar`.
 
 Head to the releases page to download the latest version: [https://github.com/Endava/cats/releases](https://github.com/Endava/cats/releases).
 
-## TLS
-
-CATS verifies server certificates and hostnames by default. For trusted test environments using self-signed certificates, verification can be disabled explicitly with `--insecure`.
-
-For mutual TLS, use `--sslKeystore`, `--sslKeystorePwd` and `--sslKeyPwd`. If `--sslKeyPwd` is omitted, CATS uses the keystore password for the private key.
-
-## Secrets and replay
-
-CATS masks authentication headers and sensitive query parameters in reports by default, replacing request values with replayable `$$EnvironmentVariable` placeholders. It creates `replay.env.example` without secret values in the directory where CATS is run.
-
-CATS automatically loads `./.env` when present. Use `--envFile path/to/cats.env` to select a different file or `--noEnvFile` to disable dotenv loading in normal, random, functional, template and replay commands. Process environment variables take precedence over dotenv values. Use `--showSecrets` only when unmasked report and console output is explicitly required.
-
-## Response safety budgets
-
-CATS cancels calls that exceed `--callTimeout`, which defaults to 20 seconds, and captures at most `--maxResponseBytes`, which defaults to 10 MiB of the decompressed response body. Set either option to `0` to disable its limit. Truncated responses retain their status and headers, skip full-body validation, and are reported with a dedicated warning.
-
-When `--dryRun` is enabled, CATS parses local configuration and calculates test counts without invoking target services, WFC login endpoints, authentication scripts, update checks, or report writers.
-
 ## Build from sources
 
-You can build CATS from sources on you local box. You need [Java 25](https://sdkman.io/jdks). Maven is already bundled.
+You can build CATS from sources on your local machine. You need [Java 25](https://sdkman.io/jdks). Maven is already bundled.
 
-> Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork of [OKHttp](https://square.github.io/okhttp/) which will install locally
-under the `5.X.X-CATS` version, so don't worry about overriding the official versions.
-
+> Before running the first build, please make sure you run `./mvnw clean`. CATS uses patched forks of [OkHttp](https://square.github.io/okhttp/) (`com.squareup.okhttp3:okhttp:5.5.0-CATS`) and [Swagger Parser](https://github.com/swagger-api/swagger-parser) (`io.swagger.parser.v3:swagger-parser-v3:2.1.49-CATS`), which Maven installs locally from `lib/` without overriding official dependency versions.
 
 You can use the following Maven command to build the project as an uberjar:
 
-`./mvnw package -Dquarkus.package.type=uber-jar`
+`./mvnw package -Dquarkus.package.jar.type=uber-jar -DskipTests`
 
 
 You will end up with a `cats-runner.jar` in the `target` folder. You can run it with `java -jar cats-runner.jar ...`.
@@ -155,6 +162,28 @@ You can also build native images using a [GraalVM Java version](https://www.graa
 ### Notes on Unit Tests
 
 You may see some `error` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the Fuzzers.
+
+# Runtime defaults
+
+## TLS
+
+CATS verifies server certificates and hostnames by default. For trusted test environments using self-signed certificates, verification can be disabled explicitly with `--insecure`.
+
+For mutual TLS, use `--sslKeystore`, `--sslKeystorePwd` and `--sslKeyPwd`. If `--sslKeyPwd` is omitted, CATS uses the keystore password for the private key.
+
+## Secrets, authentication, and replay
+
+CATS masks authentication headers and sensitive query parameters in reports by default, replacing request values with replayable `$$EnvironmentVariable` placeholders. It creates `replay.env.example` without secret values in the directory where CATS is run.
+
+CATS automatically loads `./.env` when present. Use `--envFile path/to/cats.env` to select a different file or `--noEnvFile` to disable dotenv loading in normal, random, functional, template and replay commands. Process environment variables take precedence over dotenv values. Use `--showSecrets` only when unmasked report and console output is explicitly required.
+
+Web Fuzzing Commons authentication files are supported via `--wfcAuth` and `--wfcAuthName`. When `--wfcAuthName` is omitted and the file defines multiple entries, CATS starts with the first entry and switches to subsequent entries if baseline requests return HTTP `401` or `403`.
+
+## Response safety budgets
+
+CATS cancels calls that exceed `--callTimeout`, which defaults to 20 seconds, and captures at most `--maxResponseBytes`, which defaults to 10 MiB of the decompressed response body. Set either option to `0` to disable its limit. Truncated responses retain their status and headers, skip full-body validation, and are reported with a dedicated warning.
+
+When `--dryRun` is enabled, CATS parses local configuration and calculates test counts without invoking target services, WFC login endpoints, authentication scripts, update checks, or report writers.
 
 # Contributing
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md). 
