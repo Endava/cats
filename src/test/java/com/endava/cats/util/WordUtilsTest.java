@@ -103,7 +103,15 @@ class WordUtilsTest {
             "potatoes,potato",
             "photos,photo",
             "hospitais,hospital",
-            "animais,animal"
+            "animais,animal",
+            "testmatrices,testmatrix",
+            "rentincreaseindices,rentincreaseindex",
+            "fieldsofstudy,fieldofstudy",
+            "unitsofmeasure,unitofmeasure",
+            "formcolumns,formviewcolumn",
+            "emailmethods,emailauthenticationmethod",
+            "applicationconfigs,appconfig",
+            "extdevices,externaldevice"
     })
     void shouldMatchSameNounForms(String first, String second) {
         Assertions.assertThat(WordUtils.sameNoun(first, second)).isTrue();

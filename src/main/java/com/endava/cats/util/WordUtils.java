@@ -309,6 +309,9 @@ public abstract class WordUtils {
         return forms;
     }
 
+    private static final List<String> COMPOUND_PREPOSITIONS = List.of(
+            "sof", "sfor", "sin", "swithout", "sby", "soff");
+
     private static Set<String> computeNounForms(String token) {
         Set<String> forms = new LinkedHashSet<>();
         forms.add(token);
@@ -316,6 +319,11 @@ public abstract class WordUtils {
         String irregular = IRREGULAR_SINGULARS.get(token);
         if (irregular != null) {
             forms.add(irregular);
+        }
+        if (token.endsWith("ices") && length > 4) {
+            String stem = token.substring(0, length - 4);
+            addStem(forms, stem + "ix");
+            addStem(forms, stem + "ex");
         }
         if (token.endsWith("ies") && length > 3) {
             addStem(forms, token.substring(0, length - 3) + "y");
@@ -338,7 +346,35 @@ public abstract class WordUtils {
         if (token.endsWith("s") && !token.endsWith("ss") && length > 2) {
             addStem(forms, token.substring(0, length - 1));
         }
+        if (length > 6) {
+            for (String prep : COMPOUND_PREPOSITIONS) {
+                int idx = token.indexOf(prep);
+                if (idx >= 3 && idx + prep.length() + 2 <= length) {
+                    String head = token.substring(0, idx + 1);
+                    String tail = token.substring(idx + 1);
+                    for (String headForm : computeSimpleSingulars(head)) {
+                        addStem(forms, headForm + tail);
+                    }
+                }
+            }
+        }
         return Collections.unmodifiableSet(forms);
+    }
+
+    private static Set<String> computeSimpleSingulars(String head) {
+        Set<String> out = new LinkedHashSet<>();
+        int len = head.length();
+        if (head.endsWith("ies") && len > 3) {
+            out.add(head.substring(0, len - 3) + "y");
+        }
+        if ((head.endsWith("ses") || head.endsWith("xes") || head.endsWith("zes") ||
+                head.endsWith("ches") || head.endsWith("shes")) && len > 3) {
+            out.add(head.substring(0, len - 2));
+        }
+        if (head.endsWith("s") && !head.endsWith("ss") && len > 2) {
+            out.add(head.substring(0, len - 1));
+        }
+        return out;
     }
 
     private static void addStem(Set<String> forms, String stem) {
@@ -355,7 +391,45 @@ public abstract class WordUtils {
      * @return true when the tokens may refer to the same noun
      */
     public static boolean sameNoun(String first, String second) {
-        return !Collections.disjoint(nounForms(first), nounForms(second));
+        Set<String> firstForms = nounForms(first);
+        Set<String> secondForms = nounForms(second);
+        if (!Collections.disjoint(firstForms, secondForms)) {
+            return true;
+        }
+        for (String f : firstForms) {
+            for (String s : secondForms) {
+                if (matchesWithInsertedMiddleQualifier(f, s)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks whether two multi-word normalized nouns share both a leading modifier ({@code >= 4} chars)
+     * and a trailing head noun ({@code >= 4} chars) that together cover the shorter noun
+     * (e.g. {@code formcolumn} vs {@code formviewcolumn}, {@code emailmethod} vs {@code emailauthenticationmethod}).
+     */
+    public static boolean matchesWithInsertedMiddleQualifier(String first, String second) {
+        if (first == null || second == null || first.length() == second.length()) {
+            return false;
+        }
+        String shorter = first.length() < second.length() ? first : second;
+        String longer = first.length() < second.length() ? second : first;
+        if (shorter.length() < 7) {
+            return false;
+        }
+        int prefixLen = 0;
+        while (prefixLen < shorter.length() && shorter.charAt(prefixLen) == longer.charAt(prefixLen)) {
+            prefixLen++;
+        }
+        int suffixLen = 0;
+        while (suffixLen < shorter.length() &&
+                shorter.charAt(shorter.length() - 1 - suffixLen) == longer.charAt(longer.length() - 1 - suffixLen)) {
+            suffixLen++;
+        }
+        return prefixLen >= 3 && suffixLen >= 4 && prefixLen + suffixLen >= shorter.length();
     }
 
     /**

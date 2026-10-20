@@ -488,6 +488,17 @@ final class ResourceSemanticNaming {
                 return 90;
             }
         }
+        for (String alias : sourceAliases) {
+            if (!GENERIC_FALLBACK_SUFFIXES.contains(alias)) {
+                for (String aliasForm : WordUtils.nounForms(alias)) {
+                    for (String targetForm : ctx.targetSingulars()) {
+                        if (WordUtils.matchesWithInsertedMiddleQualifier(aliasForm, targetForm)) {
+                            return 85;
+                        }
+                    }
+                }
+            }
+        }
         if ((!ctx.primaryResourceAliases().isEmpty() && sourceAliases.stream().anyMatch(ctx.primaryResourceAliases()::contains)) ||
                 hasResourceQualifiedDigitMatch(sourceAliases, ctx.digitMatchResource(), ctx.targetAliases())) {
             return 80;
