@@ -4,8 +4,10 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import lombok.Getter;
+import lombok.Setter;
 import picocli.CommandLine;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +39,20 @@ public class QualityGateArguments {
                     "Valid metrics: @|bold errors|@, @|bold warns|@, @|bold warnings|@. Thresholds must be non-negative integers. " +
                     "Example: @|bold --qualityGate \"errors<5,warns<20\"|@ will exit 1 if errors >= 5 or warns >= 20")
     private String qualityGate;
+
+    @CommandLine.Option(names = {"--baseline"},
+            description = "Path to a baseline cats-report directory or cats-summary-report.json file. " +
+                    "Compares the current run apples-to-apples against the baseline and fails only if new regressions are introduced.")
+    @Setter
+    private File baseline;
+
+    @CommandLine.Option(names = {"--failOnNewWarnings"},
+            description = "When --baseline is supplied, also fail the build if new warnings are introduced compared to the baseline. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    @Setter
+    private boolean failOnNewWarnings;
+
+    @Setter
+    private Boolean baselineRegressionDetected;
 
     private static CommandLine.TypeConversionException invalidQualityGate(String condition) {
         return new CommandLine.TypeConversionException("Invalid --qualityGate condition '" + condition.trim() +
@@ -101,6 +117,10 @@ public class QualityGateArguments {
         // Check qualityGate thresholds first (more specific)
         if (qualityGate != null && !qualityGate.trim().isEmpty()) {
             return evaluateQualityGate(errors, warnings);
+        }
+
+        if (baselineRegressionDetected != null) {
+            return baselineRegressionDetected;
         }
 
         // Fall back to failOn behavior
@@ -207,6 +227,9 @@ public class QualityGateArguments {
     public String getQualityGateDescription() {
         if (qualityGate != null && !qualityGate.trim().isEmpty()) {
             return "Quality gate: " + qualityGate;
+        }
+        if (baseline != null) {
+            return "Baseline comparison: " + baseline.getPath() + (failOnNewWarnings ? " (fail on new errors or warnings)" : " (fail on new errors)");
         }
         if (failOn != null && !failOn.trim().isEmpty()) {
             return "Fail on: " + failOn;

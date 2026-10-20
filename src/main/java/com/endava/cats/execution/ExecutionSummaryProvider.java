@@ -34,4 +34,8 @@ public class ExecutionSummaryProvider {
         return executionStatisticsListener.snapshot(
                 qualityGateArguments::shouldFailBuild, qualityGateArguments.getQualityGateDescription());
     }
+
+    public QualityGateArguments getQualityGateArguments() {
+        return qualityGateArguments;
+    }
 }

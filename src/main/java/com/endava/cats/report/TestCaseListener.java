@@ -632,6 +632,7 @@ public class TestCaseListener {
      * @return the immutable final execution summary shared by reports and presentation layers
      */
     public ExecutionSummary endSession() {
+        evaluateBaselineIfConfigured();
         ExecutionSummary executionSummary = executionSummaryProvider.snapshot();
         if (!reportingInitialized) {
             return executionSummary;
@@ -646,6 +647,7 @@ public class TestCaseListener {
             testReportsGenerator.writePerformanceReport(testCaseExecutionDetails);
             testReportsGenerator.writeSummary(testCaseSummaryDetails, executionSummary);
             testReportsGenerator.printExecutionDetails(executionSummary);
+            printBaselineComparisonIfConfigured();
             if (!reportingArguments.isTui()) {
                 writeRecordedErrorsIfPresent();
             }
@@ -674,6 +676,36 @@ public class TestCaseListener {
     public void renderFuzzingHeader() {
         if (reportingArguments.isSummaryInConsole()) {
             ConsoleUtils.renderHeader(" FUZZING ");
+        }
+    }
+
+    private BaselineComparisonEngine.ComparisonResult lastBaselineComparison;
+
+    private void evaluateBaselineIfConfigured() {
+        lastBaselineComparison = null;
+        if (executionSummaryProvider == null || executionSummaryProvider.getQualityGateArguments() == null) {
+            return;
+        }
+        var qg = executionSummaryProvider.getQualityGateArguments();
+        qg.setBaselineRegressionDetected(null);
+        if (qg.getBaseline() == null) {
+            return;
+        }
+        try {
+            lastBaselineComparison = BaselineComparisonEngine.compareWithCurrent(
+                    qg.getBaseline().toPath(), testCaseSummaryDetails, 0);
+            qg.setBaselineRegressionDetected(lastBaselineComparison.hasRegressions(qg.isFailOnNewWarnings()));
+        } catch (IOException e) {
+            logger.error("Unable to load baseline report from {}: {}", qg.getBaseline(), e.getMessage());
+            qg.setBaselineRegressionDetected(true);
+        }
+    }
+
+    private void printBaselineComparisonIfConfigured() {
+        if (lastBaselineComparison != null && !reportingArguments.isTui() &&
+                executionSummaryProvider != null && executionSummaryProvider.getQualityGateArguments() != null) {
+            BaselineComparisonEngine.renderToConsole(logger, lastBaselineComparison,
+                    executionSummaryProvider.getQualityGateArguments().isFailOnNewWarnings());
         }
     }
 
