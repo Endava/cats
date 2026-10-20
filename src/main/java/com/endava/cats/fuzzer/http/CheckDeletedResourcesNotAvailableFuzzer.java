@@ -99,13 +99,24 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
     }
 
     static String getRelativePath(String url, ApiArguments apiArguments) {
+        String strippedUrl = stripQueryAndFragment(url);
         if (apiArguments != null) {
-            var relative = ObservedHttpTarget.relativeRequestPath(apiArguments, url);
+            var relative = ObservedHttpTarget.relativeRequestPath(apiArguments, strippedUrl);
             if (relative.isPresent()) {
                 return relative.get();
             }
         }
-        return getRelativePath(url);
+        return getRelativePath(strippedUrl);
+    }
+
+    private static String stripQueryAndFragment(String url) {
+        if (url == null) {
+            return null;
+        }
+        int queryIdx = url.indexOf('?');
+        int fragmentIdx = url.indexOf('#');
+        int cut = queryIdx >= 0 && fragmentIdx >= 0 ? Math.min(queryIdx, fragmentIdx) : Math.max(queryIdx, fragmentIdx);
+        return cut >= 0 ? url.substring(0, cut) : url;
     }
 
     static String getRelativePath(String url) {

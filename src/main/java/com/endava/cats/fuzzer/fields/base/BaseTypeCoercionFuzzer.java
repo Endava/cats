@@ -8,7 +8,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.RequestTarget;
+import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -87,7 +87,7 @@ public abstract class BaseTypeCoercionFuzzer implements Fuzzer {
                                     .formatted(this.getOriginalType(), this.getFuzzedType(), field, fuzzedValue, currentValue))
                             .fuzzer(this)
                             .payload(fuzzedPayload)
-                            .mutationTarget(RequestTarget.body(field))
+                            .mutationTargets(RequestTargetResolver.resolvePayloadField(data, field))
                             .build()
             );
         }

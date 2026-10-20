@@ -150,7 +150,7 @@ public class SensitiveDataExposureFuzzer implements Fuzzer {
             JsonElement value = entry.getValue();
             if ((writeOnlyFields.contains(normalizedPath) || writeOnlyFields.contains(entry.getKey())) && hasValue(value)) {
                 exposures.writeOnly().add(fieldPath);
-            } else if (schemaFields.canDetectUndeclared() && !schemaFields.declared().contains(entry.getKey()) &&
+            } else if (schemaFields.canDetectUndeclared() && !schemaFields.declared().contains(normalizedPath) &&
                     isSensitiveName(entry.getKey()) && isUnmaskedPrimitive(value)) {
                 exposures.sensitive().add(fieldPath);
             }
@@ -235,7 +235,7 @@ public class SensitiveDataExposureFuzzer implements Fuzzer {
             Map<String, Schema> properties = Optional.ofNullable(schema.getProperties()).orElse(Map.of());
             properties.forEach((name, property) -> {
                 String propPath = pathPrefix.isEmpty() ? name : pathPrefix + "." + name;
-                declared.add(name);
+                declared.add(propPath);
                 if (Boolean.TRUE.equals(property.getWriteOnly())) {
                     writeOnly.add(propPath);
                 }

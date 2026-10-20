@@ -131,6 +131,10 @@ public class RandomFuzzer implements Fuzzer {
         boolean capPerOperation = this.capPerOperationSlice &&
                 stopArguments.getStopAfterTimeInSec() > 0 && stopArguments.getStopAfterMutations() <= 0;
         Set<String> allCatsFields = data.getAllFieldsByHttpMethod();
+        if (allCatsFields == null || allCatsFields.stream().noneMatch(field -> JsonUtils.isFieldInJson(data.getPayload(), field))) {
+            logger.debug("No mutable fields found in the request payload");
+            return;
+        }
 
         testCaseListener.updateUnknownProgress(data);
 
