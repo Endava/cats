@@ -242,9 +242,7 @@ public class SensitiveDataExposureFuzzer implements Fuzzer {
                 visit(property, propPath, depth + 1);
             });
             visit(schema.getItems(), pathPrefix, depth + 1);
-            Stream.of(schema.getAllOf(), schema.getAnyOf(), schema.getOneOf())
-                    .filter(Objects::nonNull)
-                    .flatMap(List::stream)
+            CatsModelUtils.getComposedSchemas(schema)
                     .forEach(item -> visit(item, pathPrefix, depth + 1));
             Object additionalProperties = schema.getAdditionalProperties();
             if (additionalProperties instanceof Schema<?> additionalSchema) {

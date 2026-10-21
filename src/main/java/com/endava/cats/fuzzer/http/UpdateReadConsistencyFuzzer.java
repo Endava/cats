@@ -154,37 +154,25 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
 
     private void collectProperties(Schema<?> schema, Map<String, Schema> schemaMap, int depth,
                                    Set<Schema<?>> visited, Map<String, Schema> properties) {
-        Schema<?> resolved = resolveSchema(schema, schemaMap);
+        Schema<?> resolved = com.endava.cats.util.CatsModelUtils.resolveSchema(schema, schemaMap);
         if (resolved == null || depth > MAX_SCHEMA_DEPTH || !visited.add(resolved)) {
             return;
         }
         try {
             if (resolved.getProperties() != null) {
                 resolved.getProperties().forEach((name, propSchema) -> {
-                    Schema<?> resolvedProp = resolveSchema(propSchema, schemaMap);
+                    Schema<?> resolvedProp = com.endava.cats.util.CatsModelUtils.resolveSchema(propSchema, schemaMap);
                     if (resolvedProp != null) {
                         properties.putIfAbsent(name, resolvedProp);
                     }
                 });
             }
-            for (List<Schema> composed : List.of(
-                    Optional.ofNullable(resolved.getAllOf()).orElse(List.of()),
-                    Optional.ofNullable(resolved.getOneOf()).orElse(List.of()),
-                    Optional.ofNullable(resolved.getAnyOf()).orElse(List.of()))) {
-                for (Schema<?> subSchema : composed) {
-                    collectProperties(subSchema, schemaMap, depth + 1, visited, properties);
-                }
+            for (Schema<?> subSchema : com.endava.cats.util.CatsModelUtils.getComposedSchemas(resolved)) {
+                collectProperties(subSchema, schemaMap, depth + 1, visited, properties);
             }
         } finally {
             visited.remove(resolved);
         }
-    }
-
-    private Schema<?> resolveSchema(Schema<?> schema, Map<String, Schema> schemaMap) {
-        if (schema == null || schema.get$ref() == null) {
-            return schema;
-        }
-        return schemaMap.get(schema.get$ref().substring(schema.get$ref().lastIndexOf('/') + 1));
     }
 
     private boolean samePrimitiveValue(JsonPrimitive sent, JsonPrimitive returned, Schema<?> propertySchema) {

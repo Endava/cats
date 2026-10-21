@@ -38,11 +38,11 @@ record JsonPayloadTarget(String path, boolean root, Schema<?> schema) {
     }
 
     static JsonPayloadTarget root(Schema<?> schema, Map<String, Schema> schemaMap) {
-        return new JsonPayloadTarget("$", true, resolveSchema(schema, schemaMap));
+        return new JsonPayloadTarget("$", true, CatsModelUtils.resolveSchema(schema, schemaMap));
     }
 
     static JsonPayloadTarget field(String path, Schema<?> schema, Map<String, Schema> schemaMap) {
-        return new JsonPayloadTarget(path, false, resolveSchema(schema, schemaMap));
+        return new JsonPayloadTarget(path, false, CatsModelUtils.resolveSchema(schema, schemaMap));
     }
 
     Optional<JsonElement> valueFrom(String payload) {
@@ -110,20 +110,6 @@ record JsonPayloadTarget(String path, boolean root, Schema<?> schema) {
     }
 
     static Schema<?> resolveSchema(Schema<?> schema, Map<String, Schema> schemaMap) {
-        if (schema == null || schemaMap == null) {
-            return schema;
-        }
-
-        Set<Schema<?>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
-        Schema<?> resolved = schema;
-        while (resolved.get$ref() != null && visited.add(resolved)) {
-            String schemaName = CatsModelUtils.getSimpleRef(resolved.get$ref());
-            Schema<?> referenced = schemaName == null ? null : schemaMap.get(schemaName);
-            if (referenced == null) {
-                break;
-            }
-            resolved = referenced;
-        }
-        return resolved;
+        return CatsModelUtils.resolveSchema(schema, schemaMap);
     }
 }

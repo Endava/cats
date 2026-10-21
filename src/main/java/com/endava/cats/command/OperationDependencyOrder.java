@@ -236,13 +236,8 @@ final class OperationDependencyOrder {
                     collectSchemaIdentifiers(api, entry.getValue(), propertyName, depth + 1, visited, names);
                 }
             }
-            for (List<Schema> composed : List.of(
-                    Optional.ofNullable(resolved.getAllOf()).orElse(List.of()),
-                    Optional.ofNullable(resolved.getOneOf()).orElse(List.of()),
-                    Optional.ofNullable(resolved.getAnyOf()).orElse(List.of()))) {
-                for (Schema<?> subSchema : composed) {
-                    collectSchemaIdentifiers(api, subSchema, parentProperty, depth + 1, visited, names);
-                }
+            for (Schema<?> subSchema : com.endava.cats.util.CatsModelUtils.getComposedSchemas(resolved)) {
+                collectSchemaIdentifiers(api, subSchema, parentProperty, depth + 1, visited, names);
             }
             if (resolved.getItems() != null) {
                 collectSchemaIdentifiers(api, resolved.getItems(), parentProperty, depth + 1, visited, names);
@@ -282,11 +277,10 @@ final class OperationDependencyOrder {
         if (schema == null || schema.get$ref() == null) {
             return schema;
         }
-        if (api.getComponents() == null || api.getComponents().getSchemas() == null) {
-            return null;
-        }
-        String ref = schema.get$ref();
-        return api.getComponents().getSchemas().get(ref.substring(ref.lastIndexOf('/') + 1));
+        Map<String, Schema> schemas = (api != null && api.getComponents() != null)
+                ? api.getComponents().getSchemas() : null;
+        Schema<?> resolved = com.endava.cats.util.CatsModelUtils.resolveSchema(schema, schemas);
+        return resolved == schema ? null : resolved;
     }
 
     private static Set<String> producerIdentifiers(String path) {

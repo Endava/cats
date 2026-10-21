@@ -409,4 +409,46 @@ public abstract class CatsModelUtils {
     public static boolean isNotGeneratedPattern(String name) {
         return PATTERNS_TO_IGNORE.stream().noneMatch(pattern -> pattern.matcher(name).matches());
     }
+
+    /**
+     * Resolves a possibly chained {@code $ref} schema against the supplied schema map with cycle protection.
+     */
+    @SuppressWarnings("rawtypes")
+    public static Schema<?> resolveSchema(Schema<?> schema, java.util.Map<String, Schema> schemaMap) {
+        if (schema == null || schemaMap == null) {
+            return schema;
+        }
+        Set<Schema<?>> visited = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        Schema<?> resolved = schema;
+        while (resolved != null && resolved.get$ref() != null && visited.add(resolved)) {
+            String schemaName = getSimpleRef(resolved.get$ref());
+            Schema<?> referenced = schemaName == null ? null : schemaMap.get(schemaName);
+            if (referenced == null) {
+                break;
+            }
+            resolved = referenced;
+        }
+        return resolved;
+    }
+
+    /**
+     * Returns all composed sub-schemas ({@code allOf}, {@code oneOf}, {@code anyOf}) declared on {@code schema}.
+     */
+    @SuppressWarnings("rawtypes")
+    public static List<Schema> getComposedSchemas(Schema<?> schema) {
+        if (schema == null) {
+            return List.of();
+        }
+        List<Schema> composed = new java.util.ArrayList<>();
+        if (schema.getAllOf() != null) {
+            composed.addAll(schema.getAllOf());
+        }
+        if (schema.getOneOf() != null) {
+            composed.addAll(schema.getOneOf());
+        }
+        if (schema.getAnyOf() != null) {
+            composed.addAll(schema.getAnyOf());
+        }
+        return composed;
+    }
 }
