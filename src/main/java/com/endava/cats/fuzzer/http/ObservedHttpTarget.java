@@ -4,17 +4,20 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.WordUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Restricts follow-up requests to observed, same-origin URLs under the configured API base path.
@@ -134,22 +137,39 @@ final class ObservedHttpTarget {
 
     private static Set<String> candidateIdNames(String collectionTemplate, String parameterName) {
         String resource = normalize(collectionTemplate.substring(collectionTemplate.lastIndexOf('/') + 1));
-        String singular = resource.endsWith("ies") && resource.length() > 3
-                ? resource.substring(0, resource.length() - 3) + "y"
-                : (resource.endsWith("s") && !resource.endsWith("ss") && resource.length() > 1
-                ? resource.substring(0, resource.length() - 1) : resource);
-        return Set.copyOf(List.of(
-                normalize(parameterName),
-                "id",
-                "uuid",
-                "guid",
-                resource + "id",
-                singular + "id",
-                resource + "uuid",
-                singular + "uuid",
-                resource + "guid",
-                singular + "guid"
-        ));
+        Set<String> candidates = new LinkedHashSet<>();
+        candidates.add(normalize(parameterName));
+        for (String idSuffix : List.of("id", "uuid", "guid")) {
+            candidates.add(idSuffix);
+            for (String form : WordUtils.nounForms(resource)) {
+                candidates.add(form + idSuffix);
+            }
+        }
+        return Set.copyOf(candidates);
+    }
+
+    /**
+     * Finds the latest successful write ({@code PUT} or {@code PATCH}) to a resource proven to have been created in
+     * this run.
+     */
+    static Optional<OwnedWrite> latestOwnedWrite(RuntimeResourcePool pool, ApiArguments arguments,
+                                                 String path, HttpMethod method) {
+        return latestOwnedWrite(pool, arguments, path, method, _ -> true);
+    }
+
+    static Optional<OwnedWrite> latestOwnedWrite(RuntimeResourcePool pool, ApiArguments arguments,
+                                                 String path, HttpMethod method,
+                                                 Predicate<RuntimeResourcePool.SuccessfulExchange> filter) {
+        return pool.successfulExchanges(path, method).reversed().stream()
+                .filter(filter)
+                .filter(write -> JsonUtils.isValidJson(write.requestBody()))
+                .map(write -> ownedPath(pool, arguments, path, write.url())
+                        .map(owned -> new OwnedWrite(owned, write.requestBody())))
+                .flatMap(Optional::stream)
+                .findFirst();
+    }
+
+    record OwnedWrite(String path, String body) {
     }
 
     private static String normalize(String name) {

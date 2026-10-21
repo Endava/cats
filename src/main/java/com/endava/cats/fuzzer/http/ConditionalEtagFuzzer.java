@@ -92,7 +92,7 @@ public class ConditionalEtagFuzzer implements Fuzzer {
             logger.skip("No two distinct ETags for the same GET resource were observed for {}", data.getPath());
             return;
         }
-        Optional<OwnedWrite> write = latestWriteToCreatedResource(data, tags.get().url());
+        Optional<ObservedHttpTarget.OwnedWrite> write = latestWriteToCreatedResource(data, tags.get().url());
         if (write.isEmpty()) {
             logger.skip("No successful {} to the ETag resource created by POST 201 Location was observed for {}",
                     data.getMethod(), data.getPath());
@@ -152,12 +152,9 @@ public class ConditionalEtagFuzzer implements Fuzzer {
     }
 
     /** Returns a successful write to the ETagged URL only when a POST 201 Location proves ownership. */
-    private Optional<OwnedWrite> latestWriteToCreatedResource(FuzzingData data, String observedUrl) {
-        return pool.successfulExchanges(data.getPath(), data.getMethod()).reversed().stream()
-                .filter(write -> sameTargetResource(write.url(), observedUrl) && JsonUtils.isValidJson(write.requestBody()))
-                .map(write -> ObservedHttpTarget.ownedPath(pool, arguments, data.getPath(), write.url())
-                        .map(path -> new OwnedWrite(path, write.requestBody())))
-                .flatMap(Optional::stream).findFirst();
+    private Optional<ObservedHttpTarget.OwnedWrite> latestWriteToCreatedResource(FuzzingData data, String observedUrl) {
+        return ObservedHttpTarget.latestOwnedWrite(pool, arguments, data.getPath(), data.getMethod(),
+                write -> sameTargetResource(write.url(), observedUrl));
     }
 
     private boolean sameTargetResource(String firstUrl, String secondUrl) {
@@ -222,8 +219,5 @@ public class ConditionalEtagFuzzer implements Fuzzer {
     }
 
     private record StaleTagPair(String url, String oldTag) {
-    }
-
-    private record OwnedWrite(String path, String body) {
     }
 }

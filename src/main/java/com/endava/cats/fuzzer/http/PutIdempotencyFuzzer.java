@@ -62,7 +62,8 @@ public class PutIdempotencyFuzzer implements Fuzzer {
             logger.skip("PUT idempotency needs an in-scope item GET without conditional headers for {}", data.getPath());
             return;
         }
-        Optional<OwnedPut> baseline = latestOwnedSuccessfulPut(data);
+        Optional<ObservedHttpTarget.OwnedWrite> baseline =
+                ObservedHttpTarget.latestOwnedWrite(pool, arguments, data.getPath(), HttpMethod.PUT);
         if (baseline.isEmpty()) {
             logger.skip("No successful PUT to a resource created by POST 201 Location was observed for {}", data.getPath());
             return;
@@ -77,17 +78,8 @@ public class PutIdempotencyFuzzer implements Fuzzer {
                         header.getName().equalsIgnoreCase("If-None-Match"));
     }
 
-    /** Finds the last usable PUT whose URL matches a POST 201 Location from this run. */
-    private Optional<OwnedPut> latestOwnedSuccessfulPut(FuzzingData data) {
-        return pool.successfulExchanges(data.getPath(), HttpMethod.PUT).reversed().stream()
-                .filter(exchange -> JsonUtils.isValidJson(exchange.requestBody()))
-                .map(exchange -> ObservedHttpTarget.ownedPath(pool, arguments, data.getPath(), exchange.url())
-                        .map(path -> new OwnedPut(path, exchange.requestBody())))
-                .flatMap(Optional::stream).findFirst();
-    }
-
     /** Stops the sequence as soon as a step fails, preventing further writes to an unverified resource. */
-    private void checkRepeatedPut(FuzzingData data, OwnedPut baseline) {
+    private void checkRepeatedPut(FuzzingData data, ObservedHttpTarget.OwnedWrite baseline) {
         if (!repeatPut(data, baseline)) {
             return;
         }
@@ -100,7 +92,7 @@ public class PutIdempotencyFuzzer implements Fuzzer {
         }
     }
 
-    private boolean repeatPut(FuzzingData data, OwnedPut baseline) {
+    private boolean repeatPut(FuzzingData data, ObservedHttpTarget.OwnedWrite baseline) {
         AtomicBoolean succeeded = new AtomicBoolean();
         executor.execute(SimpleExecutorContext.builder().fuzzer(this).logger(logger).fuzzingData(data)
                 .path(baseline.path()).payload(baseline.body()).replaceRefData(false).replaceUrlParams(false)
@@ -214,8 +206,5 @@ public class PutIdempotencyFuzzer implements Fuzzer {
     @Override
     public String toString() {
         return ConsoleUtils.sanitizeFuzzerName(getClass().getSimpleName());
-    }
-
-    private record OwnedPut(String path, String body) {
     }
 }

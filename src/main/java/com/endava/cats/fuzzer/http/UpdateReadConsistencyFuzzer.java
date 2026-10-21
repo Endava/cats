@@ -65,13 +65,14 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
             logger.skip("Update/read check needs an in-scope item GET and request schema on {} {}", data.getMethod(), data.getPath());
             return;
         }
-        Optional<ObservedUpdate> update = latestCreatedResourceUpdate(data);
+        Optional<ObservedHttpTarget.OwnedWrite> update =
+                ObservedHttpTarget.latestOwnedWrite(pool, arguments, data.getPath(), data.getMethod());
         if (update.isEmpty()) {
             logger.skip("No successful {} to a resource created by POST 201 Location was observed for {}",
                     data.getMethod(), data.getPath());
             return;
         }
-        ObservedUpdate observed = update.get();
+        ObservedHttpTarget.OwnedWrite observed = update.get();
         executor.execute(SimpleExecutorContext.builder().fuzzer(this).logger(logger).fuzzingData(data)
                 .httpMethod(HttpMethod.GET).path(observed.path()).payload("{}")
                 .replaceRefData(false).replaceUrlParams(false)
@@ -85,15 +86,6 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
         return (data.getMethod() == HttpMethod.PUT || data.getMethod() == HttpMethod.PATCH) &&
                 data.getPathItem() != null && data.getPathItem().getGet() != null && data.getReqSchema() != null &&
                 filterArguments.isHttpMethodSupplied(HttpMethod.GET);
-    }
-
-    /** Selects a successful update only if a matching POST 201 Location proves the item was created in this run. */
-    private Optional<ObservedUpdate> latestCreatedResourceUpdate(FuzzingData data) {
-        return pool.successfulExchanges(data.getPath(), data.getMethod()).reversed().stream()
-                .filter(update -> JsonUtils.isValidJson(update.requestBody()))
-                .map(update -> ObservedHttpTarget.ownedPath(pool, arguments, data.getPath(), update.url())
-                        .map(path -> new ObservedUpdate(path, update.requestBody())))
-                .flatMap(Optional::stream).findFirst();
     }
 
     private void checkResponse(CatsResponse response, FuzzingData data, String requestBody) {
@@ -245,8 +237,5 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
     @Override
     public String toString() {
         return ConsoleUtils.sanitizeFuzzerName(getClass().getSimpleName());
-    }
-
-    private record ObservedUpdate(String path, String body) {
     }
 }
