@@ -65,8 +65,7 @@ final class ResourceSemanticNaming {
     }
 
     static String normalize(String value) {
-        return NON_ALPHANUMERIC.matcher(Optional.ofNullable(value).orElse(""))
-                .replaceAll("").toLowerCase(Locale.ROOT);
+        return WordUtils.normalizeAlphaNumeric(value);
     }
 
     static boolean isIdentifierName(String name) {

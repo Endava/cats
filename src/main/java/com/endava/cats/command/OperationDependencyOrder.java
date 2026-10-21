@@ -294,7 +294,7 @@ final class OperationDependencyOrder {
     }
 
     private static String normalize(String value) {
-        return value == null ? "" : value.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        return WordUtils.normalizeAlphaNumeric(value);
     }
 
     /**

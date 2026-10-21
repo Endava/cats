@@ -173,7 +173,7 @@ final class ObservedHttpTarget {
     }
 
     private static String normalize(String name) {
-        return name == null ? "" : name.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        return WordUtils.normalizeAlphaNumeric(name);
     }
 
     private static boolean hasCreatedResourceLocation(RuntimeResourcePool.SuccessfulExchange exchange) {

@@ -450,6 +450,28 @@ public abstract class WordUtils {
     }
 
     /**
+     * Strips all non-ASCII-alphanumeric characters and lowercases ASCII letters in a single pass.
+     *
+     * @param value raw string (may be null)
+     * @return lowercase ASCII alphanumeric string, never null
+     */
+    public static String normalizeAlphaNumeric(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+                sb.append(c);
+            } else if (c >= 'A' && c <= 'Z') {
+                sb.append((char) (c + ('a' - 'A')));
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
      * Checks whether a raw or normalized field name represents an audit timestamp (such as {@code createdAt},
      * {@code updatedDate}, {@code lastModifiedTime}, {@code modified_on}).
      *
@@ -460,7 +482,7 @@ public abstract class WordUtils {
         if (rawKey == null || rawKey.isBlank()) {
             return false;
         }
-        String normalized = rawKey.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        String normalized = normalizeAlphaNumeric(rawKey);
         if (AUDIT_TIMESTAMP_NORMALIZED.contains(normalized)) {
             return true;
         }

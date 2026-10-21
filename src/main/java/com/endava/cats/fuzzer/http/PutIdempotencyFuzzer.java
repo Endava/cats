@@ -178,11 +178,7 @@ public class PutIdempotencyFuzzer implements Fuzzer {
         if (key == null || key.isBlank()) {
             return false;
         }
-        return VOLATILE_EXACT_FIELDS.contains(normalize(key)) || WordUtils.isAuditTimestampField(key);
-    }
-
-    private static String normalize(String key) {
-        return key == null ? "" : key.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        return VOLATILE_EXACT_FIELDS.contains(WordUtils.normalizeAlphaNumeric(key)) || WordUtils.isAuditTimestampField(key);
     }
 
     private boolean isSuccessful(CatsResponse response) {

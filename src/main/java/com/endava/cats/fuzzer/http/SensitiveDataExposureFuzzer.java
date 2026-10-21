@@ -179,7 +179,7 @@ public class SensitiveDataExposureFuzzer implements Fuzzer {
     }
 
     private boolean isSensitiveName(String name) {
-        String normalized = NON_ALPHANUMERIC.matcher(name.toLowerCase(Locale.ROOT)).replaceAll("");
+        String normalized = com.endava.cats.util.WordUtils.normalizeAlphaNumeric(name);
         return SENSITIVE_NAME_SUFFIXES.stream().anyMatch(normalized::endsWith);
     }
 
