@@ -234,40 +234,76 @@ function copyElement(element, copyButton) {
     }, 2000);
 }
 
+let activeClusterFilter = 'all';
+
 function toggleCluster(element) {
-    // Toggle the 'collapsed' class on the cluster title
     element.classList.toggle('collapsed');
-    const responseParagraph = element.nextElementSibling;
-    const content = responseParagraph.nextElementSibling;
-
-    content.classList.toggle('collapsed');
-}
-function toggleErrorCluster(element) {
-    // Toggle the 'collapsed' class on the header
-    element.classList.toggle('collapsed');
-
-    // Toggle the 'collapsed' class on the content
     const content = element.nextElementSibling;
-    content.classList.toggle('collapsed');
+    if (content) {
+        content.classList.toggle('collapsed');
+    }
 }
 
-// Optional: Add function to expand or collapse all clusters
+function toggleErrorCluster(element) {
+    element.classList.toggle('collapsed');
+    const content = element.nextElementSibling;
+    if (content) {
+        content.classList.toggle('collapsed');
+    }
+}
+
 function expandAllClusters() {
-    document.querySelectorAll('.cluster-content.collapsed').forEach(content => {
+    document.querySelectorAll('.error-cluster-content.collapsed, .cluster-content.collapsed').forEach(content => {
         content.classList.remove('collapsed');
-        content.previousElementSibling.classList.remove('collapsed');
+        if (content.previousElementSibling) {
+            content.previousElementSibling.classList.remove('collapsed');
+        }
     });
 }
 
 function collapseAllClusters() {
     document.querySelectorAll('.cluster-content:not(.collapsed)').forEach(content => {
         content.classList.add('collapsed');
-        content.previousElementSibling.classList.add('collapsed');
+        if (content.previousElementSibling) {
+            content.previousElementSibling.classList.add('collapsed');
+        }
     });
 }
 
-// Optional: Initialize all clusters as expanded
-document.addEventListener('DOMContentLoaded', function () {
-    // If you want clusters to start collapsed, uncomment the next line
-    // collapseAllClusters();
-});
+function setClusterFilter(filter, btn) {
+    activeClusterFilter = filter;
+    document.querySelectorAll('.cluster-filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) {
+        btn.classList.add('active');
+    }
+    filterClusters();
+}
+
+function filterClusters() {
+    const input = document.getElementById('clusterSearchInput');
+    const query = input ? input.value.trim().toLowerCase() : '';
+
+    document.querySelectorAll('.cluster-reason-group').forEach(group => {
+        let visibleInGroup = 0;
+        const reasonText = (group.querySelector('.error-title')?.textContent || '').toLowerCase();
+        group.querySelectorAll('.error-card').forEach(card => {
+            const severity = card.getAttribute('data-severity') || '';
+            const is5xx = card.getAttribute('data-is5xx') === 'true';
+            const matchesFilter = activeClusterFilter === 'all'
+                || (activeClusterFilter === 'error' && severity === 'error')
+                || (activeClusterFilter === 'warning' && severity === 'warning')
+                || (activeClusterFilter === '5xx' && is5xx);
+            const matchesQuery = !query
+                || reasonText.includes(query)
+                || card.textContent.toLowerCase().includes(query);
+
+            if (matchesFilter && matchesQuery) {
+                card.style.display = '';
+                visibleInGroup++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        group.style.display = visibleInGroup > 0 ? '' : 'none';
+    });
+}

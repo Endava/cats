@@ -318,8 +318,45 @@ class ClusterComputeTest {
         assertThat(clusterList).isNotEmpty();
     }
 
+    @Test
+    void shouldSeparateDifferent500JsonExceptionsAndGroupIdenticalExceptionCauses() {
+        String jacksonError1 = "{\"type\":\"http://localhost:8080/petclinic/api/owners/1\",\"title\":\"HttpMessageNotReadableException\",\"status\":500,\"detail\":\"JSON parse error: Cannot construct instance of OwnerDto\"}";
+        String jacksonError2 = "{\"type\":\"http://localhost:8080/petclinic/api/pets/14\",\"title\":\"HttpMessageNotReadableException\",\"status\":500,\"detail\":\"JSON parse error: Cannot construct instance of OwnerDto\"}";
+        String typeMismatch1 = "{\"type\":\"http://localhost:8080/petclinic/api/owners/-9223372036854775808\",\"title\":\"MethodArgumentTypeMismatchException\",\"status\":500,\"detail\":\"Failed to convert value of type 'java.lang.String' to required type 'int'; For input string: '-9223372036854775808'\"}";
+        String typeMismatch2 = "{\"type\":\"http://localhost:8080/petclinic/api/pets/2147483648\",\"title\":\"MethodArgumentTypeMismatchException\",\"status\":500,\"detail\":\"Failed to convert value of type 'java.lang.String' to required type 'int'; For input string: '2147483648'\"}";
+        String sqlIntegrity = "{\"type\":\"http://localhost:8080/petclinic/api/owners/1\",\"title\":\"DataIntegrityViolationException\",\"status\":500,\"detail\":\"could not execute statement [NULL not allowed for column 'TYPE_ID']\"}";
+
+        List<CatsTestCaseSummary> testCases = List.of(
+                createTestCaseSummary(500, "Unexpected response code: 500", "error", jacksonError1),
+                createTestCaseSummary(500, "Unexpected response code: 500", "error", jacksonError2),
+                createTestCaseSummary(500, "Unexpected response code: 500", "error", typeMismatch1),
+                createTestCaseSummary(500, "Unexpected response code: 500", "error", typeMismatch2),
+                createTestCaseSummary(500, "Unexpected response code: 500", "error", sqlIntegrity),
+                createTestCaseSummary(200, "Unexpected response code: 200", "error", "{\"id\":1,\"status\":\"accepted\"}")
+        );
+
+        List<Map<String, Object>> groups = ClusterCompute.createClusters(testCases);
+
+        // Both the 500 reason group and the 200 error reason group are included, sorted by count descending
+        assertThat(groups).hasSize(2);
+        assertThat(groups.getFirst()).containsEntry("resultReason", "Unexpected response code: 500")
+                .containsEntry("totalTests", 5);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> clusters500 = (List<Map<String, Object>>) groups.getFirst().get("clusters");
+        // The 5 500 responses should form 3 distinct root-cause clusters (2 Jackson, 2 TypeMismatch, 1 DataIntegrity)
+        assertThat(clusters500).hasSize(3);
+        assertThat(clusters500.get(0)).containsEntry("testCount", 2).containsEntry("httpStatusCode", 500);
+        assertThat(clusters500.get(1)).containsEntry("testCount", 2).containsEntry("httpStatusCode", 500);
+        assertThat(clusters500.get(2)).containsEntry("testCount", 1).containsEntry("httpStatusCode", 500);
+        assertThat(String.valueOf(clusters500.get(2).get("rootCauseSummary")))
+                .contains("DataIntegrityViolationException");
+    }
+
     private static CatsTestCaseSummary createTestCaseSummary(int httpResponseCode, String resultReason, String result, String responseBody) {
         CatsTestCase testCase = new CatsTestCase();
+        testCase.setRequest(com.endava.cats.model.CatsRequest.builder().httpMethod("POST").build());
+        testCase.setFuzzer("TestFuzzer");
         testCase.setResponse(CatsResponse.builder().responseCode(httpResponseCode).body(responseBody).build());
         testCase.setResult(result);
         testCase.setPath("/path/" + CatsRandom.instance().nextInt(1000));

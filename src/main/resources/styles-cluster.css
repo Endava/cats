@@ -47,10 +47,21 @@ p {
 }
 
 .error-card {
-    background: rgba(230, 57, 70, 0.03);
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+    background: #fafafa;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 16px 20px;
+    border-radius: 12px;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.error-card.cluster-card-error {
+    background: rgba(210, 0, 17, 0.025);
+    border-color: rgba(210, 0, 17, 0.16);
+}
+
+.error-card.cluster-card-warning {
+    background: rgba(245, 165, 5, 0.035);
+    border-color: rgba(245, 165, 5, 0.22);
 }
 
 .error-title {
@@ -61,28 +72,267 @@ p {
 }
 
 .cluster-title {
-    font-size: 1.1em;
-    font-weight: bold;
+    font-size: 1.0em;
     cursor: pointer;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 24px;
+    position: relative;
 }
 
 .cluster-title::after {
     content: '▼';
     font-size: 0.8em;
     transition: transform 0.3s ease;
+    position: absolute;
+    right: 4px;
+    top: 6px;
 }
 
 .cluster-title.collapsed::after {
     transform: rotate(-90deg);
 }
 
+.cluster-title-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.cluster-id-label {
+    font-weight: 700;
+    font-size: 1.05em;
+}
+
+.cluster-root-cause-summary {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9em;
+    color: #374151;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 6px 10px;
+    border-radius: 6px;
+    overflow-wrap: anywhere;
+}
+
+.dark-mode .cluster-root-cause-summary {
+    color: #e5e7eb;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.cluster-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 14px 20px;
+}
+
+.cluster-toolbar-left, .cluster-toolbar-right, .cluster-filter-group, .cluster-reason-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.cluster-toolbar-left {
+    flex: 1;
+    min-width: 280px;
+}
+
+.cluster-search-input {
+    flex: 1;
+    min-width: 240px;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.92em;
+    background: #ffffff;
+    color: #111827;
+}
+
+.dark-mode .cluster-search-input {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+}
+
+.cluster-filter-btn, .cluster-action-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    color: #374151;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cluster-filter-btn.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+.dark-mode .cluster-filter-btn, .dark-mode .cluster-action-btn {
+    background: #1f2937;
+    border-color: #374151;
+    color: #e5e7eb;
+}
+
+.dark-mode .cluster-filter-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+.cluster-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.78em;
+    font-weight: 600;
+}
+
+.badge-error, .badge-5xx {
+    background: rgba(220, 38, 38, 0.14);
+    color: #dc2626;
+}
+
+.dark-mode .badge-error, .dark-mode .badge-5xx {
+    background: rgba(248, 113, 113, 0.2);
+    color: #fca5a5;
+}
+
+.badge-warning, .badge-4xx {
+    background: rgba(217, 119, 6, 0.15);
+    color: #b45309;
+}
+
+.dark-mode .badge-warning, .dark-mode .badge-4xx {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fcd34d;
+}
+
+.badge-2xx {
+    background: rgba(22, 163, 74, 0.14);
+    color: #15803d;
+}
+
+.dark-mode .badge-2xx {
+    background: rgba(74, 222, 128, 0.2);
+    color: #86efac;
+}
+
+.badge-count {
+    background: rgba(37, 99, 235, 0.12);
+    color: #1d4ed8;
+}
+
+.dark-mode .badge-count {
+    background: rgba(96, 165, 250, 0.2);
+    color: #93c5fd;
+}
+
+.badge-neutral, .badge-other {
+    background: rgba(107, 114, 128, 0.14);
+    color: #4b5563;
+}
+
+.dark-mode .badge-neutral, .dark-mode .badge-other {
+    background: rgba(156, 163, 175, 0.2);
+    color: #d1d5db;
+}
+
+.cluster-meta-row {
+    margin: 10px 0 8px 0;
+    font-size: 0.9em;
+}
+
+.cluster-response-details {
+    margin: 8px 0 12px 0;
+}
+
+.cluster-response-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.88em;
+    color: #2563eb;
+}
+
+.dark-mode .cluster-response-details summary {
+    color: #60a5fa;
+}
+
+.cluster-response-pre {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 0.84em;
+    max-height: 260px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.dark-mode .cluster-response-pre {
+    background: rgba(0, 0, 0, 0.35);
+    color: #e5e7eb;
+}
+
+.cluster-paths-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.cluster-path-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.025);
+}
+
+.dark-mode .cluster-path-row {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.cluster-method-tag {
+    font-size: 0.76em;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #1d4ed8;
+    margin-right: 6px;
+}
+
+.dark-mode .cluster-method-tag {
+    color: #93c5fd;
+}
+
+.cluster-test-pill {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(37, 99, 235, 0.08);
+    font-size: 0.85em;
+    text-decoration: none;
+}
+
 .cluster-content {
     overflow: hidden;
     transition: max-height 0.3s ease;
-    max-height: 1000px; /* Adjust as needed */
+    max-height: 4000px;
 }
 
 .cluster-content.collapsed {
@@ -104,8 +354,18 @@ p {
 
 /* Dark mode styles for the error card */
 .dark-mode .error-card {
-    background: rgba(230, 57, 70, 0.1);
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    background: #222222;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .error-card.cluster-card-error {
+    background: rgba(230, 57, 70, 0.07);
+    border-color: rgba(248, 113, 113, 0.22);
+}
+
+.dark-mode .error-card.cluster-card-warning {
+    background: rgba(251, 191, 36, 0.06);
+    border-color: rgba(251, 191, 36, 0.22);
 }
 
 /* Dark mode styles for the cluster title */
@@ -131,11 +391,6 @@ p {
 /* Make strong text more prominent in dark mode */
 .dark-mode .error-card strong {
     color: #f8f9fa;
-}
-
-/* Ensure the border is visible in dark mode */
-.dark-mode .error-card {
-    border-left-width: 5px !important;
 }
 
 /* Dark mode link styles */

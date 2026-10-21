@@ -211,26 +211,77 @@
         {{/hasFailingPaths}}
     </div>
     {{/hasResponseCodes}}
-    <h2 class="title-section">Execution Details</h2>
+    <h2 class="title-section">Root-Cause Clusters</h2>
+
+    <div class="cluster-toolbar card-wrapper">
+        <div class="cluster-toolbar-left">
+            <input type="text" id="clusterSearchInput" class="cluster-search-input"
+                   placeholder="Search clusters by path, exception, HTTP status, or fuzzer..."
+                   oninput="filterClusters()"/>
+            <div class="cluster-filter-group">
+                <button type="button" class="cluster-filter-btn active" data-filter="all" onclick="setClusterFilter('all', this)">All</button>
+                <button type="button" class="cluster-filter-btn" data-filter="error" onclick="setClusterFilter('error', this)">Errors</button>
+                <button type="button" class="cluster-filter-btn" data-filter="warning" onclick="setClusterFilter('warning', this)">Warnings</button>
+                <button type="button" class="cluster-filter-btn" data-filter="5xx" onclick="setClusterFilter('5xx', this)">5XX Crashes</button>
+            </div>
+        </div>
+        <div class="cluster-toolbar-right">
+            <button type="button" class="cluster-action-btn" onclick="expandAllClusters()">Expand All</button>
+            <button type="button" class="cluster-action-btn" onclick="collapseAllClusters()">Collapse All</button>
+        </div>
+    </div>
 
     {{#groupedTestCases}}
-    <div class="card-wrapper some-margin">
+    <div class="card-wrapper some-margin cluster-reason-group {{severityClass}}" data-severity="{{severityClass}}">
         <div class="error-cluster-header" onclick="toggleErrorCluster(this)">
             <h3 class="error-title">{{resultReason}}</h3>
+            <div class="cluster-reason-badges">
+                <span class="cluster-badge badge-neutral">{{clusterCount}} root-cause cluster(s)</span>
+                {{#hasErrors}}
+                <span class="cluster-badge badge-error">{{errorCount}} Errors</span>
+                {{/hasErrors}}
+                {{#hasWarnings}}
+                <span class="cluster-badge badge-warning">{{warningCount}} Warnings</span>
+                {{/hasWarnings}}
+            </div>
         </div>
         <div class="error-cluster-content">
             <div class="error-cluster-container">
                 {{#clusters}}
-                <div class="error-card" style="border-left: 5px solid {{borderColor}};">
-                    <h4 class="cluster-title" onclick="toggleCluster(this)">🗄️ Cluster {{clusterId}}</h4>
-                    <p><strong>📃 Response:</strong> {{errorMessage}}</p>
+                <div class="error-card cluster-card-{{severity}}"
+                     data-severity="{{severity}}" data-is5xx="{{is5xx}}" data-status="{{httpStatusCode}}">
+                    <div class="cluster-title" onclick="toggleCluster(this)">
+                        <div class="cluster-title-main">
+                            <span class="cluster-id-label">Cluster #{{clusterId}}</span>
+                            <span class="cluster-badge {{statusBadgeClass}}">HTTP {{httpStatusCode}}</span>
+                            <span class="cluster-badge badge-count">{{testCount}} test(s)</span>
+                            <span class="cluster-badge badge-neutral">{{pathCount}} path(s)</span>
+                            <span class="cluster-badge badge-neutral">{{fuzzerCount}} fuzzer(s)</span>
+                        </div>
+                        <div class="cluster-root-cause-summary">{{rootCauseSummary}}</div>
+                    </div>
                     <div class="cluster-content">
-                        {{#paths}}
-                        <p><strong>📍 Path:</strong> {{path}}</p>
-                        <p><strong>📝 Test Cases:</strong>
-                            {{{testCases}}}
-                        </p>
-                        {{/paths}}
+                        <div class="cluster-meta-row">
+                            <strong>Triggered by Fuzzers:</strong> <span class="cluster-fuzzers-list">{{fuzzers}}</span>
+                        </div>
+                        <details class="cluster-response-details">
+                            <summary>Sample Response Body</summary>
+                            <pre class="cluster-response-pre">{{errorMessage}}</pre>
+                        </details>
+                        <div class="cluster-paths-table">
+                            {{#paths}}
+                            <div class="cluster-path-row">
+                                <div class="cluster-path-name">
+                                    {{#methods}}<span class="cluster-method-tag">{{methods}}</span>{{/methods}}
+                                    <code>{{path}}</code>
+                                    <span class="cluster-path-count">({{pathTestCount}})</span>
+                                </div>
+                                <div class="cluster-path-links">
+                                    {{{testCases}}}
+                                </div>
+                            </div>
+                            {{/paths}}
+                        </div>
                     </div>
                 </div>
                 {{/clusters}}
