@@ -302,4 +302,122 @@ final class OperationDependencyOrder {
     private static String normalize(String value) {
         return value == null ? "" : value.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
     }
+
+    /**
+     * Authoritative static analysis of path-parameter producers and consumers across an OpenAPI contract,
+     * shared by {@link AnalyzeCommand} and {@link InitCommand}.
+     */
+    static PathDependencyAnalysis analyzePathDependencies(OpenAPI api) {
+        if (api == null || api.getPaths() == null || api.getPaths().isEmpty()) {
+            return new PathDependencyAnalysis(List.of(), Map.of(), Map.of(), Map.of(), 0, 0);
+        }
+        List<Map.Entry<String, PathItem>> orderedEntries = order(api, new ArrayList<>(api.getPaths().entrySet()));
+        List<String> orderedPaths = orderedEntries.stream().map(Map.Entry::getKey).toList();
+        Map<String, String> postProducersByNoun = collectProducersByNoun(api, true);
+        Map<String, String> allProducersByNoun = collectProducersByNoun(api, false);
+        Map<String, Set<String>> postProducersById = buildProducersByIdentifier(api, orderedEntries);
+
+        Map<String, Set<String>> consumersByProducer = new LinkedHashMap<>();
+        Map<String, Set<String>> paramsByProducer = new LinkedHashMap<>();
+        Map<String, Set<String>> unresolvedByPath = new LinkedHashMap<>();
+        int totalPathVars = 0;
+        int resolvedPathVars = 0;
+
+        for (String path : orderedPaths) {
+            Matcher matcher = PATH_PARAMETER_PATTERN.matcher(path);
+            String methods = methodsForPath(api, path);
+            while (matcher.find()) {
+                totalPathVars++;
+                String varName = matcher.group(1);
+                String preceding = normalize(precedingSegment(path, matcher.start()));
+                String targetNoun = !preceding.isEmpty() ? preceding : inferNounFromVarName(varName);
+                String producer = matchProducer(varName, preceding, targetNoun, allProducersByNoun, postProducersById, api);
+                if (producer != null) {
+                    resolvedPathVars++;
+                    paramsByProducer.computeIfAbsent(producer, _ -> new LinkedHashSet<>()).add("{" + varName + "}");
+                    consumersByProducer.computeIfAbsent(producer, _ -> new LinkedHashSet<>()).add(methods + " " + path);
+                }
+                if (matchProducer(varName, preceding, targetNoun, postProducersByNoun, postProducersById, api) == null) {
+                    unresolvedByPath.computeIfAbsent(path, _ -> new LinkedHashSet<>()).add(varName);
+                }
+            }
+        }
+        return new PathDependencyAnalysis(orderedPaths, consumersByProducer, paramsByProducer,
+                unresolvedByPath, totalPathVars, resolvedPathVars);
+    }
+
+    private static Map<String, String> collectProducersByNoun(OpenAPI api, boolean postOnly) {
+        Map<String, String> producers = new LinkedHashMap<>();
+        for (Map.Entry<String, PathItem> entry : api.getPaths().entrySet()) {
+            PathItem item = entry.getValue();
+            if (item == null) {
+                continue;
+            }
+            String noun = lastConcreteSegment(entry.getKey());
+            if (noun.isEmpty()) {
+                continue;
+            }
+            if (item.getPost() != null) {
+                producers.put(noun, "POST " + entry.getKey());
+            } else if (!postOnly && item.getGet() != null && !stripTrailingSlash(entry.getKey()).endsWith("}")) {
+                producers.putIfAbsent(noun, "GET " + entry.getKey());
+            }
+        }
+        return producers;
+    }
+
+    private static String matchProducer(String varName, String preceding, String targetNoun,
+                                        Map<String, String> producersByNoun,
+                                        Map<String, Set<String>> postProducersById, OpenAPI api) {
+        for (Map.Entry<String, String> entry : producersByNoun.entrySet()) {
+            if (WordUtils.sameNoun(entry.getKey(), targetNoun)) {
+                return entry.getValue();
+            }
+        }
+        Set<String> candidates = new LinkedHashSet<>();
+        addIdentifierCandidate(varName, preceding, candidates);
+        for (String candidate : candidates) {
+            Set<String> paths = postProducersById.get(candidate);
+            if (paths != null && !paths.isEmpty()) {
+                String prodPath = paths.iterator().next();
+                PathItem item = api.getPaths().get(prodPath);
+                String verb = (item != null && item.getPost() != null) ? "POST " : "GET ";
+                return verb + prodPath;
+            }
+        }
+        return null;
+    }
+
+    private static String inferNounFromVarName(String varName) {
+        String stripped = varName.replaceAll("(?i)(Id|Uuid|Guid|Code|Key|Reference)$", "");
+        return normalize(stripped.isEmpty() ? varName : stripped);
+    }
+
+    private static String lastConcreteSegment(String path) {
+        List<String> segments = com.google.common.base.Splitter.on('/').omitEmptyStrings().splitToList(stripTrailingSlash(path));
+        for (int i = segments.size() - 1; i >= 0; i--) {
+            if (!segments.get(i).startsWith("{")) {
+                return normalize(segments.get(i));
+            }
+        }
+        return "";
+    }
+
+    static String methodsForPath(OpenAPI openAPI, String path) {
+        PathItem item = openAPI.getPaths() != null ? openAPI.getPaths().get(path) : null;
+        if (item == null || item.readOperationsMap() == null || item.readOperationsMap().isEmpty()) {
+            return "GET";
+        }
+        return item.readOperationsMap().keySet().stream()
+                .map(Enum::name)
+                .collect(java.util.stream.Collectors.joining("/"));
+    }
+
+    record PathDependencyAnalysis(List<String> orderedPaths,
+                                  Map<String, Set<String>> consumersByProducer,
+                                  Map<String, Set<String>> paramsByProducer,
+                                  Map<String, Set<String>> unresolvedByPath,
+                                  int totalPathVars,
+                                  int resolvedPathVars) {
+    }
 }

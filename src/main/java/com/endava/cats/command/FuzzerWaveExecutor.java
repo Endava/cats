@@ -234,15 +234,7 @@ final class FuzzerWaveExecutor {
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 2, 4, "Coverage"));
         for (String coverageFuzzerName : coverageWaveFuzzers) {
             Set<String> singleWave = Set.of(coverageFuzzerName);
-            for (PreparedPath path : preparedPaths) {
-                if (!path.binaryStreamOnly()) {
-                    CatsExecutionCancelledException.check();
-                    List<Fuzzer> matchingCoverage = nonSeedFuzzers(path.fuzzersToRun()).stream()
-                            .filter(fuzzer -> isInWave(fuzzer, singleWave))
-                            .toList();
-                    runFuzzers(path.filteredFuzzingData(), matchingCoverage);
-                }
-            }
+            runNonSeedWaveAcrossPaths(preparedPaths, fuzzer -> isInWave(fuzzer, singleWave), false);
         }
         if (command.runtimeResourcePool != null && command.runtimeResourcePool.observedResourceCount() > resourcesBeforeCoverageWave) {
             retryUnresolvedSeedOperations(preparedPaths);
@@ -251,29 +243,31 @@ final class FuzzerWaveExecutor {
 
     private void runCrashWave(List<PreparedPath> preparedPaths, Set<String> coverageWaveFuzzers, Set<String> crashWaveFuzzers) {
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 3, 4, "Crash"));
-        for (PreparedPath path : preparedPaths) {
-            if (!path.binaryStreamOnly()) {
-                CatsExecutionCancelledException.check();
-                List<Fuzzer> crashWave = nonSeedFuzzers(path.fuzzersToRun()).stream()
-                        .filter(fuzzer -> !isInWave(fuzzer, coverageWaveFuzzers) && isInWave(fuzzer, crashWaveFuzzers))
-                        .toList();
-                runFuzzers(path.filteredFuzzingData(), crashWave);
-            }
-        }
+        runNonSeedWaveAcrossPaths(preparedPaths,
+                fuzzer -> !isInWave(fuzzer, coverageWaveFuzzers) && isInWave(fuzzer, crashWaveFuzzers), false);
     }
 
     private void runRemainingWaveAndSecondPhase(List<PreparedPath> preparedPaths,
                                                 Set<String> coverageWaveFuzzers, Set<String> crashWaveFuzzers) {
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 4, 4, "Full"));
+        runNonSeedWaveAcrossPaths(preparedPaths,
+                fuzzer -> !isInWave(fuzzer, coverageWaveFuzzers) && !isInWave(fuzzer, crashWaveFuzzers), true);
+    }
+
+    private void runNonSeedWaveAcrossPaths(List<PreparedPath> preparedPaths,
+                                           java.util.function.Predicate<Fuzzer> waveFilter,
+                                           boolean completePathAfterWave) {
         for (PreparedPath path : preparedPaths) {
-            if (!path.binaryStreamOnly() && (!path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty())) {
+            if (!path.binaryStreamOnly() && (!completePathAfterWave || !path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty())) {
                 CatsExecutionCancelledException.check();
-                List<Fuzzer> remainingWave = nonSeedFuzzers(path.fuzzersToRun()).stream()
-                        .filter(fuzzer -> !isInWave(fuzzer, coverageWaveFuzzers) && !isInWave(fuzzer, crashWaveFuzzers))
+                List<Fuzzer> waveFuzzers = nonSeedFuzzers(path.fuzzersToRun()).stream()
+                        .filter(waveFilter)
                         .toList();
-                runFuzzers(path.filteredFuzzingData(), remainingWave);
-                runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
-                command.executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));
+                runFuzzers(path.filteredFuzzingData(), waveFuzzers);
+                if (completePathAfterWave) {
+                    runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
+                    command.executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));
+                }
             }
         }
     }

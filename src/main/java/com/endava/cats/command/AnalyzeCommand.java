@@ -5,8 +5,6 @@ import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
-import com.endava.cats.util.WordUtils;
-import com.google.common.base.Splitter;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
@@ -21,10 +19,8 @@ import picocli.CommandLine;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,7 +51,6 @@ import java.util.stream.Collectors;
         versionProvider = VersionProvider.class)
 @Unremovable
 public class AnalyzeCommand implements Runnable, CommandLine.IExitCodeGenerator {
-    private static final Splitter SLASH_SPLITTER = Splitter.on('/').omitEmptyStrings();
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
 
     @CommandLine.Mixin
@@ -96,126 +91,39 @@ public class AnalyzeCommand implements Runnable, CommandLine.IExitCodeGenerator 
     }
 
     BlueprintReport buildBlueprint(OpenAPI openAPI) {
-        List<String> orderedPaths = OperationDependencyOrder
-                .order(openAPI, new ArrayList<>(openAPI.getPaths().entrySet()))
-                .stream()
-                .map(Map.Entry::getKey)
-                .toList();
-        Map<String, String> producerByNoun = discoverProducers(openAPI);
+        OperationDependencyOrder.PathDependencyAnalysis depAnalysis =
+                OperationDependencyOrder.analyzePathDependencies(openAPI);
         List<ProducerConsumerChain> chains = new ArrayList<>();
-        Set<String> orphanParameters = new LinkedHashSet<>();
-        int totalPathVars = 0;
-        int resolvedPathVars = 0;
-
-        Map<String, Set<String>> consumersByProducer = new LinkedHashMap<>();
-        Map<String, Set<String>> paramsByProducer = new LinkedHashMap<>();
-        for (String path : orderedPaths) {
-            Set<String> vars = OpenApiUtils.getPathVariables(path);
-            String methods = methodsForPath(openAPI, path);
-            for (String varName : vars) {
-                totalPathVars++;
-                String noun = inferVarNoun(path, varName);
-                String matchingProducer = findMatchingProducer(producerByNoun, noun);
-                if (matchingProducer != null) {
-                    resolvedPathVars++;
-                    paramsByProducer.computeIfAbsent(matchingProducer, _ -> new LinkedHashSet<>())
-                            .add("{" + varName + "}");
-                    consumersByProducer.computeIfAbsent(matchingProducer, _ -> new LinkedHashSet<>())
-                            .add(methods + " " + path);
-                } else {
-                    orphanParameters.add("{" + varName + "} in " + methods + " " + path);
-                }
-            }
-        }
-        consumersByProducer.forEach((producer, consumers) -> {
-            String producedParams = String.join(", ", paramsByProducer.getOrDefault(producer, Set.of()));
+        depAnalysis.consumersByProducer().forEach((producer, consumers) -> {
+            String producedParams = String.join(", ", depAnalysis.paramsByProducer().getOrDefault(producer, Set.of()));
             String label = producedParams.isEmpty() ? producer : producer + "  (produces " + producedParams + ")";
             chains.add(new ProducerConsumerChain(label, List.copyOf(consumers)));
+        });
+        Set<String> orphanParameters = new LinkedHashSet<>();
+        depAnalysis.unresolvedByPath().forEach((path, vars) -> {
+            String methods = OperationDependencyOrder.methodsForPath(openAPI, path);
+            vars.forEach(v -> orphanParameters.add("{" + v + "} in " + methods + " " + path));
         });
 
         OperationMetrics opMetrics = collectOperationMetrics(openAPI);
         SchemaMetrics schemaMetrics = collectSchemaMetrics(openAPI);
-        ScoreBreakdown score = computeScore(totalPathVars, resolvedPathVars, opMetrics, schemaMetrics);
+        ScoreBreakdown score = computeScore(
+                depAnalysis.totalPathVars(), depAnalysis.resolvedPathVars(), opMetrics, schemaMetrics);
         List<String> recommendations = buildRecommendations(orphanParameters, opMetrics, schemaMetrics);
         String mermaidDiagram = buildMermaidDiagram(chains, orphanParameters);
 
         return new BlueprintReport(
                 contract,
-                orderedPaths.size(),
+                depAnalysis.orderedPaths().size(),
                 opMetrics.totalOperations(),
                 score.totalScore(),
                 score.grade(),
                 score,
-                orderedPaths,
+                depAnalysis.orderedPaths(),
                 List.copyOf(chains),
                 List.copyOf(orphanParameters),
                 recommendations,
                 mermaidDiagram);
-    }
-
-    private static Map<String, String> discoverProducers(OpenAPI openAPI) {
-        Map<String, String> producers = new LinkedHashMap<>();
-        for (Map.Entry<String, PathItem> entry : openAPI.getPaths().entrySet()) {
-            PathItem item = entry.getValue();
-            if (item == null) {
-                continue;
-            }
-            String noun = lastConcreteSegment(entry.getKey());
-            if (noun.isEmpty()) {
-                continue;
-            }
-            if (item.getPost() != null) {
-                producers.put(noun, "POST " + entry.getKey());
-            } else if (item.getGet() != null && !entry.getKey().endsWith("}")) {
-                producers.putIfAbsent(noun, "GET " + entry.getKey());
-            }
-        }
-        return producers;
-    }
-
-    private static String findMatchingProducer(Map<String, String> producerByNoun, String targetNoun) {
-        for (Map.Entry<String, String> entry : producerByNoun.entrySet()) {
-            if (WordUtils.sameNoun(entry.getKey(), targetNoun)) {
-                return entry.getValue();
-            }
-        }
-        return null;
-    }
-
-    private static String methodsForPath(OpenAPI openAPI, String path) {
-        PathItem item = openAPI.getPaths() != null ? openAPI.getPaths().get(path) : null;
-        if (item == null || item.readOperationsMap() == null || item.readOperationsMap().isEmpty()) {
-            return "GET";
-        }
-        return item.readOperationsMap().keySet().stream()
-                .map(Enum::name)
-                .collect(Collectors.joining("/"));
-    }
-
-    private static String inferVarNoun(String path, String varName) {
-        String token = "{" + varName + "}";
-        List<String> segments = SLASH_SPLITTER.splitToList(path);
-        for (int i = 0; i < segments.size(); i++) {
-            if (token.equalsIgnoreCase(segments.get(i)) && i > 0 && !segments.get(i - 1).startsWith("{")) {
-                return normalizeAlphaNum(segments.get(i - 1));
-            }
-        }
-        String stripped = varName.replaceAll("(?i)(Id|Uuid|Guid|Code|Key)$", "");
-        return normalizeAlphaNum(stripped.isEmpty() ? varName : stripped);
-    }
-
-    private static String lastConcreteSegment(String path) {
-        List<String> segments = SLASH_SPLITTER.splitToList(path);
-        for (int i = segments.size() - 1; i >= 0; i--) {
-            if (!segments.get(i).startsWith("{")) {
-                return normalizeAlphaNum(segments.get(i));
-            }
-        }
-        return "";
-    }
-
-    private static String normalizeAlphaNum(String value) {
-        return value.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
     }
 
     private static OperationMetrics collectOperationMetrics(OpenAPI openAPI) {
@@ -261,7 +169,7 @@ public class AnalyzeCommand implements Runnable, CommandLine.IExitCodeGenerator 
 
     @SuppressWarnings("rawtypes")
     private static SchemaMetrics collectSchemaMetrics(OpenAPI openAPI) {
-        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of(JsonUtils.JSON_WILDCARD));
         int totalProps = 0;
         int constrainedProps = 0;
         int exampleProps = 0;

@@ -7,6 +7,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.model.TestResultSnapshot;
@@ -127,20 +128,22 @@ public class SmokeCommand implements Runnable, CommandLine.IExitCodeGenerator {
             String key = method + " " + path;
             OperationProbe probe = new OperationProbe(method, path, code, timeMs, diagnoseStatusCode(code));
             OperationProbe existing = byOperation.get(key);
-            if (existing == null || (existing.statusCode() >= 400 && code >= 200 && code < 300)) {
+            if (existing == null || (!ResponseCodeFamily.is2xxCode(existing.statusCode()) && ResponseCodeFamily.is2xxCode(code))) {
                 byOperation.put(key, probe);
             }
         }
         List<OperationProbe> probes = List.copyOf(byOperation.values());
-        int ok2xx = countInRange(probes, 200, 300);
+        int ok2xx = (int) probes.stream().filter(p -> ResponseCodeFamily.is2xxCode(p.statusCode())).count();
         int authErrors = (int) probes.stream().filter(p -> p.statusCode() == 401 || p.statusCode() == 403).count();
         int notFound404 = (int) probes.stream().filter(p -> p.statusCode() == 404).count();
         int validation4xx = (int) probes.stream()
-                .filter(p -> p.statusCode() >= 400 && p.statusCode() < 500 && p.statusCode() != 401
+                .filter(p -> ResponseCodeFamily.is4xxCode(p.statusCode()) && p.statusCode() != 401
                         && p.statusCode() != 403 && p.statusCode() != 404)
                 .count();
-        int server5xx = countInRange(probes, 500, 600);
-        int ioErrors = (int) probes.stream().filter(p -> p.statusCode() < 100 || p.statusCode() >= 900).count();
+        int server5xx = (int) probes.stream().filter(p -> ResponseCodeFamily.is5xxCode(p.statusCode())).count();
+        int ioErrors = (int) probes.stream()
+                .filter(p -> !ResponseCodeFamily.isValidCode(String.valueOf(p.statusCode())))
+                .count();
         List<String> unresolved = collectUnresolvedParameters();
         String verdict = determineVerdict(probes.size(), ok2xx, authErrors, server5xx, ioErrors);
         return new SmokeReport(probes, probes.size(), ok2xx, authErrors, notFound404,
@@ -160,14 +163,8 @@ public class SmokeCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 .toList();
     }
 
-    private static int countInRange(List<OperationProbe> probes, int minInclusive, int maxExclusive) {
-        return (int) probes.stream()
-                .filter(p -> p.statusCode() >= minInclusive && p.statusCode() < maxExclusive)
-                .count();
-    }
-
     static String diagnoseStatusCode(int code) {
-        if (code >= 200 && code < 300) {
+        if (ResponseCodeFamily.is2xxCode(code)) {
             return "2XX OK";
         }
         if (code >= 300 && code < 400) {
@@ -179,10 +176,10 @@ public class SmokeCommand implements Runnable, CommandLine.IExitCodeGenerator {
         if (code == 404) {
             return "Not Found (Route / ID)";
         }
-        if (code >= 400 && code < 500) {
+        if (ResponseCodeFamily.is4xxCode(code)) {
             return "4XX Validation Rejected";
         }
-        if (code >= 500 && code < 600) {
+        if (ResponseCodeFamily.is5xxCode(code)) {
             return "5XX Server Crash";
         }
         return "I/O / Connection Error";

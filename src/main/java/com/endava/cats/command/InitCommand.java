@@ -4,7 +4,6 @@ import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
-import com.endava.cats.util.WordUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -175,64 +174,7 @@ public class InitCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     static Map<String, Set<String>> findUnresolvedPathParameters(OpenAPI openAPI) {
-        if (openAPI == null || openAPI.getPaths() == null) {
-            return Map.of();
-        }
-        Set<String> postProducedNouns = collectPostProducedNouns(openAPI);
-        Map<String, Set<String>> unresolvedByPath = new LinkedHashMap<>();
-
-        for (Map.Entry<String, PathItem> entry : openAPI.getPaths().entrySet()) {
-            String path = entry.getKey();
-            Set<String> pathVars = OpenApiUtils.getPathVariables(path);
-            for (String varName : pathVars) {
-                String targetNoun = inferParameterNoun(path, varName);
-                boolean hasPostProducer = postProducedNouns.stream()
-                        .anyMatch(prod -> WordUtils.sameNoun(prod, targetNoun));
-                if (!hasPostProducer) {
-                    unresolvedByPath.computeIfAbsent(path, _ -> new LinkedHashSet<>()).add(varName);
-                }
-            }
-        }
-        return unresolvedByPath;
-    }
-
-    private static Set<String> collectPostProducedNouns(OpenAPI openAPI) {
-        Set<String> nouns = new LinkedHashSet<>();
-        for (Map.Entry<String, PathItem> entry : openAPI.getPaths().entrySet()) {
-            if (entry.getValue() != null && entry.getValue().getPost() != null) {
-                String lastNoun = lastNonTemplateSegment(entry.getKey());
-                if (!lastNoun.isEmpty()) {
-                    nouns.add(lastNoun);
-                }
-            }
-        }
-        return nouns;
-    }
-
-    private static String inferParameterNoun(String path, String varName) {
-        String token = "{" + varName + "}";
-        String[] segments = path.split("/");
-        for (int i = 0; i < segments.length; i++) {
-            if (token.equalsIgnoreCase(segments[i]) && i > 0 && !segments[i - 1].startsWith("{")) {
-                return normalizeAlphaNum(segments[i - 1]);
-            }
-        }
-        String stripped = varName.replaceAll("(?i)(Id|Uuid|Guid|Code|Key)$", "");
-        return normalizeAlphaNum(stripped.isEmpty() ? varName : stripped);
-    }
-
-    private static String lastNonTemplateSegment(String path) {
-        String[] segments = path.split("/");
-        for (int i = segments.length - 1; i >= 0; i--) {
-            if (!segments[i].isBlank() && !segments[i].startsWith("{")) {
-                return normalizeAlphaNum(segments[i]);
-            }
-        }
-        return "";
-    }
-
-    private static String normalizeAlphaNum(String raw) {
-        return raw.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        return OperationDependencyOrder.analyzePathDependencies(openAPI).unresolvedByPath();
     }
 
     private static String renderHeadersYaml(Map<String, String> securityHeaders) {
