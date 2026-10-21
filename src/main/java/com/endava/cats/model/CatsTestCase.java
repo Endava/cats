@@ -290,7 +290,7 @@ public class CatsTestCase {
     }
 
     public String getResultDetailsForHtml() {
-        return this.resultDetails.replace("\n", "<br>")
+        return this.resultDetails == null ? "" : this.resultDetails.replace("\n", "<br>")
                 .replace("\r", "<br>");
     }
 }

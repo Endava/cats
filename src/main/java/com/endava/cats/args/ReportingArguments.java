@@ -53,7 +53,7 @@ public class ReportingArguments {
     private boolean timestampReports;
 
     @CommandLine.Option(names = {"--reportFormat"},
-            description = "A list of formats of the CATS report. Default: @|bold,underline ${DEFAULT-VALUE}|@. For example, the @|bold,underline HTML_ONLY|@ report format does not contain any Javascript. This is useful for large number of tests, as the page will render faster and also in CI environments due to Javascript content security policies", split = ",")
+            description = "A comma-separated list of formats for the CATS report (supports multiple formats in the same run, e.g. @|bold HTML_JS,WFC_REPORT|@). Default: @|bold,underline ${DEFAULT-VALUE}|@. Available formats: @|bold HTML_JS|@, @|bold HTML_ONLY|@, @|bold HTML_JS_CLUSTERS|@, @|bold JUNIT|@, @|bold WFC_REPORT|@.", split = ",")
     private List<ReportFormat> reportFormat = List.of(ReportFormat.HTML_JS);
 
     @CommandLine.Option(names = {"-o", "--output"},
@@ -264,7 +264,11 @@ public class ReportingArguments {
         /**
          * Generates a report in JUnit format.
          */
-        JUNIT
+        JUNIT,
+        /**
+         * Generates a standardized Web Fuzzing Commons (WFC) JSON report ({@code report.json}) with WFC Faults classification.
+         */
+        WFC_REPORT
     }
 
     /**

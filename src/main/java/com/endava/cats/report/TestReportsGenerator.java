@@ -70,8 +70,15 @@ public class TestReportsGenerator {
      */
     public void initPath(String folder) throws IOException {
         reportingArguments.resetSensitiveData();
+        primaryExporter.initPath(folder);
         for (TestCaseExporter exporter : testCaseExporters) {
-            exporter.initPath(folder);
+            if (exporter != primaryExporter) {
+                if (primaryExporter.getReportingPath() != null) {
+                    exporter.shareReportingPath(primaryExporter.getReportingPath(), primaryExporter.getT0());
+                } else {
+                    exporter.initPath(folder);
+                }
+            }
         }
     }
 
@@ -82,7 +89,13 @@ public class TestReportsGenerator {
      */
     public void writeTestCase(CatsTestCase catsTestCase) {
         SensitiveDataPolicy.sanitize(catsTestCase, reportingArguments);
-        primaryExporter.writeTestCase(catsTestCase);
+        TestCaseExporter writerExporter = testCaseExporters.stream()
+                .filter(exp -> exp.reportFormat() == ReportingArguments.ReportFormat.HTML_JS
+                        || exp.reportFormat() == ReportingArguments.ReportFormat.HTML_ONLY
+                        || exp.reportFormat() == ReportingArguments.ReportFormat.HTML_JS_CLUSTERS)
+                .findFirst()
+                .orElse(primaryExporter);
+        writerExporter.writeTestCase(catsTestCase);
     }
 
     /**

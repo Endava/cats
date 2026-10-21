@@ -1,0 +1,243 @@
+package com.endava.cats.report;
+
+import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.CatsResultFactory.Reason;
+import com.endava.cats.util.KeyValuePair;
+import com.webfuzzing.commons.faults.DefinedFaultCategory;
+import com.webfuzzing.commons.faults.FaultCategory;
+import com.webfuzzing.commons.report.FaultCategoryId;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Classifies CATS test case outcomes into standardized Web Fuzzing Commons ({@link DefinedFaultCategory})
+ * and CATS-specific ({@link CatsWfcFaultCategory}) fault category identifiers.
+ */
+public final class WfcFaultClassifier {
+    private static final Set<String> POSITIVE_VALID_INPUT_FUZZERS = Set.of(
+            "happypath", "onlyrequiredfields", "defaultvaluesinfields", "examplesfields",
+            " randomfuzzer", "functionaltest");
+
+    private static final Set<String> SSRF_REASONS = Set.of(
+            Reason.SSRF_REFLECTED.value(),
+            Reason.INTERNAL_TARGET_REFLECTED_SSRF.value(),
+            Reason.CLOUD_METADATA_REFLECTED_SSRF.value(),
+            Reason.FILE_CONTENT_EXPOSED_SSRF.value(),
+            Reason.NETWORK_ERROR_SSRF.value(),
+            Reason.DNS_RESOLUTION_SSRF.value(),
+            Reason.HTTP_CLIENT_SSRF.value());
+
+    private static final Map<String, FaultCategory> EXACT_REASON_MAP = buildExactReasonMap();
+
+    private WfcFaultClassifier() {
+        // Utility class
+    }
+
+    private static Map<String, FaultCategory> buildExactReasonMap() {
+        Map<String, FaultCategory> map = new LinkedHashMap<>();
+        map.put(Reason.NOT_MATCHING_RESPONSE_SCHEMA.value(), DefinedFaultCategory.SCHEMA_INVALID_RESPONSE);
+        map.put(Reason.RESPONSE_CONTENT_TYPE_NOT_MATCHING.value(), DefinedFaultCategory.SCHEMA_INVALID_RESPONSE);
+        map.put(Reason.MISSING_RESPONSE_HEADERS.value(), DefinedFaultCategory.SCHEMA_INVALID_RESPONSE);
+        map.put(Reason.NOT_IMPLEMENTED.value(), DefinedFaultCategory.SCHEMA_STATUS_NO_501_IF_IMPLEMENTED);
+        map.put(Reason.NOT_IMPLEMENTED.description(), DefinedFaultCategory.SCHEMA_STATUS_NO_501_IF_IMPLEMENTED);
+        map.put(Reason.SQL_INJECTION.value(), DefinedFaultCategory.SECURITY_SQL_INJECTION);
+        map.put(Reason.XSS_INJECTION.value(), DefinedFaultCategory.SECURITY_XSS_INJECTION);
+        map.put(Reason.MASS_ASSIGNMENT_DETECTED.value(), DefinedFaultCategory.SECURITY_MASS_ASSIGNMENT);
+        map.put(Reason.UNDECLARED_FIELD_ACCEPTED.value(), DefinedFaultCategory.SCHEMA_VALIDATION_BYPASS);
+        map.put(Reason.ERROR_LEAKS_DETECTED.value(), DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES);
+        map.put(Reason.CALL_TIMEOUT_EXCEEDED.value(), DefinedFaultCategory.SECURITY_CALL_TIMEOUT);
+        map.put(Reason.RESPONSE_TIME_EXCEEDS_MAX.value(), DefinedFaultCategory.SECURITY_CALL_TIMEOUT);
+        map.put(Reason.POTENTIAL_IDOR.value(), DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION);
+        map.put(Reason.COMMAND_INJECTION.value(), CatsWfcFaultCategory.CATS_COMMAND_INJECTION);
+        map.put(Reason.POSSIBLE_COMMAND_INJECTION.value(), CatsWfcFaultCategory.CATS_COMMAND_INJECTION);
+        map.put(Reason.NOSQL_INJECTION.value(), CatsWfcFaultCategory.CATS_NOSQL_INJECTION);
+        map.put(Reason.WRITE_ONLY_FIELDS_EXPOSED.value(), CatsWfcFaultCategory.CATS_SENSITIVE_DATA_EXPOSURE);
+        map.put(Reason.SENSITIVE_DATA_EXPOSED.value(), CatsWfcFaultCategory.CATS_SENSITIVE_DATA_EXPOSURE);
+        map.put(Reason.MISSING_SECURITY_HEADERS.value(), CatsWfcFaultCategory.CATS_MISSING_SECURITY_HEADERS);
+        map.put(Reason.READ_BROKEN_AFTER_FUZZING.value(), CatsWfcFaultCategory.CATS_READ_BROKEN_AFTER_FUZZING);
+        SSRF_REASONS.forEach(reason -> map.put(reason, DefinedFaultCategory.SECURITY_SSRF));
+        return Map.copyOf(map);
+    }
+
+    /**
+     * Classifies a {@link CatsTestCaseSummary} (optionally enriched with its full {@link CatsTestCase} details)
+     * into zero or more WFC {@link FaultCategoryId} entries.
+     */
+    public static Set<FaultCategoryId> classify(CatsTestCaseSummary summary, CatsTestCase fullTestCase) {
+        if (summary == null) {
+            return Set.of();
+        }
+        Set<FaultCategoryId> faults = new LinkedHashSet<>();
+        int code = summary.getHttpResponseCode();
+        String method = OptionalUpper(summary.getHttpMethod());
+
+        classifyPassiveProtocolFaults(summary, fullTestCase, code, method, faults);
+        if (!summary.getError() && !summary.getWarning()) {
+            return faults;
+        }
+
+        classifyStatusCodeFaults(summary, code, faults);
+        classifySecondPhaseAndSecurityFuzzers(summary, code, method, faults);
+        classifyReasonBasedFaults(summary, code, faults);
+
+        if (faults.isEmpty() && summary.getError() && !summary.is9xxResponse()) {
+            faults.add(faultId(CatsWfcFaultCategory.CATS_UNEXPECTED_BEHAVIOUR, summary.getResultReason()));
+        }
+        return Set.copyOf(faults);
+    }
+
+    private static void classifyStatusCodeFaults(CatsTestCaseSummary summary, int code, Set<FaultCategoryId> faults) {
+        if (code == 500) {
+            String context = ErrorSimilarityDetector.extractRootCauseSummary(
+                    summary.getResponseBody(), summary.getResultDetails());
+            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_500, context));
+        } else if (code == 501) {
+            faults.add(faultId(DefinedFaultCategory.SCHEMA_STATUS_NO_501_IF_IMPLEMENTED, null));
+        } else if (code >= 502 && code <= 599) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_OTHER_STATUS_5XX, "HTTP " + code));
+        } else if ((code < 100 || code > 599) && !summary.is9xxResponse()) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_NON_STANDARD_CODES, "HTTP " + code));
+        }
+    }
+
+    private static void classifyPassiveProtocolFaults(CatsTestCaseSummary summary, CatsTestCase fullTestCase,
+                                                      int code, String method, Set<FaultCategoryId> faults) {
+        if (code == 201) {
+            if ("DELETE".equals(method)) {
+                faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_201_IF_DELETE, null));
+            } else if ("GET".equals(method)) {
+                faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_201_IF_GET, null));
+            } else if ("PATCH".equals(method)) {
+                faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_201_IF_PATCH, null));
+            }
+        }
+        boolean hasResponseBody = !ErrorSimilarityDetector.isBlankOrEmptyPlaceholder(summary.getResponseBody());
+        if (code == 204 && hasResponseBody) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_204_IF_CONTENT, null));
+        } else if (code == 205 && hasResponseBody) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_205_IF_CONTENT, null));
+        }
+        if (code == 304 && !"GET".equals(method) && !"HEAD".equals(method)) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_304_IF_NO_GET_OR_HEAD, method));
+        }
+        if (fullTestCase != null) {
+            classifyHeaderAndPayloadProtocolFaults(fullTestCase, code, faults);
+        }
+    }
+
+    private static void classifyHeaderAndPayloadProtocolFaults(CatsTestCase fullTestCase, int code,
+                                                               Set<FaultCategoryId> faults) {
+        boolean hasReqPayload = fullTestCase.getRequest() != null
+                && StringUtils.isNotBlank(fullTestCase.getRequest().getPayload())
+                && !"{}".equals(fullTestCase.getRequest().getPayload().trim());
+        if (code == 413 && !hasReqPayload) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_413_IF_NO_PAYLOAD, null));
+        } else if (code == 415 && !hasReqPayload) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_415_IF_NO_PAYLOAD, null));
+        }
+        List<KeyValuePair<String, String>> headers = fullTestCase.getResponse() != null
+                ? fullTestCase.getResponse().getHeaders() : null;
+        if (headers == null || headers.isEmpty()) {
+            return;
+        }
+        if (code == 401 && !containsHeader(headers, "www-authenticate")) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_401_IF_NO_WWW_AUTHENTICATE, null));
+        } else if (code == 405 && !containsHeader(headers, "allow")) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW, null));
+        } else if (code == 426 && !containsHeader(headers, "upgrade")) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_426_IF_NO_UPGRADE, null));
+        }
+    }
+
+    private static boolean containsHeader(List<KeyValuePair<String, String>> headers, String target) {
+        return headers.stream().anyMatch(h -> h.getKey() != null && h.getKey().equalsIgnoreCase(target));
+    }
+
+    private static void classifySecondPhaseAndSecurityFuzzers(CatsTestCaseSummary summary, int code, String method,
+                                                              Set<FaultCategoryId> faults) {
+        String fuzzerLower = OptionalLower(summary.getFuzzer());
+        if (fuzzerLower.contains("checkdeletedresourcesnotavailable")) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_NONWORKING_DELETE, null));
+        } else if (fuzzerLower.contains("putidempotency")) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT, summary.getResultReason()));
+        } else if (fuzzerLower.contains("createdresourcelocation")) {
+            FaultCategory cat = (code == 404 || code == 410)
+                    ? DefinedFaultCategory.HTTP_CREATED_RESOURCE_NOT_FOUND
+                    : DefinedFaultCategory.HTTP_INVALID_LOCATION;
+            faults.add(faultId(cat, summary.getResultReason()));
+        } else if (fuzzerLower.contains("updatereadconsistency")) {
+            faults.add(faultId(CatsWfcFaultCategory.CATS_UPDATE_READ_INCONSISTENCY, summary.getResultReason()));
+        } else if (fuzzerLower.contains("conditionaletag") && code >= 200 && code < 300) {
+            faults.add(faultId(CatsWfcFaultCategory.CATS_STALE_ETAG_ACCEPTED, null));
+        } else if (fuzzerLower.contains("bypassauthentication") && code >= 200 && code < 300) {
+            FaultCategory cat = isWriteModificationMethod(method)
+                    ? DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS
+                    : DefinedFaultCategory.SECURITY_DECLARED_AUTH_NOT_ENFORCED;
+            faults.add(faultId(cat, method));
+        } else if (fuzzerLower.contains("crossparentresourceisolation")
+                || fuzzerLower.contains("insecuredirectobjectreferences")) {
+            faults.add(faultId(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, summary.getFuzzer()));
+        }
+    }
+
+    private static void classifyReasonBasedFaults(CatsTestCaseSummary summary, int code, Set<FaultCategoryId> faults) {
+        String reason = summary.getResultReason();
+        if (StringUtils.isBlank(reason)) {
+            return;
+        }
+        FaultCategory exact = EXACT_REASON_MAP.get(reason.trim());
+        if (exact != null) {
+            faults.add(faultId(exact, summary.getFuzzer()));
+            return;
+        }
+        if (reason.startsWith(Reason.UNEXPECTED_RESPONSE_CODE.value())
+                || reason.startsWith(Reason.UNDOCUMENTED_RESPONSE_CODE.value())
+                || reason.startsWith(Reason.UNEXPECTED_BEHAVIOUR.value())) {
+            classifyUnexpectedStatusCodeOracle(summary, code, faults);
+        }
+    }
+
+    private static void classifyUnexpectedStatusCodeOracle(CatsTestCaseSummary summary, int code,
+                                                           Set<FaultCategoryId> faults) {
+        String fuzzerLower = OptionalLower(summary.getFuzzer());
+        boolean isPositiveFuzzer = POSITIVE_VALID_INPUT_FUZZERS.stream().anyMatch(fuzzerLower::contains);
+        if (isPositiveFuzzer) {
+            if (code == 400 || code == 422) {
+                faults.add(faultId(DefinedFaultCategory.SCHEMA_VALID_INPUT_REJECTED, summary.getFuzzer()));
+            } else if (code == 406) {
+                faults.add(faultId(DefinedFaultCategory.SCHEMA_STATUS_HAS_406_IF_ACCEPT, summary.getFuzzer()));
+            }
+        } else if (code >= 200 && code < 300) {
+            faults.add(faultId(DefinedFaultCategory.SCHEMA_VALIDATION_BYPASS, summary.getFuzzer()));
+        }
+    }
+
+    private static boolean isWriteModificationMethod(String method) {
+        return "DELETE".equals(method) || "PUT".equals(method) || "PATCH".equals(method);
+    }
+
+    public static FaultCategoryId faultId(FaultCategory category, String context) {
+        FaultCategoryId id = new FaultCategoryId();
+        id.setId(category.getId());
+        id.setCode(category.getCode());
+        if (StringUtils.isNotBlank(context)) {
+            id.setContext(context);
+        }
+        return id;
+    }
+
+    private static String OptionalUpper(String value) {
+        return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private static String OptionalLower(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+}

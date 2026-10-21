@@ -86,8 +86,11 @@ public abstract class TestCaseExporter {
     final ProcessingArguments processingArguments;
     final StopArguments stopArguments;
 
+    @Getter
     private Path reportingPath;
+    @Getter
     private long t0;
+    @Getter
     private final Gson maskingSerializer;
     @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
@@ -145,6 +148,11 @@ public abstract class TestCaseExporter {
         }
 
         t0 = System.currentTimeMillis();
+    }
+
+    void shareReportingPath(Path sharedPath, long sharedT0) {
+        this.reportingPath = sharedPath;
+        this.t0 = sharedT0;
     }
 
     private void deleteFiles(Path path) throws IOException {
@@ -380,11 +388,17 @@ public abstract class TestCaseExporter {
      * The specific helper files are determined by the implementation of getSpecificHelperFiles method.
      */
     public void writeHelperFiles() {
+        String[] specificFiles = this.getSpecificHelperFiles();
+        if (specificFiles == null || specificFiles.length == 0) {
+            return;
+        }
         try {
             writeAssets();
-            for (String file : this.getSpecificHelperFiles()) {
+            for (String file : specificFiles) {
                 try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream(file)) {
-                    Files.copy(Objects.requireNonNull(stream), Paths.get(reportingPath.toFile().getAbsolutePath(), file));
+                    Files.copy(Objects.requireNonNull(stream),
+                            Paths.get(reportingPath.toFile().getAbsolutePath(), file),
+                            StandardCopyOption.REPLACE_EXISTING);
                 }
             }
         } catch (IOException e) {
@@ -445,7 +459,7 @@ public abstract class TestCaseExporter {
         }
     }
 
-    private void writeJsonTestCase(CatsTestCase testCase) {
+    protected void writeJsonTestCase(CatsTestCase testCase) {
         String testFileName = testCase.getTestId().replace(" ", "").concat(JSON);
         try {
             // Write raw bytes to preserve exact payload for replay - don't sanitize
@@ -475,7 +489,7 @@ public abstract class TestCaseExporter {
         }
     }
 
-    private CatsReportException reportFailure(String operation, Exception cause) {
+    protected CatsReportException reportFailure(String operation, Exception cause) {
         return new CatsReportException("%s in %s: %s".formatted(
                 operation, reportingPath.toAbsolutePath(), cause.getMessage()), cause);
     }
