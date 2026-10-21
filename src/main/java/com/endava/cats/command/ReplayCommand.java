@@ -431,23 +431,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     String buildCurlCommand(CatsRequest request) {
-        String method = Optional.ofNullable(request.getHttpMethod()).orElse("GET");
-        StringBuilder cmd = new StringBuilder("curl -i -X ").append(method);
-        for (KeyValuePair<String, Object> header : Optional.ofNullable(request.getHeaders()).orElse(Collections.emptyList())) {
-            if (StringUtils.isNotBlank(header.getKey())) {
-                cmd.append(" -H ").append(shellQuote(header.getKey() + ": " + header.getValue()));
-            }
-        }
-        if (StringUtils.isNotBlank(request.getPayload()) &&
-                (HttpMethod.requiresBody(method) || request.isSendBody())) {
-            cmd.append(" -d ").append(shellQuote(request.getPayload()));
-        }
-        cmd.append(" ").append(shellQuote(Optional.ofNullable(request.getUrl()).orElse("")));
-        return cmd.toString();
-    }
-
-    private static String shellQuote(String value) {
-        return "'" + value.replace("'", "'\\''") + "'";
+        return request.toCurlCommand();
     }
 
     @Override

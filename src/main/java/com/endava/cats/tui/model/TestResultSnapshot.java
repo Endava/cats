@@ -54,24 +54,7 @@ public record TestResultSnapshot(String id, String traceId, String scenario, Str
                 testCase.getPath(), testCase.getContractPath(), testCase.getFullRequestPath(), testCase.getServer(),
                 testCase.isValidJson(), reqSnapshot,
                 ResponseSnapshot.from(testCase.getResponse(), headersToMask), testCase.getCatsReplay(),
-                buildCurlCommand(reqSnapshot), targets, correlations);
-    }
-
-    private static String buildCurlCommand(RequestSnapshot req) {
-        if (req == null || req.httpMethod() == null || "####".equals(req.httpMethod())) {
-            return null;
-        }
-        StringBuilder sb = new StringBuilder("curl -X ").append(req.httpMethod());
-        for (HeaderSnapshot header : Optional.ofNullable(req.headers()).orElse(List.of())) {
-            sb.append(" -H \"").append(header.name()).append(": ").append(header.value()).append("\"");
-        }
-        if (req.payload() != null && !req.payload().isBlank() && !"{}".equals(req.payload().trim())) {
-            sb.append(" -d '").append(req.payload().replace("'", "'\\''")).append("'");
-        }
-        if (req.url() != null && !req.url().isBlank()) {
-            sb.append(" \"").append(req.url()).append("\"");
-        }
-        return sb.toString();
+                testCase.getCurl(), targets, correlations);
     }
 
     /**

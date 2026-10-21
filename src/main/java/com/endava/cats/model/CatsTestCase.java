@@ -233,19 +233,21 @@ public class CatsTestCase {
      * @return curl equivalent of running the test case
      */
     public String getCurl() {
-        if (request.getHttpMethod().equals("####")) {
+        if (request == null || request.getHttpMethod() == null || "####".equals(request.getHttpMethod())) {
             return "";
         }
 
         StringBuilder headersString = new StringBuilder();
         String body = "";
-        request.getHeaders().forEach(header -> headersString.append(CURL_HEADER.formatted(header.getKey(), this.getHeaderValueForCurl(header))));
+        Optional.ofNullable(request.getHeaders()).orElse(List.of())
+                .forEach(header -> headersString.append(CURL_HEADER.formatted(header.getKey(), this.getHeaderValueForCurl(header))));
 
         if (HttpMethod.requiresBody(request.getHttpMethod())) {
-            body = CURL_BODY.formatted(request.getPayload());
+            body = CURL_BODY.formatted(Optional.ofNullable(request.getPayload()).orElse(""));
         }
 
-        return CURL_TEMPLATE.formatted(request.getHttpMethod(), headersString.toString(), body, fullRequestPath.replace("$$", "$"));
+        String targetUrl = Optional.ofNullable(fullRequestPath).orElseGet(() -> Optional.ofNullable(request.getUrl()).orElse(""));
+        return CURL_TEMPLATE.formatted(request.getHttpMethod(), headersString.toString(), body, targetUrl.replace("$$", "$"));
     }
 
     /**
@@ -256,6 +258,10 @@ public class CatsTestCase {
      * @return a header value that passed through masking
      */
     private Object getHeaderValueForCurl(KeyValuePair<String, Object> header) {
+        if (maskingSerializer == null) {
+            String raw = String.valueOf(header.getValue());
+            return raw.startsWith("$$") ? raw.substring(1) : header.getValue();
+        }
         String value = String.valueOf(JsonUtils.getVariableFromJson(maskingSerializer.toJson(header), "value"));
 
         return value.startsWith("$$") ? value.substring(1) : header.getValue();
