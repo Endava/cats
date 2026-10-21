@@ -11,8 +11,8 @@ Here is the practical 5-minute workflow for your first run, from local sanity ch
 Before running thousands of mutations, you can inspect your contract's dependency graph in `< 1s`, scaffold starter config files if needed, and run a 1-request-per-endpoint live smoke check:
 
 ```shell
-# 1. Inspect the 0-100 Fuzzability Score, Producer -> Consumer chains, and Mermaid diagram (no server needed)
-cats analyze -c openapi.yml --mermaid
+# 1. Inspect the contract's 0-100 Fuzzability Score and resource dependency tree (offline, only needs -c)
+cats analyze -c openapi.yml
 
 # 2. (Optional) Generate starter headers.yml, refData.yml (for orphan path params), and functionalTests.yml
 cats init -c openapi.yml
@@ -40,7 +40,7 @@ When testing an API for the first time, OpenAPI contracts often have minor docum
 
 ```shell
 cats -c openapi.yml -s https://staging.example.com \
-  -H "Authorization: Bearer $$API_TOKEN" \
+  -H "Authorization=Bearer $$API_TOKEN" \
   -b -k
 ```
 - **What to aim for**: **`0` errors**. Every error reported with `-b -k` is a real unhandled exception or `500 Internal Server Error` in your service.
@@ -50,16 +50,16 @@ Runs 24 core fuzzers (missing required fields, nulls, boundary numbers, invalid 
 
 ```shell
 cats -c openapi.yml -s https://staging.example.com \
-  -H "Authorization: Bearer $$API_TOKEN" \
+  -H "Authorization=Bearer $$API_TOKEN" \
   --profile quick
 ```
 
 ### Option C: Interactive Terminal UI (`--tui`)
-Watch live progress, filter by Errors (`e`) / Warnings (`w`), search tests (`/undefined`), and inspect full request/response payloads without leaving the terminal:
+Watch live wave/path progress, drill down from any fuzzer/reason/path with `Enter`, filter by Errors (`e`) / Warnings (`w`), search tests (`/undefined`), step through test details with `n`/`p`, copy the `curl` command (`c`), or press `?` for the shortcuts guide:
 
 ```shell
 cats -c openapi.yml -s https://staging.example.com \
-  -H "Authorization: Bearer $$API_TOKEN" \
+  -H "Authorization=Bearer $$API_TOKEN" \
   --tui
 ```
 
@@ -87,7 +87,7 @@ cats replay Test42
 cats replay Test42 --curl
 
 # Not sure what a fuzzer or profile does? Ask CATS:
-cats explain SqlInjectionInStringFields
+cats explain --type fuzzer SqlInjectionInStringFields
 cats explain --type profile security
 ```
 
@@ -150,9 +150,10 @@ cats -c openapi.yml -s https://ci-env.example.com \
 Run the full 160+ fuzzer suite (plus continuous random mutations for any remaining time budget):
 ```shell
 cats -c openapi.yml -s https://staging.example.com \
-  -H "Authorization: Bearer $$API_TOKEN" \
+  -H "Authorization=Bearer $$API_TOKEN" \
+  -b -k \
   --stopAfterTimeInSec 600 --fillTimeBudget \
-  --qualityGate "5xx<1"
+  --qualityGate "errors<1"
 ```
 
 ---

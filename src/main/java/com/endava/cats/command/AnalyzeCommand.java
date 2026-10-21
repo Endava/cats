@@ -108,23 +108,30 @@ public class AnalyzeCommand implements Runnable, CommandLine.IExitCodeGenerator 
         int resolvedPathVars = 0;
 
         Map<String, Set<String>> consumersByProducer = new LinkedHashMap<>();
+        Map<String, Set<String>> paramsByProducer = new LinkedHashMap<>();
         for (String path : orderedPaths) {
             Set<String> vars = OpenApiUtils.getPathVariables(path);
+            String methods = methodsForPath(openAPI, path);
             for (String varName : vars) {
                 totalPathVars++;
                 String noun = inferVarNoun(path, varName);
                 String matchingProducer = findMatchingProducer(producerByNoun, noun);
                 if (matchingProducer != null) {
                     resolvedPathVars++;
+                    paramsByProducer.computeIfAbsent(matchingProducer, _ -> new LinkedHashSet<>())
+                            .add("{" + varName + "}");
                     consumersByProducer.computeIfAbsent(matchingProducer, _ -> new LinkedHashSet<>())
-                            .add(path + " ({" + varName + "})");
+                            .add(methods + " " + path);
                 } else {
-                    orphanParameters.add(varName + " in " + path);
+                    orphanParameters.add("{" + varName + "} in " + methods + " " + path);
                 }
             }
         }
-        consumersByProducer.forEach((producer, consumers) ->
-                chains.add(new ProducerConsumerChain(producer, List.copyOf(consumers))));
+        consumersByProducer.forEach((producer, consumers) -> {
+            String producedParams = String.join(", ", paramsByProducer.getOrDefault(producer, Set.of()));
+            String label = producedParams.isEmpty() ? producer : producer + "  (produces " + producedParams + ")";
+            chains.add(new ProducerConsumerChain(label, List.copyOf(consumers)));
+        });
 
         OperationMetrics opMetrics = collectOperationMetrics(openAPI);
         SchemaMetrics schemaMetrics = collectSchemaMetrics(openAPI);
@@ -173,6 +180,16 @@ public class AnalyzeCommand implements Runnable, CommandLine.IExitCodeGenerator 
             }
         }
         return null;
+    }
+
+    private static String methodsForPath(OpenAPI openAPI, String path) {
+        PathItem item = openAPI.getPaths() != null ? openAPI.getPaths().get(path) : null;
+        if (item == null || item.readOperationsMap() == null || item.readOperationsMap().isEmpty()) {
+            return "GET";
+        }
+        return item.readOperationsMap().keySet().stream()
+                .map(Enum::name)
+                .collect(Collectors.joining("/"));
     }
 
     private static String inferVarNoun(String path, String varName) {
@@ -299,7 +316,7 @@ public class AnalyzeCommand implements Runnable, CommandLine.IExitCodeGenerator 
         List<String> recs = new ArrayList<>();
         if (!orphanParams.isEmpty()) {
             String sampleFlags = orphanParams.stream()
-                    .map(s -> s.substring(0, s.indexOf(" in ")))
+                    .map(s -> s.substring(0, s.indexOf(" in ")).replace("{", "").replace("}", ""))
                     .distinct()
                     .limit(4)
                     .map(p -> p + ":<value>")
@@ -360,9 +377,14 @@ public class AnalyzeCommand implements Runnable, CommandLine.IExitCodeGenerator 
 
         if (!report.producerConsumerChains().isEmpty()) {
             logger.noFormat("");
-            logger.noFormat(AnsiUtils.bold("Automatic Producer -> Consumer Chains:"));
+            logger.noFormat(AnsiUtils.bold("Automatic Producer -> Consumer Dependency Tree:"));
             for (ProducerConsumerChain chain : report.producerConsumerChains()) {
-                logger.noFormat("  {}  -->  {}", AnsiUtils.boldGreen(chain.producer()), String.join(", ", chain.consumers()));
+                logger.noFormat("  {}", AnsiUtils.boldGreen(chain.producer()));
+                List<String> consumers = chain.consumers();
+                for (int i = 0; i < consumers.size(); i++) {
+                    String branch = (i == consumers.size() - 1) ? "└── " : "├── ";
+                    logger.noFormat("    {}{}", branch, consumers.get(i));
+                }
             }
         }
         if (!report.orphanPathParameters().isEmpty()) {
