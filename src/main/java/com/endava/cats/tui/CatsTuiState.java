@@ -280,24 +280,9 @@ final class CatsTuiState {
 
     private EventResult handleIssuesKey(KeyEvent event) {
         List<IssueStatisticsRow> rows = issueStatistics();
-        if (event.isUp() || event.isCharIgnoreCase('k')) {
-            selectedIssueIndex = Math.max(0, selectedIssueIndex - 1);
-            syncSelection(issuesTableState, selectedIssueIndex, rows.size());
-            return EventResult.HANDLED;
-        }
-        if (event.isDown() || event.isCharIgnoreCase('j')) {
-            selectedIssueIndex = Math.clamp(rows.size() - 1L, 0, selectedIssueIndex + 1);
-            syncSelection(issuesTableState, selectedIssueIndex, rows.size());
-            return EventResult.HANDLED;
-        }
-        if (event.isPageUp()) {
-            selectedIssueIndex = Math.max(0, selectedIssueIndex - aggregatePageSize());
-            syncSelection(issuesTableState, selectedIssueIndex, rows.size());
-            return EventResult.HANDLED;
-        }
-        if (event.isPageDown()) {
-            selectedIssueIndex = Math.clamp(rows.size() - 1L, 0, selectedIssueIndex + aggregatePageSize());
-            syncSelection(issuesTableState, selectedIssueIndex, rows.size());
+        java.util.OptionalInt moved = navigateAggregateTable(event, issuesTableState, selectedIssueIndex, rows.size());
+        if (moved.isPresent()) {
+            selectedIssueIndex = moved.getAsInt();
             return EventResult.HANDLED;
         }
         if ((event.isConfirm() || event.isSelect()) && !rows.isEmpty()) {
@@ -313,24 +298,9 @@ final class CatsTuiState {
 
     private EventResult handlePathsKey(KeyEvent event) {
         List<PathStatisticsRow> rows = pathStatistics();
-        if (event.isUp() || event.isCharIgnoreCase('k')) {
-            selectedPathIndex = Math.max(0, selectedPathIndex - 1);
-            syncSelection(pathsTableState, selectedPathIndex, rows.size());
-            return EventResult.HANDLED;
-        }
-        if (event.isDown() || event.isCharIgnoreCase('j')) {
-            selectedPathIndex = Math.clamp(rows.size() - 1L, 0, selectedPathIndex + 1);
-            syncSelection(pathsTableState, selectedPathIndex, rows.size());
-            return EventResult.HANDLED;
-        }
-        if (event.isPageUp()) {
-            selectedPathIndex = Math.max(0, selectedPathIndex - aggregatePageSize());
-            syncSelection(pathsTableState, selectedPathIndex, rows.size());
-            return EventResult.HANDLED;
-        }
-        if (event.isPageDown()) {
-            selectedPathIndex = Math.clamp(rows.size() - 1L, 0, selectedPathIndex + aggregatePageSize());
-            syncSelection(pathsTableState, selectedPathIndex, rows.size());
+        java.util.OptionalInt moved = navigateAggregateTable(event, pathsTableState, selectedPathIndex, rows.size());
+        if (moved.isPresent()) {
+            selectedPathIndex = moved.getAsInt();
             return EventResult.HANDLED;
         }
         if ((event.isConfirm() || event.isSelect()) && !rows.isEmpty()) {
@@ -346,24 +316,9 @@ final class CatsTuiState {
 
     private EventResult handleSlowestKey(KeyEvent event) {
         List<TestResultSnapshot> rows = slowestResults();
-        if (event.isUp() || event.isCharIgnoreCase('k')) {
-            selectedSlowestIndex = Math.max(0, selectedSlowestIndex - 1);
-            syncSelection(slowestTableState, selectedSlowestIndex, rows.size());
-            return EventResult.HANDLED;
-        }
-        if (event.isDown() || event.isCharIgnoreCase('j')) {
-            selectedSlowestIndex = Math.clamp(rows.size() - 1L, 0, selectedSlowestIndex + 1);
-            syncSelection(slowestTableState, selectedSlowestIndex, rows.size());
-            return EventResult.HANDLED;
-        }
-        if (event.isPageUp()) {
-            selectedSlowestIndex = Math.max(0, selectedSlowestIndex - aggregatePageSize());
-            syncSelection(slowestTableState, selectedSlowestIndex, rows.size());
-            return EventResult.HANDLED;
-        }
-        if (event.isPageDown()) {
-            selectedSlowestIndex = Math.clamp(rows.size() - 1L, 0, selectedSlowestIndex + aggregatePageSize());
-            syncSelection(slowestTableState, selectedSlowestIndex, rows.size());
+        java.util.OptionalInt moved = navigateAggregateTable(event, slowestTableState, selectedSlowestIndex, rows.size());
+        if (moved.isPresent()) {
+            selectedSlowestIndex = moved.getAsInt();
             return EventResult.HANDLED;
         }
         if ((event.isConfirm() || event.isSelect()) && !rows.isEmpty()) {
@@ -385,6 +340,23 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         return EventResult.UNHANDLED;
+    }
+
+    private java.util.OptionalInt navigateAggregateTable(KeyEvent event, TableState state, int currentIndex, int rowCount) {
+        int nextIndex;
+        if (event.isUp() || event.isCharIgnoreCase('k')) {
+            nextIndex = Math.max(0, currentIndex - 1);
+        } else if (event.isDown() || event.isCharIgnoreCase('j')) {
+            nextIndex = Math.clamp(rowCount - 1L, 0, currentIndex + 1);
+        } else if (event.isPageUp()) {
+            nextIndex = Math.max(0, currentIndex - aggregatePageSize());
+        } else if (event.isPageDown()) {
+            nextIndex = Math.clamp(rowCount - 1L, 0, currentIndex + aggregatePageSize());
+        } else {
+            return java.util.OptionalInt.empty();
+        }
+        syncSelection(state, nextIndex, rowCount);
+        return java.util.OptionalInt.of(nextIndex);
     }
 
     private EventResult handleFuzzerKey(KeyEvent event) {
