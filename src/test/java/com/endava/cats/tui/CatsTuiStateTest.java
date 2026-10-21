@@ -567,8 +567,24 @@ class CatsTuiStateTest {
         state.accept(new CatsExecutionEvent.TestCompleted(NOW, second));
         Assertions.assertThat(state.topFailingPaths()).isEqualTo("/orders (1)");
 
-        // Press Enter on OVERVIEW to drill down into RemoveFields fuzzer results
+        // Add a second fuzzer and verify j/Down moves selection to the second fuzzer on a tall viewport
+        TestResultSnapshot third = new TestResultSnapshot("Test 3", "trace-3", "scenario 3", "2XX", "success",
+                "OK", "detail 3", "", "HappyPath", "/orders", "/orders", "/orders",
+                "http://localhost", true,
+                new TestResultSnapshot.RequestSnapshot("GET", "http://localhost/orders", "now", "", List.of()),
+                new TestResultSnapshot.ResponseSnapshot(200, "GET", 10, 2, 2, false, 1, 1, "application/json", "{}", List.of()),
+                "cats replay Test3", "curl -X GET http://localhost/orders", List.of(), List.of());
+        state.accept(new CatsExecutionEvent.TestCompleted(NOW, third));
+
         state.updateViewport(120, 40);
+        state.handleKey(KeyEvent.ofChar('j'));
+        state.handleKey(KeyEvent.ofKey(KeyCode.ENTER));
+        Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.RESULTS);
+        Assertions.assertThat(state.resultsContext()).isEqualTo("Fuzzer: HappyPath");
+        state.handleKey(KeyEvent.ofKey(KeyCode.ESCAPE));
+        state.handleKey(KeyEvent.ofChar('k'));
+
+        // Press Enter on OVERVIEW first fuzzer row to drill down into RemoveFields fuzzer results
         state.handleKey(KeyEvent.ofKey(KeyCode.ENTER));
         Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.RESULTS);
         Assertions.assertThat(state.resultsContext()).isEqualTo("Fuzzer: RemoveFields");
@@ -589,6 +605,7 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.selectedTest().id()).isEqualTo("Test 1");
         state.handleKey(KeyEvent.ofChar('c'));
         Assertions.assertThat(state.lastCopiedCurl()).isEqualTo("curl -X POST http://localhost/orders");
+        Assertions.assertThat(state.copyFeedbackMessage()).contains("Test 1");
 
         state.handleKey(KeyEvent.ofChar('?'));
         Assertions.assertThat(state.helpVisible()).isTrue();

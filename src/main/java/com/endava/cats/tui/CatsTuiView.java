@@ -79,8 +79,9 @@ final class CatsTuiView {
     }
 
     private static Element header(CatsTuiState state) {
-        String heading = "CATS REST API Fuzzer  •  %s  •  %s  •  %d tests reported".formatted(
-                state.status(), state.elapsed(), state.reportedResults());
+        String feedback = state.copyFeedbackMessage() == null ? "" : "  •  " + state.copyFeedbackMessage();
+        String heading = "CATS REST API Fuzzer  •  %s  •  %s  •  %d tests reported%s".formatted(
+                state.status(), state.elapsed(), state.reportedResults(), feedback);
         return panel(text(heading).bold().cyan()).rounded().borderColor(Color.CYAN).length(3);
     }
 
@@ -145,14 +146,16 @@ final class CatsTuiView {
         if (test == null) {
             return panel("Execution Details", text("No test selected")).rounded().fill();
         }
-        String title = "%s • %s • %s %s • HTTP %d • %dms".formatted(test.id(), test.result(),
+        String feedback = state.copyFeedbackMessage() == null ? "" : " • " + state.copyFeedbackMessage();
+        String title = "%s • %s • %s %s • HTTP %d • %dms%s".formatted(test.id(), test.result(),
                 test.request().httpMethod(), test.path(), test.response().responseCode(),
-                test.response().responseTimeInMs());
+                test.response().responseTimeInMs(), feedback);
         List<String> visibleLines = state.visibleDetailLines();
-        String page = "Lines %d-%d of %d".formatted(
+        String page = "Lines %d-%d of %d%s".formatted(
                 Math.min(state.detailOffset() + 1, state.detailLineCount()),
                 Math.min(state.detailOffset() + visibleLines.size(), state.detailLineCount()),
-                state.detailLineCount());
+                state.detailLineCount(),
+                feedback);
         return panel(title, detailLines(visibleLines, test.result())).rounded()
                 .borderColor(resultColor(test.result())).bottomTitle(page).fill();
     }
@@ -251,15 +254,15 @@ final class CatsTuiView {
 
     private static Element footer(CatsTuiState state) {
         String exitControl = state.running() ? "q cancel" : "q quit";
-        String navigation = "1 overview  2 tests  3 summary  4 reasons  5 paths  6 timings  " + exitControl;
+        String navigation = "1 overview  2 tests  3 summary  4 reasons  5 paths  6 timings  ? help  " + exitControl;
         String controls = switch (state.screen()) {
-            case OVERVIEW, SUMMARY -> "j/k scroll fuzzers  PgUp/PgDn page  Enter fuzzer tests";
+            case OVERVIEW, SUMMARY -> "j/k scroll fuzzers  PgUp/PgDn page  Enter fuzzer tests  ? help";
             case RESULTS -> state.searchEditing()
                     ? "Search mode: type query  Enter apply  Backspace edit  Esc clear"
-                    : "j/k select  Enter details  / search  a/e/w/s/i filter  Esc back";
-            case DETAIL -> "j/k scroll  PgUp/PgDn page  n/p next/prev test  Esc back";
-            case ISSUES, PATHS -> "j/k select  PgUp/PgDn page  Enter matching tests  Esc home";
-            case SLOWEST -> "j/k select  PgUp/PgDn page  Enter details  Esc home";
+                    : "j/k select  Enter details  c copy curl  / search  a/e/w/s/i filter  ? help  Esc back";
+            case DETAIL -> "j/k scroll  PgUp/PgDn page  n/p next/prev test  c copy curl  ? help  Esc back";
+            case ISSUES, PATHS -> "j/k select  PgUp/PgDn page  Enter matching tests  ? help  Esc home";
+            case SLOWEST -> "j/k select  PgUp/PgDn page  Enter details  c copy curl  ? help  Esc home";
         };
         return column(text(navigation).cyan().dim().length(1), text(controls).cyan().dim().length(1)).length(2);
     }

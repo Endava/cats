@@ -55,7 +55,7 @@ cats -c openapi.yml -s https://staging.example.com \
 ```
 
 ### Option C: Interactive Terminal UI (`--tui`)
-Watch live wave/path progress, drill down from any fuzzer/reason/path with `Enter`, filter by Errors (`e`) / Warnings (`w`), search tests (`/undefined`), step through test details with `n`/`p`, copy the `curl` command (`c`), or press `?` for the shortcuts guide:
+Watch live wave/path progress, drill down from any fuzzer/reason/path with `Enter`, filter by Errors (`e`) / Warnings (`w`), search tests (`/`), step through test details with `n`/`p`, copy the `curl` command (`c`), or press `?` for the shortcuts guide:
 
 ```shell
 cats -c openapi.yml -s https://staging.example.com \

@@ -62,6 +62,7 @@ final class CatsTuiState {
     private int selectedIssueIndex;
     private int selectedPathIndex;
     private int selectedSlowestIndex;
+    private int selectedFuzzerIndex;
     private int detailOffset;
     private int fuzzerOffset;
     private long success;
@@ -85,6 +86,7 @@ final class CatsTuiState {
     private String drilldownFuzzer;
     private boolean helpVisible;
     private String lastCopiedCurl;
+    private String copyFeedbackMessage;
     private Screen resultsReturnScreen = Screen.OVERVIEW;
     private Screen detailReturnScreen = Screen.RESULTS;
 
@@ -374,6 +376,10 @@ final class CatsTuiState {
             screen = Screen.DETAIL;
             return EventResult.HANDLED;
         }
+        if (event.isCharIgnoreCase('c') && !rows.isEmpty()) {
+            copyTestCurl(rows.get(selectedSlowestIndex));
+            return EventResult.HANDLED;
+        }
         if (event.isCancel() || event.isLeft()) {
             screen = Screen.OVERVIEW;
             return EventResult.HANDLED;
@@ -386,32 +392,41 @@ final class CatsTuiState {
             screen = Screen.OVERVIEW;
             return EventResult.HANDLED;
         }
+        int total = fuzzerCount();
         int pageSize = fuzzerPageSize(screen);
-        int maximumOffset = Math.max(0, fuzzerCount() - pageSize);
+        int maximumOffset = Math.max(0, total - pageSize);
         if (event.isUp() || event.isCharIgnoreCase('k')) {
-            fuzzerOffset = Math.max(0, fuzzerOffset - 1);
+            selectedFuzzerIndex = Math.max(0, selectedFuzzerIndex - 1);
+            if (selectedFuzzerIndex < fuzzerOffset) {
+                fuzzerOffset = selectedFuzzerIndex;
+            }
             syncFuzzerSelection();
             return EventResult.HANDLED;
         }
         if (event.isDown() || event.isCharIgnoreCase('j')) {
-            fuzzerOffset = Math.min(maximumOffset, fuzzerOffset + 1);
+            selectedFuzzerIndex = total == 0 ? 0 : Math.min(total - 1, selectedFuzzerIndex + 1);
+            if (selectedFuzzerIndex >= fuzzerOffset + pageSize) {
+                fuzzerOffset = Math.min(maximumOffset, selectedFuzzerIndex - pageSize + 1);
+            }
             syncFuzzerSelection();
             return EventResult.HANDLED;
         }
         if (event.isPageUp()) {
             fuzzerOffset = Math.max(0, fuzzerOffset - pageSize);
+            selectedFuzzerIndex = Math.max(0, selectedFuzzerIndex - pageSize);
             syncFuzzerSelection();
             return EventResult.HANDLED;
         }
         if (event.isPageDown()) {
             fuzzerOffset = Math.min(maximumOffset, fuzzerOffset + pageSize);
+            selectedFuzzerIndex = total == 0 ? 0 : Math.min(total - 1, Math.max(fuzzerOffset, selectedFuzzerIndex + pageSize));
             syncFuzzerSelection();
             return EventResult.HANDLED;
         }
         if (event.isConfirm() || event.isSelect()) {
-            List<FuzzerStatisticsRow> visible = fuzzerStatistics(fuzzerOffset, pageSize);
-            if (!visible.isEmpty()) {
-                openFuzzerResults(screen, visible.getFirst().fuzzer());
+            List<FuzzerStatisticsRow> selectedRow = fuzzerStatistics(selectedFuzzerIndex, 1);
+            if (!selectedRow.isEmpty()) {
+                openFuzzerResults(screen, selectedRow.getFirst().fuzzer());
             }
             return EventResult.HANDLED;
         }
@@ -419,10 +434,14 @@ final class CatsTuiState {
     }
 
     private void syncFuzzerSelection() {
-        if (categories.isEmpty()) {
+        int total = fuzzerCount();
+        if (total == 0) {
+            selectedFuzzerIndex = 0;
             fuzzerTableState.clearSelection();
         } else {
-            fuzzerTableState.select(0);
+            selectedFuzzerIndex = Math.clamp(selectedFuzzerIndex, 0, total - 1);
+            int visibleRow = Math.max(0, selectedFuzzerIndex - fuzzerOffset);
+            fuzzerTableState.select(visibleRow);
         }
     }
 
@@ -692,7 +711,12 @@ final class CatsTuiState {
     }
 
     private void clampFuzzerOffset() {
-        fuzzerOffset = Math.clamp((long) fuzzerCount() - fuzzerPageSize(screen), 0, fuzzerOffset);
+        int pageSize = fuzzerPageSize(screen);
+        fuzzerOffset = Math.clamp((long) fuzzerCount() - pageSize, 0, fuzzerOffset);
+        if (fuzzerCount() > 0) {
+            selectedFuzzerIndex = Math.clamp(selectedFuzzerIndex, fuzzerOffset, Math.min(fuzzerCount() - 1, fuzzerOffset + pageSize - 1));
+        }
+        syncFuzzerSelection();
     }
 
     private int detailPageSize() {
@@ -1168,16 +1192,63 @@ final class CatsTuiState {
         return lastCopiedCurl;
     }
 
+    String copyFeedbackMessage() {
+        return copyFeedbackMessage;
+    }
+
     private void copySelectedTestCurl() {
-        TestResultSnapshot test = selectedTest();
+        copyTestCurl(selectedTest());
+    }
+
+    private void copyTestCurl(TestResultSnapshot test) {
         if (test == null) {
+            copyFeedbackMessage = "✖ No test selected to copy";
             return;
         }
         String cmd = test.curlCommand() != null && !test.curlCommand().isBlank()
                 ? test.curlCommand()
                 : test.replayCommand();
-        if (cmd != null && !cmd.isBlank()) {
-            lastCopiedCurl = cmd;
+        if (cmd == null || cmd.isBlank()) {
+            copyFeedbackMessage = "✖ No cURL command available for " + display(test.id());
+            return;
+        }
+        lastCopiedCurl = cmd;
+        boolean copied = writeToSystemClipboard(cmd);
+        copyFeedbackMessage = copied
+                ? "✔ Copied cURL for " + display(test.id()) + " to clipboard"
+                : "✔ Prepared cURL for " + display(test.id()) + " (clipboard command unavailable)";
+    }
+
+    private static boolean writeToSystemClipboard(String text) {
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+        List<List<String>> candidates = os.contains("mac")
+                ? List.of(List.of("pbcopy"))
+                : os.contains("win")
+                ? List.of(List.of("clip"))
+                : List.of(
+                        List.of("wl-copy"),
+                        List.of("xclip", "-selection", "clipboard"),
+                        List.of("xsel", "--clipboard", "--input"));
+        for (List<String> command : candidates) {
+            if (tryClipboardProcess(command, text)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean tryClipboardProcess(List<String> command, String text) {
+        try {
+            Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+            try (var out = process.getOutputStream()) {
+                out.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+            return process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS) && process.exitValue() == 0;
+        } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (Exception _) {
+            return false;
         }
     }
 
