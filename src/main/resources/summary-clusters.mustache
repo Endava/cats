@@ -46,114 +46,109 @@
     </div>
 </header>
 <main class="container">
-    <h2 class="title-section">Overview</h2>
-    <div class="grid">
-        <div class="card-wrapper">
-            <div class="card-header">
-                <div>
-                    <h2 class="action-tag">Tests Reported</h2>
-                    <p class="big-number">{{testsReported}} tests</p>
-                </div>
+    <!-- Row 1: S2-A Top-Aligned 3-Card Overview & Run Details -->
+    <div class="row1-hybrid-grid">
+        <div class="card-wrapper s2a-donut-card">
+            <div class="s2a-card-top">
+                <h2 class="action-tag no-top">Tests Reported</h2>
+                <p class="big-number">{{testsReported}} tests</p>
             </div>
             {{#javascript}}
-            <div class="chart-container">
-                <canvas id="myChart"></canvas>
+            <div class="chart-container s2a-donut-body">
+                <div class="donut-box"><canvas id="myChart"></canvas></div>
                 <div id="legend-container"></div>
             </div>
             <script src="draw_chart.js"></script>
             {{/javascript}}
             {{^javascript}}
-            <div>
-                <div class="chart-container">
-                    <div class="chart">
-                        <div class="chart-inner">
-                            <div class="chart-bar" style="width: {{errorPercentage}}%"></div>
-                            <div class="chart-bar" style="width: {{warnPercentage}}%"></div>
-                            <div class="chart-bar" style="width: {{successPercentage}}%"></div>
-                        </div>
+            <div class="chart-container">
+                <div class="chart">
+                    <div class="chart-inner">
+                        <div class="chart-bar" style="width: {{errorPercentage}}%"></div>
+                        <div class="chart-bar" style="width: {{warnPercentage}}%"></div>
+                        <div class="chart-bar" style="width: {{successPercentage}}%"></div>
                     </div>
-                    <div class="chart-labels">
-                        <div class="chart-label">Errors {{errors}}</div>
-                        <div class="chart-label">Warnings {{warnings}}</div>
-                        <div class="chart-label">Success {{success}}</div>
-                    </div>
+                </div>
+                <div class="chart-labels">
+                    <div class="chart-label">Errors {{errors}}</div>
+                    <div class="chart-label">Warnings {{warnings}}</div>
+                    <div class="chart-label">Success {{success}}</div>
                 </div>
             </div>
             {{/javascript}}
         </div>
-        <div class="grid">
-            <div class="card-wrapper icon-card">
-                <div class="icon">
-                    <img src="./assets/time.svg" alt="execution time" class="time-white">
-                    <img src="./assets/time_dark.svg" alt="execution time" style="display: none;" class="time-dark">
+
+        <div class="card-wrapper">
+            <div class="s2a-card-top" style="margin-bottom: 6px;">
+                <h2 class="action-tag no-top">Run Health &amp; Execution Diagnostics</h2>
+            </div>
+            <div class="s2a-rows-list">
+                <div class="report-detail-row">
+                    <span>Run outcome <small class="row-sub-note">({{runStatusDetails}})</small></span>
+                    <label class="test-result result-{{runStatusResult}}">{{runStatus}}</label>
                 </div>
-                <div>
-                    <h2 class="action-tag no-top">Execution Time</h2>
-                    <p class="big-number">{{execution}}</p>
-                    <div style="margin: 5px;"></div>
-                    <h2 class="action-tag">Average Response Time</h2>
-                    <p class="big-number">{{averageResponseTime}}ms</p>
+                <div class="report-detail-row">
+                    <span>Quality gate <small class="row-sub-note">({{qualityGateDescription}})</small></span>
+                    <label class="test-result result-{{qualityGateResult}}">{{qualityGateStatus}}</label>
+                </div>
+                <div class="report-detail-row">
+                    <span>Execution time / Avg response</span>
+                    <strong>{{execution}} · {{averageResponseTime}}ms</strong>
+                </div>
+                <div class="report-detail-row">
+                    <span>Fuzzers / Paths in scope</span>
+                    <strong><span class="orange_text">{{fuzzers}}</span>/{{totalFuzzers}} fuzzers · <span class="orange_text">{{paths}}</span>/{{totalPaths}} paths</strong>
+                </div>
+                <div class="report-detail-row">
+                    <span>Authentication errors / I/O errors</span>
+                    <strong>{{authErrors}} Auth · {{ioErrors}} I/O</strong>
                 </div>
             </div>
-            <div class="card-wrapper icon-card">
-                <div class="icon">
-                    <img src="./assets/methods.svg" alt="execution time" class="methods-white">
-                    <img src="./assets/methods_dark.svg" alt="execution time" style="display: none;"
-                         class="methods-dark">
-                </div>
-                <div>
-                    <h2 class="action-tag no-top">Http Methods in scope</h2>
-                    {{#httpMethods}}
-                    <span class="active rounded rounded-{{.}} small-margin">{{.}}</span>
-                    {{/httpMethods}}
-                </div>
+        </div>
+
+        <div class="card-wrapper">
+            <div class="s2a-card-top" style="margin-bottom: 6px;">
+                <h2 class="action-tag no-top">Target, Scope &amp; Reproduction</h2>
             </div>
-            <div class="card-wrapper icon-card">
-                <div class="icon">
-                    <img src="./assets/fuzzers.svg" alt="execution time" class="fuzzers-white">
-                    <img src="./assets/fuzzers_dark.svg" alt="execution time" style="display: none;"
-                         class="fuzzers-dark">
+            <div class="s2a-rows-list">
+                <div class="report-detail-row">
+                    <span>Base path</span>
+                    <strong class="link_text">{{baseUrl}}</strong>
                 </div>
-                <div>
-                    <h2 class="action-tag no-top">Fuzzers run</h2>
-                    <p class="big-number"><span class="orange_text">{{fuzzers}}</span> <span
-                            style="color: #9ca3af; font-size: 18px;">out of</span> {{totalFuzzers}}</p>
-                    <div style="margin: 5px;"></div>
-                    <h2 class="action-tag">Paths included</h2>
-                    <p class="big-number"><span class="orange_text">{{paths}}</span> <span
-                            style="color: #9ca3af; font-size: 18px;">out of</span> {{totalPaths}}</p>
+                <div class="report-detail-row">
+                    <span>Spec file</span>
+                    <strong class="link_text">{{contractName}}</strong>
                 </div>
-            </div>
-            <div class="card-wrapper icon-card">
-                <div class="icon">
-                    <img src="./assets/link.svg" alt="execution time" class="link-white">
-                    <img src="./assets/link_dark.svg" alt="execution time" style="display: none;" class="link-dark">
+                <div class="report-detail-row">
+                    <span>Http Methods</span>
+                    <div class="methods-inline-wrap">
+                        {{#httpMethods}}
+                        <span class="active rounded rounded-{{.}}">{{.}}</span>
+                        {{/httpMethods}}
+                    </div>
                 </div>
-                <div>
-                    <h2 class="action-tag no-top">Base path</h2>
-                    <p class="small-margin link_text">{{baseUrl}}</p>
-                    <div style="margin: 5px;"></div>
-                    <h2 class="action-tag">Spec file name</h2>
-                    <p class="small-margin link_text">{{contractName}}</p>
+                <div class="report-detail-row">
+                    <span>Runtime resource reuse / Configured stop limits</span>
+                    <strong>{{resourceReuseStatus}} · {{#hasStopLimits}}{{#stopLimits}}{{name}}: {{value}}{{suffix}} {{/stopLimits}}{{/hasStopLimits}}{{^hasStopLimits}}None{{/hasStopLimits}}</strong>
+                </div>
+                <div class="report-detail-row">
+                    <span>Random seed</span>
+                    <strong class="mono-val">{{randomSeed}}</strong>
                 </div>
             </div>
         </div>
     </div>
-    {{>summary-run-details}}
+
     {{#hasResponseCodes}}
-    <h2 class="title-section">Statistics</h2>
     <div class="stats-grid">
         <div class="card-wrapper">
-            <div class="card-header">
-                <div>
-                    <h2 class="action-tag">HTTP Response Codes</h2>
-                    <p class="big-number">Distribution across all HTTP responses</p>
-                </div>
+            <div class="chart-head-inline">
+                <h2 class="action-tag no-top">HTTP Response Codes</h2>
+                <div id="response-code-legend-container" class="stats-legend-container"></div>
             </div>
             {{#javascript}}
-            <div class="stats-chart-container">
+            <div class="stats-chart-container canvas-box-220">
                 <canvas id="responseCodeChart"></canvas>
-                <div id="response-code-legend-container" class="stats-legend-container"></div>
             </div>
             <script>
                 const responseCodeData = [
@@ -164,29 +159,16 @@
             </script>
             <script src="draw_response_codes_chart.js"></script>
             {{/javascript}}
-            {{^javascript}}
-            <div class="response-code-list">
-                {{#responseCodeDistribution}}
-                <div class="response-code-item response-code-{{family}}">
-                    <span class="response-code">{{code}}</span>
-                    <span class="response-count">{{count}}</span>
-                </div>
-                {{/responseCodeDistribution}}
-            </div>
-            {{/javascript}}
         </div>
         {{#hasFailingPaths}}
         <div class="card-wrapper">
-            <div class="card-header">
-                <div>
-                    <h2 class="action-tag">Top Failing Paths</h2>
-                    <p class="big-number">Paths with most errors</p>
-                </div>
+            <div class="chart-head-inline">
+                <h2 class="action-tag no-top">Top Failing Paths</h2>
+                <div id="top-failing-paths-legend-container" class="stats-legend-container"></div>
             </div>
             {{#javascript}}
-            <div class="stats-chart-container">
+            <div class="stats-chart-container canvas-box-220">
                 <canvas id="topFailingPathsChart"></canvas>
-                <div id="top-failing-paths-legend-container" class="stats-legend-container"></div>
             </div>
             <script>
                 const topFailingPathsData = [
@@ -196,16 +178,6 @@
                 ];
             </script>
             <script src="draw_top_failing_paths_chart.js"></script>
-            {{/javascript}}
-            {{^javascript}}
-            <div class="response-code-list">
-                {{#topFailingPaths}}
-                <div class="response-code-item response-code-5xx">
-                    <span class="response-code">{{path}}</span>
-                    <span class="response-count">{{count}}</span>
-                </div>
-                {{/topFailingPaths}}
-            </div>
             {{/javascript}}
         </div>
         {{/hasFailingPaths}}
@@ -290,6 +262,24 @@
     </div>
     {{/groupedTestCases}}
 
+    <footer class="cats-funny-footer">
+        <span class="footer-quips">You've reached the end of the fuzzing universe — no more endpoints left to torture.</span>
+        <span class="footer-sep">·</span>
+        <span class="footer-credit">
+            Built with
+            <span class="coffee-badge" title="Freshly brewed espresso">
+                <svg class="coffee-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path class="steam s1" d="M8 5.5C8 4 9.5 3.5 9.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    <path class="steam s2" d="M12 5.5C12 4 13.5 3.5 13.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    <path class="steam s3" d="M16 5.5C16 4 17.5 3.5 17.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M5 8.5H17V14.5C17 17.8137 14.3137 20.5 11 20.5C7.68629 20.5 5 17.8137 5 14.5V8.5Z" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                    <path d="M17 10H18.8C20.2912 10 21.5 11.2088 21.5 12.7C21.5 14.1912 20.2912 15.4 18.8 15.4H17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                    <path d="M3.5 20.5H18.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+            </span>
+            and curiosity by <a href="https://github.com/Endava/cats" target="_blank" rel="noopener">Madalin Ilie</a>
+        </span>
+    </footer>
 </main>
 {{#javascript}}
 <script src="script.js"></script>

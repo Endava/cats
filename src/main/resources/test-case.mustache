@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <title>Cats</title>
 </head>
 <body>
@@ -33,7 +33,7 @@
     </div>
     {{#JS}}
     <div class="theme-toggle">
-        <button id="theme-toggle"  style="display: none;">
+        <button id="theme-toggle" style="display: none;">
             <img class="theme-icon-light" src="./assets/white-mode-icon.svg" alt="Light Theme Icon">
             <img class="theme-icon-dark" src="./assets/dark-mode-icon.svg" alt="Dark Theme Icon">
         </button>
@@ -42,134 +42,141 @@
 </header>
 {{#TEST_CASE}}
 <div class="page-body">
-    <div class="page-container page-text">
-        <a href="index.html" class="anchor-tag">All Tests</a>&nbsp&nbsp/&nbsp&nbsp{{testId}}
-    </div>
-
-    <div class="table-container">
-        <div class="component title border-left-top">
-            <p>Test Id</p>
-        </div>
-        <div class="component text border-right-top">
-            <p>{{testId}}</p>
-        </div>
-
-        <div class="component title border-left-top">
-            <p>Test Trace Id</p>
-        </div>
-        <div class="component text border-right-top">
-            <p>{{traceId}}</p>
-        </div>
-
-        <div class="component title">
-            <p>Timestamp</p>
-        </div>
-        <div class="component text">
-            <p>{{request.timestamp}}</p>
-        </div>
-
-        <div class="component title">
-            <p>Scenario</p>
-        </div>
-        <div class="component text">
-            <p>{{scenario}}</p>
-        </div>
-        <div class="component title">
-            <p>Expected Result</p>
-        </div>
-        <div class="component text">
-            <p>{{expectedResult}}</p>
-        </div>
-        <div class="component title">
-            <p>Result</p>
-        </div>
-        <div class="component text">
-            <label class="test-result result-{{result}}">{{result}}</label>
-        </div>
-        <div class="component title">
-            <p>Result Details</p>
-        </div>
-        <div class="component text">
-            <p>
-                {{{resultDetailsForHtml}}}
-            </p>
-        </div>
-        {{#hasResultSwitched}}
-            <div class="component title result-warn">
-                <p>Warning</p>
+    <!-- T1 Refined: Unified Top Metadata Board (All 13 Original Fields Explicitly Preserved in a 2-Column Grid) -->
+    <div class="t1-board">
+        <div class="t1-board-header">
+            <div class="t1-header-left">
+                <a href="index.html" class="anchor-tag">All Tests</a>&nbsp;&nbsp;/&nbsp;&nbsp;<strong>{{testId}}</strong>
             </div>
-            <div class="component text result-warn">
-                <p>
-                    {{resultIgnoreDetails}}
-                </p>
+            {{#hasRequestDetails}}
+            <div class="t1-header-right">
+                <span class="t1-replay-label">CATS Replay</span>
+                <div class="t1-replay-pill" id="code-cats-replay">
+                    <pre style="margin:0;display:inline;"><code>{{catsReplay}}</code></pre>
+                </div>
+                {{#js}}
+                <button class="copy-button copy-button-cats-replay" onclick="copyCode('code-cats-replay', this)">Copy code</button>
+                {{/js}}
             </div>
-        {{/hasResultSwitched}}
-        <div class="component title">
-            <p>Contract Path</p>
-        </div>
-        <div class="component text">
-            <span class="rounded path details">{{contractPath}}</span>
+            {{/hasRequestDetails}}
         </div>
 
-        <div class="component title">
-            <p>Fuzzer</p>
-        </div>
-        <div class="component text">
-            <p>{{fuzzer}}</p>
-        </div>
-
-        {{#hasMutationTargets}}
-        <div class="component title">
-            <p>Mutation Targets</p>
-        </div>
-        <div class="component text">
-            <div class="mutation-targets-list">
-            {{#mutationTargets}}
-                <p class="mutation-target-row">{{locationName}} -&gt; {{name}}</p>
-            {{/mutationTargets}}
+        <div class="t1-grid">
+            <div class="t1-lbl">Test Id</div>
+            <div class="t1-val"><strong>{{testId}}</strong></div>
+            <div class="t1-lbl">Test Trace Id</div>
+            <div class="t1-val t1-trace-cell">
+                <code id="trace-id-val">{{traceId}}</code>
+                {{#js}}
+                <button type="button" class="inline-copy-btn" onclick="copyCode('trace-id-val', this)" title="Copy Trace ID">Copy</button>
+                {{/js}}
             </div>
-        </div>
-        {{/hasMutationTargets}}
 
-        <div class="component title">
-            <p>Full Request Path</p>
-        </div>
-        <div class="component text">
-            <span class="rounded path details">{{fullRequestPath}}</span>
-        </div>
+            <div class="t1-lbl">Result</div>
+            <div class="t1-val"><label class="test-result result-{{result}}">{{result}}</label></div>
+            <div class="t1-lbl">Expected Result</div>
+            <div class="t1-val">{{expectedResult}}</div>
 
-        <div class="component title border-left-bottom">
-            <p>Http Method</p>
-        </div>
-        <div class="component text border-right-bottom">
-            <span class="active rounded rounded-{{httpMethod}} details">{{httpMethod}}</span>
-        </div>
-        <div class="clearfix"></div>
-    </div>
-    {{#hasRequestDetails}}
-    {{#js}}
-    <div class="tabbed-section">
-        <div class="tabs">
-            <div class="tabs-and-title">
-                <div class="component section-title">Request Details</div>
-                <div class="all-tabs">
-                    <div class="component tab active" onclick="showReportTab(this, 'request-payload')">Payload</div>
-                    <div class="component tab" onclick="showReportTab(this, 'request-headers')">Headers</div>
-                    <div class="component tab" onclick="showReportTab(this, 'request-curl')">cURL</div>
+            <div class="t1-lbl">Fuzzer</div>
+            <div class="t1-val"><strong>{{fuzzer}}</strong></div>
+            <div class="t1-lbl">Timestamp</div>
+            <div class="t1-val">{{request.timestamp}}</div>
+
+            <div class="t1-lbl">Http Method</div>
+            <div class="t1-val"><span class="active rounded rounded-{{httpMethod}} details">{{httpMethod}}</span></div>
+            <div class="t1-lbl">Contract Path</div>
+            <div class="t1-val"><span class="rounded path details" style="margin-left:0;">{{contractPath}}</span></div>
+
+            <div class="t1-lbl">Full Request Path</div>
+            <div class="t1-val span-3">
+                <span class="rounded path details" style="margin-left:0;">{{fullRequestPath}}</span>
+            </div>
+
+            <div class="t1-lbl">Scenario</div>
+            <div class="t1-val span-3">{{scenario}}</div>
+
+            <div class="t1-lbl">Result Details</div>
+            <div class="t1-val span-3">
+                <div>{{{resultDetailsForHtml}}}</div>
+            </div>
+
+            {{#hasResultSwitched}}
+            <div class="t1-lbl result-warn">Warning</div>
+            <div class="t1-val span-3 result-warn">{{resultIgnoreDetails}}</div>
+            {{/hasResultSwitched}}
+
+            {{#hasMutationTargets}}
+            <div class="t1-lbl">Mutation Targets</div>
+            <div class="t1-val span-3">
+                <div class="mutation-targets-list">
+                {{#mutationTargets}}
+                    <p class="mutation-target-row">{{locationName}} -&gt; {{name}}</p>
+                {{/mutationTargets}}
                 </div>
             </div>
-            <button class="copy-button" onclick="copyActiveTab(this)">Copy code</button>
+            {{/hasMutationTargets}}
         </div>
-        <div class="code-area active" id="request-payload">
-            <pre><code>{{requestJson}}</code></pre>
+    </div>
+
+    {{#hasRequestDetails}}
+    {{#js}}
+    <!-- Side-by-Side Request Details & Response Workbench -->
+    <div class="t1-pair">
+        <div class="tabbed-section">
+            <div class="tabs">
+                <div class="tabs-and-title">
+                    <div class="component section-title">Request Details</div>
+                    <div class="all-tabs">
+                        <div class="component tab active" onclick="showReportTab(this, 'request-payload')">Payload</div>
+                        <div class="component tab" onclick="showReportTab(this, 'request-headers')">Headers</div>
+                        <div class="component tab" onclick="showReportTab(this, 'request-curl')">cURL</div>
+                    </div>
+                </div>
+                <button class="copy-button" onclick="copyActiveTab(this)">Copy code</button>
+            </div>
+            <div class="code-area active" id="request-payload">
+                <pre><code>{{requestJson}}</code></pre>
+            </div>
+            <div class="code-area" id="request-headers">
+                <pre><code>{{headers}}</code></pre>
+            </div>
+            <div class="code-area" id="request-curl">
+                <pre><code>{{curl}}</code></pre>
+            </div>
         </div>
 
-        <div class="code-area" id="request-headers">
-            <pre><code>{{headers}}</code></pre>
-        </div>
-
-        <div class="code-area" id="request-curl">
-            <pre><code>{{curl}}</code></pre>
+        <div class="section-response tabbed-section" style="margin-top:0;margin-bottom:0;">
+            <div class="tabs">
+                <div class="tabs-and-title">
+                    <div class="component section-title">Response</div>
+                    <div class="all-tabs">
+                        <div class="component tab active" onclick="showReportTab(this, 'response-body')">Body</div>
+                        <div class="component tab" onclick="showReportTab(this, 'response-headers')">Headers</div>
+                        <div class="component tab" onclick="showReportTab(this, 'response-details')">Details</div>
+                    </div>
+                </div>
+                <button class="copy-button" onclick="copyActiveTab(this)">Copy code</button>
+            </div>
+            <div class="code-area active" id="response-body">
+                <pre><code>{{responseBody}}</code></pre>
+            </div>
+            <div class="code-area" id="response-headers">
+                <pre><code>{{responseHeaders}}</code></pre>
+            </div>
+            <div class="code-area" id="response-details">
+                <div class="response-details-grid">
+                    <div class="response-detail"><span>HTTP status</span><strong>{{response.responseCode}}</strong></div>
+                    <div class="response-detail"><span>Response time</span><strong>{{response.responseTimeInMs}}ms</strong></div>
+                    <div class="response-detail"><span>Content type</span><strong>{{response.responseContentType}}</strong></div>
+                    <div class="response-detail"><span>Content length</span><strong>{{response.contentLengthInBytes}} bytes</strong></div>
+                    {{#response.bodyTruncated}}
+                    <div class="response-detail"><span>Body capture</span><strong>Truncated at {{response.capturedBodyBytes}} bytes</strong></div>
+                    <div class="response-detail"><span>Declared length</span><strong>{{response.declaredContentLengthDisplay}}</strong></div>
+                    {{/response.bodyTruncated}}
+                    <div class="response-detail"><span>Words</span><strong>{{response.numberOfWordsInResponse}}</strong></div>
+                    <div class="response-detail"><span>Lines</span><strong>{{response.numberOfLinesInResponse}}</strong></div>
+                </div>
+            </div>
         </div>
     </div>
     {{/js}}
@@ -210,44 +217,6 @@
             <pre><code>{{curl}}</code></pre>
         </div>
     </div>
-    {{/js}}
-    {{#js}}
-    <div class="section-response tabbed-section">
-        <div class="tabs">
-            <div class="tabs-and-title">
-                <div class="component section-title">Response</div>
-                <div class="all-tabs">
-                    <div class="component tab active" onclick="showReportTab(this, 'response-body')">Body</div>
-                    <div class="component tab" onclick="showReportTab(this, 'response-headers')">Headers</div>
-                    <div class="component tab" onclick="showReportTab(this, 'response-details')">Details</div>
-                </div>
-            </div>
-            <button class="copy-button" onclick="copyActiveTab(this)">Copy code</button>
-        </div>
-        <div class="code-area active" id="response-body">
-            <pre><code>{{responseBody}}</code></pre>
-        </div>
-        <div class="code-area" id="response-headers">
-            <pre><code>{{responseHeaders}}</code></pre>
-        </div>
-        <div class="code-area" id="response-details">
-            <div class="response-details-grid">
-                <div class="response-detail"><span>HTTP status</span><strong>{{response.responseCode}}</strong></div>
-                <div class="response-detail"><span>Response time</span><strong>{{response.responseTimeInMs}}ms</strong></div>
-                <div class="response-detail"><span>Content type</span><strong>{{response.responseContentType}}</strong></div>
-                <div class="response-detail"><span>Content length</span><strong>{{response.contentLengthInBytes}} bytes</strong></div>
-                {{#response.bodyTruncated}}
-                <div class="response-detail"><span>Body capture</span><strong>Truncated at {{response.capturedBodyBytes}} bytes</strong></div>
-                <div class="response-detail"><span>Declared length</span><strong>{{response.declaredContentLengthDisplay}}</strong></div>
-                {{/response.bodyTruncated}}
-                <div class="response-detail"><span>Words</span><strong>{{response.numberOfWordsInResponse}}</strong></div>
-                <div class="response-detail"><span>Lines</span><strong>{{response.numberOfLinesInResponse}}</strong></div>
-            </div>
-        </div>
-    </div>
-    {{/js}}
-
-    {{^js}}
     <div class="section-response">
         <div class="tabs-header">
             <div class="component section-title">Response Body</div>
@@ -280,21 +249,10 @@
         </div>
     </div>
     {{/js}}
+    {{/hasRequestDetails}}
 
-    <div>
-        <div class="tabs-header">
-            <div class="component section-title">CATS Replay</div>
-            {{#js}}
-            <button class="copy-button copy-button-cats-replay" onclick="copyCode('code-cats-replay', this)">Copy code</button>
-            {{/js}}
-        </div>
-        <div class="code-area-outside" id="code-cats-replay">
-            <pre><code>{{catsReplay}}</code></pre>
-        </div>
-    </div>
-{{/hasRequestDetails}}
-{{#hasRuntimeCorrelations}}
-    <div class="section-response">
+    {{#hasRuntimeCorrelations}}
+    <div class="section-response" style="margin-top: 16px;">
         <div class="tabs-header">
             <div class="component section-title">Runtime Correlations</div>
         </div>
@@ -321,12 +279,11 @@
             </table>
         </div>
     </div>
-{{/hasRuntimeCorrelations}}
+    {{/hasRuntimeCorrelations}}
 </div>
 {{/TEST_CASE}}
 {{#JS}}
 <script src="script.js"></script>
 {{/JS}}
 </body>
-
 </html>

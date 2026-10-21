@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="chart.js"></script>
     <script>
         const totalErr = parseInt('{{errors}}'.replace(/ /g, ''));
@@ -38,117 +38,144 @@
         {{/javascript}}
     </div>
     <div class="theme-toggle">
-        <button id="theme-toggle"  style="display: none;">
+        <button id="theme-toggle" style="display: none;">
             <img class="theme-icon-light" src="./assets/white-mode-icon.svg" alt="Light Theme Icon">
             <img class="theme-icon-dark" src="./assets/dark-mode-icon.svg" alt="Dark Theme Icon">
         </button>
     </div>
 </header>
 <main class="container">
-    <h2 class="title-section">Overview</h2>
-    <div class="grid">
-        <div class="card-wrapper">
-            <div class="card-header">
-                <div>
-                    <h2 class="action-tag">Tests Reported</h2>
-                    <p class="big-number">{{testsReported}} tests</p>
-                </div>
+    <!-- Row 1: S2-A Top-Aligned 3-Card Overview & Run Details (Zero space-between gaps, zero clipped badges) -->
+    <!-- Run Details -->
+    <div class="row1-hybrid-grid">
+        <!-- Card 1: Tests Reported Donut & Legend Only (Clean, uncrowded, 140px Donut) -->
+        <div class="card-wrapper s2a-donut-card">
+            <div class="s2a-card-top">
+                <h2 class="action-tag no-top">Tests Reported</h2>
+                <p class="big-number">{{testsReported}} tests</p>
             </div>
             {{#javascript}}
-                <div class="chart-container">
-                    <canvas id="myChart"></canvas>
-                    <div id="legend-container"></div>
-                </div>
-                <script src="draw_chart.js"></script>
+            <div class="chart-container s2a-donut-body">
+                <div class="donut-box"><canvas id="myChart"></canvas></div>
+                <div id="legend-container"></div>
+            </div>
+            <script src="draw_chart.js"></script>
             {{/javascript}}
             {{^javascript}}
-                <div>
-                    <div class="chart-container">
-                        <div class="chart">
-                            <div class="chart-inner">
-                                <div class="chart-bar" style="width: {{errorPercentage}}%"></div>
-                                <div class="chart-bar" style="width: {{warnPercentage}}%"></div>
-                                <div class="chart-bar" style="width: {{successPercentage}}%"></div>
-                            </div>
-                        </div>
-                        <div class="chart-labels">
-                            <div class="chart-label">Errors {{errors}}</div>
-                            <div class="chart-label">Warnings {{warnings}}</div>
-                            <div class="chart-label">Success {{success}}</div>
-                        </div>
+            <div class="chart-container">
+                <div class="chart">
+                    <div class="chart-inner">
+                        <div class="chart-bar" style="width: {{errorPercentage}}%"></div>
+                        <div class="chart-bar" style="width: {{warnPercentage}}%"></div>
+                        <div class="chart-bar" style="width: {{successPercentage}}%"></div>
                     </div>
                 </div>
+                <div class="chart-labels">
+                    <div class="chart-label">Errors {{errors}}</div>
+                    <div class="chart-label">Warnings {{warnings}}</div>
+                    <div class="chart-label">Success {{success}}</div>
+                </div>
+            </div>
             {{/javascript}}
         </div>
-        <div class="grid">
-            <div class="card-wrapper icon-card">
-                <div class="icon">
-                    <img src="./assets/time.svg" alt="execution time" class="time-white">
-                    <img src="./assets/time_dark.svg" alt="execution time" style="display: none;" class="time-dark">
+
+        <!-- Card 2: Run Health, Timing, Coverage & Execution diagnostics (6 uniform hairline rows, top-aligned) -->
+        <div class="card-wrapper">
+            <div class="s2a-card-top" style="margin-bottom: 6px;">
+                <h2 class="action-tag no-top">Run Health &amp; Execution Diagnostics</h2>
+            </div>
+            <div class="s2a-rows-list">
+                <div class="report-detail-row">
+                    <span>Run outcome <small class="row-sub-note">({{runStatusDetails}})</small></span>
+                    <label class="test-result result-{{runStatusResult}}">{{runStatus}}</label>
                 </div>
-                <div>
-                    <h2 class="action-tag no-top">Execution Time</h2>
-                    <p class="big-number">{{execution}}</p>
-                    <div style="margin: 5px;"></div>
-                    <h2 class="action-tag">Average Response Time</h2>
-                    <p class="big-number">{{averageResponseTime}}ms</p>
+                <div class="report-detail-row">
+                    <span>Quality gate <small class="row-sub-note">({{qualityGateDescription}})</small></span>
+                    <label class="test-result result-{{qualityGateResult}}">{{qualityGateStatus}}</label>
+                </div>
+                <div class="report-detail-row">
+                    <span>Execution time / Avg response</span>
+                    <strong>{{execution}} · {{averageResponseTime}}ms</strong>
+                </div>
+                <div class="report-detail-row">
+                    <span>Fuzzers / Paths in scope</span>
+                    <strong><span class="orange_text">{{fuzzers}}</span>/{{totalFuzzers}} fuzzers · <span class="orange_text">{{paths}}</span>/{{totalPaths}} paths</strong>
+                </div>
+                <div class="report-detail-row">
+                    <span>Authentication errors / I/O errors</span>
+                    <strong>{{authErrors}} Auth · {{ioErrors}} I/O</strong>
                 </div>
             </div>
-            <div class="card-wrapper icon-card">
-                <div class="icon">
-                    <img src="./assets/methods.svg" alt="execution time" class="methods-white">
-                    <img src="./assets/methods_dark.svg" alt="execution time" style="display: none;" class="methods-dark">
-                </div>
-                <div>
-                    <h2 class="action-tag no-top">Http Methods in scope</h2>
-                    {{#httpMethods}}
-                        <span class="active rounded rounded-{{.}} small-margin">{{.}}</span>
-                    {{/httpMethods}}
-                </div>
+        </div>
+
+        <!-- Card 3: Target, Contract, HTTP Methods & Reproduction (Top-aligned hairline rows, zero empty hole) -->
+        <div class="card-wrapper">
+            <div class="s2a-card-top" style="margin-bottom: 6px;">
+                <h2 class="action-tag no-top">Target, Scope &amp; Reproduction</h2>
             </div>
-            <div class="card-wrapper icon-card">
-                <div class="icon">
-                    <img src="./assets/fuzzers.svg" alt="execution time" class="fuzzers-white">
-                    <img src="./assets/fuzzers_dark.svg" alt="execution time" style="display: none;" class="fuzzers-dark">
+            <div class="s2a-rows-list">
+                <div class="report-detail-row">
+                    <span>Base path</span>
+                    <strong class="link_text">{{baseUrl}}</strong>
                 </div>
-                <div>
-                    <h2 class="action-tag no-top">Fuzzers run</h2>
-                    <p class="big-number"><span class="orange_text">{{fuzzers}}</span> <span style="color: #9ca3af; font-size: 18px;">out of</span> {{totalFuzzers}}</p>
-                    <div style="margin: 5px;"></div>
-                    <h2 class="action-tag">Paths included</h2>
-                    <p class="big-number"><span class="orange_text">{{paths}}</span> <span style="color: #9ca3af; font-size: 18px;">out of</span> {{totalPaths}}</p>
+                <div class="report-detail-row">
+                    <span>Spec file</span>
+                    <strong class="link_text">{{contractName}}</strong>
                 </div>
-            </div>
-            <div class="card-wrapper icon-card">
-                <div class="icon">
-                    <img src="./assets/link.svg" alt="execution time" class="link-white">
-                    <img src="./assets/link_dark.svg" alt="execution time" style="display: none;" class="link-dark">
+                <div class="report-detail-row">
+                    <span>Http Methods</span>
+                    <div class="methods-inline-wrap">
+                        {{#httpMethods}}
+                        <span class="active rounded rounded-{{.}}">{{.}}</span>
+                        {{/httpMethods}}
+                    </div>
                 </div>
-                <div>
-                    <h2 class="action-tag no-top">Base path</h2>
-                    <p class="small-margin link_text">{{baseUrl}}</p>
-                    <div style="margin: 5px;"></div>
-                    <h2 class="action-tag">Spec file name</h2>
-                    <p class="small-margin link_text">{{contractName}}</p>
+                <div class="report-detail-row">
+                    <span>Runtime resource reuse / Configured stop limits</span>
+                    <strong>{{resourceReuseStatus}} · {{#hasStopLimits}}{{#stopLimits}}{{name}}: {{value}}{{suffix}} {{/stopLimits}}{{/hasStopLimits}}{{^hasStopLimits}}None{{/hasStopLimits}}</strong>
+                </div>
+                <div class="report-detail-row">
+                    <span>Random seed</span>
+                    <strong class="mono-val">{{randomSeed}}</strong>
                 </div>
             </div>
         </div>
     </div>
-    {{>summary-run-details}}
+
+    {{#hasProcessingErrors}}
+    <h2 class="title-section">Processing Limitations</h2>
+    <div class="card-wrapper" style="margin-bottom: 12px;">
+        <p class="report-detail-note">These issues may have prevented some contract elements or fuzzing scenarios from being processed completely.</p>
+        <table class="report-details-table">
+            <thead>
+            <tr class="header">
+                <th>Operation</th>
+                <th>Details</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{#processingErrors}}
+            <tr>
+                <td>{{operation}}</td>
+                <td>{{message}}</td>
+            </tr>
+            {{/processingErrors}}
+            </tbody>
+        </table>
+    </div>
+    {{/hasProcessingErrors}}
+
+    <!-- Row 2: Statistics (220px Chart.js Visuals so all bars and Y-axis path labels are crisp and readable) -->
     {{#hasResponseCodes}}
-    <h2 class="title-section">Statistics</h2>
     <div class="stats-grid">
         <div class="card-wrapper">
-            <div class="card-header">
-                <div>
-                    <h2 class="action-tag">HTTP Response Codes</h2>
-                    <p class="big-number">Distribution across all HTTP responses</p>
-                </div>
+            <div class="chart-head-inline">
+                <h2 class="action-tag no-top">HTTP Response Codes</h2>
+                <div id="response-code-legend-container" class="stats-legend-container"></div>
             </div>
             {{#javascript}}
-            <div class="stats-chart-container">
+            <div class="stats-chart-container canvas-box-220">
                 <canvas id="responseCodeChart"></canvas>
-                <div id="response-code-legend-container" class="stats-legend-container"></div>
             </div>
             <script>
                 const responseCodeData = [
@@ -172,16 +199,13 @@
         </div>
         {{#hasFailingPaths}}
         <div class="card-wrapper">
-            <div class="card-header">
-                <div>
-                    <h2 class="action-tag">Top Failing Paths</h2>
-                    <p class="big-number">Paths with most errors</p>
-                </div>
+            <div class="chart-head-inline">
+                <h2 class="action-tag no-top">Top Failing Paths</h2>
+                <div id="top-failing-paths-legend-container" class="stats-legend-container"></div>
             </div>
             {{#javascript}}
-            <div class="stats-chart-container">
+            <div class="stats-chart-container canvas-box-220">
                 <canvas id="topFailingPathsChart"></canvas>
-                <div id="top-failing-paths-legend-container" class="stats-legend-container"></div>
             </div>
             <script>
                 const topFailingPathsData = [
@@ -204,9 +228,19 @@
             {{/javascript}}
         </div>
         {{/hasFailingPaths}}
+        {{^hasFailingPaths}}
+        <div class="card-wrapper">
+            <div class="chart-head-inline">
+                <h2 class="action-tag no-top">Top Failing Paths</h2>
+            </div>
+            <div class="canvas-box-220" style="display:flex;align-items:center;justify-content:center;color:var(--dark-green);font-weight:600;font-size:14px;">
+                Zero failing paths — all endpoints passed error checks
+            </div>
+        </div>
+        {{/hasFailingPaths}}
     </div>
     {{/hasResponseCodes}}
-    <h2 class="title-section">Execution Details</h2>
+
     <div class="ran-tests-component">
         <div id="summary">
             <div class="summary-container">
@@ -217,7 +251,7 @@
             </div>
             {{#javascript}}
             <div class="search-container">
-                <input type="text" class="search-input" placeholder="Search...">
+                <input type="text" class="search-input" placeholder="Search path, method, fuzzer, or reason...">
                 <button class="search-clear-btn" onclick="clearSearch()">Clear</button>
                 <img class="search-icon" src="./assets/magnifying-glass.svg" alt="Search Icon">
             </div>
@@ -227,18 +261,18 @@
             <table id="summaryTable">
                 <thead>
                 <tr class="header">
-                    <th style="width: 5%">ID</th>
-                    <th style="width: 25%">Fuzzer</th>
-                    <th style="width: 50%">Scenario</th>
-                    <th style="width: 6%">Result</th>
-                    <th style="width: 15%">Result Reason</th>
+                    <th style="width: 88px">ID</th>
+                    <th style="width: 20%">Fuzzer</th>
+                    <th>Scenario</th>
+                    <th style="width: 86px">Result</th>
+                    <th style="width: 225px">Result Reason</th>
                 </tr>
                 </thead>
                 <tbody>
                 {{#testCases}}
                 <tr data-id="{{key}}" class="{{key}}" onclick="window.open('{{key}}.html','_blank')">
                     <td><a href="{{key}}.html" target="_blank">{{id}}</a></td>
-                    <td><a href="{{key}}.html" target="_blank">{{fuzzer}}</a></td>
+                    <td class="fuzzer-cell"><a href="{{key}}.html" target="_blank">{{fuzzer}}</a></td>
                     <td><a href="{{key}}.html" target="_blank"><span class="active rounded rounded-{{httpMethod}}">{{httpMethod}}</span><span
                             class="active rounded path">{{path}}</span><span class="scenario">{{scenario}}</span></a></td>
                     <td><a href="{{key}}.html" target="_blank"><label class="test-result result-{{result}}">{{result}}</label></a></td>
@@ -254,6 +288,24 @@
             </table>
         </div>
     </div>
+    <footer class="cats-funny-footer">
+        <span class="footer-quips">You've reached the end of the fuzzing universe — no more endpoints left to torture.</span>
+        <span class="footer-sep">·</span>
+        <span class="footer-credit">
+            Built with
+            <span class="coffee-badge" title="Freshly brewed espresso">
+                <svg class="coffee-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path class="steam s1" d="M8 5.5C8 4 9.5 3.5 9.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    <path class="steam s2" d="M12 5.5C12 4 13.5 3.5 13.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    <path class="steam s3" d="M16 5.5C16 4 17.5 3.5 17.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M5 8.5H17V14.5C17 17.8137 14.3137 20.5 11 20.5C7.68629 20.5 5 17.8137 5 14.5V8.5Z" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                    <path d="M17 10H18.8C20.2912 10 21.5 11.2088 21.5 12.7C21.5 14.1912 20.2912 15.4 18.8 15.4H17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                    <path d="M3.5 20.5H18.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+            </span>
+            and curiosity by <a href="https://github.com/Endava/cats" target="_blank" rel="noopener">Madalin Ilie</a>
+        </span>
+    </footer>
 </main>
 {{#javascript}}
 <script src="script.js"></script>

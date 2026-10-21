@@ -19,6 +19,7 @@ const topFailingPathsChart = new Chart(topFailingPathsCtx, {
     options: {
         indexAxis: 'y',
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 display: false
@@ -47,10 +48,11 @@ const topFailingPathsChart = new Chart(topFailingPathsCtx, {
             },
             y: {
                 ticks: {
+                    autoSkip: false,
                     callback: function(value, index) {
                         const label = this.getLabelForValue(value);
-                        if (label.length > 30) {
-                            return label.substring(0, 27) + '...';
+                        if (label.length > 44) {
+                            return '...' + label.slice(-41);
                         }
                         return label;
                     }

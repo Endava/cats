@@ -1,3 +1,4 @@
+let selectedFilter = "All";
 let selectedFuzzer = "All";
 let set = new Set();
 
@@ -19,18 +20,21 @@ function escapeHtml(string) {
 }
 
 function populateTable() {
-    const filter = selectedFilter.toUpperCase();
-    const fuzzer = selectedFuzzer.toUpperCase();
+    const filter = (selectedFilter || "All").toUpperCase();
+    const fuzzer = (selectedFuzzer || "All").toUpperCase();
+    const searchInput = document.querySelector('.search-input');
+    const searchText = searchInput ? searchInput.value.trim().toUpperCase() : "";
 
     document.querySelectorAll('#summaryTable tr:not(.header)').forEach((tr) => {
-        const result = tr.querySelector(".test-result").textContent.toUpperCase();
-        const fuzzerName = tr.querySelector("td:nth-child(2)").textContent.toUpperCase();
-        const scenario = tr.querySelector(".scenario").textContent.toUpperCase();
-        const searchText = document.querySelector('.search-input').value.trim().toUpperCase();
+        const resultEl = tr.querySelector(".test-result");
+        const result = resultEl ? resultEl.textContent.toUpperCase() : "";
+        const fuzzerEl = tr.querySelector("td:nth-child(2)");
+        const fuzzerName = fuzzerEl ? fuzzerEl.textContent.toUpperCase() : "";
+        const rowText = tr.textContent.toUpperCase();
 
         const matchFilter = filter === "ALL" || result.includes(filter);
         const matchFuzzer = fuzzer === "ALL" || fuzzerName.includes(fuzzer);
-        const matchSearch = searchText === "" || fuzzerName.includes(searchText) || result.includes(searchText) || scenario.includes(searchText);
+        const matchSearch = searchText === "" || rowText.includes(searchText);
 
         if (matchFilter && matchFuzzer && matchSearch) {
             tr.style.display = '';
@@ -38,53 +42,37 @@ function populateTable() {
             tr.style.display = 'none';
         }
     });
+
+    const clearButton = document.querySelector('.search-clear-btn');
+    if (clearButton) {
+        clearButton.style.display = searchText.length > 0 ? 'inline-block' : 'none';
+    }
 }
 
-
 function handleFilter(filter) {
-    selectedFilter = filter;
+    selectedFilter = filter || "All";
     populateTable();
 }
 
 function handleSearch() {
-    const searchInput = document.querySelector('.search-input');
-    const searchText = searchInput.value.trim().toUpperCase();
-
-    document.querySelectorAll('#summaryTable tr:not(.header)').forEach((tr) => {
-        const anyMatchSearch = [...tr.children].some(td => td.textContent.toUpperCase().includes(searchText));
-        const anyMatchFuzzer = [...tr.children].some(td => td.textContent.toUpperCase().includes(selectedFuzzer) || selectedFuzzer === "All");
-
-        if (anyMatchSearch && anyMatchFuzzer) {
-            tr.style.removeProperty('display');
-            set.add(tr.querySelector("td:nth-child(2)").textContent);
-        } else {
-            tr.style.display = 'none';
-        }
-    });
-
-    const clearButton = document.querySelector('.search-clear-btn');
-    if (searchText.length > 0) {
-        clearButton.style.display = 'inline-block';
-    } else {
-        clearButton.style.display = 'none';
-    }
+    populateTable();
 }
 
 function clearSearch() {
     const searchInput = document.querySelector('.search-input');
-    searchInput.value = '';
-    handleSearch();
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    populateTable();
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Filter options
-    document.querySelectorAll("#summary span, #summary span button").forEach(function (element) {
-        element.addEventListener("click", function (e) {
+    document.querySelectorAll("#summary span.menu").forEach(function (menuSpan) {
+        menuSpan.addEventListener("click", function (e) {
             e.preventDefault();
-            document.querySelector("#summary span.active").classList.remove("active");
-            selectedFilter = element.getAttribute('data-filtered');
-            element.classList.add("active");
-            element.parentNode.classList.add("active");
+            document.querySelectorAll("#summary span.menu.active").forEach(el => el.classList.remove("active"));
+            selectedFilter = menuSpan.getAttribute('data-filtered') || "All";
+            menuSpan.classList.add("active");
             selectedFuzzer = "All";
 
             handleFilter(selectedFilter);
@@ -116,13 +104,29 @@ const fuzzersDark = document.querySelector('.fuzzers-dark');
 const linkWhite = document.querySelector('.link-white');
 const linkDark = document.querySelector('.link-dark');
 
-function enableDarkMode() {
-    body.classList.add('dark-mode');
-
-    if (typeof myChart != "undefined") {
-        myChart.data.datasets[0].borderColor = '#1A1A1A';
+function updateChartThemes(isDark) {
+    const tickColor = isDark ? '#D1D5DB' : '#374151';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.07)';
+    if (typeof myChart !== "undefined" && myChart.data && myChart.data.datasets[0]) {
+        myChart.data.datasets[0].borderColor = isDark ? '#1A1A1A' : '#FFFFFF';
         myChart.update();
     }
+    [typeof responseCodeChart !== "undefined" ? responseCodeChart : null,
+     typeof topFailingPathsChart !== "undefined" ? topFailingPathsChart : null].forEach(chart => {
+        if (chart && chart.options && chart.options.scales) {
+            Object.values(chart.options.scales).forEach(axis => {
+                if (axis.ticks) axis.ticks.color = tickColor;
+                if (axis.title) axis.title.color = tickColor;
+                if (axis.grid) axis.grid.color = gridColor;
+            });
+            chart.update();
+        }
+    });
+}
+
+function enableDarkMode() {
+    body.classList.add('dark-mode');
+    updateChartThemes(true);
 
     hideElement(logoWhite);
     hideElement(themeIconDark);
@@ -141,11 +145,7 @@ function enableDarkMode() {
 
 function enableLightMode() {
     body.classList.remove('dark-mode');
-
-    if (typeof myChart != "undefined") {
-        myChart.data.datasets[0].borderColor = '#fff';
-        myChart.update();
-    }
+    updateChartThemes(false);
 
     displayElement(logoWhite);
     displayElement(themeIconDark);
@@ -174,24 +174,55 @@ function hideElement(element) {
     }
 }
 
-function toggleTheme() {
-    if (body.classList.contains('dark-mode')) {
-        enableLightMode();
-    } else {
-        enableDarkMode();
+function setSavedTheme(theme) {
+    try {
+        localStorage.setItem('cats-report-theme', theme);
+    } catch (_) {
+        // Ignore storage errors in restricted contexts
     }
 }
 
+function getSavedTheme() {
+    try {
+        return localStorage.getItem('cats-report-theme');
+    } catch (_) {
+        return null;
+    }
+}
+
+function toggleTheme() {
+    if (body.classList.contains('dark-mode')) {
+        enableLightMode();
+        setSavedTheme('light');
+    } else {
+        enableDarkMode();
+        setSavedTheme('dark');
+    }
+}
+
+const savedTheme = getSavedTheme();
 const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-if (prefersDarkMode) {
+if (savedTheme === 'dark' || (savedTheme === null && prefersDarkMode)) {
     enableDarkMode();
 } else {
     enableLightMode();
 }
 
+window.addEventListener('storage', function (event) {
+    if (event.key === 'cats-report-theme') {
+        if (event.newValue === 'dark') {
+            enableDarkMode();
+        } else if (event.newValue === 'light') {
+            enableLightMode();
+        }
+    }
+});
+
 // Show the button after the initial rendering
-themeToggleBtn.style.display = 'block';
-themeToggleBtn.addEventListener('click', toggleTheme);
+if (themeToggleBtn) {
+    themeToggleBtn.style.display = 'block';
+    themeToggleBtn.addEventListener('click', toggleTheme);
+}
 
 
 function showReportTab(tab, panelId) {
@@ -226,10 +257,13 @@ function copyElement(element, copyButton) {
     document.execCommand('copy');
     document.body.removeChild(tempTextarea);
 
+    if (!copyButton.dataset.origText) {
+        copyButton.dataset.origText = copyButton.textContent;
+    }
     copyButton.textContent = 'Copied';
     copyButton.classList.add("copied");
     setTimeout(() => {
-        copyButton.textContent = 'Copy code';
+        copyButton.textContent = copyButton.dataset.origText;
         copyButton.classList.remove("copied");
     }, 2000);
 }
@@ -306,4 +340,91 @@ function filterClusters() {
         });
         group.style.display = visibleInGroup > 0 ? '' : 'none';
     });
+}
+
+function highlightJsonText(raw) {
+    if (!raw) return '';
+    const trimmed = raw.trim();
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+        return null;
+    }
+    const escaped = raw
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    return escaped.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        let cls = 'json-num';
+        if (/^"/.test(match)) {
+            cls = /:$/.test(match) ? 'json-key' : 'json-str';
+        } else if (/true|false|null/.test(match)) {
+            cls = 'json-bool';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.path, .link_text').forEach(el => {
+        if (el.children.length === 0 && el.textContent) {
+            const escaped = el.textContent
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            el.innerHTML = escaped
+                .replace(/\//g, '/<wbr>')
+                .replace(/(\{[^}]+\})/g, '<span class="param-tok">$1</span>');
+        }
+    });
+
+    document.querySelectorAll('#request-payload code, #request-headers code, #response-body code, #response-headers code').forEach(codeEl => {
+        if (codeEl.children.length === 0 && codeEl.textContent) {
+            const highlighted = highlightJsonText(codeEl.textContent);
+            if (highlighted !== null) {
+                codeEl.innerHTML = highlighted;
+            }
+        }
+    });
+
+    document.querySelectorAll('#request-curl code').forEach(codeEl => {
+        if (codeEl.children.length === 0 && codeEl.textContent) {
+            codeEl.innerHTML = formatAndHighlightCurl(codeEl.textContent);
+        }
+    });
+});
+
+function formatAndHighlightCurl(raw) {
+    const lines = raw.split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line.length > 0 && line !== '\\');
+
+    return lines.map((line, idx) => {
+        const hasTrailingSlash = line.endsWith('\\');
+        const core = (hasTrailingSlash ? line.slice(0, -1).trim() : line)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        const indent = idx === 0 ? '' : '  ';
+        const slashHtml = hasTrailingSlash ? ' <span class="curl-Slash">\\</span>' : '';
+
+        if (idx === 0 && core.startsWith('curl')) {
+            const colored = core
+                .replace(/^curl\s+/, '<span class="curl-cmd">curl</span> ')
+                .replace(/(-X)\s+(\S+)/, '<span class="curl-flag">$1</span> <span class="curl-method">$2</span>');
+            return indent + colored + slashHtml;
+        }
+        if (core.startsWith('-H ')) {
+            const headerPart = core.slice(3).trim();
+            const coloredHeader = headerPart.replace(/^(&quot;|"|')([^:]+):\s*(.*)(\1)$/,
+                '$1<span class="json-key">$2</span>: <span class="json-str">$3</span>$4');
+            return indent + '<span class="curl-flag">-H</span> ' + coloredHeader + slashHtml;
+        }
+        if (core.startsWith('-d ')) {
+            const bodyPart = core.slice(3).trim();
+            return indent + '<span class="curl-flag">-d</span> <span class="json-str">' + bodyPart + '</span>' + slashHtml;
+        }
+        if (/^https?:\/\//.test(core) || /^'https?:\/\//.test(core) || /^"https?:\/\//.test(core)) {
+            return indent + '<span class="curl-url">' + core + '</span>' + slashHtml;
+        }
+        return indent + core + slashHtml;
+    }).join('\n');
 }

@@ -27,6 +27,7 @@ const responseCodeChart = new Chart(responseCodeCtx, {
     data: responseCodeChartData,
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 display: false
