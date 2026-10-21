@@ -57,7 +57,6 @@ final class ResourceSemanticNaming {
     private static final Pattern DATE_PART = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}$");
     private static final Pattern TIME_PART = Pattern.compile(
             "^\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})?$");
-    private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^A-Za-z0-9]");
     private static final Splitter SEMANTIC_PATH_SPLITTER = Splitter.on(Pattern.compile("[.#]")).omitEmptyStrings();
 
     private ResourceSemanticNaming() {

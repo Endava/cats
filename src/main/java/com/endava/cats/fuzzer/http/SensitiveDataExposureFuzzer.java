@@ -47,7 +47,6 @@ public class SensitiveDataExposureFuzzer implements Fuzzer {
             "password", "passwd", "passphrase", "passwordhash", "secret", "secretkey", "privatekey",
             "apikey", "accesstoken", "refreshtoken", "ssn", "cvv", "cvc");
     private static final Pattern MASKED_VALUE = Pattern.compile("^[*•xX#-]+$|.*[*•]{3,}.*");
-    private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^a-z0-9]");
 
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(SensitiveDataExposureFuzzer.class);
     private final SimpleExecutor simpleExecutor;

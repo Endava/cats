@@ -203,11 +203,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
      * Gets fields that are likely to contain URLs based on schema format or field name.
      */
     private Set<String> getUrlFields(FuzzingData data) {
-        return data.getAllFieldsByHttpMethod()
-                .stream()
-                .filter(field -> isUrlField(field, data))
-                .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
-                .collect(Collectors.toSet());
+        return FuzzingData.filterFieldsInPayload(data, field -> isUrlField(field, data), 0);
     }
 
     private boolean isUrlField(String fieldName, FuzzingData data) {

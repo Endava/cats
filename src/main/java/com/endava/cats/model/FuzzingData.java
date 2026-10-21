@@ -302,6 +302,25 @@ public class FuzzingData {
     }
 
     /**
+     * Filters {@link #getAllFieldsByHttpMethod()} by evaluating the fast {@code schemaFilter} first, checking
+     * {@link com.endava.cats.util.JsonUtils#isFieldInJson(String, String)} only on matching fields, and capping the
+     * result at {@code maxFields} when {@code maxFields > 0}.
+     *
+     * @param schemaFilter fast schema/name predicate evaluated before parsing the JSON payload
+     * @param maxFields    maximum number of fields to return ({@code <= 0} means unlimited)
+     * @return matching fields present in {@link #getPayload()}
+     */
+    public static Set<String> filterFieldsInPayload(FuzzingData data, java.util.function.Predicate<String> schemaFilter, int maxFields) {
+        long limit = maxFields > 0 ? maxFields : Long.MAX_VALUE;
+        return data.getAllFieldsByHttpMethod()
+                .stream()
+                .filter(schemaFilter)
+                .filter(field -> com.endava.cats.util.JsonUtils.isFieldInJson(data.getPayload(), field))
+                .limit(limit)
+                .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+    }
+
+    /**
      * Gets a set of sets of field names based on the specified set fuzzing strategy and maximum fields to remove.
      *
      * @param setFuzzingStrategy The set fuzzing strategy to determine how sets of fields are generated.

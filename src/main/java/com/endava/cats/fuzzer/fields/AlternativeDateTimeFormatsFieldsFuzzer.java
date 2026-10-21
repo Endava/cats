@@ -49,10 +49,9 @@ public class AlternativeDateTimeFormatsFieldsFuzzer implements Fuzzer {
             logger.skip("Skip fuzzer as payload is empty");
             return;
         }
-        List<String> dateTimeFields = data.getAllFieldsByHttpMethod().stream()
-                .filter(field -> CatsModelUtils.isDateTimeSchema(data.getRequestPropertyTypes().get(field)))
-                .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
-                .toList();
+        List<String> dateTimeFields = List.copyOf(FuzzingData.filterFieldsInPayload(data,
+                field -> CatsModelUtils.isDateTimeSchema(data.getRequestPropertyTypes().get(field)),
+                processingArguments.getLimitNumberOfFields()));
         if (dateTimeFields.isEmpty()) {
             logger.skip("No date-time fields found in the request");
             return;

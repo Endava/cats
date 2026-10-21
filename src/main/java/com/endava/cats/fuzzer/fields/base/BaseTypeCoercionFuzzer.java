@@ -60,15 +60,9 @@ public abstract class BaseTypeCoercionFuzzer implements Fuzzer {
     }
 
     private Set<String> getFieldsToBeFuzzed(FuzzingData data) {
-        long maxFields = processingArguments.getLimitNumberOfFields() > 0
-                ? processingArguments.getLimitNumberOfFields()
-                : Long.MAX_VALUE;
-        return data.getAllFieldsByHttpMethod()
-                .stream()
-                .filter(field -> this.fieldsFilterFunction().apply(field, data))
-                .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
-                .limit(maxFields)
-                .collect(Collectors.toSet());
+        return FuzzingData.filterFieldsInPayload(data,
+                field -> this.fieldsFilterFunction().apply(field, data),
+                processingArguments.getLimitNumberOfFields());
     }
 
     private void fuzzField(FuzzingData data, String field) {
