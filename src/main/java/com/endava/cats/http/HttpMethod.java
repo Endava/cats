@@ -299,6 +299,36 @@ public enum HttpMethod {
     }
 
     /**
+     * Checks whether this HTTP method matches the candidate method name case-insensitively.
+     *
+     * @param candidate the candidate method string
+     * @return {@code true} if the candidate matches this method
+     */
+    public boolean matches(String candidate) {
+        return candidate != null && name().equalsIgnoreCase(candidate.trim());
+    }
+
+    /**
+     * Checks whether the given method is a read-only retrieval method ({@link #GET} or {@link #HEAD}).
+     *
+     * @param candidate the candidate method string
+     * @return {@code true} if {@code GET} or {@code HEAD}
+     */
+    public static boolean isReadOnlyMethod(String candidate) {
+        return GET.matches(candidate) || HEAD.matches(candidate);
+    }
+
+    /**
+     * Checks whether the given method modifies or deletes an existing resource ({@link #PUT}, {@link #PATCH}, or {@link #DELETE}).
+     *
+     * @param candidate the candidate method string
+     * @return {@code true} if {@code PUT}, {@code PATCH}, or {@code DELETE}
+     */
+    public static boolean isResourceModificationMethod(String candidate) {
+        return PUT.matches(candidate) || PATCH.matches(candidate) || DELETE.matches(candidate);
+    }
+
+    /**
      * Gets a list of recommended response codes associated with the current ResponseCodeFamily.
      *
      * @return A list of recommended response codes.

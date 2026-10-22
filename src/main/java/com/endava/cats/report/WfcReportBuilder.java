@@ -1,5 +1,7 @@
 package com.endava.cats.report;
 
+import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
@@ -83,7 +85,7 @@ public final class WfcReportBuilder {
             exercisedEndpoints.add(operationId);
 
             int statusCode = summary.getHttpResponseCode();
-            if (statusCode >= 200 && statusCode < 300) {
+            if (ResponseCodeFamily.is2xxCode(statusCode)) {
                 covered2xxEndpoints.add(operationId);
             }
 
@@ -152,7 +154,7 @@ public final class WfcReportBuilder {
     }
 
     static String toOperationId(String httpMethod, String contractPath) {
-        String verb = StringUtils.defaultIfBlank(httpMethod, "GET").trim().toUpperCase(Locale.ROOT);
+        String verb = StringUtils.defaultIfBlank(httpMethod, HttpMethod.GET.name()).trim().toUpperCase(Locale.ROOT);
         String path = StringUtils.defaultIfBlank(contractPath, "/").trim();
         return verb + ":" + path;
     }
@@ -165,7 +167,7 @@ public final class WfcReportBuilder {
         tc.setName("%s - %s (%s %s)".formatted(
                 summary.getId(),
                 StringUtils.defaultIfBlank(summary.getFuzzer(), "Fuzzer"),
-                StringUtils.defaultIfBlank(summary.getHttpMethod(), "GET").toUpperCase(Locale.ROOT),
+                StringUtils.defaultIfBlank(summary.getHttpMethod(), HttpMethod.GET.name()).toUpperCase(Locale.ROOT),
                 StringUtils.defaultIfBlank(summary.getPath(), "/")));
         tc.setStartLine(1);
         tc.setEndLine(Math.max(1, lineCount));
@@ -176,7 +178,7 @@ public final class WfcReportBuilder {
         CoveredEndpoint covered = new CoveredEndpoint();
         covered.setEndpointId(operationId);
         covered.setTestCaseId(testKey);
-        if (statusCode >= 100 && statusCode <= 599) {
+        if (ResponseCodeFamily.isValidHttpCode(statusCode)) {
             covered.setHttpStatus(Set.of(statusCode));
         } else {
             covered.setHttpStatus(Collections.emptySet());

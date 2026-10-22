@@ -35,6 +35,36 @@ public interface ResponseCodeFamily {
      */
     String XX = "XX";
 
+    int STATUS_CREATED = 201;
+    int STATUS_NO_CONTENT = 204;
+    int STATUS_RESET_CONTENT = 205;
+    int STATUS_NOT_MODIFIED = 304;
+    int STATUS_BAD_REQUEST = 400;
+    int STATUS_UNAUTHORIZED = 401;
+    int STATUS_NOT_FOUND = 404;
+    int STATUS_METHOD_NOT_ALLOWED = 405;
+    int STATUS_NOT_ACCEPTABLE = 406;
+    int STATUS_GONE = 410;
+    int STATUS_PAYLOAD_TOO_LARGE = 413;
+    int STATUS_UNSUPPORTED_MEDIA_TYPE = 415;
+    int STATUS_UNPROCESSABLE_ENTITY = 422;
+    int STATUS_UPGRADE_REQUIRED = 426;
+    int STATUS_TOO_MANY_HEADERS = 431;
+    int STATUS_INTERNAL_SERVER_ERROR = 500;
+    int STATUS_NOT_IMPLEMENTED = 501;
+    int MIN_VALID_HTTP_CODE = 100;
+    int MAX_VALID_HTTP_CODE = 599;
+
+    /**
+     * Checks if the provided integer code is within the standard HTTP status code range ({@code 100..599}).
+     *
+     * @param code The integer response code to check.
+     * @return {@code true} if the code is between 100 and 599 inclusive.
+     */
+    static boolean isValidHttpCode(int code) {
+        return code >= MIN_VALID_HTTP_CODE && code <= MAX_VALID_HTTP_CODE;
+    }
+
     /**
      * Checks if the provided code is a valid HTTP status code.
      *
@@ -51,7 +81,7 @@ public interface ResponseCodeFamily {
 
 
     static boolean isTooManyHeaders(int code) {
-        return code == 431;
+        return code == STATUS_TOO_MANY_HEADERS;
     }
 
     /**
@@ -91,7 +121,23 @@ public interface ResponseCodeFamily {
      * @return True if the code corresponds to an unimplemented status code (501), false otherwise.
      */
     static boolean isUnimplemented(int code) {
-        return code == 501;
+        return code == STATUS_NOT_IMPLEMENTED;
+    }
+
+    static boolean isInternalServerError(int code) {
+        return code == STATUS_INTERNAL_SERVER_ERROR;
+    }
+
+    static boolean isServerErrorOtherThan500And501(int code) {
+        return is5xxCode(code) && !isInternalServerError(code) && !isUnimplemented(code);
+    }
+
+    static boolean isNotFoundOrGone(int code) {
+        return code == STATUS_NOT_FOUND || code == STATUS_GONE;
+    }
+
+    static boolean isClientValidationError(int code) {
+        return code == STATUS_BAD_REQUEST || code == STATUS_UNPROCESSABLE_ENTITY;
     }
 
 
