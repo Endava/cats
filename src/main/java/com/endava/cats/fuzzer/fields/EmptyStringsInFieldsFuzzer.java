@@ -8,6 +8,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -50,6 +51,14 @@ public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFu
     @Override
     protected ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
         return ResponseCodeFamilyPredefined.FOURXX;
+    }
+
+    @Override
+    protected ResponseCodeFamily getExpectedResponseCodeBasedOnConstraints(FuzzingData data, String fuzzedField, boolean isFuzzedValueMatchingPattern, FuzzingConstraints fuzzingConstraints) {
+        if (data.isQueryParam(fuzzedField) && !fuzzingConstraints.hasMinLengthOrMandatoryFieldsFuzzed()) {
+            return ResponseCodeFamilyPredefined.FOURXX_TWOXX;
+        }
+        return super.getExpectedResponseCodeBasedOnConstraints(data, fuzzedField, isFuzzedValueMatchingPattern, fuzzingConstraints);
     }
 
     @Override

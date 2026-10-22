@@ -129,7 +129,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
                 serviceDataBuilder.responseValidationField(fuzzedField);
             }
             ServiceData serviceData = serviceDataBuilder.build();
-            ResponseCodeFamily expectedResponseCodeBasedOnConstraints = this.getExpectedResponseCodeBasedOnConstraints(isFuzzedValueMatchingPattern, fuzzingConstraints);
+            ResponseCodeFamily expectedResponseCodeBasedOnConstraints = this.getExpectedResponseCodeBasedOnConstraints(data, fuzzedField, isFuzzedValueMatchingPattern, fuzzingConstraints);
 
             testCaseListener.addExpectedResult(logger, "Should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
 
@@ -197,6 +197,10 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      * @param fuzzingConstraints           fuzzing constraints associated to the current fuzzed field
      * @return the appropriate ResponseCodeFamily based on the supplied conditions
      */
+    protected ResponseCodeFamily getExpectedResponseCodeBasedOnConstraints(FuzzingData data, String fuzzedField, boolean isFuzzedValueMatchingPattern, FuzzingConstraints fuzzingConstraints) {
+        return this.getExpectedResponseCodeBasedOnConstraints(isFuzzedValueMatchingPattern, fuzzingConstraints);
+    }
+
     private ResponseCodeFamily getExpectedResponseCodeBasedOnConstraints(boolean isFuzzedValueMatchingPattern, FuzzingConstraints fuzzingConstraints) {
         if (!isFuzzedValueMatchingPattern) {
             return this.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern();
@@ -235,9 +239,6 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             if (fieldSchema.getPattern() != null) {
                 Pattern pattern = Pattern.compile(fieldSchema.getPattern());
                 return fieldValue == null || pattern.matcher(sanitized).matches();
-            }
-            if (sanitized.isEmpty() && data.isQueryParam(fuzzedField) && !data.getAllRequiredFields().contains(fuzzedField)) {
-                return true;
             }
 
             return fieldValue == null || isValueMatchingFormat(fieldSchema, sanitized);
