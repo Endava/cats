@@ -354,6 +354,10 @@ public class CustomFuzzerUtil {
             KeyValuePair<String, String> header = response.getHeader(headerName);
             return header == null ? JsonUtils.NOT_SET : header.getValue();
         }
+        if (("$".equals(selector) || "$body".equalsIgnoreCase(selector) || "$response.body".equalsIgnoreCase(selector))
+                && StringUtils.isNotBlank(response.getBody())) {
+            return response.getBody().trim().replace("\"", "");
+        }
         return String.valueOf(JsonUtils.getVariableFromJson(response.getBody(), selector));
     }
 
