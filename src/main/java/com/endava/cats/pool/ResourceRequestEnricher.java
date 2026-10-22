@@ -126,7 +126,7 @@ final class ResourceRequestEnricher {
         String bindingKey = ResourceSemanticNaming.bindingKey(data.getRelativePath(), target);
         ResourceInstance boundResource = session.requestBindings.getOrDefault(bindingKey,
                 target.location() == RequestTarget.Location.PATH ? session.pathBoundResource : null);
-        Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, boundResource, false, data.getHttpMethod());
+        Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, boundResource, false, data.getHttpMethod(), data);
         if (resolved.isEmpty()) {
             return currentJson;
         }
@@ -348,7 +348,7 @@ final class ResourceRequestEnricher {
                                    ResourceSemanticNaming.TargetMatchContext matchCtx,
                                    ResourceInstance boundResource, boolean boundOnly, HttpMethod targetMethod,
                                    boolean destructivePathTarget, Set<String> protectedSelfValues,
-                                   boolean canSkipByDirectAlias) {
+                                   boolean canSkipByDirectAlias, ServiceData data) {
     }
 
     private record RankedCandidate(ResolvedValue value, int quality) {
@@ -364,6 +364,11 @@ final class ResourceRequestEnricher {
 
     Optional<ResolvedValue> resolve(String targetPath, TargetField target, ResourceInstance boundResource,
                                     boolean boundOnly, HttpMethod targetMethod) {
+        return resolve(targetPath, target, boundResource, boundOnly, targetMethod, null);
+    }
+
+    Optional<ResolvedValue> resolve(String targetPath, TargetField target, ResourceInstance boundResource,
+                                    boolean boundOnly, HttpMethod targetMethod, ServiceData data) {
         Set<String> targetAliases = ResourceSemanticNaming.targetAliases(targetPath, target);
         ResourceSemanticNaming.TargetMatchContext matchCtx =
                 ResourceSemanticNaming.createTargetMatchContext(targetPath, target, targetAliases);
@@ -372,7 +377,7 @@ final class ResourceRequestEnricher {
         Set<String> protectedSelfValues = destructivePathTarget ? selfIdentityValues(matchCtx.targetPathSegments()) : Set.of();
         boolean canSkipByDirectAlias = matchCtx.digitMatchResource() == null && matchCtx.singleWordTargetPrefix() == null;
         ResolutionQuery query = new ResolutionQuery(targetPath, target, targetAliases, matchCtx,
-                boundResource, boundOnly, targetMethod, destructivePathTarget, protectedSelfValues, canSkipByDirectAlias);
+                boundResource, boundOnly, targetMethod, destructivePathTarget, protectedSelfValues, canSkipByDirectAlias, data);
 
         RankedCandidate best = RankedCandidate.NONE;
         for (ResourceInstance resource : resources) {
@@ -430,8 +435,7 @@ final class ResourceRequestEnricher {
         if (similarity == 0) {
             return currentBest;
         }
-        if (query.target().location() == RequestTarget.Location.QUERY && affinityScore == 0 &&
-                Set.of("type", "name", "active", "status").contains(ResourceSemanticNaming.normalize(query.target().name()))) {
+        if (query.data() != null && !query.data().isAllowedEnumValue(query.target().path(), value.value())) {
             return currentBest;
         }
         int feedback = feedbackScore(resource, value, query.targetPath(), query.target());

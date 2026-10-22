@@ -6,12 +6,15 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.model.RequestTarget;
+import io.swagger.v3.oas.models.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,6 +72,8 @@ public class ServiceData {
     private final Set<String> queryParams = new HashSet<>();
     @Builder.Default
     private final Map<String, QueryParameterSerialization> queryParameterSerializations = Map.of();
+    @Builder.Default
+    private final Map<String, Set<String>> enumValuesByField = Map.of();
     /** Variables supplied by a custom fuzzer for resolving dynamic request values. */
     @Builder.Default
     private final Map<String, String> dynamicVariables = Map.of();
@@ -89,10 +94,40 @@ public class ServiceData {
                 .originalPayload(data.getPayload())
                 .queryParams(data.getQueryParams())
                 .queryParameterSerializations(data.getQueryParameterSerializations())
+                .enumValuesByField(extractEnumValuesByField(data))
                 .httpMethod(data.getMethod())
                 .contentType(data.getFirstRequestContentType())
                 .acceptHeader(resolveAcceptHeader(data))
                 .pathParamsPayload(data.getPathParamsPayload());
+    }
+
+    private static Map<String, Set<String>> extractEnumValuesByField(FuzzingData data) {
+        if (data.getRequestPropertyTypes() == null || data.getRequestPropertyTypes().isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Set<String>> result = new LinkedHashMap<>();
+        data.getRequestPropertyTypes().forEach((field, schema) -> {
+            if (field != null && schema != null && schema.getEnum() != null && !schema.getEnum().isEmpty()) {
+                Set<String> allowed = new LinkedHashSet<>();
+                for (Object item : schema.getEnum()) {
+                    if (item != null) {
+                        allowed.add(String.valueOf(item));
+                    }
+                }
+                if (!allowed.isEmpty()) {
+                    result.put(field, Set.copyOf(allowed));
+                }
+            }
+        });
+        return Map.copyOf(result);
+    }
+
+    public boolean isAllowedEnumValue(String fieldPath, Object candidateValue) {
+        if (enumValuesByField == null || enumValuesByField.isEmpty() || candidateValue == null) {
+            return true;
+        }
+        Set<String> allowed = enumValuesByField.get(fieldPath);
+        return allowed == null || allowed.isEmpty() || allowed.contains(String.valueOf(candidateValue));
     }
 
     private static String resolveAcceptHeader(FuzzingData data) {
