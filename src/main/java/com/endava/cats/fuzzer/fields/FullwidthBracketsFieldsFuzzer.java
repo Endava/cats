@@ -6,9 +6,11 @@ import com.endava.cats.fuzzer.fields.base.ExpectOnly2XXBaseFieldsFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.util.OpenApiUtils;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -43,6 +45,14 @@ class FullwidthBracketsFieldsFuzzer extends ExpectOnly2XXBaseFieldsFuzzer {
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
         return ResponseCodeFamilyPredefined.FOURXX;
+    }
+
+    @Override
+    protected ResponseCodeFamily getExpectedResponseCodeBasedOnConstraints(FuzzingData data, String fuzzedField, boolean isFuzzedValueMatchingPattern, FuzzingConstraints fuzzingConstraints) {
+        if (data.getPath() != null && OpenApiUtils.getPathVariables(data.getPath()).contains(fuzzedField)) {
+            return ResponseCodeFamilyPredefined.FOURXX_TWOXX;
+        }
+        return super.getExpectedResponseCodeBasedOnConstraints(data, fuzzedField, isFuzzedValueMatchingPattern, fuzzingConstraints);
     }
 
     @Override

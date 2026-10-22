@@ -492,7 +492,15 @@ final class FuzzerWaveExecutor {
             return;
         }
         runSeedFuzzersForPath(fuzzingData, configuredFuzzers);
-        runFuzzers(fuzzingData, nonSeedFuzzers(configuredFuzzers));
+        List<Fuzzer> remainingFuzzers = nonSeedFuzzers(configuredFuzzers);
+        List<FuzzingData> nonDeleteData = fuzzingData.stream()
+                .filter(data -> data.getMethod() != HttpMethod.DELETE)
+                .toList();
+        List<FuzzingData> deleteData = fuzzingData.stream()
+                .filter(data -> data.getMethod() == HttpMethod.DELETE)
+                .toList();
+        runFuzzers(nonDeleteData, remainingFuzzers);
+        runFuzzers(deleteData, remainingFuzzers);
     }
 
     private void runSeedFuzzersForPath(List<FuzzingData> fuzzingData, List<Fuzzer> configuredFuzzers) {

@@ -430,6 +430,11 @@ final class ResourceRequestEnricher {
         if (similarity == 0) {
             return currentBest;
         }
+        if (query.target().location() == RequestTarget.Location.QUERY &&
+                !ResourceSemanticNaming.isIdentifierName(query.target().name()) &&
+                affinityScore == 0) {
+            return currentBest;
+        }
         int feedback = feedbackScore(resource, value, query.targetPath(), query.target());
         int score = affinityScore +
                 similarity * 5 +
