@@ -198,13 +198,13 @@ public class CatsResponse {
                 {"notAJson": "connection refused! please make sure you have access to the service!"}
                 """),
         READ_TIMEOUT(954, "read timeout", """
-                {"notAJson": "read timeout! you might want to increased it using --readTimeout"}
+                {"notAJson": "read timeout! you might want to increase it using --readTimeout"}
                 """),
         WRITE_TIMEOUT(955, "write timeout", """
-                {"notAJson": "write timeout! you might want to increased it using --writeTimeout"}
+                {"notAJson": "write timeout! you might want to increase it using --writeTimeout"}
                 """),
         CONNECTION_TIMEOUT(956, "connection timeout", """
-                {"notAJson": "connection timeout! you might want to increased it using --connectionTimeout"}
+                {"notAJson": "connection timeout! you might want to increase it using --connectionTimeout"}
                 """),
         PROTOCOL_EXCEPTION(957, "protocol exception", """
                 {"notAJson": "protocol exception! your service has issues providing a consistent response"}
@@ -239,6 +239,12 @@ public class CatsResponse {
 
         public String asString() {
             return responseCode + " - " + this.name().toLowerCase(Locale.ROOT) + " - " + responseBody;
+        }
+
+        public static Optional<ExceptionalResponse> fromResponseCode(int code) {
+            return Arrays.stream(values())
+                    .filter(er -> er != NO_BODY && er.responseCode == code)
+                    .findFirst();
         }
     }
 

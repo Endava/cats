@@ -10,6 +10,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
@@ -151,10 +152,10 @@ public class CrossParentResourceIsolationFuzzer implements Fuzzer {
         if (code == 403 || code == 404) {
             listener.reportResultInfo(logger, data, "Child resource unavailable under a different parent (status {})", code);
         } else if (code >= 500 && code < 600) {
-            listener.reportResultError(logger, data, "Cross-parent request caused server error",
+            listener.reportResultError(logger, data, Reason.CROSS_PARENT_SERVER_ERROR.value(),
                     "Request for a known child under a different parent returned {}", code);
         } else if (responseContainsObservedChild(response, swap)) {
-            listener.reportResultWarn(logger, data, "Potential cross-parent resource exposure",
+            listener.reportResultWarn(logger, data, Reason.CROSS_PARENT_RESOURCE_EXPOSURE.value(),
                     "A known child identifier was returned successfully under a different observed parent; verify whether this resource is meant to be shared");
         } else {
             listener.reportResultInfo(logger, data, "Cross-parent request inconclusive (status {})", code);

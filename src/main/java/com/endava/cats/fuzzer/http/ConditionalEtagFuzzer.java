@@ -11,6 +11,7 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
@@ -178,10 +179,10 @@ public class ConditionalEtagFuzzer implements Fuzzer {
         if (code == 412 || code == 409) {
             listener.reportResultInfo(logger, data, "Stale If-Match was rejected (status {})", code);
         } else if (code >= 200 && code < 300) {
-            listener.reportResultWarn(logger, data, "Stale If-Match accepted",
+            listener.reportResultWarn(logger, data, Reason.STALE_IF_MATCH_ACCEPTED.value(),
                     "An update with a previously observed stale ETag succeeded. Check whether the precondition was honored");
         } else if (code >= 500 && code < 600) {
-            listener.reportResultError(logger, data, "Stale If-Match caused server error", "An update with a stale ETag returned {}", code);
+            listener.reportResultError(logger, data, Reason.STALE_IF_MATCH_SERVER_ERROR.value(), "An update with a stale ETag returned {}", code);
         } else {
             listener.reportResultInfo(logger, data, "Stale If-Match check inconclusive (status {})", code);
         }
@@ -192,9 +193,9 @@ public class ConditionalEtagFuzzer implements Fuzzer {
             listener.reportResultInfo(logger, data, "If-None-Match returned 304 for an unchanged ETag");
         } else if (response.getResponseCode() == 200 && response.getHeader("ETag") != null &&
                 sentTag.equals(response.getHeader("ETag").getValue())) {
-            listener.reportResultWarn(logger, data, "Conditional GET ignored", "A GET with If-None-Match returned 200 with the same ETag");
+            listener.reportResultWarn(logger, data, Reason.CONDITIONAL_GET_IGNORED.value(), "A GET with If-None-Match returned 200 with the same ETag");
         } else if (response.getResponseCode() >= 500 && response.getResponseCode() < 600) {
-            listener.reportResultError(logger, data, "Conditional GET caused server error", "A GET with If-None-Match returned {}", response.responseCodeAsString());
+            listener.reportResultError(logger, data, Reason.CONDITIONAL_GET_SERVER_ERROR.value(), "A GET with If-None-Match returned {}", response.responseCodeAsString());
         } else {
             listener.reportResultInfo(logger, data, "Conditional GET inconclusive (status {})", response.responseCodeAsString());
         }

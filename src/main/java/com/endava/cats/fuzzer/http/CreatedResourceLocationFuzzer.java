@@ -11,6 +11,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
@@ -87,7 +88,7 @@ public class CreatedResourceLocationFuzzer implements Fuzzer {
 
     private void checkResponse(CatsResponse response, FuzzingData data) {
         if (response.getResponseCode() == 404 || response.getResponseCode() == 410) {
-            listener.reportResultWarn(logger, data, "Created resource unavailable", "POST returned 201 with a Location for a documented GET, but the resource is not available (status {})",
+            listener.reportResultWarn(logger, data, Reason.CREATED_RESOURCE_UNAVAILABLE.value(), "POST returned 201 with a Location for a documented GET, but the resource is not available (status {})",
                     response.responseCodeAsString());
         } else if (response.getResponseCode() >= 200 && response.getResponseCode() < 300) {
             listener.reportResultInfo(logger, data, "Resource returned by Location is available (status {})", response.responseCodeAsString());

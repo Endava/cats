@@ -11,6 +11,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
@@ -107,9 +108,9 @@ public class PutIdempotencyFuzzer implements Fuzzer {
 
     private void reportPutResponse(CatsResponse response, FuzzingData data, boolean succeeded) {
         if (response.getResponseCode() >= 500 && response.getResponseCode() < 600) {
-            listener.reportResultError(logger, data, "PUT retry caused server error", "Repeating a successful PUT returned {}", response.responseCodeAsString());
+            listener.reportResultError(logger, data, Reason.PUT_RETRY_SERVER_ERROR.value(), "Repeating a successful PUT returned {}", response.responseCodeAsString());
         } else if (!succeeded) {
-            listener.reportResultWarn(logger, data, "PUT retry rejected", "Repeating a successful PUT returned {}", response.responseCodeAsString());
+            listener.reportResultWarn(logger, data, Reason.PUT_RETRY_REJECTED.value(), "Repeating a successful PUT returned {}", response.responseCodeAsString());
         } else {
             listener.reportResultInfo(logger, data, "Repeated PUT returned {}", response.responseCodeAsString());
         }
@@ -131,7 +132,7 @@ public class PutIdempotencyFuzzer implements Fuzzer {
     private void reportReadResponse(CatsResponse response, FuzzingData data, JsonObject before,
                                     AtomicReference<JsonObject> snapshot) {
         if (response.getResponseCode() >= 500 && response.getResponseCode() < 600) {
-            listener.reportResultError(logger, data, "PUT retry broke resource read", "GET after PUT returned {}", response.responseCodeAsString());
+            listener.reportResultError(logger, data, Reason.PUT_RETRY_BROKE_READ.value(), "GET after PUT returned {}", response.responseCodeAsString());
             return;
         }
         if (!isComparableGet(response)) {
@@ -149,7 +150,7 @@ public class PutIdempotencyFuzzer implements Fuzzer {
         if (before == null) {
             listener.reportResultInfo(logger, data, "Captured resource state after the first repeated PUT");
         } else if (!before.equals(stable)) {
-            listener.reportResultWarn(logger, data, "PUT is not idempotent", "Resource state changed after repeating the identical PUT");
+            listener.reportResultWarn(logger, data, Reason.PUT_NOT_IDEMPOTENT.value(), "Resource state changed after repeating the identical PUT");
         } else {
             listener.reportResultInfo(logger, data, "Resource state did not change after repeating the identical PUT");
         }

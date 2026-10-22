@@ -59,7 +59,7 @@ public interface CatsResultFactory {
      * @return a CatsResult to use in reports
      */
     static CatsResult createNotImplemented() {
-        return new CatsResult("Response HTTP code 501: you forgot to implement this functionality!", Reason.NOT_IMPLEMENTED.description());
+        return new CatsResult("Response HTTP code 501: you forgot to implement this functionality!", Reason.NOT_IMPLEMENTED.value());
     }
 
     /**
@@ -94,6 +94,33 @@ public interface CatsResultFactory {
 
     static CatsResult createCallTimeoutExceeded(long responseTimeInMs) {
         return new CatsResult("HTTP call exceeded --callTimeout after %d ms".formatted(responseTimeInMs), Reason.CALL_TIMEOUT_EXCEEDED.value());
+    }
+
+    static CatsResult createExceptionalResponse(CatsResponse.ExceptionalResponse exceptional, long responseTimeInMs) {
+        return switch (exceptional) {
+            case EMPTY_BODY -> new CatsResult(
+                    "Network/I/O error (code 952): server closed the connection without sending a response body",
+                    Reason.EMPTY_REPLY_FROM_SERVER.value());
+            case CONNECTION_REFUSED -> new CatsResult(
+                    "Network/I/O error (code 953): connection refused — verify that the target service is running and reachable at --server",
+                    Reason.CONNECTION_REFUSED.value());
+            case READ_TIMEOUT -> new CatsResult(
+                    "Network/I/O error (code 954): read timeout after %d ms — consider increasing --readTimeout".formatted(responseTimeInMs),
+                    Reason.READ_TIMEOUT.value());
+            case WRITE_TIMEOUT -> new CatsResult(
+                    "Network/I/O error (code 955): write timeout after %d ms — consider increasing --writeTimeout".formatted(responseTimeInMs),
+                    Reason.WRITE_TIMEOUT.value());
+            case CONNECTION_TIMEOUT -> new CatsResult(
+                    "Network/I/O error (code 956): connection timeout after %d ms — consider increasing --connectionTimeout".formatted(responseTimeInMs),
+                    Reason.CONNECTION_TIMEOUT.value());
+            case PROTOCOL_EXCEPTION -> new CatsResult(
+                    "Network/I/O error (code 957): HTTP protocol violation while reading response from server",
+                    Reason.HTTP_PROTOCOL_EXCEPTION.value());
+            case CONNECTION_RESET -> new CatsResult(
+                    "Network/I/O error (code 958): connection reset by peer while processing the request",
+                    Reason.CONNECTION_RESET.value());
+            case CALL_TIMEOUT, NO_BODY -> createCallTimeoutExceeded(responseTimeInMs);
+        };
     }
 
     /**
@@ -132,10 +159,15 @@ public interface CatsResultFactory {
      * @return a CatsResult to use in reporting
      */
     static CatsResult createUnexpectedBehaviour(String receivedResponseCode, String expectedResponseCode) {
-        String message = "Unexpected behaviour: expected %s, actual [%s]".formatted(expectedResponseCode, receivedResponseCode);
+        String base = "Unexpected behaviour: expected %s, actual [%s] (response code is neither expected for this fuzzer nor documented in the OpenAPI contract)"
+                .formatted(expectedResponseCode, receivedResponseCode);
+        if (("401".equals(receivedResponseCode) || "403".equals(receivedResponseCode))
+                && !expectedResponseCode.contains(receivedResponseCode)) {
+            base += " — authentication/authorization failed; verify credentials supplied via --headers, --user, or --wfcAuth";
+        }
         String reason = Reason.UNEXPECTED_BEHAVIOUR.value() + " %s".formatted(receivedResponseCode);
 
-        return new CatsResult(message, reason);
+        return new CatsResult(base, reason);
     }
 
     /**
@@ -146,7 +178,12 @@ public interface CatsResultFactory {
      * @return a CatsResult to use in reporting
      */
     static CatsResult createUnexpectedResponseCode(String receivedResponseCode, String expectedResponseCode) {
-        String message = "Response does NOT match expected result. Response code is NOT from a list of expected codes for this FUZZER: expected %s, actual [%s]".formatted(expectedResponseCode, receivedResponseCode);
+        String message = "Response does NOT match expected result. Response code is NOT from a list of expected codes for this FUZZER: expected %s, actual [%s] (response code is documented in the contract, but unexpected for this scenario)"
+                .formatted(expectedResponseCode, receivedResponseCode);
+        if (("401".equals(receivedResponseCode) || "403".equals(receivedResponseCode))
+                && !expectedResponseCode.contains(receivedResponseCode)) {
+            message += " — authentication/authorization failed; verify credentials supplied via --headers, --user, or --wfcAuth";
+        }
         String reason = Reason.UNEXPECTED_RESPONSE_CODE.value() + ": %s".formatted(receivedResponseCode);
 
         return new CatsResult(message, reason);
@@ -212,7 +249,26 @@ public interface CatsResultFactory {
         POTENTIAL_IDOR("Heuristic IDOR signal detected", "A modified identifier was returned in a successful response, but resource ownership was not verified"),
         WRITE_ONLY_FIELDS_EXPOSED("WriteOnly fields exposed in response", "The response contains fields marked as writeOnly in the OpenAPI contract, which must never be returned by the service"),
         SENSITIVE_DATA_EXPOSED("Sensitive data exposed in response", "The response contains undeclared fields with sensitive names (like password, secret or apiKey) and unmasked values"),
-        READ_BROKEN_AFTER_FUZZING("Read broken after fuzzing", "An operation that returned 2xx for unmodified requests earlier in the run returns a server error after the path was fuzzed, suggesting that fuzzed writes stored data which breaks reads");
+        READ_BROKEN_AFTER_FUZZING("Read broken after fuzzing", "An operation that returned 2xx for unmodified requests earlier in the run returns a server error after the path was fuzzed, suggesting that fuzzed writes stored data which breaks reads"),
+        EMPTY_REPLY_FROM_SERVER("Empty reply from server", "The server closed the connection without sending an HTTP response body"),
+        CONNECTION_REFUSED("Connection refused", "The target service refused the TCP connection; verify that the service is running and reachable at --server"),
+        READ_TIMEOUT("Read timeout", "Timed out waiting to read the HTTP response from the server; consider increasing --readTimeout"),
+        WRITE_TIMEOUT("Write timeout", "Timed out writing the HTTP request to the server; consider increasing --writeTimeout"),
+        CONNECTION_TIMEOUT("Connection timeout", "Timed out establishing a TCP connection to the server; consider increasing --connectionTimeout"),
+        HTTP_PROTOCOL_EXCEPTION("HTTP protocol exception", "The server returned a malformed HTTP response that violated the HTTP protocol"),
+        CONNECTION_RESET("Connection reset", "The TCP connection was reset by the peer while processing the request"),
+        PUT_RETRY_SERVER_ERROR("PUT retry caused server error", "Repeating an identical previously successful PUT request caused a 5xx server error"),
+        PUT_RETRY_REJECTED("PUT retry rejected", "Repeating an identical previously successful PUT request was rejected by the server"),
+        PUT_RETRY_BROKE_READ("PUT retry broke resource read", "A GET request after repeating an identical PUT returned a 5xx server error"),
+        PUT_NOT_IDEMPOTENT("PUT is not idempotent", "Resource state changed after repeating an identical PUT request"),
+        UPDATE_READ_INCONSISTENCY("Possible update/read inconsistency", "Comparable writable fields sent in a successful PUT or PATCH differed when subsequently read back via GET"),
+        STALE_IF_MATCH_ACCEPTED("Stale If-Match accepted", "An update carrying a stale If-Match ETag succeeded instead of being rejected with 412 Precondition Failed"),
+        STALE_IF_MATCH_SERVER_ERROR("Stale If-Match caused server error", "An update carrying a stale If-Match ETag caused a 5xx server error"),
+        CONDITIONAL_GET_IGNORED("Conditional GET ignored", "A GET carrying If-None-Match with the current ETag returned 200 OK instead of 304 Not Modified"),
+        CONDITIONAL_GET_SERVER_ERROR("Conditional GET caused server error", "A GET carrying If-None-Match caused a 5xx server error"),
+        CREATED_RESOURCE_UNAVAILABLE("Created resource unavailable", "A POST returned 201 Created with a Location header, but a subsequent GET on that Location returned 404 or 410"),
+        CROSS_PARENT_SERVER_ERROR("Cross-parent request caused server error", "Requesting a child resource under a different parent resource identifier caused a 5xx server error"),
+        CROSS_PARENT_RESOURCE_EXPOSURE("Potential cross-parent resource exposure", "A child resource was returned successfully under a different parent resource identifier, indicating a potential BOLA/IDOR issue");
 
 
         private final String value;

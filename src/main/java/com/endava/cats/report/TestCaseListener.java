@@ -1014,8 +1014,12 @@ public class TestCaseListener {
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode()))
                 .matchesContentType(isResponseContentTypeMatching).build();
 
+        Optional<CatsResponse.ExceptionalResponse> exceptionalResponse =
+                CatsResponse.ExceptionalResponse.fromResponseCode(response.getResponseCode());
         if (response.getResponseCode() == CatsResponse.ExceptionalResponse.CALL_TIMEOUT.responseCode()) {
             this.reportError(logger, CatsResultFactory.createCallTimeoutExceeded(response.getResponseTimeInMs()));
+        } else if (exceptionalResponse.isPresent()) {
+            this.reportError(logger, CatsResultFactory.createExceptionalResponse(exceptionalResponse.get(), response.getResponseTimeInMs()));
         } else if (response.isBodyTruncated() && !responseCodeExpected) {
             reportUnexpectedResponseCode(logger, response, expectedResultCode, assertions);
         } else if (response.isBodyTruncated()) {

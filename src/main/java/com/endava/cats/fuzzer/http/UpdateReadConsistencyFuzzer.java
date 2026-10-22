@@ -11,6 +11,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
@@ -127,7 +128,7 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
             }
         }
         if (!mismatched.isEmpty()) {
-            listener.reportResultWarn(logger, data, "Possible update/read inconsistency",
+            listener.reportResultWarn(logger, data, Reason.UPDATE_READ_INCONSISTENCY.value(),
                     "Fields sent in a successful update differ from a subsequent read: {}. Another fuzzer may have modified the resource in between",
                     mismatched);
         } else if (compared > 0) {

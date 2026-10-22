@@ -87,6 +87,14 @@ public final class WfcFaultClassifier {
         map.put(Reason.SENSITIVE_DATA_EXPOSED.value(), CatsWfcFaultCategory.CATS_SENSITIVE_DATA_EXPOSURE);
         map.put(Reason.MISSING_SECURITY_HEADERS.value(), CatsWfcFaultCategory.CATS_MISSING_SECURITY_HEADERS);
         map.put(Reason.READ_BROKEN_AFTER_FUZZING.value(), CatsWfcFaultCategory.CATS_READ_BROKEN_AFTER_FUZZING);
+        map.put(Reason.UPDATE_READ_INCONSISTENCY.value(), CatsWfcFaultCategory.CATS_UPDATE_READ_INCONSISTENCY);
+        map.put(Reason.PUT_NOT_IDEMPOTENT.value(), DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT);
+        map.put(Reason.PUT_RETRY_REJECTED.value(), DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT);
+        map.put(Reason.PUT_RETRY_SERVER_ERROR.value(), DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT);
+        map.put(Reason.PUT_RETRY_BROKE_READ.value(), DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT);
+        map.put(Reason.CREATED_RESOURCE_UNAVAILABLE.value(), DefinedFaultCategory.HTTP_CREATED_RESOURCE_NOT_FOUND);
+        map.put(Reason.STALE_IF_MATCH_ACCEPTED.value(), CatsWfcFaultCategory.CATS_STALE_ETAG_ACCEPTED);
+        map.put(Reason.CROSS_PARENT_RESOURCE_EXPOSURE.value(), DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION);
         SSRF_REASONS.forEach(reason -> map.put(reason, DefinedFaultCategory.SECURITY_SSRF));
         return Map.copyOf(map);
     }
