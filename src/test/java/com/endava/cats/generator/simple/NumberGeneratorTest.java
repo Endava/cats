@@ -29,7 +29,7 @@ class NumberGeneratorTest {
         schema.setFormat(null);
         Number leftBoundaryValue = NumberGenerator.generateLeftBoundaryIntegerValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(Long.MIN_VALUE);
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(java.math.BigInteger.valueOf(Long.MIN_VALUE).subtract(java.math.BigInteger.valueOf(NumberGenerator.TEN_THOUSANDS)));
     }
 
     @Test
@@ -37,7 +37,7 @@ class NumberGeneratorTest {
         Schema schema = new IntegerSchema();
         Number leftBoundaryValue = NumberGenerator.generateLeftBoundaryIntegerValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(Integer.MIN_VALUE);
+        Assertions.assertThat(leftBoundaryValue).isEqualTo((long) Integer.MIN_VALUE - NumberGenerator.TEN_THOUSANDS);
     }
 
     @Test
@@ -45,7 +45,7 @@ class NumberGeneratorTest {
         Schema schema = new IntegerSchema();
         Number leftBoundaryValue = NumberGenerator.generateRightBoundaryIntegerValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(Integer.MAX_VALUE);
+        Assertions.assertThat(leftBoundaryValue).isEqualTo((long) Integer.MAX_VALUE + NumberGenerator.TEN_THOUSANDS);
     }
 
     @Test
@@ -65,7 +65,7 @@ class NumberGeneratorTest {
         schema.setFormat(null);
         Number leftBoundaryValue = NumberGenerator.generateRightBoundaryIntegerValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(Long.MAX_VALUE);
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(java.math.BigInteger.valueOf(Long.MAX_VALUE).add(java.math.BigInteger.valueOf(NumberGenerator.TEN_THOUSANDS)));
     }
 
     @Test
@@ -102,7 +102,7 @@ class NumberGeneratorTest {
         Schema schema = new NumberSchema();
         Number leftBoundaryValue = NumberGenerator.generateRightBoundaryDecimalValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(BigDecimal.valueOf(Double.MAX_VALUE).subtract(BigDecimal.valueOf(Double.MIN_VALUE)));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(BigDecimal.valueOf(Double.MAX_VALUE).add(NumberGenerator.DECIMAL_CONSTANT));
     }
 
     @Test
@@ -235,7 +235,7 @@ class NumberGeneratorTest {
         schema.setFormat("float");
         Number generated = NumberGenerator.generateRightBoundaryDecimalValue(schema);
 
-        Assertions.assertThat(generated).isEqualTo(BigDecimal.valueOf(Float.MAX_VALUE).subtract(BigDecimal.valueOf(Float.MIN_VALUE)));
+        Assertions.assertThat(generated).isEqualTo(BigDecimal.valueOf(Float.MAX_VALUE).add(NumberGenerator.DECIMAL_CONSTANT));
     }
 
 }

@@ -102,9 +102,9 @@ public class NumberGenerator {
             return schema.getMaximum().longValue() + toAdd;
         }
         if (CatsModelUtils.isShortIntegerSchema(schema)) {
-            return Integer.MAX_VALUE;
+            return (long) Integer.MAX_VALUE + toAdd;
         }
-        return Long.MAX_VALUE;
+        return BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.valueOf(toAdd));
     }
 
     private static Number generateLeftBoundaryIntegerValue(Schema schema, int toAdd) {
@@ -112,9 +112,9 @@ public class NumberGenerator {
             return schema.getMinimum().longValue() - toAdd;
         }
         if (CatsModelUtils.isShortIntegerSchema(schema)) {
-            return Integer.MIN_VALUE;
+            return (long) Integer.MIN_VALUE - toAdd;
         }
-        return Long.MIN_VALUE;
+        return BigInteger.valueOf(Long.MIN_VALUE).subtract(BigInteger.valueOf(toAdd));
     }
 
     private static BigDecimal generateRightBoundaryValue(Schema schema, BigDecimal toAdd) {
@@ -122,10 +122,10 @@ public class NumberGenerator {
             return schema.getMaximum().add(toAdd);
         }
         if (CatsModelUtils.isFloatSchema(schema)) {
-            return BigDecimal.valueOf(Float.MAX_VALUE).subtract(BigDecimal.valueOf(Float.MIN_VALUE));
+            return BigDecimal.valueOf(Float.MAX_VALUE).add(toAdd);
         }
 
-        return BigDecimal.valueOf(Double.MAX_VALUE).subtract(BigDecimal.valueOf(Double.MIN_VALUE));
+        return BigDecimal.valueOf(Double.MAX_VALUE).add(toAdd);
     }
 
     private static BigDecimal generateLeftBoundaryValue(Schema schema, BigDecimal toSubtract) {

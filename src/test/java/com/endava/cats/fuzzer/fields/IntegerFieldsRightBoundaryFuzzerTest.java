@@ -53,7 +53,7 @@ class IntegerFieldsRightBoundaryFuzzerTest {
     @Test
     void shouldReturnLongBoundaryValue() {
         NumberSchema nrSchema = new NumberSchema();
-        Assertions.assertThat(integerFieldsRightBoundaryFuzzer.getBoundaryValue(nrSchema)).isInstanceOf(Long.class);
+        Assertions.assertThat(integerFieldsRightBoundaryFuzzer.getBoundaryValue(nrSchema)).isInstanceOf(Number.class);
     }
 
     @ParameterizedTest

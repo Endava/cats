@@ -142,8 +142,8 @@ public abstract class CatsUtil {
                 throw new CatsException(e);
             }
         } else {
-            Object normalizedValue = valueToSet instanceof Long longVal
-                    ? new com.google.gson.JsonPrimitive(longVal)
+            Object normalizedValue = valueToSet instanceof Number numVal
+                    ? new com.google.gson.JsonPrimitive(numVal)
                     : valueToSet;
             jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), normalizedValue);
         }
