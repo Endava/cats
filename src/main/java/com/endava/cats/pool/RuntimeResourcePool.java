@@ -82,17 +82,22 @@ public class RuntimeResourcePool {
      * @return enriched payloads and correlations that were actually applied
      */
     public synchronized ResolvedRequest enrich(ServiceData data, String processedPayload) {
-        if (!processingArguments.isReuseSuccessfulResources() || !data.isReplaceRefData() || resources.isEmpty()) {
+        if (!processingArguments.isReuseSuccessfulResources() ||
+                (!data.isReplaceRefData() && !data.isReplaceUrlParams()) || resources.isEmpty()) {
             return new ResolvedRequest(processedPayload, data.getPathParamsPayload(), List.of());
         }
 
         List<ResourceCorrelation> correlations = new ArrayList<>();
         Map<ResourceCorrelation, Long> correlationSources = new LinkedHashMap<>();
         Map<String, ResourceInstance> requestBindings = new LinkedHashMap<>();
-        String enrichedPathParams = enricher.enrichJson(data.getPathParamsPayload(), data, correlations, correlationSources,
-                requestBindings, true);
-        String enrichedPayload = enricher.enrichJson(processedPayload, data, correlations, correlationSources,
-                requestBindings, false);
+        String enrichedPathParams = data.isReplaceUrlParams()
+                ? enricher.enrichJson(data.getPathParamsPayload(), data, correlations, correlationSources,
+                        requestBindings, true)
+                : data.getPathParamsPayload();
+        String enrichedPayload = data.isReplaceRefData()
+                ? enricher.enrichJson(processedPayload, data, correlations, correlationSources,
+                        requestBindings, false)
+                : processedPayload;
         ResolvedRequest resolvedRequest = new ResolvedRequest(enrichedPayload, enrichedPathParams, List.copyOf(correlations));
         if (!correlationSources.isEmpty()) {
             pendingCorrelationSources.put(resolvedRequest, Map.copyOf(correlationSources));

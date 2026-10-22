@@ -55,6 +55,29 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldStillEnrichPathParamsPayloadWhenReplaceRefDataIsFalseAndReplaceUrlParamsIsTrue() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/risk-rules", "{}"), request("POST", "/risk-rules", "{}"),
+                response(201, "{\"ruleId\":\"rule_01m5hkgez95et4getn6kaprt2n\"}"));
+
+        ServiceData patchEmptyBody = ServiceData.builder()
+                .relativePath("/risk-rules/{ruleId}")
+                .httpMethod(HttpMethod.PATCH)
+                .contentType("application/json")
+                .payload("{}")
+                .pathParamsPayload("{\"ruleId\":\"LLHQCSWGOHGVTDUQWHKGOHNNUTAHUMMKDZEUR\"}")
+                .replaceRefData(false)
+                .replaceUrlParams(true)
+                .mutationTarget(RequestTarget.requestBody())
+                .build();
+
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(patchEmptyBody, "{}");
+
+        Assertions.assertThat(result.payload()).isEqualTo("{}");
+        Assertions.assertThat(result.pathParamsPayload()).contains("rule_01m5hkgez95et4getn6kaprt2n");
+    }
+
+    @Test
     void shouldReusePostResponseIdForLaterPathParameter() {
         enableResourceReuse();
         resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
