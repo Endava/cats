@@ -204,10 +204,7 @@ public class AuthArguments {
         if (noEnvFile) {
             return "disabled";
         }
-        if (selected.isEmpty()) {
-            return "none";
-        }
-        return selected.get() + (envFile == null ? " (auto-detected)" : "");
+        return selected.map(path -> path + (envFile == null ? " (auto-detected)" : "")).orElse("none");
     }
 
     Optional<Path> selectedEnvironmentFile() {

@@ -6,6 +6,32 @@ import java.util.List;
  * Creates expected cats results with description and reason.
  */
 public interface CatsResultFactory {
+    String ERRORS = "errors";
+    String WARNINGS = "warnings";
+    String WARNS = "warns";
+    String SUCCESS = "success";
+    String ERROR = "error";
+    String WARN = "warn";
+
+    /**
+     * Checks if the provided reason indicates an error.
+     *
+     * @param result the result to check
+     * @return true if the result indicates an error, false otherwise
+     */
+    static boolean isError(String result) {
+        return ERROR.equals(result);
+    }
+
+    /**
+     * Checks if the provided reason indicates a warning.
+     *
+     * @param result the result to check
+     * @return true if the result indicates a warning, false otherwise
+     */
+    static boolean isWarn(String result) {
+        return WARN.equals(result);
+    }
 
     /**
      * Creates a message and reason for the case when the received response is documented and response body matches response schema.

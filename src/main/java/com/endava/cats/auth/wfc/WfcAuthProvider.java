@@ -319,11 +319,7 @@ public class WfcAuthProvider {
             }
             String responseBody = capturedBody.body();
             List<String> cookies = response.headers(SET_COOKIE);
-            boolean cookieRedirect = Boolean.TRUE.equals(login.getExpectCookies()) &&
-                    login.getToken() == null &&
-                    response.code() >= 300 && response.code() < 400 &&
-                    cookies != null && !cookies.isEmpty() &&
-                    !isErrorRedirect(response);
+            boolean cookieRedirect = Boolean.TRUE.equals(login.getExpectCookies()) && login.getToken() == null && response.code() >= 300 && response.code() < 400 && !cookies.isEmpty() && !isErrorRedirect(response);
             if (!response.isSuccessful() && !cookieRedirect) {
                 throw new CatsException("WFC Auth login failed for entry %s with HTTP %s and body %s".formatted(auth.getName(), response.code(), responseBody));
             }

@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.WordUtils;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -17,7 +18,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,7 +38,9 @@ final class OperationDependencyOrder {
     private OperationDependencyOrder() {
     }
 
-    /** Returns paths in producer-first order without changing the supplied entries. */
+    /**
+     * Returns paths in producer-first order without changing the supplied entries.
+     */
     static List<Map.Entry<String, PathItem>> order(OpenAPI api, List<Map.Entry<String, PathItem>> defaultOrder) {
         Map<String, Map.Entry<String, PathItem>> entries = new LinkedHashMap<>();
         Map<String, Integer> rank = new HashMap<>();
@@ -116,7 +118,9 @@ final class OperationDependencyOrder {
         return path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
     }
 
-    /** Traverses inferred dependencies first, but does not recurse into cycles. */
+    /**
+     * Traverses inferred dependencies first, but does not recurse into cycles.
+     */
     private static void appendProducerFirst(String path, Map<String, Map.Entry<String, PathItem>> entries,
                                             Map<String, Set<String>> dependencies, Map<String, Integer> rank,
                                             Set<String> visited, Set<String> visiting,
@@ -400,7 +404,7 @@ final class OperationDependencyOrder {
     static String methodsForPath(OpenAPI openAPI, String path) {
         PathItem item = openAPI.getPaths() != null ? openAPI.getPaths().get(path) : null;
         if (item == null || item.readOperationsMap() == null || item.readOperationsMap().isEmpty()) {
-            return "GET";
+            return HttpMethod.GET.name();
         }
         return item.readOperationsMap().keySet().stream()
                 .map(Enum::name)

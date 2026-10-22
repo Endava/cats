@@ -1,6 +1,7 @@
 package com.endava.cats.command;
 
 import com.endava.cats.command.model.ConfigOptions;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
@@ -219,16 +220,16 @@ public class InitCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     private static String firstDocumentedMethod(OpenAPI openAPI, String path) {
         if (openAPI == null || openAPI.getPaths() == null || openAPI.getPaths().get(path) == null) {
-            return "GET";
+            return HttpMethod.GET.name();
         }
         PathItem item = openAPI.getPaths().get(path);
         if (item.getGet() != null) {
-            return "GET";
+            return HttpMethod.GET.name();
         }
         if (item.getPost() != null) {
-            return "POST";
+            return HttpMethod.POST.name();
         }
-        return item.readOperationsMap().keySet().stream().findFirst().map(Enum::name).orElse("GET");
+        return item.readOperationsMap().keySet().stream().findFirst().map(Enum::name).orElse(HttpMethod.GET.name());
     }
 
     private static String extractSuggestedServer(OpenAPI openAPI) {

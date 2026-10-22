@@ -77,7 +77,7 @@ public class ListCommand implements Runnable {
 
     private final List<String> formats;
     private final List<MutatorEntry> mutators;
-    private ProfileLoader profileLoader;
+    private final ProfileLoader profileLoader;
 
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;

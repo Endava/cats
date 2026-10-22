@@ -5,10 +5,10 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.impl.EnvVariableParser;
 import com.endava.cats.exception.CatsException;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -198,15 +198,16 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void countInitialResult(String result, ReplayStats stats) {
-        if ("error".equalsIgnoreCase(result)) {
+        if (CatsResultFactory.isError(result)) {
             stats.initialErrors++;
-        } else if ("warn".equalsIgnoreCase(result)) {
+        } else if (CatsResultFactory.isWarn(result)) {
             stats.initialWarnings++;
         }
     }
 
     private boolean shouldRetryTest(String result) {
-        return (errors && "error".equalsIgnoreCase(result)) || (warnings && "warn".equalsIgnoreCase(result));
+        return (errors && CatsResultFactory.isError(result)) ||
+                (warnings && CatsResultFactory.isWarn(result));
     }
 
     /**

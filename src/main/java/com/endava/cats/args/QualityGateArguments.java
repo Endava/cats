@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.model.CatsResultFactory;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -170,9 +171,9 @@ public class QualityGateArguments {
      */
     private boolean evaluateQualityGate(long errors, long warnings) {
         Map<String, Long> metrics = new HashMap<>();
-        metrics.put("errors", errors);
-        metrics.put("warns", warnings);
-        metrics.put("warnings", warnings); // Support both "warns" and "warnings"
+        metrics.put(CatsResultFactory.ERRORS, errors);
+        metrics.put(CatsResultFactory.WARNS, warnings);
+        metrics.put(CatsResultFactory.WARNINGS, warnings); // Support both "warns" and "warnings"
 
         List<String> gates = Arrays.stream(qualityGate.split(","))
                 .map(String::trim)
