@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, NoopFuzzingStrategy,
         PrefixFuzzingStrategy, ReplaceFuzzingStrategy, SkipFuzzingStrategy, TrailFuzzingStrategy {
     private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]+[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]*$");
-    private static final Pattern WITHIN = Pattern.compile("([\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]+|జ్ఞ\u200Cా|স্র\u200Cু)");
+    private static final Pattern WITHIN = Pattern.compile("([\\p{C}\\p{So}\\p{Sk}\\p{M}]+|జ్ఞ\u200Cా|স্র\u200Cু)");
 
     /**
      * The actual data to be fuzzed.

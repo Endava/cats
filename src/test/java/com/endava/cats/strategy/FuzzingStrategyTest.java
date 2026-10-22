@@ -69,6 +69,12 @@ class FuzzingStrategyTest {
     }
 
     @Test
+    void shouldKeepXssAndSqlPayloadsContainingSpacesAsReplaceStrategy() {
+        String xss = "<img src=x onerror=alert('XSS')>";
+        Assertions.assertThat(FuzzingStrategy.mergeFuzzing(xss, "US")).isEqualTo(xss);
+    }
+
+    @Test
     void givenAFuzzingStrategy_whenSettingAnInnerValueAboveTruncationThreshold_thenTheValueIsProperlyTruncated() {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("t", 50));
 

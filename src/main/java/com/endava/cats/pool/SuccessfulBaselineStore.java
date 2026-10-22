@@ -118,8 +118,18 @@ final class SuccessfulBaselineStore {
             return mergeSuccessfulArray(original.getAsJsonArray(), current.getAsJsonArray(), successful.getAsJsonArray());
         }
         if (current.isJsonPrimitive() && successful.isJsonPrimitive()) {
+            if (original.equals(successful)) {
+                return current.deepCopy();
+            }
+            Object currentVal = ResourceSemanticNaming.primitiveValue(current.getAsJsonPrimitive());
+            Object origVal = original.isJsonPrimitive()
+                    ? ResourceSemanticNaming.primitiveValue(original.getAsJsonPrimitive())
+                    : null;
+            if (origVal != null && !String.valueOf(FuzzingStrategy.mergeFuzzing(currentVal, origVal)).equals(String.valueOf(currentVal))) {
+                return current.deepCopy();
+            }
             Object merged = FuzzingStrategy.mergeFuzzing(
-                    ResourceSemanticNaming.primitiveValue(current.getAsJsonPrimitive()),
+                    currentVal,
                     ResourceSemanticNaming.primitiveValue(successful.getAsJsonPrimitive()));
             return JsonUtils.parseAsJsonElement(JsonUtils.serialize(merged));
         }

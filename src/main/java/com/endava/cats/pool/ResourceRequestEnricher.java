@@ -132,6 +132,9 @@ final class ResourceRequestEnricher {
         }
         ResolvedValue value = resolved.get();
         boolean mergeFuzzing = isFieldModifiedOrFuzzed(data, target, session.originalRoot, session.payloadRoot);
+        if (mergeFuzzing && isFullReplacementMutation(target, session.originalRoot, session.payloadRoot)) {
+            return currentJson;
+        }
         String updated;
         try {
             updated = FuzzingStrategy.replaceField(currentJson, target.path(),
@@ -151,6 +154,21 @@ final class ResourceRequestEnricher {
                 (originalRoot != null && payloadRoot != null &&
                         !ResourceValueExtractor.valuesAtPath(originalRoot, target.path())
                                 .equals(ResourceValueExtractor.valuesAtPath(payloadRoot, target.path())));
+    }
+
+    private static boolean isFullReplacementMutation(TargetField target, JsonElement originalRoot, JsonElement payloadRoot) {
+        if (originalRoot == null || payloadRoot == null) {
+            return false;
+        }
+        List<JsonElement> origValues = ResourceValueExtractor.valuesAtPath(originalRoot, target.path());
+        List<JsonElement> currValues = ResourceValueExtractor.valuesAtPath(payloadRoot, target.path());
+        if (origValues.size() != 1 || currValues.size() != 1 ||
+                !origValues.getFirst().isJsonPrimitive() || !currValues.getFirst().isJsonPrimitive()) {
+            return false;
+        }
+        Object origVal = ResourceSemanticNaming.primitiveValue(origValues.getFirst().getAsJsonPrimitive());
+        Object currVal = ResourceSemanticNaming.primitiveValue(currValues.getFirst().getAsJsonPrimitive());
+        return !String.valueOf(FuzzingStrategy.mergeFuzzing(currVal, origVal)).equals(String.valueOf(currVal));
     }
 
     private static void recordEnrichmentCorrelation(TargetField target, String bindingKey,
