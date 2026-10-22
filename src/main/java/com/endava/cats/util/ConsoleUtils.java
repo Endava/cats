@@ -82,6 +82,50 @@ public abstract class ConsoleUtils {
     }
 
     /**
+     * Returns the canonical short fuzzer name for the given fuzzer class (for example {@code "HappyPath"} for {@code HappyPathFuzzer.class}).
+     *
+     * @param fuzzerClass the fuzzer class
+     * @return the canonical short fuzzer name
+     */
+    public static String simpleFuzzerName(Class<?> fuzzerClass) {
+        if (fuzzerClass == null) {
+            return "";
+        }
+        return removeTrimSanitize(sanitizeFuzzerName(fuzzerClass.getSimpleName()));
+    }
+
+    /**
+     * Checks whether a reported or CLI fuzzer name matches the given fuzzer class after normalizing suffixes.
+     *
+     * @param candidateName the candidate fuzzer name string
+     * @param fuzzerClass   the target fuzzer class
+     * @return {@code true} if the normalized names match case-insensitively
+     */
+    public static boolean matchesFuzzer(String candidateName, Class<?> fuzzerClass) {
+        if (StringUtils.isBlank(candidateName) || fuzzerClass == null) {
+            return false;
+        }
+        String normalizedCandidate = removeTrimSanitize(sanitizeFuzzerName(candidateName.trim()));
+        return normalizedCandidate.equalsIgnoreCase(simpleFuzzerName(fuzzerClass));
+    }
+
+    /**
+     * Checks whether a reported or CLI fuzzer name matches any of the given fuzzer classes.
+     *
+     * @param candidateName the candidate fuzzer name string
+     * @param fuzzerClasses the collection of fuzzer classes to test against
+     * @return {@code true} if the candidate matches at least one class
+     */
+    public static boolean matchesAnyFuzzer(String candidateName, java.util.Collection<Class<?>> fuzzerClasses) {
+        if (StringUtils.isBlank(candidateName) || fuzzerClasses == null || fuzzerClasses.isEmpty()) {
+            return false;
+        }
+        String normalizedCandidate = removeTrimSanitize(sanitizeFuzzerName(candidateName.trim()));
+        return fuzzerClasses.stream()
+                .anyMatch(clazz -> normalizedCandidate.equalsIgnoreCase(simpleFuzzerName(clazz)));
+    }
+
+    /**
      * Get the type of the terminal.
      *
      * @return The terminal type or "unknown" if unable to determine.

@@ -1,8 +1,23 @@
 package com.endava.cats.report;
 
+import com.endava.cats.fuzzer.fields.DefaultValuesInFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.ExamplesFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
+import com.endava.cats.fuzzer.http.BypassAuthenticationFuzzer;
+import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
+import com.endava.cats.fuzzer.http.ConditionalEtagFuzzer;
+import com.endava.cats.fuzzer.http.CreatedResourceLocationFuzzer;
+import com.endava.cats.fuzzer.http.CrossParentResourceIsolationFuzzer;
+import com.endava.cats.fuzzer.http.HappyPathFuzzer;
+import com.endava.cats.fuzzer.http.InsecureDirectObjectReferencesFuzzer;
+import com.endava.cats.fuzzer.http.PutIdempotencyFuzzer;
+import com.endava.cats.fuzzer.http.UpdateReadConsistencyFuzzer;
+import com.endava.cats.fuzzer.special.FunctionalFuzzer;
+import com.endava.cats.fuzzer.special.RandomFuzzer;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
-import com.endava.cats.model.CatsResultFactory.Reason;
+import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.webfuzzing.commons.faults.DefinedFaultCategory;
 import com.webfuzzing.commons.faults.FaultCategory;
@@ -21,9 +36,13 @@ import java.util.Set;
  * and CATS-specific ({@link CatsWfcFaultCategory}) fault category identifiers.
  */
 public final class WfcFaultClassifier {
-    private static final Set<String> POSITIVE_VALID_INPUT_FUZZERS = Set.of(
-            "happypath", "onlyrequiredfields", "defaultvaluesinfields", "examplesfields",
-            " randomfuzzer", "functionaltest");
+    private static final List<Class<?>> POSITIVE_VALID_INPUT_FUZZER_CLASSES = List.of(
+            HappyPathFuzzer.class,
+            OnlyRequiredFieldsFuzzer.class,
+            DefaultValuesInFieldsFuzzer.class,
+            ExamplesFieldsFuzzer.class,
+            FunctionalFuzzer.class,
+            RandomFuzzer.class);
 
     private static final Set<String> SSRF_REASONS = Set.of(
             Reason.SSRF_REFLECTED.value(),
@@ -76,7 +95,7 @@ public final class WfcFaultClassifier {
         }
         Set<FaultCategoryId> faults = new LinkedHashSet<>();
         int code = summary.getHttpResponseCode();
-        String method = OptionalUpper(summary.getHttpMethod());
+        String method = optionalUpper(summary.getHttpMethod());
 
         classifyPassiveProtocolFaults(summary, fullTestCase, code, method, faults);
         if (!summary.getError() && !summary.getWarning()) {
@@ -162,27 +181,27 @@ public final class WfcFaultClassifier {
 
     private static void classifySecondPhaseAndSecurityFuzzers(CatsTestCaseSummary summary, int code, String method,
                                                               Set<FaultCategoryId> faults) {
-        String fuzzerLower = OptionalLower(summary.getFuzzer());
-        if (fuzzerLower.contains("checkdeletedresourcesnotavailable")) {
+        String fuzzer = summary.getFuzzer();
+        if (ConsoleUtils.matchesFuzzer(fuzzer, CheckDeletedResourcesNotAvailableFuzzer.class)) {
             faults.add(faultId(DefinedFaultCategory.HTTP_NONWORKING_DELETE, null));
-        } else if (fuzzerLower.contains("putidempotency")) {
+        } else if (ConsoleUtils.matchesFuzzer(fuzzer, PutIdempotencyFuzzer.class)) {
             faults.add(faultId(DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT, summary.getResultReason()));
-        } else if (fuzzerLower.contains("createdresourcelocation")) {
+        } else if (ConsoleUtils.matchesFuzzer(fuzzer, CreatedResourceLocationFuzzer.class)) {
             FaultCategory cat = (code == 404 || code == 410)
                     ? DefinedFaultCategory.HTTP_CREATED_RESOURCE_NOT_FOUND
                     : DefinedFaultCategory.HTTP_INVALID_LOCATION;
             faults.add(faultId(cat, summary.getResultReason()));
-        } else if (fuzzerLower.contains("updatereadconsistency")) {
+        } else if (ConsoleUtils.matchesFuzzer(fuzzer, UpdateReadConsistencyFuzzer.class)) {
             faults.add(faultId(CatsWfcFaultCategory.CATS_UPDATE_READ_INCONSISTENCY, summary.getResultReason()));
-        } else if (fuzzerLower.contains("conditionaletag") && code >= 200 && code < 300) {
+        } else if (ConsoleUtils.matchesFuzzer(fuzzer, ConditionalEtagFuzzer.class) && code >= 200 && code < 300) {
             faults.add(faultId(CatsWfcFaultCategory.CATS_STALE_ETAG_ACCEPTED, null));
-        } else if (fuzzerLower.contains("bypassauthentication") && code >= 200 && code < 300) {
+        } else if (ConsoleUtils.matchesFuzzer(fuzzer, BypassAuthenticationFuzzer.class) && code >= 200 && code < 300) {
             FaultCategory cat = isWriteModificationMethod(method)
                     ? DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS
                     : DefinedFaultCategory.SECURITY_DECLARED_AUTH_NOT_ENFORCED;
             faults.add(faultId(cat, method));
-        } else if (fuzzerLower.contains("crossparentresourceisolation")
-                || fuzzerLower.contains("insecuredirectobjectreferences")) {
+        } else if (ConsoleUtils.matchesFuzzer(fuzzer, CrossParentResourceIsolationFuzzer.class)
+                || ConsoleUtils.matchesFuzzer(fuzzer, InsecureDirectObjectReferencesFuzzer.class)) {
             faults.add(faultId(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, summary.getFuzzer()));
         }
     }
@@ -206,8 +225,7 @@ public final class WfcFaultClassifier {
 
     private static void classifyUnexpectedStatusCodeOracle(CatsTestCaseSummary summary, int code,
                                                            Set<FaultCategoryId> faults) {
-        String fuzzerLower = OptionalLower(summary.getFuzzer());
-        boolean isPositiveFuzzer = POSITIVE_VALID_INPUT_FUZZERS.stream().anyMatch(fuzzerLower::contains);
+        boolean isPositiveFuzzer = ConsoleUtils.matchesAnyFuzzer(summary.getFuzzer(), POSITIVE_VALID_INPUT_FUZZER_CLASSES);
         if (isPositiveFuzzer) {
             if (code == 400 || code == 422) {
                 faults.add(faultId(DefinedFaultCategory.SCHEMA_VALID_INPUT_REJECTED, summary.getFuzzer()));
@@ -233,11 +251,7 @@ public final class WfcFaultClassifier {
         return id;
     }
 
-    private static String OptionalUpper(String value) {
+    private static String optionalUpper(String value) {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
-    }
-
-    private static String OptionalLower(String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 }

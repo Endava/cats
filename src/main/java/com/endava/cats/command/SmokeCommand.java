@@ -6,12 +6,14 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.model.ConfigOptions;
+import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.model.TestResultSnapshot;
 import com.endava.cats.util.AnsiUtils;
+import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -106,7 +108,7 @@ public class SmokeCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void configureSmokeExecution() {
-        filterArguments.customFilter("HappyPath");
+        filterArguments.customFilter(ConsoleUtils.simpleFuzzerName(HappyPathFuzzer.class));
         if (filterArguments.getCheckArguments() != null) {
             filterArguments.getCheckArguments().setIncludeContract(false);
         }
