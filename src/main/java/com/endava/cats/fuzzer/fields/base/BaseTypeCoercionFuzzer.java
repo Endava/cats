@@ -12,6 +12,7 @@ import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -60,8 +61,11 @@ public abstract class BaseTypeCoercionFuzzer implements Fuzzer {
     }
 
     private Set<String> getFieldsToBeFuzzed(FuzzingData data) {
+        Set<String> pathParams = data.getPath() != null ? OpenApiUtils.getPathVariables(data.getPath()) : Set.of();
+        Set<String> queryParams = data.getQueryParams() != null ? data.getQueryParams() : Set.of();
         return FuzzingData.filterFieldsInPayload(data,
-                field -> this.fieldsFilterFunction().apply(field, data),
+                field -> !pathParams.contains(field) && !queryParams.contains(field)
+                        && Boolean.TRUE.equals(this.fieldsFilterFunction().apply(field, data)),
                 processingArguments.getLimitNumberOfFields());
     }
 

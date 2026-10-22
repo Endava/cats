@@ -242,4 +242,38 @@ class NumericValuesInStringFieldsFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(8)).reportResult(
                 Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
+
+    @Test
+    void shouldSerializeLongMaxValueAsUnquotedJsonNumberAndSkipPathOrQueryParams() {
+        Map<String, Schema> reqTypes = new HashMap<>();
+        reqTypes.put("description", new StringSchema());
+        reqTypes.put("watchlistId", new StringSchema());
+
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("description", "watchlistId"));
+        Mockito.when(data.getPath()).thenReturn("/risk-watchlists/{watchlistId}");
+        Mockito.when(data.getQueryParams()).thenReturn(Set.of());
+        Mockito.when(data.getPayload()).thenReturn("{\"watchlistId\":\"wl_1\",\"description\":\"Countries\"}");
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.PUT);
+        Mockito.when(data.getHeaders()).thenReturn(Set.of());
+        Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+        java.util.List<String> sentPayloads = new java.util.ArrayList<>();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(inv -> {
+            com.endava.cats.io.ServiceData sd = inv.getArgument(0);
+            sentPayloads.add(sd.getPayload());
+            return CatsResponse.builder().responseCode(400).build();
+        });
+
+        fuzzer.fuzz(data);
+
+        // watchlistId (path param) must be skipped; only description is fuzzed (8 payloads)
+        Assertions.assertThat(sentPayloads).hasSize(8);
+        // Long.MAX_VALUE and Long.MIN_VALUE must be sent as unquoted JSON numbers, not quoted strings
+        Assertions.assertThat(sentPayloads)
+                .anyMatch(p -> p.contains("\"description\":9223372036854775807"))
+                .anyMatch(p -> p.contains("\"description\":-9223372036854775808"))
+                .noneMatch(p -> p.contains("\"description\":\"9223372036854775807\""));
+    }
 }

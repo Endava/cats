@@ -142,7 +142,10 @@ public abstract class CatsUtil {
                 throw new CatsException(e);
             }
         } else {
-            jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
+            Object normalizedValue = valueToSet instanceof Long longVal
+                    ? new com.google.gson.JsonPrimitive(longVal)
+                    : valueToSet;
+            jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), normalizedValue);
         }
     }
 
