@@ -286,6 +286,7 @@ public class CatsGlobalContext {
                 case Components components when "headers".equalsIgnoreCase(finalPart) -> components.getHeaders();
                 case Components components when "requestBodies".equalsIgnoreCase(finalPart) ->
                         components.getRequestBodies();
+                case Components components when "responses".equalsIgnoreCase(finalPart) -> components.getResponses();
                 case Components components when "examples".equalsIgnoreCase(finalPart) -> components.getExamples();
                 case Example example -> example.getValue();
                 case ObjectNode node -> node.get(finalPart);

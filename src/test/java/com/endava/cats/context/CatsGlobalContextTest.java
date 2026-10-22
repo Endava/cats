@@ -65,4 +65,21 @@ class CatsGlobalContextTest {
         Object otherResolvedObject = context.getObjectFromPathsReference(otherReference);
         Assertions.assertThat(otherResolvedObject).isNull();
     }
+
+    @Test
+    void shouldResolveResponsesReferences() {
+        CatsGlobalContext context = new CatsGlobalContext();
+        OpenAPI openAPI = Mockito.mock(OpenAPI.class);
+        Components components = Mockito.mock(Components.class);
+        Mockito.when(openAPI.getComponents()).thenReturn(components);
+        io.swagger.v3.oas.models.responses.ApiResponse notFound = new io.swagger.v3.oas.models.responses.ApiResponse();
+        Mockito.when(components.getResponses()).thenReturn(Map.of("NotFound", notFound));
+        context.init(openAPI, List.of(), new Properties(), new CatsConfiguration("1", "2", "3", List.of(), 4, 4, 5, 6), Set.of(), Set.of());
+
+        Object resolvedObject = context.getApiResponseFromReference("#/components/responses/NotFound");
+        Assertions.assertThat(resolvedObject).isSameAs(notFound);
+
+        Object otherResolvedObject = context.getApiResponseFromReference("#/components/responses/Missing");
+        Assertions.assertThat(otherResolvedObject).isNull();
+    }
 }
