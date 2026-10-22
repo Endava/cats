@@ -8,6 +8,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -89,12 +90,13 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
     }
 
     private void checkResponse(CatsResponse response, FuzzingData data) {
-        if (response.getResponseCode() == 404 || response.getResponseCode() == 410) {
+        int code = response.getResponseCode();
+        if (ResponseCodeFamily.isNotFoundOrGone(code) || code == ResponseCodeFamily.STATUS_METHOD_NOT_ALLOWED) {
             testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());
         } else {
             testCaseListener.reportResultError(logger, data, "Unexpected response code: %s".formatted(response.getResponseCode()), "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
-                    data.getMethod(), "404, 410", response.responseCodeAsString());
+                    data.getMethod(), "404, 405, 410", response.responseCodeAsString());
         }
     }
 

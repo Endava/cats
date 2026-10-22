@@ -107,7 +107,7 @@ class CheckDeletedResourcesNotAvailableFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"400", "404", "410"})
+    @CsvSource({"400", "404", "405", "410"})
     void shouldRunWhenGetAndStoredDeleteRequests(int respCode) {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(respCode).build());
         FuzzingData data = Mockito.mock(FuzzingData.class);

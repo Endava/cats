@@ -135,7 +135,8 @@ class WordUtilsTest {
             "pines,pin",
             "mines,min",
             "sites,sit",
-            "notes,not"
+            "notes,not",
+            "riskevaluation,riskevaluationsortdirection"
     })
     void shouldNotMatchDifferentNouns(String first, String second) {
         Assertions.assertThat(WordUtils.sameNoun(first, second)).isFalse();

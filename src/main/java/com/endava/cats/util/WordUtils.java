@@ -446,7 +446,9 @@ public abstract class WordUtils {
                 shorter.charAt(shorter.length() - 1 - suffixLen) == longer.charAt(longer.length() - 1 - suffixLen)) {
             suffixLen++;
         }
-        return prefixLen >= 3 && suffixLen >= 4 && prefixLen + suffixLen >= shorter.length();
+        return prefixLen >= 3 && suffixLen >= 4 &&
+                prefixLen < shorter.length() && suffixLen < shorter.length() &&
+                prefixLen + suffixLen >= shorter.length();
     }
 
     /**
