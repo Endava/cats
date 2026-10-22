@@ -110,6 +110,30 @@ class WfcFaultClassifierTest {
         Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(cmdInj), cmdInj))
                 .extracting(FaultCategoryId::getCode)
                 .contains(CatsWfcFaultCategory.CATS_COMMAND_INJECTION.getCode());
+
+        CatsTestCase wrongAllow = buildTestCase("TRACE", "/users", 405, "warning",
+                Reason.WRONG_ALLOW_HEADER.value(), "HttpMethodsFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(wrongAllow), wrongAllow))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.SCHEMA_INVALID_ALLOW.getCode());
+
+        CatsTestCase hiddenEndpoint = buildTestCase("DELETE", "/users", 200, "error",
+                "Unexpected response code: 200", "HttpMethodsFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(hiddenEndpoint), hiddenEndpoint))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT.getCode());
+
+        CatsTestCase putCrash = buildTestCase("PUT", "/users/1", 500, "error",
+                Reason.PUT_RETRY_SERVER_ERROR.value(), "PutIdempotencyFuzzer", "{\"error\":\"boom\"}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(putCrash), putCrash))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.HTTP_STATUS_500.getCode());
+
+        CatsTestCase exactBoundaryRejected = buildTestCase("POST", "/users", 422, "error",
+                "Unexpected response code: 422", "MinLengthExactValuesInStringFieldsFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(exactBoundaryRejected), exactBoundaryRejected))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.SCHEMA_VALID_INPUT_REJECTED.getCode());
     }
 
     private static CatsTestCase buildTestCase(String method, String path, int code, String result,

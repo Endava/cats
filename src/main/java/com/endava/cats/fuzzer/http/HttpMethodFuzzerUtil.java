@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
@@ -90,9 +91,9 @@ public class HttpMethodFuzzerUtil {
 
         KeyValuePair<String, String> allowHeader = response.getHeader("Allow");
         if (allowHeader == null) {
-            testCaseListener.reportResultWarn(logger, data, "Missing Allowed header", "Request failed as expected for http method [{}] with response code [{}], but missing Allow header", response.getHttpMethod(), response.getResponseCode());
+            testCaseListener.reportResultWarn(logger, data, Reason.MISSING_ALLOW_HEADER.value(), "Request failed as expected for http method [{}] with response code [{}], but missing Allow header", response.getHttpMethod(), response.getResponseCode());
         } else if (allowHeader.getValue().contains(response.getHttpMethod())) {
-            testCaseListener.reportResultWarn(logger, data, "Wrong Allowed header", "Request failed as expected for http method [{}] with response code [{}], but Allow header contains [{}]", response.getHttpMethod(), response.getResponseCode(), response.getHttpMethod());
+            testCaseListener.reportResultWarn(logger, data, Reason.WRONG_ALLOW_HEADER.value(), "Request failed as expected for http method [{}] with response code [{}], but Allow header contains [{}]", response.getHttpMethod(), response.getResponseCode(), response.getHttpMethod());
         } else {
             testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());

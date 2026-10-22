@@ -268,7 +268,9 @@ public interface CatsResultFactory {
         CONDITIONAL_GET_SERVER_ERROR("Conditional GET caused server error", "A GET carrying If-None-Match caused a 5xx server error"),
         CREATED_RESOURCE_UNAVAILABLE("Created resource unavailable", "A POST returned 201 Created with a Location header, but a subsequent GET on that Location returned 404 or 410"),
         CROSS_PARENT_SERVER_ERROR("Cross-parent request caused server error", "Requesting a child resource under a different parent resource identifier caused a 5xx server error"),
-        CROSS_PARENT_RESOURCE_EXPOSURE("Potential cross-parent resource exposure", "A child resource was returned successfully under a different parent resource identifier, indicating a potential BOLA/IDOR issue");
+        CROSS_PARENT_RESOURCE_EXPOSURE("Potential cross-parent resource exposure", "A child resource was returned successfully under a different parent resource identifier, indicating a potential BOLA/IDOR issue"),
+        MISSING_ALLOW_HEADER("Missing Allowed header", "The server returned 405 Method Not Allowed without the mandatory Allow response header"),
+        WRONG_ALLOW_HEADER("Wrong Allowed header", "The server returned 405 Method Not Allowed, but the Allow response header listed the rejected HTTP method as allowed");
 
 
         private final String value;

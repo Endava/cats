@@ -2,16 +2,21 @@ package com.endava.cats.report;
 
 import com.endava.cats.fuzzer.fields.DefaultValuesInFieldsFuzzer;
 import com.endava.cats.fuzzer.fields.ExamplesFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.IterateThroughEnumValuesFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.MaxLengthExactValuesInStringFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.MaximumExactNumbersInNumericFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.MinLengthExactValuesInStringFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.MinimumExactNumbersInNumericFieldsFuzzer;
 import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
 import com.endava.cats.fuzzer.http.BypassAuthenticationFuzzer;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
-import com.endava.cats.fuzzer.http.ConditionalEtagFuzzer;
 import com.endava.cats.fuzzer.http.CreatedResourceLocationFuzzer;
-import com.endava.cats.fuzzer.http.CrossParentResourceIsolationFuzzer;
+import com.endava.cats.fuzzer.http.CustomHttpMethodsFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
+import com.endava.cats.fuzzer.http.HttpMethodsFuzzer;
 import com.endava.cats.fuzzer.http.InsecureDirectObjectReferencesFuzzer;
+import com.endava.cats.fuzzer.http.NonRestHttpMethodsFuzzer;
 import com.endava.cats.fuzzer.http.PutIdempotencyFuzzer;
-import com.endava.cats.fuzzer.http.UpdateReadConsistencyFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.fuzzer.special.RandomFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -47,8 +52,18 @@ public final class WfcFaultClassifier {
             OnlyRequiredFieldsFuzzer.class,
             DefaultValuesInFieldsFuzzer.class,
             ExamplesFieldsFuzzer.class,
+            IterateThroughEnumValuesFieldsFuzzer.class,
+            MinLengthExactValuesInStringFieldsFuzzer.class,
+            MaxLengthExactValuesInStringFieldsFuzzer.class,
+            MinimumExactNumbersInNumericFieldsFuzzer.class,
+            MaximumExactNumbersInNumericFieldsFuzzer.class,
             FunctionalFuzzer.class,
             RandomFuzzer.class);
+
+    private static final List<Class<?>> UNDOCUMENTED_HTTP_METHOD_FUZZER_CLASSES = List.of(
+            HttpMethodsFuzzer.class,
+            NonRestHttpMethodsFuzzer.class,
+            CustomHttpMethodsFuzzer.class);
 
     private static final Set<String> SSRF_REASONS = Set.of(
             Reason.SSRF_REFLECTED.value(),
@@ -72,6 +87,8 @@ public final class WfcFaultClassifier {
         map.put(Reason.MISSING_RESPONSE_HEADERS.value(), DefinedFaultCategory.SCHEMA_INVALID_RESPONSE);
         map.put(Reason.NOT_IMPLEMENTED.value(), DefinedFaultCategory.SCHEMA_STATUS_NO_501_IF_IMPLEMENTED);
         map.put(Reason.NOT_IMPLEMENTED.description(), DefinedFaultCategory.SCHEMA_STATUS_NO_501_IF_IMPLEMENTED);
+        map.put(Reason.MISSING_ALLOW_HEADER.value(), DefinedFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW);
+        map.put(Reason.WRONG_ALLOW_HEADER.value(), DefinedFaultCategory.SCHEMA_INVALID_ALLOW);
         map.put(Reason.SQL_INJECTION.value(), DefinedFaultCategory.SECURITY_SQL_INJECTION);
         map.put(Reason.XSS_INJECTION.value(), DefinedFaultCategory.SECURITY_XSS_INJECTION);
         map.put(Reason.MASS_ASSIGNMENT_DETECTED.value(), DefinedFaultCategory.SECURITY_MASS_ASSIGNMENT);
@@ -90,8 +107,6 @@ public final class WfcFaultClassifier {
         map.put(Reason.UPDATE_READ_INCONSISTENCY.value(), CatsWfcFaultCategory.CATS_UPDATE_READ_INCONSISTENCY);
         map.put(Reason.PUT_NOT_IDEMPOTENT.value(), DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT);
         map.put(Reason.PUT_RETRY_REJECTED.value(), DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT);
-        map.put(Reason.PUT_RETRY_SERVER_ERROR.value(), DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT);
-        map.put(Reason.PUT_RETRY_BROKE_READ.value(), DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT);
         map.put(Reason.CREATED_RESOURCE_UNAVAILABLE.value(), DefinedFaultCategory.HTTP_CREATED_RESOURCE_NOT_FOUND);
         map.put(Reason.STALE_IF_MATCH_ACCEPTED.value(), CatsWfcFaultCategory.CATS_STALE_ETAG_ACCEPTED);
         map.put(Reason.CROSS_PARENT_RESOURCE_EXPOSURE.value(), DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION);
@@ -197,26 +212,21 @@ public final class WfcFaultClassifier {
                                                               Set<FaultCategoryId> faults) {
         String fuzzer = summary.getFuzzer();
         boolean is2xx = ResponseCodeFamily.is2xxCode(code);
-        if (ConsoleUtils.matchesFuzzer(fuzzer, CheckDeletedResourcesNotAvailableFuzzer.class)) {
+        if (ConsoleUtils.matchesFuzzer(fuzzer, CheckDeletedResourcesNotAvailableFuzzer.class) && !ResponseCodeFamily.is5xxCode(code)) {
             faults.add(faultId(DefinedFaultCategory.HTTP_NONWORKING_DELETE, null));
-        } else if (ConsoleUtils.matchesFuzzer(fuzzer, PutIdempotencyFuzzer.class)) {
-            faults.add(faultId(DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT, summary.getResultReason()));
-        } else if (ConsoleUtils.matchesFuzzer(fuzzer, CreatedResourceLocationFuzzer.class)) {
-            FaultCategory cat = ResponseCodeFamily.isNotFoundOrGone(code)
-                    ? DefinedFaultCategory.HTTP_CREATED_RESOURCE_NOT_FOUND
-                    : DefinedFaultCategory.HTTP_INVALID_LOCATION;
-            faults.add(faultId(cat, summary.getResultReason()));
-        } else if (ConsoleUtils.matchesFuzzer(fuzzer, UpdateReadConsistencyFuzzer.class)) {
-            faults.add(faultId(CatsWfcFaultCategory.CATS_UPDATE_READ_INCONSISTENCY, summary.getResultReason()));
-        } else if (ConsoleUtils.matchesFuzzer(fuzzer, ConditionalEtagFuzzer.class) && is2xx) {
-            faults.add(faultId(CatsWfcFaultCategory.CATS_STALE_ETAG_ACCEPTED, null));
+        } else if (ConsoleUtils.matchesFuzzer(fuzzer, PutIdempotencyFuzzer.class) && code == ResponseCodeFamily.STATUS_CREATED) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT, null));
+        } else if (ConsoleUtils.matchesFuzzer(fuzzer, CreatedResourceLocationFuzzer.class)
+                && !ResponseCodeFamily.isNotFoundOrGone(code) && !ResponseCodeFamily.is5xxCode(code)) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_INVALID_LOCATION, summary.getResultReason()));
         } else if (ConsoleUtils.matchesFuzzer(fuzzer, BypassAuthenticationFuzzer.class) && is2xx) {
             FaultCategory cat = HttpMethod.isResourceModificationMethod(method)
                     ? DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS
                     : DefinedFaultCategory.SECURITY_DECLARED_AUTH_NOT_ENFORCED;
             faults.add(faultId(cat, method));
-        } else if (ConsoleUtils.matchesFuzzer(fuzzer, CrossParentResourceIsolationFuzzer.class)
-                || ConsoleUtils.matchesFuzzer(fuzzer, InsecureDirectObjectReferencesFuzzer.class)) {
+        } else if (ConsoleUtils.matchesAnyFuzzer(fuzzer, UNDOCUMENTED_HTTP_METHOD_FUZZER_CLASSES) && is2xx) {
+            faults.add(faultId(DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT, method));
+        } else if (ConsoleUtils.matchesFuzzer(fuzzer, InsecureDirectObjectReferencesFuzzer.class) && is2xx) {
             faults.add(faultId(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, summary.getFuzzer()));
         }
     }
@@ -240,15 +250,21 @@ public final class WfcFaultClassifier {
 
     private static void classifyUnexpectedStatusCodeOracle(CatsTestCaseSummary summary, int code,
                                                            Set<FaultCategoryId> faults) {
-        boolean isPositiveFuzzer = ConsoleUtils.matchesAnyFuzzer(summary.getFuzzer(), POSITIVE_VALID_INPUT_FUZZER_CLASSES);
+        String fuzzer = summary.getFuzzer();
+        if (ConsoleUtils.matchesAnyFuzzer(fuzzer, UNDOCUMENTED_HTTP_METHOD_FUZZER_CLASSES)
+                || ConsoleUtils.matchesFuzzer(fuzzer, CheckDeletedResourcesNotAvailableFuzzer.class)
+                || ConsoleUtils.matchesFuzzer(fuzzer, BypassAuthenticationFuzzer.class)) {
+            return;
+        }
+        boolean isPositiveFuzzer = ConsoleUtils.matchesAnyFuzzer(fuzzer, POSITIVE_VALID_INPUT_FUZZER_CLASSES);
         if (isPositiveFuzzer) {
             if (ResponseCodeFamily.isClientValidationError(code)) {
-                faults.add(faultId(DefinedFaultCategory.SCHEMA_VALID_INPUT_REJECTED, summary.getFuzzer()));
+                faults.add(faultId(DefinedFaultCategory.SCHEMA_VALID_INPUT_REJECTED, fuzzer));
             } else if (code == ResponseCodeFamily.STATUS_NOT_ACCEPTABLE) {
-                faults.add(faultId(DefinedFaultCategory.SCHEMA_STATUS_HAS_406_IF_ACCEPT, summary.getFuzzer()));
+                faults.add(faultId(DefinedFaultCategory.SCHEMA_STATUS_HAS_406_IF_ACCEPT, fuzzer));
             }
         } else if (ResponseCodeFamily.is2xxCode(code)) {
-            faults.add(faultId(DefinedFaultCategory.SCHEMA_VALIDATION_BYPASS, summary.getFuzzer()));
+            faults.add(faultId(DefinedFaultCategory.SCHEMA_VALIDATION_BYPASS, fuzzer));
         }
     }
 
