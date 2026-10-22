@@ -125,7 +125,7 @@ public final class ErrorSimilarityDetector {
      */
     public static String extractNormalizedClusterKey(String responseBody, String fallbackDetails) {
         if (isBlankOrEmptyPlaceholder(responseBody)) {
-            return "EMPTY|" + normalizeForClustering(prefix(OptionalString(fallbackDetails)));
+            return "EMPTY|" + normalizeForClustering(prefix(optionalString(fallbackDetails)));
         }
         ExtractedCause cause = extractCause(responseBody);
         return cause.errorType().toLowerCase(Locale.ROOT) + "|"
@@ -288,7 +288,7 @@ public final class ErrorSimilarityDetector {
         return text.length() <= maxLen ? text : text.substring(0, maxLen - 3) + "...";
     }
 
-    private static String OptionalString(String value) {
+    private static String optionalString(String value) {
         return value == null ? "" : value;
     }
 

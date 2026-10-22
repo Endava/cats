@@ -13,7 +13,7 @@ class WordUtilsTest {
 
     @Test
     void shouldReturnAllCombinations() {
-        String[] words = new String[]{"pet", "name", "id"};
+        String[] words = {"pet", "name", "id"};
         Set<String> result = WordUtils.createWordCombinations(words);
 
         Assertions.assertThat(result).containsOnly("ID", "Id", "NAME-ID", "NAMEID", "NAME_ID", "Name-Id", "NameId",

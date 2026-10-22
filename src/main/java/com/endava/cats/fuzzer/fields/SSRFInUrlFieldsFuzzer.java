@@ -23,7 +23,6 @@ import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Fuzzer that sends SSRF (Server-Side Request Forgery) payloads in URL-type fields.

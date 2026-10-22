@@ -12,7 +12,6 @@ import dev.tamboui.widgets.table.TableState;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.LinkedHashMap;
@@ -391,7 +390,7 @@ final class CatsTuiState {
         }
         if (event.isPageDown()) {
             fuzzerOffset = Math.min(maximumOffset, fuzzerOffset + pageSize);
-            selectedFuzzerIndex = total == 0 ? 0 : Math.min(total - 1, Math.max(fuzzerOffset, selectedFuzzerIndex + pageSize));
+            selectedFuzzerIndex = total == 0 ? 0 : Math.clamp(fuzzerOffset, selectedFuzzerIndex + pageSize, total - 1);
             syncFuzzerSelection();
             return EventResult.HANDLED;
         }
@@ -894,103 +893,6 @@ final class CatsTuiState {
         return cachedDetailLines;
     }
 
-    private List<String> unusedLegacyDetailLines() {
-        TestResultSnapshot test = selectedTest();
-        if (test == null) {
-            return List.of("No test selected");
-        }
-        List<String> lines = new ArrayList<>();
-        add(lines, "Scenario", test.scenario());
-        add(lines, "Expected Result", test.expectedResult());
-        add(lines, "Result", test.result());
-        add(lines, "Result Reason", test.resultReason());
-        add(lines, "Result Details", test.resultDetails());
-        if (test.resultIgnoreDetails() != null && !test.resultIgnoreDetails().isBlank()) {
-            add(lines, "Warning", test.resultIgnoreDetails());
-        }
-        add(lines, "Test Trace Id", test.traceId());
-        add(lines, "Contract Path", test.contractPath());
-        add(lines, "Full Request Path", test.fullRequestPath());
-        add(lines, "Server", test.server());
-        lines.add("Valid JSON: " + test.validJson());
-        lines.add("");
-        lines.add("REQUEST DETAILS");
-        add(lines, "Http Method", test.request().httpMethod());
-        add(lines, "URL", test.request().url());
-        add(lines, "Timestamp", test.request().timestamp());
-        lines.add("Headers:");
-        test.request().headers().forEach(header -> appendWrappedLine(lines,
-                "  " + safe(header.name()) + ": " + safe(header.value())));
-        lines.add("Payload:");
-        appendMultiline(lines, test.request().payload());
-        lines.add("");
-        lines.add("RESPONSE");
-        lines.add("HTTP Response Code: %d    Response Time: %dms".formatted(
-                test.response().responseCode(), test.response().responseTimeInMs()));
-        lines.add("Content Type: %s    Content Length: %d bytes".formatted(
-                safe(test.response().contentType()), test.response().contentLengthInBytes()));
-        if (test.response().bodyTruncated()) {
-            String declaredLength = test.response().declaredContentLength() < 0
-                    ? "unknown" : test.response().declaredContentLength() + " bytes";
-            lines.add("Response body truncated    Declared Content Length: " + declaredLength);
-        }
-        lines.add("Number of Words: %d    Number of Lines: %d".formatted(
-                test.response().numberOfWords(), test.response().numberOfLines()));
-        lines.add("Headers:");
-        test.response().headers().forEach(header -> appendWrappedLine(lines,
-                "  " + safe(header.name()) + ": " + safe(header.value())));
-        lines.add("Body:");
-        appendMultiline(lines, test.response().body());
-        lines.add("");
-        add(lines, "CATS Replay", test.replayCommand());
-        return lines;
-    }
-
-    private void add(List<String> lines, String label, String value) {
-        appendWrappedLine(lines, label + ": " + safe(value));
-    }
-
-    private void appendMultiline(List<String> lines, String value) {
-        String safeValue = safe(value);
-        if (safeValue.isBlank()) {
-            lines.add("  <empty>");
-            return;
-        }
-        safeValue.lines().forEach(line -> appendWrappedLine(lines, "  " + line));
-    }
-
-    private void appendWrappedLine(List<String> lines, String value) {
-        if (value.isEmpty()) {
-            lines.add("");
-            return;
-        }
-        int lineWidth = Math.max(20, terminalColumns - 4);
-        int offset = 0;
-        while (offset < value.length()) {
-            int end = Math.min(value.length(), offset + lineWidth);
-            if (end < value.length() && Character.isHighSurrogate(value.charAt(end - 1))) {
-                end--;
-            }
-            lines.add(value.substring(offset, end));
-            offset = end;
-        }
-    }
-
-    private static String safe(String value) {
-        if (value == null) {
-            return "";
-        }
-        StringBuilder safe = new StringBuilder(value.length());
-        value.codePoints().forEach(codePoint -> {
-            if (codePoint == '\n' || codePoint == '\t' || !Character.isISOControl(codePoint)) {
-                safe.appendCodePoint(codePoint);
-            } else {
-                safe.append('�');
-            }
-        });
-        return safe.toString();
-    }
-
     private static String display(String value) {
         return value == null || value.isBlank() ? "Unknown" : singleLine(value);
     }
@@ -1132,7 +1034,7 @@ final class CatsTuiState {
         String liveFailing = paths.entrySet().stream()
                 .filter(entry -> entry.getValue().errors() > 0)
                 .sorted(Map.Entry.<String, CategoryStatistics>comparingByValue(
-                        Comparator.comparingLong(CategoryStatistics::errors)).reversed()
+                                Comparator.comparingLong(CategoryStatistics::errors)).reversed()
                         .thenComparing(Map.Entry::getKey))
                 .limit(5)
                 .map(entry -> singleLine(entry.getKey()) + " (" + entry.getValue().errors() + ")")
@@ -1196,11 +1098,11 @@ final class CatsTuiState {
         List<List<String>> candidates = os.contains("mac")
                 ? List.of(List.of("pbcopy"))
                 : os.contains("win")
-                ? List.of(List.of("clip"))
-                : List.of(
-                        List.of("wl-copy"),
-                        List.of("xclip", "-selection", "clipboard"),
-                        List.of("xsel", "--clipboard", "--input"));
+                  ? List.of(List.of("clip"))
+                  : List.of(
+                List.of("wl-copy"),
+                List.of("xclip", "-selection", "clipboard"),
+                List.of("xsel", "--clipboard", "--input"));
         for (List<String> command : candidates) {
             if (tryClipboardProcess(command, text)) {
                 return true;

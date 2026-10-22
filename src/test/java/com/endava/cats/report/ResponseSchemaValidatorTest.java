@@ -15,7 +15,7 @@ import java.util.Map;
 class ResponseSchemaValidatorTest {
 
     @Test
-    void shouldValidateOneOfResponseSchemaWithExplicitDiscriminatorMapping() throws Exception {
+    void shouldValidateOneOfResponseSchemaWithExplicitDiscriminatorMapping() {
         String openApiYaml = """
                 openapi: "3.0.1"
                 info:

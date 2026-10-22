@@ -13,11 +13,9 @@ import io.swagger.v3.oas.models.media.Schema;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Identifies either the request root or a nested field for JSON payload mutations.

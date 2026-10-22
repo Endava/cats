@@ -17,7 +17,6 @@ import org.mockito.Mockito;
 import picocli.CommandLine;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 @QuarkusTest

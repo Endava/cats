@@ -387,7 +387,7 @@ public abstract class CatsUtil {
                     return pathVariables;
                 }
                 int pathDepth = Integer.compare(pathDepth(e1.getKey()), pathDepth(e2.getKey()));
-                return pathDepth != 0 ? pathDepth : e1.getKey().compareTo(e2.getKey());
+                return pathDepth == 0 ? e1.getKey().compareTo(e2.getKey()) : pathDepth;
             }
         };
     }

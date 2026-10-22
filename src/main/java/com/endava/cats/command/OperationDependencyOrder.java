@@ -328,7 +328,7 @@ final class OperationDependencyOrder {
                 totalPathVars++;
                 String varName = matcher.group(1);
                 String preceding = normalize(precedingSegment(path, matcher.start()));
-                String targetNoun = !preceding.isEmpty() ? preceding : inferNounFromVarName(varName);
+                String targetNoun = preceding.isEmpty() ? inferNounFromVarName(varName) : preceding;
                 String producer = matchProducer(varName, preceding, targetNoun, allProducersByNoun, postProducersById, api);
                 if (producer != null) {
                     resolvedPathVars++;

@@ -213,7 +213,7 @@ public class AnalyzeCommand implements Runnable, CommandLine.IExitCodeGenerator 
         int errorDocsScore = opMetrics.totalOperations() == 0 ? 0
                 : (int) Math.round(15.0 * opMetrics.opsWith4xxDocs() / opMetrics.totalOperations());
 
-        int total = Math.clamp(correlationScore + constraintScore + exampleScore + responseSchemaScore + errorDocsScore, 0, 100);
+        int total = Math.clamp((long) correlationScore + constraintScore + exampleScore + responseSchemaScore + errorDocsScore, 0, 100);
         String grade = total >= 85 ? "A" : total >= 70 ? "B" : total >= 55 ? "C" : "D";
         return new ScoreBreakdown(total, grade, correlationScore, constraintScore,
                 exampleScore, responseSchemaScore, errorDocsScore);

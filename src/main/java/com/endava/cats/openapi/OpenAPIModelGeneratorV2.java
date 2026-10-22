@@ -808,9 +808,9 @@ public class OpenAPIModelGeneratorV2 {
                 orElse(new Schema<>())
                 .getEnum()).map(List::size).orElse(0);
 
-        int max = maxFromEnum != 0 ? maxFromEnum : Optional.ofNullable(property.getMaxItems())
+        int max = maxFromEnum == 0 ? Optional.ofNullable(property.getMaxItems())
                 .filter(maxVal -> maxVal != 0)
-                .orElse(min + 1);
+                .orElse(min + 1) : maxFromEnum;
 
         logger.debug("Clamping array size between {} and {}, array size {}", min, max, this.maxArraySize);
         return Math.clamp(this.maxArraySize, min, max);

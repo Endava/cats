@@ -24,7 +24,6 @@ import com.endava.cats.exception.CatsExecutionLimitReachedException;
 import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.api.Fuzzer;
-import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.fuzzer.special.RandomFuzzer;
 import com.endava.cats.http.HttpMethod;

@@ -269,9 +269,7 @@ class NumericValuesInStringFieldsFuzzerTest {
         fuzzer.fuzz(data);
 
         // watchlistId (path param) must be skipped; only description is fuzzed (8 payloads)
-        Assertions.assertThat(sentPayloads).hasSize(8);
-        // Long.MAX_VALUE and Long.MIN_VALUE must be sent as unquoted JSON numbers, not quoted strings
-        Assertions.assertThat(sentPayloads)
+        Assertions.assertThat(sentPayloads).hasSize(8)
                 .anyMatch(p -> p.contains("\"description\":9223372036854775807"))
                 .anyMatch(p -> p.contains("\"description\":-9223372036854775808"))
                 .noneMatch(p -> p.contains("\"description\":\"9223372036854775807\""));

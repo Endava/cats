@@ -420,7 +420,7 @@ public abstract class CatsModelUtils {
         }
         Set<Schema<?>> visited = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         Schema<?> resolved = schema;
-        while (resolved != null && resolved.get$ref() != null && visited.add(resolved)) {
+        while (resolved.get$ref() != null && visited.add(resolved)) {
             String schemaName = getSimpleRef(resolved.get$ref());
             Schema<?> referenced = schemaName == null ? null : schemaMap.get(schemaName);
             if (referenced == null) {

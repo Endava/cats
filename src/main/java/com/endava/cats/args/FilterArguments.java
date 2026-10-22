@@ -209,7 +209,7 @@ public class FilterArguments {
     private TotalCountType totalCountType = TotalCountType.FUZZERS;
 
     private Map<String, List<String>> skipPathFuzzers = new HashMap<>();
-    private Map<String, Map<String, List<String>>> skipFuzzersForExtensionMap = new HashMap<>();
+    private final Map<String, Map<String, List<String>>> skipFuzzersForExtensionMap = new HashMap<>();
 
 
     /**

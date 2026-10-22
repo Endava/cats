@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -76,7 +75,7 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     public void executeCustomFuzzerTests() {
         customFuzzerUtil.loadGlobalVariables(filesArguments.getCustomFuzzerDetails());
         logger.debug("Executing {} functional tests.", executions.size());
-        Collections.sort(executions);
+        executions.sort(null);
 
         for (Map.Entry<String, Map<String, Object>> entry : filesArguments.getCustomFuzzerDetails().entrySet()) {
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.fuzzingData().getContractPath().equalsIgnoreCase(entry.getKey()))
