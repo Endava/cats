@@ -45,7 +45,8 @@ public class StringFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Override
     public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
-        return true;
+        Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
+        return schema.getMinLength() != null && schema.getMinLength() > 0;
     }
 
     @Override

@@ -520,7 +520,7 @@ final class FuzzerWaveExecutor {
         runFuzzers(seedData, seedFuzzers);
         runFuzzers(deferredHappyPathData, List.of(happyPathFuzzer));
         if (!deleteData.isEmpty()) {
-            deferredHappyPathDeletes.add(new DeferredHappyPathDelete(fuzzingData, deleteData, seedFuzzers));
+            deferredHappyPathDeletes.add(new DeferredHappyPathDelete(fuzzingData, deleteData, List.of(happyPathFuzzer)));
         }
     }
 

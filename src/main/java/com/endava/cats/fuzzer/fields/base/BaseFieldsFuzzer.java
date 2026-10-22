@@ -228,13 +228,19 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             if (CatsModelUtils.isByteArraySchema(fieldSchema)) {
                 return true;
             }
-
+            String sanitized = this.sanitizeString(fieldValue);
+            if (fieldValue != null && fieldSchema.getEnum() != null && !fieldSchema.getEnum().isEmpty()) {
+                return fieldSchema.getEnum().stream().anyMatch(enumVal -> String.valueOf(enumVal).equals(sanitized));
+            }
             if (fieldSchema.getPattern() != null) {
                 Pattern pattern = Pattern.compile(fieldSchema.getPattern());
-                return fieldValue == null || pattern.matcher(this.sanitizeString(fieldValue)).matches();
+                return fieldValue == null || pattern.matcher(sanitized).matches();
+            }
+            if (sanitized.isEmpty() && data.isQueryParam(fuzzedField) && !data.getAllRequiredFields().contains(fuzzedField)) {
+                return true;
             }
 
-            return fieldValue == null || isValueMatchingFormat(fieldSchema, this.sanitizeString(fieldValue));
+            return fieldValue == null || isValueMatchingFormat(fieldSchema, sanitized);
         }
         return true;
     }
