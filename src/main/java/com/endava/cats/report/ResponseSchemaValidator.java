@@ -133,10 +133,44 @@ final class ResponseSchemaValidator {
             if (reference != null && reference.isTextual() && reference.textValue().startsWith(sourcePrefix)) {
                 objectNode.put("$ref", targetPrefix + reference.textValue().substring(sourcePrefix.length()));
             }
+            rewriteDiscriminatorMapping(objectNode, sourcePrefix, targetPrefix);
             objectNode.elements().forEachRemaining(child -> rewriteSchemaReferences(child, sourcePrefix, targetPrefix));
         } else if (node instanceof ArrayNode arrayNode) {
             arrayNode.elements().forEachRemaining(child -> rewriteSchemaReferences(child, sourcePrefix, targetPrefix));
         }
+    }
+
+    private void rewriteDiscriminatorMapping(ObjectNode objectNode, String sourcePrefix, String targetPrefix) {
+        JsonNode discriminator = objectNode.get("discriminator");
+        if (!(discriminator instanceof ObjectNode discriminatorNode)) {
+            return;
+        }
+        JsonNode defaultMapping = discriminatorNode.get("defaultMapping");
+        if (defaultMapping != null && defaultMapping.isTextual()) {
+            discriminatorNode.put("defaultMapping", rewriteDiscriminatorTarget(defaultMapping.textValue(), sourcePrefix, targetPrefix));
+        }
+        JsonNode mapping = discriminatorNode.get("mapping");
+        if (!(mapping instanceof ObjectNode mappingNode)) {
+            return;
+        }
+        List<String> keys = new ArrayList<>();
+        mappingNode.fieldNames().forEachRemaining(keys::add);
+        for (String key : keys) {
+            JsonNode target = mappingNode.get(key);
+            if (target != null && target.isTextual()) {
+                mappingNode.put(key, rewriteDiscriminatorTarget(target.textValue(), sourcePrefix, targetPrefix));
+            }
+        }
+    }
+
+    private String rewriteDiscriminatorTarget(String value, String sourcePrefix, String targetPrefix) {
+        if (value.startsWith(sourcePrefix)) {
+            return targetPrefix + value.substring(sourcePrefix.length());
+        }
+        if (!value.contains("/") && !value.contains(":")) {
+            return targetPrefix + value;
+        }
+        return value;
     }
 
     private String formatError(Error error) {
