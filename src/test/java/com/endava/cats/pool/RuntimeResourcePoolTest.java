@@ -78,6 +78,29 @@ class RuntimeResourcePoolTest {
     }
 
     @Test
+    void shouldPreserveUnquotedNumericAndBooleanTypesOnFuzzedIdentifierFields() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/risk-evaluations", "{}"), request("POST", "/risk-evaluations", "{}"),
+                response(200, "{\"evaluationId\":\"eval_1\",\"paymentId\":\"pay-2024-001234\"}"));
+
+        String originalPayload = "{\"partyId\":\"party_1\",\"paymentId\":\"pay-2024-001234\"}";
+        String fuzzedNumericPayload = "{\"partyId\":\"party_1\",\"paymentId\":2}";
+        ServiceData data = ServiceData.builder()
+                .relativePath("/risk-evaluations")
+                .httpMethod(HttpMethod.POST)
+                .contentType("application/json")
+                .originalPayload(originalPayload)
+                .payload(fuzzedNumericPayload)
+                .mutationTarget(RequestTarget.body("paymentId"))
+                .build();
+
+        RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(data, fuzzedNumericPayload);
+
+        Assertions.assertThat(result.payload()).contains("\"paymentId\":2").doesNotContain("\"paymentId\":\"2\"");
+        Assertions.assertThat(result.correlations()).isEmpty();
+    }
+
+    @Test
     void shouldReusePostResponseIdForLaterPathParameter() {
         enableResourceReuse();
         resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),

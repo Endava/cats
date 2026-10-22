@@ -349,7 +349,10 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
             }
             Object valueToSet = fuzzingStrategyToApply.process(oldValue);
             if (mergeFuzzing) {
-                valueToSet = FuzzingStrategy.mergeFuzzing(WordUtils.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData());
+                Object fuzzedOldValue = oldValue instanceof Number || oldValue instanceof Boolean
+                        ? oldValue
+                        : WordUtils.nullOrValueOf(oldValue);
+                valueToSet = FuzzingStrategy.mergeFuzzing(fuzzedOldValue, fuzzingStrategyToApply.getData());
             }
             CatsUtil.replaceOldValueWithNewOne(jsonPropertyForReplacement, jsonDocument, valueToSet);
 
