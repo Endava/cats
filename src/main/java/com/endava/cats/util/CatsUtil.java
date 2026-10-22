@@ -142,10 +142,7 @@ public abstract class CatsUtil {
                 throw new CatsException(e);
             }
         } else {
-            Object normalizedValue = valueToSet instanceof Number numVal
-                    ? new com.google.gson.JsonPrimitive(numVal)
-                    : valueToSet;
-            jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), normalizedValue);
+            jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
         }
     }
 

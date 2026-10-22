@@ -127,7 +127,6 @@ public abstract class JsonUtils {
             .setStrictness(Strictness.LENIENT)
             .disableHtmlEscaping()
             .setExclusionStrategies(new ExcludeTestCaseStrategy())
-            .registerTypeAdapter(Long.class, new LongTypeSerializer())
             .registerTypeAdapter(OffsetDateTime.class, new OffsetDatetimeTypeAdapter())
             .serializeNulls()
             .create();
