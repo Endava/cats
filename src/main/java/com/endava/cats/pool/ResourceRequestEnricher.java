@@ -704,6 +704,9 @@ final class ResourceRequestEnricher {
             }
         }
         for (ResourceInstance resource : resources) {
+            if (resource.pathSegments().equals(targetSegments)) {
+                continue;
+            }
             boolean matchesResourceNoun = !Collections.disjoint(resource.resourceNameForms(), fieldForms) ||
                     resource.resourceNameForms().stream()
                             .anyMatch(form -> fieldForms.stream().anyMatch(f -> f.startsWith(form) && f.length() > form.length()));

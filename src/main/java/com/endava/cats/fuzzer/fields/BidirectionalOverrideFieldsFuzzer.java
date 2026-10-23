@@ -68,7 +68,7 @@ public class BidirectionalOverrideFieldsFuzzer extends BaseReplaceFieldsFuzzer {
                     return CatsModelUtils.isStringSchema(schema) && !CatsModelUtils.isEnumSchema(schema) && JsonUtils.isFieldInJson(data.getPayload(), field);
                 })
                 .fuzzValueProducer(fuzzValueProducer)
-                .expectedResponseCode(processingArguments.isSanitizeFirst() ? ResponseCodeFamilyPredefined.TWOXX : ResponseCodeFamilyPredefined.FOURXX)
+                .expectedResponseCode(processingArguments.isSanitizeFirst() ? ResponseCodeFamilyPredefined.FOURXX_TWOXX : ResponseCodeFamilyPredefined.FOURXX)
                 .replaceRefData(true)
                 .build();
     }

@@ -46,7 +46,7 @@ final class ResourceSemanticNaming {
             "kind", "meta", "metadata", "self", "next", "prev");
     private static final Set<String> ITEM_METADATA_WORDS = Set.of(
             "time", "timestamp", "date", "datetime", "status", "httpstatus", "statuscode", "errorcode",
-            "message", "error");
+            "message", "error", "type");
     private static final Set<String> PER_REQUEST_TRACE_SUFFIXES = Set.of(
             "correlationid", "requestid", "traceid", "spanid", "idempotencykey", "traceparent", "tracestate");
 
