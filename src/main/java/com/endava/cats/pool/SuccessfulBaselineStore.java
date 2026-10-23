@@ -53,11 +53,11 @@ final class SuccessfulBaselineStore {
     void store(ServiceData data, String effectivePayload) {
         boolean requiredOnlyFallback = data.getAllMutationTargets().equals(List.of(RequestTarget.requestBody())) ||
                 data.getAllMutationTargets().equals(List.of(RequestTarget.query("Optional parameters")));
-        boolean fieldRemovalFallback = HttpMethod.requiresBody(data.getHttpMethod()) && isSubsetOfOriginalPayload(data, effectivePayload);
+        boolean fieldRemovalFallback = isSubsetOfOriginalPayload(data, effectivePayload);
         boolean fallbackBaseline = requiredOnlyFallback || fieldRemovalFallback;
         if ((ResourceValueExtractor.isRequestBodyFuzzed(data) && !fallbackBaseline) || !data.isReplaceRefData() || !data.isValidJson() ||
                 !data.getPayloadFormat().supportsNamedFields() ||
-                (!HttpMethod.requiresBody(data.getHttpMethod()) && !requiredOnlyFallback) ||
+                (!HttpMethod.requiresBody(data.getHttpMethod()) && !fallbackBaseline) ||
                 !JsonUtils.isValidJson(effectivePayload)) {
             return;
         }

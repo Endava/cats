@@ -1,9 +1,12 @@
 package com.endava.cats.fuzzer.executor;
 
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -78,8 +81,14 @@ public class SimpleExecutor {
             if (context.getResponseProcessor() != null) {
                 context.getResponseProcessor().accept(response, context.getFuzzingData());
             } else {
-                testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode(), context.isMatchResponseResult(), context.isMatchResponseContentType());
+                reportDefaultResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode(), context.isMatchResponseResult(), context.isMatchResponseContentType());
             }
         }, context.getFuzzingData());
+    }
+
+    public void reportDefaultResult(PrettyLogger logger, FuzzingData data, CatsResponse response,
+                                    ResponseCodeFamily expectedResponseCode, boolean matchResponseResult,
+                                    boolean matchResponseContentType) {
+        testCaseListener.reportResult(logger, data, response, expectedResponseCode, matchResponseResult, matchResponseContentType);
     }
 }

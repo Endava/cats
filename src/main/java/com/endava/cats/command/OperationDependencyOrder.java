@@ -256,6 +256,7 @@ final class OperationDependencyOrder {
         if (normalized.isEmpty()) {
             return;
         }
+        names.add("noun:" + normalized);
         if (ID_SUFFIXES.contains(normalized)) {
             String normalizedParent = normalize(parentProperty);
             if (!normalizedParent.isEmpty()) {
@@ -291,8 +292,11 @@ final class OperationDependencyOrder {
         String trimmed = stripTrailingSlash(path);
         String resource = normalize(trimmed.substring(trimmed.lastIndexOf('/') + 1));
         Set<String> identifiers = new LinkedHashSet<>();
-        for (String suffix : ID_SUFFIXES) {
-            WordUtils.nounForms(resource).forEach(form -> identifiers.add(form + suffix));
+        for (String form : WordUtils.nounForms(resource)) {
+            identifiers.add("noun:" + form);
+            for (String suffix : ID_SUFFIXES) {
+                identifiers.add(form + suffix);
+            }
         }
         return identifiers;
     }

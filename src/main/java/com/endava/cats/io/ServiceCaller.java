@@ -513,8 +513,8 @@ public class ServiceCaller {
     }
 
     private EncodedRequestBody encodeFormPayload(String payload, ServiceData data) {
-        if (StringUtils.isBlank(payload) || !data.isValidJson()) {
-            return new EncodedRequestBody(payload, data.getContentType());
+        if (JsonUtils.isEmptyPayload(payload) || !data.isValidJson()) {
+            return new EncodedRequestBody(JsonUtils.isEmptyPayload(payload) ? "" : payload, data.getContentType());
         }
         try {
             HashMap<String, Object> payloadAsMap = new ObjectMapper().readValue(payload, new TypeReference<>() {

@@ -176,7 +176,7 @@ public class FuzzingDataFactory {
      * @param operationParameters the parameters defined in the OpenAPI contract
      * @return a Schema associated with the GET request which resembles the model for POST
      */
-    private Schema<?> createSyntheticSchemaForGet(List<Parameter> operationParameters) {
+    private Schema<?> createSyntheticSchemaForGet(List<Parameter> operationParameters, boolean bodyMethod) {
         Schema<?> syntheticSchema = CatsModelUtils.newObjectSchema();
         syntheticSchema.setProperties(new LinkedHashMap<>());
         List<String> required = new ArrayList<>();
@@ -184,6 +184,11 @@ public class FuzzingDataFactory {
         for (Parameter parameter : this.getResolvedParameters(operationParameters)) {
             if (isFuzzableGetParameter(parameter)) {
                 Schema<?> schemaCopy = buildParameterSchemaCopy(parameter);
+                if (bodyMethod && "query".equalsIgnoreCase(parameter.getIn())
+                        && !Boolean.TRUE.equals(parameter.getRequired())
+                        && schemaCopy.getDefault() == null && schemaCopy.getExample() == null) {
+                    continue;
+                }
                 syntheticSchema.addProperty(parameter.getName(), schemaCopy);
                 if (Boolean.TRUE.equals(parameter.getRequired())) {
                     required.add(parameter.getName());
@@ -310,7 +315,7 @@ public class FuzzingDataFactory {
         List<String> reqSchemaNames = this.getCurrentRequestSchemaName(mediaType);
         logger.debug("Request schema names identified for path {}, method {}: {}", path, method, reqSchemaNames);
 
-        KeyValuePair<String, Schema<?>> paramsSchema = this.createSyntheticSchemaForGet(item, operation);
+        KeyValuePair<String, Schema<?>> paramsSchema = this.createSyntheticSchemaForGet(item, operation, true);
         //we need this in order to be able to generate path params if not supplied by the user
         String pathParamsExample = this.getRequestPayloadsSamples(null, paramsSchema.getKey()).examplePayloads().getFirst();
         Set<String> queryParams = this.extractQueryParams(paramsSchema.getValue());
@@ -481,8 +486,12 @@ public class FuzzingDataFactory {
     }
 
     private KeyValuePair<String, Schema<?>> createSyntheticSchemaForGet(PathItem pathItem, Operation operation) {
+        return createSyntheticSchemaForGet(pathItem, operation, false);
+    }
+
+    private KeyValuePair<String, Schema<?>> createSyntheticSchemaForGet(PathItem pathItem, Operation operation, boolean bodyMethod) {
         List<Parameter> mergedParameters = mergeParameters(pathItem, operation);
-        Schema<?> syntheticSchema = this.createSyntheticSchemaForGet(mergedParameters);
+        Schema<?> syntheticSchema = this.createSyntheticSchemaForGet(mergedParameters, bodyMethod);
         globalContext.getSchemaMap().put(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
 
         return new KeyValuePair<>(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
@@ -624,7 +633,7 @@ public class FuzzingDataFactory {
 
     private SelectedMediaType getMediaType(Operation operation, OpenAPI openAPI) {
         if (operation.getRequestBody() == null) {
-            return new SelectedMediaType(defaultRequestContentType(), new NoMediaType());
+            return new SelectedMediaType(noBodyRequestContentType(operation), new NoMediaType());
         }
         RequestBody requestBody = operation.getRequestBody();
         if (requestBody.get$ref() != null) {
@@ -651,6 +660,16 @@ public class FuzzingDataFactory {
 
     private String defaultRequestContentType() {
         return Optional.ofNullable(processingArguments.getDefaultContentType()).orElse("application/json");
+    }
+
+    private String noBodyRequestContentType(Operation operation) {
+        if ("application/json".equalsIgnoreCase(defaultRequestContentType())
+                && operation != null
+                && operation.getParameters() != null
+                && operation.getParameters().stream().anyMatch(p -> p != null && "query".equalsIgnoreCase(p.getIn()))) {
+            return "application/x-www-form-urlencoded";
+        }
+        return defaultRequestContentType();
     }
 
     private boolean isSupportedRequestContentType(String contentType) {
@@ -777,7 +796,7 @@ public class FuzzingDataFactory {
             }
             requests.addAll(new ArrayList<>(Optional.ofNullable(operation.getRequestBody().getContent()).orElse(defaultContent).keySet()));
         } else {
-            requests.add(processingArguments.getDefaultContentType());
+            requests.add(noBodyRequestContentType(operation));
         }
         return requests;
     }

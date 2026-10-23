@@ -8,8 +8,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.v3.oas.models.media.Schema;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -147,5 +150,61 @@ public final class RequiredOnlyPayloadGenerator {
 
     private static String appendPath(String parent, String property) {
         return parent.isEmpty() ? property : parent + "#" + property;
+    }
+
+    /**
+     * Generates candidate minimal payloads when the strict required-only payload is rejected with 4XX:
+     * first a payload retaining required + schema-defaulted/exampled fields (if distinct), followed by
+     * payloads retaining required fields + one top-level optional field at a time (up to {@code maxSingleOptional}).
+     */
+    public static List<String> generateFallbackMinimalPayloads(String payload, List<String> requiredFields,
+                                                               String requiredOnlyPayload,
+                                                               Map<String, Schema> requestPropertyTypes,
+                                                               int maxSingleOptional) {
+        if (payload == null || payload.isBlank() || !JsonUtils.isValidJson(payload)) {
+            return List.of();
+        }
+        try {
+            JsonElement root = JsonUtils.parseAsJsonElement(payload);
+            if (!root.isJsonObject()) {
+                return List.of();
+            }
+            Set<String> required = requiredFields == null ? Set.of() : Set.copyOf(requiredFields);
+            Set<String> candidates = new LinkedHashSet<>();
+
+            if (requestPropertyTypes != null && !requestPropertyTypes.isEmpty()) {
+                Set<String> requiredOrDefaulted = new LinkedHashSet<>(required);
+                requestPropertyTypes.forEach((field, schema) -> {
+                    if (field != null && schema != null && (schema.getDefault() != null || schema.getExample() != null)) {
+                        requiredOrDefaulted.add(field);
+                    }
+                });
+                if (!requiredOrDefaulted.equals(required)) {
+                    String withDefaults = JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(retainRequired(root, requiredOrDefaulted, ""));
+                    if (!withDefaults.equals(requiredOnlyPayload) && !withDefaults.equals(payload)) {
+                        candidates.add(withDefaults);
+                    }
+                }
+            }
+
+            int addedSingle = 0;
+            for (Map.Entry<String, JsonElement> entry : root.getAsJsonObject().entrySet()) {
+                if (addedSingle >= maxSingleOptional) {
+                    break;
+                }
+                String topKey = entry.getKey();
+                if (!required.contains(topKey) && !isServerGeneratedField(topKey, Set.of())) {
+                    Set<String> singlePlusRequired = new LinkedHashSet<>(required);
+                    singlePlusRequired.add(topKey);
+                    String candidate = JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(retainRequired(root, singlePlusRequired, ""));
+                    if (!candidate.equals(requiredOnlyPayload) && !candidate.equals(payload) && candidates.add(candidate)) {
+                        addedSingle++;
+                    }
+                }
+            }
+            return new ArrayList<>(candidates);
+        } catch (RuntimeException _) {
+            return List.of();
+        }
     }
 }

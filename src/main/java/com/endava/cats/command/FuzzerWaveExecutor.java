@@ -291,13 +291,20 @@ final class FuzzerWaveExecutor {
         if (happyPath == null) {
             return;
         }
+        Fuzzer onlyRequiredFields = path.fuzzersToRun().stream()
+                .filter(OnlyRequiredFieldsFuzzer.class::isInstance)
+                .findFirst()
+                .orElse(null);
+        List<Fuzzer> seedFuzzers = onlyRequiredFields != null
+                ? List.of(happyPath, onlyRequiredFields)
+                : List.of(happyPath);
         List<FuzzingData> unresolvedSeedData = path.filteredFuzzingData().stream()
                 .filter(this::isSafeResourceSeed)
                 .filter(data -> !command.runtimeResourcePool.hasSucceededWithUnmodifiedRequest(data.getPath(), data.getMethod()))
                 .sorted(Comparator.comparingInt(data -> seedMethodOrder(data.getMethod())))
                 .toList();
         if (!unresolvedSeedData.isEmpty()) {
-            runFuzzers(unresolvedSeedData, List.of(happyPath));
+            runFuzzers(unresolvedSeedData, seedFuzzers);
         }
     }
 
