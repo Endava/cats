@@ -115,4 +115,23 @@ class FieldCorrelationEvaluatorTest {
                 "/risk-rules", fuzzedPayload, rules, Map.of(), Set.of("counter#metricField"));
         Assertions.assertThat(preserved).contains("\"metricField\":\"FUZZED_VAL\"");
     }
+
+    @Test
+    void shouldExpandWildcardArrayCorrelationsPerElement() throws Exception {
+        File riskCorr = new File("/Users/madalinilie/repos/xelerator_risk/risk-correlations.yml");
+        if (!riskCorr.exists()) {
+            return;
+        }
+        List<FieldCorrelationRule> rules = FunctionalFlowParser.parseCorrelationFile(riskCorr);
+        String test6Payload = """
+                {"expression":{"type":"CONDITION"},"ruleType":"VELOCITY","name":"Rule-Old","velocityDefinitions":[{"name":"c1","metricField":"amount","dimension":"cardBin","metric":"COUNT"},{"name":"c2","metricField":"RANDOM","dimension":"ipv4","metric":"DISTINCT_COUNT"}]}
+                """;
+        String updated = FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/risk-rules", test6Payload, rules, Map.of(), Set.of());
+        Assertions.assertThat(updated)
+                .doesNotContain("\"metricField\":\"amount\"")
+                .contains("\"metricField\":\"country\"")
+                .contains("\"operator\":\"EQ\"")
+                .doesNotContain("Rule-Old");
+    }
 }

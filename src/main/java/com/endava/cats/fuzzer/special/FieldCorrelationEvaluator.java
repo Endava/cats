@@ -5,6 +5,8 @@ import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRul
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang3.StringUtils;
@@ -52,12 +54,70 @@ public final class FieldCorrelationEvaluator {
         }
         String updated = jsonPayload;
         for (FieldCorrelationRule rule : rules) {
-            if (matchesPathPattern(contractPath, rule.paths())
-                    && evaluateBooleanExpression(rule.when(), updated, null, null, variables)) {
-                updated = applyRuleMutations(updated, rule, variables, protectedFields);
+            if (!matchesPathPattern(contractPath, rule.paths())) {
+                continue;
+            }
+            for (FieldCorrelationRule expandedRule : expandWildcardArrayRule(updated, rule)) {
+                if (evaluateBooleanExpression(expandedRule.when(), updated, null, null, variables)) {
+                    updated = applyRuleMutations(updated, expandedRule, variables, protectedFields);
+                }
             }
         }
         return updated;
+    }
+
+    private static List<FieldCorrelationRule> expandWildcardArrayRule(String payload, FieldCorrelationRule rule) {
+        String wildcardPrefix = findWildcardArrayPrefix(rule);
+        if (wildcardPrefix == null) {
+            return List.of(rule);
+        }
+        Object arrayObj = JsonUtils.getVariableFromJson(payload, normalizeFieldPath(wildcardPrefix));
+        if (!(arrayObj instanceof List<?> list) || list.isEmpty()) {
+            return List.of();
+        }
+        List<FieldCorrelationRule> expanded = new ArrayList<>(list.size());
+        String token = wildcardPrefix + "[*]";
+        for (int i = 0; i < list.size(); i++) {
+            String indexed = wildcardPrefix + "[" + i + "]";
+            String when = rule.when() == null ? null : rule.when().replace(token, indexed);
+            Map<String, Object> set = new java.util.LinkedHashMap<>();
+            Optional.ofNullable(rule.set()).orElse(Map.of())
+                    .forEach((k, v) -> set.put(k.replace(token, indexed), v));
+            List<String> omit = Optional.ofNullable(rule.omit()).orElse(List.of()).stream()
+                    .map(o -> o.replace(token, indexed))
+                    .toList();
+            expanded.add(new FieldCorrelationRule(rule.paths(), when, set, omit));
+        }
+        return expanded;
+    }
+
+    private static String findWildcardArrayPrefix(FieldCorrelationRule rule) {
+        if (rule.when() != null && rule.when().contains("[*]")) {
+            return extractPrefixBeforeWildcard(rule.when());
+        }
+        for (String omit : Optional.ofNullable(rule.omit()).orElse(List.of())) {
+            if (omit.contains("[*]")) {
+                return extractPrefixBeforeWildcard(omit);
+            }
+        }
+        for (String key : Optional.ofNullable(rule.set()).orElse(Map.of()).keySet()) {
+            if (key.contains("[*]")) {
+                return extractPrefixBeforeWildcard(key);
+            }
+        }
+        return null;
+    }
+
+    private static String extractPrefixBeforeWildcard(String text) {
+        int idx = text.indexOf("[*]");
+        if (idx <= 0) {
+            return null;
+        }
+        int start = idx - 1;
+        while (start >= 0 && (Character.isLetterOrDigit(text.charAt(start)) || text.charAt(start) == '.' || text.charAt(start) == '_' || text.charAt(start) == '#')) {
+            start--;
+        }
+        return text.substring(start + 1, idx);
     }
 
     private static String applyRuleMutations(String payload, FieldCorrelationRule rule,
@@ -65,8 +125,8 @@ public final class FieldCorrelationEvaluator {
         String current = payload;
         for (String omitField : Optional.ofNullable(rule.omit()).orElse(List.of())) {
             String normalizedPath = normalizeFieldPath(omitField);
-            if (!isFieldProtected(normalizedPath, protectedFields) && JsonUtils.isFieldInJson(current, normalizedPath)) {
-                current = JsonUtils.deleteNode(current, normalizedPath);
+            if (!isFieldProtected(normalizedPath, protectedFields)) {
+                current = deleteFieldAtPath(current, normalizedPath);
             }
         }
         for (Map.Entry<String, Object> entry : Optional.ofNullable(rule.set()).orElse(Map.of()).entrySet()) {
@@ -83,28 +143,69 @@ public final class FieldCorrelationEvaluator {
         if (protectedFields == null || protectedFields.isEmpty()) {
             return false;
         }
-        String leaf = normalizedPath.contains("#")
-                ? normalizedPath.substring(normalizedPath.lastIndexOf('#') + 1)
-                : normalizedPath;
-        return protectedFields.contains(normalizedPath) || protectedFields.contains(leaf);
+        String unindexed = normalizedPath.replaceAll("\\[\\d+]", "");
+        String leaf = unindexed.contains("#")
+                ? unindexed.substring(unindexed.lastIndexOf('#') + 1)
+                : unindexed;
+        return protectedFields.contains(normalizedPath)
+                || protectedFields.contains(unindexed)
+                || protectedFields.contains(leaf);
+    }
+
+    private static String deleteFieldAtPath(String jsonPayload, String fieldPath) {
+        if (!fieldPath.contains("[")) {
+            return JsonUtils.isFieldInJson(jsonPayload, fieldPath)
+                    ? JsonUtils.deleteNode(jsonPayload, fieldPath)
+                    : jsonPayload;
+        }
+        JsonObject root = JsonParser.parseString(StringUtils.defaultIfBlank(jsonPayload, "{}")).getAsJsonObject();
+        JsonObject parent = navigateToParentObject(root, fieldPath.split("#", -1));
+        if (parent == null) {
+            return jsonPayload;
+        }
+        String[] parts = fieldPath.split("#", -1);
+        parent.remove(parts[parts.length - 1]);
+        return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(root);
     }
 
     public static String setOrInsertField(String jsonPayload, String fieldPath, Object value) {
-        if (JsonUtils.isFieldInJson(jsonPayload, fieldPath)) {
+        if (!fieldPath.contains("[") && JsonUtils.isFieldInJson(jsonPayload, fieldPath)) {
             return CatsUtil.justReplaceField(jsonPayload, fieldPath, value).json();
         }
         JsonObject root = JsonParser.parseString(StringUtils.defaultIfBlank(jsonPayload, "{}")).getAsJsonObject();
         String[] parts = fieldPath.split("#", -1);
+        JsonObject parent = navigateToParentObject(root, parts);
+        if (parent == null) {
+            return jsonPayload;
+        }
+        parent.add(parts[parts.length - 1], JsonUtils.GSON_NO_PRETTY_PRINTING.toJsonTree(value));
+        return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(root);
+    }
+
+    private static JsonObject navigateToParentObject(JsonObject root, String[] parts) {
         JsonObject current = root;
         for (int i = 0; i < parts.length - 1; i++) {
             String segment = parts[i];
-            if (!current.has(segment) || !current.get(segment).isJsonObject()) {
-                return jsonPayload;
+            int bracketOpen = segment.indexOf('[');
+            if (bracketOpen > 0 && segment.endsWith("]")) {
+                String arrayName = segment.substring(0, bracketOpen);
+                int index = Integer.parseInt(segment.substring(bracketOpen + 1, segment.length() - 1));
+                if (!current.has(arrayName) || !current.get(arrayName).isJsonArray()) {
+                    return null;
+                }
+                JsonArray arr = current.getAsJsonArray(arrayName);
+                if (index < 0 || index >= arr.size() || !arr.get(index).isJsonObject()) {
+                    return null;
+                }
+                current = arr.get(index).getAsJsonObject();
+            } else {
+                if (!current.has(segment) || !current.get(segment).isJsonObject()) {
+                    return null;
+                }
+                current = current.getAsJsonObject(segment);
             }
-            current = current.getAsJsonObject(segment);
         }
-        current.add(parts[parts.length - 1], JsonUtils.GSON_NO_PRETTY_PRINTING.toJsonTree(value));
-        return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(root);
+        return current;
     }
 
     private static Object resolveRuleValue(Object rawValue, String requestJson, Map<String, String> variables) {
