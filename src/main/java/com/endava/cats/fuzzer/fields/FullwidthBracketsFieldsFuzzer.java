@@ -44,7 +44,7 @@ class FullwidthBracketsFieldsFuzzer extends ExpectOnly2XXBaseFieldsFuzzer {
 
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
-        return ResponseCodeFamilyPredefined.FOURXX;
+        return ResponseCodeFamilyPredefined.FOURXX_TWOXX;
     }
 
     @Override

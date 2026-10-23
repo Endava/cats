@@ -233,6 +233,9 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
                 return true;
             }
             String sanitized = this.sanitizeString(fieldValue);
+            if (fieldValue != null && fieldSchema.getMaxLength() != null && sanitized.length() > fieldSchema.getMaxLength()) {
+                return false;
+            }
             if (fieldValue != null && fieldSchema.getEnum() != null && !fieldSchema.getEnum().isEmpty()) {
                 return fieldSchema.getEnum().stream().anyMatch(enumVal -> String.valueOf(enumVal).equals(sanitized));
             }
@@ -294,7 +297,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      * @return the initial value with unicode control chars removed
      */
     private String sanitizeString(Object fieldValue) {
-        return String.valueOf(fieldValue).replaceAll("\\p{C}", "");
+        return FuzzingStrategy.stripSpecialAndInvisibleChars(String.valueOf(fieldValue));
     }
 
     private boolean hasMinValue(FuzzingData data, String fuzzedField) {

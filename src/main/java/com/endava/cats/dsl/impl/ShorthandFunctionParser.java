@@ -34,6 +34,7 @@ import java.util.function.Function;
 public class ShorthandFunctionParser implements Parser {
 
     private static final String CROCKFORD_BASE32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+    private static final String[] ISO_COUNTRIES = Locale.getISOCountries();
 
     private static final Map<String, Function<int[], String>> PARAMETERIZED_FUNCTIONS = Map.ofEntries(
             Map.entry("alphanumeric", args -> args.length == 1 ? CatsRandom.alphanumeric(args[0]) : CatsRandom.alphanumeric(args[0], args[1])),
@@ -56,7 +57,9 @@ public class ShorthandFunctionParser implements Parser {
             "ulid", "ulid",
             "email", "email",
             "now", "now",
-            "today", "today"
+            "today", "today",
+            "country", "country",
+            "countrycode", "countrycode"
     );
 
     @Override
@@ -138,6 +141,7 @@ public class ShorthandFunctionParser implements Parser {
             case "email" -> CatsRandom.email();
             case "now" -> OffsetDateTime.now(ZoneOffset.UTC).toString();
             case "today" -> LocalDate.now(ZoneOffset.UTC).toString();
+            case "country", "countrycode" -> ISO_COUNTRIES[CatsRandom.instance().nextInt(ISO_COUNTRIES.length)];
             default -> null;
         };
     }

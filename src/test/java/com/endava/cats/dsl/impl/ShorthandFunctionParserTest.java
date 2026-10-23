@@ -72,6 +72,13 @@ class ShorthandFunctionParserTest {
         }
 
         @Test
+        @DisplayName("Should generate ISO country code")
+        void shouldGenerateCountryCode() {
+            String result = parser.parse("#(countryCode)", Map.of());
+            assertThat(result).hasSize(2).matches("[A-Z]{2}");
+        }
+
+        @Test
         @DisplayName("Should replace embedded shorthands inside strings")
         void shouldReplaceEmbeddedShorthands() {
             String result = parser.parse("Rule-#(alphanumeric(6))-end", Map.of());
