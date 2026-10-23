@@ -236,6 +236,9 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             if (fieldValue != null && fieldSchema.getMaxLength() != null && sanitized.length() > fieldSchema.getMaxLength()) {
                 return false;
             }
+            if (fieldValue != null && fieldSchema.getMinLength() != null && sanitized.length() < fieldSchema.getMinLength()) {
+                return false;
+            }
             if (fieldValue != null && fieldSchema.getEnum() != null && !fieldSchema.getEnum().isEmpty()) {
                 return fieldSchema.getEnum().stream().anyMatch(enumVal -> String.valueOf(enumVal).equals(sanitized));
             }
