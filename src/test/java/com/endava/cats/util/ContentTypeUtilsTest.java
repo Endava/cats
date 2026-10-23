@@ -50,7 +50,8 @@ class ContentTypeUtilsTest {
     void shouldResolveAcceptHeaderForStructuredAndPlainMediaTypes() {
         Assertions.assertThat(ContentTypeUtils.resolveAcceptHeader(null)).isNull();
         Assertions.assertThat(ContentTypeUtils.resolveAcceptHeader(Map.of())).isNull();
-        Assertions.assertThat(ContentTypeUtils.resolveAcceptHeader(Map.of("400", List.of("application/problem+json")))).isNull();
+        Assertions.assertThat(ContentTypeUtils.resolveAcceptHeader(Map.of("204", List.of(), "404", List.of("application/xml"))))
+                .isEqualTo("application/xml");
         Assertions.assertThat(ContentTypeUtils.resolveAcceptHeader(Map.of("200", List.of("application/json")))).isNull();
         Assertions.assertThat(ContentTypeUtils.resolveAcceptHeader(Map.of("200", List.of("*/*")))).isNull();
         Assertions.assertThat(ContentTypeUtils.resolveAcceptHeader(Map.of("200", List.of("application/hal+json"))))

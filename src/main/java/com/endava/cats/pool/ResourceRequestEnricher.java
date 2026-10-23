@@ -410,13 +410,13 @@ final class ResourceRequestEnricher {
         if (query.targetMethod() == HttpMethod.DELETE &&
                 query.target().location() == RequestTarget.Location.PATH &&
                 query.data() != null && query.data().hasDeclaredMutation() &&
-                isLastRemainingActiveResourceAfterDeletions(resource)) {
+                isLastRemainingActiveResourceAfterDeletions(resource, query.data())) {
             return false;
         }
         return !query.canSkipByDirectAlias() || resource.hasAnyAlias(query.matchCtx().allDirectAliases());
     }
 
-    private boolean isLastRemainingActiveResourceAfterDeletions(ResourceInstance candidate) {
+    private boolean isLastRemainingActiveResourceAfterDeletions(ResourceInstance candidate, ServiceData data) {
         int activeSameResource = 0;
         int deletedSameResource = 0;
         for (ResourceInstance r : resources) {
@@ -428,7 +428,9 @@ final class ResourceRequestEnricher {
                 }
             }
         }
-        return activeSameResource <= 1 && deletedSameResource >= 1;
+        boolean headerOnlyDeleteMutation = resources.size() > 1
+                && data.getAllMutationTargets().stream().allMatch(t -> t.location() == RequestTarget.Location.HEADER);
+        return activeSameResource <= 1 && (deletedSameResource >= 1 || headerOnlyDeleteMutation);
     }
 
     private RankedCandidate evaluateResourceForResolve(ResourceInstance resource, ResolutionQuery query,

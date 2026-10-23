@@ -43,7 +43,10 @@ public interface Fuzzer {
 
     default boolean isApplicableTo(FuzzingData data) {
         FieldFuzzer fieldFuzzer = AnnotationUtils.findAnnotation(getClass(), FieldFuzzer.class);
-        return fieldFuzzer == null || data.getPayloadFormat().supportsNamedFields();
+        return fieldFuzzer == null
+                || data.getPayloadFormat().supportsNamedFields()
+                || (data.getReqSchema() != null
+                        && com.endava.cats.io.XmlPayloadEncoder.isXmlContentType(data.getFirstRequestContentType()));
     }
 
     /**

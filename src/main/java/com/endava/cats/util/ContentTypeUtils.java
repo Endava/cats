@@ -99,16 +99,23 @@ public abstract class ContentTypeUtils {
         if (responseContentTypes == null || responseContentTypes.isEmpty()) {
             return null;
         }
-        List<String> twoXxMediaTypes = responseContentTypes.entrySet().stream()
+        List<String> candidateMediaTypes = responseContentTypes.entrySet().stream()
                 .filter(entry -> entry.getKey() != null && entry.getKey().startsWith("2"))
                 .flatMap(entry -> entry.getValue().stream())
                 .filter(mt -> mt != null && !mt.isBlank())
                 .toList();
-        if (twoXxMediaTypes.isEmpty()) {
+        if (candidateMediaTypes.isEmpty()) {
+            candidateMediaTypes = responseContentTypes.values().stream()
+                    .filter(java.util.Objects::nonNull)
+                    .flatMap(List::stream)
+                    .filter(mt -> mt != null && !mt.isBlank())
+                    .toList();
+        }
+        if (candidateMediaTypes.isEmpty()) {
             return null;
         }
-        boolean supportsPlainJsonOrWildcard = twoXxMediaTypes.stream()
+        boolean supportsPlainJsonOrWildcard = candidateMediaTypes.stream()
                 .anyMatch(ContentTypeUtils::isPlainJsonOrWildcard);
-        return supportsPlainJsonOrWildcard ? null : twoXxMediaTypes.getFirst();
+        return supportsPlainJsonOrWildcard ? null : candidateMediaTypes.getFirst();
     }
 }

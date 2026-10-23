@@ -76,6 +76,9 @@ public class ServiceData {
     private final Map<String, Set<String>> enumValuesByField = Map.of();
     @Builder.Default
     private final Set<String> discriminatorFields = Set.of();
+    private final Schema<?> reqSchema;
+    @Builder.Default
+    private final Map<String, Schema> schemaMap = Map.of();
     /** Variables supplied by a custom fuzzer for resolving dynamic request values. */
     @Builder.Default
     private final Map<String, String> dynamicVariables = Map.of();
@@ -98,6 +101,8 @@ public class ServiceData {
                 .queryParameterSerializations(data.getQueryParameterSerializations())
                 .enumValuesByField(extractEnumValuesByField(data))
                 .discriminatorFields(extractDiscriminatorFields(data))
+                .reqSchema(data.getReqSchema())
+                .schemaMap(data.getSchemaMap() == null ? Map.of() : data.getSchemaMap())
                 .httpMethod(data.getMethod())
                 .contentType(data.getFirstRequestContentType())
                 .acceptHeader(resolveAcceptHeader(data))

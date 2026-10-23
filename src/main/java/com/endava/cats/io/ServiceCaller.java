@@ -507,8 +507,15 @@ public class ServiceCaller {
             case TEXT -> new EncodedRequestBody(encodeTextPayload(payload, data.isValidJson()), data.getContentType());
             case NDJSON ->
                     new EncodedRequestBody(encodeNdjsonPayload(payload, data.isValidJson()), data.getContentType());
-            case UNKNOWN ->
-                    throw new IllegalArgumentException("Unsupported request Content-Type '" + data.getContentType() + "'");
+            case UNKNOWN -> {
+                if (XmlPayloadEncoder.isXmlContentType(data.getContentType()) && data.getReqSchema() != null) {
+                    boolean stripRootIdOnPost = data.getHttpMethod() == HttpMethod.POST && !data.hasDeclaredMutation();
+                    yield new EncodedRequestBody(
+                            XmlPayloadEncoder.encode(payload, data.getReqSchema(), data.getSchemaMap(), stripRootIdOnPost),
+                            data.getContentType());
+                }
+                throw new IllegalArgumentException("Unsupported request Content-Type '" + data.getContentType() + "'");
+            }
         };
     }
 
@@ -1041,7 +1048,9 @@ public class ServiceCaller {
     }
 
     private String replacePayloadWithRefData(ServiceData data, String initialPayload) {
-        if (!data.getPayloadFormat().supportsNamedFields() || !data.isReplaceRefData() || "null".equals(initialPayload)) {
+        boolean supportsStructuredFields = data.getPayloadFormat().supportsNamedFields()
+                || (XmlPayloadEncoder.isXmlContentType(data.getContentType()) && data.getReqSchema() != null);
+        if (!supportsStructuredFields || !data.isReplaceRefData() || "null".equals(initialPayload)) {
             logger.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
             return initialPayload;
         } else {

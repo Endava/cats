@@ -30,8 +30,10 @@ final class SuccessfulBaselineStore {
 
     String apply(ServiceData data, boolean reuseEnabled) {
         String currentPayload = data.getPayload();
+        boolean supportsStructured = data.getPayloadFormat().supportsNamedFields()
+                || (com.endava.cats.io.XmlPayloadEncoder.isXmlContentType(data.getContentType()) && data.getReqSchema() != null);
         if (!reuseEnabled || !data.isReplaceRefData() || !data.isValidJson() ||
-                !data.getPayloadFormat().supportsNamedFields() || !JsonUtils.isValidJson(currentPayload)) {
+                !supportsStructured || !JsonUtils.isValidJson(currentPayload)) {
             return currentPayload;
         }
         Optional<SuccessfulBaselineKey> key = baselineKey(data);
@@ -55,8 +57,10 @@ final class SuccessfulBaselineStore {
                 data.getAllMutationTargets().equals(List.of(RequestTarget.query("Optional parameters")));
         boolean fieldRemovalFallback = isSubsetOfOriginalPayload(data, effectivePayload);
         boolean fallbackBaseline = requiredOnlyFallback || fieldRemovalFallback;
+        boolean supportsStructured = data.getPayloadFormat().supportsNamedFields()
+                || (com.endava.cats.io.XmlPayloadEncoder.isXmlContentType(data.getContentType()) && data.getReqSchema() != null);
         if ((ResourceValueExtractor.isRequestBodyFuzzed(data) && !fallbackBaseline) || !data.isReplaceRefData() || !data.isValidJson() ||
-                !data.getPayloadFormat().supportsNamedFields() ||
+                !supportsStructured ||
                 (!HttpMethod.requiresBody(data.getHttpMethod()) && !fallbackBaseline) ||
                 !JsonUtils.isValidJson(effectivePayload)) {
             return;
