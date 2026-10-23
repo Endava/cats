@@ -105,7 +105,7 @@ import java.util.concurrent.TimeUnit;
         abbreviateSynopsis = true,
         synopsisHeading = "@|bold,underline Usage:|@%n",
         customSynopsis = {"@|bold cats|@ @|fg(yellow) -c|@ <CONTRACT> @|fg(yellow) -s|@ <SERVER> [ADDITIONAL OPTIONS]",
-                "@|bold cats (list | replay | run | template | lint | info | stats | validate | random | generate | explain | smoke | compare | init | analyze)|@ [OPTIONS]", "%n"},
+                "@|bold cats (list | replay | run | template | lint | info | stats | validate | random | generate | explain | smoke | compare | init | analyze | triage)|@ [OPTIONS]", "%n"},
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
         exitCodeList = {"@|bold 0|@:Successful program execution",
                 "@|bold 2|@:Usage error: user input for the command was incorrect",
@@ -133,7 +133,8 @@ import java.util.concurrent.TimeUnit;
                 SmokeCommand.class,
                 CompareCommand.class,
                 InitCommand.class,
-                AnalyzeCommand.class
+                AnalyzeCommand.class,
+                TriageCommand.class
         })
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, AutoCloseable {
 
