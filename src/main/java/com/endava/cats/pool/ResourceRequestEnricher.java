@@ -281,6 +281,9 @@ final class ResourceRequestEnricher {
     }
 
     private boolean shouldCollectPrimitiveTarget(RequestTarget.Location location, String key, List<String> targetSegments) {
+        if (ResourceSemanticNaming.isPerRequestTraceKey(key)) {
+            return false;
+        }
         return isParameterOrIdentifier(location, key) ||
                 hasSiblingPostValue(targetSegments, key) ||
                 hasMatchingResourceCollection(targetSegments, key);

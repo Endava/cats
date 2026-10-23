@@ -66,5 +66,15 @@ class DummyContentTypeHeadersFuzzerTest {
     @Test
     void shouldReturn4XXMTResponseCode() {
         Assertions.assertThat(dummyContentTypeHeadersFuzzer.getResponseCodeFamily()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX_MT);
+        FuzzingData getData = FuzzingData.builder().method(HttpMethod.GET).build();
+        FuzzingData postData = FuzzingData.builder().method(HttpMethod.POST).build();
+        Assertions.assertThat(dummyContentTypeHeadersFuzzer.getResponseCodeFamily(getData))
+                .isEqualTo(ResponseCodeFamilyPredefined.FOURXX_TWOXX);
+        Assertions.assertThat(dummyContentTypeHeadersFuzzer.getExpectedResponseCode(getData))
+                .isEqualTo("2XX or 4XX");
+        Assertions.assertThat(dummyContentTypeHeadersFuzzer.getResponseCodeFamily(postData))
+                .isEqualTo(ResponseCodeFamilyPredefined.FOURXX_MT);
+        Assertions.assertThat(dummyContentTypeHeadersFuzzer.getExpectedResponseCode(postData))
+                .isEqualTo("415");
     }
 }

@@ -104,6 +104,8 @@ cats -c openapi.yml -s https://staging.example.com \
   --urlParams "tenantId:acme-corp,region:eu-west-1"
 ```
 
+For domain-specific cross-field constraints (`when:` / `then:` / `where:`) or multi-step workflows (`steps:`), pass `--correlations correlations.yml` or `--functionalTests flows.yml`.
+
 To see the exact dependency order CATS will use for your contract:
 ```shell
 cats list --paths --executionOrder -c openapi.yml
@@ -140,7 +142,7 @@ cats compare -b ./baseline-cats-report -t ./cats-report
 Once your `5XX` errors are fixed and your OpenAPI spec matches your API's `4XX` responses, remove `-b -k`:
 ```shell
 cats -c openapi.yml -s https://ci-env.example.com \
-  -H "Authorization: Bearer $$API_TOKEN" \
+  -H "Authorization=Bearer $$API_TOKEN" \
   --profile ci \
   --stopAfterTimeInSec 180 \
   --qualityGate "errors<1,warn<10"
@@ -165,9 +167,9 @@ cats -c openapi.yml -s https://staging.example.com \
 | `health-check` | First 10-second check that `--server` and auth headers work | `HappyPath` (`1` fuzzer) |
 | `quick` | Fast local smoke test during development | `24` core fuzzers |
 | `ci` | Pull-request CI/CD gate (balanced speed vs. coverage) | `51` fuzzers |
-| `crash` | Maximum `5XX` fault detection on boundary, injection & control chars | `40` high-yield crash fuzzers |
+| `crash` | Maximum `5XX` fault detection on boundary, injection & control chars | `45` high-yield crash fuzzers |
 | `security` | OWASP injection, auth bypass, IDOR, mass assignment & state checks | `41` security fuzzers |
 | `compliance` | OWASP API Security Top 10 (2023) audit | `43` compliance fuzzers |
 | `type-coercion` | Test framework/JSON deserialization coercion (`"123"` as `123`, etc.) | `16` coercion fuzzers |
-| `coverage` | Fast positive + combinatorial field-removal pass to maximize code coverage | `9` coverage fuzzers |
+| `coverage` | Fast positive + combinatorial field-removal pass to maximize code coverage | `10` coverage fuzzers |
 | `full` *(default)* | Comprehensive nightly or pre-release run | All `160+` fuzzers |

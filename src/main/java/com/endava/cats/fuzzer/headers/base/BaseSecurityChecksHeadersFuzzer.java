@@ -73,14 +73,34 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
                             .logger(log)
                             .fuzzingData(data)
                             .fuzzer(this)
-                            .expectedResponseCode(this.getResponseCodeFamily())
-                            .expectedSpecificResponseCode(this.getExpectedResponseCode())
+                            .expectedResponseCode(this.getResponseCodeFamily(data))
+                            .expectedSpecificResponseCode(this.getExpectedResponseCode(data))
                             .matchResponseResult(false)
                             .matchResponseContentType(this.shouldMatchContentType())
                             .headers(headers)
                             .mutationTarget(RequestTarget.header(targetHeaderName()))
                             .build());
         }
+    }
+
+    /**
+     * Returns the expected response code family for the given fuzzing data.
+     *
+     * @param data the current FuzzingData
+     * @return expected response code family
+     */
+    public ResponseCodeFamily getResponseCodeFamily(FuzzingData data) {
+        return this.getResponseCodeFamily();
+    }
+
+    /**
+     * Returns the expected specific response code description for the given fuzzing data.
+     *
+     * @param data the current FuzzingData
+     * @return expected response code description
+     */
+    public String getExpectedResponseCode(FuzzingData data) {
+        return this.getExpectedResponseCode();
     }
 
     /**

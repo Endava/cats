@@ -2176,6 +2176,9 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(enrichedAddress)
                 .contains("\"postalCode\":\"generated-zip\"", "\"promoCode\":\"generated-promo\"");
         Assertions.assertThat(ResourceSemanticNaming.isMetadataKey("code")).isTrue();
+        Assertions.assertThat(ResourceSemanticNaming.isCorrelatableHeader("X-XE-CorrelationId")).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.isCorrelatableHeader("X-XE-IdempotencyKey")).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.isCorrelatableHeader("X-Request-Id")).isFalse();
     }
 
     @Test

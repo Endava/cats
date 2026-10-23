@@ -47,6 +47,8 @@ final class ResourceSemanticNaming {
     private static final Set<String> ITEM_METADATA_WORDS = Set.of(
             "time", "timestamp", "date", "datetime", "status", "httpstatus", "statuscode", "errorcode",
             "message", "error");
+    private static final Set<String> PER_REQUEST_TRACE_SUFFIXES = Set.of(
+            "correlationid", "requestid", "traceid", "spanid", "idempotencykey", "traceparent", "tracestate");
 
     private static final Pattern WORD_BOUNDARY_SPLITTER = Pattern.compile(
             "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[_\\-]+");
@@ -342,7 +344,7 @@ final class ResourceSemanticNaming {
             aliases.addAll(primaryResourceIdentifierAliases(targetPath));
         }
         if (target.location() == RequestTarget.Location.PATH || target.location() == RequestTarget.Location.QUERY
-                || !target.path().contains("#")) {
+                || (target.location() == RequestTarget.Location.BODY && !target.path().contains("#"))) {
             addResourceQualifiedTargetAliases(targetPath, target.name(), aliases);
         }
         if (target.location() == RequestTarget.Location.PATH) {
@@ -354,7 +356,7 @@ final class ResourceSemanticNaming {
     private static void addResourceQualifiedTargetAliases(String targetPath, String targetName, Set<String> aliases) {
         String key = normalize(targetName);
         String resource = resourceName(targetPath);
-        if (key.isEmpty() || SIMPLE_IDENTIFIERS.contains(key) || WordUtils.sameNoun(key, resource)) {
+        if (key.isEmpty() || SIMPLE_IDENTIFIERS.contains(key) || isIdentifierName(targetName) || WordUtils.sameNoun(key, resource)) {
             return;
         }
         Set<String> resourcePrefixes = new LinkedHashSet<>(WordUtils.nounForms(resource));
@@ -445,8 +447,16 @@ final class ResourceSemanticNaming {
         return common;
     }
 
+    static boolean isPerRequestTraceKey(String rawName) {
+        if (StringUtils.isBlank(rawName)) {
+            return false;
+        }
+        String normalized = normalize(rawName);
+        return PER_REQUEST_TRACE_SUFFIXES.stream().anyMatch(normalized::endsWith);
+    }
+
     static boolean isCorrelatableHeader(String rawHeaderName) {
-        if (StringUtils.isBlank(rawHeaderName)) {
+        if (StringUtils.isBlank(rawHeaderName) || isPerRequestTraceKey(rawHeaderName)) {
             return false;
         }
         if (isIdentifierName(rawHeaderName)) {

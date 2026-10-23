@@ -55,6 +55,22 @@ public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzz
     }
 
     @Override
+    public ResponseCodeFamily getResponseCodeFamily(FuzzingData data) {
+        if (data != null && data.getMethod() != null && !HttpMethod.requiresBody(data.getMethod())) {
+            return ResponseCodeFamilyPredefined.FOURXX_TWOXX;
+        }
+        return this.getResponseCodeFamily();
+    }
+
+    @Override
+    public String getExpectedResponseCode(FuzzingData data) {
+        if (data != null && data.getMethod() != null && !HttpMethod.requiresBody(data.getMethod())) {
+            return "2XX or 4XX";
+        }
+        return this.getExpectedResponseCode();
+    }
+
+    @Override
     public List<Set<CatsHeader>> getHeaders(FuzzingData data) {
         if (data.getPayload() == null) {
             return Collections.emptyList();
