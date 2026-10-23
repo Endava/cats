@@ -4,7 +4,10 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingConstraints;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.OpenApiUtils;
 
 /**
  * Abstract base class for fuzzers expecting only 2xx responses for base fields.
@@ -37,5 +40,13 @@ public abstract class ExpectOnly2XXBaseFieldsFuzzer extends BaseFieldsFuzzer {
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
         return ResponseCodeFamilyPredefined.TWOXX;
+    }
+
+    @Override
+    protected ResponseCodeFamily getExpectedResponseCodeBasedOnConstraints(FuzzingData data, String fuzzedField, boolean isFuzzedValueMatchingPattern, FuzzingConstraints fuzzingConstraints) {
+        if (data.getPath() != null && OpenApiUtils.getPathVariables(data.getPath()).contains(fuzzedField)) {
+            return this.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern();
+        }
+        return super.getExpectedResponseCodeBasedOnConstraints(data, fuzzedField, isFuzzedValueMatchingPattern, fuzzingConstraints);
     }
 }

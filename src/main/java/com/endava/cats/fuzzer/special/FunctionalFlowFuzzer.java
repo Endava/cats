@@ -26,7 +26,6 @@ import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
-import com.endava.cats.util.OpenApiUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -39,11 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -61,7 +56,6 @@ import java.util.regex.Pattern;
 @SpecialFuzzer
 public class FunctionalFlowFuzzer implements Fuzzer {
     private static final String REF_DATA_CUSTOM_FILE = "refData_custom.yml";
-    private static final String RESPONSE_HEADER_PREFIX = "$header.";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FunctionalFlowFuzzer.class);
     private final FilesArguments filesArguments;
     private final ServiceCaller serviceCaller;
@@ -308,23 +302,15 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         }
 
         String pathParamsPayload = StringUtils.defaultIfBlank(data.getPathParamsPayload(), "{}");
-        for (Map.Entry<String, Object> pathEntry : target.extractedPathParams().entrySet()) {
-            Object resolved = resolveValueAndRecordRefData(data.getContractPath(), pathEntry.getKey(), pathEntry.getValue(), bodyPayload);
-            changedFields.add(pathEntry.getKey());
+        Map<String, Object> combinedUrlParams = new LinkedHashMap<>(target.extractedPathParams());
+        combinedUrlParams.putAll(target.extractedQueryParams());
+        for (Map.Entry<String, Object> paramEntry : combinedUrlParams.entrySet()) {
+            Object resolved = resolveValueAndRecordRefData(data.getContractPath(), paramEntry.getKey(), paramEntry.getValue(), bodyPayload);
+            changedFields.add(paramEntry.getKey());
             if (bodyMethod) {
-                pathParamsPayload = setOrAddJsonField(pathParamsPayload, pathEntry.getKey(), resolved);
+                pathParamsPayload = FieldCorrelationEvaluator.setOrInsertField(pathParamsPayload, paramEntry.getKey(), resolved, true);
             } else {
-                bodyPayload = setOrAddJsonField(bodyPayload, pathEntry.getKey(), resolved);
-            }
-        }
-
-        for (Map.Entry<String, Object> queryEntry : target.extractedQueryParams().entrySet()) {
-            Object resolved = resolveValueAndRecordRefData(data.getContractPath(), queryEntry.getKey(), queryEntry.getValue(), bodyPayload);
-            changedFields.add(queryEntry.getKey());
-            if (bodyMethod) {
-                pathParamsPayload = setOrAddJsonField(pathParamsPayload, queryEntry.getKey(), resolved);
-            } else {
-                bodyPayload = setOrAddJsonField(bodyPayload, queryEntry.getKey(), resolved);
+                bodyPayload = FieldCorrelationEvaluator.setOrInsertField(bodyPayload, paramEntry.getKey(), resolved, true);
             }
         }
 
@@ -447,7 +433,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             }
             return CatsUtil.justReplaceField(jsonPayload, fieldPath, value).json();
         }
-        return setOrAddJsonField(jsonPayload, fieldPath, value);
+        return FieldCorrelationEvaluator.setOrInsertField(jsonPayload, fieldPath, value, true);
     }
 
     private static String mergeNestedObject(String jsonPayload, String topKey, Map<?, ?> mapVal) {
@@ -460,24 +446,6 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             additions.getAsJsonObject().entrySet().forEach(e -> child.add(e.getKey(), e.getValue()));
         }
         root.add(topKey, child);
-        return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(root);
-    }
-
-    private static String setOrAddJsonField(String jsonPayload, String fieldPath, Object value) {
-        if (JsonUtils.isFieldInJson(jsonPayload, fieldPath)) {
-            return CatsUtil.justReplaceField(jsonPayload, fieldPath, value).json();
-        }
-        JsonObject root = JsonParser.parseString(StringUtils.defaultIfBlank(jsonPayload, "{}")).getAsJsonObject();
-        String[] parts = fieldPath.split("#", -1);
-        JsonObject current = root;
-        for (int i = 0; i < parts.length - 1; i++) {
-            String segment = parts[i];
-            if (!current.has(segment) || !current.get(segment).isJsonObject()) {
-                current.add(segment, new JsonObject());
-            }
-            current = current.getAsJsonObject(segment);
-        }
-        current.add(parts[parts.length - 1], JsonUtils.GSON_NO_PRETTY_PRINTING.toJsonTree(value));
         return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(root);
     }
 
@@ -521,24 +489,13 @@ public class FunctionalFlowFuzzer implements Fuzzer {
 
     private String extractValueBySelector(String selector, CatsResponse response,
                                           String requestPayload, String pathParamsPayload) {
-        if ("$".equals(selector) || "$body".equalsIgnoreCase(selector) || "$response.body".equalsIgnoreCase(selector)) {
-            return Optional.ofNullable(response.getBody()).orElse("").trim().replace("\"", "");
-        }
-        if (selector.startsWith(RESPONSE_HEADER_PREFIX) || selector.toLowerCase(Locale.ROOT).startsWith("header.")) {
-            String headerName = selector.contains(".")
-                    ? selector.substring(selector.indexOf('.') + 1)
-                    : selector.substring(RESPONSE_HEADER_PREFIX.length());
-            KeyValuePair<String, String> header = response.getHeader(headerName);
-            return header == null ? JsonUtils.NOT_SET : header.getValue();
-        }
         if (selector.startsWith("$request.")) {
             return CatsDSLParser.parseAndGetResult(selector, Map.of(Parser.REQUEST, requestPayload));
         }
         if (selector.startsWith("$path.")) {
             return CatsDSLParser.parseAndGetResult(selector, Map.of(Parser.PATH, StringUtils.defaultIfBlank(pathParamsPayload, requestPayload)));
         }
-        String cleanSelector = selector.startsWith("$response.") ? selector.substring("$response.".length()) : selector;
-        return String.valueOf(JsonUtils.getVariableFromJson(response.getBody(), FieldCorrelationEvaluator.normalizeFieldPath(cleanSelector)));
+        return CustomFuzzerUtil.extractResponseValue(response, selector);
     }
 
     private void evaluateAndReportStepResult(FunctionalFlowStep step, FuzzingData data, String requestPayload,
@@ -631,22 +588,10 @@ public class FunctionalFlowFuzzer implements Fuzzer {
 
     private void writeRefDataOutputIfRequested() throws IOException {
         if (filesArguments.getRefDataFile() != null) {
-            List<String> refDataLines = Files.readAllLines(filesArguments.getRefDataFile().toPath());
-            List<String> updatedLines = refDataLines.stream().map(this::replaceVariablesInLine).toList();
-            String currentFile = filesArguments.getRefDataFile().getAbsolutePath();
-            Path outFile = Paths.get(currentFile.substring(0, currentFile.lastIndexOf('.')) + "_replaced.yml");
-            Files.write(outFile, updatedLines, StandardCharsets.UTF_8);
+            CustomFuzzerUtil.writeReplacedRefDataFile(filesArguments.getRefDataFile(), variables);
         } else if (filesArguments.isCreateRefData()) {
             CatsUtil.writeToYaml(REF_DATA_CUSTOM_FILE, recordedRefDataByPath);
         }
-    }
-
-    private String replaceVariablesInLine(String line) {
-        String result = line;
-        for (Map.Entry<String, String> variable : variables.entrySet()) {
-            result = result.replace("${" + variable.getKey() + "}", variable.getValue());
-        }
-        return result;
     }
 
     @Override

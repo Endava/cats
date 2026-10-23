@@ -42,12 +42,9 @@ class FunctionalFlowFuzzerTest {
 
     @BeforeEach
     void setup() {
-        CatsGlobalContext catsGlobalContext = Mockito.mock(CatsGlobalContext.class);
-        Mockito.when(catsGlobalContext.getCatsConfiguration()).thenReturn(Mockito.mock(CatsConfiguration.class));
         filesArguments = new FilesArguments();
         serviceCaller = Mockito.mock(ServiceCaller.class);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
-        ReflectionTestUtils.setField(testCaseListener, "globalContext", catsGlobalContext);
         fuzzer = new FunctionalFlowFuzzer(filesArguments, serviceCaller, testCaseListener);
     }
 

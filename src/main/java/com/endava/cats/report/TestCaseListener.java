@@ -480,7 +480,7 @@ public class TestCaseListener {
     }
 
     private void notifySummaryObservers(String path, char progressChar) {
-        if (!reportingArguments.isSummaryInConsole()) {
+        if (!reportingArguments.isSummaryInConsole() || globalContext.getCatsConfiguration() == null) {
             return;
         }
         String fuzzer = progressChar == '✔' ? "" : MDC.get(FUZZER) + " ";

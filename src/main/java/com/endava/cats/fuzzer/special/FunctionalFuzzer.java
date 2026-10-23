@@ -13,10 +13,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -101,24 +97,11 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     public void replaceRefData() throws IOException {
         if (filesArguments.getRefDataFile() != null) {
             logger.debug("Replacing variables in refData file with output variables from FunctionalFuzzer!");
-            List<String> refDataLines = Files.readAllLines(filesArguments.getRefDataFile().toPath());
-            List<String> updatedLines = refDataLines.stream().map(this::replaceWithVariable).toList();
-            String currentFile = filesArguments.getRefDataFile().getAbsolutePath();
-            Path file = Paths.get(currentFile.substring(0, currentFile.lastIndexOf(".")) + "_replaced.yml");
-            Files.write(file, updatedLines, StandardCharsets.UTF_8);
+            CustomFuzzerUtil.writeReplacedRefDataFile(filesArguments.getRefDataFile(), customFuzzerUtil.getVariables());
         } else if (filesArguments.isCreateRefData()) {
             logger.debug("Creating refData file with output variables from FunctionalFuzzer!");
             customFuzzerUtil.writeRefDataFileWithOutputVariables();
         }
-    }
-
-    private String replaceWithVariable(String line) {
-        String result = line;
-        for (Map.Entry<String, String> variable : customFuzzerUtil.getVariables().entrySet()) {
-            result = result.replace("${" + variable.getKey() + "}", variable.getValue());
-        }
-
-        return result;
     }
 
     @Override

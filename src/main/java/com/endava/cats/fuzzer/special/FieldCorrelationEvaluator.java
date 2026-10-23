@@ -177,12 +177,16 @@ public final class FieldCorrelationEvaluator {
     }
 
     public static String setOrInsertField(String jsonPayload, String fieldPath, Object value) {
+        return setOrInsertField(jsonPayload, fieldPath, value, false);
+    }
+
+    public static String setOrInsertField(String jsonPayload, String fieldPath, Object value, boolean createMissingParents) {
         if (!fieldPath.contains("[") && JsonUtils.isFieldInJson(jsonPayload, fieldPath)) {
             return CatsUtil.justReplaceField(jsonPayload, fieldPath, value).json();
         }
         JsonObject root = JsonParser.parseString(StringUtils.defaultIfBlank(jsonPayload, "{}")).getAsJsonObject();
         String[] parts = fieldPath.split("#", -1);
-        JsonObject parent = navigateToParentObject(root, parts);
+        JsonObject parent = navigateToParentObject(root, parts, createMissingParents);
         if (parent == null) {
             return jsonPayload;
         }
@@ -191,6 +195,10 @@ public final class FieldCorrelationEvaluator {
     }
 
     private static JsonObject navigateToParentObject(JsonObject root, String[] parts) {
+        return navigateToParentObject(root, parts, false);
+    }
+
+    private static JsonObject navigateToParentObject(JsonObject root, String[] parts, boolean createMissingParents) {
         JsonObject current = root;
         for (int i = 0; i < parts.length - 1; i++) {
             String segment = parts[i];
@@ -208,7 +216,10 @@ public final class FieldCorrelationEvaluator {
                 current = arr.get(index).getAsJsonObject();
             } else {
                 if (!current.has(segment) || !current.get(segment).isJsonObject()) {
-                    return null;
+                    if (!createMissingParents) {
+                        return null;
+                    }
+                    current.add(segment, new JsonObject());
                 }
                 current = current.getAsJsonObject(segment);
             }
@@ -344,30 +355,52 @@ public final class FieldCorrelationEvaluator {
                                          CatsResponse response,
                                          Map<String, String> variables) {
         String trimmed = token.trim();
+        Optional<Object> literalOrVar = resolveLiteralOrVariable(trimmed, variables);
+        if (literalOrVar.isPresent()) {
+            return literalOrVar.get();
+        }
+        Optional<Object> metadata = resolveResponseMetadata(trimmed, requestJson, responseJson, response);
+        if (metadata.isPresent()) {
+            return metadata.get();
+        }
+        return resolveJsonFieldOperand(trimmed, requestJson, responseJson, variables);
+    }
+
+    private static Optional<Object> resolveLiteralOrVariable(String trimmed, Map<String, String> variables) {
         if ((trimmed.startsWith("'") && trimmed.endsWith("'")) || (trimmed.startsWith("\"") && trimmed.endsWith("\""))) {
-            return DynamicValueResolver.resolve(trimmed.substring(1, trimmed.length() - 1), variables);
+            return Optional.ofNullable(DynamicValueResolver.resolve(trimmed.substring(1, trimmed.length() - 1), variables));
         }
         if ("true".equalsIgnoreCase(trimmed) || "false".equalsIgnoreCase(trimmed)) {
-            return Boolean.valueOf(trimmed);
+            return Optional.of(Boolean.valueOf(trimmed));
         }
         if (trimmed.matches("-?\\d+(\\.\\d+)?")) {
-            return new BigDecimal(trimmed);
+            return Optional.of(new BigDecimal(trimmed));
         }
         if (trimmed.startsWith("${") && trimmed.endsWith("}") && variables != null) {
             String varKey = trimmed.substring(2, trimmed.length() - 1);
-            return variables.getOrDefault(varKey, JsonUtils.NOT_SET);
+            return Optional.of(variables.getOrDefault(varKey, JsonUtils.NOT_SET));
         }
+        return Optional.empty();
+    }
+
+    private static Optional<Object> resolveResponseMetadata(String trimmed, String requestJson,
+                                                            String responseJson, CatsResponse response) {
         if (("responseTimeMs".equalsIgnoreCase(trimmed) || "$responseTimeMs".equalsIgnoreCase(trimmed) || "time".equalsIgnoreCase(trimmed))
                 && response != null) {
-            return response.getResponseTimeInMs();
+            return Optional.of(response.getResponseTimeInMs());
         }
         if (("$status".equalsIgnoreCase(trimmed) || "status".equalsIgnoreCase(trimmed)) && response != null) {
-            return response.getResponseCode();
+            return Optional.of(response.getResponseCode());
         }
         if (trimmed.toLowerCase(Locale.ROOT).startsWith("size(") && trimmed.endsWith(")")) {
             String innerField = trimmed.substring(5, trimmed.length() - 1).trim();
-            return evaluateCollectionSize(innerField, responseJson != null ? responseJson : requestJson);
+            return Optional.of(evaluateCollectionSize(innerField, responseJson != null ? responseJson : requestJson));
         }
+        return Optional.empty();
+    }
+
+    private static Object resolveJsonFieldOperand(String trimmed, String requestJson,
+                                                  String responseJson, Map<String, String> variables) {
         if (trimmed.startsWith("$request.")) {
             return lookupJsonPath(requestJson, trimmed.substring("$request.".length()));
         }

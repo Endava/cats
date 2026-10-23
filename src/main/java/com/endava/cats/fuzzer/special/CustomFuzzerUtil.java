@@ -349,8 +349,14 @@ public class CustomFuzzerUtil {
     }
 
     private String getResponseValue(CatsResponse response, String selector) {
-        if (selector.startsWith(RESPONSE_HEADER_PREFIX)) {
-            String headerName = selector.substring(RESPONSE_HEADER_PREFIX.length());
+        return extractResponseValue(response, selector);
+    }
+
+    static String extractResponseValue(CatsResponse response, String selector) {
+        if (selector.startsWith(RESPONSE_HEADER_PREFIX) || selector.toLowerCase(java.util.Locale.ROOT).startsWith("header.")) {
+            String headerName = selector.contains(".")
+                    ? selector.substring(selector.indexOf('.') + 1)
+                    : selector.substring(RESPONSE_HEADER_PREFIX.length());
             KeyValuePair<String, String> header = response.getHeader(headerName);
             return header == null ? JsonUtils.NOT_SET : header.getValue();
         }
@@ -358,7 +364,22 @@ public class CustomFuzzerUtil {
                 && StringUtils.isNotBlank(response.getBody())) {
             return response.getBody().trim().replace("\"", "");
         }
-        return String.valueOf(JsonUtils.getVariableFromJson(response.getBody(), selector));
+        String cleanSelector = selector.startsWith("$response.") ? selector.substring("$response.".length()) : selector;
+        return String.valueOf(JsonUtils.getVariableFromJson(response.getBody(), FieldCorrelationEvaluator.normalizeFieldPath(cleanSelector)));
+    }
+
+    static void writeReplacedRefDataFile(java.io.File refDataFile, Map<String, String> variables) throws IOException {
+        List<String> refDataLines = java.nio.file.Files.readAllLines(refDataFile.toPath());
+        List<String> updatedLines = refDataLines.stream().map(line -> {
+            String result = line;
+            for (Map.Entry<String, String> variable : variables.entrySet()) {
+                result = result.replace("${" + variable.getKey() + "}", variable.getValue());
+            }
+            return result;
+        }).toList();
+        String currentFile = refDataFile.getAbsolutePath();
+        java.nio.file.Path outFile = java.nio.file.Paths.get(currentFile.substring(0, currentFile.lastIndexOf('.')) + "_replaced.yml");
+        java.nio.file.Files.write(outFile, updatedLines, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     private static Map.Entry<String, String> remapCheckBoolean(Map.Entry<String, String> entry) {
