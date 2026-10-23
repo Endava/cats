@@ -599,6 +599,24 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(elapsedMs).isLessThan(500L);
     }
 
+    @Test
+    void shouldNotThrowStackOverflowErrorOnCyclicOneOfAndAllOfSchemas() {
+        Schema<?> parent = new Schema<>();
+        parent.setOneOf(List.of(new Schema<>().$ref("#/components/schemas/ChildTrue")));
+        ObjectSchema child = new ObjectSchema();
+        child.addProperty("operator", new StringSchema()._default("isTrue"));
+        child.setAllOf(List.of(new Schema<>().$ref("#/components/schemas/ParentBoolean")));
+        globalContext.getSchemaMap().put("ParentBoolean", parent);
+        globalContext.getSchemaMap().put("ChildTrue", child);
+
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 2, true, 2, "UPPER_SNAKE_CASE", 5);
+        List<String> generated = generator.generate("ParentBoolean");
+
+        Assertions.assertThat(generated).isNotEmpty();
+        Assertions.assertThat(generated.getFirst()).contains("isTrue");
+    }
+
     private OpenAPIModelGeneratorV2 generatorFor(String testResource) throws IOException {
         ParseOptions options = new ParseOptions();
         options.setResolve(true);

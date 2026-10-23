@@ -785,6 +785,62 @@ class CatsCommandTest {
     }
 
     @Test
+    void shouldRunWaveFourNonDeletesAcrossAllPathsBeforeChildFirstDeletes() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> executionOrder = new ArrayList<>();
+        HappyPathFuzzer happy = Mockito.mock(HappyPathFuzzer.class);
+        Mockito.when(happy.skipForHttpMethods()).thenReturn(List.of());
+        Mockito.when(happy.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(happy.toString()).thenReturn("HappyPath");
+        Mockito.doAnswer(inv -> {
+            FuzzingData d = inv.getArgument(0);
+            executionOrder.add("HappyPath:" + d.getMethod() + " " + d.getPath());
+            return null;
+        }).when(happy).fuzz(Mockito.any());
+
+        Fuzzer wave4Fuzzer = Mockito.mock(Fuzzer.class);
+        Mockito.when(wave4Fuzzer.skipForHttpMethods()).thenReturn(List.of());
+        Mockito.when(wave4Fuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(wave4Fuzzer.toString()).thenReturn("ExtraHeaders");
+        Mockito.doAnswer(inv -> {
+            FuzzingData d = inv.getArgument(0);
+            executionOrder.add("ExtraHeaders:" + d.getMethod() + " " + d.getPath());
+            return null;
+        }).when(wave4Fuzzer).fuzz(Mockito.any());
+
+        PathItem parentPath = new PathItem().get(new Operation()).delete(new Operation());
+        PathItem childCollectionPath = new PathItem().post(new Operation());
+        PathItem childItemPath = new PathItem().delete(new Operation());
+        OpenAPI api = new OpenAPI().paths(new Paths()
+                .addPathItem("/watchlists/{id}", parentPath)
+                .addPathItem("/watchlists/{id}/entries", childCollectionPath)
+                .addPathItem("/watchlists/{id}/entries/{entryId}", childItemPath));
+        Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of(
+                "/watchlists/{id}", "/watchlists/{id}/entries", "/watchlists/{id}/entries/{entryId}"));
+        Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
+        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                .thenReturn(List.of(happy, wave4Fuzzer));
+        Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/watchlists/{id}"), fuzzingData(HttpMethod.DELETE, "/watchlists/{id}")))
+                .when(fuzzingDataFactory).fromPathItem("/watchlists/{id}", parentPath, api);
+        Mockito.doReturn(List.of(fuzzingData(HttpMethod.POST, "/watchlists/{id}/entries")))
+                .when(fuzzingDataFactory).fromPathItem("/watchlists/{id}/entries", childCollectionPath, api);
+        Mockito.doReturn(List.of(fuzzingData(HttpMethod.DELETE, "/watchlists/{id}/entries/{entryId}")))
+                .when(fuzzingDataFactory).fromPathItem("/watchlists/{id}/entries/{entryId}", childItemPath, api);
+
+        catsMain.startFuzzing(api);
+
+        Assertions.assertThat(executionOrder).containsExactly(
+                "HappyPath:GET /watchlists/{id}",
+                "HappyPath:POST /watchlists/{id}/entries",
+                "ExtraHeaders:GET /watchlists/{id}",
+                "ExtraHeaders:POST /watchlists/{id}/entries",
+                "ExtraHeaders:DELETE /watchlists/{id}/entries/{entryId}",
+                "ExtraHeaders:DELETE /watchlists/{id}",
+                "HappyPath:DELETE /watchlists/{id}/entries/{entryId}",
+                "HappyPath:DELETE /watchlists/{id}");
+    }
+
+    @Test
     void shouldRunBinaryStreamPathsBeforeDeferredDeletesAndExecuteDeletesAndRandomTailUnderTimeLimit() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
         List<String> executionOrder = new ArrayList<>();

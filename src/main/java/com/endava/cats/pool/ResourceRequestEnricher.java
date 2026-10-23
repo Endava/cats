@@ -407,7 +407,28 @@ final class ResourceRequestEnricher {
         if (query.destructivePathTarget() && isSelfIdentityGetResource(resource)) {
             return false;
         }
+        if (query.targetMethod() == HttpMethod.DELETE &&
+                query.target().location() == RequestTarget.Location.PATH &&
+                query.data() != null && query.data().hasDeclaredMutation() &&
+                isLastRemainingActiveResourceAfterDeletions(resource)) {
+            return false;
+        }
         return !query.canSkipByDirectAlias() || resource.hasAnyAlias(query.matchCtx().allDirectAliases());
+    }
+
+    private boolean isLastRemainingActiveResourceAfterDeletions(ResourceInstance candidate) {
+        int activeSameResource = 0;
+        int deletedSameResource = 0;
+        for (ResourceInstance r : resources) {
+            if (!r.fuzzed() && !Collections.disjoint(r.resourceNameForms(), candidate.resourceNameForms())) {
+                if (r.active()) {
+                    activeSameResource++;
+                } else {
+                    deletedSameResource++;
+                }
+            }
+        }
+        return activeSameResource <= 1 && deletedSameResource >= 1;
     }
 
     private RankedCandidate evaluateResourceForResolve(ResourceInstance resource, ResolutionQuery query,

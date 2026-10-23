@@ -661,7 +661,8 @@ public class FuzzingDataFactory {
         }
         if (!processingArguments.isCustomContentTypeSupplied()
                 && processingArguments.getContentType() != null
-                && processingArguments.getContentType().size() > 1) {
+                && processingArguments.getContentType().size() > 1
+                && content.keySet().stream().anyMatch(k -> k != null && k.toLowerCase(Locale.ROOT).contains("xml"))) {
             return new SelectedMediaType(defaultRequestContentType(), new NoMediaType());
         }
         return null;

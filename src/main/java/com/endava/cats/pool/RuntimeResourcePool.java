@@ -358,7 +358,7 @@ public class RuntimeResourcePool {
                 effectiveRequestPayload, response.getBody(), requestObjects.size(), responseObjects.size());
         boolean fuzzedRequest = ResourceValueExtractor.isFuzzedRequest(data);
         int limit = Math.min(responseObjects.size(), ResourceValueExtractor.MAX_COLLECTION_ITEMS);
-        String collectionResource = ResourceSemanticNaming.resourceName(data.getRelativePath());
+        String collectionResource = ResourceSemanticNaming.lastRawResourceSegment(data.getRelativePath());
         Optional<String> inferredCollectionKey = data.getHttpMethod() == HttpMethod.GET &&
                 ResourceSemanticNaming.isCollectionPath(data.getRelativePath())
                 ? ResourceValueExtractor.inferObjectArrayKeyField(

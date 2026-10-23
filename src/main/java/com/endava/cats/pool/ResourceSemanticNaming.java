@@ -284,6 +284,32 @@ final class ResourceSemanticNaming {
         }
     }
 
+    static String lastRawResourceSegment(String path) {
+        List<String> segments = pathSegments(path);
+        for (int i = segments.size() - 1; i >= 0; i--) {
+            if (!isTemplateSegment(segments.get(i))) {
+                return segments.get(i);
+            }
+        }
+        return "resource";
+    }
+
+    static Set<String> resourceWithTailWordForms(String rawSegment) {
+        String normalized = normalize(rawSegment);
+        if (normalized.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> forms = new LinkedHashSet<>(WordUtils.nounForms(normalized));
+        List<String> words = splitWords(rawSegment);
+        if (words.size() >= 2) {
+            String tailWord = normalize(words.getLast());
+            if (!tailWord.isEmpty()) {
+                forms.addAll(WordUtils.nounForms(tailWord));
+            }
+        }
+        return forms;
+    }
+
     static Set<String> resourceIdentifierAliases(String path) {
         List<String> segments = pathSegments(path);
         int lastResourceIndex = -1;
@@ -301,19 +327,22 @@ final class ResourceSemanticNaming {
             startIndex--;
         }
         Set<String> aliases = new LinkedHashSet<>();
-        segments.subList(startIndex, lastResourceIndex + 1).stream()
-                .map(ResourceSemanticNaming::normalize)
-                .filter(StringUtils::isNotBlank)
-                .forEach(resource -> addFormsWithSuffix(resource, "id", aliases));
+        for (String seg : segments.subList(startIndex, lastResourceIndex + 1)) {
+            for (String form : resourceWithTailWordForms(seg)) {
+                aliases.add(form + "id");
+            }
+        }
         return aliases;
     }
 
     static Set<String> primaryResourceIdentifierAliases(String path) {
-        String resource = resourceName(path);
+        String rawResource = lastRawResourceSegment(path);
         Set<String> aliases = new LinkedHashSet<>();
-        for (String suffix : SIMPLE_IDENTIFIERS) {
-            addFormsWithSuffix(resource, suffix, aliases);
-            addFormsWithSuffix(resource, suffix + "s", aliases);
+        for (String form : resourceWithTailWordForms(rawResource)) {
+            for (String suffix : SIMPLE_IDENTIFIERS) {
+                aliases.add(form + suffix);
+                aliases.add(form + suffix + "s");
+            }
         }
         return aliases;
     }

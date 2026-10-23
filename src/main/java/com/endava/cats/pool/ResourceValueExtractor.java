@@ -272,7 +272,7 @@ final class ResourceValueExtractor {
         if (ResourceSemanticNaming.COLLECTION_WRAPPER_SEGMENTS.contains(normCollection)) {
             return Optional.empty();
         }
-        Set<String> ownIdAliases = buildOwnIdAliases(normCollection);
+        Set<String> ownIdAliases = buildOwnIdAliases(collectionOrArrayName);
         JsonObject first = objects.getFirst();
         if (hasExplicitOwnIdentifier(first, ownIdAliases)) {
             return Optional.empty();
@@ -289,12 +289,12 @@ final class ResourceValueExtractor {
         return Optional.ofNullable(bestProp);
     }
 
-    private static Set<String> buildOwnIdAliases(String normCollection) {
+    private static Set<String> buildOwnIdAliases(String rawCollection) {
         Set<String> ownIdAliases = new LinkedHashSet<>(ResourceSemanticNaming.SIMPLE_IDENTIFIERS);
-        if (!normCollection.isEmpty()) {
-            Set<String> collectionForms = WordUtils.nounForms(normCollection);
-            ResourceSemanticNaming.SIMPLE_IDENTIFIERS.forEach(suffix ->
-                    collectionForms.forEach(form -> ownIdAliases.add(form + suffix)));
+        for (String form : ResourceSemanticNaming.resourceWithTailWordForms(rawCollection)) {
+            for (String suffix : ResourceSemanticNaming.SIMPLE_IDENTIFIERS) {
+                ownIdAliases.add(form + suffix);
+            }
         }
         return ownIdAliases;
     }

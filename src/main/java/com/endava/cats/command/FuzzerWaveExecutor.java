@@ -254,8 +254,35 @@ final class FuzzerWaveExecutor {
     private void runRemainingWaveAndSecondPhase(List<PreparedPath> preparedPaths,
                                                 Set<String> coverageWaveFuzzers, Set<String> crashWaveFuzzers) {
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 4, 4, "Full"));
-        runNonSeedWaveAcrossPaths(preparedPaths,
-                fuzzer -> !isInWave(fuzzer, coverageWaveFuzzers) && !isInWave(fuzzer, crashWaveFuzzers), true);
+        java.util.function.Predicate<Fuzzer> remainingFilter =
+                fuzzer -> !isInWave(fuzzer, coverageWaveFuzzers) && !isInWave(fuzzer, crashWaveFuzzers);
+        for (PreparedPath path : preparedPaths) {
+            if (!path.binaryStreamOnly() && (!path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty())) {
+                CatsExecutionCancelledException.check();
+                List<Fuzzer> waveFuzzers = nonSeedFuzzers(path.fuzzersToRun()).stream()
+                        .filter(remainingFilter)
+                        .toList();
+                List<FuzzingData> nonDeleteData = path.filteredFuzzingData().stream()
+                        .filter(data -> data.getMethod() != HttpMethod.DELETE)
+                        .toList();
+                runFuzzers(nonDeleteData, waveFuzzers);
+                runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
+            }
+        }
+        for (int i = preparedPaths.size() - 1; i >= 0; i--) {
+            PreparedPath path = preparedPaths.get(i);
+            if (!path.binaryStreamOnly() && (!path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty())) {
+                CatsExecutionCancelledException.check();
+                List<Fuzzer> waveFuzzers = nonSeedFuzzers(path.fuzzersToRun()).stream()
+                        .filter(remainingFilter)
+                        .toList();
+                List<FuzzingData> deleteData = path.filteredFuzzingData().stream()
+                        .filter(data -> data.getMethod() == HttpMethod.DELETE)
+                        .toList();
+                runFuzzers(deleteData, waveFuzzers);
+                command.executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));
+            }
+        }
     }
 
     private void runNonSeedWaveAcrossPaths(List<PreparedPath> preparedPaths,

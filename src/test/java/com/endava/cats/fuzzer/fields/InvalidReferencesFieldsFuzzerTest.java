@@ -120,4 +120,20 @@ class InvalidReferencesFieldsFuzzerTest {
                 Mockito.eq("Response code expected: [{}]"),
                 Mockito.eq(new Object[]{responseCode}));
     }
+
+    @Test
+    void shouldResolvePathVariableFromPathParamsPayloadWhenRefDataNotProvided() {
+        FuzzingData data = FuzzingData.builder()
+                .path("/items/{id}")
+                .pathParamsPayload("{\"id\":\"42\"}")
+                .method(HttpMethod.GET)
+                .build();
+        invalidReferencesFieldsFuzzer.fuzz(data);
+
+        org.mockito.ArgumentCaptor<com.endava.cats.fuzzer.executor.SimpleExecutorContext> captor =
+                org.mockito.ArgumentCaptor.forClass(com.endava.cats.fuzzer.executor.SimpleExecutorContext.class);
+        Mockito.verify(simpleExecutor, Mockito.times(23)).execute(captor.capture());
+        Assertions.assertThat(captor.getAllValues())
+                .allMatch(ctx -> !ctx.isReplaceUrlParams() && ctx.getPath().startsWith("/items/42") && !ctx.getPath().contains("{id}"));
+    }
 }
