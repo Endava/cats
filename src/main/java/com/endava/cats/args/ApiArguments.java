@@ -122,7 +122,10 @@ public class ApiArguments {
             }
 
             if (!this.server.startsWith("http")) {
-                this.server = serverFromInput + this.server;
+                String baseServer = this.server.startsWith("/") && serverFromInput.endsWith("/")
+                        ? serverFromInput.substring(0, serverFromInput.length() - 1)
+                        : serverFromInput;
+                this.server = baseServer + this.server;
             }
             if (!CatsUtil.isValidURL(this.server) && CatsUtil.isValidURL(serverFromInput)) {
                 this.server = serverFromInput;
@@ -175,7 +178,28 @@ public class ApiArguments {
         if (!openApiServer.startsWith("http")) {
             return openApiServer;
         }
+        if (extractNonRootPath(serverFromInput).isEmpty()) {
+            String openApiBasePath = extractNonRootPath(openApiServer);
+            if (!openApiBasePath.isEmpty()) {
+                return openApiBasePath;
+            }
+        }
         return serverFromInput;
+    }
+
+    private static String extractNonRootPath(String url) {
+        if (url == null || url.isBlank()) {
+            return "";
+        }
+        try {
+            String path = java.net.URI.create(url.trim()).getPath();
+            if (path == null || path.isEmpty() || "/".equals(path)) {
+                return "";
+            }
+            return path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
+        } catch (IllegalArgumentException _) {
+            return "";
+        }
     }
 
     private void validateURL(CommandLine.Model.CommandSpec spec) {

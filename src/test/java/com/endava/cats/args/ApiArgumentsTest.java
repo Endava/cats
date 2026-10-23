@@ -111,7 +111,9 @@ class ApiArgumentsTest {
                 Arguments.of("should replace OpenAPI placeholder with CLI server", "http://api.com", "{apiRoot}/v2", "http://api.com/v2"),
                 Arguments.of("should prefer CLI server over concrete OpenAPI server", "http://localhost:8080", "https://api.example.com", "http://localhost:8080"),
                 Arguments.of("should ignore root protocol-relative Swagger 2 server when CLI server is supplied", "http://localhost:10003", "//localhost:8090", "http://localhost:10003"),
-                Arguments.of("should preserve basePath from protocol-relative Swagger 2 server when CLI server has no path", "http://localhost:10003", "//localhost:31106/app", "http://localhost:10003/app")
+                Arguments.of("should preserve basePath from protocol-relative Swagger 2 server when CLI server has no path", "http://localhost:10003", "//localhost:31106/app", "http://localhost:10003/app"),
+                Arguments.of("should preserve basePath from concrete OpenAPI server when CLI server has no path", "http://localhost:10003", "http://localhost:8080/rest", "http://localhost:10003/rest"),
+                Arguments.of("should keep CLI server path when CLI server already specifies a non-root path", "http://localhost:10003/custom", "http://localhost:8080/rest", "http://localhost:10003/custom")
         );
     }
 
