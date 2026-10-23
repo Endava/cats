@@ -540,7 +540,14 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             filesArguments.setCustomFuzzerFile(null);
             filterArguments.customFilter(FunctionalFlowFuzzer.class.getSimpleName());
         }
+        if (filesArguments.getFunctionalFlowFile() != null) {
+            logger.config(AnsiUtils.bold("FunctionalFlow file: {}"),
+                    AnsiUtils.blue(filesArguments.getFunctionalFlowFile().getCanonicalPath()));
+        }
         filesArguments.loadConfig();
+        if (filesArguments.getCustomFuzzerFile() != null) {
+            logger.warning("The legacy path-grouped FunctionalFuzzer YAML format is deprecated and will be removed in a future release. Please migrate to the sequential 'steps:' FunctionalFlow format.");
+        }
         filterArguments.applyProfile(spec);
     }
 
