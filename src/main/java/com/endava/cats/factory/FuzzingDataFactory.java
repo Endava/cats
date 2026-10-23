@@ -655,7 +655,13 @@ public class FuzzingDataFactory {
             }
         }
         MediaType wildcard = content.get("*/*");
-        return wildcard == null ? null : new SelectedMediaType(defaultRequestContentType(), wildcard);
+        if (wildcard != null) {
+            return new SelectedMediaType(defaultRequestContentType(), wildcard);
+        }
+        if (processingArguments.getContentType() != null && processingArguments.getContentType().size() > 1) {
+            return new SelectedMediaType(defaultRequestContentType(), new NoMediaType());
+        }
+        return null;
     }
 
     private String defaultRequestContentType() {

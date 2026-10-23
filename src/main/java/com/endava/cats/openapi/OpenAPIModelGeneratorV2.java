@@ -72,6 +72,7 @@ public class OpenAPIModelGeneratorV2 {
     private final int maxArraySize;
     private final Map<String, List<GeneratedExample>> examplesCache = new HashMap<>();
     private final Deque<Discriminator> activeDiscriminators = new ArrayDeque<>();
+    private final Set<Schema<?>> activeComposedSchemas = Collections.newSetFromMap(new IdentityHashMap<>());
 
     @Getter
     private final Map<String, Schema> requestDataTypes = new HashMap<>();
@@ -371,9 +372,24 @@ public class OpenAPIModelGeneratorV2 {
             return List.of();
         }
 
+        boolean composed = CatsModelUtils.isComposedSchema(schema);
+        if (composed && !activeComposedSchemas.add(schema)) {
+            if (schema.getProperties() != null && !schema.getProperties().isEmpty()) {
+                return traverseSchemaProperties(schema, name);
+            }
+            return List.of();
+        }
+
         recordRequestSchema(currentProperty, schema);
 
-        List<GeneratedExample> examples = buildExamplesForSchema(name, schema);
+        List<GeneratedExample> examples;
+        try {
+            examples = buildExamplesForSchema(name, schema);
+        } finally {
+            if (composed) {
+                activeComposedSchemas.remove(schema);
+            }
+        }
         if (!bypassExamplesCache) {
             examplesCache.put(cacheKey, examples);
         }
@@ -715,6 +731,9 @@ public class OpenAPIModelGeneratorV2 {
             List<Schema> schemas = CatsModelUtils.getInterfaces(schema).stream().filter(iteratingSchema -> !isNullSchema(iteratingSchema)).toList();
 
             for (Schema subSchema : schemas) {
+                if (examples.size() >= LIMIT_OF_EXAMPLES) {
+                    break;
+                }
                 if (hasValidRef(subSchema)) {
                     Schema resolved = globalContext.getSchemaFromReference(subSchema.get$ref());
                     if (resolved != null) {
