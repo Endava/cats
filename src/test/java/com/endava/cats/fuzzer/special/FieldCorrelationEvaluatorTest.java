@@ -114,6 +114,11 @@ class FieldCorrelationEvaluatorTest {
         String preserved = FieldCorrelationEvaluator.applyRequestCorrelations(
                 "/risk-rules", fuzzedPayload, rules, Map.of(), Set.of("counter#metricField"));
         Assertions.assertThat(preserved).contains("\"metricField\":\"FUZZED_VAL\"");
+
+        String zwspPayload = "{\"counter\":{\"metric\":\"SUM\",\"metricField\":\"am\\u200bount\"},\"expression\":{\"type\":\"CONDITION\"}}";
+        String merged = FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/risk-rules", zwspPayload, rules, Map.of(), Set.of("counter#metricField"));
+        Assertions.assertThat(merged).contains("amo\u200bunt");
     }
 
     @Test

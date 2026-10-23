@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.special;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRule;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
@@ -131,9 +132,16 @@ public final class FieldCorrelationEvaluator {
         }
         for (Map.Entry<String, Object> entry : Optional.ofNullable(rule.set()).orElse(Map.of()).entrySet()) {
             String normalizedPath = normalizeFieldPath(entry.getKey());
+            Object resolvedVal = resolveRuleValue(entry.getValue(), current, variables);
             if (!isFieldProtected(normalizedPath, protectedFields)) {
-                Object resolvedVal = resolveRuleValue(entry.getValue(), current, variables);
                 current = setOrInsertField(current, normalizedPath, resolvedVal);
+            } else if (JsonUtils.isFieldInJson(current, normalizedPath)) {
+                Object currentVal = JsonUtils.getVariableFromJson(current, normalizedPath);
+                FuzzingStrategy strategy = FuzzingStrategy.fromValue(currentVal);
+                if (!"REPLACE".equalsIgnoreCase(strategy.name())) {
+                    Object mergedVal = strategy.process(resolvedVal);
+                    current = setOrInsertField(current, normalizedPath, mergedVal);
+                }
             }
         }
         return current;

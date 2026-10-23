@@ -117,10 +117,14 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
         if (StringUtils.isBlank(valueAsString) || ALL.matcher(valueAsString).matches()) {
             return replace().withData(valueObject);
         }
-        if (isUnicodeControlChar(valueAsString.charAt(0)) || isUnicodeWhitespace(valueAsString.charAt(0)) || isUnicodeOtherSymbol(valueAsString.charAt(0))) {
+        char firstChar = valueAsString.charAt(0);
+        if (isUnicodeControlChar(firstChar) || isUnicodeWhitespace(firstChar)
+                || isUnicodeOtherSymbol(firstChar) || isUnicodeMarkOrFiller(firstChar)) {
             return prefix().withData(replaceSpecialCharsWithEmpty(valueAsString));
         }
-        if (isUnicodeControlChar(valueAsString.charAt(valueAsString.length() - 1)) || isUnicodeWhitespace(valueAsString.charAt(valueAsString.length() - 1)) || isUnicodeOtherSymbol(valueAsString.charAt(valueAsString.length() - 1))) {
+        char lastChar = valueAsString.charAt(valueAsString.length() - 1);
+        if (isUnicodeControlChar(lastChar) || isUnicodeWhitespace(lastChar)
+                || isUnicodeOtherSymbol(lastChar) || isUnicodeMarkOrFiller(lastChar)) {
             return trail().withData(replaceSpecialCharsWithEmpty(valueAsString));
         }
         if (isLargeString(valueAsString)) {
@@ -135,7 +139,21 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
     }
 
     private static String replaceSpecialCharsWithEmpty(String value) {
-        return value.replaceAll("[^\\p{Z}\\p{C}\\p{So}\\p{Sk}\\p{M}]+", "");
+        return value.replaceAll("[^\\p{Z}\\p{C}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0]+", "");
+    }
+
+    /**
+     * Strips invisible control characters, combining marks, and Hangul filler characters from a string.
+     *
+     * @param value input string
+     * @return sanitized string with invisible/combining/filler characters removed
+     */
+    public static String stripSpecialAndInvisibleChars(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        String stripped = value.replaceAll("[\\p{C}\\p{M}\\u115F\\u1160\\u3164\\uFFA0]+", "");
+        return stripped.isEmpty() ? value : stripped;
     }
 
     /**
@@ -152,7 +170,7 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < data.length(); i++) {
             char c = data.charAt(i);
-            if (isUnicodeWhitespace(c) || isUnicodeControlChar(c) || isUnicodeOtherSymbol(c)) {
+            if (isUnicodeWhitespace(c) || isUnicodeControlChar(c) || isUnicodeOtherSymbol(c) || isUnicodeMarkOrFiller(c)) {
                 builder.append(String.format("\\u%04x", (int) c));
             } else {
                 builder.append(c);
@@ -173,6 +191,14 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
 
     private static boolean isUnicodeOtherSymbol(char c) {
         return Character.getType(c) == Character.OTHER_SYMBOL || Character.getType(c) == Character.MODIFIER_SYMBOL;
+    }
+
+    private static boolean isUnicodeMarkOrFiller(char c) {
+        int type = Character.getType(c);
+        return type == Character.NON_SPACING_MARK
+                || type == Character.COMBINING_SPACING_MARK
+                || type == Character.ENCLOSING_MARK
+                || c == '\u115F' || c == '\u1160' || c == '\u3164' || c == '\uFFA0';
     }
 
     static boolean isLargeString(String data) {

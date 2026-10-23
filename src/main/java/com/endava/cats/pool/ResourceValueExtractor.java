@@ -3,6 +3,7 @@ package com.endava.cats.pool;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.RequestTarget;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.WordUtils;
@@ -56,7 +57,7 @@ final class ResourceValueExtractor {
             String segment = templateSegments.get(i);
             if (ResourceSemanticNaming.isTemplateSegment(segment)) {
                 String name = segment.substring(1, segment.length() - 1);
-                String value = actualSegments.get(offset + i);
+                String value = FuzzingStrategy.stripSpecialAndInvisibleChars(actualSegments.get(offset + i));
                 values.put(name, new StoredValue(value, "request.path." + name, Set.of(ResourceSemanticNaming.normalize(name))));
             }
         }

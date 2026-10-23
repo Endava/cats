@@ -286,7 +286,7 @@ public class RuntimeResourcePool {
         exchangeRecorder.recordSuccessfulExchange(data, request, response);
         baselineStore.store(data, effectiveRequestPayload);
         if (data.getHttpMethod() == HttpMethod.DELETE) {
-            markDeleted(data, request.getUrl());
+            markDeleted(data, request.getUrl(), resolvedRequest);
             return;
         }
         if (!isResourceProducingMethod(data.getHttpMethod())) {
@@ -628,9 +628,19 @@ public class RuntimeResourcePool {
         correlationFeedback.keySet().removeIf(key -> key.resourceSequence() == removed.sequence());
     }
 
-    private void markDeleted(ServiceData data, String actualUrl) {
+    private void markDeleted(ServiceData data, String actualUrl, ResolvedRequest resolvedRequest) {
         Map<String, StoredValue> deletedValues = new LinkedHashMap<>(
                 ResourceValueExtractor.extractPathValues(data.getRelativePath(), actualUrl));
+        if (resolvedRequest != null && resolvedRequest.correlations() != null) {
+            for (ResourceCorrelation correlation : resolvedRequest.correlations()) {
+                if (correlation.getTarget() != null && correlation.getTarget().location() == RequestTarget.Location.PATH
+                        && correlation.getValue() != null) {
+                    String name = correlation.getTarget().name();
+                    deletedValues.put(name, new StoredValue(correlation.getValue(), "request.path." + name,
+                            Set.of(ResourceSemanticNaming.normalize(name))));
+                }
+            }
+        }
         if (deletedValues.isEmpty()) {
             ResourceValueExtractor.extractIdentifierQueryValues(data, actualUrl).forEach(deletedValues::putIfAbsent);
         }
