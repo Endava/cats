@@ -263,6 +263,41 @@ class OnlyRequiredFieldsFuzzerTest {
                 """)).isTrue();
     }
 
+    @Test
+    void shouldTryEnumVariantAndRequiredHeaderFallbacksWhenInitialRequiredOnlyCallFails() {
+        StringSchema keyTypeSchema = new StringSchema();
+        keyTypeSchema.setEnum(List.of("GUID", "TELETAN"));
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.POST)
+                .path("/version/v1/registrationToken")
+                .headers(java.util.Set.of(
+                        com.endava.cats.model.CatsHeader.builder().name("cwa-fake").value("random").required(false).build(),
+                        com.endava.cats.model.CatsHeader.builder().name("Authorization").value("Bearer x").required(true).build()))
+                .payload("{\"key\":\"KTXQ7YH6F5\",\"keyDob\":\"x3712\",\"keyType\":\"GUID\"}")
+                .reqSchema(new ObjectSchema())
+                .schemaMap(Map.of())
+                .allRequiredFields(List.of())
+                .requestPropertyTypes(Map.of("keyType", keyTypeSchema, "key", new StringSchema()))
+                .requestContentTypes(List.of("application/json"))
+                .build();
+
+        Mockito.doAnswer(inv -> {
+            SimpleExecutorContext ctx = inv.getArgument(0);
+            int code = ctx.getPayload().contains("\"TELETAN\"") && !ctx.getPayload().contains("keyDob") ? 201 : 400;
+            ctx.getResponseProcessor().accept(com.endava.cats.model.CatsResponse.builder().responseCode(code).build(), data);
+            return null;
+        }).when(simpleExecutor).execute(Mockito.any());
+
+        fuzzer.fuzz(data);
+
+        ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(simpleExecutor, Mockito.atLeast(2)).execute(captor.capture());
+        SimpleExecutorContext winningContext = captor.getAllValues().getLast();
+        Assertions.assertThat(winningContext.getPayload()).contains("\"keyType\":\"TELETAN\"", "\"key\":\"KTXQ7YH6F5\"");
+        Assertions.assertThat(winningContext.getHeaders()).extracting(com.endava.cats.model.CatsHeader::getName)
+                .containsExactly("Authorization");
+    }
+
     private FuzzingData fuzzingData(String payload, Schema<?> schema, Map<String, Schema> schemaMap,
                                     List<String> requiredFields) {
         return FuzzingData.builder()

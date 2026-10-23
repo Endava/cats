@@ -65,6 +65,13 @@ public class OnlyRequiredFieldsFuzzer implements Fuzzer {
         }
         List<String> fallbacks = RequiredOnlyPayloadGenerator.generateFallbackMinimalPayloads(
                 data.getPayload(), data.getAllRequiredFields(), payload, data.getRequestPropertyTypes(), 12);
+        java.util.Set<com.endava.cats.model.CatsHeader> requiredHeadersOnly = data.getHeaders() == null ? null
+                : data.getHeaders().stream()
+                        .filter(com.endava.cats.model.CatsHeader::isRequired)
+                        .collect(java.util.stream.Collectors.toSet());
+        if (requiredHeadersOnly != null && requiredHeadersOnly.size() < data.getHeaders().size() && fallbacks.isEmpty()) {
+            fallbacks = List.of(payload);
+        }
         for (String fallbackPayload : fallbacks) {
             if (!failed[0]) {
                 break;
@@ -74,6 +81,7 @@ public class OnlyRequiredFieldsFuzzer implements Fuzzer {
                     .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                     .fuzzer(this)
                     .payload(fallbackPayload)
+                    .headers(requiredHeadersOnly)
                     .mutationTarget(target)
                     .scenario("Send a request containing required fields and minimal optional fields")
                     .responseProcessor((response, fuzzData) -> {

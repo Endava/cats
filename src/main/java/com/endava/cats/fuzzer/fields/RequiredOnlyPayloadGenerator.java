@@ -202,9 +202,39 @@ public final class RequiredOnlyPayloadGenerator {
                     }
                 }
             }
+            if (requestPropertyTypes != null && !requestPropertyTypes.isEmpty()) {
+                addEnumVariantFallbacks(root.getAsJsonObject(), required, requestPropertyTypes, candidates);
+            }
             return new ArrayList<>(candidates);
         } catch (RuntimeException _) {
             return List.of();
+        }
+    }
+
+    private static void addEnumVariantFallbacks(JsonObject rootObj, Set<String> required,
+                                                Map<String, Schema> requestPropertyTypes, Set<String> candidates) {
+        for (Map.Entry<String, JsonElement> entry : rootObj.entrySet()) {
+            String topKey = entry.getKey();
+            Schema<?> schema = requestPropertyTypes.get(topKey);
+            if (schema != null && schema.getEnum() != null && schema.getEnum().size() > 1) {
+                for (Object enumVal : schema.getEnum()) {
+                    if (enumVal == null) {
+                        continue;
+                    }
+                    JsonObject variant = new JsonObject();
+                    variant.addProperty(topKey, String.valueOf(enumVal));
+                    for (Map.Entry<String, JsonElement> other : rootObj.entrySet()) {
+                        String otherKey = other.getKey();
+                        if (!otherKey.equals(topKey) && (required.contains(otherKey)
+                                || "key".equalsIgnoreCase(otherKey)
+                                || normalize(otherKey).endsWith("id")
+                                || normalize(otherKey).endsWith("token"))) {
+                            variant.add(otherKey, other.getValue().deepCopy());
+                        }
+                    }
+                    candidates.add(JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(variant));
+                }
+            }
         }
     }
 }

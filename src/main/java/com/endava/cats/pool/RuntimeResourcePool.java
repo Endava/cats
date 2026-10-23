@@ -456,16 +456,21 @@ public class RuntimeResourcePool {
             return;
         }
         Set<String> resourceIdentifierAliases = ResourceSemanticNaming.resourceIdentifierAliases(data.getRelativePath());
+        Set<String> resourceNounForms = ResourceSemanticNaming.resourceWithTailWordForms(
+                ResourceSemanticNaming.lastRawResourceSegment(data.getRelativePath()));
         boolean hasRootSimpleIdentifier = values.entrySet().stream()
                 .anyMatch(entry -> ResourceSemanticNaming.isTopLevelResponseKey(entry.getKey()) &&
                         entry.getValue().aliases().stream().anyMatch(ResourceSemanticNaming.SIMPLE_IDENTIFIERS::contains));
         Map<String, StoredValue> enrichedValues = new LinkedHashMap<>();
         values.forEach((key, value) -> {
             Set<String> aliases = new LinkedHashSet<>(value.aliases());
-            aliases.add(ResourceSemanticNaming.normalize(key));
+            String normKey = ResourceSemanticNaming.normalize(key);
+            aliases.add(normKey);
             if (hasRootSimpleIdentifier && !ResourceSemanticNaming.isTopLevelResponseKey(key)) {
                 aliases.removeAll(ResourceSemanticNaming.SIMPLE_IDENTIFIERS);
-            } else if (value.aliases().stream().anyMatch(ResourceSemanticNaming.SIMPLE_IDENTIFIERS::contains)) {
+            } else if (value.aliases().stream().anyMatch(ResourceSemanticNaming.SIMPLE_IDENTIFIERS::contains)
+                    || (!hasRootSimpleIdentifier && ResourceSemanticNaming.isTopLevelResponseKey(key) && resourceNounForms.contains(normKey))) {
+                aliases.add("id");
                 aliases.addAll(resourceIdentifierAliases);
             }
             enrichedValues.put(key, value.withAliases(aliases));

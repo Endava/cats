@@ -27,7 +27,7 @@ final class ResourceSemanticNaming {
 
     private static final Set<String> SINGLE_WORD_IDENTIFIERS = Stream.concat(
             SIMPLE_IDENTIFIERS.stream(),
-            Stream.of("username", "token")).collect(Collectors.toUnmodifiableSet());
+            Stream.of("username", "token", "key")).collect(Collectors.toUnmodifiableSet());
     private static final Set<String> MULTI_WORD_IDENTIFIER_SUFFIXES = Stream.concat(
             SINGLE_WORD_IDENTIFIERS.stream(),
             Stream.of("address")).collect(Collectors.toUnmodifiableSet());

@@ -245,6 +245,15 @@ final class OperationDependencyOrder {
                 for (Map.Entry<String, Schema> entry : resolved.getProperties().entrySet()) {
                     String propertyName = entry.getKey();
                     addIdentifierCandidate(propertyName, parentProperty, names);
+                    Schema<?> propSchema = resolvedRequestSchema(api, entry.getValue());
+                    if (propSchema != null && propSchema.getEnum() != null) {
+                        for (Object enumItem : propSchema.getEnum()) {
+                            String normEnum = normalize(String.valueOf(enumItem));
+                            if (!normEnum.isEmpty()) {
+                                WordUtils.nounForms(normEnum).forEach(form -> names.add("noun:" + form));
+                            }
+                        }
+                    }
                     collectSchemaIdentifiers(api, entry.getValue(), propertyName, depth + 1, visited, names);
                 }
             }

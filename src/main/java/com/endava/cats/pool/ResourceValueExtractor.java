@@ -144,9 +144,11 @@ final class ResourceValueExtractor {
                         && !(entry.getValue().value() instanceof Boolean)
                         && StringUtils.isNotBlank(String.valueOf(entry.getValue().value())))
                 .toList();
-        if (candidates.size() == 1 && (topLevelEntries.size() >= 2 || candidates.getFirst().getKey().endsWith("[]"))) {
+        if (candidates.size() == 1 && (topLevelEntries.size() >= 2
+                || candidates.getFirst().getKey().endsWith("[]")
+                || "$.value".equalsIgnoreCase(candidates.getFirst().getKey()))) {
             StoredValue candidate = candidates.getFirst().getValue();
-            return Optional.of(new StoredValue(candidate.value(), candidate.sourceLocation(), Set.of("id")));
+            return Optional.of(new StoredValue(candidate.value(), candidate.sourceLocation(), Set.of("id", "key", "value")));
         }
         return Optional.empty();
     }
