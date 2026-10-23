@@ -284,11 +284,11 @@ public class RuntimeResourcePool {
             return;
         }
         exchangeRecorder.recordSuccessfulExchange(data, request, response);
-        baselineStore.store(data, effectiveRequestPayload);
         if (data.getHttpMethod() == HttpMethod.DELETE) {
             markDeleted(data, request.getUrl(), resolvedRequest);
             return;
         }
+        baselineStore.store(data, effectiveRequestPayload);
         if (!isResourceProducingMethod(data.getHttpMethod())) {
             return;
         }
@@ -647,6 +647,12 @@ public class RuntimeResourcePool {
         if (deletedValues.isEmpty()) {
             return;
         }
+        Set<String> deletedPrimitiveStrings = deletedValues.values().stream()
+                .map(StoredValue::value)
+                .filter(Objects::nonNull)
+                .map(String::valueOf)
+                .collect(Collectors.toSet());
+        baselineStore.evictContainingPrimitiveValues(deletedPrimitiveStrings);
         for (int i = 0; i < resources.size(); i++) {
             ResourceInstance resource = resources.get(i);
             boolean matches = deletedValues.entrySet().stream().allMatch(deleted -> {
