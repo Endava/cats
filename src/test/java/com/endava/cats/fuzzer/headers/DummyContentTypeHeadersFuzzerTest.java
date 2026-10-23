@@ -47,8 +47,13 @@ class DummyContentTypeHeadersFuzzerTest {
 
         List<Set<CatsHeader>> headers = dummyContentTypeHeadersFuzzer.getHeaders(data);
 
-        Assertions.assertThat(headers).hasSize(2);
+        Assertions.assertThat(headers).hasSize(3);
         Assertions.assertThat(headers.getFirst()).contains(CatsHeader.builder().name("Content-Type").build());
+
+        FuzzingData getData = FuzzingData.builder().method(HttpMethod.GET).headers(new HashSet<>(HEADERS))
+                .responseContentTypes(Collections.singletonMap("200", Collections.singletonList("application/json"))).build();
+        ReflectionTestUtils.setField(getData, "processedPayload", "{\"id\": 1}");
+        Assertions.assertThat(dummyContentTypeHeadersFuzzer.getHeaders(getData)).hasSize(2);
     }
 
     @Test

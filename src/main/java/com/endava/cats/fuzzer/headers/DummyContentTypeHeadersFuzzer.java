@@ -81,7 +81,14 @@ public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzz
         Set<CatsHeader> malformedMultipartHeader = Cloner.cloneMe(data.getHeaders());
         malformedMultipartHeader.add(CatsHeader.builder().name(HttpHeaders.CONTENT_TYPE).value("multipart/form-data").build());
 
-        return List.of(dummyHeader, malformedMultipartHeader);
+        if (data.getMethod() != null && !HttpMethod.requiresBody(data.getMethod())) {
+            return List.of(dummyHeader, malformedMultipartHeader);
+        }
+
+        Set<CatsHeader> unsupportedCharsetHeader = Cloner.cloneMe(data.getHeaders());
+        unsupportedCharsetHeader.add(CatsHeader.builder().name(HttpHeaders.CONTENT_TYPE).value("application/json; charset=UTF-7").build());
+
+        return List.of(dummyHeader, malformedMultipartHeader, unsupportedCharsetHeader);
     }
 
     @Override

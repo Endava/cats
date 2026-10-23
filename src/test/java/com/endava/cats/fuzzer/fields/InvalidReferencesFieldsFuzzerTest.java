@@ -136,4 +136,21 @@ class InvalidReferencesFieldsFuzzerTest {
         Assertions.assertThat(captor.getAllValues())
                 .allMatch(ctx -> !ctx.isReplaceUrlParams() && ctx.getPath().startsWith("/items/42") && !ctx.getPath().contains("{id}"));
     }
+
+    @Test
+    void shouldFuzzFirstQueryParamWithRawInvalidReferencesWhenPathHasNoVariables() {
+        FuzzingData data = FuzzingData.builder()
+                .path("/search")
+                .queryParams(Set.of("q"))
+                .method(HttpMethod.GET)
+                .build();
+        invalidReferencesFieldsFuzzer.fuzz(data);
+
+        org.mockito.ArgumentCaptor<com.endava.cats.fuzzer.executor.SimpleExecutorContext> captor =
+                org.mockito.ArgumentCaptor.forClass(com.endava.cats.fuzzer.executor.SimpleExecutorContext.class);
+        Mockito.verify(simpleExecutor, Mockito.times(2)).execute(captor.capture());
+        Assertions.assertThat(captor.getAllValues())
+                .extracting(com.endava.cats.fuzzer.executor.SimpleExecutorContext::getPath)
+                .containsExactly("/search?q=%", "/search?q=%00");
+    }
 }

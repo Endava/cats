@@ -72,6 +72,23 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
                                 .responseProcessor(this::processResponse)
                                 .build());
             }
+        } else if (data.getQueryParams() != null && !data.getQueryParams().isEmpty()) {
+            String firstQueryParam = data.getQueryParams().iterator().next();
+            for (String rawQuerySuffix : List.of("%", "%00")) {
+                String rawQueryPath = data.getPath() + "?" + firstQueryParam + "=" + rawQuerySuffix;
+                simpleExecutor.execute(
+                        SimpleExecutorContext.builder()
+                                .fuzzer(this)
+                                .fuzzingData(data)
+                                .logger(logger)
+                                .path(rawQueryPath)
+                                .mutationTarget(RequestTarget.query(firstQueryParam))
+                                .scenario("Fuzz query parameters with raw invalid reference: %s".formatted(rawQueryPath))
+                                .expectedSpecificResponseCode("[2XX, 4XX]")
+                                .replaceUrlParams(false)
+                                .responseProcessor(this::processResponse)
+                                .build());
+            }
         }
     }
 
