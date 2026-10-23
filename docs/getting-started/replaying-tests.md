@@ -20,18 +20,29 @@ Important notes:
 - if you provide a `.json` extension to a test name, that file will be searched as a path i.e. it will search for `Test15.json` in the current folder and `Test19.json` in the `dir` folder
 - if you don't provide a json extension to a test name, CATS searches for that test in the `cats-report` folder i.e. `cats-report/Test1.json` and `cats-report/Test233.json`
 
-You can also use environment variables for headers when replaying tests using `$$varible`. Make sure you replace the header's value with `$$variable` inside the JSON file.
+You can also use environment variables for headers and URLs when replaying tests using `$$variable`. CATS resolves `$$variable` placeholders from the process environment first, then from `./.env` (or the file supplied via `--envFile`, unless disabled with `--noEnvFile`).
 
 :::tip
 When replaying tests you can also supply headers using the `-H` argument. This will override any header matching the given header name.
 `cats replay Test1 -H Authentication=token`
 :::
 
+## Printing equivalent `curl` commands
+
+Pass `--curl` to print the equivalent `curl` command(s) for the selected test case(s) without executing any HTTP calls:
+
+```bash
+cats replay Test1 --curl
+cats replay --errors --curl
+```
+
+## Reporting and service overrides
+
 You can enable reporting by supplying an `--output` argument with the location folder that will be used to write the report files. Please note that CATS won't produce a full report, but rather
 individual `TestXXX.json` and `TestXXX.html` files.
 
-The `replay` sub-command also supports replacing the base URL of the service. This is useful when replaying the test(s) on the different environment than they originally run.
-This is achieved using the `--server` argument. 
+The `replay` sub-command also supports replacing the base URL of the service. This is useful when replaying the test(s) on a different environment than they originally ran against.
+This is achieved using the `--server` argument. You can also adjust `--callTimeout` and `--maxResponseBytes` for replayed requests. 
 
 :::note
 Please note that you only need to provide the base URL of the service in the `--server` argument.

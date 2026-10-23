@@ -71,7 +71,10 @@ createdOn: "#(today)"
 futureDate: "#(todayPlus(30))"
 ```
 
-Available helpers include `uuid`, `email`, `now`, `today`, `todayPlus(days)`,
-`todayMinus(days)`, `alphanumeric(length)`, `alphabetic(length)`,
-`numeric(length)`, and `ascii(length)`. Length ranges can be supplied as
-`function(min,max)`.
+Available helpers include `uuid`, `ulid`, `email`, `country` (or `countryCode`),
+`now`, `today`, `todayPlus(days)`, `todayMinus(days)`, `nowPlusDays(days)`,
+`nowMinusDays(days)`, `nowPlusHours(hours)`, `nowMinusHours(hours)`,
+`randomInt(max)` (or `randomInt(min,max)`), `alphanumeric(length)`,
+`alphabetic(length)`, `numeric(length)`, and `ascii(length)`. Length ranges can
+be supplied as `function(min,max)`, and `#(...)` tokens can also be embedded
+inside larger strings (such as `prefix-#(alphanumeric(6))`).

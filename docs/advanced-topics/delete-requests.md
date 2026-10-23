@@ -25,10 +25,14 @@ For example, suppose that a POST to `/pets` responds with:
 
 When doing a `DELETE` request, CATS will discover that `{petId}` and `pet_id` are used as identifiers for the `Pet` resource, and will do the `DELETE` at `/pets/2`.
 
-If these conventions are followed (which also align to good REST naming practices), it is expected that `DELETE` and `POST`requests will be on-par for most of the resources.
+Starting with CATS 14.1.0 and 15.0.0, [Runtime Resource Reuse](./runtime-resource-reuse) (`--reuseSuccessfulResources`, enabled by default) generalizes this behavior:
+- CATS captures resource identifiers from `2XX` `POST`, `PUT`, `PATCH`, and `GET` responses (including `Location` headers and nested collections) in the `RuntimeResourcePool`.
+- During the initial seed wave, `HappyPath` `DELETE` requests are postponed until all paths have been fuzzed, and then executed in reverse path order (child paths before parent paths) so that created resources remain available to `GET`, `PUT`, `PATCH`, and child operations throughout the run.
+- Once a `DELETE` succeeds (`2XX`), its identifier is evicted from the pool and [`CheckDeletedResourcesNotAvailableFuzzer`](../fuzzers/http-fuzzers/check-deleted) verifies that a subsequent `GET` to the deleted URL returns `404` or `410`.
+
+If these conventions are followed (which also align to good REST naming practices), it is expected that `DELETE` and `POST` requests will be on-par for most of the resources.
 
 :::caution
 If your contract does not follow the above conventions you will need to supply resource identifiers using `--refData` or `--urlParams`. 
-As `DELETE` makes resources unavailable, the first successful `DELETE` will cause subsequent calls that use those identifiers to fail. 
-The recommendation is to skip `DELETE` and supply the exact HTTP methods you want to test using `--httpMethos`.
+As `DELETE` makes resources unavailable, you can also skip `DELETE` or supply the exact HTTP methods you want to test using `--httpMethods`.
 :::

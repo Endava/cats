@@ -5,6 +5,21 @@ description: How a typical CATS run looks like
 
 # Running CATS
 
+## Pre-flight checks: `analyze`, `init`, and `smoke`
+
+Before running the full fuzzing suite against an API for the first time, you can inspect the contract offline, scaffold starter configuration files, and run a 1-request-per-endpoint live probe:
+
+```bash
+# 1. Inspect the contract's 0-100 Fuzzability Readiness Score, producer-consumer chains, and orphan path params (offline)
+cats analyze -c openapi.yaml
+
+# 2. (Optional) Scaffold starter headers.yml, refData.yml, and functionalTests.yml
+cats init -c openapi.yaml
+
+# 3. Probe one HappyPath request per operation (excluding DELETE by default) to verify --server and authentication
+cats smoke -c openapi.yaml -s http://localhost:8080 -H "Authorization=Bearer $$API_TOKEN"
+```
+
 ## Blackbox Mode
 
 Blackbox mode means that CATS doesn't need any specific context. You just need to provide the service URL, the OpenAPI spec and most probably [authentication headers](headers-file).
@@ -46,8 +61,8 @@ cats --contract=openapi.yaml --server=http://localhost:8080 --headers=headers.ym
 The first two modes are deterministic. Running CATS multiple times with the same configuration will (most likely) produce the same output: same number of tests, same number of failing tests with the same reason.
 
 CATS can also do continuous fuzzing i.e. fuzz until a certain stop condition is met, either time based, failing tests or number of tests. 
-Continuous fuzzing has more randomness when executing: random selection of field to fuzz, fuzzing data is either generated on the fly or randomly picked
-from a set of data. When doing continuous fuzzing you must also supply a `matchXXX` condition. This is used to flag the tests as `error` when that condition is met.
+Continuous fuzzing has more randomness when executing: random selection of one or multiple fields to fuzz per request, and fuzzing data that is either generated on the fly or randomly picked
+from a set of data. You can supply a `matchXXX` condition to flag tests as `error` when that condition is met.
 
 This is a typical continuous fuzzing run:
 
@@ -57,8 +72,9 @@ cats random --contract=openapi.yaml --server=http://localhost:8080 -H "API-KEY=$
 
 This will run continuous fuzzing for method `POST` on path `/users/auth`, flag any `500` response code as error and stop after 10 seconds.
 
-As continuous fuzzing do not rely on pre-defined fuzzers, the `matchXXX` condition offers control on how each test case is flagged as error or not.
-Continuous fuzzing is also more targeted, this is why supplying the `--path` and http method `-X` is required.
+Both `--path` (`-p`) and `--httpMethod` (`-X`) are optional: if omitted, `cats random` fuzzes all paths and HTTP methods in the contract.
+
+In addition, when running normal OpenAPI fuzzing with `--stopAfterTimeInSec` and `--fillTimeBudget` (or `--withRandom`), if all deterministic fuzzer waves finish before the time limit expires, CATS uses the remaining time to run continuous `RandomFuzzer` rounds across operations with non-empty payloads, reporting `5XX` responses as errors even when no `--matchXXX` flags are supplied.
 
 :::caution
 It's recommended to supply a `--stopXXX` argument in order for CATS to stop the execution when the supplied condition is met. 

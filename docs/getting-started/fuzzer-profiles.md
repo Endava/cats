@@ -12,19 +12,30 @@ Profiles select a useful set of fuzzers without requiring a long
 cats list --profiles
 ```
 
+You can also inspect a specific profile and see the description of each fuzzer it includes with:
+
+```bash
+cats explain --type profile security
+```
+
 Use a profile with the OpenAPI fuzzing command:
 
 ```bash
 cats -c openapi.yml -s http://localhost:8080 --profile security
 cats -c openapi.yml -s http://localhost:8080 --profile quick
+cats -c openapi.yml -s http://localhost:8080 --profile coverage
+cats -c openapi.yml -s http://localhost:8080 --profile crash
 ```
 
 The built-in profiles are:
 
 - `health-check` runs `HappyPath` to verify that endpoints are reachable.
-- `security` focuses on OWASP-style injection, authentication, IDOR, resource, and security-header checks.
+- `coverage` runs a fast positive and combinatorial field-removal blitz (`HappyPath`, `OnlyRequiredFields`, `DummyContentTypeHeaders`, `EmptyJsonBody`, `DefaultValuesInFields`, `ExamplesFields`, `AlternativeDateTimeFormatsFields`, `QueryObjectAsRequestBody`, `RemoveFields`, `NumericValuesInStringFields`) to maximize operation and code coverage.
+- `crash` runs high-impact boundary, type-coercion, injection, control-character, Unicode, and resource fuzzers targeting `5XX` server crashes.
+- `type-coercion` runs type-coercion fuzzers (along with `HappyPath` and `OnlyRequiredFields`) targeting automatic type conversion issues in frameworks and libraries.
+- `security` focuses on OWASP-style injection, authentication, IDOR, sensitive data exposure, resource lifecycle, and security-header checks.
 - `quick` is a fast smoke test covering critical positive and negative scenarios.
-- `compliance` focuses on API Security Top 10 and contract-related checks.
+- `compliance` focuses on OWASP API Security Top 10 and contract-related checks.
 - `ci` provides a balanced suite for CI/CD pipelines.
 - `full` runs all fuzzers and is the default.
 

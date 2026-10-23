@@ -39,4 +39,14 @@ and you still need to pass the `application/v5+json` `Accept` header, you can us
 ```yaml
 all:
   Accept: "application/v5+json"
-``
+```
+
+## Supported payload formats and `Accept` negotiation
+
+By default, CATS supports request bodies declared with:
+- `application/json` and `*+json` media types
+- `application/x-www-form-urlencoded`
+- `text/plain`
+- `application/x-ndjson` and `application/ndjson`
+
+For `Accept` headers, CATS automatically negotiates a media type declared under the operation's `2XX` responses in the OpenAPI contract when present, falling back to the default content type (`application/json`) otherwise.

@@ -14,6 +14,8 @@ They are all in the `9XX` range. The current defined ones are as follows:
 - `955` - write timeout; typically when writing the request takes longer that the current set timeout; you might want to increase the `--writeTimeout` argument
 - `956` - connection timeout; typically when establishing a connection takes longer that the current set timeout; you might want to increase the `--connectionTimeout` argument
 - `957` - protocol communication exception; typically when the service might write some malformed data into the response; might indicate an issue with the service
+- `958` - connection reset; typically when the server resets the connection while sending or receiving data
+- `959` - call timeout exceeded; when the total HTTP call time exceeds the configured `--callTimeout` limit (default: 20 seconds)
 - `999` - when something unexpected happened which is not part of the above errors
 
 If the entire communication is successful i.e. request was fully sent and response was fully consumed the HTTP response code will be used.

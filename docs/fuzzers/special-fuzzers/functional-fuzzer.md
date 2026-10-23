@@ -3,35 +3,134 @@ sidebar_position: 1
 description: The Fuzzer used to write functional tests without coding
 ---
 
-# Functional Fuzzer
+# Functional Flow & Functional Fuzzer
 
 | Item | Description |
 |:--|:--|
-| **Full Fuzzer Name** | `FunctionalFuzzer` |
-| **Log Key** | N/A; test identifiers and scenarios from the input file identify executions. |
-| **Description** | Runs user-defined functional tests while preserving CATS payload generation and self-healing behavior. |
+| **Full Fuzzer Name** | `FunctionalFlowFuzzer` / `FunctionalFuzzer` |
+| **Log Key** | N/A; step names, test identifiers, and scenarios from the input file identify executions. |
+| **Description** | Executes sequential multi-step functional flows (`FunctionalFlowFuzzer`) or path-grouped functional tests (`FunctionalFuzzer`) while preserving CATS payload generation and self-healing behavior. |
 | **Enabled by default?** | No. Enable it with `cats run <file>`. |
-| **Target fields** | Fields, path parameters, headers, and request bodies specified by the functional test file. |
-| **Expected result** | The `expectedResponseCode` supplied for each test case, optionally combined with `verify` assertions. |
-| **Fuzzing logic** | Generates a valid request, applies values from the YAML DSL, executes tests in declared order, and can pass output variables between tests. |
-| **Conditions when this fuzzer will be skipped** | When no functional test file is supplied, the path is not configured, the HTTP method does not match, or required keywords are missing. |
-| **HTTP methods that will be skipped** | A test method is skipped when it is invalid or unavailable on the selected OpenAPI path. |
-| **Reporting** | Reports the configured response-code expectation and any `verify` assertion failures. |
+| **Target fields** | Fields, path parameters, query parameters, headers, cross-field correlations, and request bodies specified by the functional YAML file. |
+| **Expected result** | The `status`/`expect` (or `expectedResponseCode`/`verify`) assertions configured for each step or test. |
+| **Fuzzing logic** | Generates a valid base request from the OpenAPI contract, applies step overrides and `correlate` rules, executes steps sequentially, captures variables (`save`/`output`), and evaluates response assertions. |
+| **Conditions when this fuzzer will be skipped** | When no functional file is supplied, or a configured step/path does not match any OpenAPI operation. |
+| **HTTP methods that will be skipped** | A method is skipped when it is invalid or unavailable on the selected OpenAPI path. |
+| **Reporting** | Reports the configured status expectation, schema validation, and any `expect` / `verify` assertion failures. |
 
-You can leverage CATS super-powers of self-healing and payload generation in order to write functional tests.
-This is achieved using the `FunctionalFuzzer` through the `cats run <file-name>` sub-command.
-The `FunctionalFuzzer` is not a `Fuzzer` per se, but was named as such for consistency.
-The functional tests are written in a YAML file using a simple DSL.
-The DSL supports adding identifiers, descriptions, assertions as well as passing variables between tests.
-The cool thing is that, by leveraging the fact that CATS generates valid payload, you only need to override values for a limited set of fields.
-The rest of the information will be populated by CATS using valid data, just like a `happy` flow request.
+You can leverage CATS's self-healing payload generation to write end-to-end functional flows without coding using `cats run <file-name>`.
 
-:::caution
-It's important to note that `--refData` won't get replaced when using the `FunctionalFuzzer`.
-Any reference data must be supplied in the `FunctionalFuzzer` file.
+CATS automatically detects two YAML formats:
+1. **Sequential `FunctionalFlowFuzzer` format (`steps:`)** — the recommended format for multi-step functional flows, cross-field correlations, and rich response assertions.
+2. **Legacy path-grouped `FunctionalFuzzer` format** — supported for backwards compatibility (logs a deprecation warning when executed).
+
+## Sequential `steps:` Format (`FunctionalFlowFuzzer`)
+
+A sequential functional flow file defines optional `variables`, optional cross-field `correlate` rules, and an ordered list of HTTP `steps`:
+
+```yaml
+variables:
+  prefix: "Rule"
+  correlationId: "#(uuid)"
+
+correlate:
+  - paths: ["/risk-rules*"]
+    when: "ruleType == 'STATIC'"
+    then:
+      omit: ["metricField"]
+  - paths: ["/orders*"]
+    when: "items[*].category == 'DIGITAL'"
+    then:
+      set:
+        items[*].shippingRequired: false
+
+steps:
+  - name: Create static rule
+    POST: /risk-rules
+    headers:
+      X-Correlation-Id: "${correlationId}"
+    base: MERGE
+    omit: [id]
+    body:
+      ruleType: "STATIC"
+      name: "${prefix}-Alpha"
+      metadata:
+        owner: "risk-team"
+    status: 201
+    save:
+      createdRuleId: ruleId
+      serverHeader: header#X-Server
+    expect:
+      ruleType: "STATIC"
+      headers:
+        X-Server: "risk.*"
+      bodyContains: ["rule_"]
+      bodyNotContains: ["stacktrace"]
+      where:
+        - "priority >= 10 & $request.ruleType = 'STATIC'"
+        - "responseTimeMs < 1000 & status == 201"
+
+  - name: Patch created rule using inline path and query parameters
+    PATCH: /risk-rules/${createdRuleId}?dryRun=false
+    body:
+      active: false
+    status: 200
+    expect:
+      ruleId: "${createdRuleId}"
+      active: false
+```
+
+Run the flow with:
+
+```shell
+cats run flow.yml -c contract.yml -s http://localhost:8080
+```
+
+### Step properties in `steps:`
+- **HTTP method and target path**: Either use a shorthand method key such as `POST: /risk-rules` or `PATCH: /risk-rules/${createdRuleId}?dryRun=false` (inline path parameters and query parameters are extracted automatically), or specify `method: POST` and `path: /risk-rules`.
+- **`name`** (or `description`): Scenario name shown in logs and reports.
+- **`base`** (or `mode`): Controls how the starting payload is generated from the OpenAPI schema before `body` overrides are applied:
+  - `MERGE` (default): Starts from a full generated happy-path payload and merges `body` overrides.
+  - `ONLY_REQUIRED`: Starts from a payload containing only required fields.
+  - `EMPTY`: Starts from an empty `{}` payload.
+- **`body`**: Map, list, or raw scalar overriding the request body. Nested maps are merged into existing objects; dot/hash paths (such as `metadata.owner` or `metadata#owner`) are also supported.
+- **`path`**, **`query`**, **`headers`**: Maps of path parameters, query parameters, and HTTP headers for the step.
+- **`omit`**: List of fields to remove from the generated request payload.
+- **`variant`**: Selects a specific `oneOf`/`anyOf` schema variant by schema name suffix (string) or discriminator field map (object).
+- **`correlate`**: Step-level cross-field correlation rules applied after `body` and `omit`.
+- **`save`** (or `output`): Captures variables from the exchange for use in later steps as `${varName}`:
+  - `field.path` or `$response.field.path`: Extracts a JSON property from the response body.
+  - `$`, `$body`, or `$response.body`: Captures a root scalar response body.
+  - `header#Header-Name` or `header.Header-Name`: Captures a response header.
+  - `$request.field.path` or `$path.paramName`: Captures a value from the sent request body or path parameters.
+- **`status`** and **`expect`** (or `verify`):
+  - `status`: Expected status code(s) or family (e.g. `201`, `[200, 201]`, `2XX`). Defaults to `2XX`.
+  - `fields` (or any non-reserved key directly under `expect`): Exact value or Java regex assertions on response body fields.
+  - `headers`: Exact value or regex assertions on response headers.
+  - `bodyContains` / `bodyNotContains`: Substrings that must or must not appear in the raw response body.
+  - `where`: Boolean correlation expressions across response fields, `$request.*` fields, `status`, `time` / `responseTimeMs`, `size(arrayField)`, `is null` / `is not null`, `contains`, and `matches`, combined with `&` / `&&` and `|` / `||`.
+  - `matchesSchema`: Whether to validate the response body against the OpenAPI response schema (default: `true`).
+
+### Reusing Cross-Field Correlations Across All Fuzzers (`--correlations`)
+
+You can also apply `correlate:` rules (`when`/`then` `set` or `omit`, including per-element wildcard array `[*]` rules) during normal OpenAPI fuzzing, `cats run`, `cats replay`, `cats template`, and `cats random` by passing `--correlations` (or `--correlate`):
+
+```shell
+cats -c contract.yml -s http://localhost:8080 --correlations correlations.yml
+```
+
+During fuzzing, CATS automatically protects the field currently targeted by a fuzzer so correlation rules never overwrite the fuzzer's negative mutation.
+
+---
+
+## Legacy Path-Grouped Format (`FunctionalFuzzer`)
+
+:::caution Deprecated format
+The legacy path-grouped `FunctionalFuzzer` YAML format is deprecated and will be removed in a future release. Please prefer the sequential `steps:` format above for new functional flows.
+It's also important to note that `--refData` won't get replaced when using the `FunctionalFuzzer`; any reference data must be supplied in the `FunctionalFuzzer` file (or generated with `--createRefData`).
 :::
 
-The `FunctionalFuzzer` file has the following syntax:
+The legacy `FunctionalFuzzer` file has the following syntax:
 
 ```yaml
 /path:

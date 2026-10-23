@@ -24,10 +24,11 @@ and fuzz their values considering their defined data type and constraints.
 The actual fuzzing depends on the specific Fuzzer executed. Please check the [list of fuzzers](/docs/fuzzers) for the specific behaviour.
 
 There are also differences on how the fuzzing works depending on the HTTP method:
-- for methods with request bodies like **POST, PUT, PATCH** the fuzzing will be applied at the **request body data models level**
-- for methods without request bodies like **GET, DELETE** the fuzzing will be applied at the **URL parameters level**
+- for methods with request bodies like **POST, PUT, PATCH** the fuzzing will be applied at the **request body data models level** (supporting `application/json`, `*+json`, `application/x-www-form-urlencoded`, `text/plain`, and `application/x-ndjson` / `application/ndjson`)
+- for methods without request bodies like **GET, DELETE, HEAD** (and **TRACE** when explicitly enabled via `--httpMethods`) the fuzzing will be applied at the **URL parameters level**
+
+When [runtime resource reuse](../advanced-topics/runtime-resource-reuse) is enabled (the default), CATS orders root collection `POST` producers before dependent paths, executes fuzzers in breadth-first waves across paths (seeding resources with `HappyPath` and `OnlyRequiredFields` first, followed by coverage, crash, remaining first-phase, and second-phase fuzzers), and postpones `HappyPath` `DELETE` requests until all paths have been fuzzed so learned identifiers remain valid throughout the run.
 
 :::note
-For HTTP methods with request bodies (`POST,PUT`) that have also URL/path parameters, you need to supply the path parameters via [`--urlParams`](url-params) or the [`--refData`](reference-data-file) file 
-as failure to do so will result in `Illegal character in path at index ...` errors.
+For HTTP methods with request bodies (`POST, PUT, PATCH`) that also have URL/path parameters, CATS automatically attempts to resolve path parameters from earlier `2XX` responses in the run. When an identifier cannot be learned at runtime, supply it via [`--urlParams`](url-params) or the [`--refData`](reference-data-file) file.
 :::

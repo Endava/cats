@@ -16,11 +16,11 @@ List the current built-in mutators with:
 cats list --mutators
 ```
 
-The current set includes:
+The current set of 31 built-in mutators includes:
 
 - `BigListOfNaughtyStringsMutator`, `RandomStringMutator`, `RandomAlphanumericStringMutator`, and `RandomPayloadSizeMutator`
-- `NullStringMutator`, `RandomNumberMutator`, `RandomLargeIntegersMutator`, `RandomLargeDecimalsMutator`, `RandomMinValuesMutator`, and `RandomMaxValuesMutator`
-- `RandomJsonMutator`, `RandomControlCharsMutator`, `RandomWhitespaceCharsMutator`, `RandomZalgoTextMutator`, `RandomAbugidasMutator`, `RandomSingleCodepointEmojisMutator`, and `RandomMultiCodepointEmojisMutator`
+- `NullStringMutator`, `RandomNumberMutator`, `RandomLargeIntegersMutator`, `RandomLargeDecimalsMutator`, `RandomMinValuesMutator`, `RandomMaxValuesMutator`, and `RandomBoundaryNumbersMutator`
+- `RandomJsonMutator`, `RandomTypeConfusionMutator`, `RandomInjectionAndFormatCrashMutator`, `RandomControlCharsMutator`, `RandomWhitespaceCharsMutator`, `RandomZalgoTextMutator`, `RandomAbugidasMutator`, `RandomSingleCodepointEmojisMutator`, and `RandomMultiCodepointEmojisMutator`
 - `RandomControlCharsInFieldKeysMutator`, `RandomWhitespacesInFieldKeysMutator`, and `RandomLanguageIdentifiersMutator`
 - `RandomAcceptHeaderMutator`, `RandomContentTypeHeaderMutator`, and `RandomTransferEncodingHeaderMutator`
 - `LowercaseExpandingBytesMutator`, `LowercaseExpandingLengthMutator`, `UppercaseExpandingBytesMutator`, `UppercaseExpandingLengthMutator`, and `RemoveFieldMutator`

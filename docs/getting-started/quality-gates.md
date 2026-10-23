@@ -37,6 +37,30 @@ precedence over `--failOn` when both are supplied.
 The configured gate and its pass/fail status are included in the execution
 summary and report.
 
+## Baseline regression gating (`--baseline` and `cats compare`)
+
+When onboarding an existing API that already has known findings, use `--baseline`
+to compare the current run apples-to-apples against a previous `cats-report`
+folder or `cats-summary-report.json` file:
+
+```bash
+cats -c openapi.yml -s http://localhost:8080 \
+  --profile ci \
+  --baseline ./baseline-cats-report
+```
+
+CATS compares only the shared `(contractPath, httpMethod, fuzzer)` scopes
+present in both runs and exits with code `1` only if **new** error regressions
+are introduced (pass `--failOnNewWarnings` to also fail on new warnings).
+
+You can also diff two existing report directories or `cats-summary-report.json`
+files offline using `cats compare` (alias `cats diff`):
+
+```bash
+cats compare -b ./baseline-cats-report -t ./cats-report
+cats compare -b ./baseline-cats-report -t ./cats-report --failOnNewWarnings -j
+```
+
 ## Stop conditions
 
 Stop a finite or continuous run after a limit is reached:
@@ -51,7 +75,11 @@ cats random -c openapi.yml -s http://localhost:8080 \
 - `--stopAfterTests` stops after the specified number of test cases. `--stopAfterMutations` is an alias.
 - `--stopAfterErrors` stops after the specified number of error results.
 - `--stopAfterTimeInSec` stops after the specified elapsed time.
+- `--fillTimeBudget` (or `--withRandom`) continues fuzzing with `RandomFuzzer` after the deterministic fuzzers finish until the `--stopAfterTimeInSec` time budget expires.
 
 The report records the reached stop condition and retains the results already
 executed. These options apply to normal OpenAPI fuzzing, `cats random`, and
-template fuzzing.
+template fuzzing. When `--fillTimeBudget` (`--withRandom`) is combined with
+`--stopAfterTimeInSec` during normal OpenAPI fuzzing, if the deterministic
+fuzzers finish before the time budget expires, CATS continues running
+`RandomFuzzer` rounds until the time limit is reached.

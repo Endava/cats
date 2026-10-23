@@ -7,7 +7,9 @@ description: Use Web Fuzzing Commons authentication configurations with CATS
 
 CATS can load authentication configurations in the Web Fuzzing Commons format
 with `--wfcAuth`. Select a named entry with `--wfcAuthName`; if no name is
-provided, the first entry is used.
+provided, CATS starts with the first entry and automatically falls back to
+subsequent entries when unmutated baseline requests return HTTP `401` or `403`,
+locking in a working entry per operation once a baseline request returns `2XX`.
 
 ```bash
 cats -c openapi.yml -s http://localhost:8080 \
@@ -50,5 +52,9 @@ authTemplate:
       sendTemplate: Bearer {token}
 ```
 
-WFC authentication can provide headers, cookies, or query parameters. It is
-also available to `cats replay`, `cats run`, and `cats random`.
+WFC authentication can provide headers, cookies, or query parameters. When a
+login endpoint is configured with `expectCookies: true`, CATS captures
+`Set-Cookie` headers directly from `3XX` login redirect responses without
+following the redirect (while rejecting redirects whose `Location` indicates a
+login error). WFC authentication is also available to `cats replay`, `cats run`,
+and `cats random`.

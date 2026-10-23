@@ -1,6 +1,6 @@
 # Field Fuzzers
 
-CATS has currently 100 registered `Field` Fuzzers. The names below match the
+CATS has currently 104 registered `Field` Fuzzers. The names below match the
 current output of `cats list --fuzzers`.
 
 - `AbugidasInStringFields` - iterate through each field and send values containing abugidas chars
@@ -92,6 +92,7 @@ These fuzzers send values encoded as a different type to check whether the
 service or its framework silently coerces input. They expect `4XX` by default;
 use `--no-strictTypes` when the service intentionally accepts the coercion.
 
+- `AlternativeDateTimeFormatsFields` - iterate through date-time fields and send ISO local date and offset-less local date-time formats
 - `BooleanStringInBooleanFields` - send boolean values encoded as strings
 - `BooleanValuesInStringFields` - send boolean values to string fields
 - `EnumNumericOrdinalFields` - send numeric enum ordinals to enum fields
@@ -102,6 +103,7 @@ use `--no-strictTypes` when the service intentionally accepts the coercion.
 - `NumericValuesInStringFields` - send numeric values to string fields
 - `ScientificNotationStringsInDecimalFields` - send scientific-notation numbers as strings
 - `SingleElementArrayToScalarFields` - send primitive values wrapped in a single-element array
+- `SmallNegativeAndInt32BoundaryFields` - iterate through integer and numeric fields and send `0`, `-1`, and `Integer.MAX_VALUE` boundary values
 - `WhitespacePaddedNumericFields` - send numeric values padded with whitespace
 
 ## Additional field fuzzers
@@ -109,7 +111,10 @@ use `--no-strictTypes` when the service intentionally accepts the coercion.
 - `DuplicateItemsInUniqueArraysFields` - send duplicate items in arrays declared with `uniqueItems: true`
 - `FreeFormArrayItemsFields` - send hostile values in arrays whose items are unconstrained
 - `FreeFormObjectFields` - send hostile keys and values in objects with unrestricted `additionalProperties`
+- `LdapInjectionInStringFields` - send LDAP injection payloads to string fields to detect authentication bypass or unauthorized data access
+- `NullElementsInArrayFields` - replace array fields with an array containing a `null` element (`[null]`)
 - `OnlyRequiredFields` - send requests containing only the fields marked as required
+- `QueryObjectAsRequestBody` - send complex query object parameters as JSON request bodies on non-body HTTP methods
 - `SstiInjectionInStringFields` - send server-side template injection payloads to string fields
 - `XxeInjectionInStringFields` - send XML External Entity payloads to string fields
 

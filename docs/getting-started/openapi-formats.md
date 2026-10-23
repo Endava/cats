@@ -39,6 +39,7 @@ This is explicitly mentioned in the mapping table.
 | `regex`                     | N/A                                                                        | `[a-z0-9]+`                            |
 | `relative-json-pointer`     | N/A                                                                        | `1/id`                                 |
 | `time`                      | N/A                                                                        | `10:15:30Z`                            |
+| `timestamp`                 | or name ends with `timestamp`, `*At`, or `*_at`                            | `2021-07-21T10:22:01Z`                 |
 | `uri` or `url`              | or name equals or ends with `url` or `uri`                                 | `http://example.com/cats`              |
 | `uri-reference`             | N/A                                                                        | `/fuzzing/`                            |
 | `uri-template`              | N/A                                                                        | `/fuzzing/{path}`                      |
@@ -48,5 +49,10 @@ This is explicitly mentioned in the mapping table.
 :::info
 Whenever you see a `camelCase` naming, CATS also checks for `snake_case` and `kebab-case`. For example, for `countryCode` CATS will also match properties ending in `country-code` and `country_code`. 
 :::
+
+In addition to `format` and property-name matching, CATS also:
+- supports `x-extensible-enum` values when `enum` is not declared;
+- normalizes paired numeric properties (such as `min*`/`max*` or `start*`/`end*`) so generated lower bounds do not exceed upper bounds; and
+- verifies that values produced by a format generator also satisfy any `pattern` regex declared on the same schema, falling back to pattern-driven string generation when they conflict.
 
 CATS generators are continuously evolving so this page might not have listed all. You can see all formats supported by CATS by running `cats list --formats`.

@@ -53,8 +53,8 @@ You can build CATS from sources on your local machine with [Java 25+](https://sd
 :::caution Before running the first build
 Before running the first build, please make sure you run `./mvnw clean`. CATS uses patched forks of [OkHttp](https://square.github.io/okhttp/) and [Swagger Parser](https://github.com/swagger-api/swagger-parser). Maven installs these artifacts locally from the repository's `lib/` directory:
 
-- `com.squareup.okhttp3:okhttp:5.4.0-CATS`
-- `io.swagger.parser.v3:swagger-parser-v3:2.1.46-CATS`
+- `com.squareup.okhttp3:okhttp:5.5.0-CATS`
+- `io.swagger.parser.v3:swagger-parser-v3:2.1.49-CATS`
 
 These `-CATS` versions are local build artifacts and are intentionally kept separate from the official dependency versions.
 :::
