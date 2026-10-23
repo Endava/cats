@@ -131,20 +131,7 @@ public class ServiceData {
     }
 
     private static String resolveAcceptHeader(FuzzingData data) {
-        if (data.getResponseContentTypes() == null || data.getResponseContentTypes().isEmpty()) {
-            return null;
-        }
-        List<String> twoXxMediaTypes = data.getResponseContentTypes().entrySet().stream()
-                .filter(entry -> entry.getKey() != null && entry.getKey().startsWith("2"))
-                .flatMap(entry -> entry.getValue().stream())
-                .filter(mt -> mt != null && !mt.isBlank())
-                .toList();
-        if (twoXxMediaTypes.isEmpty()) {
-            return null;
-        }
-        boolean supportsJsonOrWildcard = twoXxMediaTypes.stream()
-                .anyMatch(mt -> mt.trim().toLowerCase(java.util.Locale.ROOT).startsWith("application/json") || mt.contains("*/*"));
-        return supportsJsonOrWildcard ? null : twoXxMediaTypes.getFirst();
+        return com.endava.cats.util.ContentTypeUtils.resolveAcceptHeader(data.getResponseContentTypes());
     }
 
     /**

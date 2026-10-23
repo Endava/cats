@@ -1076,16 +1076,7 @@ public class TestCaseListener {
     }
 
     boolean areContentTypesEquivalent(String firstContentType, String secondContentType) {
-        try {
-            MediaType firstMediaType = MediaType.parse(Optional.ofNullable(firstContentType).orElse(CatsResponse.unknownContentType())).withoutParameters();
-            MediaType secondMediaType = MediaType.parse(Optional.ofNullable(secondContentType).orElse(CatsResponse.unknownContentType())).withoutParameters();
-
-            return firstMediaType.is(secondMediaType) || secondMediaType.is(firstMediaType) || (firstMediaType.type().equalsIgnoreCase(secondMediaType.type()) &&
-                    (firstMediaType.subtype().endsWith(secondMediaType.subtype()) || secondMediaType.subtype().endsWith(firstMediaType.subtype())));
-        } catch (IllegalArgumentException e) {
-            logger.debug("Error parsing content type: {}", e.getMessage());
-            return false;
-        }
+        return com.endava.cats.util.ContentTypeUtils.areContentTypesEquivalent(firstContentType, secondContentType);
     }
 
     private boolean isNotFound(CatsResponse response) {

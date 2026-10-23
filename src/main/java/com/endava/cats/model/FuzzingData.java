@@ -487,7 +487,7 @@ public class FuzzingData {
                     .findFirst()
                     .orElseGet(Collections::emptyMap);
             Optional<Schema<?>> matchingSchema = schemasByContentType.entrySet().stream()
-                    .filter(entry -> areContentTypesEquivalent(entry.getKey(), contentType))
+                    .filter(entry -> com.endava.cats.util.ContentTypeUtils.areContentTypesEquivalent(entry.getKey(), contentType))
                     .map(Map.Entry::getValue)
                     .findFirst();
             if (matchingSchema.isPresent()) {
@@ -498,19 +498,6 @@ public class FuzzingData {
             }
         }
         return Optional.empty();
-    }
-
-    private boolean areContentTypesEquivalent(String firstContentType, String secondContentType) {
-        try {
-            MediaType firstMediaType = MediaType.parse(Optional.ofNullable(firstContentType).orElse(CatsResponse.unknownContentType())).withoutParameters();
-            MediaType secondMediaType = MediaType.parse(Optional.ofNullable(secondContentType).orElse(CatsResponse.unknownContentType())).withoutParameters();
-            return firstMediaType.is(secondMediaType) || secondMediaType.is(firstMediaType)
-                    || (firstMediaType.type().equalsIgnoreCase(secondMediaType.type())
-                    && (firstMediaType.subtype().endsWith(secondMediaType.subtype())
-                    || secondMediaType.subtype().endsWith(firstMediaType.subtype())));
-        } catch (IllegalArgumentException _) {
-            return false;
-        }
     }
 
     /**

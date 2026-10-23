@@ -125,7 +125,7 @@ public abstract class OpenApiUtils {
     public static MediaType getMediaTypeFromContent(Content content, String contentType) {
         content.forEach((key, value) -> LOGGER.debug("key {} contentType {}", key, contentType));
         return content.entrySet().stream()
-                .filter(contentEntry -> contentEntry.getKey().matches(contentType))
+                .filter(contentEntry -> ContentTypeUtils.matchesContentType(contentEntry.getKey(), contentType))
                 .map(Map.Entry::getValue)
                 .findFirst()
                 .orElseGet(() -> content.get(contentType));
@@ -205,7 +205,7 @@ public abstract class OpenApiUtils {
     public static boolean hasContentType(Content content, List<String> contentType) {
         return content != null && content.keySet().stream()
                 .anyMatch(contentKey -> contentType.stream()
-                        .anyMatch(contentItem -> contentKey.matches(contentItem) || contentKey.equalsIgnoreCase(contentItem))
+                        .anyMatch(contentItem -> ContentTypeUtils.matchesContentType(contentKey, contentItem))
                 );
     }
 

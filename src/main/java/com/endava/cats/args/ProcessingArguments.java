@@ -201,6 +201,15 @@ public class ProcessingArguments {
     }
 
     /**
+     * Returns {@code true} when an explicit {@code --contentType} was supplied by the user.
+     *
+     * @return {@code true} if {@code --contentType} was explicitly configured
+     */
+    public boolean isCustomContentTypeSupplied() {
+        return contentType != null && !contentType.isBlank();
+    }
+
+    /**
      * Resolves an example flag by returning the global {@code --useExamples} override when set,
      * or the specific flag value otherwise.
      *

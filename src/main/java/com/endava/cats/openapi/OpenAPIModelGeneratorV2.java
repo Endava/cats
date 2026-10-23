@@ -86,6 +86,7 @@ public class OpenAPIModelGeneratorV2 {
     private boolean bypassExamplesCache;
     private boolean bypassDeclaredExamples;
     private int arrayItemVariantDepth;
+    private final int maxExamples;
 
     /**
      * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
@@ -115,6 +116,10 @@ public class OpenAPIModelGeneratorV2 {
      * @param discriminatorCasing The casing convention for discriminator values
      */
     public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int maxArraySize, String discriminatorCasing) {
+        this(catsGlobalContext, validDataFormat, useExamplesArgument, selfReferenceDepth, useDefaults, maxArraySize, discriminatorCasing, LIMIT_OF_EXAMPLES);
+    }
+
+    public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int maxArraySize, String discriminatorCasing, int maxExamples) {
         this.globalContext = catsGlobalContext;
         this.random = CatsRandom.instance();
         this.examplesFlags = useExamplesArgument;
@@ -124,6 +129,7 @@ public class OpenAPIModelGeneratorV2 {
         this.useDefaults = useDefaults;
         this.maxArraySize = maxArraySize;
         this.discriminatorCasing = discriminatorCasing;
+        this.maxExamples = maxExamples > 0 ? Math.min(LIMIT_OF_EXAMPLES, maxExamples) : LIMIT_OF_EXAMPLES;
 
         this.resolveAnyOfAsMultipleSchema = true;
         this.totalDepth = REQUEST_TOTAL_DEPTH;
@@ -168,6 +174,7 @@ public class OpenAPIModelGeneratorV2 {
         this.resolveAnyOfAsMultipleSchema = resolveAnyOfAsMultipleSchema;
         this.discriminatorCasing = discriminatorCasing;
         this.totalDepth = RESPONSE_TOTAL_DEPTH;
+        this.maxExamples = LIMIT_OF_EXAMPLES;
     }
 
     private void addExampleAndKeepDepth(String propertyName, GeneratedExample propertyExample, Map<String, Object> newExample,
@@ -211,6 +218,9 @@ public class OpenAPIModelGeneratorV2 {
             if (schema != null) {
                 List<GeneratedExample> generatedExamples = generateExamplesForSchema(modelName, schema);
                 for (GeneratedExample generatedExample : generatedExamples) {
+                    if (examples.size() >= maxExamples) {
+                        break;
+                    }
                     String example = this.transformInJson(modelName, generatedExample.value());
 
                     if (example != null) {
@@ -461,7 +471,13 @@ public class OpenAPIModelGeneratorV2 {
         if (!parentPropertyExamples.isEmpty()) {
             List<GeneratedExample> mergedExamples = new ArrayList<>();
             for (GeneratedExample oneOfExample : oneOfAnyOfExamples) {
+                if (mergedExamples.size() >= maxExamples) {
+                    break;
+                }
                 for (GeneratedExample parentExample : parentPropertyExamples) {
+                    if (mergedExamples.size() >= maxExamples) {
+                        break;
+                    }
                     Map<String, Object> merged = new HashMap<>(asMap(oneOfExample));
 
                     for (Map.Entry<String, Object> entry : asMap(parentExample).entrySet()) {
@@ -472,7 +488,7 @@ public class OpenAPIModelGeneratorV2 {
             }
             examples = combineExampleLists(examples, mergedExamples);
         } else {
-            examples = combineExampleLists(examples, oneOfAnyOfExamples);
+            examples = combineExampleLists(examples, oneOfAnyOfExamples.stream().limit(maxExamples).toList());
         }
         return examples;
     }
@@ -657,12 +673,18 @@ public class OpenAPIModelGeneratorV2 {
         List<GeneratedExample> interimExamples = new ArrayList<>();
 
         if (CatsModelUtils.isAnyOf(subSchema) || CatsModelUtils.isOneOf(subSchema)) {
-            interimExamples.addAll(subExamples);
+            interimExamples.addAll(subExamples.stream().limit(maxExamples).toList());
         } else if (examples.isEmpty()) {
-            examples.addAll(subExamples);
+            examples.addAll(subExamples.stream().limit(maxExamples).toList());
         } else {
             for (GeneratedExample subExample : subExamples) {
+                if (interimExamples.size() >= maxExamples) {
+                    break;
+                }
                 for (GeneratedExample existingExample : examples) {
+                    if (interimExamples.size() >= maxExamples) {
+                        break;
+                    }
                     interimExamples.add(mergeExamples(existingExample, subExample));
                 }
             }
@@ -671,7 +693,7 @@ public class OpenAPIModelGeneratorV2 {
             examples.clear();
         }
         examples.addAll(interimExamples.stream()
-                .limit(Math.min(interimExamples.size(), LIMIT_OF_EXAMPLES))
+                .limit(Math.min(interimExamples.size(), maxExamples))
                 .toList());
     }
 
@@ -731,7 +753,7 @@ public class OpenAPIModelGeneratorV2 {
             List<Schema> schemas = CatsModelUtils.getInterfaces(schema).stream().filter(iteratingSchema -> !isNullSchema(iteratingSchema)).toList();
 
             for (Schema subSchema : schemas) {
-                if (examples.size() >= LIMIT_OF_EXAMPLES) {
+                if (examples.size() >= maxExamples) {
                     break;
                 }
                 if (hasValidRef(subSchema)) {
@@ -740,6 +762,9 @@ public class OpenAPIModelGeneratorV2 {
                         String schemaName = CatsModelUtils.getSimpleRefUsingOAT(subSchema.get$ref());
                         List<GeneratedExample> variantExamples = generateExamplesForSchema(schemaName, resolved);
                         for (GeneratedExample variantExample : variantExamples) {
+                            if (examples.size() >= maxExamples) {
+                                break;
+                            }
                             Map<String, Object> wrappedExample = new HashMap<>();
                             Map<String, Object> variantValue = asMap(variantExample);
                             wrappedExample.put(propertyName, variantValue.getOrDefault(schemaName, variantValue));
@@ -747,7 +772,12 @@ public class OpenAPIModelGeneratorV2 {
                         }
                     }
                 } else {
-                    examples.addAll(generateExamplesForSchema(propertyName, subSchema));
+                    for (GeneratedExample generatedExample : generateExamplesForSchema(propertyName, subSchema)) {
+                        if (examples.size() >= maxExamples) {
+                            break;
+                        }
+                        examples.add(generatedExample);
+                    }
                 }
             }
         } finally {
@@ -1201,6 +1231,9 @@ public class OpenAPIModelGeneratorV2 {
 
         if (existingExamples.isEmpty()) {
             for (GeneratedExample propertyExample : propertyExamples) {
+                if (combinedExamples.size() >= maxExamples) {
+                    break;
+                }
                 Map<String, Object> newExample = new HashMap<>();
                 Set<String> requiredFields = new LinkedHashSet<>();
                 if (required) {
@@ -1210,7 +1243,13 @@ public class OpenAPIModelGeneratorV2 {
             }
         } else {
             for (GeneratedExample existingExample : existingExamples) {
+                if (combinedExamples.size() >= maxExamples) {
+                    break;
+                }
                 for (GeneratedExample propertyExample : propertyExamples) {
+                    if (combinedExamples.size() >= maxExamples) {
+                        break;
+                    }
                     Map<String, Object> newExample = new HashMap<>(asMap(existingExample));
                     Set<String> requiredFields = new LinkedHashSet<>(existingExample.requiredFields());
                     if (required) {
@@ -1222,7 +1261,7 @@ public class OpenAPIModelGeneratorV2 {
         }
 
         return combinedExamples.stream()
-                .limit(Math.min(combinedExamples.size(), LIMIT_OF_EXAMPLES))
+                .limit(Math.min(combinedExamples.size(), maxExamples))
                 .toList();
     }
 

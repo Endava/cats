@@ -15,6 +15,7 @@ import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2.GeneratedPayload;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsRandom;
+import com.endava.cats.util.ContentTypeUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
@@ -648,7 +649,7 @@ public class FuzzingDataFactory {
         }
         for (String contentType : processingArguments.getContentType()) {
             Optional<Map.Entry<String, MediaType>> selected = content.entrySet().stream()
-                    .filter(entry -> matchesContentType(entry.getKey(), contentType))
+                    .filter(entry -> ContentTypeUtils.matchesContentType(entry.getKey(), contentType))
                     .findFirst();
             if (selected.isPresent()) {
                 return new SelectedMediaType(selected.get().getKey(), selected.get().getValue());
@@ -658,7 +659,9 @@ public class FuzzingDataFactory {
         if (wildcard != null) {
             return new SelectedMediaType(defaultRequestContentType(), wildcard);
         }
-        if (processingArguments.getContentType() != null && processingArguments.getContentType().size() > 1) {
+        if (!processingArguments.isCustomContentTypeSupplied()
+                && processingArguments.getContentType() != null
+                && processingArguments.getContentType().size() > 1) {
             return new SelectedMediaType(defaultRequestContentType(), new NoMediaType());
         }
         return null;
@@ -669,7 +672,8 @@ public class FuzzingDataFactory {
     }
 
     private String noBodyRequestContentType(Operation operation) {
-        if ("application/json".equalsIgnoreCase(defaultRequestContentType())
+        if (!processingArguments.isCustomContentTypeSupplied()
+                && "application/json".equalsIgnoreCase(defaultRequestContentType())
                 && operation != null
                 && operation.getParameters() != null
                 && operation.getParameters().stream().anyMatch(p -> p != null && "query".equalsIgnoreCase(p.getIn()))) {
@@ -682,36 +686,14 @@ public class FuzzingDataFactory {
         return PayloadFormat.from(contentType) != PayloadFormat.UNKNOWN;
     }
 
-    private boolean matchesContentType(String actual, String configured) {
-        if (actual.equalsIgnoreCase(configured)) {
-            return true;
-        }
-        try {
-            if (com.endava.cats.util.external.MediaType.parse(actual)
-                    .is(com.endava.cats.util.external.MediaType.parse(configured))) {
-                return true;
-            }
-        } catch (IllegalArgumentException _) {
-            return matchesContentTypePattern(actual, configured);
-        }
-        return matchesContentTypePattern(actual, configured);
-    }
-
-    private boolean matchesContentTypePattern(String actual, String configured) {
-        try {
-            return actual.matches("(?i:" + configured + ")");
-        } catch (IllegalArgumentException _) {
-            return false;
-        }
-    }
-
     static boolean hasContent(Operation operation) {
         return operation.getRequestBody() != null && operation.getRequestBody().getContent() != null;
     }
 
     private GenerationResult getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
         OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, processingArguments.examplesFlags(),
-                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE, processingArguments.getDiscriminatorCasing());
+                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE,
+                processingArguments.getDiscriminatorCasing(), processingArguments.getLimitXxxOfCombinations());
 
         /* Event though the media type might have an example set, we still generate samples in order to properly map each field with its corresponding data type*/
         GenerationResult generated = this.generateRequestSamples(reqSchemaName, generator);
@@ -918,7 +900,16 @@ public class FuzzingDataFactory {
             }
         }
         if (apiResponse.getContent() != null) {
-            Set<Object> examples = extractExamples(apiResponse.getContent().get(processingArguments.getDefaultContentType()));
+            MediaType matchedMediaType = apiResponse.getContent().get(processingArguments.getDefaultContentType());
+            if (matchedMediaType == null) {
+                for (String configuredCt : processingArguments.getContentType()) {
+                    matchedMediaType = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), configuredCt);
+                    if (matchedMediaType != null) {
+                        break;
+                    }
+                }
+            }
+            Set<Object> examples = extractExamples(matchedMediaType);
             return examples.stream()
                     .map(JsonUtils::serialize)
                     .toList();
