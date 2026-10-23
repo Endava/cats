@@ -65,6 +65,19 @@ class RunCommandTest {
         Mockito.verify(filterArguments, Mockito.atLeastOnce()).customFilter(Mockito.anyString());
     }
 
+    @Test
+    void shouldAutoRecognizeAndRunFunctionalFlowFuzzer() throws IOException {
+        File flowFile = File.createTempFile("functionalFlow", ".yml");
+        Files.writeString(flowFile.toPath(), "steps:\n  - POST: /pets\n    status: 200\n", UTF_8);
+        try {
+            ReflectionTestUtils.setField(runCommand, "file", flowFile);
+            runCommand.run();
+            Mockito.verify(filterArguments, Mockito.atLeastOnce()).customFilter("FunctionalFlowFuzzer");
+        } finally {
+            deleteFile(flowFile);
+        }
+    }
+
     @ParameterizedTest
     @CsvSource({"securityFuzzer.yml,1", "securityFuzzer-fieldTypes.yml,1"})
     void shouldRunSecurityFuzzer(String securityFuzzerFile, int times) {

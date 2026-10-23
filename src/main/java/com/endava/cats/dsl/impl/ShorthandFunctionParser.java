@@ -33,17 +33,27 @@ import java.util.function.Function;
  */
 public class ShorthandFunctionParser implements Parser {
 
-    private static final Map<String, Function<int[], String>> PARAMETERIZED_FUNCTIONS = Map.of(
-            "alphanumeric", args -> args.length == 1 ? CatsRandom.alphanumeric(args[0]) : CatsRandom.alphanumeric(args[0], args[1]),
-            "alphabetic", args -> args.length == 1 ? CatsRandom.alphabetic(args[0]) : CatsRandom.alphabetic(args[0], args[1]),
-            "numeric", args -> args.length == 1 ? CatsRandom.numeric(args[0]) : CatsRandom.numeric(args[0], args[1]),
-            "ascii", args -> args.length == 1 ? CatsRandom.ascii(args[0]) : CatsRandom.ascii(args[0], args[1]),
-            "todayplus", args -> LocalDate.now(ZoneOffset.UTC).plusDays(args[0]).toString(),
-            "todayminus", args -> LocalDate.now(ZoneOffset.UTC).minusDays(args[0]).toString()
+    private static final String CROCKFORD_BASE32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+    private static final Map<String, Function<int[], String>> PARAMETERIZED_FUNCTIONS = Map.ofEntries(
+            Map.entry("alphanumeric", args -> args.length == 1 ? CatsRandom.alphanumeric(args[0]) : CatsRandom.alphanumeric(args[0], args[1])),
+            Map.entry("alphabetic", args -> args.length == 1 ? CatsRandom.alphabetic(args[0]) : CatsRandom.alphabetic(args[0], args[1])),
+            Map.entry("numeric", args -> args.length == 1 ? CatsRandom.numeric(args[0]) : CatsRandom.numeric(args[0], args[1])),
+            Map.entry("ascii", args -> args.length == 1 ? CatsRandom.ascii(args[0]) : CatsRandom.ascii(args[0], args[1])),
+            Map.entry("todayplus", args -> LocalDate.now(ZoneOffset.UTC).plusDays(args[0]).toString()),
+            Map.entry("todayminus", args -> LocalDate.now(ZoneOffset.UTC).minusDays(args[0]).toString()),
+            Map.entry("nowplusdays", args -> OffsetDateTime.now(ZoneOffset.UTC).plusDays(args[0]).toString()),
+            Map.entry("nowminusdays", args -> OffsetDateTime.now(ZoneOffset.UTC).minusDays(args[0]).toString()),
+            Map.entry("nowplushours", args -> OffsetDateTime.now(ZoneOffset.UTC).plusHours(args[0]).toString()),
+            Map.entry("nowminushours", args -> OffsetDateTime.now(ZoneOffset.UTC).minusHours(args[0]).toString()),
+            Map.entry("randomint", args -> args.length == 1
+                    ? String.valueOf(CatsRandom.instance().nextInt(Math.max(1, args[0])))
+                    : String.valueOf(args[0] + CatsRandom.instance().nextInt(Math.max(1, args[1] - args[0]))))
     );
 
     private static final Map<String, String> NO_ARG_FUNCTIONS = Map.of(
             "uuid", UUID.class.getName(),
+            "ulid", "ulid",
             "email", "email",
             "now", "now",
             "today", "today"
@@ -52,16 +62,60 @@ public class ShorthandFunctionParser implements Parser {
     @Override
     public String parse(String expression, Map<String, String> context) {
         String inner = extractInner(expression);
-        if (inner == null) {
-            return expression;
+        if (inner != null) {
+            return evaluateSingleToken(inner, expression);
         }
+        return replaceEmbeddedShorthands(expression);
+    }
 
+    private String evaluateSingleToken(String inner, String originalExpression) {
         String noArgResult = evaluateNoArgFunction(inner);
         if (noArgResult != null) {
             return noArgResult;
         }
+        return evaluateParameterizedFunction(inner, originalExpression);
+    }
 
-        return evaluateParameterizedFunction(inner, expression);
+    private String replaceEmbeddedShorthands(String expression) {
+        if (expression == null || !expression.contains("#(")) {
+            return expression;
+        }
+        StringBuilder out = new StringBuilder();
+        int idx = 0;
+        while (idx < expression.length()) {
+            int start = expression.indexOf("#(", idx);
+            if (start < 0) {
+                out.append(expression, idx, expression.length());
+                break;
+            }
+            out.append(expression, idx, start);
+            int end = findMatchingClosingParen(expression, start + 2);
+            if (end < 0) {
+                out.append(expression, start, expression.length());
+                break;
+            }
+            String token = expression.substring(start, end + 1);
+            String inner = expression.substring(start + 2, end).trim();
+            out.append(evaluateSingleToken(inner, token));
+            idx = end + 1;
+        }
+        return out.toString();
+    }
+
+    private static int findMatchingClosingParen(String text, int startAfterOpen) {
+        int depth = 1;
+        for (int i = startAfterOpen; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     private String extractInner(String expression) {
@@ -80,11 +134,25 @@ public class ShorthandFunctionParser implements Parser {
 
         return switch (key) {
             case "uuid" -> UUID.randomUUID().toString();
+            case "ulid" -> generateUlid();
             case "email" -> CatsRandom.email();
             case "now" -> OffsetDateTime.now(ZoneOffset.UTC).toString();
             case "today" -> LocalDate.now(ZoneOffset.UTC).toString();
             default -> null;
         };
+    }
+
+    private static String generateUlid() {
+        long timestamp = System.currentTimeMillis();
+        char[] chars = new char[26];
+        for (int i = 9; i >= 0; i--) {
+            chars[i] = CROCKFORD_BASE32.charAt((int) (timestamp & 31));
+            timestamp >>>= 5;
+        }
+        for (int i = 10; i < 26; i++) {
+            chars[i] = CROCKFORD_BASE32.charAt(CatsRandom.instance().nextInt(32));
+        }
+        return new String(chars);
     }
 
     private String evaluateParameterizedFunction(String inner, String originalExpression) {

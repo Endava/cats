@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer;
 
+import com.endava.cats.fuzzer.special.FunctionalFlowFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.fuzzer.special.RandomFuzzer;
 import com.endava.cats.fuzzer.special.SecurityFuzzer;
@@ -18,6 +19,11 @@ public final class FuzzerTypes {
      * FunctionalFuzzer - runs functional tests from YAML files.
      */
     public static final String FUNCTIONAL = FunctionalFuzzer.class.getSimpleName();
+
+    /**
+     * FunctionalFlowFuzzer - runs sequential functional flow tests from YAML files.
+     */
+    public static final String FUNCTIONAL_FLOW = FunctionalFlowFuzzer.class.getSimpleName();
 
     /**
      * SecurityFuzzer - runs security tests from YAML files.

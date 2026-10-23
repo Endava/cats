@@ -62,6 +62,14 @@ public class CommandContext {
         return get("customFuzzerFile", File.class);
     }
 
+    public void setFunctionalFlowFile(File file) {
+        set("functionalFlowFile", file);
+    }
+
+    public Optional<File> getFunctionalFlowFile() {
+        return get("functionalFlowFile", File.class);
+    }
+
     public void setSecurityFuzzerFile(File file) {
         set("securityFuzzerFile", file);
     }

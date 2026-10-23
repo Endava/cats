@@ -63,6 +63,20 @@ class ShorthandFunctionParserTest {
             String result = parser.parse("#(UUID)", Map.of());
             assertThat(result).matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
         }
+
+        @Test
+        @DisplayName("Should generate ULID")
+        void shouldGenerateUlid() {
+            String result = parser.parse("#(ulid)", Map.of());
+            assertThat(result).hasSize(26).matches("[0-9A-HJKMNP-TV-Z]{26}");
+        }
+
+        @Test
+        @DisplayName("Should replace embedded shorthands inside strings")
+        void shouldReplaceEmbeddedShorthands() {
+            String result = parser.parse("Rule-#(alphanumeric(6))-end", Map.of());
+            assertThat(result).startsWith("Rule-").endsWith("-end").hasSize(15);
+        }
     }
 
     @Nested
@@ -142,6 +156,17 @@ class ShorthandFunctionParserTest {
         void shouldGenerateTodayMinus() {
             String result = parser.parse("#(todayMinus(10))", Map.of());
             assertThat(result).isEqualTo(LocalDate.now().minusDays(10).toString());
+        }
+
+        @Test
+        @DisplayName("Should generate nowPlusDays, nowMinusDays, nowPlusHours, nowMinusHours, and randomInt")
+        void shouldGenerateNowOffsetsAndRandomInt() {
+            assertThat(parser.parse("#(nowPlusDays(2))", Map.of())).contains("T");
+            assertThat(parser.parse("#(nowMinusDays(2))", Map.of())).contains("T");
+            assertThat(parser.parse("#(nowPlusHours(3))", Map.of())).contains("T");
+            assertThat(parser.parse("#(nowMinusHours(3))", Map.of())).contains("T");
+            int rand = Integer.parseInt(parser.parse("#(randomInt(10,20))", Map.of()));
+            assertThat(rand).isBetween(10, 19);
         }
     }
 

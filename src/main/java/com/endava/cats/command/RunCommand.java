@@ -7,6 +7,7 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.model.CommandContext;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.fuzzer.FuzzerTypes;
+import com.endava.cats.fuzzer.special.FunctionalFlowParser;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
@@ -139,7 +140,10 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
         CommandContext context = new CommandContext();
 
         // Set fuzzer type based on file content
-        if (this.isFunctionalFuzzerFile()) {
+        if (FunctionalFlowParser.isFunctionalFlowFile(file)) {
+            context.setFuzzerType(FuzzerTypes.FUNCTIONAL_FLOW);
+            context.setFunctionalFlowFile(file);
+        } else if (this.isFunctionalFuzzerFile()) {
             context.setFuzzerType(FuzzerTypes.FUNCTIONAL);
             context.setCustomFuzzerFile(file);
         } else {

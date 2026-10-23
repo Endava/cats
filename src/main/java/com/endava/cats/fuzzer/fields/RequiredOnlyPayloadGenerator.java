@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * Creates request payloads containing only properties marked as required for the generated payload,
  * or strips unmarked server-generated metadata fields when the schema declares no required fields.
  */
-final class RequiredOnlyPayloadGenerator {
+public final class RequiredOnlyPayloadGenerator {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RequiredOnlyPayloadGenerator.class);
     private static final Set<String> PRIMARY_ID_FIELDS = Set.of("id", "uuid", "guid");
 
@@ -28,7 +28,7 @@ final class RequiredOnlyPayloadGenerator {
         // utility class
     }
 
-    static String generate(String payload, List<String> requiredFields) {
+    public static String generate(String payload, List<String> requiredFields) {
         return generate(payload, requiredFields, null, false);
     }
 
@@ -44,7 +44,7 @@ final class RequiredOnlyPayloadGenerator {
      * @param bodyMethod     whether the HTTP method sends a request body
      * @return a JSON payload containing only required (or non-metadata) properties
      */
-    static String generate(String payload, List<String> requiredFields, String contractPath, boolean bodyMethod) {
+    public static String generate(String payload, List<String> requiredFields, String contractPath, boolean bodyMethod) {
         if (payload == null || payload.isBlank()) {
             return payload;
         }

@@ -117,8 +117,13 @@ public class FilesArguments {
 
     @CommandLine.Option(names = {"--functionalFuzzerFile"},
             description = "The file used by the @|bold FunctionalFuzzer|@ to create user-supplied payloads and tests")
+    @Getter
     @Setter
     private File customFuzzerFile;
+
+    @Getter
+    @Setter
+    private File functionalFlowFile;
 
     @CommandLine.Option(names = {"--securityFuzzerFile"},
             description = "The file used by the @|bold SecurityFuzzer|@ to inject special strings in order to exploit possible vulnerabilities")

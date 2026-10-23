@@ -24,6 +24,8 @@ import com.endava.cats.exception.CatsExecutionLimitReachedException;
 import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.special.FunctionalFlowFuzzer;
+import com.endava.cats.fuzzer.special.FunctionalFlowParser;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.fuzzer.special.RandomFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -143,6 +145,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     FuzzingDataFactory fuzzingDataFactory;
     @Inject
     FunctionalFuzzer functionalFuzzer;
+
+    @Inject
+    FunctionalFlowFuzzer functionalFlowFuzzer;
     @Inject
     TestCaseListener testCaseListener;
     @Inject
@@ -262,6 +267,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         // Apply context to arguments
         context.getFuzzerType().ifPresent(filterArguments::customFilter);
         context.getCustomFuzzerFile().ifPresent(filesArguments::setCustomFuzzerFile);
+        context.getFunctionalFlowFile().ifPresent(filesArguments::setFunctionalFlowFile);
         context.getSecurityFuzzerFile().ifPresent(filesArguments::setSecurityFuzzerFile);
         context.getHeadersFile().ifPresent(filesArguments::setHeadersFile);
         context.getHeadersMap().ifPresent(filesArguments::setHeadersMap);
@@ -498,6 +504,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     private void executeCustomFuzzer() throws IOException {
         CatsExecutionCancelledException.check();
+        if (filterArguments.getSuppliedFuzzers().contains(FunctionalFlowFuzzer.class.getSimpleName())
+                || filesArguments.getFunctionalFlowFile() != null) {
+            functionalFlowFuzzer.executeFlows();
+            CatsExecutionCancelledException.check();
+        }
         if (filterArguments.getSuppliedFuzzers().contains(FunctionalFuzzer.class.getSimpleName())) {
             functionalFuzzer.executeCustomFuzzerTests();
             CatsExecutionCancelledException.check();
@@ -523,6 +534,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         authArguments.getEnvironmentVariables();
         apiArguments.validateRequired(spec);
         processingArguments.validatePreseedCollectionGets(spec);
+        if (filesArguments.getCustomFuzzerFile() != null
+                && FunctionalFlowParser.isFunctionalFlowFile(filesArguments.getCustomFuzzerFile())) {
+            filesArguments.setFunctionalFlowFile(filesArguments.getCustomFuzzerFile());
+            filesArguments.setCustomFuzzerFile(null);
+            filterArguments.customFilter(FunctionalFlowFuzzer.class.getSimpleName());
+        }
         filesArguments.loadConfig();
         filterArguments.applyProfile(spec);
     }

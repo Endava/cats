@@ -1,5 +1,7 @@
 package com.endava.cats.dsl;
 
+import com.endava.cats.dsl.impl.ShorthandFunctionParser;
+
 import java.util.Map;
 
 /**
@@ -10,6 +12,7 @@ import java.util.Map;
  * expression.</p>
  */
 public final class DynamicValueResolver {
+    private static final ShorthandFunctionParser SHORTHAND_PARSER = new ShorthandFunctionParser();
 
     private DynamicValueResolver() {
         // Utility class.
@@ -32,6 +35,9 @@ public final class DynamicValueResolver {
             for (Map.Entry<String, String> variable : context.entrySet()) {
                 result = result.replace("${" + variable.getKey() + "}", variable.getValue());
             }
+        }
+        if (result.contains("#(") && !result.trim().startsWith("#(")) {
+            result = SHORTHAND_PARSER.parse(result, context);
         }
         return CatsDSLParser.parseAndGetResult(result, context);
     }

@@ -573,7 +573,8 @@ final class FuzzerWaveExecutor {
 
         logFuzzerStart(fuzzer, data);
 
-        boolean reportsFuzzerLifecycle = !(fuzzer instanceof FunctionalFuzzer);
+        boolean reportsFuzzerLifecycle = !(fuzzer instanceof FunctionalFuzzer)
+                && !(fuzzer instanceof com.endava.cats.fuzzer.special.FunctionalFlowFuzzer);
         if (reportsFuzzerLifecycle) {
             command.testCaseListener.beforeFuzz(fuzzer.getClass(), data.getContractPath(), data.getMethod().name());
         }
