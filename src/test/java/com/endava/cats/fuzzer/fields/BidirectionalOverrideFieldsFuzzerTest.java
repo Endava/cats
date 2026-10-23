@@ -49,7 +49,7 @@ class BidirectionalOverrideFieldsFuzzerTest {
     @Test
     void shouldSkipForNonBodyMethods() {
         Assertions.assertThat(bidirectionalOverrideFieldsFuzzer.skipForHttpMethods())
-                .contains(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD);
+                .containsOnly(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 
     @Test

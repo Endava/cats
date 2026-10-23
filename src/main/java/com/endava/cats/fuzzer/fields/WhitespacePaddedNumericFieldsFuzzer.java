@@ -50,4 +50,9 @@ public class WhitespacePaddedNumericFieldsFuzzer extends BaseTypeCoercionFuzzer 
     protected String getFuzzedType() {
         return "whitespace padded number";
     }
+
+    @Override
+    public List<com.endava.cats.http.HttpMethod> skipForHttpMethods() {
+        return List.of(com.endava.cats.http.HttpMethod.HEAD, com.endava.cats.http.HttpMethod.TRACE);
+    }
 }

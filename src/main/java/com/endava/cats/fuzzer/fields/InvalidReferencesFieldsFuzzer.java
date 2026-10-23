@@ -13,10 +13,12 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,7 +57,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         if (this.hasPathVariables(data.getPath())) {
-            List<PathMutation> pathCombinations = this.replacePathVariables(data.getPath());
+            List<PathMutation> pathCombinations = this.replacePathVariables(data);
             for (PathMutation pathMutation : pathCombinations) {
                 simpleExecutor.execute(
                         SimpleExecutorContext.builder()
@@ -66,6 +68,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
                                 .mutationTarget(RequestTarget.path(pathMutation.parameter()))
                                 .scenario("Fuzz path parameters for HTTP methods with bodies. Current path: %s".formatted(pathMutation.path()))
                                 .expectedSpecificResponseCode("[2XX, 4XX]")
+                                .replaceUrlParams(false)
                                 .responseProcessor(this::processResponse)
                                 .build());
             }
@@ -83,7 +86,8 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
         }
     }
 
-    private List<PathMutation> replacePathVariables(String path) {
+    private List<PathMutation> replacePathVariables(FuzzingData data) {
+        String path = data.getPath();
         List<String> variables = new ArrayList<>();
         Matcher matcher = VARIABLES_PATTERN.matcher(path);
         while (matcher.find()) {
@@ -93,17 +97,35 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
         Map<String, String> variablesValues = new HashMap<>();
         for (String variable : variables) {
             String variableName = variable.substring(1, variable.length() - 1);
-            String value = Optional.ofNullable(filesArguments.getRefData(path).get(variableName))
+            String value = Optional.ofNullable(filesArguments.getRefData(path))
+                    .map(ref -> ref.get(variableName))
                     .map(WordUtils::nullOrValueOf)
-                    .orElse(filesArguments.getUrlParamsList()
+                    .orElseGet(() -> Optional.ofNullable(filesArguments.getUrlParamsList())
+                            .orElse(List.of())
                             .stream()
                             .filter(param -> param.startsWith(variableName + ":"))
                             .map(item -> item.split(":", -1)[1])
-                            .findFirst().orElse(variable));
+                            .findFirst()
+                            .orElseGet(() -> resolvePathVariableFromPayload(data, variableName)));
             variablesValues.put(variable, value);
         }
 
         return createPathCombinations(path, variables, variablesValues);
+    }
+
+    private static String resolvePathVariableFromPayload(FuzzingData data, String variableName) {
+        String safeBodyPayload = data.getReqSchema() != null ? StringUtils.defaultString(data.getPayload()) : "";
+        for (String candidatePayload : List.of(
+                StringUtils.defaultString(data.getPathParamsPayload()),
+                safeBodyPayload)) {
+            if (StringUtils.isNotBlank(candidatePayload) && JsonUtils.isValidJson(candidatePayload)) {
+                Object val = JsonUtils.getVariableFromJson(candidatePayload, variableName);
+                if (val != null && !JsonUtils.isNotSet(String.valueOf(val)) && StringUtils.isNotBlank(String.valueOf(val))) {
+                    return String.valueOf(val);
+                }
+            }
+        }
+        return "1";
     }
 
     private static List<PathMutation> createPathCombinations(String path, List<String> variables, Map<String, String> variablesValues) {

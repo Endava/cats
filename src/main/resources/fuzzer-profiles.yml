@@ -330,6 +330,10 @@ profiles:
       - HappyPath
       - OnlyRequiredFields
       - RemoveFields
+      - NullValuesInFields
+      - EmptyStringsInFields
+      - StringsInNumericFields
+      - InvalidReferencesFields
       - NullElementsInArrayFields
       - AlternativeDateTimeFormatsFields
       - QueryObjectAsRequestBody

@@ -164,7 +164,7 @@ class LeadingZerosInNumericFieldsFuzzerTest {
     @Test
     void shouldSkipForHttpMethods() {
         Assertions.assertThat(leadingZerosInNumericFieldsFuzzer.skipForHttpMethods())
-                .containsOnly(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
+                .containsOnly(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 
     @Test

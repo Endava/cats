@@ -147,7 +147,7 @@ class EnumNumericOrdinalFieldsFuzzerTest {
     @Test
     void shouldSkipForHttpMethods() {
         Assertions.assertThat(fuzzer.skipForHttpMethods())
-                .containsOnly(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
+                .containsOnly(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 
     @Test

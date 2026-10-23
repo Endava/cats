@@ -243,8 +243,12 @@ final class FuzzerWaveExecutor {
 
     private void runCrashWave(List<PreparedPath> preparedPaths, Set<String> coverageWaveFuzzers, Set<String> crashWaveFuzzers) {
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 3, 4, "Crash"));
-        runNonSeedWaveAcrossPaths(preparedPaths,
-                fuzzer -> !isInWave(fuzzer, coverageWaveFuzzers) && isInWave(fuzzer, crashWaveFuzzers), false);
+        for (String crashFuzzerName : crashWaveFuzzers) {
+            if (!coverageWaveFuzzers.contains(crashFuzzerName)) {
+                Set<String> singleWave = Set.of(crashFuzzerName);
+                runNonSeedWaveAcrossPaths(preparedPaths, fuzzer -> isInWave(fuzzer, singleWave), false);
+            }
+        }
     }
 
     private void runRemainingWaveAndSecondPhase(List<PreparedPath> preparedPaths,
@@ -263,7 +267,14 @@ final class FuzzerWaveExecutor {
                 List<Fuzzer> waveFuzzers = nonSeedFuzzers(path.fuzzersToRun()).stream()
                         .filter(waveFilter)
                         .toList();
-                runFuzzers(path.filteredFuzzingData(), waveFuzzers);
+                List<FuzzingData> nonDeleteData = path.filteredFuzzingData().stream()
+                        .filter(data -> data.getMethod() != HttpMethod.DELETE)
+                        .toList();
+                List<FuzzingData> deleteData = path.filteredFuzzingData().stream()
+                        .filter(data -> data.getMethod() == HttpMethod.DELETE)
+                        .toList();
+                runFuzzers(nonDeleteData, waveFuzzers);
+                runFuzzers(deleteData, waveFuzzers);
                 if (completePathAfterWave) {
                     runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
                     command.executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));

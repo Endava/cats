@@ -48,7 +48,7 @@ class HomoglyphEnumFieldsFuzzerTest {
     @Test
     void shouldSkipForNonBodyMethods() {
         Assertions.assertThat(homoglyphEnumFieldsFuzzer.skipForHttpMethods())
-                .contains(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD);
+                .containsOnly(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 
     @Test
