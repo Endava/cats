@@ -119,7 +119,9 @@ final class ResourceValueExtractor {
             }
             String value = ResourceSemanticNaming.lastPathSegment(locationHeader.getValue());
             if (StringUtils.isNotBlank(value)) {
-                return Optional.of(new StoredValue(value, "response.header." + name, Set.of("id")));
+                Set<String> aliases = new LinkedHashSet<>(Set.of("id"));
+                aliases.addAll(ResourceSemanticNaming.primaryResourceIdentifierAliases(locationHeader.getValue()));
+                return Optional.of(new StoredValue(value, "response.header." + name, Set.copyOf(aliases)));
             }
         }
         return Optional.empty();
@@ -245,7 +247,15 @@ final class ResourceValueExtractor {
             return;
         }
         Set<String> aliases = new LinkedHashSet<>(existing.aliases());
-        aliases.addAll(WordUtils.nounForms(normCollection));
+        String rawProp = keyLocation.contains(".") ? keyLocation.substring(keyLocation.lastIndexOf('.') + 1) : keyLocation;
+        String normProp = ResourceSemanticNaming.normalize(rawProp);
+        for (String form : WordUtils.nounForms(normCollection)) {
+            aliases.add(form);
+            aliases.add(form + "id");
+            if (!normProp.isEmpty()) {
+                aliases.add(form + normProp);
+            }
+        }
         values.put(keyLocation, existing.withAliases(aliases));
     }
 

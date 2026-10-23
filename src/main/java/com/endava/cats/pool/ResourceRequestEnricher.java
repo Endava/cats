@@ -695,8 +695,11 @@ final class ResourceRequestEnricher {
         }
         Set<String> fieldForms = WordUtils.nounForms(normalizedField);
         for (ResourceInstance resource : resources) {
+            boolean matchesResourceNoun = !Collections.disjoint(resource.resourceNameForms(), fieldForms) ||
+                    resource.resourceNameForms().stream()
+                            .anyMatch(form -> normalizedField.startsWith(form) && normalizedField.length() > form.length());
             if (resource.active() && !resource.fuzzed() && resource.collectionPath() &&
-                    !Collections.disjoint(resource.resourceNameForms(), fieldForms) &&
+                    matchesResourceNoun &&
                     !Collections.disjoint(resource.allAliases(), fieldForms)) {
                 return true;
             }

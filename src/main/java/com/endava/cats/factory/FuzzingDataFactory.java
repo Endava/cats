@@ -749,6 +749,9 @@ public class FuzzingDataFactory {
         List<GeneratedPayload> examples = generator.generateWithMetadata(reqSchemaName);
         logger.debug("Finish generating example and required fields for schema name {}, took {}ms", reqSchemaName,
                 System.currentTimeMillis() - t0);
+        if (processingArguments.getLimitXxxOfCombinations() > 0 && examples.size() > processingArguments.getLimitXxxOfCombinations()) {
+            examples = List.copyOf(examples.subList(0, processingArguments.getLimitXxxOfCombinations()));
+        }
 
         if (processingArguments.getLimitXxxOfCombinations() > 0) {
             examples = examples.stream()
