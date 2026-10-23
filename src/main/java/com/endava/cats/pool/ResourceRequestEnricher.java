@@ -283,7 +283,7 @@ final class ResourceRequestEnricher {
     private boolean shouldCollectPrimitiveTarget(RequestTarget.Location location, String key, List<String> targetSegments) {
         return isParameterOrIdentifier(location, key) ||
                 hasSiblingPostValue(targetSegments, key) ||
-                hasMatchingResourceCollection(key);
+                hasMatchingResourceCollection(targetSegments, key);
     }
 
     private static boolean isParameterOrIdentifier(RequestTarget.Location location, String key) {
@@ -687,17 +687,23 @@ final class ResourceRequestEnricher {
         return false;
     }
 
-    private boolean hasMatchingResourceCollection(String fieldName) {
+    private boolean hasMatchingResourceCollection(List<String> targetSegments, String fieldName) {
         String normalizedField = ResourceSemanticNaming.normalize(fieldName);
         if (normalizedField.isEmpty() || ResourceSemanticNaming.SIMPLE_IDENTIFIERS.contains(normalizedField) ||
                 ResourceSemanticNaming.isMetadataKey(fieldName)) {
             return false;
         }
-        Set<String> fieldForms = WordUtils.nounForms(normalizedField);
+        Set<String> fieldForms = new java.util.LinkedHashSet<>(WordUtils.nounForms(normalizedField));
+        if (!targetSegments.isEmpty()) {
+            String targetPath = "/" + String.join("/", targetSegments);
+            for (String headForm : ResourceSemanticNaming.headWordFormsOfResourcePath(targetPath)) {
+                fieldForms.add(headForm + normalizedField);
+            }
+        }
         for (ResourceInstance resource : resources) {
             boolean matchesResourceNoun = !Collections.disjoint(resource.resourceNameForms(), fieldForms) ||
                     resource.resourceNameForms().stream()
-                            .anyMatch(form -> normalizedField.startsWith(form) && normalizedField.length() > form.length());
+                            .anyMatch(form -> fieldForms.stream().anyMatch(f -> f.startsWith(form) && f.length() > form.length()));
             if (resource.active() && !resource.fuzzed() && resource.collectionPath() &&
                     matchesResourceNoun &&
                     !Collections.disjoint(resource.allAliases(), fieldForms)) {

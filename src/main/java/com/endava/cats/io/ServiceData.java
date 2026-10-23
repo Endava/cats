@@ -143,7 +143,7 @@ public class ServiceData {
             return null;
         }
         boolean supportsJsonOrWildcard = twoXxMediaTypes.stream()
-                .anyMatch(mt -> mt.contains("json") || mt.contains("*/*"));
+                .anyMatch(mt -> mt.trim().toLowerCase(java.util.Locale.ROOT).startsWith("application/json") || mt.contains("*/*"));
         return supportsJsonOrWildcard ? null : twoXxMediaTypes.getFirst();
     }
 

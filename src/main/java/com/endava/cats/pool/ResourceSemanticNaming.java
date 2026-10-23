@@ -341,7 +341,8 @@ final class ResourceSemanticNaming {
                 (target.location() == RequestTarget.Location.PATH || !target.path().contains("#"))) {
             aliases.addAll(primaryResourceIdentifierAliases(targetPath));
         }
-        if (target.location() == RequestTarget.Location.PATH || target.location() == RequestTarget.Location.QUERY) {
+        if (target.location() == RequestTarget.Location.PATH || target.location() == RequestTarget.Location.QUERY
+                || !target.path().contains("#")) {
             addResourceQualifiedTargetAliases(targetPath, target.name(), aliases);
         }
         if (target.location() == RequestTarget.Location.PATH) {
@@ -356,11 +357,27 @@ final class ResourceSemanticNaming {
         if (key.isEmpty() || SIMPLE_IDENTIFIERS.contains(key) || WordUtils.sameNoun(key, resource)) {
             return;
         }
-        for (String resourceForm : WordUtils.nounForms(resource)) {
+        Set<String> resourcePrefixes = new LinkedHashSet<>(WordUtils.nounForms(resource));
+        resourcePrefixes.addAll(headWordFormsOfResourcePath(targetPath));
+        for (String resourceForm : resourcePrefixes) {
             for (String keyForm : WordUtils.nounForms(key)) {
                 aliases.add(resourceForm + keyForm);
             }
         }
+    }
+
+    static Set<String> headWordFormsOfResourcePath(String path) {
+        List<String> segments = pathSegments(path);
+        for (int i = segments.size() - 1; i >= 0; i--) {
+            if (!isTemplateSegment(segments.get(i))) {
+                List<String> words = splitWords(segments.get(i));
+                if (words.size() >= 2) {
+                    return WordUtils.nounForms(normalize(words.getFirst()));
+                }
+                break;
+            }
+        }
+        return Set.of();
     }
 
     static String bindingKey(String targetPath, TargetField target) {

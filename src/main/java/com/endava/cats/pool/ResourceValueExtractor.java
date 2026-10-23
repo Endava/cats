@@ -58,7 +58,12 @@ final class ResourceValueExtractor {
             if (ResourceSemanticNaming.isTemplateSegment(segment)) {
                 String name = segment.substring(1, segment.length() - 1);
                 String value = FuzzingStrategy.stripSpecialAndInvisibleChars(actualSegments.get(offset + i));
-                values.put(name, new StoredValue(value, "request.path." + name, Set.of(ResourceSemanticNaming.normalize(name))));
+                Set<String> aliases = new LinkedHashSet<>(Set.of(ResourceSemanticNaming.normalize(name)));
+                if (i > 0 && !ResourceSemanticNaming.isTemplateSegment(templateSegments.get(i - 1))) {
+                    String parentSeg = ResourceSemanticNaming.normalize(templateSegments.get(i - 1));
+                    aliases.addAll(WordUtils.nounForms(parentSeg));
+                }
+                values.put(name, new StoredValue(value, "request.path." + name, Set.copyOf(aliases)));
             }
         }
         return values;
