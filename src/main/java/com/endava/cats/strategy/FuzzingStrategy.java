@@ -31,8 +31,8 @@ import java.util.regex.Pattern;
 @Getter
 public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, NoopFuzzingStrategy,
         PrefixFuzzingStrategy, ReplaceFuzzingStrategy, SkipFuzzingStrategy, TrailFuzzingStrategy {
-    private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0]+[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0]*$");
-    private static final Pattern WITHIN = Pattern.compile("([\\p{C}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0]+|జ్ఞ\u200Cా|স্র\u200Cু)");
+    private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0\\uFF1C\\uFF1E]+[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0\\uFF1C\\uFF1E]*$");
+    private static final Pattern WITHIN = Pattern.compile("([\\p{C}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0\\uFF1C\\uFF1E]+|జ్ఞ\u200Cా|স্র\u200Cু)");
 
     /**
      * The actual data to be fuzzed.
@@ -139,7 +139,7 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
     }
 
     private static String replaceSpecialCharsWithEmpty(String value) {
-        return value.replaceAll("[^\\p{Z}\\p{C}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0]+", "");
+        return value.replaceAll("[^\\p{Z}\\p{C}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0\\uFF1C\\uFF1E]+", "");
     }
 
     /**
@@ -190,7 +190,9 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
     }
 
     private static boolean isUnicodeOtherSymbol(char c) {
-        return Character.getType(c) == Character.OTHER_SYMBOL || Character.getType(c) == Character.MODIFIER_SYMBOL;
+        return Character.getType(c) == Character.OTHER_SYMBOL
+                || Character.getType(c) == Character.MODIFIER_SYMBOL
+                || c == '\uFF1C' || c == '\uFF1E';
     }
 
     private static boolean isUnicodeMarkOrFiller(char c) {
