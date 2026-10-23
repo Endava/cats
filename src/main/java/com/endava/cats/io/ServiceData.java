@@ -74,6 +74,8 @@ public class ServiceData {
     private final Map<String, QueryParameterSerialization> queryParameterSerializations = Map.of();
     @Builder.Default
     private final Map<String, Set<String>> enumValuesByField = Map.of();
+    @Builder.Default
+    private final Set<String> discriminatorFields = Set.of();
     /** Variables supplied by a custom fuzzer for resolving dynamic request values. */
     @Builder.Default
     private final Map<String, String> dynamicVariables = Map.of();
@@ -95,6 +97,7 @@ public class ServiceData {
                 .queryParams(data.getQueryParams())
                 .queryParameterSerializations(data.getQueryParameterSerializations())
                 .enumValuesByField(extractEnumValuesByField(data))
+                .discriminatorFields(extractDiscriminatorFields(data))
                 .httpMethod(data.getMethod())
                 .contentType(data.getFirstRequestContentType())
                 .acceptHeader(resolveAcceptHeader(data))
@@ -128,6 +131,40 @@ public class ServiceData {
         }
         Set<String> allowed = enumValuesByField.get(fieldPath);
         return allowed == null || allowed.isEmpty() || allowed.contains(String.valueOf(candidateValue));
+    }
+
+    public boolean isDiscriminatorOrConstantField(String fieldPath, String fieldName) {
+        if (enumValuesByField != null) {
+            Set<String> allowed = enumValuesByField.get(fieldPath);
+            if (allowed != null && allowed.size() == 1) {
+                return true;
+            }
+        }
+        if (discriminatorFields == null || discriminatorFields.isEmpty()) {
+            return false;
+        }
+        return (fieldPath != null && discriminatorFields.contains(fieldPath.toLowerCase(java.util.Locale.ROOT)))
+                || (fieldName != null && discriminatorFields.contains(fieldName.toLowerCase(java.util.Locale.ROOT)));
+    }
+
+    private static Set<String> extractDiscriminatorFields(FuzzingData data) {
+        Set<String> discriminators = new LinkedHashSet<>();
+        addDiscriminatorFromSchema(data.getReqSchema(), discriminators);
+        if (data.getRequestPropertyTypes() != null) {
+            data.getRequestPropertyTypes().values().forEach(schema -> addDiscriminatorFromSchema(schema, discriminators));
+        }
+        if (data.getSchemaMap() != null) {
+            data.getSchemaMap().values().forEach(schema -> addDiscriminatorFromSchema(schema, discriminators));
+        }
+        return discriminators.isEmpty() ? Set.of() : Set.copyOf(discriminators);
+    }
+
+    private static void addDiscriminatorFromSchema(Schema<?> schema, Set<String> discriminators) {
+        if (schema != null && schema.getDiscriminator() != null
+                && schema.getDiscriminator().getPropertyName() != null
+                && !schema.getDiscriminator().getPropertyName().isBlank()) {
+            discriminators.add(schema.getDiscriminator().getPropertyName().trim().toLowerCase(java.util.Locale.ROOT));
+        }
     }
 
     private static String resolveAcceptHeader(FuzzingData data) {

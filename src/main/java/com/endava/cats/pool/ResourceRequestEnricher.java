@@ -263,6 +263,9 @@ final class ResourceRequestEnricher {
         String path = prefix.isEmpty() ? entry.getKey() : prefix + "#" + entry.getKey();
         JsonElement value = entry.getValue();
         if (value.isJsonPrimitive()) {
+            if (data.isDiscriminatorOrConstantField(path, entry.getKey())) {
+                return;
+            }
             RequestTarget.Location location = targetLocation(data, entry.getKey(), pathParametersPayload);
             if (shouldCollectPrimitiveTarget(location, entry.getKey(), targetSegments)) {
                 targets.add(new TargetField(path, entry.getKey(), location,
