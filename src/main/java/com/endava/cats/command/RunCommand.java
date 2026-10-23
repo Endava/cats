@@ -93,6 +93,10 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     "If this is supplied when @|bold FunctionalFuzzer|@ is also enabled, the @|bold FunctionalFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
     private File refDataFile;
 
+    @CommandLine.Option(names = {"--correlations", "--correlate"},
+            description = "Specifies a YAML file with cross-field correlation rules (when/then set or omit) applied to request payloads")
+    private File correlationsFile;
+
     @CommandLine.Option(names = {"--contentType"},
             description = "A custom mime type if the OpenAPI contract/spec uses content type negotiation versioning")
     private String contentType;
@@ -156,6 +160,7 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
         context.setHeadersMap(headersMap);
         context.setCreateRefData(createRefData);
         context.setRefDataFile(refDataFile);
+        context.setCorrelationsFile(correlationsFile);
         context.setQueryFile(queryFile);
         context.setContentType(contentType);
         context.setXxxOfSelections(xxxOfSelections);

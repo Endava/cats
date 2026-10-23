@@ -5,6 +5,8 @@ import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRul
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -14,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -33,35 +36,75 @@ public final class FieldCorrelationEvaluator {
     public static String applyRequestCorrelations(String contractPath, String jsonPayload,
                                                   List<FieldCorrelationRule> rules,
                                                   Map<String, String> variables) {
-        if (StringUtils.isBlank(jsonPayload) || rules == null || rules.isEmpty()) {
+        return applyRequestCorrelations(contractPath, jsonPayload, rules, variables, Set.of());
+    }
+
+    /**
+     * Applies all matching correlation rules (`when` -> `set` / `omit`) to the given JSON request payload,
+     * skipping any target field present in {@code protectedFields}.
+     */
+    public static String applyRequestCorrelations(String contractPath, String jsonPayload,
+                                                  List<FieldCorrelationRule> rules,
+                                                  Map<String, String> variables,
+                                                  Set<String> protectedFields) {
+        if (StringUtils.isBlank(jsonPayload) || !JsonUtils.isValidJson(jsonPayload) || rules == null || rules.isEmpty()) {
             return jsonPayload;
         }
         String updated = jsonPayload;
         for (FieldCorrelationRule rule : rules) {
             if (matchesPathPattern(contractPath, rule.paths())
                     && evaluateBooleanExpression(rule.when(), updated, null, null, variables)) {
-                updated = applyRuleMutations(updated, rule, variables);
+                updated = applyRuleMutations(updated, rule, variables, protectedFields);
             }
         }
         return updated;
     }
 
-    private static String applyRuleMutations(String payload, FieldCorrelationRule rule, Map<String, String> variables) {
+    private static String applyRuleMutations(String payload, FieldCorrelationRule rule,
+                                             Map<String, String> variables, Set<String> protectedFields) {
         String current = payload;
         for (String omitField : Optional.ofNullable(rule.omit()).orElse(List.of())) {
             String normalizedPath = normalizeFieldPath(omitField);
-            if (JsonUtils.isFieldInJson(current, normalizedPath)) {
+            if (!isFieldProtected(normalizedPath, protectedFields) && JsonUtils.isFieldInJson(current, normalizedPath)) {
                 current = JsonUtils.deleteNode(current, normalizedPath);
             }
         }
         for (Map.Entry<String, Object> entry : Optional.ofNullable(rule.set()).orElse(Map.of()).entrySet()) {
             String normalizedPath = normalizeFieldPath(entry.getKey());
-            Object resolvedVal = resolveRuleValue(entry.getValue(), current, variables);
-            if (JsonUtils.isFieldInJson(current, normalizedPath)) {
-                current = CatsUtil.justReplaceField(current, normalizedPath, resolvedVal).json();
+            if (!isFieldProtected(normalizedPath, protectedFields)) {
+                Object resolvedVal = resolveRuleValue(entry.getValue(), current, variables);
+                current = setOrInsertField(current, normalizedPath, resolvedVal);
             }
         }
         return current;
+    }
+
+    private static boolean isFieldProtected(String normalizedPath, Set<String> protectedFields) {
+        if (protectedFields == null || protectedFields.isEmpty()) {
+            return false;
+        }
+        String leaf = normalizedPath.contains("#")
+                ? normalizedPath.substring(normalizedPath.lastIndexOf('#') + 1)
+                : normalizedPath;
+        return protectedFields.contains(normalizedPath) || protectedFields.contains(leaf);
+    }
+
+    public static String setOrInsertField(String jsonPayload, String fieldPath, Object value) {
+        if (JsonUtils.isFieldInJson(jsonPayload, fieldPath)) {
+            return CatsUtil.justReplaceField(jsonPayload, fieldPath, value).json();
+        }
+        JsonObject root = JsonParser.parseString(StringUtils.defaultIfBlank(jsonPayload, "{}")).getAsJsonObject();
+        String[] parts = fieldPath.split("#", -1);
+        JsonObject current = root;
+        for (int i = 0; i < parts.length - 1; i++) {
+            String segment = parts[i];
+            if (!current.has(segment) || !current.get(segment).isJsonObject()) {
+                return jsonPayload;
+            }
+            current = current.getAsJsonObject(segment);
+        }
+        current.add(parts[parts.length - 1], JsonUtils.GSON_NO_PRETTY_PRINTING.toJsonTree(value));
+        return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(root);
     }
 
     private static Object resolveRuleValue(Object rawValue, String requestJson, Map<String, String> variables) {

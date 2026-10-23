@@ -70,6 +70,14 @@ public class CommandContext {
         return get("functionalFlowFile", File.class);
     }
 
+    public void setCorrelationsFile(File file) {
+        set("correlationsFile", file);
+    }
+
+    public Optional<File> getCorrelationsFile() {
+        return get("correlationsFile", File.class);
+    }
+
     public void setSecurityFuzzerFile(File file) {
         set("securityFuzzerFile", file);
     }

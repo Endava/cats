@@ -12,6 +12,9 @@ import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsExecutionCancelledException;
+import com.endava.cats.fuzzer.special.FieldCorrelationEvaluator;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRule;
+import com.endava.cats.fuzzer.special.FunctionalFlowParser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.io.util.HttpContent;
@@ -248,6 +251,7 @@ public class ServiceCaller {
         RuntimeResourcePool.ResolvedRequest resolvedRequest = this.enrichWithRuntimeResources(data, processedPayload);
         processedPayload = resolvedRequest.payload();
         resolvedRequest.correlations().forEach(correlation -> testCaseListener.addRuntimeCorrelation(logger, correlation));
+        processedPayload = this.applyConfiguredFieldCorrelations(data, processedPayload);
         EncodedRequestBody encodedBody = this.encodeRequestBody(processedPayload, data);
         processedPayload = encodedBody.payload();
         logger.debug("Payload replaced with ref data: {}", processedPayload);
@@ -322,6 +326,39 @@ public class ServiceCaller {
             logger.debug("Runtime response-header correlation stacktrace", e);
             return new RuntimeResourcePool.ResolvedHeaders(List.copyOf(headers), List.of());
         }
+    }
+
+    private java.io.File cachedCorrelationsFile;
+    private List<FieldCorrelationRule> cachedCorrelationRules = List.of();
+
+    private String applyConfiguredFieldCorrelations(ServiceData data, String payload) {
+        if (!data.isReplaceRefData() || filesArguments.getCorrelationsFile() == null) {
+            return payload;
+        }
+        try {
+            List<FieldCorrelationRule> rules = getLoadedCorrelationRules(filesArguments.getCorrelationsFile());
+            if (rules.isEmpty()) {
+                return payload;
+            }
+            Set<String> protectedFields = data.getAllMutationTargets().stream()
+                    .filter(t -> t.location() == RequestTarget.Location.BODY || t.location() == RequestTarget.Location.QUERY)
+                    .map(t -> FieldCorrelationEvaluator.normalizeFieldPath(t.name()))
+                    .collect(Collectors.toSet());
+            String pathKey = Optional.ofNullable(data.getContractPath()).orElse(data.getRelativePath());
+            return FieldCorrelationEvaluator.applyRequestCorrelations(
+                    pathKey, payload, rules, getHeaderParserContext(data), protectedFields);
+        } catch (Exception e) {
+            logger.debug("Unable to apply field correlation rules", e);
+            return payload;
+        }
+    }
+
+    private List<FieldCorrelationRule> getLoadedCorrelationRules(java.io.File file) throws IOException {
+        if (!file.equals(cachedCorrelationsFile)) {
+            cachedCorrelationsFile = file;
+            cachedCorrelationRules = FunctionalFlowParser.parseCorrelationFile(file);
+        }
+        return cachedCorrelationRules;
     }
 
     private String applySuccessfulRequestBaseline(ServiceData data) {

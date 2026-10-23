@@ -125,6 +125,12 @@ public class FilesArguments {
     @Setter
     private File functionalFlowFile;
 
+    @CommandLine.Option(names = {"--correlations", "--correlate"},
+            description = "Specifies a YAML file with cross-field correlation rules (when/then set or omit) applied to request payloads")
+    @Getter
+    @Setter
+    private File correlationsFile;
+
     @CommandLine.Option(names = {"--securityFuzzerFile"},
             description = "The file used by the @|bold SecurityFuzzer|@ to inject special strings in order to exploit possible vulnerabilities")
     @Setter

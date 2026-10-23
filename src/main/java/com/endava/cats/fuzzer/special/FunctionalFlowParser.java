@@ -101,6 +101,28 @@ public final class FunctionalFlowParser {
         }
     }
 
+    public static List<FieldCorrelationRule> parseCorrelationFile(File file) throws IOException {
+        if (file == null || !file.exists()) {
+            return List.of();
+        }
+        JsonNode root = YAML_MAPPER.readTree(Files.readString(file.toPath()));
+        if (root == null) {
+            return List.of();
+        }
+        if (root.isArray()) {
+            return parseCorrelations(root);
+        }
+        if (root.isObject()) {
+            if (root.has("correlate")) {
+                return parseCorrelations(root.get("correlate"));
+            }
+            if (root.has("correlations")) {
+                return parseCorrelations(root.get("correlations"));
+            }
+        }
+        return List.of();
+    }
+
     private static List<FunctionalFlowStep> parseSteps(JsonNode stepsNode) {
         if (stepsNode == null || !stepsNode.isArray()) {
             return List.of();

@@ -6,9 +6,13 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @QuarkusTest
 class FieldCorrelationEvaluatorTest {
@@ -77,5 +81,38 @@ class FieldCorrelationEvaluatorTest {
         Assertions.assertThat(failingResult)
                 .isPresent()
                 .get().asString().contains("totalRiskScore < decisionMetadata.threshold");
+    }
+
+    @Test
+    void shouldProtectFuzzedFieldsAndInsertMissingNestedFieldsAndParseCorrelationFile(@org.junit.jupiter.api.io.TempDir Path tempDir) throws Exception {
+        String yaml = """
+                correlate:
+                  - paths: ["/risk-rules*"]
+                    when: "counter.metric == 'SUM'"
+                    then:
+                      set:
+                        counter.metricField: "amount"
+                  - paths: ["/risk-rules*"]
+                    when: "expression.type == 'CONDITION' & expression.field is null"
+                    then:
+                      set:
+                        expression.field: "country"
+                """;
+        File corrFile = tempDir.resolve("correlations.yml").toFile();
+        Files.writeString(corrFile.toPath(), yaml);
+        List<FieldCorrelationRule> rules = FunctionalFlowParser.parseCorrelationFile(corrFile);
+        Assertions.assertThat(rules).hasSize(2);
+
+        String missingFieldsPayload = "{\"counter\":{\"metric\":\"SUM\"},\"expression\":{\"type\":\"CONDITION\"}}";
+        String enriched = FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/risk-rules", missingFieldsPayload, rules, Map.of(), Set.of());
+        Assertions.assertThat(enriched)
+                .contains("\"metricField\":\"amount\"")
+                .contains("\"field\":\"country\"");
+
+        String fuzzedPayload = "{\"counter\":{\"metric\":\"SUM\",\"metricField\":\"FUZZED_VAL\"},\"expression\":{\"type\":\"CONDITION\"}}";
+        String preserved = FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/risk-rules", fuzzedPayload, rules, Map.of(), Set.of("counter#metricField"));
+        Assertions.assertThat(preserved).contains("\"metricField\":\"FUZZED_VAL\"");
     }
 }

@@ -273,6 +273,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         context.getHeadersMap().ifPresent(filesArguments::setHeadersMap);
         context.getCreateRefData().ifPresent(filesArguments::setCreateRefData);
         context.getRefDataFile().ifPresent(filesArguments::setRefDataFile);
+        context.getCorrelationsFile().ifPresent(filesArguments::setCorrelationsFile);
         context.getQueryFile().ifPresent(filesArguments::setQueryFile);
         context.getContentType().ifPresent(processingArguments::setContentType);
         context.getXxxOfSelections().ifPresent(processingArguments::setXxxOfSelections);
@@ -543,6 +544,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         if (filesArguments.getFunctionalFlowFile() != null) {
             logger.config(AnsiUtils.bold("FunctionalFlow file: {}"),
                     AnsiUtils.blue(filesArguments.getFunctionalFlowFile().getCanonicalPath()));
+        }
+        if (filesArguments.getCorrelationsFile() != null) {
+            logger.config(AnsiUtils.bold("Correlations file: {}"),
+                    AnsiUtils.blue(filesArguments.getCorrelationsFile().getCanonicalPath()));
         }
         filesArguments.loadConfig();
         if (filesArguments.getCustomFuzzerFile() != null) {

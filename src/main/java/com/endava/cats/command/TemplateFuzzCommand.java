@@ -2,6 +2,7 @@ package com.endava.cats.command;
 
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ReportingArguments;
@@ -135,6 +136,13 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
     @Inject
     CatsGlobalContext catsGlobalContext;
 
+    @Inject
+    FilesArguments filesArguments;
+
+    @CommandLine.Option(names = {"--correlations", "--correlate"},
+            description = "Specifies a YAML file with cross-field correlation rules (when/then set or omit) applied to request payloads")
+    private java.io.File correlationsFile;
+
     @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
@@ -217,6 +225,9 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
 
     private void init() {
         CatsRandom.initRandom(seed);
+        if (filesArguments != null && correlationsFile != null) {
+            filesArguments.setCorrelationsFile(correlationsFile);
+        }
         reportingArguments.processLogData();
         authArguments.getEnvironmentVariables();
         logger.config("Environment file: {}", authArguments.getEnvironmentFileStatus());
