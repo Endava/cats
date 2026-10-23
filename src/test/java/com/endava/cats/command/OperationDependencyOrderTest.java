@@ -132,6 +132,26 @@ class OperationDependencyOrderTest {
                 .containsExactly("/properties", "/bookings");
     }
 
+    @Test
+    void schedulesTemplatedPostProducersBeforeDeeperAndCamelCaseConsumersAndHandlesRootSlash() {
+        Schema<?> requiresConstraint = new ObjectSchema()
+                .addProperty("sourceFeature", new StringSchema())
+                .addProperty("requiredFeature", new StringSchema());
+        OpenAPI api = new OpenAPI().paths(new Paths()
+                .addPathItem("/", new PathItem().post(new Operation()))
+                .addPathItem("/products/{productName}/constraints/requires", new PathItem().post(post(requiresConstraint)))
+                .addPathItem("/products/{productName}/features/{featureName}", new PathItem().post(new Operation()))
+                .addPathItem("/products/{productName}", new PathItem().post(new Operation())));
+        List<Map.Entry<String, PathItem>> alphabetical = api.getPaths().entrySet().stream().toList();
+
+        Assertions.assertThat(OperationDependencyOrder.order(api, alphabetical)).extracting(Map.Entry::getKey)
+                .containsExactly(
+                        "/",
+                        "/products/{productName}",
+                        "/products/{productName}/features/{featureName}",
+                        "/products/{productName}/constraints/requires");
+    }
+
     private static Operation post(Schema<?> schema) {
         return new Operation().requestBody(new RequestBody().content(
                 new Content().addMediaType("application/json", new MediaType().schema(schema))));

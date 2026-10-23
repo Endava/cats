@@ -733,10 +733,11 @@ final class ResourceRequestEnricher {
             }
             boolean matchesResourceNoun = !Collections.disjoint(resource.resourceNameForms(), fieldForms) ||
                     resource.resourceNameForms().stream()
-                            .anyMatch(form -> fieldForms.stream().anyMatch(f -> f.startsWith(form) && f.length() > form.length()));
-            if (resource.active() && !resource.fuzzed() && resource.collectionPath() &&
+                            .anyMatch(form -> fieldForms.stream().anyMatch(f -> (f.startsWith(form) || f.endsWith(form)) && f.length() > form.length()));
+            if (resource.active() && !resource.fuzzed() &&
+                    (resource.collectionPath() || resource.sourceMethod() == HttpMethod.POST) &&
                     matchesResourceNoun &&
-                    !Collections.disjoint(resource.allAliases(), fieldForms)) {
+                    (!Collections.disjoint(resource.allAliases(), fieldForms) || !Collections.disjoint(resource.allAliases(), resource.resourceNameForms()))) {
                 return true;
             }
         }

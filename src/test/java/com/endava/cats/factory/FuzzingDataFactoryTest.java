@@ -486,6 +486,18 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data).noneMatch(entry -> entry.getMethod() == HttpMethod.POST);
     }
 
+    @Test
+    void shouldFallbackMultipartFormDataToFormUrlEncodedWhenDefaultContentTypesConfigured() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml", true, openAPI -> {
+            RequestBody requestBody = openAPI.getPaths().get("/pets").getPost().getRequestBody();
+            MediaType json = requestBody.getContent().get("application/json");
+            requestBody.setContent(new Content().addMediaType("multipart/form-data", json));
+        });
+
+        FuzzingData post = data.stream().filter(entry -> entry.getMethod() == HttpMethod.POST).findFirst().orElseThrow();
+        Assertions.assertThat(post.getFirstRequestContentType()).isEqualTo("application/x-www-form-urlencoded");
+    }
+
     private List<FuzzingData> setupFuzzingData(String path, String contract) throws IOException {
         return this.setupFuzzingData(path, contract, true);
     }

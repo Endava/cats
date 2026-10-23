@@ -61,7 +61,7 @@ final class OperationDependencyOrder {
 
     private static Map<String, Set<String>> buildProducersByIdentifier(OpenAPI api, List<Map.Entry<String, PathItem>> defaultOrder) {
         Map<String, Set<String>> producersByIdentifier = new HashMap<>();
-        defaultOrder.stream().filter(OperationDependencyOrder::isRootCollectionProducer)
+        defaultOrder.stream().filter(OperationDependencyOrder::isProducerPath)
                 .forEach(entry -> {
                     producerIdentifiers(entry.getKey()).forEach(id ->
                             producersByIdentifier.computeIfAbsent(id, _ -> new LinkedHashSet<>()).add(entry.getKey()));
@@ -86,7 +86,12 @@ final class OperationDependencyOrder {
                     .map(producersByIdentifier::get).filter(Objects::nonNull)
                     .forEach(required::addAll);
             addSiblingSupersetProducers(entry.getKey(), postPropsByPath, required);
-            required.remove(entry.getKey());
+            String selfTrimmed = stripTrailingSlash(entry.getKey());
+            int selfDepth = com.google.common.base.Splitter.on('/').omitEmptyStrings().splitToList(selfTrimmed).size();
+            required.removeIf(prodPath -> prodPath.equals(entry.getKey())
+                    || stripTrailingSlash(prodPath).startsWith(selfTrimmed + "/")
+                    || (selfTrimmed.contains("{") && com.google.common.base.Splitter.on('/').omitEmptyStrings()
+                            .splitToList(stripTrailingSlash(prodPath)).size() > selfDepth));
             dependencies.put(entry.getKey(), required);
         }
         return dependencies;
@@ -106,9 +111,12 @@ final class OperationDependencyOrder {
         });
     }
 
-    private static boolean isRootCollectionProducer(Map.Entry<String, PathItem> entry) {
+    private static boolean isProducerPath(Map.Entry<String, PathItem> entry) {
         String trimmed = stripTrailingSlash(entry.getKey());
-        return (entry.getValue().getPost() != null || entry.getValue().getGet() != null) && !trimmed.contains("{");
+        if ((entry.getValue().getPost() != null || entry.getValue().getGet() != null) && !trimmed.contains("{")) {
+            return true;
+        }
+        return entry.getValue().getPost() != null && trimmed.endsWith("}");
     }
 
     private static String stripTrailingSlash(String path) {
@@ -256,7 +264,15 @@ final class OperationDependencyOrder {
         if (normalized.isEmpty()) {
             return;
         }
+        names.add(normalized);
         names.add("noun:" + normalized);
+        String[] camelWords = rawName.trim().split("(?<=[a-z0-9])(?=[A-Z])|[_\\-]+");
+        if (camelWords.length >= 2) {
+            String lastWord = normalize(camelWords[camelWords.length - 1]);
+            if (!lastWord.isEmpty() && !ID_SUFFIXES.contains(lastWord)) {
+                WordUtils.nounForms(lastWord).forEach(form -> names.add("noun:" + form));
+            }
+        }
         if (ID_SUFFIXES.contains(normalized)) {
             String normalizedParent = normalize(parentProperty);
             if (!normalizedParent.isEmpty()) {
@@ -289,9 +305,29 @@ final class OperationDependencyOrder {
     }
 
     private static Set<String> producerIdentifiers(String path) {
-        String trimmed = stripTrailingSlash(path);
-        String resource = normalize(trimmed.substring(trimmed.lastIndexOf('/') + 1));
+        List<String> segments = com.google.common.base.Splitter.on('/').omitEmptyStrings().splitToList(stripTrailingSlash(path));
+        if (segments.isEmpty()) {
+            return Set.of();
+        }
+        String lastSegment = segments.getLast();
         Set<String> identifiers = new LinkedHashSet<>();
+        if (lastSegment.startsWith("{") && lastSegment.endsWith("}")) {
+            String paramName = normalize(lastSegment.substring(1, lastSegment.length() - 1));
+            if (!paramName.isEmpty()) {
+                identifiers.add(paramName);
+            }
+            if (segments.size() >= 2 && !segments.get(segments.size() - 2).startsWith("{")) {
+                String parentResource = normalize(segments.get(segments.size() - 2));
+                for (String form : WordUtils.nounForms(parentResource)) {
+                    identifiers.add("noun:" + form);
+                    for (String suffix : ID_SUFFIXES) {
+                        identifiers.add(form + suffix);
+                    }
+                }
+            }
+            return identifiers;
+        }
+        String resource = normalize(lastSegment);
         for (String form : WordUtils.nounForms(resource)) {
             identifiers.add("noun:" + form);
             for (String suffix : ID_SUFFIXES) {

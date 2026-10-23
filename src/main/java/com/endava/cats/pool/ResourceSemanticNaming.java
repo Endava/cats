@@ -375,6 +375,13 @@ final class ResourceSemanticNaming {
         if (target.location() == RequestTarget.Location.PATH || target.location() == RequestTarget.Location.QUERY
                 || (target.location() == RequestTarget.Location.BODY && !target.path().contains("#"))) {
             addResourceQualifiedTargetAliases(targetPath, target.name(), aliases);
+            List<String> words = splitWords(target.name());
+            if (words.size() == 2 && words.getFirst().length() >= 3 && words.getFirst().chars().noneMatch(Character::isDigit)) {
+                String lastWord = normalize(words.getLast());
+                if (!lastWord.isEmpty() && !COMPOUND_SUFFIX_GUARD.contains(lastWord) && !ITEM_METADATA_WORDS.contains(lastWord)) {
+                    aliases.addAll(WordUtils.nounForms(lastWord));
+                }
+            }
         }
         if (target.location() == RequestTarget.Location.PATH) {
             aliases.addAll(precedingPathSegmentAliases(targetPath, target.name()));
