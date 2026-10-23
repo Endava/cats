@@ -312,9 +312,10 @@ profiles:
     fuzzers:
       - HappyPath
       - OnlyRequiredFields
+      - DummyContentTypeHeaders
+      - EmptyJsonBody
       - DefaultValuesInFields
       - ExamplesFields
-      - EmptyJsonBody
       - AlternativeDateTimeFormatsFields
       - QueryObjectAsRequestBody
       - RemoveFields
@@ -329,6 +330,7 @@ profiles:
     fuzzers:
       - HappyPath
       - OnlyRequiredFields
+      - DummyContentTypeHeaders
       - RemoveFields
       - NullValuesInFields
       - EmptyStringsInFields

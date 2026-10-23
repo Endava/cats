@@ -41,4 +41,9 @@ public class UnsupportedContentTypesHeadersFuzzer extends DummyContentTypeHeader
         return filterHeaders(data, HttpHeaders.CONTENT_TYPE, data.getRequestContentTypes());
     }
 
+    @Override
+    public List<com.endava.cats.http.HttpMethod> skipForHttpMethods() {
+        return java.util.Arrays.asList(com.endava.cats.http.HttpMethod.DELETE, com.endava.cats.http.HttpMethod.GET);
+    }
+
 }

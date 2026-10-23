@@ -655,8 +655,11 @@ public class ServiceCaller {
             requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8),
                     contentType == null ? null : MediaType.parse(contentType));
         } else {
-            //for GET and HEAD, we remove Content-Type as some servers don't like it
-            headers.removeAll("Content-Type");
+            //for GET and HEAD, we remove default Content-Type as some servers don't like it
+            String currentContentType = headers.get(HttpHeaders.CONTENT_TYPE);
+            if (currentContentType != null && currentContentType.equalsIgnoreCase(processingArguments.getDefaultContentType())) {
+                headers.removeAll("Content-Type");
+            }
         }
         Request request = new Request.Builder()
                 .url(catsRequest.getUrl())

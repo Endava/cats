@@ -56,17 +56,20 @@ public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzz
 
     @Override
     public List<Set<CatsHeader>> getHeaders(FuzzingData data) {
-        if (JsonUtils.isEmptyPayload(data.getPayload())) {
+        if (data.getPayload() == null) {
             return Collections.emptyList();
         }
-        Set<CatsHeader> clonedHeaders = Cloner.cloneMe(data.getHeaders());
-        clonedHeaders.add(CatsHeader.builder().name(HttpHeaders.CONTENT_TYPE).value(CATS_ACCEPT).build());
+        Set<CatsHeader> dummyHeader = Cloner.cloneMe(data.getHeaders());
+        dummyHeader.add(CatsHeader.builder().name(HttpHeaders.CONTENT_TYPE).value(CATS_ACCEPT).build());
 
-        return Collections.singletonList(clonedHeaders);
+        Set<CatsHeader> malformedMultipartHeader = Cloner.cloneMe(data.getHeaders());
+        malformedMultipartHeader.add(CatsHeader.builder().name(HttpHeaders.CONTENT_TYPE).value("multipart/form-data").build());
+
+        return List.of(dummyHeader, malformedMultipartHeader);
     }
 
     @Override
     public List<HttpMethod> skipForHttpMethods() {
-        return Arrays.asList(HttpMethod.DELETE, HttpMethod.GET);
+        return Arrays.asList(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 }

@@ -47,13 +47,13 @@ class DummyContentTypeHeadersFuzzerTest {
 
         List<Set<CatsHeader>> headers = dummyContentTypeHeadersFuzzer.getHeaders(data);
 
-        Assertions.assertThat(headers).hasSize(1);
+        Assertions.assertThat(headers).hasSize(2);
         Assertions.assertThat(headers.getFirst()).contains(CatsHeader.builder().name("Content-Type").build());
     }
 
     @Test
     void shouldReturnHttpMethodsSkipFor() {
-        Assertions.assertThat(dummyContentTypeHeadersFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(dummyContentTypeHeadersFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 
     @Test
