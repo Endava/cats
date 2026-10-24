@@ -47,7 +47,7 @@ public class TestReportsGenerator {
             throw new CatsException("At least one report format must be selected");
         }
         this.reportingArguments = reportingArguments;
-        this.primaryExporter = findExporter(exportersByFormat, selectedFormats.iterator().next());
+        this.primaryExporter = findExporter(exportersByFormat, selectedFormats.getFirst());
         this.testCaseExporters = selectedFormats.stream()
                 .map(format -> findExporter(exportersByFormat, format))
                 .toList();

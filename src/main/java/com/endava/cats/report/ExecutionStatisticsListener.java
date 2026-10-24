@@ -5,6 +5,8 @@ import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.RunOutcome;
 import com.endava.cats.util.AnsiUtils;
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.Getter;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiPredicate;
@@ -33,7 +35,9 @@ public class ExecutionStatisticsListener {
      */
     private final Map<String, Long> success = new HashMap<>();
 
-    /** Map to track results intentionally not reported because of reporting options, grouped by path. */
+    /**
+     * Map to track results intentionally not reported because of reporting options, grouped by path.
+     */
     private final Map<String, Long> skippedFromReporting = new HashMap<>();
 
     /**
@@ -45,23 +49,28 @@ public class ExecutionStatisticsListener {
      * Count of test-case boundaries processed by the engine. This drives stop limits only and is deliberately not
      * exposed as completed-test reporting because it includes ordinary control-flow skips.
      */
+    @Getter
     private long processedTests;
 
     /**
      * Count of HTTP requests handed to the HTTP client for execution.
      */
+    @Getter
     private long requestsAttempted;
 
     /**
      * Count of authentication errors.
      */
+    @Getter
     private int authErrors;
 
     /**
      * Count of I/O errors.
      */
+    @Getter
     private int ioErrors;
 
+    @Getter
     private RunOutcome runOutcome = RunOutcome.completed();
 
     /**
@@ -110,7 +119,7 @@ public class ExecutionStatisticsListener {
     /**
      * Captures the current statistics and outcome in one immutable representation.
      *
-     * @param qualityGatePassed whether the configured quality gate passed
+     * @param qualityGatePassed      whether the configured quality gate passed
      * @param qualityGateDescription human-readable configured quality gate
      * @return execution summary for reports and presentation layers
      */
@@ -122,7 +131,7 @@ public class ExecutionStatisticsListener {
      * Evaluates the quality gate from the counts used to construct the session summary. Callers must honor this
      * listener's single-thread confinement.
      *
-     * @param shouldFailBuild quality-gate predicate receiving error and warning counts
+     * @param shouldFailBuild        quality-gate predicate receiving error and warning counts
      * @param qualityGateDescription human-readable configured quality gate
      * @return execution summary based on one coherent statistics snapshot
      */
@@ -153,12 +162,16 @@ public class ExecutionStatisticsListener {
         this.ioErrors++;
     }
 
-    /** Records an HTTP request immediately before it is handed to the HTTP client. */
+    /**
+     * Records an HTTP request immediately before it is handed to the HTTP client.
+     */
     public void increaseRequestsAttempted() {
         this.requestsAttempted++;
     }
 
-    /** Records a processed test-case boundary for execution stop limits. */
+    /**
+     * Records a processed test-case boundary for execution stop limits.
+     */
     public void increaseProcessedTests() {
         this.processedTests++;
     }
@@ -322,23 +335,4 @@ public class ExecutionStatisticsListener {
         return this.errors.getOrDefault(path, 0L) + this.warns.getOrDefault(path, 0L) + this.success.getOrDefault(path, 0L);
     }
 
-    public long getRequestsAttempted() {
-        return requestsAttempted;
-    }
-
-    public long getProcessedTests() {
-        return processedTests;
-    }
-
-    public int getAuthErrors() {
-        return authErrors;
-    }
-
-    public int getIoErrors() {
-        return ioErrors;
-    }
-
-    public RunOutcome getRunOutcome() {
-        return runOutcome;
-    }
 }

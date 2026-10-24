@@ -11,7 +11,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.HttpHeaders;
 import jakarta.inject.Singleton;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 

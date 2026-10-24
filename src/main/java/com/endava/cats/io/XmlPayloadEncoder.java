@@ -10,7 +10,6 @@ import io.swagger.v3.oas.models.media.XML;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 /**

@@ -9,7 +9,6 @@ import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.model.TestResultSnapshot;
 import com.endava.cats.util.AnsiUtils;

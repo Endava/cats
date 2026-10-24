@@ -647,8 +647,7 @@ public class RuntimeResourcePool {
                 ResourceValueExtractor.extractPathValues(data.getRelativePath(), actualUrl));
         if (resolvedRequest != null && resolvedRequest.correlations() != null) {
             for (ResourceCorrelation correlation : resolvedRequest.correlations()) {
-                if (correlation.getTarget() != null && correlation.getTarget().location() == RequestTarget.Location.PATH
-                        && correlation.getValue() != null) {
+                if (correlation.getTarget().location() == RequestTarget.Location.PATH && correlation.getValue() != null) {
                     String name = correlation.getTarget().name();
                     deletedValues.put(name, new StoredValue(correlation.getValue(), "request.path." + name,
                             Set.of(ResourceSemanticNaming.normalize(name))));

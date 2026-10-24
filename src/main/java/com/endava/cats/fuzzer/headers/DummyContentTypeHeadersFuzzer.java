@@ -10,7 +10,6 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.HttpHeaders;
-import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
 
 import java.util.Arrays;

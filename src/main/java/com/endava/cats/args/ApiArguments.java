@@ -71,9 +71,9 @@ public class ApiArguments {
     String appVersion;
 
     /**
-     * Verifies if the supplied OpenAPI spec is from a local location or a http one.
+     * Verifies if the supplied OpenAPI spec is from a local location or an http one.
      *
-     * @return true if the contract is from a http location, false otherwise
+     * @return true if the contract is from an http location, false otherwise
      */
     public boolean isRemoteContract() {
         return contract != null && contract.startsWith("http");

@@ -19,7 +19,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 /**
  * Base class for fuzzers that test type coercion issues.

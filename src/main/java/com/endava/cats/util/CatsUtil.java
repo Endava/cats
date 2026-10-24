@@ -29,6 +29,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.endava.cats.util.CatsDSLWords.ADDITIONAL_PROPERTIES;
 import static com.endava.cats.util.CatsDSLWords.ELEMENT;
@@ -393,7 +394,7 @@ public abstract class CatsUtil {
     }
 
     private static int pathDepth(String path) {
-        return (int) List.of(path.split("/")).stream().filter(StringUtils::isNotBlank).count();
+        return (int) Stream.of(path.split("/")).filter(StringUtils::isNotBlank).count();
     }
 
     /**

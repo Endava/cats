@@ -226,12 +226,11 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         String path = Objects.requireNonNullElse(tc.getContractPath(), Objects.requireNonNullElse(tc.getPath(), ""));
         String errorSig = extractErrorSignature(tc);
         List<ResourceCorrelation> correlations = tc.getRequestProvenance() != null
-                && tc.getRequestProvenance().getRuntimeCorrelations() != null
                 ? tc.getRequestProvenance().getRuntimeCorrelations()
                 : List.of();
 
         for (ResourceCorrelation corr : correlations) {
-            if (corr.getTarget() != null && corr.getTarget().location() == RequestTarget.Location.HEADER) {
+            if (corr.getTarget().location() == RequestTarget.Location.HEADER) {
                 String headerName = corr.getTarget().name();
                 String key = "HEADER_CORRELATION_COLLISION|" + method + "|" + path + "|" + headerName;
                 return new ClusterClassification(
@@ -259,8 +258,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
         if (code == 404) {
             for (ResourceCorrelation corr : correlations) {
-                if (corr.getTarget() != null && corr.getTarget().location() == RequestTarget.Location.PATH
-                        && corr.getSourceLocation() != null && corr.getSourceLocation().endsWith(".name")) {
+                if (corr.getTarget().location() == RequestTarget.Location.PATH && corr.getSourceLocation() != null && corr.getSourceLocation().endsWith(".name")) {
                     String key = "SUSPICIOUS_CORRELATION_404|" + method + "|" + path + "|" + corr.getSourceLocation();
                     return new ClusterClassification(
                             key,

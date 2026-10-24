@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /** Typed data exposed to all summary report templates. */
 @Builder
@@ -174,11 +175,10 @@ public final class SummaryReportContext {
     }
 
     private static List<StopLimit> stopLimits(CatsTestReport report) {
-        return List.of(
+        return Stream.of(
                         new StopLimit("Tests", report.getStopAfterTests(), ""),
                         new StopLimit("Errors", report.getStopAfterErrors(), ""),
                         new StopLimit("Time", report.getStopAfterTimeInSec(), " seconds"))
-                .stream()
                 .filter(limit -> limit.value() > 0)
                 .toList();
     }

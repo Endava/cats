@@ -11,9 +11,6 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Singleton;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 import java.util.ArrayDeque;
 import java.util.Collections;
@@ -180,19 +177,19 @@ public class SchemaWalker {
      * @param ctx    the walk context
      */
     private static void dfs(Schema<?> schema, Deque<String> fqn, Deque<String> ptr, WalkContext ctx) {
-        if (schema == null || !ctx.getVisited().add(schema)) return;
+        if (schema == null || !ctx.visited().add(schema)) return;
 
         if (schema.get$ref() != null) {
             String refName = CatsModelUtils.getSimpleRefUsingOAT(schema.get$ref());
-            Schema<?> target = Optional.ofNullable(ctx.getApi().getComponents())
+            Schema<?> target = Optional.ofNullable(ctx.api().getComponents())
                     .map(Components::getSchemas).map(m -> m.get(refName))
                     .orElse(null);
             dfs(target, fqn, ptr, ctx);
             return;
         }
 
-        SchemaLocation loc = new SchemaLocation(ctx.getUrl(), ctx.getMethod(), toFqn(fqn), JsonUtils.toPointer(ptr));
-        for (SchemaHandler h : ctx.getHandlers()) h.handle(loc, schema);
+        SchemaLocation loc = new SchemaLocation(ctx.url(), ctx.method(), toFqn(fqn), JsonUtils.toPointer(ptr));
+        for (SchemaHandler h : ctx.handlers()) h.handle(loc, schema);
 
         if (CatsModelUtils.isComposedSchema(schema)) {
             Map<String, List<Schema>> composed = Map.of(
@@ -250,16 +247,7 @@ public class SchemaWalker {
 /**
  * Encapsulates the traversal context for schema walking.
  */
-@Data
-@EqualsAndHashCode
-@ToString
-final class WalkContext {
-    private final OpenAPI api;
-    private final Set<Schema<?>> visited;
-    private final SchemaHandler[] handlers;
-    private final String url;
-    private final String method;
-
+record WalkContext(OpenAPI api, Set<Schema<?>> visited, SchemaHandler[] handlers, String url, String method) {
     WalkContext withLocation(String newUrl, String newMethod) {
         return new WalkContext(api, visited, handlers, newUrl, newMethod);
     }

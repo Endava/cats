@@ -7,7 +7,6 @@ import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang3.StringUtils;
@@ -360,10 +359,7 @@ public final class FieldCorrelationEvaluator {
             return literalOrVar.get();
         }
         Optional<Object> metadata = resolveResponseMetadata(trimmed, requestJson, responseJson, response);
-        if (metadata.isPresent()) {
-            return metadata.get();
-        }
-        return resolveJsonFieldOperand(trimmed, requestJson, responseJson, variables);
+        return metadata.orElseGet(() -> resolveJsonFieldOperand(trimmed, requestJson, responseJson, variables));
     }
 
     private static Optional<Object> resolveLiteralOrVariable(String trimmed, Map<String, String> variables) {

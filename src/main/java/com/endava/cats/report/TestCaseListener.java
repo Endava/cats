@@ -32,7 +32,6 @@ import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.CyclingCharIterator;
 import com.endava.cats.util.SensitiveDataPolicy;
 import com.endava.cats.util.WordUtils;
-import com.endava.cats.util.external.MediaType;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;

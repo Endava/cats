@@ -25,7 +25,9 @@ final class ObservedHttpTarget {
     private ObservedHttpTarget() {
     }
 
-    /** Returns the API-relative path only when the target is safe to replay against the configured server. */
+    /**
+     * Returns the API-relative path only when the target is safe to replay against the configured server.
+     */
     static Optional<String> relativePath(ApiArguments arguments, String target) {
         if (StringUtils.isBlank(target) || StringUtils.isBlank(arguments.getServer())) {
             return Optional.empty();
@@ -45,7 +47,9 @@ final class ObservedHttpTarget {
         }
     }
 
-    /** Returns the API-relative path for a previously sent request URL, ignoring any query parameters. */
+    /**
+     * Returns the API-relative path for a previously sent request URL, ignoring any query parameters.
+     */
     static Optional<String> relativeRequestPath(ApiArguments arguments, String requestUrl) {
         if (StringUtils.isBlank(requestUrl)) {
             return Optional.empty();
@@ -104,11 +108,8 @@ final class ObservedHttpTarget {
         Optional<String> collectionPath = relativeRequestPath(arguments, exchange.url())
                 .map(path -> path.endsWith("/") && path.length() > 1 ? path.substring(0, path.length() - 1) : path)
                 .filter(path -> matchesTemplate(collectionTemplate, path));
-        if (collectionPath.isEmpty()) {
-            return Optional.empty();
-        }
-        return extractCreatedId(exchange.responseBody(), collectionTemplate, parameterName)
-                .map(id -> collectionPath.get() + "/" + id);
+        return collectionPath.flatMap(s -> extractCreatedId(exchange.responseBody(), collectionTemplate, parameterName)
+                .map(id -> s + "/" + id));
     }
 
     private static Optional<String> extractCreatedId(String responseBody, String collectionTemplate, String parameterName) {
@@ -179,7 +180,9 @@ final class ObservedHttpTarget {
         return exchange.status() == 201 && exchange.location() != null;
     }
 
-    /** Matches a concrete URL path to a documented OpenAPI path template, without crossing path segments. */
+    /**
+     * Matches a concrete URL path to a documented OpenAPI path template, without crossing path segments.
+     */
     static boolean matchesTemplate(String template, String path) {
         List<String> expected = Arrays.asList(template.split("/", -1));
         List<String> actual = Arrays.asList(path.split("/", -1));
@@ -202,7 +205,9 @@ final class ObservedHttpTarget {
         return segment.matches("\\{[^/]+}");
     }
 
-    /** Resolves relative Location values against the original request URL before validating the destination. */
+    /**
+     * Resolves relative Location values against the original request URL before validating the destination.
+     */
     static Optional<String> resolvedLocation(String requestUrl, String location) {
         try {
             return Optional.of(URI.create(requestUrl).resolve(URI.create(location)).toString());

@@ -455,7 +455,7 @@ public class CustomFuzzerUtil {
     private boolean isCatsRemove(Map.Entry<String, Object> keyValue) {
         Object value = keyValue.getValue();
         if (value instanceof List<?> list && list.size() == 1) {
-            return ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(list.get(0)));
+            return ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(list.getFirst()));
         }
         return ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(value));
     }

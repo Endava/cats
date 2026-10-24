@@ -13,7 +13,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import lombok.Builder;
 import lombok.ToString;
-import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
 
 import java.lang.reflect.Field;

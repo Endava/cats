@@ -284,7 +284,7 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         if (score >= 6) {
             return InjectionDetectionResult.vulnerable(
                     "Potential LDAP injection detected",
-                    "Evidence score=" + score + " (" + contributing.toString() + ") suggesting LDAP data leakage or filter injection"
+                    "Evidence score=" + score + " (" + contributing + ") suggesting LDAP data leakage or filter injection"
             );
         }
 

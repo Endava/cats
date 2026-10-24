@@ -1,11 +1,9 @@
 package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -16,7 +14,6 @@ import com.google.gson.JsonParser;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.ObjectSchema;
-import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -153,7 +150,7 @@ class FunctionalFlowFuzzerTest {
         fuzzer.executeFlows();
 
         Assertions.assertThat(capturedCalls).hasSize(2);
-        ServiceData postCall = capturedCalls.get(0);
+        ServiceData postCall = capturedCalls.getFirst();
         Assertions.assertThat(postCall.getPayload())
                 .contains("\"name\":\"Rule-Alpha\"")
                 .contains("\"owner\":\"risk-team\"")

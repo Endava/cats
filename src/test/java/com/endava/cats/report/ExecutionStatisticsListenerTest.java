@@ -3,6 +3,7 @@ package com.endava.cats.report;
 import com.endava.cats.model.RunOutcome;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -204,17 +205,7 @@ class ExecutionStatisticsListenerTest {
 
     @Test
     void shouldResetAllSessionStatisticsAndRunOutcome() {
-        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
-        listener.increaseSuccess("/path");
-        listener.increaseErrors("/path");
-        listener.increaseWarns("/path");
-        listener.increaseSkippedFromReporting("/path");
-        listener.increaseProcessedTests();
-        listener.increaseRequestsAttempted();
-        listener.increaseAuthErrors();
-        listener.increaseIoErrors();
-        listener.recordResponseCode(200);
-        listener.markFailed("Contract processing failed");
+        ExecutionStatisticsListener listener = getExecutionStatisticsListener();
 
         Assertions.assertThat(listener.getRunOutcome())
                 .isEqualTo(RunOutcome.failed("Contract processing failed"));
@@ -232,6 +223,21 @@ class ExecutionStatisticsListenerTest {
         Assertions.assertThat(listener.getAuthErrors()).isZero();
         Assertions.assertThat(listener.getIoErrors()).isZero();
         Assertions.assertThat(listener.getResponseCodeDistribution()).isEmpty();
+    }
+
+    private static @NonNull ExecutionStatisticsListener getExecutionStatisticsListener() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        listener.increaseSuccess("/path");
+        listener.increaseErrors("/path");
+        listener.increaseWarns("/path");
+        listener.increaseSkippedFromReporting("/path");
+        listener.increaseProcessedTests();
+        listener.increaseRequestsAttempted();
+        listener.increaseAuthErrors();
+        listener.increaseIoErrors();
+        listener.recordResponseCode(200);
+        listener.markFailed("Contract processing failed");
+        return listener;
     }
 
 }

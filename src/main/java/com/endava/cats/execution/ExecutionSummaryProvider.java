@@ -5,18 +5,22 @@ import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import lombok.Getter;
 
-/** Captures the authoritative immutable summary of the current execution. */
+/**
+ * Captures the authoritative immutable summary of the current execution.
+ */
 @ApplicationScoped
 public class ExecutionSummaryProvider {
     private final ExecutionStatisticsListener executionStatisticsListener;
+    @Getter
     private final QualityGateArguments qualityGateArguments;
 
     /**
      * Creates the summary provider.
      *
      * @param executionStatisticsListener current execution statistics
-     * @param qualityGateArguments configured quality gate
+     * @param qualityGateArguments        configured quality gate
      */
     @Inject
     public ExecutionSummaryProvider(ExecutionStatisticsListener executionStatisticsListener,
@@ -35,7 +39,4 @@ public class ExecutionSummaryProvider {
                 qualityGateArguments::shouldFailBuild, qualityGateArguments.getQualityGateDescription());
     }
 
-    public QualityGateArguments getQualityGateArguments() {
-        return qualityGateArguments;
-    }
 }
