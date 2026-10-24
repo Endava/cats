@@ -617,6 +617,23 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(generated.getFirst()).contains("isTrue");
     }
 
+    @Test
+    void shouldGenerateSmallPositiveQuantityAndIsoTimestampsForUnformattedFromToFields() {
+        ObjectSchema schema = new ObjectSchema();
+        schema.addProperty("quantity", new io.swagger.v3.oas.models.media.IntegerSchema());
+        schema.addProperty("from", new StringSchema());
+        schema.addProperty("to", new StringSchema());
+        globalContext.getSchemaMap().put("FilterQuery", schema);
+
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(false, false, false, false), 2, true, 2);
+        String json = generator.generate("FilterQuery").getFirst();
+
+        Assertions.assertThat(JsonUtils.getVariableFromJson(json, "$.quantity")).hasToString("1");
+        Assertions.assertThat(JsonUtils.getVariableFromJson(json, "$.from")).hasToString("2026-01-01T00:00:00Z");
+        Assertions.assertThat(JsonUtils.getVariableFromJson(json, "$.to")).hasToString("2026-01-02T00:00:00Z");
+    }
+
     private OpenAPIModelGeneratorV2 generatorFor(String testResource) throws IOException {
         ParseOptions options = new ParseOptions();
         options.setResolve(true);

@@ -40,7 +40,7 @@ class DummyAcceptHeadersFuzzerTest {
 
         List<Set<CatsHeader>> headers = dummyAcceptHeadersFuzzer.getHeaders(data);
 
-        Assertions.assertThat(headers).hasSize(1);
+        Assertions.assertThat(headers).hasSize(2);
         Assertions.assertThat(headers.getFirst()).contains(CatsHeader.builder().name("Accept").build());
     }
 

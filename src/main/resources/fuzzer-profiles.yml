@@ -337,6 +337,7 @@ profiles:
       - StringsInNumericFields
       - InvalidReferencesFields
       - NullElementsInArrayFields
+      - WithinControlCharsInStringFields
       - AlternativeDateTimeFormatsFields
       - QueryObjectAsRequestBody
       - SmallNegativeAndInt32BoundaryFields

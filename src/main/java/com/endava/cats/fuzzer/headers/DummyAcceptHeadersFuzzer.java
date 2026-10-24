@@ -56,6 +56,9 @@ public class DummyAcceptHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
         Set<CatsHeader> clonedHeaders = Cloner.cloneMe(data.getHeaders());
         clonedHeaders.add(CatsHeader.builder().name(HttpHeaders.ACCEPT).value(CATS_ACCEPT).build());
 
-        return Collections.singletonList(clonedHeaders);
+        Set<CatsHeader> malformedQualityHeaders = Cloner.cloneMe(data.getHeaders());
+        malformedQualityHeaders.add(CatsHeader.builder().name(HttpHeaders.ACCEPT).value("*/*; q=invalid").build());
+
+        return List.of(clonedHeaders, malformedQualityHeaders);
     }
 }

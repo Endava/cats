@@ -1294,9 +1294,30 @@ public class OpenAPIModelGeneratorV2 {
         if (propertyName == null || syntheticSchema(propertyName) || !CatsModelUtils.isStringSchema(propertySchema)) {
             return null;
         }
+        String isoTimestamp = inferUnformattedTemporalValue(propertyName, propertySchema);
+        if (isoTimestamp != null) {
+            return isoTimestamp;
+        }
 
         String propertyForGeneration = currentProperty.endsWith(propertyName) ? currentProperty : currentProperty + "#" + propertyName;
         return validDataFormat.generate(propertySchema, propertyForGeneration);
+    }
+
+    private static String inferUnformattedTemporalValue(String propertyName, Schema<?> propertySchema) {
+        if (propertySchema.getFormat() != null || propertySchema.getPattern() != null || propertySchema.getEnum() != null) {
+            return null;
+        }
+        if ((propertySchema.getMinLength() != null && propertySchema.getMinLength() > 20)
+                || (propertySchema.getMaxLength() != null && propertySchema.getMaxLength() < 20)) {
+            return null;
+        }
+        String leaf = propertyName.substring(propertyName.lastIndexOf('#') + 1)
+                .replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        return switch (leaf) {
+            case "from", "startdate", "starttime", "since", "datefrom", "timefrom" -> "2026-01-01T00:00:00Z";
+            case "to", "enddate", "endtime", "until", "dateto", "timeto" -> "2026-01-02T00:00:00Z";
+            default -> null;
+        };
     }
 
     @SuppressWarnings("unchecked")
@@ -1457,7 +1478,9 @@ public class OpenAPIModelGeneratorV2 {
         }
         String leaf = propertyName.substring(propertyName.lastIndexOf('#') + 1)
                 .replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
-        return leaf.equals("page") || leaf.equals("pagenumber") || leaf.equals("pageindex") || leaf.equals("offset");
+        return leaf.equals("page") || leaf.equals("pagenumber") || leaf.equals("pageindex")
+                || leaf.equals("offset") || leaf.equals("quantity") || leaf.equals("count")
+                || leaf.equals("size") || leaf.equals("pagesize") || leaf.equals("limit") || leaf.equals("perpage");
     }
 
     private Object getExampleFromNumberSchema(String propertyName, Schema<?> property) {
