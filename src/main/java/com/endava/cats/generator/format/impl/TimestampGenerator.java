@@ -11,6 +11,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * A generator class implementing various interfaces for generating valid and invalid date-time data formats.
@@ -36,7 +37,7 @@ public class TimestampGenerator implements ValidDataFormatGenerator, InvalidData
         }
         String leaf = propertyName.substring(propertyName.lastIndexOf('#') + 1);
         return (leaf.length() > 2 && leaf.endsWith("At") && Character.isLowerCase(leaf.charAt(leaf.length() - 3))) ||
-                leaf.toLowerCase(java.util.Locale.ROOT).endsWith("_at");
+                leaf.toLowerCase(Locale.ROOT).endsWith("_at");
     }
 
     @Override

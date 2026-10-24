@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.ConsoleUtils;
@@ -16,6 +17,8 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Sends a valid request containing only fields marked as required in the OpenAPI contract.
@@ -66,10 +69,10 @@ public class OnlyRequiredFieldsFuzzer implements Fuzzer {
         }
         List<String> fallbacks = RequiredOnlyPayloadGenerator.generateFallbackMinimalPayloads(
                 data.getPayload(), data.getAllRequiredFields(), payload, data.getRequestPropertyTypes(), MAX_FALLBACK_CANDIDATES);
-        java.util.Set<com.endava.cats.model.CatsHeader> requiredHeadersOnly = data.getHeaders() == null ? null
+        Set<CatsHeader> requiredHeadersOnly = data.getHeaders() == null ? null
                 : data.getHeaders().stream()
-                        .filter(com.endava.cats.model.CatsHeader::isRequired)
-                        .collect(java.util.stream.Collectors.toSet());
+                        .filter(CatsHeader::isRequired)
+                        .collect(Collectors.toSet());
         if (requiredHeadersOnly != null && requiredHeadersOnly.size() < data.getHeaders().size() && fallbacks.isEmpty()) {
             fallbacks = List.of(payload);
         }

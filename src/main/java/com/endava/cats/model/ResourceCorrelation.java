@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 
+import java.util.Locale;
+
 /**
  * Describes a value obtained from a previously successful request and reused in a later request.
  */
@@ -18,7 +20,7 @@ public class ResourceCorrelation {
     private final Object value;
 
     public String getTargetLocation() {
-        return target.location().name().toLowerCase(java.util.Locale.ROOT);
+        return target.location().name().toLowerCase(Locale.ROOT);
     }
 
     public String getTargetField() {

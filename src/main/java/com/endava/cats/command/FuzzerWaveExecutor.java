@@ -7,7 +7,9 @@ import com.endava.cats.exception.CatsExecutionLimitReachedException;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
+import com.endava.cats.fuzzer.special.FunctionalFlowFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
+import com.endava.cats.fuzzer.special.RandomFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.tui.event.CatsExecutionEvent;
@@ -23,6 +25,7 @@ import io.swagger.v3.oas.models.PathItem;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -31,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -126,7 +130,7 @@ final class FuzzerWaveExecutor {
                 .map(profile -> profile.fuzzers().stream()
                         .map(name -> name.toLowerCase(Locale.ROOT))
                         .collect(Collectors.toCollection(LinkedHashSet::new)))
-                .map( java.util.Collections::unmodifiableSet)
+                .map(Collections::unmodifiableSet)
                 .orElse(Set.of());
     }
 
@@ -254,7 +258,7 @@ final class FuzzerWaveExecutor {
     private void runRemainingWaveAndSecondPhase(List<PreparedPath> preparedPaths,
                                                 Set<String> coverageWaveFuzzers, Set<String> crashWaveFuzzers) {
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 4, 4, "Full"));
-        java.util.function.Predicate<Fuzzer> remainingFilter =
+        Predicate<Fuzzer> remainingFilter =
                 fuzzer -> !isInWave(fuzzer, coverageWaveFuzzers) && !isInWave(fuzzer, crashWaveFuzzers);
         for (PreparedPath path : preparedPaths) {
             if (!path.binaryStreamOnly() && (!path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty())) {
@@ -286,7 +290,7 @@ final class FuzzerWaveExecutor {
     }
 
     private void runNonSeedWaveAcrossPaths(List<PreparedPath> preparedPaths,
-                                           java.util.function.Predicate<Fuzzer> waveFilter,
+                                           Predicate<Fuzzer> waveFilter,
                                            boolean completePathAfterWave) {
         for (PreparedPath path : preparedPaths) {
             if (!path.binaryStreamOnly() && (!completePathAfterWave || !path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty())) {
@@ -398,7 +402,7 @@ final class FuzzerWaveExecutor {
             return false;
         }
         boolean skipped = Optional.ofNullable(command.filterArguments.getSkipFuzzers()).orElse(List.of()).stream()
-                .anyMatch(name -> "randomfuzzer".equalsIgnoreCase(name) || "random".equalsIgnoreCase(name));
+                .anyMatch(name -> ConsoleUtils.matchesFuzzer(name, RandomFuzzer.class));
         if (skipped) {
             return false;
         }
@@ -406,7 +410,7 @@ final class FuzzerWaveExecutor {
             return true;
         }
         return Optional.ofNullable(command.filterArguments.getSuppliedFuzzers()).orElse(List.of()).stream()
-                .anyMatch(name -> "randomfuzzer".equalsIgnoreCase(name) || "random".equalsIgnoreCase(name));
+                .anyMatch(name -> ConsoleUtils.matchesFuzzer(name, RandomFuzzer.class));
     }
 
     private static boolean isSeedFuzzer(Fuzzer fuzzer) {
@@ -619,7 +623,7 @@ final class FuzzerWaveExecutor {
         logFuzzerStart(fuzzer, data);
 
         boolean reportsFuzzerLifecycle = !(fuzzer instanceof FunctionalFuzzer)
-                && !(fuzzer instanceof com.endava.cats.fuzzer.special.FunctionalFlowFuzzer);
+                && !(fuzzer instanceof FunctionalFlowFuzzer);
         if (reportsFuzzerLifecycle) {
             command.testCaseListener.beforeFuzz(fuzzer.getClass(), data.getContractPath(), data.getMethod().name());
         }

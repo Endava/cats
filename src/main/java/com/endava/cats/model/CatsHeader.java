@@ -1,6 +1,7 @@
 package com.endava.cats.model;
 
 import com.endava.cats.generator.simple.StringGenerator;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import lombok.AllArgsConstructor;
@@ -100,7 +101,7 @@ public class CatsHeader {
         }
 
         if ("uuid".equalsIgnoreCase(schema.getFormat())) {
-            return com.endava.cats.util.CatsRandom.uuid();
+            return CatsRandom.uuid();
         }
         if ("date-time".equalsIgnoreCase(schema.getFormat())) {
             return OffsetDateTime.now(ZoneId.systemDefault()).toString();

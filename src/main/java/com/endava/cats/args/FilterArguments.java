@@ -15,6 +15,8 @@ import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.annotations.WhitespaceFuzzer;
 import com.endava.cats.args.util.ProfileLoader;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.fields.UserDictionaryFieldsFuzzer;
+import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.AnnotationUtils;
 import com.endava.cats.util.CatsUtil;
@@ -503,7 +505,9 @@ public class FilterArguments {
         if (userArguments.isUserDictionarySupplied()) {
             FUZZERS_TO_BE_RUN.clear();
             // if a custom dictionary is supplied, we only keep these 2 fuzzers
-            FUZZERS_TO_BE_RUN.addAll(List.of("UserDictionaryFieldsFuzzer", "UserDictionaryHeadersFuzzer"));
+            FUZZERS_TO_BE_RUN.addAll(List.of(
+                    UserDictionaryFieldsFuzzer.class.getSimpleName(),
+                    UserDictionaryHeadersFuzzer.class.getSimpleName()));
         } else {
             //second phase fuzzers are removed
             FUZZERS_TO_BE_RUN.removeIf(this.getSecondPhaseFuzzers().stream().map(Object::toString).toList()::contains);

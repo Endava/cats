@@ -6,6 +6,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.model.RequestTarget;
+import com.endava.cats.util.ContentTypeUtils;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +17,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -148,8 +150,8 @@ public class ServiceData {
         if (discriminatorFields == null || discriminatorFields.isEmpty()) {
             return false;
         }
-        return (fieldPath != null && discriminatorFields.contains(fieldPath.toLowerCase(java.util.Locale.ROOT)))
-                || (fieldName != null && discriminatorFields.contains(fieldName.toLowerCase(java.util.Locale.ROOT)));
+        return (fieldPath != null && discriminatorFields.contains(fieldPath.toLowerCase(Locale.ROOT)))
+                || (fieldName != null && discriminatorFields.contains(fieldName.toLowerCase(Locale.ROOT)));
     }
 
     private static Set<String> extractDiscriminatorFields(FuzzingData data) {
@@ -168,12 +170,12 @@ public class ServiceData {
         if (schema != null && schema.getDiscriminator() != null
                 && schema.getDiscriminator().getPropertyName() != null
                 && !schema.getDiscriminator().getPropertyName().isBlank()) {
-            discriminators.add(schema.getDiscriminator().getPropertyName().trim().toLowerCase(java.util.Locale.ROOT));
+            discriminators.add(schema.getDiscriminator().getPropertyName().trim().toLowerCase(Locale.ROOT));
         }
     }
 
     private static String resolveAcceptHeader(FuzzingData data) {
-        return com.endava.cats.util.ContentTypeUtils.resolveAcceptHeader(data.getResponseContentTypes());
+        return ContentTypeUtils.resolveAcceptHeader(data.getResponseContentTypes());
     }
 
     /**

@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -80,7 +81,7 @@ public final class FieldCorrelationEvaluator {
         for (int i = 0; i < list.size(); i++) {
             String indexed = wildcardPrefix + "[" + i + "]";
             String when = rule.when() == null ? null : rule.when().replace(token, indexed);
-            Map<String, Object> set = new java.util.LinkedHashMap<>();
+            Map<String, Object> set = new LinkedHashMap<>();
             Optional.ofNullable(rule.set()).orElse(Map.of())
                     .forEach((k, v) -> set.put(k.replace(token, indexed), v));
             List<String> omit = Optional.ofNullable(rule.omit()).orElse(List.of()).stream()

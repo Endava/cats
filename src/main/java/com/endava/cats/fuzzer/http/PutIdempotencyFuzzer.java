@@ -8,6 +8,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsResponse;
@@ -106,7 +107,7 @@ public class PutIdempotencyFuzzer implements Fuzzer {
     }
 
     private void reportPutResponse(CatsResponse response, FuzzingData data, boolean succeeded) {
-        if (response.getResponseCode() >= 500 && response.getResponseCode() < 600) {
+        if (ResponseCodeFamily.is5xxCode(response.getResponseCode())) {
             listener.reportResultError(logger, data, Reason.PUT_RETRY_SERVER_ERROR.value(), "Repeating a successful PUT returned {}", response.responseCodeAsString());
         } else if (!succeeded) {
             listener.reportResultWarn(logger, data, Reason.PUT_RETRY_REJECTED.value(), "Repeating a successful PUT returned {}", response.responseCodeAsString());
@@ -130,7 +131,7 @@ public class PutIdempotencyFuzzer implements Fuzzer {
     /** Compares stable JSON fields from the GET after the first and second identical PUTs. */
     private void reportReadResponse(CatsResponse response, FuzzingData data, JsonObject before,
                                     AtomicReference<JsonObject> snapshot) {
-        if (response.getResponseCode() >= 500 && response.getResponseCode() < 600) {
+        if (ResponseCodeFamily.is5xxCode(response.getResponseCode())) {
             listener.reportResultError(logger, data, Reason.PUT_RETRY_BROKE_READ.value(), "GET after PUT returned {}", response.responseCodeAsString());
             return;
         }
@@ -182,7 +183,7 @@ public class PutIdempotencyFuzzer implements Fuzzer {
     }
 
     private boolean isSuccessful(CatsResponse response) {
-        return response.getResponseCode() >= 200 && response.getResponseCode() < 300;
+        return ResponseCodeFamily.is2xxCode(response.getResponseCode());
     }
 
     private boolean isComparableGet(CatsResponse response) {

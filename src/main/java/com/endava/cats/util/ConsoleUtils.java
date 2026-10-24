@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -116,7 +117,7 @@ public abstract class ConsoleUtils {
      * @param fuzzerClasses the collection of fuzzer classes to test against
      * @return {@code true} if the candidate matches at least one class
      */
-    public static boolean matchesAnyFuzzer(String candidateName, java.util.Collection<Class<?>> fuzzerClasses) {
+    public static boolean matchesAnyFuzzer(String candidateName, Collection<Class<?>> fuzzerClasses) {
         if (StringUtils.isBlank(candidateName) || fuzzerClasses == null || fuzzerClasses.isEmpty()) {
             return false;
         }

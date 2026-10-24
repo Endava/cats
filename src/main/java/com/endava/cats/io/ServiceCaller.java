@@ -62,6 +62,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -328,7 +329,7 @@ public class ServiceCaller {
         }
     }
 
-    private java.io.File cachedCorrelationsFile;
+    private File cachedCorrelationsFile;
     private List<FieldCorrelationRule> cachedCorrelationRules = List.of();
 
     private String applyConfiguredFieldCorrelations(ServiceData data, String payload) {
@@ -353,7 +354,7 @@ public class ServiceCaller {
         }
     }
 
-    private List<FieldCorrelationRule> getLoadedCorrelationRules(java.io.File file) throws IOException {
+    private List<FieldCorrelationRule> getLoadedCorrelationRules(File file) throws IOException {
         if (!file.equals(cachedCorrelationsFile)) {
             cachedCorrelationsFile = file;
             cachedCorrelationRules = FunctionalFlowParser.parseCorrelationFile(file);

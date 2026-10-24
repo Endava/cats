@@ -1,11 +1,15 @@
 package com.endava.cats.command;
 
 import com.endava.cats.command.model.ConfigOptions;
+import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
+import com.endava.cats.fuzzer.http.HappyPathFuzzer;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.report.ErrorSimilarityDetector;
 import com.endava.cats.util.AnsiUtils;
+import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.VersionProvider;
 import com.google.gson.JsonElement;
@@ -154,7 +158,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             int code = tc.getResponse().getResponseCode();
             String method = Objects.requireNonNullElse(tc.getRequest().getHttpMethod(), "").toUpperCase(Locale.ROOT);
             String path = Objects.requireNonNullElse(tc.getContractPath(), Objects.requireNonNullElse(tc.getPath(), ""));
-            if (code >= 200 && code < 300) {
+            if (ResponseCodeFamily.is2xxCode(code)) {
                 if ("POST".equals(method)) {
                     pathsWithSuccessfulPost.add(path);
                 } else if ("DELETE".equals(method)) {
@@ -238,7 +242,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             }
         }
 
-        if (code >= 500 && code < 600) {
+        if (ResponseCodeFamily.is5xxCode(code)) {
             String key = "SERVER_CRASH_5XX|" + method + "|" + path + "|" + errorSig;
             return new ClusterClassification(
                     key,
@@ -294,7 +298,8 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     "Seed a valid resource via POST " + collectionPath + " or pass --urlParams <param>:<value>.");
         }
 
-        if ((code == 400 || code == 422) && ("HappyPath".equals(tc.getFuzzer()) || "OnlyRequiredFields".equals(tc.getFuzzer())
+        if ((code == 400 || code == 422) && (ConsoleUtils.matchesFuzzer(tc.getFuzzer(), HappyPathFuzzer.class)
+                || ConsoleUtils.matchesFuzzer(tc.getFuzzer(), OnlyRequiredFieldsFuzzer.class)
                 || tc.getExpectedResult() != null && tc.getExpectedResult().contains("2XX"))) {
             String key = "CROSS_FIELD_CONSTRAINT_4XX|" + method + "|" + path + "|" + errorSig;
             return new ClusterClassification(

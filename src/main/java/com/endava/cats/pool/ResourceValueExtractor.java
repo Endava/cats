@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
 /**
@@ -32,9 +34,9 @@ final class ResourceValueExtractor {
     static final int MAX_COLLECTION_ITEMS = 50;
     private static final Splitter FIELD_PATH_SPLITTER = Splitter.on('#').omitEmptyStrings();
     private static final Set<String> SINGLE_VALUE_WRAPPER_KEYS = Set.of("value", "key", "token", "code", "result", "data");
-    private static final java.util.regex.Pattern XML_IDENTIFIER_PATTERN = java.util.regex.Pattern.compile(
+    private static final Pattern XML_IDENTIFIER_PATTERN = Pattern.compile(
             "(?:<(id|uuid|guid|code)>([^<\\s]+)</\\1>|\\b(id|uuid|guid|code)=\"([^\"\\s]+)\")",
-            java.util.regex.Pattern.CASE_INSENSITIVE);
+            Pattern.CASE_INSENSITIVE);
 
     private ResourceValueExtractor() {
         // utility class
@@ -163,7 +165,7 @@ final class ResourceValueExtractor {
         if (xmlBody == null || !xmlBody.trim().startsWith("<")) {
             return Optional.empty();
         }
-        java.util.regex.Matcher matcher = XML_IDENTIFIER_PATTERN.matcher(xmlBody);
+        Matcher matcher = XML_IDENTIFIER_PATTERN.matcher(xmlBody);
         if (!matcher.find()) {
             return Optional.empty();
         }

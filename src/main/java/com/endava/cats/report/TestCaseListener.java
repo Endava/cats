@@ -29,6 +29,7 @@ import com.endava.cats.tui.model.TestResultSnapshot;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.ContentTypeUtils;
 import com.endava.cats.util.CyclingCharIterator;
 import com.endava.cats.util.SensitiveDataPolicy;
 import com.endava.cats.util.WordUtils;
@@ -1075,7 +1076,7 @@ public class TestCaseListener {
     }
 
     boolean areContentTypesEquivalent(String firstContentType, String secondContentType) {
-        return com.endava.cats.util.ContentTypeUtils.areContentTypesEquivalent(firstContentType, secondContentType);
+        return ContentTypeUtils.areContentTypesEquivalent(firstContentType, secondContentType);
     }
 
     private boolean isNotFound(CatsResponse response) {

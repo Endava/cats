@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Runs a fast 1-request-per-operation contract-vs-live-server health, route, and authentication smoke check.
@@ -160,7 +161,7 @@ public class SmokeCommand implements Runnable, CommandLine.IExitCodeGenerator {
                         op.outcome().method(), op.outcome().path(),
                         op.parameters().stream()
                                 .map(p -> p.target().name())
-                                .collect(java.util.stream.Collectors.joining(", "))))
+                                .collect(Collectors.joining(", "))))
                 .toList();
     }
 
@@ -168,7 +169,7 @@ public class SmokeCommand implements Runnable, CommandLine.IExitCodeGenerator {
         if (ResponseCodeFamily.is2xxCode(code)) {
             return "2XX OK";
         }
-        if (code >= 300 && code < 400) {
+        if (ResponseCodeFamily.is3xxCode(code)) {
             return "3XX Redirect";
         }
         if (code == 401 || code == 403) {

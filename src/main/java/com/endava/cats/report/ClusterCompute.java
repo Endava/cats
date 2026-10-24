@@ -1,5 +1,6 @@
 package com.endava.cats.report;
 
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsTestCaseSummary;
 import org.apache.commons.lang3.StringUtils;
 
@@ -145,7 +146,7 @@ public class ClusterCompute {
                     first.getResponseBody(), first.getResultDetails());
             int statusCode = first.getHttpResponseCode();
             boolean hasError = cluster.stream().anyMatch(CatsTestCaseSummary::getError);
-            boolean is5xx = statusCode >= 500 && statusCode < 600;
+            boolean is5xx = ResponseCodeFamily.is5xxCode(statusCode);
 
             Set<String> distinctFuzzers = cluster.stream()
                     .map(CatsTestCaseSummary::getFuzzer)
@@ -172,13 +173,13 @@ public class ClusterCompute {
     }
 
     private static String statusBadgeClass(int code) {
-        if (code >= 500 && code < 600) {
+        if (ResponseCodeFamily.is5xxCode(code)) {
             return "badge-5xx";
         }
-        if (code >= 400 && code < 500) {
+        if (ResponseCodeFamily.is4xxCode(code)) {
             return "badge-4xx";
         }
-        if (code >= 200 && code < 300) {
+        if (ResponseCodeFamily.is2xxCode(code)) {
             return "badge-2xx";
         }
         return "badge-other";

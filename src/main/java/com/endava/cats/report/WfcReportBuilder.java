@@ -31,6 +31,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -56,7 +57,7 @@ public final class WfcReportBuilder {
     public static Report build(List<CatsTestCaseSummary> summaries,
                                ExecutionSummary executionSummary,
                                OpenAPI openAPI,
-                               java.util.Collection<ProcessingError> processingErrors,
+                               Collection<ProcessingError> processingErrors,
                                Path reportingPath,
                                String toolVersion,
                                long executionTimeSeconds) {
@@ -203,7 +204,7 @@ public final class WfcReportBuilder {
         return List.of(coverage);
     }
 
-    private static List<Warning> buildWarnings(java.util.Collection<ProcessingError> processingErrors) {
+    private static List<Warning> buildWarnings(Collection<ProcessingError> processingErrors) {
         if (processingErrors == null || processingErrors.isEmpty()) {
             return List.of();
         }

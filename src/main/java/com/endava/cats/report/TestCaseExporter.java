@@ -52,6 +52,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -206,7 +207,7 @@ public abstract class TestCaseExporter {
                 ConsoleUtils.renderHeader(" Execution time details ");
             }
             emptyConsoleLine();
-            List<TimeExecutionDetails> allDetails = new java.util.ArrayList<>();
+            List<TimeExecutionDetails> allDetails = new ArrayList<>();
             executionDetails.forEach((key, value) -> {
                 TimeExecutionDetails details = buildAndPrintExecutionTimesForPathAndHttpMethod(key, value);
                 allDetails.add(details);

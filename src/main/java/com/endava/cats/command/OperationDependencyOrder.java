@@ -1,7 +1,9 @@
 package com.endava.cats.command;
 
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.WordUtils;
+import com.google.common.base.Splitter;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -24,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Conservatively orders root collection POST producers before operations that reference their IDs in request bodies,
@@ -33,6 +36,7 @@ import java.util.regex.Pattern;
 final class OperationDependencyOrder {
     private static final int MAX_SCHEMA_DEPTH = 4;
     private static final Pattern PATH_PARAMETER_PATTERN = Pattern.compile("\\{([^/]+)}");
+    private static final Splitter PATH_SEGMENT_SPLITTER = Splitter.on('/').omitEmptyStrings();
     private static final List<String> ID_SUFFIXES = WordUtils.IDENTIFIER_SUFFIXES;
 
     private OperationDependencyOrder() {
@@ -87,10 +91,10 @@ final class OperationDependencyOrder {
                     .forEach(required::addAll);
             addSiblingSupersetProducers(entry.getKey(), postPropsByPath, required);
             String selfTrimmed = stripTrailingSlash(entry.getKey());
-            int selfDepth = com.google.common.base.Splitter.on('/').omitEmptyStrings().splitToList(selfTrimmed).size();
+            int selfDepth = PATH_SEGMENT_SPLITTER.splitToList(selfTrimmed).size();
             required.removeIf(prodPath -> prodPath.equals(entry.getKey())
                     || stripTrailingSlash(prodPath).startsWith(selfTrimmed + "/")
-                    || (selfTrimmed.contains("{") && com.google.common.base.Splitter.on('/').omitEmptyStrings()
+                    || (selfTrimmed.contains("{") && PATH_SEGMENT_SPLITTER
                             .splitToList(stripTrailingSlash(prodPath)).size() > selfDepth));
             dependencies.put(entry.getKey(), required);
         }
@@ -257,7 +261,7 @@ final class OperationDependencyOrder {
                     collectSchemaIdentifiers(api, entry.getValue(), propertyName, depth + 1, visited, names);
                 }
             }
-            for (Schema<?> subSchema : com.endava.cats.util.CatsModelUtils.getComposedSchemas(resolved)) {
+            for (Schema<?> subSchema : CatsModelUtils.getComposedSchemas(resolved)) {
                 collectSchemaIdentifiers(api, subSchema, parentProperty, depth + 1, visited, names);
             }
             if (resolved.getItems() != null) {
@@ -309,12 +313,12 @@ final class OperationDependencyOrder {
         }
         Map<String, Schema> schemas = (api != null && api.getComponents() != null)
                 ? api.getComponents().getSchemas() : null;
-        Schema<?> resolved = com.endava.cats.util.CatsModelUtils.resolveSchema(schema, schemas);
+        Schema<?> resolved = CatsModelUtils.resolveSchema(schema, schemas);
         return resolved == schema ? null : resolved;
     }
 
     private static Set<String> producerIdentifiers(String path) {
-        List<String> segments = com.google.common.base.Splitter.on('/').omitEmptyStrings().splitToList(stripTrailingSlash(path));
+        List<String> segments = PATH_SEGMENT_SPLITTER.splitToList(stripTrailingSlash(path));
         if (segments.isEmpty()) {
             return Set.of();
         }
@@ -441,7 +445,7 @@ final class OperationDependencyOrder {
     }
 
     private static String lastConcreteSegment(String path) {
-        List<String> segments = com.google.common.base.Splitter.on('/').omitEmptyStrings().splitToList(stripTrailingSlash(path));
+        List<String> segments = PATH_SEGMENT_SPLITTER.splitToList(stripTrailingSlash(path));
         for (int i = segments.size() - 1; i >= 0; i--) {
             if (!segments.get(i).startsWith("{")) {
                 return normalize(segments.get(i));
@@ -457,7 +461,7 @@ final class OperationDependencyOrder {
         }
         return item.readOperationsMap().keySet().stream()
                 .map(Enum::name)
-                .collect(java.util.stream.Collectors.joining("/"));
+                .collect(Collectors.joining("/"));
     }
 
     record PathDependencyAnalysis(List<String> orderedPaths,

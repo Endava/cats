@@ -15,6 +15,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.WordUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -175,7 +176,7 @@ public class SensitiveDataExposureFuzzer implements Fuzzer {
     }
 
     private boolean isSensitiveName(String name) {
-        String normalized = com.endava.cats.util.WordUtils.normalizeAlphaNumeric(name);
+        String normalized = WordUtils.normalizeAlphaNumeric(name);
         return SENSITIVE_NAME_SUFFIXES.stream().anyMatch(normalized::endsWith);
     }
 

@@ -8,8 +8,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import lombok.Getter;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
 
 /**
  * Listener for tracking execution statistics of CATS tests, including errors, warnings, successes, and results
@@ -241,11 +243,11 @@ public class ExecutionStatisticsListener {
         return this.errors.entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(limit)
-                .collect(java.util.stream.Collectors.toMap(
+                .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
-                        (e1, e2) -> e1,
-                        java.util.LinkedHashMap::new
+                        (e1, _) -> e1,
+                        LinkedHashMap::new
                 ));
     }
 

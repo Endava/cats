@@ -3,11 +3,11 @@ package com.endava.cats.generator.format.impl;
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * A generator class implementing interfaces for generating valid and invalid UUID (Universally Unique Identifier) data formats.
@@ -18,7 +18,7 @@ public class UUIDGenerator implements ValidDataFormatGenerator, InvalidDataForma
 
     @Override
     public Object generate(Schema<?> schema) {
-        return com.endava.cats.util.CatsRandom.uuid();
+        return CatsRandom.uuid();
     }
 
     @Override

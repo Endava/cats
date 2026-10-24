@@ -1,6 +1,7 @@
 package com.endava.cats.io;
 
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.ContentTypeUtils;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -29,7 +30,7 @@ public final class XmlPayloadEncoder {
      * @return {@code true} if XML media type
      */
     public static boolean isXmlContentType(String contentType) {
-        return com.endava.cats.util.ContentTypeUtils.isXmlContentType(contentType);
+        return ContentTypeUtils.isXmlContentType(contentType);
     }
 
     /**

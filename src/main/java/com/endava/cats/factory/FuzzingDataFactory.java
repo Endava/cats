@@ -304,11 +304,11 @@ public class FuzzingDataFactory {
         SelectedMediaType selectedMediaType = this.getMediaType(operation, openAPI);
 
         if (selectedMediaType == null) {
-            logger.warn("No supported request content type found for path {}, method {}. Supported payload formats are JSON, form, plain text and NDJSON", path, method);
+            logger.warn("No supported request content type found for path {}, method {}. Supported payload formats are JSON, form, XML, plain text and NDJSON", path, method);
             return Collections.emptyList();
         }
         if (!isSupportedRequestContentType(selectedMediaType.contentType())) {
-            logger.warn("Request content type {} is not supported for path {}, method {}. Supported payload formats are JSON, form, plain text and NDJSON",
+            logger.warn("Request content type {} is not supported for path {}, method {}. Supported payload formats are JSON, form, XML, plain text and NDJSON",
                     selectedMediaType.contentType(), path, method);
             return Collections.emptyList();
         }

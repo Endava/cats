@@ -16,6 +16,7 @@ import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -186,7 +187,7 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
         String valueStr = String.valueOf(currentValue);
 
         if (UUID_PATTERN.matcher(valueStr).matches()) {
-            alternatives.add(com.endava.cats.util.CatsRandom.uuid());
+            alternatives.add(CatsRandom.uuid());
             alternatives.add("00000000-0000-0000-0000-000000000000");
             alternatives.add("11111111-1111-1111-1111-111111111111");
         } else if (NUMERIC_ID_PATTERN.matcher(valueStr).matches()) {
@@ -200,7 +201,7 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
             alternatives.add(valueStr + "_other");
             alternatives.add("other_" + valueStr);
             alternatives.add("test_user_id");
-            alternatives.add(com.endava.cats.util.CatsRandom.uuid());
+            alternatives.add(CatsRandom.uuid());
         }
 
         return alternatives.stream()

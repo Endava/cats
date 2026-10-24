@@ -11,6 +11,7 @@ import com.endava.cats.fuzzer.special.mutators.api.CustomMutator;
 import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorConfig;
 import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorKeywords;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
@@ -19,6 +20,7 @@ import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -43,6 +45,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -150,7 +153,7 @@ public class RandomFuzzer implements Fuzzer {
             Mutator selectedRandomMutator = CatsUtil.selectRandom(mutatorsToRun);
             logger.debug("Selected mutator [{}]", selectedRandomMutator.getClass().getSimpleName());
 
-            Set<String> mutatedFields = new java.util.LinkedHashSet<>();
+            Set<String> mutatedFields = new LinkedHashSet<>();
             mutatedFields.add(targetField);
             String mutatedPayload = applyMutations(data.getPayload(), targetField, selectedRandomMutator,
                     allCatsFields, mutatorsToRun, mutatedFields);
@@ -178,10 +181,10 @@ public class RandomFuzzer implements Fuzzer {
     private String applyMutations(String basePayload, String targetField, Mutator primaryMutator,
                                   Set<String> allCatsFields, List<Mutator> mutatorsToRun, Set<String> mutatedFields) {
         String mutatedPayload = primaryMutator.mutate(basePayload, targetField);
-        if (allCatsFields.size() <= 1 || !com.endava.cats.util.CatsRandom.instance().nextBoolean()) {
+        if (allCatsFields.size() <= 1 || !CatsRandom.instance().nextBoolean()) {
             return mutatedPayload;
         }
-        int extraMutations = 1 + com.endava.cats.util.CatsRandom.instance().nextInt(Math.min(3, allCatsFields.size() - 1));
+        int extraMutations = 1 + CatsRandom.instance().nextInt(Math.min(3, allCatsFields.size() - 1));
         for (int i = 0; i < extraMutations && JsonUtils.isValidJson(mutatedPayload); i++) {
             String extraField = CatsUtil.selectRandom(allCatsFields);
             if (JsonUtils.isFieldInJson(mutatedPayload, extraField)) {
@@ -227,7 +230,7 @@ public class RandomFuzzer implements Fuzzer {
         if (matchArguments.isMatchResponse(catsResponse)) {
             testCaseListener.reportResultError(logger, fuzzingData, CatsResultFactory.Reason.RESPONSE_MATCHES_ARGUMENTS.value(), "Response matches" + matchArguments.getMatchString());
         } else if (reportServerErrorsWhenUnmatched && !matchArguments.isAnyMatchArgumentSupplied() &&
-                catsResponse.getResponseCode() >= 500 && catsResponse.getResponseCode() < 600) {
+                ResponseCodeFamily.is5xxCode(catsResponse.getResponseCode())) {
             testCaseListener.reportResultError(logger, fuzzingData, CatsResultFactory.Reason.UNEXPECTED_RESPONSE_CODE.value(),
                     "Response status code %s indicates a server error".formatted(catsResponse.responseCodeAsString()));
         } else {

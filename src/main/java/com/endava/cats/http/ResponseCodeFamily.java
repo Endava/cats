@@ -91,7 +91,17 @@ public interface ResponseCodeFamily {
      * @return True if the code corresponds to a 2xx status code, false otherwise.
      */
     static boolean is2xxCode(int code) {
-        return String.valueOf(code).startsWith("2");
+        return code >= 200 && code < 300;
+    }
+
+    /**
+     * Checks if the provided integer code corresponds to a 3xx HTTP response status code.
+     *
+     * @param code The integer response code to check.
+     * @return True if the code corresponds to a 3xx status code, false otherwise.
+     */
+    static boolean is3xxCode(int code) {
+        return code >= 300 && code < 400;
     }
 
     /**
@@ -101,7 +111,7 @@ public interface ResponseCodeFamily {
      * @return True if the code corresponds to a 4xx status code, false otherwise.
      */
     static boolean is4xxCode(int code) {
-        return String.valueOf(code).startsWith("4");
+        return code >= 400 && code < 500;
     }
 
     /**
@@ -111,7 +121,7 @@ public interface ResponseCodeFamily {
      * @return True if the code corresponds to a 5xx status code, false otherwise.
      */
     static boolean is5xxCode(int code) {
-        return String.valueOf(code).startsWith("5");
+        return code >= 500 && code < 600;
     }
 
     /**

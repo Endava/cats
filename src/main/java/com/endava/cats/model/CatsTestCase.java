@@ -14,7 +14,11 @@ import lombok.Setter;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -233,14 +237,14 @@ public class CatsTestCase {
      * @param file path to the JSON test case file
      * @return parsed test case if present and valid
      */
-    public static Optional<CatsTestCase> readTestCaseFile(java.nio.file.Path file) {
-        if (file == null || !java.nio.file.Files.isRegularFile(file)) {
+    public static Optional<CatsTestCase> readTestCaseFile(Path file) {
+        if (file == null || !Files.isRegularFile(file)) {
             return Optional.empty();
         }
         try {
-            String content = java.nio.file.Files.readString(file, java.nio.charset.StandardCharsets.UTF_8);
+            String content = Files.readString(file, StandardCharsets.UTF_8);
             return Optional.ofNullable(JsonUtils.GSON.fromJson(content, CatsTestCase.class));
-        } catch (java.io.IOException | RuntimeException _) {
+        } catch (IOException | RuntimeException _) {
             return Optional.empty();
         }
     }

@@ -19,9 +19,12 @@ import io.swagger.v3.oas.models.media.UUIDSchema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -414,11 +417,11 @@ public abstract class CatsModelUtils {
      * Resolves a possibly chained {@code $ref} schema against the supplied schema map with cycle protection.
      */
     @SuppressWarnings("rawtypes")
-    public static Schema<?> resolveSchema(Schema<?> schema, java.util.Map<String, Schema> schemaMap) {
+    public static Schema<?> resolveSchema(Schema<?> schema, Map<String, Schema> schemaMap) {
         if (schema == null || schemaMap == null) {
             return schema;
         }
-        Set<Schema<?>> visited = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        Set<Schema<?>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         Schema<?> resolved = schema;
         while (resolved.get$ref() != null && visited.add(resolved)) {
             String schemaName = getSimpleRef(resolved.get$ref());
@@ -439,7 +442,7 @@ public abstract class CatsModelUtils {
         if (schema == null) {
             return List.of();
         }
-        List<Schema> composed = new java.util.ArrayList<>();
+        List<Schema> composed = new ArrayList<>();
         if (schema.getAllOf() != null) {
             composed.addAll(schema.getAllOf());
         }

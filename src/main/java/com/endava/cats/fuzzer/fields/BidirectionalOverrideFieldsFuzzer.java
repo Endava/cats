@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseReplaceFieldsFuzzer;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsModelUtils;
@@ -74,7 +75,7 @@ public class BidirectionalOverrideFieldsFuzzer extends BaseReplaceFieldsFuzzer {
     }
 
     @Override
-    public List<com.endava.cats.http.HttpMethod> skipForHttpMethods() {
-        return List.of(com.endava.cats.http.HttpMethod.HEAD, com.endava.cats.http.HttpMethod.TRACE);
+    public List<HttpMethod> skipForHttpMethods() {
+        return List.of(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 }

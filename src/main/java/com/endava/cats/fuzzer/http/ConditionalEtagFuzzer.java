@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsHeader;
@@ -177,10 +178,10 @@ public class ConditionalEtagFuzzer implements Fuzzer {
         int code = response.getResponseCode();
         if (code == 412 || code == 409) {
             listener.reportResultInfo(logger, data, "Stale If-Match was rejected (status {})", code);
-        } else if (code >= 200 && code < 300) {
+        } else if (ResponseCodeFamily.is2xxCode(code)) {
             listener.reportResultWarn(logger, data, Reason.STALE_IF_MATCH_ACCEPTED.value(),
                     "An update with a previously observed stale ETag succeeded. Check whether the precondition was honored");
-        } else if (code >= 500 && code < 600) {
+        } else if (ResponseCodeFamily.is5xxCode(code)) {
             listener.reportResultError(logger, data, Reason.STALE_IF_MATCH_SERVER_ERROR.value(), "An update with a stale ETag returned {}", code);
         } else {
             listener.reportResultInfo(logger, data, "Stale If-Match check inconclusive (status {})", code);
@@ -193,7 +194,7 @@ public class ConditionalEtagFuzzer implements Fuzzer {
         } else if (response.getResponseCode() == 200 && response.getHeader("ETag") != null &&
                 sentTag.equals(response.getHeader("ETag").getValue())) {
             listener.reportResultWarn(logger, data, Reason.CONDITIONAL_GET_IGNORED.value(), "A GET with If-None-Match returned 200 with the same ETag");
-        } else if (response.getResponseCode() >= 500 && response.getResponseCode() < 600) {
+        } else if (ResponseCodeFamily.is5xxCode(response.getResponseCode())) {
             listener.reportResultError(logger, data, Reason.CONDITIONAL_GET_SERVER_ERROR.value(), "A GET with If-None-Match returned {}", response.responseCodeAsString());
         } else {
             listener.reportResultInfo(logger, data, "Conditional GET inconclusive (status {})", response.responseCodeAsString());

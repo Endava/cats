@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsResponse;
@@ -21,10 +22,12 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 /**
  * Probes a previously observed child under another observed parent on the same nested GET operation.
@@ -84,7 +87,7 @@ public class CrossParentResourceIsolationFuzzer implements Fuzzer {
     /** Identifies the immediate parent and final child parameters of a nested item path. */
     private Optional<ParentChildPath> parentChildPath(String path) {
         List<String> segments = Arrays.asList(path.split("/", -1));
-        List<Integer> variables = java.util.stream.IntStream.range(0, segments.size())
+        List<Integer> variables = IntStream.range(0, segments.size())
                 .filter(index -> segments.get(index).matches("\\{[^/]+}"))
                 .boxed().toList();
         if (variables.size() < 2 || variables.getLast() != segments.size() - 1) {
@@ -119,7 +122,7 @@ public class CrossParentResourceIsolationFuzzer implements Fuzzer {
                     .orElse(Optional.empty())
                     .filter(parent -> !parent.equals(currentParent));
             if (alternativeParent.isPresent()) {
-                List<String> segments = new java.util.ArrayList<>(child);
+                List<String> segments = new ArrayList<>(child);
                 segments.set(path.parentIndex(), alternativeParent.get());
                 return Optional.of(new SwappedChild(String.join("/", segments),
                         path.parentName(), path.childName(), child.get(path.childIndex())));
@@ -142,7 +145,7 @@ public class CrossParentResourceIsolationFuzzer implements Fuzzer {
     }
 
     private String swappedPath(List<String> child, List<String> other, int parentIndex) {
-        List<String> segments = new java.util.ArrayList<>(child);
+        List<String> segments = new ArrayList<>(child);
         segments.set(parentIndex, other.get(parentIndex));
         return String.join("/", segments);
     }
@@ -151,7 +154,7 @@ public class CrossParentResourceIsolationFuzzer implements Fuzzer {
         int code = response.getResponseCode();
         if (code == 403 || code == 404) {
             listener.reportResultInfo(logger, data, "Child resource unavailable under a different parent (status {})", code);
-        } else if (code >= 500 && code < 600) {
+        } else if (ResponseCodeFamily.is5xxCode(code)) {
             listener.reportResultError(logger, data, Reason.CROSS_PARENT_SERVER_ERROR.value(),
                     "Request for a known child under a different parent returned {}", code);
         } else if (responseContainsObservedChild(response, swap)) {
@@ -164,7 +167,7 @@ public class CrossParentResourceIsolationFuzzer implements Fuzzer {
 
     /** Requires a complete successful JSON response that identifies the original child, not merely a 2xx status. */
     private boolean responseContainsObservedChild(CatsResponse response, SwappedChild swap) {
-        return response.getResponseCode() >= 200 && response.getResponseCode() < 300 && !response.isBodyTruncated() &&
+        return ResponseCodeFamily.is2xxCode(response.getResponseCode()) && !response.isBodyTruncated() &&
                 JsonUtils.isValidJson(response.getBody()) &&
                 containsChildId(JsonUtils.parseAsJsonElement(response.getBody()), swap.childName(), swap.childId());
     }

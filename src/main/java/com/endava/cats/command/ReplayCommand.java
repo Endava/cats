@@ -5,6 +5,7 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.impl.EnvVariableParser;
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -275,10 +276,10 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         int oldCode = testCase.getResponse().getResponseCode();
         int newCode = response.getResponseCode();
 
-        boolean wasError = oldCode >= 500 || oldCode == 0;
-        boolean isNowError = newCode >= 500 || newCode == 0;
-        boolean isNowClientError = newCode >= 400 && newCode < 500;
-        boolean isNowSuccess = newCode >= 200 && newCode < 300;
+        boolean wasError = ResponseCodeFamily.is5xxCode(oldCode) || oldCode == 0;
+        boolean isNowError = ResponseCodeFamily.is5xxCode(newCode) || newCode == 0;
+        boolean isNowClientError = ResponseCodeFamily.is4xxCode(newCode);
+        boolean isNowSuccess = ResponseCodeFamily.is2xxCode(newCode);
 
         if (oldCode == newCode) {
             stats.unchanged++;
@@ -312,7 +313,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void loadHeadersIfSupplied(CatsTestCase testCase) {
-        List<KeyValuePair<String, Object>> headersFromFile = new java.util.ArrayList<>(Optional.ofNullable(testCase.getRequest().getHeaders()).orElse(Collections.emptyList()));
+        List<KeyValuePair<String, Object>> headersFromFile = new ArrayList<>(Optional.ofNullable(testCase.getRequest().getHeaders()).orElse(Collections.emptyList()));
 
         //remove old headers
         headersFromFile.removeIf(header -> headersMap.containsKey(header.getKey()));

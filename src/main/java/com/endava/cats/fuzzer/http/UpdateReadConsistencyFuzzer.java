@@ -8,12 +8,14 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
@@ -25,6 +27,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -108,7 +111,7 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
     }
 
     private boolean isCompleteSuccessfulJson(CatsResponse response) {
-        return response.getResponseCode() >= 200 && response.getResponseCode() < 300 &&
+        return ResponseCodeFamily.is2xxCode(response.getResponseCode()) &&
                 !response.isBodyTruncated() && JsonUtils.isValidJson(response.getBody());
     }
 
@@ -155,20 +158,20 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
 
     private void collectProperties(Schema<?> schema, Map<String, Schema> schemaMap, int depth,
                                    Set<Schema<?>> visited, Map<String, Schema> properties) {
-        Schema<?> resolved = com.endava.cats.util.CatsModelUtils.resolveSchema(schema, schemaMap);
+        Schema<?> resolved = CatsModelUtils.resolveSchema(schema, schemaMap);
         if (resolved == null || depth > MAX_SCHEMA_DEPTH || !visited.add(resolved)) {
             return;
         }
         try {
             if (resolved.getProperties() != null) {
                 resolved.getProperties().forEach((name, propSchema) -> {
-                    Schema<?> resolvedProp = com.endava.cats.util.CatsModelUtils.resolveSchema(propSchema, schemaMap);
+                    Schema<?> resolvedProp = CatsModelUtils.resolveSchema(propSchema, schemaMap);
                     if (resolvedProp != null) {
                         properties.putIfAbsent(name, resolvedProp);
                     }
                 });
             }
-            for (Schema<?> subSchema : com.endava.cats.util.CatsModelUtils.getComposedSchemas(resolved)) {
+            for (Schema<?> subSchema : CatsModelUtils.getComposedSchemas(resolved)) {
                 collectProperties(subSchema, schemaMap, depth + 1, visited, properties);
             }
         } finally {
@@ -186,8 +189,8 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
             return true;
         }
         boolean numericSchema = propertySchema != null &&
-                (com.endava.cats.util.CatsModelUtils.isNumberSchema(propertySchema) ||
-                        com.endava.cats.util.CatsModelUtils.isIntegerSchema(propertySchema));
+                (CatsModelUtils.isNumberSchema(propertySchema) ||
+                        CatsModelUtils.isIntegerSchema(propertySchema));
         if (sent.isNumber() || returned.isNumber() || numericSchema) {
             try {
                 if (new BigDecimal(sentStr).compareTo(new BigDecimal(returnedStr)) == 0) {
@@ -198,8 +201,8 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
             }
         }
         try {
-            return java.time.OffsetDateTime.parse(sentStr).toInstant()
-                    .equals(java.time.OffsetDateTime.parse(returnedStr).toInstant());
+            return OffsetDateTime.parse(sentStr).toInstant()
+                    .equals(OffsetDateTime.parse(returnedStr).toInstant());
         } catch (java.time.format.DateTimeParseException _) {
             return false;
         }

@@ -1,6 +1,7 @@
 package com.endava.cats.args;
 
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -363,7 +364,7 @@ public class FilesArguments {
      */
     public List<String> getFieldsToRemoveFromRefData(String currentPath) {
         return getRefData(currentPath).entrySet().stream()
-                .filter(entry -> com.endava.cats.io.ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(entry.getValue())))
+                .filter(entry -> ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(entry.getValue())))
                 .map(Map.Entry::getKey)
                 .toList();
     }

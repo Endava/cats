@@ -1,10 +1,12 @@
 package com.endava.cats.util;
 
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.util.external.MediaType;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -106,7 +108,7 @@ public abstract class ContentTypeUtils {
                 .toList();
         if (candidateMediaTypes.isEmpty()) {
             candidateMediaTypes = responseContentTypes.values().stream()
-                    .filter(java.util.Objects::nonNull)
+                    .filter(Objects::nonNull)
                     .flatMap(List::stream)
                     .filter(mt -> mt != null && !mt.isBlank())
                     .toList();
@@ -126,6 +128,6 @@ public abstract class ContentTypeUtils {
      * @return {@code true} if XML media type
      */
     public static boolean isXmlContentType(String contentType) {
-        return com.endava.cats.model.PayloadFormat.from(contentType) == com.endava.cats.model.PayloadFormat.XML;
+        return PayloadFormat.from(contentType) == PayloadFormat.XML;
     }
 }

@@ -38,6 +38,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -141,7 +142,7 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
 
     @CommandLine.Option(names = {"--correlations", "--correlate"},
             description = "Specifies a YAML file with cross-field correlation rules (when/then set or omit) applied to request payloads")
-    private java.io.File correlationsFile;
+    private File correlationsFile;
 
     @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")

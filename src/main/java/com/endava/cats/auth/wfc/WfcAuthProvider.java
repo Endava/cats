@@ -4,6 +4,7 @@ import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.BoundedResponseBodyReader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -231,7 +232,7 @@ public class WfcAuthProvider {
             return;
         }
         int currentIdx = activeIndexByOperation.getOrDefault(opKey, lastSuccessfulIndex);
-        if (statusCode >= 200 && statusCode < 300) {
+        if (ResponseCodeFamily.is2xxCode(statusCode)) {
             lockedOperations.add(opKey);
             activeIndexByOperation.put(opKey, currentIdx);
             lastSuccessfulIndex = currentIdx;
@@ -319,7 +320,8 @@ public class WfcAuthProvider {
             }
             String responseBody = capturedBody.body();
             List<String> cookies = response.headers(SET_COOKIE);
-            boolean cookieRedirect = Boolean.TRUE.equals(login.getExpectCookies()) && login.getToken() == null && response.code() >= 300 && response.code() < 400 && !cookies.isEmpty() && !isErrorRedirect(response);
+            boolean cookieRedirect = Boolean.TRUE.equals(login.getExpectCookies()) && login.getToken() == null
+                    && ResponseCodeFamily.is3xxCode(response.code()) && !cookies.isEmpty() && !isErrorRedirect(response);
             if (!response.isSuccessful() && !cookieRedirect) {
                 throw new CatsException("WFC Auth login failed for entry %s with HTTP %s and body %s".formatted(auth.getName(), response.code(), responseBody));
             }

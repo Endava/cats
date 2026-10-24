@@ -2,6 +2,8 @@ package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.CatsRandom;
+import com.endava.cats.util.ContentTypeUtils;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -21,7 +23,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -283,7 +287,7 @@ public class FuzzingData {
     private Set<String> getAllFields() {
         if (allFields == null) {
             List<String> list = this.getAllFieldsAsCatsFields().stream().map(CatsField::getName).collect(Collectors.toList());
-            Collections.shuffle(list, new java.util.Random(com.endava.cats.util.CatsRandom.getStoredSeed()));
+            Collections.shuffle(list, new Random(CatsRandom.getStoredSeed()));
             int limit = Math.min(list.size(), limitNumberOfFields <= 0 ? list.size() : limitNumberOfFields);
             allFields = list.stream()
                     .limit(limit)
@@ -295,21 +299,21 @@ public class FuzzingData {
 
     /**
      * Filters {@link #getAllFieldsByHttpMethod()} by evaluating the fast {@code schemaFilter} first, checking
-     * {@link com.endava.cats.util.JsonUtils#isFieldInJson(String, String)} only on matching fields, and capping the
+     * {@link JsonUtils#isFieldInJson(String, String)} only on matching fields, and capping the
      * result at {@code maxFields} when {@code maxFields > 0}.
      *
      * @param schemaFilter fast schema/name predicate evaluated before parsing the JSON payload
      * @param maxFields    maximum number of fields to return ({@code <= 0} means unlimited)
      * @return matching fields present in {@link #getPayload()}
      */
-    public static Set<String> filterFieldsInPayload(FuzzingData data, java.util.function.Predicate<String> schemaFilter, int maxFields) {
+    public static Set<String> filterFieldsInPayload(FuzzingData data, Predicate<String> schemaFilter, int maxFields) {
         long limit = maxFields > 0 ? maxFields : Long.MAX_VALUE;
         return data.getAllFieldsByHttpMethod()
                 .stream()
                 .filter(schemaFilter)
-                .filter(field -> com.endava.cats.util.JsonUtils.isFieldInJson(data.getPayload(), field))
+                .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
                 .limit(limit)
-                .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
@@ -479,7 +483,7 @@ public class FuzzingData {
                     .findFirst()
                     .orElseGet(Collections::emptyMap);
             Optional<Schema<?>> matchingSchema = schemasByContentType.entrySet().stream()
-                    .filter(entry -> com.endava.cats.util.ContentTypeUtils.areContentTypesEquivalent(entry.getKey(), contentType))
+                    .filter(entry -> ContentTypeUtils.areContentTypesEquivalent(entry.getKey(), contentType))
                     .map(Map.Entry::getValue)
                     .findFirst();
             if (matchingSchema.isPresent()) {

@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseTypeCoercionFuzzer;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsModelUtils;
 import io.swagger.v3.oas.models.media.Schema;
@@ -67,7 +68,7 @@ public class LeadingZerosInNumericFieldsFuzzer extends BaseTypeCoercionFuzzer {
     }
 
     @Override
-    public List<com.endava.cats.http.HttpMethod> skipForHttpMethods() {
-        return List.of(com.endava.cats.http.HttpMethod.HEAD, com.endava.cats.http.HttpMethod.TRACE);
+    public List<HttpMethod> skipForHttpMethods() {
+        return List.of(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 }

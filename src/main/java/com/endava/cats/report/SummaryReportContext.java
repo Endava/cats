@@ -1,5 +1,6 @@
 package com.endava.cats.report;
 
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
@@ -202,16 +203,16 @@ public final class SummaryReportContext {
     }
 
     private static String responseCodeFamily(int code) {
-        if (code >= 200 && code < 300) {
+        if (ResponseCodeFamily.is2xxCode(code)) {
             return "2xx";
         }
-        if (code >= 300 && code < 400) {
+        if (ResponseCodeFamily.is3xxCode(code)) {
             return "3xx";
         }
-        if (code >= 400 && code < 500) {
+        if (ResponseCodeFamily.is4xxCode(code)) {
             return "4xx";
         }
-        if (code >= 500 && code < 600) {
+        if (ResponseCodeFamily.is5xxCode(code)) {
             return "5xx";
         }
         return "other";

@@ -3,6 +3,7 @@ package com.endava.cats.command;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
@@ -62,7 +63,7 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
-    com.endava.cats.args.IgnoreArguments ignoreArguments;
+    IgnoreArguments ignoreArguments;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Files Options:|@%n", exclusive = false)

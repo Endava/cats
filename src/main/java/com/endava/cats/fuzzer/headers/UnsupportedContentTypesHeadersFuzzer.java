@@ -2,12 +2,14 @@ package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.HttpHeaders;
 import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -42,8 +44,8 @@ public class UnsupportedContentTypesHeadersFuzzer extends DummyContentTypeHeader
     }
 
     @Override
-    public List<com.endava.cats.http.HttpMethod> skipForHttpMethods() {
-        return java.util.Arrays.asList(com.endava.cats.http.HttpMethod.DELETE, com.endava.cats.http.HttpMethod.GET);
+    public List<HttpMethod> skipForHttpMethods() {
+        return Arrays.asList(HttpMethod.DELETE, HttpMethod.GET);
     }
 
 }

@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -722,7 +723,7 @@ final class ResourceRequestEnricher {
                 ResourceSemanticNaming.isMetadataKey(fieldName)) {
             return false;
         }
-        Set<String> fieldForms = new java.util.LinkedHashSet<>(WordUtils.nounForms(normalizedField));
+        Set<String> fieldForms = new LinkedHashSet<>(WordUtils.nounForms(normalizedField));
         if (!targetSegments.isEmpty()) {
             String targetPath = "/" + String.join("/", targetSegments);
             for (String headForm : ResourceSemanticNaming.headWordFormsOfResourcePath(targetPath)) {
