@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  */
 public final class RequiredOnlyPayloadGenerator {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RequiredOnlyPayloadGenerator.class);
-    private static final Set<String> PRIMARY_ID_FIELDS = Set.of("id", "uuid", "guid");
+    private static final Set<String> PRIMARY_ID_FIELDS = WordUtils.PRIMARY_IDENTIFIER_NAMES;
 
     private RequiredOnlyPayloadGenerator() {
         // utility class
@@ -124,7 +124,7 @@ public final class RequiredOnlyPayloadGenerator {
     }
 
     private static String normalize(String name) {
-        return name == null ? "" : name.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        return WordUtils.normalizeAlphaNumeric(name);
     }
 
     private static JsonElement retainRequired(JsonElement value, Set<String> requiredFields, String parent) {
@@ -221,18 +221,27 @@ public final class RequiredOnlyPayloadGenerator {
                     if (enumVal == null) {
                         continue;
                     }
-                    JsonObject variant = new JsonObject();
-                    variant.addProperty(topKey, String.valueOf(enumVal));
+                    String enumString = String.valueOf(enumVal);
                     for (Map.Entry<String, JsonElement> other : rootObj.entrySet()) {
                         String otherKey = other.getKey();
-                        if (!otherKey.equals(topKey) && (required.contains(otherKey)
-                                || "key".equalsIgnoreCase(otherKey)
-                                || normalize(otherKey).endsWith("id")
-                                || normalize(otherKey).endsWith("token"))) {
-                            variant.add(otherKey, other.getValue().deepCopy());
+                        if (!otherKey.equals(topKey) && !isServerGeneratedField(otherKey, Set.of())) {
+                            JsonObject singleSiblingVariant = new JsonObject();
+                            singleSiblingVariant.addProperty(topKey, enumString);
+                            required.stream().filter(rootObj::has).forEach(reqKey ->
+                                    singleSiblingVariant.add(reqKey, rootObj.get(reqKey).deepCopy()));
+                            singleSiblingVariant.add(otherKey, other.getValue().deepCopy());
+                            candidates.add(JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(singleSiblingVariant));
                         }
                     }
-                    candidates.add(JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(variant));
+                    JsonObject allNonGeneratedVariant = new JsonObject();
+                    allNonGeneratedVariant.addProperty(topKey, enumString);
+                    for (Map.Entry<String, JsonElement> other : rootObj.entrySet()) {
+                        String otherKey = other.getKey();
+                        if (!otherKey.equals(topKey) && !isServerGeneratedField(otherKey, Set.of())) {
+                            allNonGeneratedVariant.add(otherKey, other.getValue().deepCopy());
+                        }
+                    }
+                    candidates.add(JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(allNonGeneratedVariant));
                 }
             }
         }

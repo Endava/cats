@@ -50,6 +50,8 @@ public abstract class WordUtils {
     private static final Map<String, Set<String>> NOUN_FORMS_CACHE = new ConcurrentHashMap<>();
     private static final Splitter WORD_BOUNDARY_SPLITTER = Splitter.on(
             Pattern.compile("(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[^A-Za-z0-9]+")).omitEmptyStrings();
+    public static final Set<String> PRIMARY_IDENTIFIER_NAMES = Set.of("id", "uuid", "guid");
+    public static final List<String> IDENTIFIER_SUFFIXES = List.of("id", "uuid", "guid", "token");
     private static final Set<String> AUDIT_TIMESTAMP_PREFIX_WORDS = Set.of(
             "create", "created", "creation", "update", "updated", "modify", "modified", "modification", "deleted", "last");
     private static final Set<String> AUDIT_TIMESTAMP_SUFFIX_WORDS = Set.of(
@@ -471,6 +473,35 @@ public abstract class WordUtils {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Splits a raw identifier or path segment on camelCase, acronym, and non-alphanumeric boundaries.
+     *
+     * @param rawName raw identifier
+     * @return non-empty word tokens
+     */
+    public static List<String> splitWords(String rawName) {
+        if (rawName == null || rawName.isBlank()) {
+            return List.of();
+        }
+        return WORD_BOUNDARY_SPLITTER.splitToList(rawName.trim());
+    }
+
+    /**
+     * Extracts the leaf property name after the last {@code '#'} or {@code '.'} delimiter and normalizes it
+     * to lowercase ASCII alphanumeric characters.
+     *
+     * @param propertyPath property path or name
+     * @return normalized leaf property name
+     */
+    public static String normalizeLeaf(String propertyPath) {
+        if (propertyPath == null || propertyPath.isEmpty()) {
+            return "";
+        }
+        int lastSep = Math.max(propertyPath.lastIndexOf('#'), propertyPath.lastIndexOf('.'));
+        String leaf = lastSep >= 0 ? propertyPath.substring(lastSep + 1) : propertyPath;
+        return normalizeAlphaNumeric(leaf);
     }
 
     /**

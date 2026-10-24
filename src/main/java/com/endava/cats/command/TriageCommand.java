@@ -63,6 +63,9 @@ import java.util.stream.Stream;
 public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private static final Pattern TEST_FILE_PATTERN = Pattern.compile("Test(\\d+)\\.json$");
     private static final Pattern QUOTED_FIELD_PATTERN = Pattern.compile("['\"]([A-Za-z0-9_.#$-]+)['\"]");
+    private static final Pattern ENUM_LIKE_CONSTANT_PATTERN = Pattern.compile("^[A-Z][A-Z0-9_]{1,31}$");
+    private static final Set<String> DISCRIMINATOR_KEY_SUFFIXES = Set.of(
+            "type", "kind", "mode", "category", "channel", "method", "operator", "status", "action", "role", "state");
 
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
 
@@ -391,10 +394,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
             String k = entry.getKey();
             if (!k.equals(referencedField) && entry.getValue() != null && entry.getValue().isJsonPrimitive()
-                    && (k.toLowerCase(Locale.ROOT).endsWith("type")
-                            || k.toLowerCase(Locale.ROOT).endsWith("kind")
-                            || "operator".equalsIgnoreCase(k)
-                            || "status".equalsIgnoreCase(k))) {
+                    && isDiscriminatorCandidate(k, entry.getValue().getAsString())) {
                 discriminatorKey = k;
                 discriminatorVal = entry.getValue().getAsString();
                 break;
@@ -413,6 +413,17 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         if (seenRuleKeys.add(dedupKey)) {
             rules.add(new SynthesizedCorrelationRule(path, discriminatorKey, discriminatorVal, referencedField, action, errorSig));
         }
+    }
+
+    private static boolean isDiscriminatorCandidate(String fieldName, String fieldValue) {
+        if (StringUtils.isBlank(fieldName) || StringUtils.isBlank(fieldValue)) {
+            return false;
+        }
+        String lowerName = fieldName.toLowerCase(Locale.ROOT);
+        if (DISCRIMINATOR_KEY_SUFFIXES.stream().anyMatch(lowerName::endsWith)) {
+            return true;
+        }
+        return ENUM_LIKE_CONSTANT_PATTERN.matcher(fieldValue).matches();
     }
 
     private static String renderCorrelationsYaml(List<SynthesizedCorrelationRule> rules) {

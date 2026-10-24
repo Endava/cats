@@ -118,4 +118,20 @@ public abstract class ContentTypeUtils {
                 .anyMatch(ContentTypeUtils::isPlainJsonOrWildcard);
         return supportsPlainJsonOrWildcard ? null : candidateMediaTypes.getFirst();
     }
+
+    /**
+     * Checks whether the given content-type header represents an XML media type.
+     *
+     * @param contentType media type string
+     * @return {@code true} if XML media type
+     */
+    public static boolean isXmlContentType(String contentType) {
+        if (contentType == null || contentType.isBlank()) {
+            return false;
+        }
+        String normalized = contentType.split(";", 2)[0].trim().toLowerCase(Locale.ROOT);
+        return "application/xml".equals(normalized)
+                || "text/xml".equals(normalized)
+                || normalized.endsWith("+xml");
+    }
 }

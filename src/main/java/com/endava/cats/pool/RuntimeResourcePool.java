@@ -430,22 +430,15 @@ public class RuntimeResourcePool {
                 }
                 values.put("$[]", new StoredValue(val, "response.body.$[]", Set.copyOf(aliases)));
             }
-        } else if ((data.getHttpMethod() == HttpMethod.POST
-                || (data.getHttpMethod() == HttpMethod.GET && ResourceSemanticNaming.isCollectionPath(data.getRelativePath())))
-                && response.getBody() != null && response.getBody().trim().startsWith("<")) {
-            java.util.regex.Matcher xmlIdMatcher = java.util.regex.Pattern
-                    .compile("(?:<(id|uuid|guid|code)>([^<\\s]+)</\\1>|\\b(id|uuid|guid|code)=\"([^\"\\s]+)\")",
-                            java.util.regex.Pattern.CASE_INSENSITIVE)
-                    .matcher(response.getBody());
-            if (xmlIdMatcher.find()) {
-                String xmlId = xmlIdMatcher.group(2) != null ? xmlIdMatcher.group(2) : xmlIdMatcher.group(4);
-                Object parsedXmlId = xmlId.chars().allMatch(Character::isDigit) ? Long.valueOf(xmlId) : xmlId;
+        } else if (data.getHttpMethod() == HttpMethod.POST
+                || (data.getHttpMethod() == HttpMethod.GET && ResourceSemanticNaming.isCollectionPath(data.getRelativePath()))) {
+            ResourceValueExtractor.extractXmlIdentifier(response.getBody()).ifPresent(parsedXmlId -> {
                 Set<String> aliases = new LinkedHashSet<>(Set.of("id"));
                 aliases.addAll(ResourceSemanticNaming.primaryResourceIdentifierAliases(data.getRelativePath()));
                 StoredValue storedXmlId = new StoredValue(parsedXmlId, "response.body.xml.id", Set.copyOf(aliases));
                 values.put("id", storedXmlId);
                 values.put("$.id", storedXmlId);
-            }
+            });
         }
         addResource(data, values, ResourceValueExtractor.isFuzzedRequest(data));
     }

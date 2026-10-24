@@ -23,6 +23,7 @@ import java.util.List;
 @Singleton
 @FieldFuzzer
 public class OnlyRequiredFieldsFuzzer implements Fuzzer {
+    private static final int MAX_FALLBACK_CANDIDATES = 12;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OnlyRequiredFieldsFuzzer.class);
     private final SimpleExecutor simpleExecutor;
 
@@ -64,7 +65,7 @@ public class OnlyRequiredFieldsFuzzer implements Fuzzer {
             return;
         }
         List<String> fallbacks = RequiredOnlyPayloadGenerator.generateFallbackMinimalPayloads(
-                data.getPayload(), data.getAllRequiredFields(), payload, data.getRequestPropertyTypes(), 12);
+                data.getPayload(), data.getAllRequiredFields(), payload, data.getRequestPropertyTypes(), MAX_FALLBACK_CANDIDATES);
         java.util.Set<com.endava.cats.model.CatsHeader> requiredHeadersOnly = data.getHeaders() == null ? null
                 : data.getHeaders().stream()
                         .filter(com.endava.cats.model.CatsHeader::isRequired)

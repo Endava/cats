@@ -35,6 +35,8 @@ import java.util.regex.Pattern;
 @FieldFuzzer
 public class InvalidReferencesFieldsFuzzer implements Fuzzer {
     private static final Pattern VARIABLES_PATTERN = Pattern.compile("\\{([^{]*)}");
+    private static final String DEFAULT_PATH_VARIABLE_FALLBACK = "1";
+    private static final List<String> RAW_QUERY_REFERENCE_PAYLOADS = List.of("%", "%00");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(InvalidReferencesFieldsFuzzer.class);
 
     private final FilesArguments filesArguments;
@@ -74,7 +76,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
             }
         } else if (data.getQueryParams() != null && !data.getQueryParams().isEmpty()) {
             String firstQueryParam = data.getQueryParams().iterator().next();
-            for (String rawQuerySuffix : List.of("%", "%00")) {
+            for (String rawQuerySuffix : RAW_QUERY_REFERENCE_PAYLOADS) {
                 String rawQueryPath = data.getPath() + "?" + firstQueryParam + "=" + rawQuerySuffix;
                 simpleExecutor.execute(
                         SimpleExecutorContext.builder()
@@ -142,7 +144,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
                 }
             }
         }
-        return "1";
+        return DEFAULT_PATH_VARIABLE_FALLBACK;
     }
 
     private static List<PathMutation> createPathCombinations(String path, List<String> variables, Map<String, String> variablesValues) {

@@ -1048,9 +1048,7 @@ public class ServiceCaller {
     }
 
     private String replacePayloadWithRefData(ServiceData data, String initialPayload) {
-        boolean supportsStructuredFields = data.getPayloadFormat().supportsNamedFields()
-                || (XmlPayloadEncoder.isXmlContentType(data.getContentType()) && data.getReqSchema() != null);
-        if (!supportsStructuredFields || !data.isReplaceRefData() || "null".equals(initialPayload)) {
+        if (!data.supportsStructuredFields() || !data.isReplaceRefData() || "null".equals(initialPayload)) {
             logger.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
             return initialPayload;
         } else {

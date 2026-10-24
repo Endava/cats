@@ -168,6 +168,16 @@ function _complete_cats() {
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} random" ];    then _picocli_cats; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} generate" ];    then _picocli_cats; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} explain" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} smoke" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} probe" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} compare" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} diff" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} init" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} analyze" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} blueprint" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} triage" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} diagnose" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} doctor" ];    then _picocli_cats; return $?; fi
 
   # Find the longest sequence of subcommands and call the bash function for that subcommand.
   local cmds0=(generate-completion)
@@ -184,7 +194,27 @@ function _complete_cats() {
   local cmds11=(random)
   local cmds12=(generate)
   local cmds13=(explain)
+  local cmds14=(smoke)
+  local cmds15=(probe)
+  local cmds16=(compare)
+  local cmds17=(diff)
+  local cmds18=(init)
+  local cmds19=(analyze)
+  local cmds20=(blueprint)
+  local cmds21=(triage)
+  local cmds22=(diagnose)
+  local cmds23=(doctor)
 
+  if CompWordsContainsArray "${cmds23[@]}"; then _picocli_cats_doctor; return $?; fi
+  if CompWordsContainsArray "${cmds22[@]}"; then _picocli_cats_diagnose; return $?; fi
+  if CompWordsContainsArray "${cmds21[@]}"; then _picocli_cats_triage; return $?; fi
+  if CompWordsContainsArray "${cmds20[@]}"; then _picocli_cats_blueprint; return $?; fi
+  if CompWordsContainsArray "${cmds19[@]}"; then _picocli_cats_analyze; return $?; fi
+  if CompWordsContainsArray "${cmds18[@]}"; then _picocli_cats_init; return $?; fi
+  if CompWordsContainsArray "${cmds17[@]}"; then _picocli_cats_diff; return $?; fi
+  if CompWordsContainsArray "${cmds16[@]}"; then _picocli_cats_compare; return $?; fi
+  if CompWordsContainsArray "${cmds15[@]}"; then _picocli_cats_probe; return $?; fi
+  if CompWordsContainsArray "${cmds14[@]}"; then _picocli_cats_smoke; return $?; fi
   if CompWordsContainsArray "${cmds13[@]}"; then _picocli_cats_explain; return $?; fi
   if CompWordsContainsArray "${cmds12[@]}"; then _picocli_cats_generate; return $?; fi
   if CompWordsContainsArray "${cmds11[@]}"; then _picocli_cats_random; return $?; fi
@@ -210,9 +240,9 @@ function _picocli_cats() {
   local curr_word=${COMP_WORDS[COMP_CWORD]}
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
-  local commands="generate-completion help list replay run template fuzz lint info stats validate random generate explain"
-  local flag_opts="'-A' '--checkHeaders' '-F' '--checkFields' '-T' '--checkHttp' '-C' '--checkContract' '--includeContract' '--includeLinters' '-W' '--includeWhitespaces' '-E' '--includeEmojis' '-U' '--includeControlChars' '--createRefData' '-d' '--dryRun' '--skipDeprecatedOperations' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--useExamples' '--useRequestBodyExamples' '--useResponseBodyExamples' '--useSchemaExamples' '--usePropertyExamples' '--cachePayloads' '--rfc7396' '--allowInvalidEnumValues' '--checkAllowHeader' '--healthCheck' '--strictTypes' '--useDefaults' '--resolveXxxOfCombinationForResponses' '--http2PriorKnowledge' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--nameReplace' '--simpleReplace' '--matchInput' '--mi' '--includeAllInjectionPayloads' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--securityFuzzerFile' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--fieldsFuzzingStrategy' '--maxFieldsToRemove' '--edgeSpacesStrategy' '--sanitizationStrategy' '--largeStringsSize' '--randomHeadersNumber' '--selfReferenceDepth' '-L' '--contentType' '--oneOfSelection' '--anyOfSelection' '--limitXxxOfCombinations' '--limitFuzzedFields' '--seed' '--discriminatorCasing' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--words' '-w' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '--failOn' '--qualityGate' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm'"
+  local commands="generate-completion help list replay run template fuzz lint info stats validate random generate explain smoke probe compare diff init analyze blueprint triage diagnose doctor"
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-A' '--checkHeaders' '-F' '--checkFields' '-T' '--checkHttp' '-C' '--checkContract' '--includeContract' '--includeLinters' '-W' '--includeWhitespaces' '-E' '--includeEmojis' '-U' '--includeControlChars' '--createRefData' '-d' '--dryRun' '--skipDeprecatedOperations' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--useExamples' '--useRequestBodyExamples' '--useResponseBodyExamples' '--useSchemaExamples' '--usePropertyExamples' '--cachePayloads' '--rfc7396' '--allowInvalidEnumValues' '--checkAllowHeader' '--healthCheck' '--strictTypes' '--useDefaults' '--resolveXxxOfCombinationForResponses' '--reuseSuccessfulResources' '--preseedCollectionGets' '--http2PriorKnowledge' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--nameReplace' '--simpleReplace' '--matchInput' '--mi' '--includeAllInjectionPayloads' '--failOnNewWarnings' '--fillTimeBudget' '--withRandom' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--fieldsFuzzingStrategy' '--maxFieldsToRemove' '--edgeSpacesStrategy' '--sanitizationStrategy' '--largeStringsSize' '--randomHeadersNumber' '--selfReferenceDepth' '-L' '--contentType' '--oneOfSelection' '--anyOfSelection' '--limitXxxOfCombinations' '--limitFuzzedFields' '--maxPreseedCollectionGets' '--seed' '--discriminatorCasing' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--words' '-w' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '--failOn' '--qualityGate' '--baseline' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm'"
   local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
   local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
   local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
@@ -223,7 +253,7 @@ function _picocli_cats() {
   local fieldsFuzzingStrategy_option_args=("POWERSET" "SIZE" "ONEBYONE") # --fieldsFuzzingStrategy values
   local edgeSpacesStrategy_option_args=("VALIDATE_AND_TRIM" "TRIM_AND_VALIDATE") # --edgeSpacesStrategy values
   local sanitizationStrategy_option_args=("VALIDATE_AND_SANITIZE" "SANITIZE_AND_VALIDATE") # --sanitizationStrategy values
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
 
   type compopt &>/dev/null && compopt +o default
@@ -247,6 +277,12 @@ function _picocli_cats() {
     '--readTimeout')
       return
       ;;
+    '--callTimeout')
+      return
+      ;;
+    '--maxResponseBytes')
+      return
+      ;;
     '--userAgent')
       return
       ;;
@@ -264,6 +300,12 @@ function _picocli_cats() {
       ;;
     '--sslKeyPwd')
       return
+      ;;
+    '--envFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
       ;;
     '--basicAuth'|'--basicauth')
       return
@@ -341,6 +383,12 @@ function _picocli_cats() {
       return
       ;;
     '--functionalFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--correlations'|'--correlate')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -504,6 +552,9 @@ function _picocli_cats() {
     '--limitFuzzedFields')
       return
       ;;
+    '--maxPreseedCollectionGets')
+      return
+      ;;
     '--seed')
       return
       ;;
@@ -568,6 +619,12 @@ function _picocli_cats() {
     '--qualityGate')
       return
       ;;
+    '--baseline')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
     '--stopAfterTimeInSec'|'--st')
       return
       ;;
@@ -611,7 +668,7 @@ function _picocli_cats_help() {
   # Get completion data
   local curr_word=${COMP_WORDS[COMP_CWORD]}
 
-  local commands="generate-completion list replay run template lint info stats validate random generate explain"
+  local commands="generate-completion list replay run template lint info stats validate random generate explain smoke compare init analyze triage"
   local flag_opts="'-h' '--help'"
   local arg_opts=""
 
@@ -631,7 +688,7 @@ function _picocli_cats_list() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-p' '--paths' 'paths' '-f' '--fuzzers' 'fuzzers' '-l' '--linters' 'linters' '-m' '--mutators' 'mutators' '--cmt' '--customMutatorTypes' '-s' '--fieldsFuzzerStrategies' 'fieldsFuzzerStrategies' '--formats' 'formats' '--profiles' 'profiles' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local flag_opts="'-p' '--paths' 'paths' '--executionOrder' '--dependencyOrder' '-f' '--fuzzers' 'fuzzers' '-l' '--linters' 'linters' '-m' '--mutators' 'mutators' '--cmt' '--customMutatorTypes' '-s' '--fieldsFuzzerStrategies' 'fieldsFuzzerStrategies' '--formats' 'formats' '--profiles' 'profiles' '-j' '--json' '-h' '--help' '-V' '--version'"
   local arg_opts="'--path' '--tag' '-c' '--contract'"
 
   type compopt &>/dev/null && compopt +o default
@@ -664,8 +721,8 @@ function _picocli_cats_replay() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '-v' '--verbose' '--errors' '--warnings' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-H' '-s' '--server' '-o' '--output' '--reportFolder' '-r'"
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '-v' '--verbose' '--errors' '--warnings' '--curl' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-H' '-s' '--server' '--callTimeout' '--maxResponseBytes' '-o' '--output' '--reportFolder' '-r'"
 
   type compopt &>/dev/null && compopt +o default
 
@@ -678,6 +735,12 @@ function _picocli_cats_replay() {
       ;;
     '--sslKeyPwd')
       return
+      ;;
+    '--envFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
       ;;
     '--basicAuth'|'--basicauth')
       return
@@ -709,6 +772,12 @@ function _picocli_cats_replay() {
     '-s'|'--server')
       return
       ;;
+    '--callTimeout')
+      return
+      ;;
+    '--maxResponseBytes')
+      return
+      ;;
     '-o'|'--output')
       return
       ;;
@@ -733,9 +802,9 @@ function _picocli_cats_run() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--createRefData' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--headers' '--queryParams' '-H' '--refData' '--contentType' '--oneOfSelection' '--anyOfSelection' '--seed' '--discriminatorCasing' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr'"
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--createRefData' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--headers' '--queryParams' '-H' '--refData' '--correlations' '--correlate' '--contentType' '--oneOfSelection' '--anyOfSelection' '--seed' '--discriminatorCasing' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr'"
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
 
   type compopt &>/dev/null && compopt +o default
@@ -759,6 +828,12 @@ function _picocli_cats_run() {
     '--readTimeout')
       return
       ;;
+    '--callTimeout')
+      return
+      ;;
+    '--maxResponseBytes')
+      return
+      ;;
     '--userAgent')
       return
       ;;
@@ -776,6 +851,12 @@ function _picocli_cats_run() {
       ;;
     '--sslKeyPwd')
       return
+      ;;
+    '--envFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
       ;;
     '--basicAuth'|'--basicauth')
       return
@@ -853,6 +934,12 @@ function _picocli_cats_run() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
+    '--correlations'|'--correlate')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
     '--contentType')
       return
       ;;
@@ -920,9 +1007,9 @@ function _picocli_cats_template() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--words' '-w' '--headers' '-H' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--fillTimeBudget' '--withRandom' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--words' '-w' '--correlations' '--correlate' '--headers' '-H' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
 
@@ -947,6 +1034,12 @@ function _picocli_cats_template() {
     '--readTimeout')
       return
       ;;
+    '--callTimeout')
+      return
+      ;;
+    '--maxResponseBytes')
+      return
+      ;;
     '--userAgent')
       return
       ;;
@@ -964,6 +1057,12 @@ function _picocli_cats_template() {
       ;;
     '--sslKeyPwd')
       return
+      ;;
+    '--envFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
       ;;
     '--basicAuth'|'--basicauth')
       return
@@ -1075,6 +1174,12 @@ function _picocli_cats_template() {
       return
       ;;
     '--words'|'-w')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--correlations'|'--correlate')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -1115,9 +1220,9 @@ function _picocli_cats_fuzz() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--words' '-w' '--headers' '-H' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--fillTimeBudget' '--withRandom' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--words' '-w' '--correlations' '--correlate' '--headers' '-H' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
 
@@ -1142,6 +1247,12 @@ function _picocli_cats_fuzz() {
     '--readTimeout')
       return
       ;;
+    '--callTimeout')
+      return
+      ;;
+    '--maxResponseBytes')
+      return
+      ;;
     '--userAgent')
       return
       ;;
@@ -1159,6 +1270,12 @@ function _picocli_cats_fuzz() {
       ;;
     '--sslKeyPwd')
       return
+      ;;
+    '--envFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
       ;;
     '--basicAuth'|'--basicauth')
       return
@@ -1275,6 +1392,12 @@ function _picocli_cats_fuzz() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
+    '--correlations'|'--correlate')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
     '--headers'|'-H')
       return
       ;;
@@ -1310,9 +1433,9 @@ function _picocli_cats_lint() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--strict' '-h' '--help' '-V' '--version'"
+  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--strict' '-h' '--help' '-V' '--version'"
   local arg_opts="'--configFile' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--pathNaming' '--pathVariablesNaming' '--queryParamsNaming' '--jsonObjectsNaming' '--jsonPropertiesNaming' '--headersNaming' '--enumsNaming' '--operationPrefixMapFile' '-c' '--contract' '--skipLinters' '--skipLinter' '--skipPaths' '--skipPath'"
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local pathNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL" "UPPER_UNDERSCORE" "LOWER_UNDERSCORE") # --pathNaming values
   local pathVariablesNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL" "UPPER_UNDERSCORE" "LOWER_UNDERSCORE") # --pathVariablesNaming values
@@ -1508,9 +1631,9 @@ function _picocli_cats_random() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--printProgress' '--matchInput' '--mi' '--createRefData' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--securityFuzzerFile' '--mutators' '-m' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--httpMethod' '-X' '--contentType' '--oneOfSelection' '--anyOfSelection' '--path' '-p' '--seed'"
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT") # --reportFormat values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--createRefData' '--fillTimeBudget' '--withRandom' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--mutators' '-m' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--httpMethod' '-X' '--contentType' '--oneOfSelection' '--anyOfSelection' '--path' '-p' '--seed'"
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
 
@@ -1535,6 +1658,12 @@ function _picocli_cats_random() {
     '--readTimeout')
       return
       ;;
+    '--callTimeout')
+      return
+      ;;
+    '--maxResponseBytes')
+      return
+      ;;
     '--userAgent')
       return
       ;;
@@ -1552,6 +1681,12 @@ function _picocli_cats_random() {
       ;;
     '--sslKeyPwd')
       return
+      ;;
+    '--envFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
       ;;
     '--basicAuth'|'--basicauth')
       return
@@ -1623,6 +1758,36 @@ function _picocli_cats_random() {
     '--matchResponseRegex'|'--mr')
       return
       ;;
+    '-i'|'--ignoreResponseCodes'|'--ic')
+      return
+      ;;
+    '--ignoreResponseSize'|'--is')
+      return
+      ;;
+    '--ignoreResponseWords'|'--iw')
+      return
+      ;;
+    '--ignoreResponseLines'|'--il')
+      return
+      ;;
+    '--ignoreResponseRegex'|'--ir')
+      return
+      ;;
+    '--filterResponseCodes'|'--fc')
+      return
+      ;;
+    '--filterResponseSize'|'--fs')
+      return
+      ;;
+    '--filterResponseWords'|'--fw')
+      return
+      ;;
+    '--filterResponseLines'|'--fl')
+      return
+      ;;
+    '--filterResponseRegex'|'--fr')
+      return
+      ;;
     '--errorLeaksKeywords'|'-K')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
@@ -1675,6 +1840,12 @@ function _picocli_cats_random() {
       return
       ;;
     '--functionalFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--correlations'|'--correlate')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -1786,7 +1957,7 @@ function _picocli_cats_explain() {
   local commands=""
   local flag_opts="'-h' '--help' '-V' '--version'"
   local arg_opts="'-t' '--type'"
-  local type_option_args=("FUZZER" "MUTATOR" "RESPONSE_CODE" "ERROR_REASON") # --type values
+  local type_option_args=("FUZZER" "LINTER" "PROFILE" "MUTATOR" "RESPONSE_CODE" "ERROR_REASON") # --type values
 
   type compopt &>/dev/null && compopt +o default
 
@@ -1795,6 +1966,888 @@ function _picocli_cats_explain() {
       local IFS=$'\n'
       COMPREPLY=( $( compReplyArray "${type_option_args[@]}" ) )
       return $?
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `smoke` subcommand.
+function _picocli_cats_smoke() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '--createRefData' '-d' '--dryRun' '--skipDeprecatedOperations' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--includeDelete' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders'"
+  local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
+  local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
+  local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
+  local skipFieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --skipFieldTypes values
+  local fieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --fieldFormats values
+  local skipFieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --skipFieldFormats values
+  local mode_option_args=("ALL" "NEGATIVE" "POSITIVE") # --mode values
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
+  local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    '--configFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--maxRequestsPerMinute')
+      return
+      ;;
+    '--connectionTimeout')
+      return
+      ;;
+    '--writeTimeout')
+      return
+      ;;
+    '--readTimeout')
+      return
+      ;;
+    '--callTimeout')
+      return
+      ;;
+    '--maxResponseBytes')
+      return
+      ;;
+    '--userAgent')
+      return
+      ;;
+    '-c'|'--contract')
+      return
+      ;;
+    '-s'|'--server')
+      return
+      ;;
+    '--sslKeystore')
+      return
+      ;;
+    '--sslKeystorePwd')
+      return
+      ;;
+    '--sslKeyPwd')
+      return
+      ;;
+    '--envFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--basicAuth'|'--basicauth')
+      return
+      ;;
+    '--proxyHost')
+      return
+      ;;
+    '--proxyPort')
+      return
+      ;;
+    '--authRefreshScript'|'--ars')
+      return
+      ;;
+    '--authRefreshInterval'|'--ari')
+      return
+      ;;
+    '--wfcAuth')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--wfcAuthName')
+      return
+      ;;
+    '--errorLeaksKeywords'|'-K')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--fuzzersConfig')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--urlParams')
+      return
+      ;;
+    '-P')
+      return
+      ;;
+    '--headers')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-H')
+      return
+      ;;
+    '--queryParams')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--pathsRunOrder')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-Q')
+      return
+      ;;
+    '--refData')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-R')
+      return
+      ;;
+    '--functionalFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--correlations'|'--correlate')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--securityFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--mutators'|'-m')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-f'|'--fuzzers'|'--fuzzer')
+      return
+      ;;
+    '-p'|'--paths'|'--path')
+      return
+      ;;
+    '--skipPaths'|'--skipPath')
+      return
+      ;;
+    '--skipFuzzers'|'--skipFuzzer')
+      return
+      ;;
+    '--httpMethods'|'--httpMethod'|'-X')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${httpMethods_option_args[@]}" ) )
+      return $?
+      ;;
+    '--skipHttpMethods'|'--skipHttpMethod')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${skippedHttpMethods_option_args[@]}" ) )
+      return $?
+      ;;
+    '--fieldTypes'|'--fieldType')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${fieldTypes_option_args[@]}" ) )
+      return $?
+      ;;
+    '--skipFieldTypes'|'--skipFieldType')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${skipFieldTypes_option_args[@]}" ) )
+      return $?
+      ;;
+    '--fieldFormats'|'--fieldFormat')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${fieldFormats_option_args[@]}" ) )
+      return $?
+      ;;
+    '--skipFieldFormats'|'--skipFieldFormat')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${skipFieldFormats_option_args[@]}" ) )
+      return $?
+      ;;
+    '--skipFields'|'--skipField')
+      return
+      ;;
+    '--skipHeaders'|'--skipHeader')
+      return
+      ;;
+    '-t'|'--tags'|'--tag')
+      return
+      ;;
+    '--skipTags'|'--skipTag')
+      return
+      ;;
+    '--operationIds'|'--operationId')
+      return
+      ;;
+    '--skipOperationIds'|'--skipOperationId')
+      return
+      ;;
+    '--skipFuzzersForExtension'|'--skipFuzzerForExtension')
+      return
+      ;;
+    '--profile')
+      return
+      ;;
+    '--profileFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--mode')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${mode_option_args[@]}" ) )
+      return $?
+      ;;
+    '-l'|'--log')
+      return
+      ;;
+    '-g'|'--skipLog')
+      return
+      ;;
+    '-O'|'--onlyLog')
+      return
+      ;;
+    '--reportFormat')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${reportFormat_option_args[@]}" ) )
+      return $?
+      ;;
+    '-o'|'--output')
+      return
+      ;;
+    '--tuiMaxResults')
+      return
+      ;;
+    '--maxResponseTimeInMs')
+      return
+      ;;
+    '--verbosity')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${verbosity_option_args[@]}" ) )
+      return $?
+      ;;
+    '--maskHeaders')
+      return
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `probe` subcommand.
+function _picocli_cats_probe() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '--createRefData' '-d' '--dryRun' '--skipDeprecatedOperations' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--includeDelete' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders'"
+  local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
+  local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
+  local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
+  local skipFieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --skipFieldTypes values
+  local fieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --fieldFormats values
+  local skipFieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --skipFieldFormats values
+  local mode_option_args=("ALL" "NEGATIVE" "POSITIVE") # --mode values
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
+  local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    '--configFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--maxRequestsPerMinute')
+      return
+      ;;
+    '--connectionTimeout')
+      return
+      ;;
+    '--writeTimeout')
+      return
+      ;;
+    '--readTimeout')
+      return
+      ;;
+    '--callTimeout')
+      return
+      ;;
+    '--maxResponseBytes')
+      return
+      ;;
+    '--userAgent')
+      return
+      ;;
+    '-c'|'--contract')
+      return
+      ;;
+    '-s'|'--server')
+      return
+      ;;
+    '--sslKeystore')
+      return
+      ;;
+    '--sslKeystorePwd')
+      return
+      ;;
+    '--sslKeyPwd')
+      return
+      ;;
+    '--envFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--basicAuth'|'--basicauth')
+      return
+      ;;
+    '--proxyHost')
+      return
+      ;;
+    '--proxyPort')
+      return
+      ;;
+    '--authRefreshScript'|'--ars')
+      return
+      ;;
+    '--authRefreshInterval'|'--ari')
+      return
+      ;;
+    '--wfcAuth')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--wfcAuthName')
+      return
+      ;;
+    '--errorLeaksKeywords'|'-K')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--fuzzersConfig')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--urlParams')
+      return
+      ;;
+    '-P')
+      return
+      ;;
+    '--headers')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-H')
+      return
+      ;;
+    '--queryParams')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--pathsRunOrder')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-Q')
+      return
+      ;;
+    '--refData')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-R')
+      return
+      ;;
+    '--functionalFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--correlations'|'--correlate')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--securityFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--mutators'|'-m')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-f'|'--fuzzers'|'--fuzzer')
+      return
+      ;;
+    '-p'|'--paths'|'--path')
+      return
+      ;;
+    '--skipPaths'|'--skipPath')
+      return
+      ;;
+    '--skipFuzzers'|'--skipFuzzer')
+      return
+      ;;
+    '--httpMethods'|'--httpMethod'|'-X')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${httpMethods_option_args[@]}" ) )
+      return $?
+      ;;
+    '--skipHttpMethods'|'--skipHttpMethod')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${skippedHttpMethods_option_args[@]}" ) )
+      return $?
+      ;;
+    '--fieldTypes'|'--fieldType')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${fieldTypes_option_args[@]}" ) )
+      return $?
+      ;;
+    '--skipFieldTypes'|'--skipFieldType')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${skipFieldTypes_option_args[@]}" ) )
+      return $?
+      ;;
+    '--fieldFormats'|'--fieldFormat')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${fieldFormats_option_args[@]}" ) )
+      return $?
+      ;;
+    '--skipFieldFormats'|'--skipFieldFormat')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${skipFieldFormats_option_args[@]}" ) )
+      return $?
+      ;;
+    '--skipFields'|'--skipField')
+      return
+      ;;
+    '--skipHeaders'|'--skipHeader')
+      return
+      ;;
+    '-t'|'--tags'|'--tag')
+      return
+      ;;
+    '--skipTags'|'--skipTag')
+      return
+      ;;
+    '--operationIds'|'--operationId')
+      return
+      ;;
+    '--skipOperationIds'|'--skipOperationId')
+      return
+      ;;
+    '--skipFuzzersForExtension'|'--skipFuzzerForExtension')
+      return
+      ;;
+    '--profile')
+      return
+      ;;
+    '--profileFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--mode')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${mode_option_args[@]}" ) )
+      return $?
+      ;;
+    '-l'|'--log')
+      return
+      ;;
+    '-g'|'--skipLog')
+      return
+      ;;
+    '-O'|'--onlyLog')
+      return
+      ;;
+    '--reportFormat')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${reportFormat_option_args[@]}" ) )
+      return $?
+      ;;
+    '-o'|'--output')
+      return
+      ;;
+    '--tuiMaxResults')
+      return
+      ;;
+    '--maxResponseTimeInMs')
+      return
+      ;;
+    '--verbosity')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${verbosity_option_args[@]}" ) )
+      return $?
+      ;;
+    '--maskHeaders')
+      return
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `compare` subcommand.
+function _picocli_cats_compare() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="'--failOnNewErrors' '--failOnNewWarnings' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-b' '--baseline' '-t' '--target'"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    '--configFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-b'|'--baseline')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-t'|'--target')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `diff` subcommand.
+function _picocli_cats_diff() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="'--failOnNewErrors' '--failOnNewWarnings' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-b' '--baseline' '-t' '--target'"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    '--configFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-b'|'--baseline')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-t'|'--target')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `init` subcommand.
+function _picocli_cats_init() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="'--force' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-c' '--contract' '-o' '--output'"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    '--configFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-c'|'--contract')
+      return
+      ;;
+    '-o'|'--output')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `analyze` subcommand.
+function _picocli_cats_analyze() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="'--mermaid' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-c' '--contract'"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    '--configFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-c'|'--contract')
+      return
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `blueprint` subcommand.
+function _picocli_cats_blueprint() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="'--mermaid' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-c' '--contract'"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    '--configFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-c'|'--contract')
+      return
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `triage` subcommand.
+function _picocli_cats_triage() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="'--include-warnings' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-r' '--report' '--export-correlations' '--export-reproducers'"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    '--configFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-r'|'--report')
+      return
+      ;;
+    '--export-correlations')
+      return
+      ;;
+    '--export-reproducers')
+      return
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `diagnose` subcommand.
+function _picocli_cats_diagnose() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="'--include-warnings' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-r' '--report' '--export-correlations' '--export-reproducers'"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    '--configFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-r'|'--report')
+      return
+      ;;
+    '--export-correlations')
+      return
+      ;;
+    '--export-reproducers')
+      return
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `doctor` subcommand.
+function _picocli_cats_doctor() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="'--include-warnings' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-r' '--report' '--export-correlations' '--export-reproducers'"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    '--configFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-r'|'--report')
+      return
+      ;;
+    '--export-correlations')
+      return
+      ;;
+    '--export-reproducers')
+      return
       ;;
   esac
 

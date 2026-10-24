@@ -22,7 +22,7 @@ import java.util.stream.Stream;
  * for runtime resource correlation.
  */
 final class ResourceSemanticNaming {
-    static final Set<String> SIMPLE_IDENTIFIERS = Set.of("id", "uuid", "guid");
+    static final Set<String> SIMPLE_IDENTIFIERS = WordUtils.PRIMARY_IDENTIFIER_NAMES;
     static final Set<String> SELF_IDENTITY_SEGMENTS = Set.of("me", "self", "current", "whoami");
 
     private static final Set<String> SINGLE_WORD_IDENTIFIERS = Stream.concat(
@@ -50,8 +50,6 @@ final class ResourceSemanticNaming {
     private static final Set<String> PER_REQUEST_TRACE_SUFFIXES = Set.of(
             "correlationid", "requestid", "traceid", "spanid", "idempotencykey", "traceparent", "tracestate");
 
-    private static final Pattern WORD_BOUNDARY_SPLITTER = Pattern.compile(
-            "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[_\\-]+");
     private static final Pattern UUID_VALUE = Pattern.compile(
             "(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
     private static final Pattern DATE_PART = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}$");
@@ -230,7 +228,7 @@ final class ResourceSemanticNaming {
     }
 
     private static List<String> splitWords(String rawName) {
-        return Splitter.on(WORD_BOUNDARY_SPLITTER).omitEmptyStrings().splitToList(rawName.trim());
+        return WordUtils.splitWords(rawName);
     }
 
     private static void addWordBoundarySuffixAliases(String rawName, Set<String> aliases) {

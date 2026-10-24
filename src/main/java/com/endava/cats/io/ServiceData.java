@@ -189,6 +189,11 @@ public class ServiceData {
         return PayloadFormat.from(contentType);
     }
 
+    public boolean supportsStructuredFields() {
+        return getPayloadFormat().supportsNamedFields()
+                || (reqSchema != null && com.endava.cats.util.ContentTypeUtils.isXmlContentType(contentType));
+    }
+
     /**
      * Returns the request parts explicitly marked as mutated by the executor.
      *

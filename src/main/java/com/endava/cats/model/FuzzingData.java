@@ -358,6 +358,11 @@ public class FuzzingData {
         return PayloadFormat.from(contentType);
     }
 
+    public boolean supportsStructuredFields() {
+        return getPayloadFormat().supportsNamedFields()
+                || (reqSchema != null && com.endava.cats.util.ContentTypeUtils.isXmlContentType(getFirstRequestContentType()));
+    }
+
     public boolean isRootTextPayload() {
         return getPayloadFormat() == PayloadFormat.TEXT && CatsModelUtils.isStringSchema(reqSchema);
     }

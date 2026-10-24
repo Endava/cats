@@ -61,6 +61,18 @@ public class OpenAPIModelGeneratorV2 {
     public static final int REQUEST_TOTAL_DEPTH = 200;
     public static final int RESPONSE_TOTAL_DEPTH = 50;
     private static final int MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS = 20;
+    private static final int ISO_UTC_TIMESTAMP_LENGTH = 20;
+    private static final String DEFAULT_TEMPORAL_START_VALUE = "2026-01-01T00:00:00Z";
+    private static final String DEFAULT_TEMPORAL_END_VALUE = "2026-01-02T00:00:00Z";
+    private static final List<String[]> NUMERIC_BOUND_PREFIX_PAIRS = List.of(
+            new String[]{"min", "max"},
+            new String[]{"minimum", "maximum"},
+            new String[]{"start", "end"},
+            new String[]{"from", "to"},
+            new String[]{"low", "high"});
+    private static final Set<String> SMALL_POSITIVE_INTEGER_LEAVES = Set.of(
+            "page", "pagenumber", "pageindex", "offset", "quantity", "count",
+            "size", "pagesize", "limit", "perpage");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGeneratorV2.class);
     private final Random random;
     private final ProcessingArguments.ExamplesFlags examplesFlags;
@@ -580,17 +592,12 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private static boolean isLowerBoundOf(String candidateLower, String candidateUpper) {
-        String lower = candidateLower.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
-        String upper = candidateUpper.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+        String lower = WordUtils.normalizeLeaf(candidateLower);
+        String upper = WordUtils.normalizeLeaf(candidateUpper);
         if (lower.equals(upper) || upper.length() < 3) {
             return false;
         }
-        for (String[] pair : List.of(
-                new String[]{"min", "max"},
-                new String[]{"minimum", "maximum"},
-                new String[]{"start", "end"},
-                new String[]{"from", "to"},
-                new String[]{"low", "high"})) {
+        for (String[] pair : NUMERIC_BOUND_PREFIX_PAIRS) {
             if (lower.startsWith(pair[0]) && upper.startsWith(pair[1]) &&
                     lower.substring(pair[0].length()).equals(upper.substring(pair[1].length()))) {
                 return true;
@@ -1307,15 +1314,13 @@ public class OpenAPIModelGeneratorV2 {
         if (propertySchema.getFormat() != null || propertySchema.getPattern() != null || propertySchema.getEnum() != null) {
             return null;
         }
-        if ((propertySchema.getMinLength() != null && propertySchema.getMinLength() > 20)
-                || (propertySchema.getMaxLength() != null && propertySchema.getMaxLength() < 20)) {
+        if ((propertySchema.getMinLength() != null && propertySchema.getMinLength() > ISO_UTC_TIMESTAMP_LENGTH)
+                || (propertySchema.getMaxLength() != null && propertySchema.getMaxLength() < ISO_UTC_TIMESTAMP_LENGTH)) {
             return null;
         }
-        String leaf = propertyName.substring(propertyName.lastIndexOf('#') + 1)
-                .replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
-        return switch (leaf) {
-            case "from", "startdate", "starttime", "since", "datefrom", "timefrom" -> "2026-01-01T00:00:00Z";
-            case "to", "enddate", "endtime", "until", "dateto", "timeto" -> "2026-01-02T00:00:00Z";
+        return switch (WordUtils.normalizeLeaf(propertyName)) {
+            case "from", "startdate", "starttime", "since", "datefrom", "timefrom" -> DEFAULT_TEMPORAL_START_VALUE;
+            case "to", "enddate", "endtime", "until", "dateto", "timeto" -> DEFAULT_TEMPORAL_END_VALUE;
             default -> null;
         };
     }
@@ -1473,22 +1478,14 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private static boolean isPaginationPageProperty(String propertyName) {
-        if (propertyName == null) {
-            return false;
-        }
-        String leaf = propertyName.substring(propertyName.lastIndexOf('#') + 1)
-                .replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
-        return leaf.equals("page") || leaf.equals("pagenumber") || leaf.equals("pageindex")
-                || leaf.equals("offset") || leaf.equals("quantity") || leaf.equals("count")
-                || leaf.equals("size") || leaf.equals("pagesize") || leaf.equals("limit") || leaf.equals("perpage");
+        return propertyName != null && SMALL_POSITIVE_INTEGER_LEAVES.contains(WordUtils.normalizeLeaf(propertyName));
     }
 
     private Object getExampleFromNumberSchema(String propertyName, Schema<?> property) {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
         if (min == null && max == null && propertyName != null) {
-            String leaf = propertyName.substring(propertyName.lastIndexOf('#') + 1)
-                    .replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.ROOT);
+            String leaf = WordUtils.normalizeLeaf(propertyName);
             if (leaf.equals("lat") || leaf.endsWith("latitude")) {
                 min = -90.0;
                 max = 90.0;

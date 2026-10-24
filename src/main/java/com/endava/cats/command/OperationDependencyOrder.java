@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 final class OperationDependencyOrder {
     private static final int MAX_SCHEMA_DEPTH = 4;
     private static final Pattern PATH_PARAMETER_PATTERN = Pattern.compile("\\{([^/]+)}");
-    private static final List<String> ID_SUFFIXES = List.of("id", "uuid", "guid", "token");
+    private static final List<String> ID_SUFFIXES = WordUtils.IDENTIFIER_SUFFIXES;
 
     private OperationDependencyOrder() {
     }
@@ -275,9 +275,9 @@ final class OperationDependencyOrder {
         }
         names.add(normalized);
         names.add("noun:" + normalized);
-        String[] camelWords = rawName.trim().split("(?<=[a-z0-9])(?=[A-Z])|[_\\-]+");
-        if (camelWords.length >= 2) {
-            String lastWord = normalize(camelWords[camelWords.length - 1]);
+        List<String> camelWords = WordUtils.splitWords(rawName);
+        if (camelWords.size() >= 2) {
+            String lastWord = normalize(camelWords.getLast());
             if (!lastWord.isEmpty() && !ID_SUFFIXES.contains(lastWord)) {
                 WordUtils.nounForms(lastWord).forEach(form -> names.add("noun:" + form));
             }

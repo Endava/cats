@@ -31,6 +31,9 @@ import java.util.stream.StreamSupport;
 final class ResourceValueExtractor {
     static final int MAX_COLLECTION_ITEMS = 50;
     private static final Splitter FIELD_PATH_SPLITTER = Splitter.on('#').omitEmptyStrings();
+    private static final java.util.regex.Pattern XML_IDENTIFIER_PATTERN = java.util.regex.Pattern.compile(
+            "(?:<(id|uuid|guid|code)>([^<\\s]+)</\\1>|\\b(id|uuid|guid|code)=\"([^\"\\s]+)\")",
+            java.util.regex.Pattern.CASE_INSENSITIVE);
 
     private ResourceValueExtractor() {
         // utility class
@@ -144,13 +147,29 @@ final class ResourceValueExtractor {
                         && !(entry.getValue().value() instanceof Boolean)
                         && StringUtils.isNotBlank(String.valueOf(entry.getValue().value())))
                 .toList();
-        if (candidates.size() == 1 && (topLevelEntries.size() >= 2
-                || candidates.getFirst().getKey().endsWith("[]")
-                || "$.value".equalsIgnoreCase(candidates.getFirst().getKey()))) {
+        if (candidates.size() == 1) {
             StoredValue candidate = candidates.getFirst().getValue();
-            return Optional.of(new StoredValue(candidate.value(), candidate.sourceLocation(), Set.of("id", "key", "value")));
+            Set<String> wrapperAliases = new LinkedHashSet<>(Set.of("id", "key", "value"));
+            wrapperAliases.addAll(candidate.aliases());
+            return Optional.of(new StoredValue(candidate.value(), candidate.sourceLocation(), Set.copyOf(wrapperAliases)));
         }
         return Optional.empty();
+    }
+
+    static Optional<Object> extractXmlIdentifier(String xmlBody) {
+        if (xmlBody == null || !xmlBody.trim().startsWith("<")) {
+            return Optional.empty();
+        }
+        java.util.regex.Matcher matcher = XML_IDENTIFIER_PATTERN.matcher(xmlBody);
+        if (!matcher.find()) {
+            return Optional.empty();
+        }
+        String xmlId = matcher.group(2) != null ? matcher.group(2) : matcher.group(4);
+        if (StringUtils.isBlank(xmlId)) {
+            return Optional.empty();
+        }
+        Object parsed = xmlId.chars().allMatch(Character::isDigit) ? Long.valueOf(xmlId) : xmlId;
+        return Optional.of(parsed);
     }
 
     static void collectKeyedMapIdentifier(String relativePath, JsonObject root, Map<String, StoredValue> values) {
