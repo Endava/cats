@@ -92,7 +92,9 @@ class ProcessingArgumentsTest {
         ProcessingArguments processingArguments = new ProcessingArguments();
         Assertions.assertThat(processingArguments.getContentType()).containsExactly(
                 "application\\/(?:json|[^;]+\\+json)(?:;.*)?",
-                "application/x-www-form-urlencoded", "text/plain", "application/x-ndjson", "application/ndjson");
+                "application/x-www-form-urlencoded",
+                "application/xml", "text/xml", "application/.*\\+xml",
+                "text/plain", "application/x-ndjson", "application/ndjson");
     }
 
     @Test

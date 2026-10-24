@@ -666,12 +666,6 @@ public class FuzzingDataFactory {
             if (multipart != null) {
                 return new SelectedMediaType("application/x-www-form-urlencoded", multipart);
             }
-            Optional<Map.Entry<String, MediaType>> xmlEntry = content.entrySet().stream()
-                    .filter(entry -> com.endava.cats.io.XmlPayloadEncoder.isXmlContentType(entry.getKey()))
-                    .findFirst();
-            if (xmlEntry.isPresent()) {
-                return new SelectedMediaType(xmlEntry.get().getKey(), xmlEntry.get().getValue());
-            }
         }
         return null;
     }
@@ -692,13 +686,7 @@ public class FuzzingDataFactory {
     }
 
     private boolean isSupportedRequestContentType(String contentType) {
-        if (PayloadFormat.from(contentType) != PayloadFormat.UNKNOWN) {
-            return true;
-        }
-        return !processingArguments.isCustomContentTypeSupplied()
-                && processingArguments.getContentType() != null
-                && processingArguments.getContentType().size() > 1
-                && com.endava.cats.io.XmlPayloadEncoder.isXmlContentType(contentType);
+        return PayloadFormat.from(contentType) != PayloadFormat.UNKNOWN;
     }
 
     static boolean hasContent(Operation operation) {

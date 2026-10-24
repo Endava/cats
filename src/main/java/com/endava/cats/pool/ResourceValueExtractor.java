@@ -31,6 +31,7 @@ import java.util.stream.StreamSupport;
 final class ResourceValueExtractor {
     static final int MAX_COLLECTION_ITEMS = 50;
     private static final Splitter FIELD_PATH_SPLITTER = Splitter.on('#').omitEmptyStrings();
+    private static final Set<String> SINGLE_VALUE_WRAPPER_KEYS = Set.of("value", "key", "token", "code", "result", "data");
     private static final java.util.regex.Pattern XML_IDENTIFIER_PATTERN = java.util.regex.Pattern.compile(
             "(?:<(id|uuid|guid|code)>([^<\\s]+)</\\1>|\\b(id|uuid|guid|code)=\"([^\"\\s]+)\")",
             java.util.regex.Pattern.CASE_INSENSITIVE);
@@ -147,7 +148,9 @@ final class ResourceValueExtractor {
                         && !(entry.getValue().value() instanceof Boolean)
                         && StringUtils.isNotBlank(String.valueOf(entry.getValue().value())))
                 .toList();
-        if (candidates.size() == 1) {
+        if (candidates.size() == 1 && (topLevelEntries.size() >= 2
+                || candidates.getFirst().getKey().endsWith("[]")
+                || SINGLE_VALUE_WRAPPER_KEYS.contains(WordUtils.normalizeLeaf(candidates.getFirst().getKey())))) {
             StoredValue candidate = candidates.getFirst().getValue();
             Set<String> wrapperAliases = new LinkedHashSet<>(Set.of("id", "key", "value"));
             wrapperAliases.addAll(candidate.aliases());

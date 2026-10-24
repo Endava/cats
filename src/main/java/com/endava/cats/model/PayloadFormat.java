@@ -5,6 +5,7 @@ import com.endava.cats.util.external.MediaType;
 public enum PayloadFormat {
     JSON,
     FORM,
+    XML,
     TEXT,
     NDJSON,
     UNKNOWN;
@@ -26,6 +27,10 @@ public enum PayloadFormat {
             if ("application".equals(type) && "x-www-form-urlencoded".equals(subtype)) {
                 return FORM;
             }
+            if ((("application".equals(type) || "text".equals(type)) && "xml".equals(subtype))
+                    || subtype.endsWith("+xml")) {
+                return XML;
+            }
             if ("text".equals(type) && "plain".equals(subtype)) {
                 return TEXT;
             }
@@ -36,6 +41,6 @@ public enum PayloadFormat {
     }
 
     public boolean supportsNamedFields() {
-        return this == JSON || this == FORM;
+        return this == JSON || this == FORM || this == XML;
     }
 }

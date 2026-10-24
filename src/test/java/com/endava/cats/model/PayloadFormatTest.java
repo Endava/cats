@@ -20,8 +20,11 @@ class PayloadFormatTest {
             "text/plain; charset=utf-8, TEXT",
             "application/x-ndjson, NDJSON",
             "application/ndjson, NDJSON",
+            "application/xml, XML",
+            "text/xml, XML",
+            "application/problem+xml, XML",
             "application/json-seq, UNKNOWN",
-            "application/xml, UNKNOWN"
+            "application/octet-stream, UNKNOWN"
     })
     void shouldClassifyMediaTypes(String contentType, PayloadFormat expected) {
         assertThat(PayloadFormat.from(contentType)).isEqualTo(expected);

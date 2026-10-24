@@ -475,12 +475,12 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldSkipExplicitlySelectedUnsupportedMediaType() throws Exception {
-        Mockito.when(processingArguments.getContentType()).thenReturn(List.of("application/xml"));
+        Mockito.when(processingArguments.getContentType()).thenReturn(List.of("application/octet-stream"));
 
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml", true, openAPI -> {
             RequestBody requestBody = openAPI.getPaths().get("/pets").getPost().getRequestBody();
             MediaType json = requestBody.getContent().get("application/json");
-            requestBody.setContent(new Content().addMediaType("application/xml", json));
+            requestBody.setContent(new Content().addMediaType("application/octet-stream", json));
         });
 
         Assertions.assertThat(data).noneMatch(entry -> entry.getMethod() == HttpMethod.POST);

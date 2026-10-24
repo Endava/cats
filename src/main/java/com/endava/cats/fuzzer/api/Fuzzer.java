@@ -43,7 +43,7 @@ public interface Fuzzer {
 
     default boolean isApplicableTo(FuzzingData data) {
         FieldFuzzer fieldFuzzer = AnnotationUtils.findAnnotation(getClass(), FieldFuzzer.class);
-        return fieldFuzzer == null || data.supportsStructuredFields();
+        return fieldFuzzer == null || data.getPayloadFormat().supportsNamedFields();
     }
 
     /**

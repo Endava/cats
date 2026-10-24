@@ -31,7 +31,7 @@ final class SuccessfulBaselineStore {
     String apply(ServiceData data, boolean reuseEnabled) {
         String currentPayload = data.getPayload();
         if (!reuseEnabled || !data.isReplaceRefData() || !data.isValidJson() ||
-                !data.supportsStructuredFields() || !JsonUtils.isValidJson(currentPayload)) {
+                !data.getPayloadFormat().supportsNamedFields() || !JsonUtils.isValidJson(currentPayload)) {
             return currentPayload;
         }
         Optional<SuccessfulBaselineKey> key = baselineKey(data);
@@ -56,7 +56,7 @@ final class SuccessfulBaselineStore {
         boolean fieldRemovalFallback = isSubsetOfOriginalPayload(data, effectivePayload);
         boolean fallbackBaseline = requiredOnlyFallback || fieldRemovalFallback;
         if ((ResourceValueExtractor.isRequestBodyFuzzed(data) && !fallbackBaseline) || !data.isReplaceRefData() || !data.isValidJson() ||
-                !data.supportsStructuredFields() ||
+                !data.getPayloadFormat().supportsNamedFields() ||
                 (!HttpMethod.requiresBody(data.getHttpMethod()) && !fallbackBaseline) ||
                 !JsonUtils.isValidJson(effectivePayload)) {
             return;

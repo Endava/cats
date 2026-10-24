@@ -433,10 +433,10 @@ class ServiceCallerTest {
     void shouldRejectUnsupportedRequestContentType() {
         ServiceData serviceData = ServiceData.builder().relativePath("/pets").payload("{\"id\":1}").httpMethod(HttpMethod.POST)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
-                .contentType("application/xml").build();
+                .contentType("application/octet-stream").build();
         Assertions.assertThatThrownBy(() -> serviceCaller.call(serviceData))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Unsupported request Content-Type", "application/xml");
+                .hasMessageContaining("Unsupported request Content-Type", "application/octet-stream");
     }
 
     @Test
