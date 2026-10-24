@@ -158,7 +158,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(221);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(222);
     }
 
     @Test

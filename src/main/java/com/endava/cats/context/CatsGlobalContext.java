@@ -88,6 +88,18 @@ public class CatsGlobalContext {
      */
     public void init(OpenAPI openAPI, List<String> contentType, Properties fuzzersConfiguration, CatsConfiguration catsConfiguration,
                      Set<String> errorLeaksKeywords, Set<String> refs) {
+        this.schemaMap.clear();
+        this.exampleMap.clear();
+        this.additionalProperties.clear();
+        this.discriminators.clear();
+        this.discriminatorValues.clear();
+        this.successfulDeletes.clear();
+        this.fuzzersConfiguration.clear();
+        this.generatedExamplesCache.clear();
+        this.recordedErrors.clear();
+        this.errorLeaksKeywords.clear();
+        this.refs.clear();
+
         Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, contentType);
 
         this.getSchemaMap().putAll(allSchemasFromOpenApi);

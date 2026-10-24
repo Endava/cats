@@ -472,8 +472,11 @@ public class RuntimeResourcePool {
             enrichedValues.put(key, value.withAliases(aliases));
         });
 
-        if (data.getHttpMethod() == HttpMethod.POST) {
-            observedProducers.add(data.getRelativePath());
+        if (!fuzzedRequest && (data.getHttpMethod() == HttpMethod.POST
+                || data.getHttpMethod() == HttpMethod.PUT
+                || data.getHttpMethod() == HttpMethod.PATCH
+                || (data.getHttpMethod() == HttpMethod.GET && ResourceSemanticNaming.isCollectionPath(data.getRelativePath())))) {
+            observedProducers.add(data.getHttpMethod() + " " + data.getRelativePath());
         }
         String primaryId = extractPrimaryIdentifierValue(enrichedValues, resourceIdentifierAliases);
         if (deduplicateExistingResource(data, enrichedValues, fuzzedRequest, resourceIdentifierAliases, primaryId)) {

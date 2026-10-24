@@ -1,258 +1,241 @@
 package com.endava.cats.command.model;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.http.HttpMethod;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * Context object for passing configuration between commands.
- * This replaces direct mutation of parent command state by subcommands.
- * Provides type-safe methods for common configuration properties.
+ * Typed context object for passing configuration between subcommands and {@code CatsCommand}.
  */
 public class CommandContext {
-    private final Map<String, Object> properties = new HashMap<>();
-
-    /**
-     * Sets a property value.
-     *
-     * @param key   the property key
-     * @param value the property value (null values are ignored)
-     * @param <T>   the value type
-     */
-    public <T> void set(String key, T value) {
-        if (value != null) {
-            properties.put(key, value);
-        }
-    }
-
-    /**
-     * Gets a property value.
-     *
-     * @param key  the property key
-     * @param type the expected value type
-     * @param <T>  the value type
-     * @return Optional containing the value if present and of correct type
-     */
-    public <T> Optional<T> get(String key, Class<T> type) {
-        return Optional.ofNullable(properties.get(key))
-                .filter(type::isInstance)
-                .map(type::cast);
-    }
-
-    // Type-safe setters for common properties
+    private String fuzzerType;
+    private File customFuzzerFile;
+    private File functionalFlowFile;
+    private File correlationsFile;
+    private File securityFuzzerFile;
+    private File headersFile;
+    private Map<String, Object> headersMap;
+    private String contentType;
+    private Long seed;
+    private Boolean createRefData;
+    private File refDataFile;
+    private File queryFile;
+    private Map<String, String> xxxOfSelections;
+    private String discriminatorCasing;
+    private List<String> paths;
+    private List<HttpMethod> httpMethods;
+    private List<String> skipFuzzers;
+    private List<String> skipPaths;
+    private List<HttpMethod> skippedHttpMethods;
+    private Boolean includeContract;
+    private String contract;
+    private String server;
+    private Integer limitXxxOfCombinations;
+    private FilesArguments filesArguments;
+    private FilterArguments.TotalCountType totalCountType;
 
     public void setFuzzerType(String fuzzerType) {
-        set("fuzzerType", fuzzerType);
+        this.fuzzerType = fuzzerType;
     }
 
     public Optional<String> getFuzzerType() {
-        return get("fuzzerType", String.class);
+        return Optional.ofNullable(fuzzerType);
     }
 
     public void setCustomFuzzerFile(File file) {
-        set("customFuzzerFile", file);
+        this.customFuzzerFile = file;
     }
 
     public Optional<File> getCustomFuzzerFile() {
-        return get("customFuzzerFile", File.class);
+        return Optional.ofNullable(customFuzzerFile);
     }
 
     public void setFunctionalFlowFile(File file) {
-        set("functionalFlowFile", file);
+        this.functionalFlowFile = file;
     }
 
     public Optional<File> getFunctionalFlowFile() {
-        return get("functionalFlowFile", File.class);
+        return Optional.ofNullable(functionalFlowFile);
     }
 
     public void setCorrelationsFile(File file) {
-        set("correlationsFile", file);
+        this.correlationsFile = file;
     }
 
     public Optional<File> getCorrelationsFile() {
-        return get("correlationsFile", File.class);
+        return Optional.ofNullable(correlationsFile);
     }
 
     public void setSecurityFuzzerFile(File file) {
-        set("securityFuzzerFile", file);
+        this.securityFuzzerFile = file;
     }
 
     public Optional<File> getSecurityFuzzerFile() {
-        return get("securityFuzzerFile", File.class);
+        return Optional.ofNullable(securityFuzzerFile);
     }
 
     public void setHeadersFile(File file) {
-        set("headersFile", file);
+        this.headersFile = file;
     }
 
     public Optional<File> getHeadersFile() {
-        return get("headersFile", File.class);
+        return Optional.ofNullable(headersFile);
     }
 
     public void setHeadersMap(Map<String, Object> headers) {
-        set("headersMap", headers);
+        this.headersMap = headers;
     }
 
-    @SuppressWarnings("unchecked")
     public Optional<Map<String, Object>> getHeadersMap() {
-        return Optional.ofNullable(properties.get("headersMap"))
-                .filter(Map.class::isInstance)
-                .map(v -> (Map<String, Object>) v);
+        return Optional.ofNullable(headersMap);
     }
 
     public void setContentType(String contentType) {
-        set("contentType", contentType);
+        this.contentType = contentType;
     }
 
     public Optional<String> getContentType() {
-        return get("contentType", String.class);
+        return Optional.ofNullable(contentType);
     }
 
     public void setSeed(long seed) {
-        set("seed", seed);
+        this.seed = seed;
     }
 
     public Optional<Long> getSeed() {
-        return get("seed", Long.class);
+        return Optional.ofNullable(seed);
     }
 
     public void setCreateRefData(boolean createRefData) {
-        set("createRefData", createRefData);
+        this.createRefData = createRefData;
     }
 
     public Optional<Boolean> getCreateRefData() {
-        return get("createRefData", Boolean.class);
+        return Optional.ofNullable(createRefData);
     }
 
     public void setRefDataFile(File file) {
-        set("refDataFile", file);
+        this.refDataFile = file;
     }
 
     public Optional<File> getRefDataFile() {
-        return get("refDataFile", File.class);
+        return Optional.ofNullable(refDataFile);
     }
 
     public void setQueryFile(File file) {
-        set("queryFile", file);
+        this.queryFile = file;
     }
 
     public Optional<File> getQueryFile() {
-        return get("queryFile", File.class);
+        return Optional.ofNullable(queryFile);
     }
 
     public void setXxxOfSelections(Map<String, String> selections) {
-        set("xxxOfSelections", selections);
+        this.xxxOfSelections = selections;
+    }
+
+    public Optional<Map<String, String>> getXxxOfSelections() {
+        return Optional.ofNullable(xxxOfSelections);
     }
 
     public void setDiscriminatorCasing(String discriminatorCasing) {
-        set("discriminatorCasing", discriminatorCasing);
+        this.discriminatorCasing = discriminatorCasing;
     }
 
     public Optional<String> getDiscriminatorCasing() {
-        return get("discriminatorCasing", String.class);
-    }
-
-    @SuppressWarnings("unchecked")
-    public Optional<Map<String, String>> getXxxOfSelections() {
-        return Optional.ofNullable(properties.get("xxxOfSelections"))
-                .filter(Map.class::isInstance)
-                .map(v -> (Map<String, String>) v);
+        return Optional.ofNullable(discriminatorCasing);
     }
 
     public void setPaths(List<String> paths) {
-        set("paths", paths);
+        this.paths = paths;
     }
 
-    @SuppressWarnings("unchecked")
     public Optional<List<String>> getPaths() {
-        return Optional.ofNullable(properties.get("paths"))
-                .filter(List.class::isInstance)
-                .map(v -> (List<String>) v);
+        return Optional.ofNullable(paths);
     }
 
     public void setHttpMethods(List<HttpMethod> httpMethods) {
-        set("httpMethods", httpMethods);
+        this.httpMethods = httpMethods;
     }
 
-    @SuppressWarnings("unchecked")
     public Optional<List<HttpMethod>> getHttpMethods() {
-        return Optional.ofNullable(properties.get("httpMethods"))
-                .filter(List.class::isInstance)
-                .map(v -> (List<HttpMethod>) v);
+        return Optional.ofNullable(httpMethods);
     }
 
     public void setSkipFuzzers(List<String> skipFuzzers) {
-        set("skipFuzzers", skipFuzzers);
+        this.skipFuzzers = skipFuzzers;
     }
 
-    @SuppressWarnings("unchecked")
     public Optional<List<String>> getSkipFuzzers() {
-        return Optional.ofNullable(properties.get("skipFuzzers"))
-                .filter(List.class::isInstance)
-                .map(v -> (List<String>) v);
+        return Optional.ofNullable(skipFuzzers);
     }
 
     public void setSkipPaths(List<String> skipPaths) {
-        set("skipPaths", skipPaths);
+        this.skipPaths = skipPaths;
     }
 
-    @SuppressWarnings("unchecked")
     public Optional<List<String>> getSkipPaths() {
-        return Optional.ofNullable(properties.get("skipPaths"))
-                .filter(List.class::isInstance)
-                .map(v -> (List<String>) v);
+        return Optional.ofNullable(skipPaths);
+    }
+
+    public void setSkippedHttpMethods(List<HttpMethod> skippedHttpMethods) {
+        this.skippedHttpMethods = skippedHttpMethods;
+    }
+
+    public Optional<List<HttpMethod>> getSkippedHttpMethods() {
+        return Optional.ofNullable(skippedHttpMethods);
     }
 
     public void setIncludeContract(boolean includeContract) {
-        set("includeContract", includeContract);
+        this.includeContract = includeContract;
     }
 
     public Optional<Boolean> getIncludeContract() {
-        return get("includeContract", Boolean.class);
+        return Optional.ofNullable(includeContract);
     }
 
     public void setContract(String contract) {
-        set("contract", contract);
+        this.contract = contract;
     }
 
     public Optional<String> getContract() {
-        return get("contract", String.class);
+        return Optional.ofNullable(contract);
     }
 
     public void setServer(String server) {
-        set("server", server);
+        this.server = server;
     }
 
     public Optional<String> getServer() {
-        return get("server", String.class);
+        return Optional.ofNullable(server);
     }
 
     public void setLimitXxxOfCombinations(int limit) {
-        set("limitXxxOfCombinations", limit);
+        this.limitXxxOfCombinations = limit;
     }
 
     public Optional<Integer> getLimitXxxOfCombinations() {
-        return get("limitXxxOfCombinations", Integer.class);
+        return Optional.ofNullable(limitXxxOfCombinations);
     }
 
-    public void setFilesArguments(Object filesArguments) {
-        set("filesArguments", filesArguments);
+    public void setFilesArguments(FilesArguments filesArguments) {
+        this.filesArguments = filesArguments;
     }
 
-    public Optional<Object> getFilesArguments() {
-        return get("filesArguments", Object.class);
+    public Optional<FilesArguments> getFilesArguments() {
+        return Optional.ofNullable(filesArguments);
     }
 
     public void setTotalCountType(FilterArguments.TotalCountType totalCountType) {
-        set("totalCountType", totalCountType);
+        this.totalCountType = totalCountType;
     }
 
     public Optional<FilterArguments.TotalCountType> getTotalCountType() {
-        return get("totalCountType", FilterArguments.TotalCountType.class);
+        return Optional.ofNullable(totalCountType);
     }
 }

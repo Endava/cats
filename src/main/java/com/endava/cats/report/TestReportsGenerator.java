@@ -23,8 +23,7 @@ import java.util.stream.Collectors;
  */
 @Singleton
 public class TestReportsGenerator {
-    private final List<TestCaseExporter> testCaseExporters;
-    private final TestCaseExporter primaryExporter;
+    private final Map<ReportingArguments.ReportFormat, TestCaseExporter> exportersByFormat;
     private final ReportingArguments reportingArguments;
 
     /**
@@ -35,22 +34,29 @@ public class TestReportsGenerator {
      */
     public TestReportsGenerator(Instance<TestCaseExporter> testCaseExporters,
                                 ReportingArguments reportingArguments) {
-        Map<ReportingArguments.ReportFormat, TestCaseExporter> exportersByFormat = testCaseExporters.stream()
+        this.exportersByFormat = testCaseExporters.stream()
                 .collect(Collectors.toMap(TestCaseExporter::reportFormat, Function.identity(),
-                        (first, second) -> {
+                        (first, _) -> {
                             throw new CatsException("Multiple report exporters registered for format " + first.reportFormat());
                         }, LinkedHashMap::new));
+        this.reportingArguments = reportingArguments;
+        resolveSelectedExporters();
+    }
+
+    private List<TestCaseExporter> resolveSelectedExporters() {
         List<ReportingArguments.ReportFormat> selectedFormats = reportingArguments.getReportFormat().stream()
                 .distinct()
                 .toList();
         if (selectedFormats.isEmpty()) {
             throw new CatsException("At least one report format must be selected");
         }
-        this.reportingArguments = reportingArguments;
-        this.primaryExporter = findExporter(exportersByFormat, selectedFormats.getFirst());
-        this.testCaseExporters = selectedFormats.stream()
+        return selectedFormats.stream()
                 .map(format -> findExporter(exportersByFormat, format))
                 .toList();
+    }
+
+    private TestCaseExporter resolvePrimaryExporter() {
+        return resolveSelectedExporters().getFirst();
     }
 
     private TestCaseExporter findExporter(Map<ReportingArguments.ReportFormat, TestCaseExporter> exportersByFormat,
@@ -70,11 +76,13 @@ public class TestReportsGenerator {
      */
     public void initPath(String folder) throws IOException {
         reportingArguments.resetSensitiveData();
-        primaryExporter.initPath(folder);
-        for (TestCaseExporter exporter : testCaseExporters) {
-            if (exporter != primaryExporter) {
-                if (primaryExporter.getReportingPath() != null) {
-                    exporter.shareReportingPath(primaryExporter.getReportingPath(), primaryExporter.getT0());
+        List<TestCaseExporter> currentExporters = resolveSelectedExporters();
+        TestCaseExporter currentPrimary = currentExporters.getFirst();
+        currentPrimary.initPath(folder);
+        for (TestCaseExporter exporter : currentExporters) {
+            if (exporter != currentPrimary) {
+                if (currentPrimary.getReportingPath() != null) {
+                    exporter.shareReportingPath(currentPrimary.getReportingPath(), currentPrimary.getT0());
                 } else {
                     exporter.initPath(folder);
                 }
@@ -89,12 +97,14 @@ public class TestReportsGenerator {
      */
     public void writeTestCase(CatsTestCase catsTestCase) {
         SensitiveDataPolicy.sanitize(catsTestCase, reportingArguments);
-        TestCaseExporter writerExporter = testCaseExporters.stream()
+        List<TestCaseExporter> currentExporters = resolveSelectedExporters();
+        TestCaseExporter currentPrimary = currentExporters.getFirst();
+        TestCaseExporter writerExporter = currentExporters.stream()
                 .filter(exp -> exp.reportFormat() == ReportingArguments.ReportFormat.HTML_JS
                         || exp.reportFormat() == ReportingArguments.ReportFormat.HTML_ONLY
                         || exp.reportFormat() == ReportingArguments.ReportFormat.HTML_JS_CLUSTERS)
                 .findFirst()
-                .orElse(primaryExporter);
+                .orElse(currentPrimary);
         writerExporter.writeTestCase(catsTestCase);
     }
 
@@ -102,7 +112,7 @@ public class TestReportsGenerator {
      * Writes helper files for the test case exporters.
      */
     public void writeHelperFiles() {
-        testCaseExporters.forEach(TestCaseExporter::writeHelperFiles);
+        resolveSelectedExporters().forEach(TestCaseExporter::writeHelperFiles);
     }
 
     /**
@@ -112,7 +122,7 @@ public class TestReportsGenerator {
      * @param executionSummary the single execution snapshot shared by every exporter
      */
     public void writeSummary(List<CatsTestCaseSummary> testCaseSummaryDetails, ExecutionSummary executionSummary) {
-        testCaseExporters.forEach(testCaseExporter ->
+        resolveSelectedExporters().forEach(testCaseExporter ->
                 testCaseExporter.writeSummary(testCaseSummaryDetails, executionSummary));
     }
 
@@ -122,7 +132,7 @@ public class TestReportsGenerator {
      * @param testCaseSummaryDetails the list of test case summaries containing error details
      */
     public void writeErrorsByReason(List<CatsTestCaseSummary> testCaseSummaryDetails) {
-        primaryExporter.writeErrorsByReason(testCaseSummaryDetails);
+        resolvePrimaryExporter().writeErrorsByReason(testCaseSummaryDetails);
     }
 
 
@@ -132,17 +142,17 @@ public class TestReportsGenerator {
      * @param testCaseExecutionDetails the list of test case execution summaries to be included in the performance report
      */
     public void writePerformanceReport(List<CatsTestCaseExecutionSummary> testCaseExecutionDetails) {
-        primaryExporter.writePerformanceReport(testCaseExecutionDetails);
+        resolvePrimaryExporter().writePerformanceReport(testCaseExecutionDetails);
     }
 
     /**
      * Prints execution details through the explicitly selected primary exporter.
      */
     public void printExecutionDetails(ExecutionSummary executionSummary) {
-        primaryExporter.printExecutionDetails(executionSummary);
+        resolvePrimaryExporter().printExecutionDetails(executionSummary);
     }
 
     public void writeTopFuzzers(List<CatsTestCaseSummary> testCaseSummaries) {
-        primaryExporter.writeTopFuzzers(testCaseSummaries);
+        resolvePrimaryExporter().writeTopFuzzers(testCaseSummaries);
     }
 }

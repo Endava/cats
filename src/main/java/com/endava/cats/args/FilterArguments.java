@@ -304,17 +304,22 @@ public class FilterArguments {
      */
     public List<String> getSkipFuzzers() {
         List<String> skipFuzzerListWithPathFuzzers = Optional.ofNullable(this.skipFuzzers).orElse(Collections.emptyList());
-        skipPathFuzzers = skipFuzzerListWithPathFuzzers.stream()
+        skipPathFuzzers = computeSkipPathFuzzers(skipFuzzerListWithPathFuzzers);
+        return skipFuzzerListWithPathFuzzers.stream()
+                .filter(string -> !string.contains("="))
+                .toList();
+    }
+
+    private Map<String, List<String>> computeSkipPathFuzzers(List<String> skipFuzzerListWithPathFuzzers) {
+        return skipFuzzerListWithPathFuzzers.stream()
                 .filter(string -> string.contains("="))
                 .map(String::trim)
                 .map(string -> string.split("=", 2))
                 .collect(Collectors.toMap(stringArray -> stringArray[0],
                         stringArray -> Stream.of(stringArray[1].split(","))
                                 .map(String::trim)
-                                .toList()));
-        return skipFuzzerListWithPathFuzzers.stream()
-                .filter(string -> !string.contains("="))
-                .toList();
+                                .toList(),
+                        (first, _) -> first));
     }
 
     /**
@@ -465,9 +470,12 @@ public class FilterArguments {
      * @return a filtered list with fuzzers that can be run against at least one of the provided http method
      */
     public List<Fuzzer> filterOutFuzzersNotMatchingHttpMethodsAndPath(Set<HttpMethod> httpMethods, String path) {
+        Map<String, List<String>> currentSkipPathFuzzers = skipPathFuzzers.isEmpty() && skipFuzzers != null && !skipFuzzers.isEmpty()
+                ? computeSkipPathFuzzers(skipFuzzers)
+                : skipPathFuzzers;
         return this.getFirstPhaseFuzzersAsFuzzers().stream()
                 .filter(fuzzer -> !new HashSet<>(fuzzer.skipForHttpMethods()).containsAll(httpMethods))
-                .filter(fuzzer -> Optional.ofNullable(skipPathFuzzers.get(path))
+                .filter(fuzzer -> Optional.ofNullable(currentSkipPathFuzzers.get(path))
                         .orElse(List.of())
                         .stream()
                         .noneMatch(string -> fuzzer.toString().contains(string)))
@@ -692,9 +700,13 @@ public class FilterArguments {
         this.suppliedFuzzers = List.of(specialFuzzer);
         this.paths = Collections.emptyList();
         this.skipFuzzers = new ArrayList<>();
+        this.skipPathFuzzers.clear();
         this.skipPaths = Collections.emptyList();
         this.httpMethods = defaultHttpMethods();
         this.dryRun = false;
+        this.fuzzersToBeRunComputed = false;
+        FUZZERS_TO_BE_RUN.clear();
+        PATHS_TO_INCLUDE.clear();
     }
 
 
