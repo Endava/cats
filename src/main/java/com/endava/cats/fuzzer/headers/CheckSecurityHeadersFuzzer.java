@@ -88,16 +88,16 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     private List<KeyValuePair<String, String>> getMissingSecurityHeaders(CatsResponse catsResponse) {
         return SECURITY_HEADERS.entrySet().stream()
                 .filter(entry -> {
-                    String headerName = entry.getKey();
                     List<KeyValuePair<String, String>> possibleValues = entry.getValue();
 
                     if (possibleValues.stream().noneMatch(possibleHeader -> catsResponse.containsHeader(possibleHeader.getKey()))) {
                         return possibleValues.stream().noneMatch(keyPair -> keyPair.getValue() == null);
                     }
 
-                    KeyValuePair<String, String> responseHeader = catsResponse.getHeader(headerName);
-                    return responseHeader != null &&
-                            possibleValues.stream().noneMatch(possibleHeader -> this.matchesSecurityHeader(possibleHeader, responseHeader));
+                    return possibleValues.stream().noneMatch(possibleHeader -> {
+                        KeyValuePair<String, String> responseHeader = catsResponse.getHeader(possibleHeader.getKey());
+                        return responseHeader != null && this.matchesSecurityHeader(possibleHeader, responseHeader);
+                    });
                 }).flatMap(entry -> entry.getValue().stream())
                 .toList();
     }

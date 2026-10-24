@@ -73,7 +73,7 @@ public class ResponseHeadersMatchContractHeadersFuzzer implements Fuzzer {
             testCaseListener.reportResult(logger, fuzzingData, catsResponse, ResponseCodeFamilyPredefined.TWOXX);
         } else {
             testCaseListener.reportResultError(logger, fuzzingData, CatsResultFactory.Reason.MISSING_RESPONSE_HEADERS.value(),
-                    "The following response headers defined in the contract are missing: {}", notReturnedHeaders.toArray());
+                    "The following response headers defined in the contract are missing: {}", notReturnedHeaders);
         }
     }
 

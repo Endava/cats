@@ -49,7 +49,7 @@ public class HomoglyphEnumFieldsFuzzer extends BaseReplaceFieldsFuzzer {
                     }
                 }
             }
-            return results.isEmpty() ? List.of(original) : results;
+            return results;
         };
 
         return BaseReplaceFieldsContext.builder()
@@ -58,7 +58,11 @@ public class HomoglyphEnumFieldsFuzzer extends BaseReplaceFieldsFuzzer {
                 .skipMessage("Fuzzer only runs for string enums")
                 .fieldFilter(field -> {
                     Schema<?> schema = data.getRequestPropertyTypes().get(field);
-                    return CatsModelUtils.isEnumSchema(schema) && JsonUtils.isFieldInJson(data.getPayload(), field);
+                    if (!CatsModelUtils.isEnumSchema(schema) || !JsonUtils.isFieldInJson(data.getPayload(), field)) {
+                        return false;
+                    }
+                    String original = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), field));
+                    return original.chars().anyMatch(ch -> UnicodeGenerator.getHomoglyphs().containsKey((char) ch));
                 })
                 .fuzzValueProducer(producer)
                 .build();

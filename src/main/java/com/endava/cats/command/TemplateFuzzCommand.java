@@ -12,6 +12,8 @@ import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.exception.CatsExecutionCancelledException;
+import com.endava.cats.exception.CatsExecutionLimitReachedException;
+import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsConfiguration;
@@ -140,6 +142,9 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
     @Inject
     FilesArguments filesArguments;
 
+    @Inject
+    ExecutionStopController executionStopController;
+
     @CommandLine.Option(names = {"--correlations", "--correlate"},
             description = "Specifies a YAML file with cross-field correlation rules (when/then set or omit) applied to request payloads")
     private File correlationsFile;
@@ -185,6 +190,9 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
         boolean fuzzerStarted = false;
         String fuzzingPath = null;
         try {
+            if (executionStopController != null) {
+                executionStopController.startSession();
+            }
             testCaseListener.startSession();
             sessionStarted = true;
             this.init();
@@ -203,6 +211,9 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
             beforeFuzz(fuzzingPath, fuzzingData.getMethod().name());
             fuzzerStarted = true;
             templateFuzzer.fuzz(fuzzingData);
+        } catch (CatsExecutionLimitReachedException e) {
+            executionStatisticsListener.markLimitReached(e.getMessage());
+            logger.info("{}", e.getMessage());
         } catch (CatsExecutionCancelledException e) {
             executionStatisticsListener.markCancelled(e.getMessage());
             exitCode = CANCELLED_EXIT_CODE;

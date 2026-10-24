@@ -37,7 +37,7 @@ import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.Writer;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -185,10 +185,14 @@ public abstract class JsonUtils {
         return SIMPLE_OBJECT_MAPPER;
     }
 
+    private static final int MAX_SERIALIZED_PAYLOAD_CHARS = 512 * 1024;
+
     public static String serialize(Object obj) {
         try {
-            return SIMPLE_OBJECT_MAPPER.writeValueAsString(obj);
-        } catch (IOException e) {
+            BoundedStringWriter writer = new BoundedStringWriter(MAX_SERIALIZED_PAYLOAD_CHARS);
+            SIMPLE_OBJECT_MAPPER.writeValue(writer, obj);
+            return writer.toString();
+        } catch (IOException | OutOfMemoryError e) {
             LOGGER.debug("Error serializing object: {}", e.getMessage());
             return null;
         }
@@ -196,13 +200,53 @@ public abstract class JsonUtils {
 
     public static String serializeWithDepthAwareSerializer(Object exampleObject) {
         try {
-            StringWriter stringWriter = new StringWriter();
+            BoundedStringWriter stringWriter = new BoundedStringWriter(MAX_SERIALIZED_PAYLOAD_CHARS);
             JsonGenerator jsonGenerator = JsonUtils.getCustomDepthMapper().getFactory().createGenerator(stringWriter);
             JsonUtils.getCustomDepthMapper().writeValue(jsonGenerator, exampleObject);
             return stringWriter.toString();
-        } catch (IOException e) {
+        } catch (IOException | OutOfMemoryError e) {
             LOGGER.debug("Error writing large object as string: {}", e.getMessage());
-            return null;
+            return "{}";
+        }
+    }
+
+    private static final class BoundedStringWriter extends Writer {
+        private final StringBuilder buffer = new StringBuilder(256);
+        private final int maxChars;
+
+        BoundedStringWriter(int maxChars) {
+            this.maxChars = maxChars;
+        }
+
+        @Override
+        public void write(char[] cbuf, int off, int len) throws IOException {
+            if (buffer.length() + len > maxChars) {
+                throw new IOException("Serialized JSON exceeds maximum length of " + maxChars + " characters");
+            }
+            buffer.append(cbuf, off, len);
+        }
+
+        @Override
+        public void write(String str, int off, int len) throws IOException {
+            if (buffer.length() + len > maxChars) {
+                throw new IOException("Serialized JSON exceeds maximum length of " + maxChars + " characters");
+            }
+            buffer.append(str, off, len);
+        }
+
+        @Override
+        public void flush() {
+            // no-op
+        }
+
+        @Override
+        public void close() {
+            // no-op
+        }
+
+        @Override
+        public String toString() {
+            return buffer.toString();
         }
     }
 
@@ -411,7 +455,18 @@ public abstract class JsonUtils {
         if (StringUtils.isNotBlank(payload)) {
             try {
                 return JsonPath.parse(payload).delete(sanitizeToJsonPath(node)).jsonString();
-            } catch (PathNotFoundException _) {
+            } catch (InvalidPathException _) {
+                if (node != null && !node.contains("#") && payload.stripLeading().startsWith("{")) {
+                    try {
+                        JsonElement el = parseAsJsonElement(payload);
+                        if (el.isJsonObject() && el.getAsJsonObject().has(node)) {
+                            el.getAsJsonObject().remove(node);
+                            return GSON_NO_PRETTY_PRINTING.toJson(el);
+                        }
+                    } catch (RuntimeException _) {
+                        // return original payload below
+                    }
+                }
                 return payload;
             }
         }

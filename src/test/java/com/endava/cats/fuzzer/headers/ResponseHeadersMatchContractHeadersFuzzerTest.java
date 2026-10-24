@@ -79,7 +79,8 @@ class  ResponseHeadersMatchContractHeadersFuzzerTest {
         responseHeadersMatchContractHeadersFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(),
-                Mockito.eq("The following response headers defined in the contract are missing: {}"), Mockito.eq(new TreeSet<>(Set.of("anotherMissingHeader", "missingHeader")).toArray()));
+                Mockito.eq("The following response headers defined in the contract are missing: {}"),
+                org.mockito.AdditionalMatchers.aryEq(new Object[]{new TreeSet<>(Set.of("anotherMissingHeader", "missingHeader"))}));
     }
 
     @Test

@@ -66,7 +66,7 @@ class SmokeCommandTest {
 
     @Test
     void shouldFailSmokeCheckOn5xxOrTotalAuthFailureAndSupportJsonMode() {
-        smokeCommand.json = true;
+        org.springframework.test.util.ReflectionTestUtils.setField(smokeCommand.reportingArguments, "jsonOutput", true);
         smokeCommand.includeDelete = true;
         Mockito.doAnswer(_ -> {
             catsCommand.executionEventPublisher.publish(new CatsExecutionEvent.TestCompleted(

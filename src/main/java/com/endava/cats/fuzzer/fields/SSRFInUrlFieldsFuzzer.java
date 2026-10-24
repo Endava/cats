@@ -216,6 +216,10 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
             return true;
         }
 
+        if (schema != null && !CatsModelUtils.isStringSchema(schema)) {
+            return false;
+        }
+
         String lowerFieldName = fieldName.toLowerCase(Locale.ROOT);
         return URL_FIELD_PATTERNS.stream()
                 .anyMatch(lowerFieldName::contains);

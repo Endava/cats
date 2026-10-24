@@ -63,6 +63,7 @@ public class FuzzingData {
     private final String reqSchemaName;
     /*these are cached after the first computation*/
     private Set<String> allFields;
+    private Set<String> allFieldsByHttpMethod;
     private Set<Set<String>> allFieldsSetOfSets;
     private List<String> allRequiredFields;
     private Set<CatsField> allFieldsAsCatsFields;
@@ -277,21 +278,27 @@ public class FuzzingData {
      * @return A set of field names associated with the fuzzing data based on the HTTP method.
      */
     public Set<String> getAllFieldsByHttpMethod() {
-        if (HttpMethod.requiresBody(method)) {
-            return getAllFields().stream().filter(field -> !this.getAllReadOnlyFields().contains(field)).collect(Collectors.toSet());
+        if (allFieldsByHttpMethod == null) {
+            Set<String> excluded = HttpMethod.requiresBody(method) ? this.getAllReadOnlyFields() : this.getAllWriteOnlyFields();
+            List<String> eligible = getAllFields().stream()
+                    .filter(field -> !excluded.contains(field))
+                    .collect(Collectors.toList());
+            if (limitNumberOfFields > 0 && limitNumberOfFields < eligible.size()) {
+                Collections.shuffle(eligible, new Random(CatsRandom.getStoredSeed()));
+                eligible = eligible.subList(0, limitNumberOfFields);
+            }
+            allFieldsByHttpMethod = new LinkedHashSet<>(eligible);
         }
-
-        return getAllFields().stream().filter(field -> !this.getAllWriteOnlyFields().contains(field)).collect(Collectors.toSet());
+        return allFieldsByHttpMethod;
     }
 
     private Set<String> getAllFields() {
         if (allFields == null) {
             List<String> list = this.getAllFieldsAsCatsFields().stream().map(CatsField::getName).collect(Collectors.toList());
-            Collections.shuffle(list, new Random(CatsRandom.getStoredSeed()));
-            int limit = Math.min(list.size(), limitNumberOfFields <= 0 ? list.size() : limitNumberOfFields);
-            allFields = list.stream()
-                    .limit(limit)
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            if (limitNumberOfFields > 0 && limitNumberOfFields < list.size()) {
+                Collections.shuffle(list, new Random(CatsRandom.getStoredSeed()));
+            }
+            allFields = new LinkedHashSet<>(list);
         }
 
         return allFields;

@@ -708,9 +708,10 @@ final class ResourceRequestEnricher {
         }
         String normalizedField = ResourceSemanticNaming.normalize(fieldName);
         for (ResourceInstance resource : resources) {
-            if (resource.active() && !resource.fuzzed() && resource.sourceMethod() == HttpMethod.POST &&
-                    resource.requestBodyAliases().contains(normalizedField) &&
-                    ResourceSemanticNaming.sameParentPath(resource.pathSegments(), targetSegments)) {
+            if (resource.active() && !resource.fuzzed()
+                    && ResourceSemanticNaming.sameParentPath(resource.pathSegments(), targetSegments)
+                    && ((resource.sourceMethod() == HttpMethod.POST && resource.requestBodyAliases().contains(normalizedField))
+                        || (resource.collectionPath() && "value".equals(normalizedField) && resource.allAliases().contains(normalizedField)))) {
                 return true;
             }
         }

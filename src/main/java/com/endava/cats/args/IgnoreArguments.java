@@ -10,6 +10,7 @@ import picocli.CommandLine;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -29,7 +30,7 @@ public class IgnoreArguments {
     private boolean ignoreResponseBodyCheck;
 
     @CommandLine.Option(names = {"--ignoreErrorLeaksCheck", "--ie"},
-            description = "Don't check if the response body received from the service matches the schema supplied inside the contract. This will mark the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
+            description = "Don't check if the response body received from the service contains keywords suggesting an error leak. This will mark the test result as @|bold,underline success|@ instead of @|bold,underline error|@")
     private boolean ignoreErrorLeaksCheck;
 
     @CommandLine.Option(names = {"--ignoreResponseContentTypeCheck", "--it"},
@@ -170,7 +171,10 @@ public class IgnoreArguments {
      * @return true if the regex is not found in the body, false otherwise
      */
     public boolean isNotIgnoredRegex(String body) {
-        return !body.matches(Optional.ofNullable(ignoreResponseRegex).orElse("cats_body"));
+        if (ignoreResponseRegex == null || body == null) {
+            return true;
+        }
+        return !Pattern.compile(ignoreResponseRegex, Pattern.DOTALL).matcher(body).matches();
     }
 
     /**

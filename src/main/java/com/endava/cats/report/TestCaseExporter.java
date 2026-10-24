@@ -208,13 +208,10 @@ public abstract class TestCaseExporter {
             }
             emptyConsoleLine();
             List<TimeExecutionDetails> allDetails = new ArrayList<>();
-            executionDetails.forEach((key, value) -> {
-                TimeExecutionDetails details = buildAndPrintExecutionTimesForPathAndHttpMethod(key, value);
-                allDetails.add(details);
-                writeExecutionTimesFile(details);
-            });
-            if (allDetails.size() > 1) {
-                writeExecutionTimesListFile(allDetails);
+            executionDetails.forEach((key, value) ->
+                    allDetails.add(buildAndPrintExecutionTimesForPathAndHttpMethod(key, value)));
+            if (!allDetails.isEmpty()) {
+                writeExecutionTimesFile(allDetails);
             }
         } else {
             emptyConsoleLine();
@@ -279,10 +276,6 @@ public abstract class TestCaseExporter {
         } catch (IOException e) {
             throw reportFailure("Unable to write " + EXECUTION_TIME_REPORT, e);
         }
-    }
-
-    private void writeExecutionTimesListFile(List<TimeExecutionDetails> allDetails) {
-        writeExecutionTimesFile(allDetails);
     }
 
     /**

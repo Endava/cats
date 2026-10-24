@@ -230,7 +230,7 @@ public final class WfcReportBuilder {
         try {
             String content = Files.readString(file, StandardCharsets.UTF_8);
             int lines = Math.max(1, content.split("\r?\n", -1).length);
-            CatsTestCase parsed = JsonUtils.GSON.fromJson(content, CatsTestCase.class);
+            CatsTestCase parsed = CatsTestCase.readTestCaseFile(file).orElse(null);
             return new TestFileMetadata(lines, parsed);
         } catch (IOException | RuntimeException _) {
             return new TestFileMetadata(1, null);

@@ -472,7 +472,7 @@ public class FuzzingDataFactory {
                         .queryParameterSerializations(queryParameterSerializations)
                         .openApi(openAPI)
                         .tags(operation.getTags())
-                        .reqSchemaName(SYNTH_SCHEMA_NAME)
+                        .reqSchemaName(syntheticSchema.getKey())
                         .selfReferenceDepth(processingArguments.getSelfReferenceDepth())
                         .limitNumberOfFields(processingArguments.getLimitNumberOfFields())
                         .includeFieldTypes(filterArguments.getFieldTypes())
@@ -666,28 +666,11 @@ public class FuzzingDataFactory {
                 && processingArguments.getContentType() != null
                 && processingArguments.getContentType().size() > 1) {
             MediaType multipart = content.get("multipart/form-data");
-            if (multipart != null && !hasBinaryProperty(multipart.getSchema(), openAPI)) {
+            if (multipart != null) {
                 return new SelectedMediaType("application/x-www-form-urlencoded", multipart);
             }
         }
         return null;
-    }
-
-    private boolean hasBinaryProperty(Schema<?> schema, OpenAPI openAPI) {
-        if (schema == null) {
-            return false;
-        }
-        Schema<?> resolved = schema;
-        if (schema.get$ref() != null && openAPI != null && openAPI.getComponents() != null
-                && openAPI.getComponents().getSchemas() != null) {
-            resolved = openAPI.getComponents().getSchemas().getOrDefault(
-                    CatsModelUtils.getSimpleRef(schema.get$ref()), schema);
-        }
-        if (CatsModelUtils.isBinarySchema(resolved)) {
-            return true;
-        }
-        return resolved.getProperties() != null && resolved.getProperties().values().stream()
-                .anyMatch(prop -> prop != null && CatsModelUtils.isBinarySchema((Schema<?>) prop));
     }
 
     private String defaultRequestContentType() {

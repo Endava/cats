@@ -467,8 +467,8 @@ class CatsCommandTest {
         Mockito.verify(spyMain).startFuzzing(Mockito.any());
         Mockito.verify(fuzzingDataFactory).fromPathItem(Mockito.eq("/pet"), Mockito.any(), Mockito.any());
         Mockito.verify(fuzzingDataFactory, Mockito.times(0)).fromPathItem(Mockito.eq("/petss"), Mockito.any(), Mockito.any());
-        Mockito.verify(testCaseListener, Mockito.times(13)).afterFuzz(Mockito.any());
-        Mockito.verify(testCaseListener, Mockito.times(9)).beforeFuzz(Mockito.eq(PathTagsLinter.class), Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(14)).afterFuzz(Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(10)).beforeFuzz(Mockito.eq(PathTagsLinter.class), Mockito.anyString(), Mockito.any());
         Mockito.verify(testCaseListener, Mockito.times(4)).beforeFuzz(Mockito.eq(CheckDeletedResourcesNotAvailableFuzzer.class), Mockito.any(), Mockito.any());
 
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");

@@ -15,11 +15,14 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 /**
- * Fuzzer that sends epoch number field values as strings to check for type coercion issues.
+ * Fuzzer that sends date-time field values as epoch numbers to check for type coercion issues.
  */
 @Singleton
 @FieldFuzzer
 public class EpochNumberInDateTimeFieldsFuzzer extends BaseTypeCoercionFuzzer {
+    private static final long DEFAULT_BASE_EPOCH_SECONDS = 1_704_067_200L;
+    private static final long EPOCH_OFFSET_SECONDS = 10_000L;
+
     /**
      * Creates a new EpochNumberInDateTimeFieldsFuzzer instance.
      *
@@ -40,8 +43,19 @@ public class EpochNumberInDateTimeFieldsFuzzer extends BaseTypeCoercionFuzzer {
 
     @Override
     protected List<Object> getFuzzedValues(Object currentValue) {
-        return List.of(Instant.now().minusSeconds(10000).getEpochSecond(),
-                Instant.now().plusSeconds(10000).getEpochSecond());
+        long baseEpoch = parseEpochSeconds(currentValue);
+        return List.of(baseEpoch - EPOCH_OFFSET_SECONDS, baseEpoch + EPOCH_OFFSET_SECONDS);
+    }
+
+    private static long parseEpochSeconds(Object currentValue) {
+        if (currentValue != null) {
+            try {
+                return Instant.parse(String.valueOf(currentValue).trim()).getEpochSecond();
+            } catch (RuntimeException _) {
+                // fall back to deterministic reference epoch
+            }
+        }
+        return DEFAULT_BASE_EPOCH_SECONDS;
     }
 
     @Override

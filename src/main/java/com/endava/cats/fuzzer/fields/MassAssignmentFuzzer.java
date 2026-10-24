@@ -249,12 +249,15 @@ public class MassAssignmentFuzzer implements Fuzzer {
     }
 
     private boolean isFieldReflectedInResponse(String responseBody, String fieldName, Object fieldValue) {
-        if (!responseBody.contains(fieldName.toLowerCase(Locale.ROOT))) {
+        String lowerFieldName = fieldName.toLowerCase(Locale.ROOT);
+        if (!responseBody.contains("\"" + lowerFieldName + "\"")) {
             return false;
         }
-
         String valueStr = String.valueOf(fieldValue).toLowerCase(Locale.ROOT);
-        return responseBody.contains(valueStr);
+        return responseBody.contains("\"" + lowerFieldName + "\":\"" + valueStr + "\"")
+                || responseBody.contains("\"" + lowerFieldName + "\": \"" + valueStr + "\"")
+                || responseBody.contains("\"" + lowerFieldName + "\":" + valueStr)
+                || responseBody.contains("\"" + lowerFieldName + "\": " + valueStr);
     }
 
     private String truncateValue(Object value) {

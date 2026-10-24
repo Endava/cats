@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -72,7 +73,7 @@ public class OpenAPIModelGeneratorV2 {
             new String[]{"low", "high"});
     private static final Set<String> SMALL_POSITIVE_INTEGER_LEAVES = Set.of(
             "page", "pagenumber", "pageindex", "offset", "quantity", "count",
-            "size", "pagesize", "limit", "perpage");
+            "size", "pagesize", "limit", "perpage", "timeout", "timeoutms", "maxwait");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGeneratorV2.class);
     private final Random random;
     private final ProcessingArguments.ExamplesFlags examplesFlags;
@@ -529,12 +530,11 @@ public class OpenAPIModelGeneratorV2 {
             Schema property = entry.getValue();
             String requiredPropertyPath = appendRequiredProperty(currentRequiredProperty, propertyName);
 
-            currentPropertiesDepth++;
-            // this is a hack to avoid infinite recursion when the schema references itself and JsonUtils.isCyclicReference does not catch it.
-            // json responses tend to have a lot of self-references, and they return more complex objects than request payloads
-            if (currentPropertiesDepth > totalDepth) {
+            // Cap total cyclic/empty property expansions across self-referential response schemas
+            if (currentPropertiesDepth >= totalDepth) {
                 continue;
             }
+            currentPropertiesDepth++;
 
             // Skip discriminator property if requested (when parent has oneOf/anyOf)
             if (skipDiscriminator && schema.getDiscriminator() != null &&
@@ -1375,7 +1375,8 @@ public class OpenAPIModelGeneratorV2 {
         }
         if (CatsModelUtils.isBinarySchema(property) || CatsModelUtils.isByteArraySchema(property)) {
             try {
-                return Base64.getDecoder().decode((byte[]) example);
+                byte[] bytes = example instanceof byte[] b ? b : String.valueOf(example).getBytes(StandardCharsets.UTF_8);
+                return Base64.getDecoder().decode(bytes);
             } catch (IllegalArgumentException _) {
                 return example;
             }

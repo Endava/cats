@@ -25,6 +25,7 @@ public abstract class BaseLinter implements Fuzzer {
      */
     protected final TestCaseListener testCaseListener;
     private final List<String> fuzzedPaths = new ArrayList<>();
+    private int lastOpenApiIdentity;
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     /**
@@ -36,8 +37,20 @@ public abstract class BaseLinter implements Fuzzer {
         this.testCaseListener = tcl;
     }
 
+    /**
+     * Clears the cached run keys for a new linting session.
+     */
+    public void reset() {
+        fuzzedPaths.clear();
+    }
+
     @Override
     public void fuzz(FuzzingData data) {
+        int currentOpenApiIdentity = System.identityHashCode(data.getOpenApi());
+        if (currentOpenApiIdentity != lastOpenApiIdentity) {
+            fuzzedPaths.clear();
+            lastOpenApiIdentity = currentOpenApiIdentity;
+        }
         if (fuzzedPaths.contains(this.runKey(data))) {
             return;
         }

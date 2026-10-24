@@ -84,15 +84,10 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
     }
 
     private Set<String> getStringFields(FuzzingData data) {
-        Set<String> stringFields = data.getAllFieldsByHttpMethod()
-                .stream()
-                .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
-                .filter(field -> {
-                    var schema = data.getRequestPropertyTypes().get(field);
-                    return CatsModelUtils.isStringSchema(schema);
-                })
-                .filter(this::shouldFuzzField)
-                .collect(Collectors.toCollection(HashSet::new));
+        Set<String> stringFields = new HashSet<>(FuzzingData.filterFieldsInPayload(data, field -> {
+            var schema = data.getRequestPropertyTypes().get(field);
+            return CatsModelUtils.isStringSchema(schema) && shouldFuzzField(field);
+        }, 0));
         if (data.isRootTextPayload()) {
             stringFields.add("$");
         }

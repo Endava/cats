@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 /**
- * Fuzzer that sends enum field values as strings to check for type coercion issues.
+ * Fuzzer that sends enum field values as numeric ordinals (0, 1) to check for type coercion issues.
  */
 @Singleton
 @FieldFuzzer

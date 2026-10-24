@@ -202,7 +202,7 @@ public final class RequiredOnlyPayloadGenerator {
                 }
             }
             if (requestPropertyTypes != null && !requestPropertyTypes.isEmpty()) {
-                addEnumVariantFallbacks(root.getAsJsonObject(), required, requestPropertyTypes, candidates);
+                addEnumVariantFallbacks(root.getAsJsonObject(), requestPropertyTypes, candidates, maxSingleOptional);
             }
             return new ArrayList<>(candidates);
         } catch (RuntimeException _) {
@@ -210,37 +210,32 @@ public final class RequiredOnlyPayloadGenerator {
         }
     }
 
-    private static void addEnumVariantFallbacks(JsonObject rootObj, Set<String> required,
-                                                Map<String, Schema> requestPropertyTypes, Set<String> candidates) {
+    private static void addEnumVariantFallbacks(JsonObject rootObj,
+                                                Map<String, Schema> requestPropertyTypes, Set<String> candidates,
+                                                int maxCandidates) {
         for (Map.Entry<String, JsonElement> entry : rootObj.entrySet()) {
+            if (candidates.size() >= maxCandidates) {
+                return;
+            }
             String topKey = entry.getKey();
             Schema<?> schema = requestPropertyTypes.get(topKey);
             if (schema != null && schema.getEnum() != null && schema.getEnum().size() > 1) {
                 for (Object enumVal : schema.getEnum()) {
+                    if (candidates.size() >= maxCandidates) {
+                        return;
+                    }
                     if (enumVal == null) {
                         continue;
                     }
-                    String enumString = String.valueOf(enumVal);
+                    JsonObject variant = new JsonObject();
+                    variant.addProperty(topKey, String.valueOf(enumVal));
                     for (Map.Entry<String, JsonElement> other : rootObj.entrySet()) {
                         String otherKey = other.getKey();
                         if (!otherKey.equals(topKey) && !isServerGeneratedField(otherKey, Set.of())) {
-                            JsonObject singleSiblingVariant = new JsonObject();
-                            singleSiblingVariant.addProperty(topKey, enumString);
-                            required.stream().filter(rootObj::has).forEach(reqKey ->
-                                    singleSiblingVariant.add(reqKey, rootObj.get(reqKey).deepCopy()));
-                            singleSiblingVariant.add(otherKey, other.getValue().deepCopy());
-                            candidates.add(JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(singleSiblingVariant));
+                            variant.add(otherKey, other.getValue().deepCopy());
                         }
                     }
-                    JsonObject allNonGeneratedVariant = new JsonObject();
-                    allNonGeneratedVariant.addProperty(topKey, enumString);
-                    for (Map.Entry<String, JsonElement> other : rootObj.entrySet()) {
-                        String otherKey = other.getKey();
-                        if (!otherKey.equals(topKey) && !isServerGeneratedField(otherKey, Set.of())) {
-                            allNonGeneratedVariant.add(otherKey, other.getValue().deepCopy());
-                        }
-                    }
-                    candidates.add(JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(allNonGeneratedVariant));
+                    candidates.add(JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(variant));
                 }
             }
         }
