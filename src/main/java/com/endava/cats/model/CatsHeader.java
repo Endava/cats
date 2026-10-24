@@ -100,7 +100,7 @@ public class CatsHeader {
         }
 
         if ("uuid".equalsIgnoreCase(schema.getFormat())) {
-            return UUID.randomUUID().toString();
+            return com.endava.cats.util.CatsRandom.uuid();
         }
         if ("date-time".equalsIgnoreCase(schema.getFormat())) {
             return OffsetDateTime.now(ZoneId.systemDefault()).toString();

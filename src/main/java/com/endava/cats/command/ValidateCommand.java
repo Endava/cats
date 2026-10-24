@@ -29,8 +29,9 @@ import java.util.List;
                 "    cats validate -c openapi.yml"},
         versionProvider = VersionProvider.class)
 @Unremovable
-public class ValidateCommand implements Runnable {
+public class ValidateCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
+    private int exitCode = CommandLine.ExitCode.OK;
 
     @CommandLine.Option(names = {"-c", "--contract"},
             description = "The OpenAPI contract/spec", required = true)
@@ -62,8 +63,14 @@ public class ValidateCommand implements Runnable {
             reasons = List.of(e.toString());
         }
         ValidContractEntry validContractEntry = new ValidContractEntry(isValid, version, reasons);
+        exitCode = isValid ? CommandLine.ExitCode.OK : CommandLine.ExitCode.SOFTWARE;
 
         printEntry(validContractEntry);
+    }
+
+    @Override
+    public int getExitCode() {
+        return exitCode;
     }
 
     private void printEntry(ValidContractEntry validContractEntry) {

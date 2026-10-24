@@ -151,7 +151,15 @@ class TriageCommandTest {
                         "SUSPICIOUS_CORRELATION_404");
         Assertions.assertThat(report.synthesizedCorrelations()).hasSize(1);
         Assertions.assertThat(Files.readString(exportedCorr))
-                .contains("/risk-rules:", "ruleType: VELOCITY", "velocityDefinitions:");
+                .contains("correlations:", "- \"/risk-rules\"", "ruleType == 'VELOCITY'", "velocityDefinitions:");
+        Assertions.assertThat(com.endava.cats.fuzzer.special.FunctionalFlowParser.parseCorrelationFile(exportedCorr.toFile()))
+                .hasSize(1)
+                .first()
+                .satisfies(rule -> {
+                    Assertions.assertThat(rule.paths()).containsExactly("/risk-rules");
+                    Assertions.assertThat(rule.when()).isEqualTo("ruleType == 'VELOCITY'");
+                    Assertions.assertThat(rule.set()).containsKey("velocityDefinitions");
+                });
         Assertions.assertThat(Files.readString(exportedSh))
                 .contains("#!/usr/bin/env bash", "curl -i -X POST 'http://localhost:8098/risk-rules'");
 

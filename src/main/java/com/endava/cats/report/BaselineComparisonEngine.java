@@ -174,11 +174,21 @@ public final class BaselineComparisonEngine {
 
     private static Map<String, List<CatsTestCaseSummary>> groupByReason(List<CatsTestCaseSummary> list, String level) {
         return list.stream()
-                .filter(tc -> level.equalsIgnoreCase(tc.getResult()))
+                .filter(tc -> matchesResultLevel(tc.getResult(), level))
                 .collect(Collectors.groupingBy(
                         tc -> Optional.ofNullable(tc.getResultReason()).orElse("Unspecified"),
                         LinkedHashMap::new,
                         Collectors.toList()));
+    }
+
+    private static boolean matchesResultLevel(String result, String level) {
+        if (result == null) {
+            return false;
+        }
+        if ("warning".equalsIgnoreCase(level) || "warn".equalsIgnoreCase(level)) {
+            return "warn".equalsIgnoreCase(result) || "warning".equalsIgnoreCase(result);
+        }
+        return level.equalsIgnoreCase(result);
     }
 
     private static int compareReasonBuckets(ScopeKey scope, String level,

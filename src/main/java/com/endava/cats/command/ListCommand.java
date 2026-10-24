@@ -71,13 +71,14 @@ import java.util.stream.Collectors;
                 "    cats list --fuzzers"},
         versionProvider = VersionProvider.class)
 @Unremovable
-public class ListCommand implements Runnable {
+public class ListCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
     private final List<Fuzzer> fuzzersList;
 
     private final List<String> formats;
     private final List<MutatorEntry> mutators;
     private final ProfileLoader profileLoader;
+    private int exitCode = CommandLine.ExitCode.OK;
 
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;
@@ -154,7 +155,7 @@ public class ListCommand implements Runnable {
             PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(fuzzerEntries));
         } else {
             String message = AnsiUtils.boldGreen("CATS has {} registered linters:");
-            logger.noFormat(message, fuzzersList.size());
+            logger.noFormat(message, linters.size());
             displayFuzzers(linters, Linter.class);
         }
     }
@@ -196,11 +197,17 @@ public class ListCommand implements Runnable {
             } else {
                 this.listPath(openAPI, listCommandGroups.listContractOptions.path);
             }
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
             logger.debug("Exception while reading contract!", e);
             logger.error("Error while reading contract. The file might not exist or is not reachable: {}. Error message: {}",
                     listCommandGroups.listContractOptions.contract, e.getMessage());
+            exitCode = CommandLine.ExitCode.SOFTWARE;
         }
+    }
+
+    @Override
+    public int getExitCode() {
+        return exitCode;
     }
 
     void listPath(OpenAPI openAPI, String path) {

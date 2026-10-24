@@ -174,6 +174,8 @@ class ShorthandFunctionParserTest {
             assertThat(parser.parse("#(nowMinusHours(3))", Map.of())).contains("T");
             int rand = Integer.parseInt(parser.parse("#(randomInt(10,20))", Map.of()));
             assertThat(rand).isBetween(10, 19);
+            String combined = parser.parse("#(uuid)-#(alphanumeric(5))", Map.of());
+            assertThat(combined).doesNotContain("#(").hasSize(36 + 1 + 5);
         }
     }
 

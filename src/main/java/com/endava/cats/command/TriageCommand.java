@@ -426,25 +426,22 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     private static String renderCorrelationsYaml(List<SynthesizedCorrelationRule> rules) {
         if (rules.isEmpty()) {
-            return "# No cross-field correlation rules needed\n";
+            return "# No cross-field correlation rules needed\ncorrelations: []\n";
         }
-        Map<String, List<SynthesizedCorrelationRule>> byPath = new LinkedHashMap<>();
-        for (SynthesizedCorrelationRule rule : rules) {
-            byPath.computeIfAbsent(rule.path(), _ -> new ArrayList<>()).add(rule);
-        }
-        StringBuilder sb = new StringBuilder("# Auto-synthesized by `cats triage`\n");
-        byPath.forEach((path, pathRules) -> {
-            sb.append(path).append(":\n");
-            for (int i = 0; i < pathRules.size(); i++) {
-                SynthesizedCorrelationRule r = pathRules.get(i);
-                sb.append("  - name: auto-rule-").append(i + 1).append("-").append(r.targetField()).append("\n");
-                sb.append("    when:\n");
-                sb.append("      ").append(r.whenField()).append(": ").append(r.whenValue()).append("\n");
-                sb.append("    then:\n");
-                sb.append("      ").append(r.targetField()).append(": ")
-                        .append("REMOVE".equals(r.action()) ? "null" : "\"<REQUIRED_VALUE>\"").append("\n");
+        StringBuilder sb = new StringBuilder("# Auto-synthesized by `cats triage`\ncorrelations:\n");
+        for (SynthesizedCorrelationRule r : rules) {
+            sb.append("  - paths:\n");
+            sb.append("      - \"").append(r.path()).append("\"\n");
+            sb.append("    when: \"").append(r.whenField()).append(" == '").append(r.whenValue()).append("'\"\n");
+            sb.append("    then:\n");
+            if ("REMOVE".equals(r.action())) {
+                sb.append("      omit:\n");
+                sb.append("        - \"").append(r.targetField()).append("\"\n");
+            } else {
+                sb.append("      set:\n");
+                sb.append("        ").append(r.targetField()).append(": \"<REQUIRED_VALUE>\"\n");
             }
-        });
+        }
         return sb.toString();
     }
 

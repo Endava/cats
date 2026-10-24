@@ -136,11 +136,12 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
     }
 
     void printResult(List<String> filteredBasedOnHttpMethod) {
-        List<String> toPrintList = filteredBasedOnHttpMethod;
+        List<String> toPrintList = filteredBasedOnHttpMethod.stream()
+                .limit(limit > 0 ? limit : filteredBasedOnHttpMethod.size())
+                .toList();
 
         if (pretty) {
-            toPrintList = filteredBasedOnHttpMethod.stream()
-                    .limit(limit > 0 ? limit : filteredBasedOnHttpMethod.size())
+            toPrintList = toPrintList.stream()
                     .map(JsonParser::parseString)
                     .map(JsonUtils.GSON::toJson).toList();
         }

@@ -493,9 +493,12 @@ public class FuzzingDataFactory {
     private KeyValuePair<String, Schema<?>> createSyntheticSchemaForGet(PathItem pathItem, Operation operation, boolean bodyMethod) {
         List<Parameter> mergedParameters = mergeParameters(pathItem, operation);
         Schema<?> syntheticSchema = this.createSyntheticSchemaForGet(mergedParameters, bodyMethod);
-        globalContext.getSchemaMap().put(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
+        String synthKey = SYNTH_SCHEMA_NAME + (operation.getOperationId() != null
+                ? operation.getOperationId()
+                : Integer.toUnsignedString(System.identityHashCode(operation)));
+        globalContext.getSchemaMap().put(synthKey, syntheticSchema);
 
-        return new KeyValuePair<>(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
+        return new KeyValuePair<>(synthKey, syntheticSchema);
     }
 
     /**
@@ -775,8 +778,8 @@ public class FuzzingDataFactory {
                     .limit(maxCombinations)
                     .toList();
         }
-        logger.debug("Cached example for schema name {}", reqSchemaName);
-        globalContext.addGeneratedExample(reqSchemaName, examples);
+        logger.debug("Cached example for schema name {}", onlySchemaName);
+        globalContext.addGeneratedExample(onlySchemaName, examples);
         return examples;
     }
 

@@ -8,6 +8,7 @@ import org.cornutum.regexpgen.random.RandomBoundsGen;
 
 import java.util.Locale;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -16,6 +17,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public abstract class CatsRandom {
 
     private static Random random;
+    private static Random uuidRandom;
     private static RandomGen regexpRandomGen;
     @Getter
     private static long storedSeed;
@@ -61,7 +63,22 @@ public abstract class CatsRandom {
         }
         storedSeed = seed;
         random = new Random(storedSeed);
+        uuidRandom = new Random(storedSeed ^ 0x5DEECE66DL);
         regexpRandomGen = new RandomBoundsGen(random);
+    }
+
+    /**
+     * Generates a deterministic RFC-4122 version 4 UUID string derived from the configured seed.
+     *
+     * @return a random v4 UUID string
+     */
+    public static String uuid() {
+        if (uuidRandom == null) {
+            initRandom(0);
+        }
+        long msb = (uuidRandom.nextLong() & ~0x000000000000F000L) | 0x0000000000004000L;
+        long lsb = (uuidRandom.nextLong() & 0x3FFFFFFFFFFFFFFFL) | 0x8000000000000000L;
+        return new UUID(msb, lsb).toString();
     }
 
     /**

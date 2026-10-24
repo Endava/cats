@@ -84,7 +84,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
      * @return True if the result is an error, false otherwise.
      */
     public boolean getError() {
-        return this.result.equalsIgnoreCase("error");
+        return this.result != null && this.result.equalsIgnoreCase("error");
     }
 
     /**
@@ -93,7 +93,8 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
      * @return True if the result is a warning, false otherwise.
      */
     public boolean getWarning() {
-        return this.result.equalsIgnoreCase("warning");
+        return this.result != null
+                && (this.result.equalsIgnoreCase(CatsResultFactory.WARN) || this.result.equalsIgnoreCase("warning"));
     }
 
     /**

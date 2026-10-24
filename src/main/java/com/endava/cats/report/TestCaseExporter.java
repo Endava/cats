@@ -206,7 +206,15 @@ public abstract class TestCaseExporter {
                 ConsoleUtils.renderHeader(" Execution time details ");
             }
             emptyConsoleLine();
-            executionDetails.forEach(this::writeExecutionTimesForPathAndHttpMethod);
+            List<TimeExecutionDetails> allDetails = new java.util.ArrayList<>();
+            executionDetails.forEach((key, value) -> {
+                TimeExecutionDetails details = buildAndPrintExecutionTimesForPathAndHttpMethod(key, value);
+                allDetails.add(details);
+                writeExecutionTimesFile(details);
+            });
+            if (allDetails.size() > 1) {
+                writeExecutionTimesListFile(allDetails);
+            }
         } else {
             emptyConsoleLine();
             logger.info("Skip printing time execution statistics. You can use --printExecutionStatistics to enable this feature!");
@@ -223,7 +231,7 @@ public abstract class TestCaseExporter {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private void writeExecutionTimesForPathAndHttpMethod(String key, List<CatsTestCaseExecutionSummary> value) {
+    private TimeExecutionDetails buildAndPrintExecutionTimesForPathAndHttpMethod(String key, List<CatsTestCaseExecutionSummary> value) {
         double average = value.stream().mapToLong(CatsTestCaseExecutionSummary::responseTimeInMs).average().orElse(0);
         List<CatsTestCaseExecutionSummary> sortedRuns = value.stream()
                 .sorted(Comparator.comparingLong(CatsTestCaseExecutionSummary::responseTimeInMs))
@@ -260,11 +268,20 @@ public abstract class TestCaseExporter {
             logger.timer("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
             logger.noFormat(" ");
         }
+        return timeExecutionDetails;
+    }
+
+    private void writeExecutionTimesFile(Object payload) {
         try {
-            Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), EXECUTION_TIME_REPORT), maskingSerializer.toJson(timeExecutionDetails).getBytes(StandardCharsets.UTF_8));
+            Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), EXECUTION_TIME_REPORT),
+                    maskingSerializer.toJson(payload).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw reportFailure("Unable to write " + EXECUTION_TIME_REPORT, e);
         }
+    }
+
+    private void writeExecutionTimesListFile(List<TimeExecutionDetails> allDetails) {
+        writeExecutionTimesFile(allDetails);
     }
 
     /**

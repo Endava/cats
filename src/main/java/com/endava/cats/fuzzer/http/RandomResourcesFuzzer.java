@@ -151,7 +151,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
         int randomChoice = CatsRandom.instance().nextInt(3);
         int randomLength = CatsRandom.instance().nextInt(32);
         return switch (randomChoice) {
-            case 0 -> UUID.randomUUID().toString();
+            case 0 -> CatsRandom.uuid();
             case 1 -> NumberGenerator.generateRandomLong(0, Long.MAX_VALUE);
             default -> CatsRandom.alphanumeric(randomLength);
         };
@@ -161,7 +161,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
         String valueAsString = String.valueOf(value);
 
         if (isUuid(valueAsString)) {
-            return UUID.randomUUID().toString();
+            return CatsRandom.uuid();
         }
         if (isLong(valueAsString)) {
             long longValue = Long.parseLong(valueAsString);

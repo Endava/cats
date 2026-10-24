@@ -42,8 +42,9 @@ import java.util.Set;
                 "    cats stats -c openapi.yml --skip DESCRIPTION"},
         versionProvider = VersionProvider.class)
 @Unremovable
-public class StatsCommand implements Runnable {
+public class StatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
+    private int exitCode = CommandLine.ExitCode.OK;
     @CommandLine.Option(names = {"-j", "--json"},
             description = "Output to console in JSON format")
     private boolean json;
@@ -108,7 +109,6 @@ public class StatsCommand implements Runnable {
     public void run() {
         try {
             OpenAPI openAPI = OpenApiUtils.readOpenApi(this.contract);
-            System.out.println(OpenApiReusabilityMetrics.computeAllMetrics(openAPI));
             String pathSize = String.valueOf(openAPI.getPaths().size());
             String operationsSize = String.valueOf(OpenApiUtils.getNumberOfOperations(openAPI));
             Set<String> servers = OpenApiUtils.getServers(openAPI);
@@ -159,9 +159,16 @@ public class StatsCommand implements Runnable {
             } else {
                 displayText(stats);
             }
+            exitCode = CommandLine.ExitCode.OK;
         } catch (Exception e) {
             logger.fatal("Something went wrong while running stats {}", e.toString());
+            exitCode = CommandLine.ExitCode.SOFTWARE;
         }
+    }
+
+    @Override
+    public int getExitCode() {
+        return exitCode;
     }
 
     void displayJson(Stats stats) {

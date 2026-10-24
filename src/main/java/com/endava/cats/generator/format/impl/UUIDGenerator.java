@@ -18,7 +18,7 @@ public class UUIDGenerator implements ValidDataFormatGenerator, InvalidDataForma
 
     @Override
     public Object generate(Schema<?> schema) {
-        return UUID.randomUUID().toString();
+        return com.endava.cats.util.CatsRandom.uuid();
     }
 
     @Override

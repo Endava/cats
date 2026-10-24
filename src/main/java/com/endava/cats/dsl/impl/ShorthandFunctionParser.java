@@ -123,7 +123,8 @@ public class ShorthandFunctionParser implements Parser {
 
     private String extractInner(String expression) {
         String trimmed = expression.trim();
-        if (trimmed.startsWith("#(") && trimmed.endsWith(")")) {
+        if (trimmed.startsWith("#(") && trimmed.endsWith(")")
+                && findMatchingClosingParen(trimmed, 2) == trimmed.length() - 1) {
             return trimmed.substring(2, trimmed.length() - 1).trim();
         }
         return null;
@@ -136,7 +137,7 @@ public class ShorthandFunctionParser implements Parser {
         }
 
         return switch (key) {
-            case "uuid" -> UUID.randomUUID().toString();
+            case "uuid" -> CatsRandom.uuid();
             case "ulid" -> generateUlid();
             case "email" -> CatsRandom.email();
             case "now" -> OffsetDateTime.now(ZoneOffset.UTC).toString();

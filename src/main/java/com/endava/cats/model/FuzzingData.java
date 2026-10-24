@@ -282,20 +282,13 @@ public class FuzzingData {
 
     private Set<String> getAllFields() {
         if (allFields == null) {
-            allFields = this.getAllFieldsAsCatsFields().stream().map(CatsField::getName).collect(Collectors.toSet());
+            List<String> list = this.getAllFieldsAsCatsFields().stream().map(CatsField::getName).collect(Collectors.toList());
+            Collections.shuffle(list, new java.util.Random(com.endava.cats.util.CatsRandom.getStoredSeed()));
+            int limit = Math.min(list.size(), limitNumberOfFields <= 0 ? list.size() : limitNumberOfFields);
+            allFields = list.stream()
+                    .limit(limit)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
         }
-        int limit = Math.min(allFields.size(), limitNumberOfFields <= 0 ? allFields.size() : limitNumberOfFields);
-
-        allFields = allFields.stream()
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toList(),
-                        list -> {
-                            Collections.shuffle(list);
-                            return list.stream()
-                                    .limit(limit)
-                                    .collect(Collectors.toCollection(LinkedHashSet::new));
-                        }
-                ));
 
         return allFields;
     }
