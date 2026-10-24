@@ -49,57 +49,57 @@ class FunctionalFlowFuzzerTest {
     void shouldExecuteSequentialFlowWithInlineParamsCorrelationsAndRefDataReplacement(@TempDir Path tempDir) throws Exception {
         String yaml = """
                 variables:
-                  prefix: "Rule"
+                  prefix: "Plan"
                 correlate:
-                  - paths: ["/risk-rules*"]
-                    when: "ruleType == 'STATIC'"
+                  - paths: ["/billing-plans*"]
+                    when: "planType == 'STATIC'"
                     then:
                       omit: ["metricField"]
                 steps:
-                  - name: Create static rule
-                    POST: /risk-rules
+                  - name: Create static plan
+                    POST: /billing-plans
                     headers:
                       X-Correlation-Id: "#(uuid)"
                     omit: [id]
                     body:
-                      ruleType: "STATIC"
+                      planType: "STATIC"
                       name: "${prefix}-Alpha"
                       metadata:
-                        owner: "risk-team"
+                        owner: "billing-team"
                     status: 201
                     save:
-                      createdRuleId: ruleId
+                      createdPlanId: planId
                     expect:
-                      ruleType: "STATIC"
+                      planType: "STATIC"
                       headers:
-                        X-Server: "risk"
-                      bodyContains: ["rule_42"]
+                        X-Server: "billing"
+                      bodyContains: ["plan_42"]
                       where:
-                        - "priority >= 10 & $request.ruleType = 'STATIC'"
+                        - "priority >= 10 & $request.planType = 'STATIC'"
 
-                  - name: Fetch and patch created rule
-                    PATCH: /risk-rules/${createdRuleId}?dryRun=false
+                  - name: Fetch and patch created plan
+                    PATCH: /billing-plans/${createdPlanId}?dryRun=false
                     body:
                       active: false
                     status: 200
                     expect:
-                      ruleId: "${createdRuleId}"
+                      planId: "${createdPlanId}"
                       active: false
                 """;
         File flowFile = tempDir.resolve("flow.yml").toFile();
         Files.writeString(flowFile.toPath(), yaml);
         File refDataTemplate = tempDir.resolve("refData.yml").toFile();
-        Files.writeString(refDataTemplate.toPath(), "/risk-rules/{ruleId}:\n  ruleId: ${createdRuleId}\n");
+        Files.writeString(refDataTemplate.toPath(), "/billing-plans/{planId}:\n  planId: ${createdPlanId}\n");
 
         filesArguments.setFunctionalFlowFile(flowFile);
         filesArguments.setRefDataFile(refDataTemplate);
 
-        FuzzingData postRules = FuzzingData.builder()
+        FuzzingData postPlans = FuzzingData.builder()
                 .method(HttpMethod.POST)
-                .path("/risk-rules")
-                .contractPath("/risk-rules")
-                .payload("{\"id\":\"remove-me\",\"ruleType\":\"STATIC\",\"name\":\"Default\",\"metricField\":\"drop\",\"metadata\":{}}")
-                .allRequiredFields(List.of("ruleType", "name"))
+                .path("/billing-plans")
+                .contractPath("/billing-plans")
+                .payload("{\"id\":\"remove-me\",\"planType\":\"STATIC\",\"name\":\"Default\",\"metricField\":\"drop\",\"metadata\":{}}")
+                .allRequiredFields(List.of("planType", "name"))
                 .reqSchema(new ObjectSchema())
                 .schemaMap(Map.of())
                 .headers(Set.of(CatsHeader.builder().name("X-Correlation-Id").value("old").build()))
@@ -107,12 +107,12 @@ class FunctionalFlowFuzzerTest {
                 .requestContentTypes(List.of("application/json"))
                 .build();
 
-        FuzzingData patchRule = FuzzingData.builder()
+        FuzzingData patchPlan = FuzzingData.builder()
                 .method(HttpMethod.PATCH)
-                .path("/risk-rules/{ruleId}")
-                .contractPath("/risk-rules/{ruleId}")
+                .path("/billing-plans/{planId}")
+                .contractPath("/billing-plans/{planId}")
                 .payload("{\"active\":true}")
-                .pathParamsPayload("{\"ruleId\":\"RANDOM\"}")
+                .pathParamsPayload("{\"planId\":\"RANDOM\"}")
                 .queryParams(Set.of("dryRun"))
                 .allRequiredFields(List.of())
                 .reqSchema(new ObjectSchema())
@@ -122,23 +122,23 @@ class FunctionalFlowFuzzerTest {
                 .requestContentTypes(List.of("application/json"))
                 .build();
 
-        fuzzer.fuzz(postRules);
-        fuzzer.fuzz(patchRule);
+        fuzzer.fuzz(postPlans);
+        fuzzer.fuzz(patchPlan);
 
         List<ServiceData> capturedCalls = new ArrayList<>();
         Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(inv -> {
             ServiceData sd = inv.getArgument(0);
             capturedCalls.add(sd);
             if (sd.getHttpMethod() == HttpMethod.POST) {
-                String body = "{\"ruleId\":\"rule_42\",\"ruleType\":\"STATIC\",\"priority\":100}";
+                String body = "{\"planId\":\"plan_42\",\"planType\":\"STATIC\",\"priority\":100}";
                 return CatsResponse.builder()
                         .responseCode(201)
                         .body(body)
                         .jsonBody(JsonParser.parseString(body))
-                        .headers(List.of(new KeyValuePair<>("X-Server", "risk")))
+                        .headers(List.of(new KeyValuePair<>("X-Server", "billing")))
                         .build();
             }
-            String body = "{\"ruleId\":\"rule_42\",\"active\":false}";
+            String body = "{\"planId\":\"plan_42\",\"active\":false}";
             return CatsResponse.builder()
                     .responseCode(200)
                     .body(body)
@@ -152,8 +152,8 @@ class FunctionalFlowFuzzerTest {
         Assertions.assertThat(capturedCalls).hasSize(2);
         ServiceData postCall = capturedCalls.getFirst();
         Assertions.assertThat(postCall.getPayload())
-                .contains("\"name\":\"Rule-Alpha\"")
-                .contains("\"owner\":\"risk-team\"")
+                .contains("\"name\":\"Plan-Alpha\"")
+                .contains("\"owner\":\"billing-team\"")
                 .doesNotContain("\"id\"")
                 .doesNotContain("metricField");
         Assertions.assertThat(postCall.getHeaders())
@@ -161,13 +161,13 @@ class FunctionalFlowFuzzerTest {
 
         ServiceData patchCall = capturedCalls.get(1);
         Assertions.assertThat(patchCall.getPathParamsPayload())
-                .contains("\"ruleId\":\"rule_42\"")
+                .contains("\"planId\":\"plan_42\"")
                 .contains("\"dryRun\":\"false\"");
         Assertions.assertThat(patchCall.getPayload()).contains("\"active\":false");
 
         File replacedRefData = tempDir.resolve("refData_replaced.yml").toFile();
         Assertions.assertThat(replacedRefData).exists();
-        Assertions.assertThat(Files.readString(replacedRefData.toPath())).contains("ruleId: rule_42");
+        Assertions.assertThat(Files.readString(replacedRefData.toPath())).contains("planId: plan_42");
         Assertions.assertThat(fuzzer).hasToString("FunctionalFlowFuzzer");
         Assertions.assertThat(fuzzer.description()).isNotBlank();
     }
@@ -176,19 +176,19 @@ class FunctionalFlowFuzzerTest {
     void shouldSelectVariantAndReportAssertionFailures(@TempDir Path tempDir) throws Exception {
         String yaml = """
                 steps:
-                  - name: Create velocity rule
-                    POST: /risk-rules
-                    variant: VelocityRule
+                  - name: Create metered plan
+                    POST: /billing-plans
+                    variant: MeteredPlan
                     base: empty
                     body:
-                      ruleType: "VELOCITY"
+                      planType: "METERED"
                     status: 201
                     expect:
-                      ruleType: "STATIC"
+                      planType: "STATIC"
                       headers:
                         X-Missing: "val"
                       bodyContains: ["must_exist"]
-                      bodyNotContains: ["VELOCITY"]
+                      bodyNotContains: ["METERED"]
                       where:
                         - "score > 50"
                 """;
@@ -197,27 +197,27 @@ class FunctionalFlowFuzzerTest {
         filesArguments.setFunctionalFlowFile(flowFile);
 
         FuzzingData staticVariant = FuzzingData.builder()
-                .method(HttpMethod.POST).path("/risk-rules").contractPath("/risk-rules")
-                .reqSchemaName("StaticRule").payload("{\"ruleType\":\"STATIC\"}")
+                .method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
+                .reqSchemaName("StaticPlan").payload("{\"planType\":\"STATIC\"}")
                 .reqSchema(new ObjectSchema()).schemaMap(Map.of()).headers(Set.of())
                 .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
-        FuzzingData velocityVariant = FuzzingData.builder()
-                .method(HttpMethod.POST).path("/risk-rules").contractPath("/risk-rules")
-                .reqSchemaName("VelocityRule").payload("{\"ruleType\":\"VELOCITY\"}")
+        FuzzingData meteredVariant = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
+                .reqSchemaName("MeteredPlan").payload("{\"planType\":\"METERED\"}")
                 .reqSchema(new ObjectSchema()).schemaMap(Map.of()).headers(Set.of())
                 .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
 
         fuzzer.fuzz(staticVariant);
-        fuzzer.fuzz(velocityVariant);
+        fuzzer.fuzz(meteredVariant);
 
-        String respBody = "{\"ruleType\":\"VELOCITY\",\"score\":10}";
+        String respBody = "{\"planType\":\"METERED\",\"score\":10}";
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
                 CatsResponse.builder().responseCode(201).body(respBody).jsonBody(JsonParser.parseString(respBody)).headers(List.of()).build());
 
         fuzzer.executeFlows();
 
         Mockito.verify(testCaseListener).reportResultError(
-                Mockito.any(), Mockito.eq(velocityVariant),
+                Mockito.any(), Mockito.eq(meteredVariant),
                 Mockito.eq("Verify parameters not matching response"),
                 Mockito.contains("score > 50"), Mockito.any());
     }

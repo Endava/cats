@@ -39,7 +39,7 @@ class RemoveFieldsFuzzerTest {
     @Test
     void shouldSkipFuzzerIfSkippedTests() {
         data = Mockito.mock(FuzzingData.class);
-        Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(ProcessingArguments.SetFuzzingStrategy.ONEBYONE);
+        Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(FuzzingData.SetFuzzingStrategy.ONEBYONE);
         Mockito.when(data.getAllFields(Mockito.any(), Mockito.anyInt())).thenReturn(Collections.singleton(Collections.singleton("id")));
         Mockito.when(filterArguments.getSkipFields()).thenReturn(Collections.singletonList("id"));
         removeFieldsFuzzer.fuzz(data);
@@ -76,7 +76,7 @@ class RemoveFieldsFuzzerTest {
         Schema schema = new ObjectSchema();
         schema.setProperties(this.createPropertiesMap());
         schema.setRequired(Collections.singletonList("field"));
-        Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(ProcessingArguments.SetFuzzingStrategy.ONEBYONE);
+        Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(FuzzingData.SetFuzzingStrategy.ONEBYONE);
         data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload(payload).
                 responses(responses).reqSchema(schema).schemaMap(this.createPropertiesMap()).responseCodes(Collections.singleton("200"))
                 .requestContentTypes(List.of("application/json")).requestPropertyTypes(this.createPropertiesMap()).build();

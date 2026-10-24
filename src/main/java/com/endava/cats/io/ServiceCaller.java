@@ -1027,7 +1027,7 @@ public class ServiceCaller {
         logger.debug("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
         for (Map.Entry<String, Object> entry : currentPathRefData.entrySet()) {
-            String valueToReplace = CatsDSLParser.parseAndGetResult(String.valueOf(entry.getValue()), authArguments.getDynamicVariablesContext());
+            String valueToReplace = DynamicValueResolver.resolve(String.valueOf(entry.getValue()), authArguments.getDynamicVariablesContext());
             currentUrl = currentUrl.replace("{" + entry.getKey() + "}", CatsUtil.urlEncodePathSegment(valueToReplace));
             data.getPathParams().add(entry.getKey());
         }
@@ -1082,7 +1082,7 @@ public class ServiceCaller {
         if (refDataValue instanceof String str) {
             Map<String, String> context = new HashMap<>(authArguments.getDynamicVariablesContext());
             context.put(Parser.REQUEST, payload);
-            refDataValue = CatsDSLParser.parseAndGetResult(str, context);
+            refDataValue = DynamicValueResolver.resolve(str, context);
         }
         if (SUBSTITUTE_FOR_NULL.equals(String.valueOf(refDataValue))) {
             refDataValue = null;

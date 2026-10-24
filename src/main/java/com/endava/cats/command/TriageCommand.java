@@ -4,9 +4,9 @@ import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
+import com.endava.cats.report.ErrorSimilarityDetector;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.JsonUtils;
-import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.VersionProvider;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -131,15 +131,9 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
         List<IndexedTestCase> result = new ArrayList<>(files.size());
         for (Path file : files) {
-            try {
-                String content = Files.readString(file, StandardCharsets.UTF_8);
-                CatsTestCase tc = JsonUtils.GSON.fromJson(content, CatsTestCase.class);
-                if (tc != null && tc.getRequest() != null && tc.getResponse() != null) {
-                    result.add(new IndexedTestCase(extractTestNumber(file), tc));
-                }
-            } catch (RuntimeException _) {
-                // ignore malformed files
-            }
+            CatsTestCase.readTestCaseFile(file)
+                    .filter(tc -> tc.getRequest() != null && tc.getResponse() != null)
+                    .ifPresent(tc -> result.add(new IndexedTestCase(extractTestNumber(file), tc)));
         }
         return result;
     }
@@ -350,19 +344,15 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private static String extractErrorSignature(CatsTestCase tc) {
-        JsonElement body = tc.getResponse().getJsonBody();
-        if (body != null && body.isJsonObject()) {
-            JsonObject obj = body.getAsJsonObject();
-            for (String key : List.of("message", "detail", "error", "title", "errorCode")) {
-                if (obj.has(key) && obj.get(key).isJsonPrimitive()) {
-                    String msg = obj.get(key).getAsString().trim();
-                    if (!msg.isEmpty()) {
-                        return msg.length() > 90 ? msg.substring(0, 90) + "..." : msg;
-                    }
-                }
-            }
+        String rawBody = tc.getResponse().getBody();
+        if (StringUtils.isBlank(rawBody) && tc.getResponse().getJsonBody() != null) {
+            rawBody = tc.getResponse().getJsonBody().toString();
         }
-        return StringUtils.defaultIfBlank(tc.getResultReason(), "HTTP " + tc.getResponse().getResponseCode());
+        String fallback = StringUtils.isNotBlank(tc.getResultReason())
+                ? tc.getResultReason()
+                : "HTTP " + tc.getResponse().getResponseCode();
+        String summary = ErrorSimilarityDetector.extractRootCauseSummary(rawBody, fallback);
+        return summary.length() > 90 ? summary.substring(0, 90) + "..." : summary;
     }
 
     private static void maybeSynthesizeCorrelationRule(CatsTestCase tc,
@@ -446,22 +436,13 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private static String buildCurlReproducer(CatsTestCase tc) {
-        String method = StringUtils.defaultIfBlank(tc.getRequest().getHttpMethod(), "GET").toUpperCase(Locale.ROOT);
-        String url = Objects.requireNonNullElse(tc.getRequest().getUrl(), Objects.requireNonNullElse(tc.getFullRequestPath(), ""));
-        StringBuilder curl = new StringBuilder("curl -i -X ").append(method).append(" '").append(url).append("'");
-        if (tc.getRequest().getHeaders() != null) {
-            for (KeyValuePair<String, Object> h : tc.getRequest().getHeaders()) {
-                if (h.getKey() != null && h.getValue() != null) {
-                    curl.append(" -H '").append(h.getKey()).append(": ").append(h.getValue()).append("'");
-                }
-            }
+        if (tc.getRequest() == null) {
+            return "";
         }
-        String payload = tc.getRequest().getPayload();
-        if (StringUtils.isNotBlank(payload) && tc.getRequest().isSendBody()
-                && ("POST".equals(method) || "PUT".equals(method) || "PATCH".equals(method))) {
-            curl.append(" -d '").append(payload.replace("'", "'\\''")).append("'");
+        if (StringUtils.isBlank(tc.getRequest().getUrl()) && StringUtils.isNotBlank(tc.getFullRequestPath())) {
+            tc.getRequest().setUrl(tc.getFullRequestPath());
         }
-        return curl.toString();
+        return tc.getRequest().toCurlCommand();
     }
 
     private static String buildReproducersScript(TriageReport report) {

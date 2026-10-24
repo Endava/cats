@@ -227,6 +227,18 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
         return this.getClass().isAssignableFrom(SkipFuzzingStrategy.class);
     }
 
+    /**
+     * Returns {@code true} when {@code fuzzedValue} is a full replacement mutation (as opposed to a prefix/trail/insert
+     * mutation that merges with {@code originalValue}).
+     *
+     * @param fuzzedValue   the current fuzzed field value
+     * @param originalValue the original baseline value
+     * @return {@code true} if {@link #mergeFuzzing(Object, Object)} would alter {@code fuzzedValue}
+     */
+    public static boolean isFullReplacementMutation(Object fuzzedValue, Object originalValue) {
+        return !String.valueOf(mergeFuzzing(fuzzedValue, originalValue)).equals(String.valueOf(fuzzedValue));
+    }
+
     @Override
     public String toString() {
         return this.truncatedValue();

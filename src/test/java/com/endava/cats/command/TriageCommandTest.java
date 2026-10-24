@@ -22,18 +22,18 @@ class TriageCommandTest {
                   "resultReason": "Unexpected response code: 422",
                   "expectedResult": "Should return 2XX",
                   "fuzzer": "HappyPath",
-                  "contractPath": "/risk-rules",
-                  "path": "/risk-rules",
+                  "contractPath": "/billing-plans",
+                  "path": "/billing-plans",
                   "request": {
                     "httpMethod": "POST",
-                    "url": "http://localhost:8098/risk-rules",
+                    "url": "http://localhost:8080/billing-plans",
                     "headers": [{"key": "Content-Type", "value": "application/json"}],
-                    "payload": "{\\"ruleType\\":\\"VELOCITY\\",\\"name\\":\\"Rule-1\\"}",
+                    "payload": "{\\"planType\\":\\"RECURRING\\",\\"name\\":\\"Plan-1\\"}",
                     "sendBody": true
                   },
                   "response": {
                     "responseCode": 422,
-                    "jsonBody": {"message": "'velocityDefinitions' must not be null"}
+                    "jsonBody": {"message": "'billingSchedule' must not be null"}
                   }
                 }
                 """, StandardCharsets.UTF_8);
@@ -43,11 +43,11 @@ class TriageCommandTest {
                   "testId": "Test 2",
                   "result": "warn",
                   "fuzzer": "RemoveHeaders",
-                  "contractPath": "/risk-watchlists/{watchlistId}",
-                  "path": "/risk-watchlists/{watchlistId}",
+                  "contractPath": "/customer-groups/{groupId}",
+                  "path": "/customer-groups/{groupId}",
                   "request": {
                     "httpMethod": "DELETE",
-                    "url": "http://localhost:8098/risk-watchlists/wl_1",
+                    "url": "http://localhost:8080/customer-groups/grp_1",
                     "sendBody": false
                   },
                   "response": {
@@ -62,17 +62,17 @@ class TriageCommandTest {
                   "result": "error",
                   "resultReason": "Not found",
                   "fuzzer": "ExtraHeaders",
-                  "contractPath": "/risk-watchlists/{watchlistId}/entries",
-                  "path": "/risk-watchlists/{watchlistId}/entries",
+                  "contractPath": "/customer-groups/{groupId}/members",
+                  "path": "/customer-groups/{groupId}/members",
                   "request": {
                     "httpMethod": "POST",
-                    "url": "http://localhost:8098/risk-watchlists/wl_1/entries",
+                    "url": "http://localhost:8080/customer-groups/grp_1/members",
                     "payload": "{\\"value\\":\\"US\\"}",
                     "sendBody": true
                   },
                   "response": {
                     "responseCode": 404,
-                    "jsonBody": {"message": "Watchlist not found"}
+                    "jsonBody": {"message": "Group not found"}
                   }
                 }
                 """, StandardCharsets.UTF_8);
@@ -83,11 +83,11 @@ class TriageCommandTest {
                   "result": "error",
                   "resultReason": "Unexpected response code: 500",
                   "fuzzer": "DummyContentTypeHeaders",
-                  "contractPath": "/risk-rules",
-                  "path": "/risk-rules",
+                  "contractPath": "/billing-plans",
+                  "path": "/billing-plans",
                   "request": {
                     "httpMethod": "POST",
-                    "url": "http://localhost:8098/risk-rules",
+                    "url": "http://localhost:8080/billing-plans",
                     "headers": [{"key": "Content-Type", "value": "multipart/form-data"}],
                     "payload": "{}",
                     "sendBody": true
@@ -105,24 +105,24 @@ class TriageCommandTest {
                   "result": "error",
                   "resultReason": "Not found",
                   "fuzzer": "HangulFillerFields",
-                  "contractPath": "/risk-rules/{ruleId}",
-                  "path": "/risk-rules/{ruleId}",
+                  "contractPath": "/billing-plans/{planId}",
+                  "path": "/billing-plans/{planId}",
                   "request": {
                     "httpMethod": "DELETE",
-                    "url": "http://localhost:8098/risk-rules/Rule-i94anAZP",
+                    "url": "http://localhost:8080/billing-plans/Plan-Alpha",
                     "sendBody": false
                   },
                   "response": {
                     "responseCode": 404,
-                    "jsonBody": {"message": "Rule not found"}
+                    "jsonBody": {"message": "Plan not found"}
                   },
                   "requestProvenance": {
                     "runtimeCorrelations": [{
                       "sourceMethod": "GET",
-                      "sourcePath": "/risk-rules",
+                      "sourcePath": "/billing-plans",
                       "sourceLocation": "response.body.$.items[].name",
-                      "target": {"location": "PATH", "name": "ruleId"},
-                      "value": "Rule-i94anAZP"
+                      "target": {"location": "PATH", "name": "planId"},
+                      "value": "Plan-Alpha"
                     }]
                   }
                 }
@@ -151,17 +151,17 @@ class TriageCommandTest {
                         "SUSPICIOUS_CORRELATION_404");
         Assertions.assertThat(report.synthesizedCorrelations()).hasSize(1);
         Assertions.assertThat(Files.readString(exportedCorr))
-                .contains("correlations:", "- \"/risk-rules\"", "ruleType == 'VELOCITY'", "velocityDefinitions:");
+                .contains("correlations:", "- \"/billing-plans\"", "planType == 'RECURRING'", "billingSchedule:");
         Assertions.assertThat(com.endava.cats.fuzzer.special.FunctionalFlowParser.parseCorrelationFile(exportedCorr.toFile()))
                 .hasSize(1)
                 .first()
                 .satisfies(rule -> {
-                    Assertions.assertThat(rule.paths()).containsExactly("/risk-rules");
-                    Assertions.assertThat(rule.when()).isEqualTo("ruleType == 'VELOCITY'");
-                    Assertions.assertThat(rule.set()).containsKey("velocityDefinitions");
+                    Assertions.assertThat(rule.paths()).containsExactly("/billing-plans");
+                    Assertions.assertThat(rule.when()).isEqualTo("planType == 'RECURRING'");
+                    Assertions.assertThat(rule.set()).containsKey("billingSchedule");
                 });
         Assertions.assertThat(Files.readString(exportedSh))
-                .contains("#!/usr/bin/env bash", "curl -i -X POST 'http://localhost:8098/risk-rules'");
+                .contains("#!/usr/bin/env bash", "curl -i -X POST", "'http://localhost:8080/billing-plans'");
 
         triageCommand.json = true;
         triageCommand.run();

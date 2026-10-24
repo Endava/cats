@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
 import lombok.Getter;
@@ -18,7 +19,7 @@ import java.util.Optional;
 public class ProcessingArguments {
     @CommandLine.Option(names = {"--fieldsFuzzingStrategy"},
             description = "The strategy used by some of the field fuzzers. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private SetFuzzingStrategy fieldsFuzzingStrategy = SetFuzzingStrategy.ONEBYONE;
+    private FuzzingData.SetFuzzingStrategy fieldsFuzzingStrategy = FuzzingData.SetFuzzingStrategy.ONEBYONE;
 
     @CommandLine.Option(names = {"--maxFieldsToRemove"},
             description = "The maximum number of fields that will be removed from a request when using the @|bold,underline SIZE|@ fieldsFuzzingStrategy")

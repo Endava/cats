@@ -680,9 +680,6 @@ public class RuntimeResourcePool {
                 correlationFeedback.keySet().removeIf(key -> key.resourceSequence() == resource.sequence());
             }
         }
-        Set<String> deletedPrimitiveValues = deletedValues.values().stream()
-                .map(StoredValue::value).map(String::valueOf).collect(Collectors.toSet());
-        baselineStore.evictContainingPrimitiveValues(deletedPrimitiveValues);
     }
 
     /**

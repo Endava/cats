@@ -168,7 +168,7 @@ final class ResourceRequestEnricher {
         }
         Object origVal = ResourceSemanticNaming.primitiveValue(origValues.getFirst().getAsJsonPrimitive());
         Object currVal = ResourceSemanticNaming.primitiveValue(currValues.getFirst().getAsJsonPrimitive());
-        return !String.valueOf(FuzzingStrategy.mergeFuzzing(currVal, origVal)).equals(String.valueOf(currVal));
+        return FuzzingStrategy.isFullReplacementMutation(currVal, origVal);
     }
 
     private static void recordEnrichmentCorrelation(TargetField target, String bindingKey,

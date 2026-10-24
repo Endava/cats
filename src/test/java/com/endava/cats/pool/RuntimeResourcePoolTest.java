@@ -57,15 +57,15 @@ class RuntimeResourcePoolTest {
     @Test
     void shouldStillEnrichPathParamsPayloadWhenReplaceRefDataIsFalseAndReplaceUrlParamsIsTrue() {
         enableResourceReuse();
-        resourcePool.observe(postData("/risk-rules", "{}"), request("POST", "/risk-rules", "{}"),
-                response(201, "{\"ruleId\":\"rule_01m5hkgez95et4getn6kaprt2n\"}"));
+        resourcePool.observe(postData("/billing-plans", "{}"), request("POST", "/billing-plans", "{}"),
+                response(201, "{\"planId\":\"plan_01m5hkgez95et4getn6kaprt2n\"}"));
 
         ServiceData patchEmptyBody = ServiceData.builder()
-                .relativePath("/risk-rules/{ruleId}")
+                .relativePath("/billing-plans/{planId}")
                 .httpMethod(HttpMethod.PATCH)
                 .contentType("application/json")
                 .payload("{}")
-                .pathParamsPayload("{\"ruleId\":\"LLHQCSWGOHGVTDUQWHKGOHNNUTAHUMMKDZEUR\"}")
+                .pathParamsPayload("{\"planId\":\"LLHQCSWGOHGVTDUQWHKGOHNNUTAHUMMKDZEUR\"}")
                 .replaceRefData(false)
                 .replaceUrlParams(true)
                 .mutationTarget(RequestTarget.requestBody())
@@ -74,19 +74,19 @@ class RuntimeResourcePoolTest {
         RuntimeResourcePool.ResolvedRequest result = resourcePool.enrich(patchEmptyBody, "{}");
 
         Assertions.assertThat(result.payload()).isEqualTo("{}");
-        Assertions.assertThat(result.pathParamsPayload()).contains("rule_01m5hkgez95et4getn6kaprt2n");
+        Assertions.assertThat(result.pathParamsPayload()).contains("plan_01m5hkgez95et4getn6kaprt2n");
     }
 
     @Test
     void shouldPreserveUnquotedNumericAndBooleanTypesOnFuzzedIdentifierFields() {
         enableResourceReuse();
-        resourcePool.observe(postData("/risk-evaluations", "{}"), request("POST", "/risk-evaluations", "{}"),
-                response(200, "{\"evaluationId\":\"eval_1\",\"paymentId\":\"pay-2024-001234\"}"));
+        resourcePool.observe(postData("/billing-invoices", "{}"), request("POST", "/billing-invoices", "{}"),
+                response(200, "{\"invoiceId\":\"inv_1\",\"paymentId\":\"pay-2024-001234\"}"));
 
         String originalPayload = "{\"partyId\":\"party_1\",\"paymentId\":\"pay-2024-001234\"}";
         String fuzzedNumericPayload = "{\"partyId\":\"party_1\",\"paymentId\":2}";
         ServiceData data = ServiceData.builder()
-                .relativePath("/risk-evaluations")
+                .relativePath("/billing-invoices")
                 .httpMethod(HttpMethod.POST)
                 .contentType("application/json")
                 .originalPayload(originalPayload)
@@ -2176,60 +2176,60 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(enrichedAddress)
                 .contains("\"postalCode\":\"generated-zip\"", "\"promoCode\":\"generated-promo\"");
         Assertions.assertThat(ResourceSemanticNaming.isMetadataKey("code")).isTrue();
-        Assertions.assertThat(ResourceSemanticNaming.isCorrelatableHeader("X-XE-CorrelationId")).isFalse();
-        Assertions.assertThat(ResourceSemanticNaming.isCorrelatableHeader("X-XE-IdempotencyKey")).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.isCorrelatableHeader("X-Correlation-Id")).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.isCorrelatableHeader("X-Idempotency-Key")).isFalse();
         Assertions.assertThat(ResourceSemanticNaming.isCorrelatableHeader("X-Request-Id")).isFalse();
 
-        // Hyphenated collection /risk-rules with tail-word identifier ruleId must not infer 'name' as key
-        ServiceData listRules = getData("/risk-rules", "{}");
-        resourcePool.observe(listRules,
-                request("GET", "/risk-rules", "{}"),
+        // Hyphenated collection /billing-plans with tail-word identifier planId must not infer 'name' as key
+        ServiceData listPlans = getData("/billing-plans", "{}");
+        resourcePool.observe(listPlans,
+                request("GET", "/billing-plans", "{}"),
                 response(200,
-                        "{\"items\":[{\"ruleId\":\"rule_01m5mr4szb916cwmjy9xwebafh\",\"name\":\"Rule-i94anAZP\",\"ruleType\":\"STATIC\"}," +
-                                "{\"ruleId\":\"rule_01m5mr4t2sdgc1dh48am7amgz2\",\"name\":\"Rule-acKS1Tq7\",\"ruleType\":\"VELOCITY\"}]}"));
-        ServiceData deleteRule = ServiceData.builder()
-                .relativePath("/risk-rules/{ruleId}")
-                .contractPath("/risk-rules/{ruleId}")
+                        "{\"items\":[{\"planId\":\"plan_01m5mr4szb916cwmjy9xwebafh\",\"name\":\"Plan-Alpha\",\"planType\":\"FIXED\"}," +
+                                "{\"planId\":\"plan_01m5mr4t2sdgc1dh48am7amgz2\",\"name\":\"Plan-Beta\",\"planType\":\"METERED\"}]}"));
+        ServiceData deletePlan = ServiceData.builder()
+                .relativePath("/billing-plans/{planId}")
+                .contractPath("/billing-plans/{planId}")
                 .httpMethod(HttpMethod.DELETE)
-                .pathParamsPayload("{\"ruleId\":\"placeholder\"}")
-                .payload("{\"ruleId\":\"placeholder\"}")
+                .pathParamsPayload("{\"planId\":\"placeholder\"}")
+                .payload("{\"planId\":\"placeholder\"}")
                 .build();
-        RuntimeResourcePool.ResolvedRequest resolvedDelete = resourcePool.enrich(deleteRule, deleteRule.getPayload());
+        RuntimeResourcePool.ResolvedRequest resolvedDelete = resourcePool.enrich(deletePlan, deletePlan.getPayload());
         Assertions.assertThat(resolvedDelete.payload())
-                .contains("rule_01m5mr")
-                .doesNotContain("Rule-i94anAZP");
+                .contains("plan_01m5mr")
+                .doesNotContain("Plan-Alpha");
 
-        // OpenAPI discriminator property (ruleType) and single-value constant enum must never be overwritten
-        ServiceData postVelocityRule = ServiceData.builder()
-                .relativePath("/risk-rules")
-                .contractPath("/risk-rules")
+        // OpenAPI discriminator property (planType) and single-value constant enum must never be overwritten
+        ServiceData postMeteredPlan = ServiceData.builder()
+                .relativePath("/billing-plans")
+                .contractPath("/billing-plans")
                 .httpMethod(HttpMethod.POST)
-                .discriminatorFields(Set.of("ruletype"))
+                .discriminatorFields(Set.of("plantype"))
                 .enumValuesByField(Map.of("constantKind", Set.of("ONLY_KIND")))
-                .payload("{\"ruleType\":\"VELOCITY\",\"constantKind\":\"ONLY_KIND\",\"name\":\"Rule-new\"}")
-                .originalPayload("{\"ruleType\":\"VELOCITY\",\"constantKind\":\"ONLY_KIND\",\"name\":\"Rule-new\"}")
+                .payload("{\"planType\":\"METERED\",\"constantKind\":\"ONLY_KIND\",\"name\":\"Plan-new\"}")
+                .originalPayload("{\"planType\":\"METERED\",\"constantKind\":\"ONLY_KIND\",\"name\":\"Plan-new\"}")
                 .build();
-        RuntimeResourcePool.ResolvedRequest resolvedPostRule = resourcePool.enrich(postVelocityRule, postVelocityRule.getPayload());
-        Assertions.assertThat(resolvedPostRule.payload())
-                .contains("\"ruleType\":\"VELOCITY\"", "\"constantKind\":\"ONLY_KIND\"");
+        RuntimeResourcePool.ResolvedRequest resolvedPostPlan = resourcePool.enrich(postMeteredPlan, postMeteredPlan.getPayload());
+        Assertions.assertThat(resolvedPostPlan.payload())
+                .contains("\"planType\":\"METERED\"", "\"constantKind\":\"ONLY_KIND\"");
 
-        // After a fuzzed DELETE deletes one of the 2 rules on /risk-rules/{ruleId}, the last remaining active rule
+        // After a fuzzed DELETE deletes one of the 2 plans on /billing-plans/{planId}, the last remaining active plan
         // is reserved for HappyPath DELETE (no declared mutation) rather than consumed by another fuzzed DELETE.
-        resourcePool.observe(deleteRule,
-                request("DELETE", "http://localhost:8098/risk-rules/rule_01m5mr4t2sdgc1dh48am7amgz2", resolvedDelete.payload()),
+        resourcePool.observe(deletePlan,
+                request("DELETE", "http://localhost:8080/billing-plans/plan_01m5mr4t2sdgc1dh48am7amgz2", resolvedDelete.payload()),
                 response(204, ""), resolvedDelete);
-        ServiceData fuzzedDeleteRule = ServiceData.builder()
-                .relativePath("/risk-rules/{ruleId}")
-                .contractPath("/risk-rules/{ruleId}")
+        ServiceData fuzzedDeletePlan = ServiceData.builder()
+                .relativePath("/billing-plans/{planId}")
+                .contractPath("/billing-plans/{planId}")
                 .httpMethod(HttpMethod.DELETE)
                 .mutationTargets(Set.of(RequestTarget.header("Cats-Fuzzy-Header")))
-                .pathParamsPayload("{\"ruleId\":\"placeholder\"}")
-                .payload("{\"ruleId\":\"placeholder\"}")
+                .pathParamsPayload("{\"planId\":\"placeholder\"}")
+                .payload("{\"planId\":\"placeholder\"}")
                 .build();
-        Assertions.assertThat(resourcePool.enrich(fuzzedDeleteRule, fuzzedDeleteRule.getPayload()).payload())
-                .contains("\"ruleId\":\"placeholder\"");
-        Assertions.assertThat(resourcePool.enrich(deleteRule, deleteRule.getPayload()).payload())
-                .contains("\"ruleId\":\"rule_01m5mr4szb916cwmjy9xwebafh\"");
+        Assertions.assertThat(resourcePool.enrich(fuzzedDeletePlan, fuzzedDeletePlan.getPayload()).payload())
+                .contains("\"planId\":\"placeholder\"");
+        Assertions.assertThat(resourcePool.enrich(deletePlan, deletePlan.getPayload()).payload())
+                .contains("\"planId\":\"plan_01m5mr4szb916cwmjy9xwebafh\"");
     }
 
     @Test

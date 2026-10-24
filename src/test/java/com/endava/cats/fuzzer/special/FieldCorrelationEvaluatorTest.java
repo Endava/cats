@@ -23,14 +23,14 @@ class FieldCorrelationEvaluatorTest {
                 {"counter":{"metric":"COUNT","metricField":"amount"},"transactionFacts":{"country":"US","amount":150,"currency":"EUR"}}
                 """;
         List<FieldCorrelationRule> rules = List.of(
-                new FieldCorrelationRule(List.of("/risk-rules*"), "counter.metric == 'COUNT'",
+                new FieldCorrelationRule(List.of("/billing-plans*"), "counter.metric == 'COUNT'",
                         Map.of(), List.of("counter.metricField")),
                 new FieldCorrelationRule(List.of("*"), "transactionFacts.country = 'US' & transactionFacts.amount > 100",
                         Map.of("transactionFacts.currency", "${preferredCurrency}"), List.of())
         );
 
         String updated = FieldCorrelationEvaluator.applyRequestCorrelations(
-                "/risk-rules", payload, rules, Map.of("preferredCurrency", "USD"));
+                "/billing-plans", payload, rules, Map.of("preferredCurrency", "USD"));
 
         Assertions.assertThat(updated)
                 .doesNotContain("metricField")
@@ -43,11 +43,11 @@ class FieldCorrelationEvaluatorTest {
         List<FieldCorrelationRule> rules = List.of(
                 new FieldCorrelationRule(List.of("/other*"), "counter.metric == 'SUM'",
                         Map.of(), List.of("counter.metricField")),
-                new FieldCorrelationRule(List.of("/risk-rules*"), "counter.metric == 'COUNT'",
+                new FieldCorrelationRule(List.of("/billing-plans*"), "counter.metric == 'COUNT'",
                         Map.of(), List.of("counter.metricField"))
         );
 
-        String updated = FieldCorrelationEvaluator.applyRequestCorrelations("/risk-rules", payload, rules, Map.of());
+        String updated = FieldCorrelationEvaluator.applyRequestCorrelations("/billing-plans", payload, rules, Map.of());
         Assertions.assertThat(updated).contains("metricField");
     }
 
@@ -55,7 +55,7 @@ class FieldCorrelationEvaluatorTest {
     void shouldEvaluateResponseWhereCorrelationsWithSingleAndDoubleAmpersandAndPipe() {
         String requestJson = "{\"partyId\":\"party_1\",\"email\":\"john@email.com\"}";
         String responseBody = """
-                {"totalRiskScore":80,"decision":"POSSIBLE_FRAUD","decisionMetadata":{"threshold":50},"matchedRules":[{"id":"r1"}],"periodStart":"2026-01-01","periodEnd":"2026-01-02"}
+                {"totalScore":80,"decision":"FLAGGED","decisionMetadata":{"threshold":50},"matchedItems":[{"id":"r1"}],"periodStart":"2026-01-01","periodEnd":"2026-01-02"}
                 """;
         CatsResponse response = CatsResponse.builder()
                 .responseCode(200)
@@ -64,12 +64,12 @@ class FieldCorrelationEvaluatorTest {
                 .build();
 
         List<String> passingWhere = List.of(
-                "totalRiskScore >= decisionMetadata.threshold && decision == 'POSSIBLE_FRAUD'",
+                "totalScore >= decisionMetadata.threshold && decision == 'FLAGGED'",
                 "time > 10 & $request.email = 'john@email.com'",
                 "responseTimeMs < 500 & status == 200",
-                "size(matchedRules) > 0 & decision is not null & missingField is null",
-                "decision contains 'FRAUD' & decision matches 'POSSIBLE_.*'",
-                "periodEnd > periodStart | totalRiskScore < 0"
+                "size(matchedItems) > 0 & decision is not null & missingField is null",
+                "decision contains 'FLAG' & decision matches 'FLAG.*'",
+                "periodEnd > periodStart | totalScore < 0"
         );
 
         Optional<String> result = FieldCorrelationEvaluator.evaluateWhereExpectations(
@@ -77,22 +77,22 @@ class FieldCorrelationEvaluatorTest {
         Assertions.assertThat(result).isEmpty();
 
         Optional<String> failingResult = FieldCorrelationEvaluator.evaluateWhereExpectations(
-                List.of("totalRiskScore < decisionMetadata.threshold"), requestJson, response, Map.of());
+                List.of("totalScore < decisionMetadata.threshold"), requestJson, response, Map.of());
         Assertions.assertThat(failingResult)
                 .isPresent()
-                .get().asString().contains("totalRiskScore < decisionMetadata.threshold");
+                .get().asString().contains("totalScore < decisionMetadata.threshold");
     }
 
     @Test
     void shouldProtectFuzzedFieldsAndInsertMissingNestedFieldsAndParseCorrelationFile(@org.junit.jupiter.api.io.TempDir Path tempDir) throws Exception {
         String yaml = """
                 correlate:
-                  - paths: ["/risk-rules*"]
+                  - paths: ["/billing-plans*"]
                     when: "counter.metric == 'SUM'"
                     then:
                       set:
                         counter.metricField: "amount"
-                  - paths: ["/risk-rules*"]
+                  - paths: ["/billing-plans*"]
                     when: "expression.type == 'CONDITION' & expression.field is null"
                     then:
                       set:
@@ -105,38 +105,54 @@ class FieldCorrelationEvaluatorTest {
 
         String missingFieldsPayload = "{\"counter\":{\"metric\":\"SUM\"},\"expression\":{\"type\":\"CONDITION\"}}";
         String enriched = FieldCorrelationEvaluator.applyRequestCorrelations(
-                "/risk-rules", missingFieldsPayload, rules, Map.of(), Set.of());
+                "/billing-plans", missingFieldsPayload, rules, Map.of(), Set.of());
         Assertions.assertThat(enriched)
                 .contains("\"metricField\":\"amount\"")
                 .contains("\"field\":\"country\"");
 
         String fuzzedPayload = "{\"counter\":{\"metric\":\"SUM\",\"metricField\":\"FUZZED_VAL\"},\"expression\":{\"type\":\"CONDITION\"}}";
         String preserved = FieldCorrelationEvaluator.applyRequestCorrelations(
-                "/risk-rules", fuzzedPayload, rules, Map.of(), Set.of("counter#metricField"));
+                "/billing-plans", fuzzedPayload, rules, Map.of(), Set.of("counter#metricField"));
         Assertions.assertThat(preserved).contains("\"metricField\":\"FUZZED_VAL\"");
 
         String zwspPayload = "{\"counter\":{\"metric\":\"SUM\",\"metricField\":\"am\\u200bount\"},\"expression\":{\"type\":\"CONDITION\"}}";
         String merged = FieldCorrelationEvaluator.applyRequestCorrelations(
-                "/risk-rules", zwspPayload, rules, Map.of(), Set.of("counter#metricField"));
+                "/billing-plans", zwspPayload, rules, Map.of(), Set.of("counter#metricField"));
         Assertions.assertThat(merged).contains("amo\u200bunt");
     }
 
     @Test
-    void shouldExpandWildcardArrayCorrelationsPerElement() throws Exception {
-        File riskCorr = new File("/Users/madalinilie/repos/xelerator_risk/risk-correlations.yml");
-        if (!riskCorr.exists()) {
-            return;
-        }
-        List<FieldCorrelationRule> rules = FunctionalFlowParser.parseCorrelationFile(riskCorr);
-        String test6Payload = """
-                {"expression":{"type":"CONDITION"},"ruleType":"VELOCITY","name":"Rule-Old","velocityDefinitions":[{"name":"c1","metricField":"amount","dimension":"cardBin","metric":"COUNT"},{"name":"c2","metricField":"RANDOM","dimension":"ipv4","metric":"DISTINCT_COUNT"}]}
+    void shouldExpandWildcardArrayCorrelationsPerElement(@org.junit.jupiter.api.io.TempDir Path tempDir) throws Exception {
+        String yaml = """
+                correlations:
+                  - paths: ["/billing-plans*"]
+                    when: "schedules[*].metric == 'COUNT'"
+                    then:
+                      omit: ["schedules[*].metricField"]
+                  - paths: ["/billing-plans*"]
+                    when: "schedules[*].metric == 'DISTINCT_COUNT'"
+                    then:
+                      set:
+                        schedules[*].metricField: "country"
+                  - paths: ["/billing-plans*"]
+                    when: "expression.type == 'CONDITION'"
+                    then:
+                      set:
+                        expression.operator: "EQ"
+                        name: "Plan-Updated"
+                """;
+        File corrFile = tempDir.resolve("wildcard-correlations.yml").toFile();
+        Files.writeString(corrFile.toPath(), yaml);
+        List<FieldCorrelationRule> rules = FunctionalFlowParser.parseCorrelationFile(corrFile);
+        String payload = """
+                {"expression":{"type":"CONDITION"},"planType":"RECURRING","name":"Plan-Old","schedules":[{"name":"c1","metricField":"amount","dimension":"region","metric":"COUNT"},{"name":"c2","metricField":"RANDOM","dimension":"ipv4","metric":"DISTINCT_COUNT"}]}
                 """;
         String updated = FieldCorrelationEvaluator.applyRequestCorrelations(
-                "/risk-rules", test6Payload, rules, Map.of(), Set.of());
+                "/billing-plans", payload, rules, Map.of(), Set.of());
         Assertions.assertThat(updated)
                 .doesNotContain("\"metricField\":\"amount\"")
                 .contains("\"metricField\":\"country\"")
                 .contains("\"operator\":\"EQ\"")
-                .doesNotContain("Rule-Old");
+                .doesNotContain("Plan-Old");
     }
 }

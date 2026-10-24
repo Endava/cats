@@ -36,7 +36,6 @@ import java.util.regex.Pattern;
  * This class performs the actual fuzzing. It can be extended to provide expected result codes based on different fuzzing scenarios.
  */
 public abstract class BaseFieldsFuzzer implements Fuzzer {
-    private static final String CATS_REMOVE_FIELD = "cats_remove_field";
     /**
      * The logger used by all subclasses.
      */
@@ -79,9 +78,9 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         logger.debug("All required fields, including subfields: {}", data.getAllRequiredFields());
         logger.debug("All fields {}", allFields);
 
-        List<String> fieldsToBeRemoved = filesArguments.getRefData(data.getPath()).entrySet()
-                .stream().filter(entry -> String.valueOf(entry.getValue()).equalsIgnoreCase(CATS_REMOVE_FIELD)).map(Map.Entry::getKey).toList();
-        logger.note("The following fields marked as [{}] in refData will not be fuzzed: {}", CATS_REMOVE_FIELD, fieldsToBeRemoved);
+        List<String> fieldsToBeRemoved = filesArguments.getFieldsToRemoveFromRefData(data.getPath());
+        logger.note("The following fields marked as [{}] in refData will not be fuzzed: {}",
+                ServiceCaller.CATS_REMOVE_FIELD, fieldsToBeRemoved);
 
         fieldsToBeRemoved.forEach(allFields::remove);
 

@@ -51,13 +51,6 @@ import java.util.regex.Pattern;
 public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(InsecureDirectObjectReferencesFuzzer.class);
 
-    private static final List<String> ID_FIELD_PATTERNS = Arrays.asList(
-            "id", "uuid", "guid", "userid", "user_id", "accountid", "account_id",
-            "customerid", "customer_id", "orderid", "order_id", "resourceid", "resource_id",
-            "objectid", "object_id", "entityid", "entity_id", "recordid", "record_id",
-            "documentid", "document_id", "fileid", "file_id", "itemid", "item_id"
-    );
-
     private static final Pattern ID_SUFFIX_PATTERN = Pattern.compile(".*[_-]?(?:id|uuid|guid)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern NUMERIC_ID_PATTERN = Pattern.compile("^\\d+$");
     private static final Pattern UUID_PATTERN = Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
@@ -138,12 +131,6 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
     }
 
     private boolean isIdField(String fieldName) {
-        String lowerFieldName = fieldName.toLowerCase(Locale.ROOT);
-
-        if (ID_FIELD_PATTERNS.contains(lowerFieldName)) {
-            return true;
-        }
-
         return ID_SUFFIX_PATTERN.matcher(fieldName).matches();
     }
 

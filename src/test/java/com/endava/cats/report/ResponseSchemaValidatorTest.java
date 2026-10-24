@@ -19,10 +19,10 @@ class ResponseSchemaValidatorTest {
         String openApiYaml = """
                 openapi: "3.0.1"
                 info:
-                  title: Risk Rules API
+                  title: Billing Plans API
                   version: "1.0.0"
                 paths:
-                  /risk-rules:
+                  /billing-plans:
                     get:
                       responses:
                         '200':
@@ -30,10 +30,10 @@ class ResponseSchemaValidatorTest {
                           content:
                             application/json:
                               schema:
-                                $ref: '#/components/schemas/RuleListResponse'
+                                $ref: '#/components/schemas/PlanListResponse'
                 components:
                   schemas:
-                    RuleListResponse:
+                    PlanListResponse:
                       type: object
                       required:
                         - items
@@ -41,48 +41,48 @@ class ResponseSchemaValidatorTest {
                         items:
                           type: array
                           items:
-                            $ref: '#/components/schemas/RuleResponse'
-                    RuleResponse:
+                            $ref: '#/components/schemas/PlanResponse'
+                    PlanResponse:
                       oneOf:
-                        - $ref: '#/components/schemas/StaticRuleResponse'
-                        - $ref: '#/components/schemas/VelocityRuleResponse'
+                        - $ref: '#/components/schemas/FixedPlanResponse'
+                        - $ref: '#/components/schemas/MeteredPlanResponse'
                       discriminator:
-                        propertyName: ruleType
+                        propertyName: planType
                         mapping:
-                          STATIC: '#/components/schemas/StaticRuleResponse'
-                          VELOCITY: '#/components/schemas/VelocityRuleResponse'
-                    RuleResponseBase:
+                          FIXED: '#/components/schemas/FixedPlanResponse'
+                          METERED: '#/components/schemas/MeteredPlanResponse'
+                    PlanResponseBase:
                       type: object
                       required:
-                        - ruleId
-                        - ruleType
+                        - planId
+                        - planType
                         - name
                       properties:
-                        ruleId:
+                        planId:
                           type: string
-                        ruleType:
+                        planType:
                           type: string
-                          enum: [STATIC, VELOCITY]
+                          enum: [FIXED, METERED]
                         name:
                           type: string
-                    StaticRuleResponse:
+                    FixedPlanResponse:
                       allOf:
-                        - $ref: '#/components/schemas/RuleResponseBase'
-                    VelocityRuleResponse:
+                        - $ref: '#/components/schemas/PlanResponseBase'
+                    MeteredPlanResponse:
                       allOf:
-                        - $ref: '#/components/schemas/RuleResponseBase'
+                        - $ref: '#/components/schemas/PlanResponseBase'
                         - type: object
                           required:
-                            - velocityDefinitions
+                            - billingSchedule
                           properties:
-                            velocityDefinitions:
+                            billingSchedule:
                               type: array
                               items:
                                 type: string
                 """;
         OpenAPI openAPI = new io.swagger.v3.parser.OpenAPIV3Parser().readContents(openApiYaml, null, null).getOpenAPI();
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, java.util.List.of("application/json"));
-        Schema<?> responseSchema = openAPI.getPaths().get("/risk-rules").getGet()
+        Schema<?> responseSchema = openAPI.getPaths().get("/billing-plans").getGet()
                 .getResponses().get("200").getContent().get("application/json").getSchema();
 
         FuzzingData data = FuzzingData.builder()
@@ -91,14 +91,14 @@ class ResponseSchemaValidatorTest {
                 .responseSchemaDefinitions(Map.of("200", Map.of("application/json", responseSchema)))
                 .build();
 
-        CatsResponse validStaticRuleResponse = CatsResponse.builder()
+        CatsResponse validFixedPlanResponse = CatsResponse.builder()
                 .responseCode(200)
                 .responseContentType("application/json")
-                .body("{\"items\":[{\"ruleId\":\"rule_1\",\"ruleType\":\"STATIC\",\"name\":\"High-Risk Country Rule\"}]}")
+                .body("{\"items\":[{\"planId\":\"plan_1\",\"planType\":\"FIXED\",\"name\":\"Standard Monthly Plan\"}]}")
                 .build();
 
         ResponseSchemaValidator validator = new ResponseSchemaValidator();
-        ResponseSchemaValidator.ValidationResult result = validator.validate(validStaticRuleResponse, data);
+        ResponseSchemaValidator.ValidationResult result = validator.validate(validFixedPlanResponse, data);
 
         Assertions.assertThat(result.performed()).isTrue();
         Assertions.assertThat(result.isValid()).isTrue();

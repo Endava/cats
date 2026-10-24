@@ -125,7 +125,7 @@ final class SuccessfulBaselineStore {
             Object origVal = original.isJsonPrimitive()
                     ? ResourceSemanticNaming.primitiveValue(original.getAsJsonPrimitive())
                     : null;
-            if (origVal != null && !String.valueOf(FuzzingStrategy.mergeFuzzing(currentVal, origVal)).equals(String.valueOf(currentVal))) {
+            if (origVal != null && FuzzingStrategy.isFullReplacementMutation(currentVal, origVal)) {
                 return current.deepCopy();
             }
             Object merged = FuzzingStrategy.mergeFuzzing(

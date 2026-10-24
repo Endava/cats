@@ -355,6 +355,20 @@ public class FilesArguments {
     }
 
     /**
+     * Returns the list of field names marked with {@link com.endava.cats.io.ServiceCaller#CATS_REMOVE_FIELD}
+     * in {@code --refData} for the given path.
+     *
+     * @param currentPath the current API path
+     * @return list of field names to remove/skip from fuzzing
+     */
+    public List<String> getFieldsToRemoveFromRefData(String currentPath) {
+        return getRefData(currentPath).entrySet().stream()
+                .filter(entry -> com.endava.cats.io.ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(entry.getValue())))
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    /**
      * Returns a map with key-value pairs for all additional query parameters corresponding
      * to the given path as well as the ALL entry.
      *

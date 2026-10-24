@@ -747,12 +747,6 @@ public class FuzzingDataFactory {
             examples = List.copyOf(examples.subList(0, processingArguments.getLimitXxxOfCombinations()));
         }
 
-        if (processingArguments.getLimitXxxOfCombinations() > 0) {
-            examples = examples.stream()
-                    .limit(Math.min(processingArguments.getLimitXxxOfCombinations(), examples.size()))
-                    .toList();
-        }
-
         GenerationResult result = new GenerationResult(examples, Map.copyOf(generator.getRequestDataTypes()));
         if (processingArguments.isCachePayloads()) {
             generatedRequestExamplesCache.put(requestSchema, result);

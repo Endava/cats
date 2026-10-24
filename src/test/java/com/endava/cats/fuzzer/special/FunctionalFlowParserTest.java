@@ -20,15 +20,15 @@ class FunctionalFlowParserTest {
     void shouldDetectFunctionalFlowYamlAndRejectLegacyOrSecurityYaml(@TempDir Path tempDir) throws Exception {
         String flowYaml = """
                 variables:
-                  baseName: "Rule"
+                  baseName: "Plan"
                 correlate:
-                  - paths: ["/risk-rules*"]
+                  - paths: ["/billing-plans*"]
                     when: "counter.metric == 'COUNT'"
                     then:
                       omit: ["counter.metricField"]
                 steps:
-                  - name: Create rule
-                    POST: /risk-rules
+                  - name: Create plan
+                    POST: /billing-plans
                     body:
                       name: "${baseName}-1"
                     status: 201

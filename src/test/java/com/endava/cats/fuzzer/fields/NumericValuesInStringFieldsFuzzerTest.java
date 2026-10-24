@@ -247,13 +247,13 @@ class NumericValuesInStringFieldsFuzzerTest {
     void shouldSerializeLongMaxValueAsUnquotedJsonNumberAndSkipPathOrQueryParams() {
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("description", new StringSchema());
-        reqTypes.put("watchlistId", new StringSchema());
+        reqTypes.put("groupId", new StringSchema());
 
         FuzzingData data = Mockito.mock(FuzzingData.class);
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("description", "watchlistId"));
-        Mockito.when(data.getPath()).thenReturn("/risk-watchlists/{watchlistId}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("description", "groupId"));
+        Mockito.when(data.getPath()).thenReturn("/customer-groups/{groupId}");
         Mockito.when(data.getQueryParams()).thenReturn(Set.of());
-        Mockito.when(data.getPayload()).thenReturn("{\"watchlistId\":\"wl_1\",\"description\":\"Countries\"}");
+        Mockito.when(data.getPayload()).thenReturn("{\"groupId\":\"grp_1\",\"description\":\"Countries\"}");
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
         Mockito.when(data.getMethod()).thenReturn(HttpMethod.PUT);
         Mockito.when(data.getHeaders()).thenReturn(Set.of());
@@ -268,7 +268,7 @@ class NumericValuesInStringFieldsFuzzerTest {
 
         fuzzer.fuzz(data);
 
-        // watchlistId (path param) must be skipped; only description is fuzzed (8 payloads)
+        // groupId (path param) must be skipped; only description is fuzzed (8 payloads)
         Assertions.assertThat(sentPayloads).hasSize(8)
                 .anyMatch(p -> p.contains("\"description\":9223372036854775807"))
                 .anyMatch(p -> p.contains("\"description\":-9223372036854775808"))

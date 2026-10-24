@@ -228,6 +228,24 @@ public class CatsTestCase {
     }
 
     /**
+     * Reads and deserializes a {@code Test*.json} report file into a {@link CatsTestCase}.
+     *
+     * @param file path to the JSON test case file
+     * @return parsed test case if present and valid
+     */
+    public static Optional<CatsTestCase> readTestCaseFile(java.nio.file.Path file) {
+        if (file == null || !java.nio.file.Files.isRegularFile(file)) {
+            return Optional.empty();
+        }
+        try {
+            String content = java.nio.file.Files.readString(file, java.nio.charset.StandardCharsets.UTF_8);
+            return Optional.ofNullable(JsonUtils.GSON.fromJson(content, CatsTestCase.class));
+        } catch (java.io.IOException | RuntimeException _) {
+            return Optional.empty();
+        }
+    }
+
+    /**
      * Returns the curl equivalent of running the test case.
      *
      * @return curl equivalent of running the test case
