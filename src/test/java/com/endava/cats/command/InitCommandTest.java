@@ -8,6 +8,7 @@ import picocli.CommandLine;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 @QuarkusTest
 class InitCommandTest {
@@ -28,6 +29,7 @@ class InitCommandTest {
                 .containsExactly("headers.yml", "refData.yml", "functionalTests.yml");
         Assertions.assertThat(Files.readString(tempDir.resolve("headers.yml"))).contains("all:");
         Assertions.assertThat(Files.readString(tempDir.resolve("refData.yml"))).contains("hook_id");
+        Assertions.assertThat(Files.readString(tempDir.resolve("functionalTests.yml"))).contains("steps:");
 
         // Second run without --force should skip existing files
         initCommand.json = true;
@@ -41,6 +43,58 @@ class InitCommandTest {
         initCommand.run();
         Assertions.assertThat(initCommand.getLastResult().writtenFiles())
                 .containsExactly("headers.yml", "refData.yml", "functionalTests.yml");
+    }
+
+    @Test
+    void shouldInstallSkillsForAllPlatformsInProjectDirectory(@TempDir Path tempDir) throws Exception {
+        InitCommand initCommand = new InitCommand();
+        initCommand.skillPlatforms = List.of("all");
+        initCommand.outputDir = tempDir.toFile();
+
+        initCommand.run();
+
+        Assertions.assertThat(initCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+        Assertions.assertThat(initCommand.getLastResult().writtenFiles()).hasSize(25);
+        Assertions.assertThat(tempDir.resolve(".devin/skills/cats/SKILL.md")).exists();
+        Assertions.assertThat(tempDir.resolve(".agents/skills/cats-analyze-api/SKILL.md")).exists();
+        Assertions.assertThat(tempDir.resolve(".claude/skills/cats-write-tests/SKILL.md")).exists();
+        Assertions.assertThat(tempDir.resolve(".opencode/skills/cats-fuzz-api/SKILL.md")).exists();
+        Assertions.assertThat(tempDir.resolve(".cursor/skills/cats-triage-results/SKILL.md")).exists();
+        Assertions.assertThat(Files.readString(tempDir.resolve(".claude/skills/cats-write-tests/SKILL.md")))
+                .contains("--functionalFlow")
+                .doesNotContain("functionalFuzzerFile");
+    }
+
+    @Test
+    void shouldInstallSkillsForSelectedPlatformsGlobally(@TempDir Path tempHome) {
+        InitCommand initCommand = new InitCommand();
+        initCommand.skillPlatforms = List.of("devin", "claude", "opencode");
+        initCommand.globalSkills = true;
+        initCommand.userHomeDir = tempHome;
+
+        initCommand.run();
+
+        Assertions.assertThat(initCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+        Assertions.assertThat(initCommand.getLastResult().writtenFiles()).hasSize(15);
+        Assertions.assertThat(tempHome.resolve(".config/devin/skills/cats/SKILL.md")).exists();
+        Assertions.assertThat(tempHome.resolve(".claude/skills/cats-fuzz-api/SKILL.md")).exists();
+        Assertions.assertThat(tempHome.resolve(".config/opencode/skills/cats-triage-results/SKILL.md")).exists();
+        Assertions.assertThat(tempHome.resolve(".cursor/skills/cats/SKILL.md")).doesNotExist();
+
+        // Second run without --force skips existing global skill files
+        initCommand.run();
+        Assertions.assertThat(initCommand.getLastResult().writtenFiles()).isEmpty();
+        Assertions.assertThat(initCommand.getLastResult().skippedFiles()).hasSize(15);
+    }
+
+    @Test
+    void shouldReturnUsageExitCodeWhenNeitherContractNorSkillsProvided(@TempDir Path tempDir) {
+        InitCommand initCommand = new InitCommand();
+        initCommand.outputDir = tempDir.toFile();
+
+        initCommand.run();
+
+        Assertions.assertThat(initCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.USAGE);
     }
 
     @Test

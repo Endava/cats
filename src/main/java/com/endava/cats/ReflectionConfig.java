@@ -294,7 +294,7 @@ import java.util.UUID;
         com.endava.cats.command.AnalyzeCommand.BlueprintReport.class, com.endava.cats.command.AnalyzeCommand.ScoreBreakdown.class,
         com.endava.cats.command.AnalyzeCommand.ProducerConsumerChain.class,
         com.endava.cats.command.SmokeCommand.SmokeReport.class, com.endava.cats.command.SmokeCommand.OperationProbe.class,
-        com.endava.cats.command.InitCommand.InitResult.class,
+        com.endava.cats.command.InitCommand.InitResult.class, com.endava.cats.command.InitCommand.AgentPlatform.class,
         com.endava.cats.report.BaselineComparisonEngine.ComparisonResult.class, com.endava.cats.report.BaselineComparisonEngine.FindingDelta.class,
         com.endava.cats.args.util.ProfileLoader.Profile.class,
         com.endava.cats.model.CatsTestReport.JunitTestSuite.class,

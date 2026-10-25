@@ -1,0 +1,9 @@
+{
+  "name": "cats",
+  "version": "15.1.1",
+  "description": "AI agent skills for REST API contract analysis, functional flow authoring, automated fuzzing, and root-cause triage with CATS",
+  "repository": "https://github.com/Endava/cats",
+  "homepage": "https://endava.github.io/cats/",
+  "license": "Apache-2.0",
+  "skills": ".devin/skills"
+}
