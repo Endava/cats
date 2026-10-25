@@ -1,11 +1,14 @@
 package com.endava.cats.command;
 
+import com.endava.cats.fuzzer.special.FunctionalFlowParser;
+import com.sun.net.httpserver.HttpServer;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,7 +17,7 @@ import java.nio.file.Path;
 class TriageCommandTest {
 
     @Test
-    void shouldClusterRootCausesSynthesizeCorrelationRulesAndExportReproducers(@TempDir Path tempDir) throws Exception {
+    void shouldClusterRootCausesMineRefDataGenerateContractPatchAndSynthesizeCorrelations(@TempDir Path tempDir) throws Exception {
         Files.writeString(tempDir.resolve("Test1.json"), """
                 {
                   "testId": "Test 1",
@@ -42,6 +45,7 @@ class TriageCommandTest {
                 {
                   "testId": "Test 2",
                   "result": "warn",
+                  "resultReason": "Response code is undocumented",
                   "fuzzer": "RemoveHeaders",
                   "contractPath": "/customer-groups/{groupId}",
                   "path": "/customer-groups/{groupId}",
@@ -129,11 +133,15 @@ class TriageCommandTest {
                 """, StandardCharsets.UTF_8);
 
         Path exportedCorr = tempDir.resolve("correlations.yml");
+        Path exportedRefData = tempDir.resolve("refData.yml");
+        Path exportedPatch = tempDir.resolve("contract-patch.yml");
         Path exportedSh = tempDir.resolve("reproducers.sh");
 
         TriageCommand triageCommand = new TriageCommand();
         triageCommand.reportFolder = tempDir.toString();
         triageCommand.exportCorrelationsFile = exportedCorr.toString();
+        triageCommand.exportRefDataFile = exportedRefData.toString();
+        triageCommand.exportContractPatchFile = exportedPatch.toString();
         triageCommand.exportReproducersFile = exportedSh.toString();
 
         triageCommand.run();
@@ -152,7 +160,7 @@ class TriageCommandTest {
         Assertions.assertThat(report.synthesizedCorrelations()).hasSize(1);
         Assertions.assertThat(Files.readString(exportedCorr))
                 .contains("correlations:", "- \"/billing-plans\"", "planType == 'RECURRING'", "billingSchedule:");
-        Assertions.assertThat(com.endava.cats.fuzzer.special.FunctionalFlowParser.parseCorrelationFile(exportedCorr.toFile()))
+        Assertions.assertThat(FunctionalFlowParser.parseCorrelationFile(exportedCorr.toFile()))
                 .hasSize(1)
                 .first()
                 .satisfies(rule -> {
@@ -160,21 +168,80 @@ class TriageCommandTest {
                     Assertions.assertThat(rule.when()).isEqualTo("planType == 'RECURRING'");
                     Assertions.assertThat(rule.set()).containsKey("billingSchedule");
                 });
+        Assertions.assertThat(Files.readString(exportedRefData))
+                .contains("\"/customer-groups/{groupId}\":", "groupId: \"grp_1\"");
+        Assertions.assertThat(Files.readString(exportedPatch))
+                .contains("/customer-groups/{groupId}:", "delete:", "'204':");
         Assertions.assertThat(Files.readString(exportedSh))
                 .contains("#!/usr/bin/env bash", "curl -i -X POST", "'http://localhost:8080/billing-plans'");
-
-        triageCommand.json = true;
-        triageCommand.run();
-        Assertions.assertThat(triageCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
     }
 
     @Test
-    void shouldReturnSoftwareExitCodeWhenReportDirectoryDoesNotExist() {
-        TriageCommand triageCommand = new TriageCommand();
-        triageCommand.reportFolder = "src/test/resources/non-existent-report-folder";
+    void shouldVerifyFixesAgainstLiveServer(@TempDir Path tempDir) throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/billing-plans", exchange -> {
+            exchange.sendResponseHeaders(400, 2);
+            exchange.getResponseBody().write("{}".getBytes(StandardCharsets.UTF_8));
+            exchange.close();
+        });
+        server.start();
+        try {
+            int port = server.getAddress().getPort();
+            Files.writeString(tempDir.resolve("Test1.json"), """
+                    {
+                      "testId": "Test 1",
+                      "result": "error",
+                      "resultReason": "Unexpected response code: 500",
+                      "fuzzer": "DummyContentTypeHeaders",
+                      "contractPath": "/billing-plans",
+                      "path": "/billing-plans",
+                      "request": {
+                        "httpMethod": "POST",
+                        "url": "http://localhost:8080/billing-plans",
+                        "headers": [{"key": "Content-Type", "value": "application/json"}],
+                        "payload": "{}",
+                        "sendBody": true
+                      },
+                      "response": {
+                        "responseCode": 500,
+                        "jsonBody": {"message": "Internal error"}
+                      }
+                    }
+                    """, StandardCharsets.UTF_8);
 
-        triageCommand.run();
+            TriageCommand triageCommand = new TriageCommand();
+            triageCommand.reportFolder = tempDir.toString();
+            triageCommand.verify = true;
+            triageCommand.serverUrl = "http://127.0.0.1:" + port;
+            triageCommand.json = true;
 
-        Assertions.assertThat(triageCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+            triageCommand.run();
+
+            Assertions.assertThat(triageCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+            Assertions.assertThat(triageCommand.getLastReport().clusters())
+                    .singleElement()
+                    .satisfies(cluster -> {
+                        Assertions.assertThat(cluster.verificationStatus()).isEqualTo("FIXED");
+                        Assertions.assertThat(cluster.verifiedStatusCode()).isEqualTo(400);
+                    });
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void shouldSupportJsonOutputAndHandleMissingDirectory(@TempDir Path tempDir) {
+        TriageCommand missingCmd = new TriageCommand();
+        missingCmd.reportFolder = tempDir.resolve("does-not-exist").toString();
+        missingCmd.run();
+        Assertions.assertThat(missingCmd.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+
+        TriageCommand emptyCmd = new TriageCommand();
+        emptyCmd.reportFolder = tempDir.toString();
+        emptyCmd.json = true;
+        emptyCmd.includeWarnings = true;
+        emptyCmd.run();
+        Assertions.assertThat(emptyCmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+        Assertions.assertThat(emptyCmd.getLastReport().totalClusters()).isZero();
     }
 }
