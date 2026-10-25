@@ -155,4 +155,29 @@ class FieldCorrelationEvaluatorTest {
                 .contains("\"operator\":\"EQ\"")
                 .doesNotContain("Plan-Old");
     }
+
+    @Test
+    void shouldEvaluateWhereExpectationsAndComplexBooleanExpressions() {
+        CatsResponse response = CatsResponse.builder()
+                .responseCode(201)
+                .body("{\"id\":\"ord_1\",\"amount\":50,\"status\":\"ACTIVE\",\"tags\":\"fast,priority\"}")
+                .build();
+        String reqJson = "{\"amount\":50,\"mode\":\"EXPRESS\"}";
+        Map<String, String> vars = Map.of("expectedStatus", "ACTIVE");
+
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateWhereExpectations(
+                List.of(
+                        "$status == 201 && response.amount >= 50",
+                        "response.status == '${expectedStatus}' || response.status == 'PENDING'",
+                        "response.tags contains 'fast' && response.id matches 'ord_\\d+'",
+                        "response.id is not null && response.missingField is null",
+                        "response.missingField != 'SOMETHING'"
+                ),
+                reqJson, response, vars)).isEmpty();
+
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateWhereExpectations(
+                List.of("response.amount > 100"), reqJson, response, vars))
+                .isPresent()
+                .get().asString().contains("response.amount > 100");
+    }
 }

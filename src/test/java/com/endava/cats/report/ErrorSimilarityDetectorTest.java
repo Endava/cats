@@ -48,4 +48,34 @@ class ErrorSimilarityDetectorTest {
                 Arguments.of("Error: Event occurred at 2023-10-01T12:34:56", "Error: Event occurred at TIMESTAMP")
         );
     }
+
+    @org.junit.jupiter.api.Test
+    void shouldExtractRootCausesAndNormalizedKeysAcrossJsonAndStackTraces() {
+        String rfc7807 = "{\"type\":\"about:blank\",\"title\":\"Bad Request\",\"detail\":\"Field 'amount' failed\",\"trace\":\"\\tat java.lang.Thread.run(Thread.java:1)\\n\\tat com.acme.OrderService.create(OrderService.java:88)\"}";
+        String summary1 = ErrorSimilarityDetector.extractRootCauseSummary(rfc7807, "fallback");
+        assertThat(summary1).contains("Bad Request: Field 'amount' failed @ com.acme.OrderService.create(OrderService.java:88)");
+
+        String arrayErrors = "[{\"error\":{\"code\":\"ERR_42\"},\"message\":\"Nested error message\"}]";
+        assertThat(ErrorSimilarityDetector.extractRootCauseSummary(arrayErrors, "fb")).contains("ERR_42: Nested error message");
+
+        String violationsJson = "{\"violations\":[\"First violation\"]}";
+        assertThat(ErrorSimilarityDetector.extractRootCauseSummary(violationsJson, "fb")).isEqualTo("First violation");
+
+        String objectViolationsJson = "{\"errors\":[{\"defaultMessage\":\"Invalid field value\"}]}";
+        assertThat(ErrorSimilarityDetector.extractRootCauseSummary(objectViolationsJson, "fb")).isEqualTo("Invalid field value");
+
+        String emptyJsonObj = "{\"unrelated\":123}";
+        assertThat(ErrorSimilarityDetector.extractRootCauseSummary(emptyJsonObj, "fb")).isEqualTo("{\"unrelated\":123}");
+
+        assertThat(ErrorSimilarityDetector.extractRootCauseSummary("", "Fallback Reason")).isEqualTo("Fallback Reason");
+        assertThat(ErrorSimilarityDetector.extractNormalizedClusterKey("", "Fallback Reason")).startsWith("EMPTY|");
+        assertThat(ErrorSimilarityDetector.extractNormalizedClusterKey(rfc7807, "fb")).contains("bad request|");
+
+        assertThat(ErrorSimilarityDetector.areErrorsSimilar("identical", "identical")).isTrue();
+        assertThat(ErrorSimilarityDetector.areErrorsSimilar(
+                "{\"error\":\"TypeA\",\"message\":\"failed\"}",
+                "{\"error\":\"TypeB\",\"message\":\"failed\"}")).isFalse();
+        assertThat(ErrorSimilarityDetector.wordTokenJaccard("123 !@#", "456 $%^")).isEqualTo(1.0);
+        assertThat(ErrorSimilarityDetector.wordTokenJaccard("123 !@#", "valid tokens here")).isZero();
+    }
 }

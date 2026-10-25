@@ -56,7 +56,15 @@ class TemporalLogicFieldsFuzzerTest {
         schema.setExample("Example");
         Mockito.when(data.getReqSchema()).thenReturn(schema);
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of(fieldName));
+        org.mockito.ArgumentCaptor<com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext> captor =
+                org.mockito.ArgumentCaptor.forClass(com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext.class);
         temporalLogicFieldsFuzzer.fuzz(data);
-        Mockito.verify(executor, Mockito.times(1)).execute(Mockito.any());
+        Mockito.verify(executor, Mockito.times(1)).execute(captor.capture());
+
+        com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext ctx = captor.getValue();
+        Assertions.assertThat(ctx.getFuzzValueProducer().apply(new io.swagger.v3.oas.models.media.DateSchema(), fieldName))
+                .singleElement().asString().matches("\\d{4}-\\d{2}-\\d{2}");
+        Assertions.assertThat(ctx.getFuzzValueProducer().apply(new io.swagger.v3.oas.models.media.DateTimeSchema(), fieldName))
+                .hasSize(1);
     }
 }

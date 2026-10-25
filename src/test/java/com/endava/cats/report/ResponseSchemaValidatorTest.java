@@ -103,5 +103,31 @@ class ResponseSchemaValidatorTest {
         Assertions.assertThat(result.performed()).isTrue();
         Assertions.assertThat(result.isValid()).isTrue();
         Assertions.assertThat(result.errors()).isEmpty();
+        Assertions.assertThat(result.details()).isEmpty();
+
+        // Second call hits compiledByIdentity cache
+        Assertions.assertThat(validator.validate(validFixedPlanResponse, data).isValid()).isTrue();
+
+        // Different Schema instance with same $ref hits compiledByKey cache
+        Schema<?> sameRefSchema = new Schema<>().$ref("#/components/schemas/PlanListResponse");
+        FuzzingData sameRefData = FuzzingData.builder()
+                .openApi(openAPI)
+                .schemaMap(schemas)
+                .responseSchemaDefinitions(Map.of("200", Map.of("application/json", sameRefSchema)))
+                .build();
+        Assertions.assertThat(validator.validate(validFixedPlanResponse, sameRefData).isValid()).isTrue();
+
+        // Invalid response body with > 5 errors truncates details()
+        ResponseSchemaValidator.ValidationResult manyErrors = ResponseSchemaValidator.ValidationResult.invalid(
+                java.util.List.of("e1", "e2", "e3", "e4", "e5", "e6", "e7"));
+        Assertions.assertThat(manyErrors.details()).contains("... and 2 more validation errors");
+
+        // Null data / missing schema / invalid JSON body
+        Assertions.assertThat(validator.validate(validFixedPlanResponse, null).performed()).isFalse();
+        Assertions.assertThat(validator.validate(validFixedPlanResponse, FuzzingData.builder().build()).performed()).isFalse();
+        CatsResponse unmappedCodeResponse = CatsResponse.builder().responseCode(204).responseContentType("application/json").body("").build();
+        Assertions.assertThat(validator.validate(unmappedCodeResponse, data).performed()).isFalse();
+        CatsResponse malformedBodyResponse = CatsResponse.builder().responseCode(200).responseContentType("application/json").body("{not-json").build();
+        Assertions.assertThat(validator.validate(malformedBodyResponse, data).isValid()).isFalse();
     }
 }

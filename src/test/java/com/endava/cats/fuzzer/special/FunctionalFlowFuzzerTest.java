@@ -221,4 +221,70 @@ class FunctionalFlowFuzzerTest {
                 Mockito.eq("Verify parameters not matching response"),
                 Mockito.contains("score > 50"), Mockito.any());
     }
+
+    @Test
+    void shouldHandleStringAndListBodiesNestedMapsInlineQueryParamsAndSelectors(@TempDir Path tempDir) throws Exception {
+        String flowYaml = """
+                steps:
+                  - name: Create with nested map and shorthand scalar coercion
+                    POST: /billing-plans?region=EU&flag
+                    base: empty
+                    headers:
+                      X-Trace: "#(uuid)"
+                    body:
+                      name: "Plan-A"
+                      count: "#(randomInt(1,5))"
+                      enabled: "T(java.lang.Boolean).TRUE"
+                      tags: ["tag1", "tag2"]
+                      nested:
+                        tier: "GOLD"
+                    save:
+                      savedId: "id"
+                      reqName: "$request.name"
+                      hdrVal: "$headers.X-Rate"
+                    expect:
+                      status: 201
+                      headers:
+                        X-Rate: "100"
+                      bodyContains: ["Plan-A"]
+                      bodyNotContains: ["FORBIDDEN"]
+                  - name: Send raw string body
+                    POST: /billing-plans
+                    body: "{\\"raw\\":\\"${savedId}\\"}"
+                    expect:
+                      status: 201
+                  - name: Send list body
+                    POST: /billing-plans
+                    body:
+                      - "${savedId}"
+                    expect:
+                      status: 201
+                """;
+        File flowFile = tempDir.resolve("rich-flow.yml").toFile();
+        Files.writeString(flowFile.toPath(), flowYaml);
+        filesArguments.setFunctionalFlowFile(flowFile);
+        filesArguments.setCreateRefData(true);
+        File outRefFile = tempDir.resolve("out-ref.yml").toFile();
+        Files.writeString(outRefFile.toPath(), "all:\n  x: 1\n");
+        filesArguments.setRefDataFile(outRefFile);
+
+        FuzzingData postPlan = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
+                .payload("{\"nested\":{\"existing\":\"v\"}}").reqSchema(new ObjectSchema()).schemaMap(Map.of())
+                .headers(Set.of(com.endava.cats.model.CatsHeader.builder().name("X-Default").value("1").build()))
+                .queryParams(Set.of("region", "flag"))
+                .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
+        fuzzer.fuzz(postPlan);
+
+        String respBody = "{\"id\":\"p_1\",\"name\":\"Plan-A\"}";
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(201).body(respBody)
+                        .jsonBody(JsonParser.parseString(respBody))
+                        .headers(List.of(new com.endava.cats.util.KeyValuePair<>("X-Rate", "100"))).build());
+
+        fuzzer.executeFlows();
+        Mockito.verify(serviceCaller, Mockito.times(3)).call(Mockito.any());
+        Assertions.assertThat(fuzzer.description()).isNotBlank();
+        Assertions.assertThat(fuzzer).hasToString("FunctionalFlowFuzzer");
+    }
 }

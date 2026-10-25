@@ -160,4 +160,39 @@ class FunctionalFlowParserTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must specify an HTTP method");
     }
+
+    @Test
+    void shouldHandleExplicitMethodPathAndEdgeCases(@org.junit.jupiter.api.io.TempDir java.nio.file.Path tempDir) throws Exception {
+        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(null)).isFalse();
+        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(tempDir.resolve("missing.yml").toFile())).isFalse();
+        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowYaml("")).isFalse();
+        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowYaml(":::invalid:::yaml")).isFalse();
+        Assertions.assertThat(FunctionalFlowParser.parseCorrelationFile(null)).isEmpty();
+
+        String explicitMethodPathYaml = """
+                - method: POST
+                  path: /items
+                  output:
+                    id: id
+                  verify:
+                    status: 201
+                """;
+        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowYaml(explicitMethodPathYaml)).isTrue();
+        FunctionalFlowDocument doc = FunctionalFlowParser.parseContent(explicitMethodPathYaml);
+        Assertions.assertThat(doc.steps()).singleElement().satisfies(step -> {
+            Assertions.assertThat(step.method()).isEqualTo(HttpMethod.POST);
+            Assertions.assertThat(step.rawTarget()).isEqualTo("/items");
+            Assertions.assertThat(step.save()).containsEntry("id", "id");
+            Assertions.assertThat(step.expect().status()).containsExactly("201");
+        });
+
+        java.io.File corrArrayFile = tempDir.resolve("corr-array.yml").toFile();
+        java.nio.file.Files.writeString(corrArrayFile.toPath(), """
+                - paths: ["/items"]
+                  if: "kind == 'A'"
+                  set:
+                    code: 1
+                """);
+        Assertions.assertThat(FunctionalFlowParser.parseCorrelationFile(corrArrayFile)).hasSize(1);
+    }
 }

@@ -88,5 +88,32 @@ class XmlPayloadEncoderTest {
         Assertions.assertThat(XmlPayloadEncoder.encode("{}", emptySchema, Map.of())).isEqualTo("<movie/>");
         Assertions.assertThat(XmlPayloadEncoder.encode("not-json", emptySchema, Map.of())).isEqualTo("not-json");
         Assertions.assertThat(XmlPayloadEncoder.encode("", emptySchema, Map.of())).isEmpty();
+        Assertions.assertThat(XmlPayloadEncoder.encode(null, emptySchema, Map.of())).isEmpty();
+    }
+
+    @Test
+    void shouldHandleStripRootIdRootArraysPrimitiveArraysAndSpecialCharacters() {
+        ObjectSchema itemSchema = new ObjectSchema();
+        itemSchema.setXml(new XML().name("entry"));
+        itemSchema.addProperty("id", new IntegerSchema());
+        itemSchema.addProperty("tags", new ArraySchema().items(new StringSchema()));
+        itemSchema.addProperty("wrappedTags", new ArraySchema().xml(new XML().wrapped(true)).items(new StringSchema()));
+
+        String objPayload = "{\"id\": 10, \"tags\": [\"a<b\", null, \"c>d\"], \"wrappedTags\": [\"x'y\", \"z\\\"w\"], \"nilField\": null}";
+        String strippedXml = XmlPayloadEncoder.encode(objPayload, itemSchema, Map.of(), true);
+        Assertions.assertThat(strippedXml)
+                .doesNotContain("<id>")
+                .contains("<tags>a&lt;b</tags><tags>c&gt;d</tags>")
+                .contains("<wrappedTags><item>x&apos;y</item><item>z&quot;w</item></wrappedTags>");
+
+        ArraySchema rootArraySchema = new ArraySchema();
+        rootArraySchema.setXml(new XML().name("entries"));
+        rootArraySchema.setItems(itemSchema);
+        String rootArrayXml = XmlPayloadEncoder.encode("[{\"id\": 1}, \"raw<val\"]", rootArraySchema, null, false);
+        Assertions.assertThat(rootArrayXml)
+                .isEqualTo("<entries><entry><id>1</id></entry><entry>raw&lt;val</entry></entries>");
+
+        String primitiveRootXml = XmlPayloadEncoder.encode("\"hello & world\"", new StringSchema(), Map.of());
+        Assertions.assertThat(primitiveRootXml).isEqualTo("\"hello & world\"");
     }
 }

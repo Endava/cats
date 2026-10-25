@@ -279,4 +279,26 @@ class FilesArgumentsTest {
 
         org.assertj.core.api.Assertions.assertThat(filesArguments.getMutatorsFolder()).isDirectory();
     }
+
+    @Test
+    void shouldCopyFromOtherInstanceAndFilterRemovedFields() {
+        FilesArguments source = new FilesArguments();
+        source.setCreateRefData(true);
+        source.setParams(List.of("id:1"));
+        source.setHeadersMap(Map.of("X-Test", "1"));
+        source.setQueryParamsArguments(Map.of("q", "v"));
+        source.setRefDataArguments(Map.of("r", "v"));
+
+        FilesArguments target = new FilesArguments();
+        target.copyFrom(null);
+        target.copyFrom(target);
+        target.copyFrom(source);
+
+        org.assertj.core.api.Assertions.assertThat(target.isCreateRefData()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(null)).isEmpty();
+        org.assertj.core.api.Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(Map.of())).isEmpty();
+        org.assertj.core.api.Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(
+                Map.of("keep", "val", "drop", com.endava.cats.io.ServiceCaller.CATS_REMOVE_FIELD)))
+                .containsExactly("drop");
+    }
 }

@@ -2459,6 +2459,36 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(resourcePool.isKnownPoolValue("non-existent")).isFalse();
     }
 
+    @Test
+    void shouldExtractXmlIdentifiersKeyedMapIdentifiersAndEnrichRootScalarBody() {
+        enableResourceReuse();
+        ServiceData postMovieXml = postData("/movies", "<movie><title>Matrix</title></movie>");
+        resourcePool.observe(postMovieXml, request("POST", "/movies", "<movie/>"),
+                CatsResponse.builder().responseCode(201).body("<movie id=\"77\"><title>Matrix</title></movie>").build());
+
+        ServiceData getMovie = getData("/movies/{id}", "{\"id\":999}");
+        Assertions.assertThat(resourcePool.enrich(getMovie, getMovie.getPayload()).payload())
+                .contains("\"id\":77");
+
+        ServiceData createFeatures = postData("/features", "{}");
+        resourcePool.observe(createFeatures, request("POST", "/features", "{}"),
+                response(200, "{\"features\":{\"feat_alpha\":{\"enabled\":true}}}"));
+        ServiceData getFeature = getData("/features/{featureId}", "{\"featureId\":\"gen\"}");
+        Assertions.assertThat(resourcePool.enrich(getFeature, getFeature.getPayload()).payload())
+                .contains("\"featureId\":\"feat_alpha\"");
+
+        ServiceData enableMovie = postData("/movies/enable", "placeholder");
+        RuntimeResourcePool.ResolvedRequest scalarEnriched = resourcePool.enrich(enableMovie, enableMovie.getPayload());
+        Assertions.assertThat(scalarEnriched.payload()).isEqualTo("77");
+
+        for (com.endava.cats.model.CatsResponse.ExceptionalResponse ex : com.endava.cats.model.CatsResponse.ExceptionalResponse.values()) {
+            Assertions.assertThat(com.endava.cats.model.CatsResultFactory.createExceptionalResponse(ex, 120).message()).isNotBlank();
+        }
+        Assertions.assertThat(com.endava.cats.model.CatsResultFactory.createNotMatchingResponseSchema("200").message()).contains("200");
+        Assertions.assertThat(com.endava.cats.model.CatsResultFactory.createNotFound().reason()).isEqualTo("Not found");
+        Assertions.assertThat(com.endava.cats.model.CatsResultFactory.createUnexpectedBehaviour("401", "2XX").message()).contains("authentication");
+    }
+
     private void enableResourceReuse() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
     }

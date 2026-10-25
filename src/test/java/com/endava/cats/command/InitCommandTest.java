@@ -107,4 +107,34 @@ class InitCommandTest {
 
         Assertions.assertThat(initCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
     }
+
+    @Test
+    void shouldExtractAllSecuritySchemeTypesAndHandlePlatformAliases() {
+        io.swagger.v3.oas.models.OpenAPI api = new io.swagger.v3.oas.models.OpenAPI();
+        Assertions.assertThat(InitCommand.extractSecurityHeaders(api)).containsEntry("Authorization", "Bearer $$API_TOKEN");
+
+        io.swagger.v3.oas.models.Components components = new io.swagger.v3.oas.models.Components()
+                .addSecuritySchemes("basicAuth", new io.swagger.v3.oas.models.security.SecurityScheme()
+                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.HTTP).scheme("basic"))
+                .addSecuritySchemes("headerKey", new io.swagger.v3.oas.models.security.SecurityScheme()
+                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.APIKEY)
+                        .in(io.swagger.v3.oas.models.security.SecurityScheme.In.HEADER).name("X-API-Key"))
+                .addSecuritySchemes("queryKey", new io.swagger.v3.oas.models.security.SecurityScheme()
+                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.APIKEY)
+                        .in(io.swagger.v3.oas.models.security.SecurityScheme.In.QUERY).name("api_key"))
+                .addSecuritySchemes("oauth", new io.swagger.v3.oas.models.security.SecurityScheme()
+                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.OAUTH2))
+                .addSecuritySchemes("mtls", new io.swagger.v3.oas.models.security.SecurityScheme()
+                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.MUTUALTLS));
+        api.setComponents(components);
+
+        java.util.Map<String, String> headers = InitCommand.extractSecurityHeaders(api);
+        Assertions.assertThat(headers).containsKeys("Authorization", "X-API-Key");
+
+        Assertions.assertThat(InitCommand.AgentPlatform.parsePlatforms(List.of("codex", "cursor")))
+                .containsExactlyInAnyOrder(InitCommand.AgentPlatform.CODEX, InitCommand.AgentPlatform.CURSOR);
+        Assertions.assertThat(InitCommand.AgentPlatform.parsePlatforms(null)).hasSize(5);
+        Assertions.assertThatThrownBy(() -> InitCommand.AgentPlatform.parsePlatforms(List.of("unknown-agent")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

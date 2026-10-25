@@ -296,6 +296,29 @@ class OnlyRequiredFieldsFuzzerTest {
         Assertions.assertThat(winningContext.getPayload()).contains("\"keyType\":\"TELETAN\"", "\"key\":\"KTXQ7YH6F5\"");
         Assertions.assertThat(winningContext.getHeaders()).extracting(com.endava.cats.model.CatsHeader::getName)
                 .containsExactly("Authorization");
+
+        // Also cover defaulted field fallback and edge cases on RequiredOnlyPayloadGenerator
+        StringSchema defaultedProp = new StringSchema();
+        defaultedProp.setDefault("DEF");
+        List<String> fallbacks = RequiredOnlyPayloadGenerator.generateFallbackMinimalPayloads(
+                "{\"req\":\"1\",\"defField\":\"DEF\",\"optField\":\"OPT\"}",
+                List.of("req"),
+                "{\"req\":\"1\"}",
+                Map.of("defField", defaultedProp),
+                5);
+        Assertions.assertThat(fallbacks).isNotEmpty();
+        Assertions.assertThat(RequiredOnlyPayloadGenerator.generateFallbackMinimalPayloads("", List.of(), "{}", Map.of(), 5)).isEmpty();
+        Assertions.assertThat(RequiredOnlyPayloadGenerator.generateFallbackMinimalPayloads("[1,2]", List.of(), "[]", Map.of(), 5)).isEmpty();
+
+        // Exercise JsonPayloadTarget branches
+        JsonPayloadTarget rootTarget = JsonPayloadTarget.root(new ObjectSchema(), Map.of());
+        Assertions.assertThat(rootTarget.valueFrom("invalid-json")).isEmpty();
+        Assertions.assertThat(rootTarget.valueFrom((com.google.gson.JsonElement) null)).isEmpty();
+        Assertions.assertThat(rootTarget.displayName()).isEqualTo("root");
+        JsonPayloadTarget fieldTarget = JsonPayloadTarget.field("items[*]#code", new StringSchema(), Map.of());
+        Assertions.assertThat(fieldTarget.valueFrom("{\"items\":[]}")).isEmpty();
+        Assertions.assertThat(fieldTarget.valueFrom("{\"items\":[123]}")).isEmpty();
+        Assertions.assertThat(fieldTarget.valueFrom("{\"items\":[{\"code\":\"X\"}]}")).isPresent();
     }
 
     private FuzzingData fuzzingData(String payload, Schema<?> schema, Map<String, Schema> schemaMap,

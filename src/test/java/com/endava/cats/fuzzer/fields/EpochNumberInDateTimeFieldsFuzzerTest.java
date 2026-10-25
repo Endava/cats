@@ -60,6 +60,8 @@ class EpochNumberInDateTimeFieldsFuzzerTest {
     @Test
     void shouldReturnEpochValues() {
         Assertions.assertThat(fuzzer.getFuzzedValues("2024-01-01T00:00:00Z")).hasSize(2);
+        Assertions.assertThat(fuzzer.getFuzzedValues("not-an-instant")).hasSize(2);
+        Assertions.assertThat(fuzzer.getFuzzedValues(null)).hasSize(2);
     }
 
     @Test

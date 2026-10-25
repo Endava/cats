@@ -84,6 +84,42 @@ class CompareCommandTest {
         Assertions.assertThat(qg.getQualityGateDescription()).contains("Baseline comparison:");
     }
 
+    @Test
+    void shouldHandleWarningsCompareWithCurrentAndErrorPaths(@TempDir Path tempDir) throws IOException {
+        CatsTestCaseSummary baseWarn = summary("Test 1", "GET", "/pets", "HappyPath", "warn", "Undocumented code", 201);
+        CatsTestCaseSummary targetNewWarn = summary("Test 2", "POST", "/pets", "HappyPath", "warning", "Slow response", 200);
+        CatsTestCaseSummary targetSameScopeOk = summary("Test 1", "GET", "/pets", "HappyPath", "success", null, 200);
+        CatsTestCaseSummary basePostOk = summary("Test 2", "POST", "/pets", "HappyPath", "success", null, 200);
+
+        Path baseFile = tempDir.resolve("base-warn.json");
+        writeReport(baseFile, List.of(baseWarn, basePostOk), 5);
+
+        BaselineComparisonEngine.ComparisonResult currentDiff = BaselineComparisonEngine.compareWithCurrent(
+                baseFile, List.of(targetSameScopeOk, targetNewWarn), 6);
+        Assertions.assertThat(currentDiff.newWarningCount()).isEqualTo(1);
+        Assertions.assertThat(currentDiff.resolvedWarningCount()).isEqualTo(1);
+        Assertions.assertThat(currentDiff.hasRegressions(true)).isTrue();
+        Assertions.assertThat(currentDiff.hasRegressions(false)).isFalse();
+
+        BaselineComparisonEngine.renderToConsole(
+                io.github.ludovicianul.prettylogger.PrettyLoggerFactory.getConsoleLogger(), currentDiff, true);
+
+        Assertions.assertThatThrownBy(() -> BaselineComparisonEngine.loadReport(null))
+                .isInstanceOf(IOException.class);
+        Assertions.assertThatThrownBy(() -> BaselineComparisonEngine.loadReport(tempDir.resolve("missing.json")))
+                .isInstanceOf(IOException.class);
+        Path emptyJson = tempDir.resolve("empty.json");
+        Files.writeString(emptyJson, "");
+        Assertions.assertThatThrownBy(() -> BaselineComparisonEngine.loadReport(emptyJson))
+                .isInstanceOf(IOException.class);
+
+        CompareCommand failingCmd = new CompareCommand();
+        failingCmd.baseline = tempDir.resolve("missing.json").toFile();
+        failingCmd.target = baseFile.toFile();
+        failingCmd.run();
+        Assertions.assertThat(failingCmd.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+    }
+
     private static void writeReport(Path file, List<CatsTestCaseSummary> cases, long execTime) throws IOException {
         CatsTestReport report = CatsTestReport.builder()
                 .testCases(cases)

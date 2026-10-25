@@ -95,6 +95,39 @@ class SmokeCommandTest {
         Assertions.assertThat(SmokeCommand.diagnoseStatusCode(953)).isEqualTo("I/O / Connection Error");
     }
 
+    @Test
+    void shouldCoverAllVerdictsProbeUpgradeAndUnresolvedParameters() {
+        // 1. NO_OPERATIONS_EXECUTED (only skipped tests)
+        SmokeCommand.SmokeReport emptyReport = smokeCommand.buildReport(List.of(
+                snapshot("GET", "/pets", 200, 5, "skipped")));
+        Assertions.assertThat(emptyReport.verdict()).isEqualTo("NO_OPERATIONS_EXECUTED");
+
+        // 2. UNREACHABLE_SERVER (all I/O errors)
+        SmokeCommand.SmokeReport ioReport = smokeCommand.buildReport(List.of(
+                snapshot("GET", "/pets", 953, 5, "error")));
+        Assertions.assertThat(ioReport.verdict()).isEqualTo("UNREACHABLE_SERVER");
+
+        // 3. AUTH_FAILURE_ALL_ENDPOINTS (all 401/403)
+        Mockito.doAnswer(_ -> {
+            catsCommand.executionEventPublisher.publish(new CatsExecutionEvent.TestCompleted(
+                    Instant.now(), snapshot("GET", "/pets", 401, 5, "error")));
+            return null;
+        }).when(catsCommand).run();
+        smokeCommand.run();
+        Assertions.assertThat(smokeCommand.getLastReport().verdict()).isEqualTo("AUTH_FAILURE_ALL_ENDPOINTS");
+        Assertions.assertThat(smokeCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+
+        // 4. NEEDS_SEED_OR_AUTH_CONFIG (all 404, upgrading probe when 2xx arrives later)
+        SmokeCommand.SmokeReport notFoundReport = smokeCommand.buildReport(List.of(
+                snapshot("GET", "/pets/" + "x".repeat(60), 404, 5, "error")));
+        Assertions.assertThat(notFoundReport.verdict()).isEqualTo("NEEDS_SEED_OR_AUTH_CONFIG");
+
+        SmokeCommand.SmokeReport upgradedReport = smokeCommand.buildReport(List.of(
+                snapshot("GET", "/pets", 404, 5, "error"),
+                snapshot("GET", "/pets", 200, 4, "success")));
+        Assertions.assertThat(upgradedReport.ok2xx()).isEqualTo(1);
+    }
+
     private static TestResultSnapshot snapshot(String method, String path, int code, long timeMs, String result) {
         return new TestResultSnapshot("Test 1", "trace", "scenario", "2XX", result, "reason", "details", "",
                 "HappyPath", path, path, path, "http://localhost", true,

@@ -245,4 +245,114 @@ class TriageCommandTest {
         Assertions.assertThat(emptyCmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
         Assertions.assertThat(emptyCmd.getLastReport().totalClusters()).isZero();
     }
+
+    @Test
+    void shouldClassifyAuthGapsHeaderCollisionsUnresolved404OmitCorrelationsAndContractDrift(@TempDir Path tempDir) throws Exception {
+        // 2XX POST with numeric id to exercise primitiveToJavaObject(number)
+        Files.writeString(tempDir.resolve("Test1.json"), """
+                {
+                  "testId": "Test 1",
+                  "result": "success",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/orders",
+                  "path": "/orders",
+                  "request": {"httpMethod": "POST", "url": "http://localhost:8080/orders", "sendBody": true},
+                  "response": {"responseCode": 201, "jsonBody": {"id": 9001, "activeId": true}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        // 401 Auth failure
+        Files.writeString(tempDir.resolve("Test2.json"), """
+                {
+                  "testId": "Test 2",
+                  "result": "error",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/orders",
+                  "path": "/orders",
+                  "request": {"httpMethod": "GET", "url": "http://localhost:8080/orders", "sendBody": false},
+                  "response": {"responseCode": 401, "jsonBody": {"message": "Unauthorized"}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        // Header correlation collision
+        Files.writeString(tempDir.resolve("Test3.json"), """
+                {
+                  "testId": "Test 3",
+                  "result": "error",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/orders",
+                  "path": "/orders",
+                  "request": {"httpMethod": "POST", "url": "http://localhost:8080/orders", "sendBody": true},
+                  "response": {"responseCode": 400, "jsonBody": {"message": "Invalid correlation header"}},
+                  "requestProvenance": {
+                    "runtimeCorrelations": [{
+                      "sourceMethod": "POST",
+                      "sourcePath": "/orders",
+                      "sourceLocation": "response.body.$.id",
+                      "target": {"location": "HEADER", "name": "X-Request-Id"},
+                      "value": "9001"
+                    }]
+                  }
+                }
+                """, StandardCharsets.UTF_8);
+
+        // Unresolved 404 on /orders/{orderId} (where POST /orders succeeded)
+        Files.writeString(tempDir.resolve("Test4.json"), """
+                {
+                  "testId": "Test 4",
+                  "result": "error",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/orders/{orderId}",
+                  "path": "/orders/{orderId}",
+                  "request": {"httpMethod": "GET", "url": "http://localhost:8080/orders/9999", "sendBody": false},
+                  "response": {"responseCode": 404, "jsonBody": {"message": "Order not found"}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        // 422 with 'must be null' -> synthesizes REMOVE (omit) rule
+        Files.writeString(tempDir.resolve("Test5.json"), """
+                {
+                  "testId": "Test 5",
+                  "result": "error",
+                  "expectedResult": "Should return 2XX",
+                  "fuzzer": "OnlyRequiredFields",
+                  "contractPath": "/orders",
+                  "path": "/orders",
+                  "request": {
+                    "httpMethod": "POST",
+                    "url": "http://localhost:8080/orders",
+                    "payload": "{\\"orderType\\":\\"DIGITAL\\",\\"shippingAddress\\":\\"123 Main St\\"}",
+                    "sendBody": true
+                  },
+                  "response": {"responseCode": 422, "jsonBody": {"message": "'shippingAddress' must be null for DIGITAL orders"}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        // Contract mismatch (non-5XX, non-404, non-401, non-seed 400)
+        Files.writeString(tempDir.resolve("Test6.json"), """
+                {
+                  "testId": "Test 6",
+                  "result": "error",
+                  "resultReason": "Unexpected response code: 200",
+                  "expectedResult": "Should return 4XX",
+                  "fuzzer": "InvalidValuesInEnumsFields",
+                  "contractPath": "/pet",
+                  "path": "/pet",
+                  "request": {"httpMethod": "PUT", "url": "http://localhost:8080/pet", "sendBody": true},
+                  "response": {"responseCode": 200, "jsonBody": {"status": "accepted"}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        TriageCommand cmd = new TriageCommand();
+        cmd.reportFolder = tempDir.toString();
+        cmd.contractPath = "src/test/resources/petstore.yml";
+        cmd.run();
+
+        Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+        Assertions.assertThat(cmd.getLastReport().clusters()).extracting(TriageCommand.RootCauseCluster::category)
+                .contains("HEADER_CORRELATION_COLLISION", "CROSS_FIELD_CONSTRAINT_4XX",
+                        "AUTH_CONFIGURATION_GAP", "UNRESOLVED_PATH_PARAM_404", "CONTRACT_MISMATCH");
+        Assertions.assertThat(cmd.getLastReport().synthesizedCorrelationsYaml()).contains("omit:", "- \"shippingAddress\"");
+        Assertions.assertThat(cmd.getLastReport().minedRefDataYaml()).contains("id: 9001", "activeId: true");
+    }
 }

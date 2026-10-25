@@ -2,7 +2,6 @@ package com.endava.cats.command;
 
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.JsonUtils;
-import com.endava.cats.util.OpenApiReusabilityMetrics;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.VersionProvider;

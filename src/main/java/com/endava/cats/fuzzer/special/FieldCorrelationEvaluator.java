@@ -407,8 +407,14 @@ public final class FieldCorrelationEvaluator {
         if (trimmed.startsWith("$request.")) {
             return lookupJsonPath(requestJson, trimmed.substring("$request.".length()));
         }
+        if (trimmed.startsWith("request.")) {
+            return lookupJsonPath(requestJson, trimmed.substring("request.".length()));
+        }
         if (trimmed.startsWith("$response.")) {
             return lookupJsonPath(responseJson, trimmed.substring("$response.".length()));
+        }
+        if (trimmed.startsWith("response.")) {
+            return lookupJsonPath(responseJson, trimmed.substring("response.".length()));
         }
         String primaryJson = responseJson != null ? responseJson : requestJson;
         Object fromPrimary = lookupJsonPath(primaryJson, trimmed);
