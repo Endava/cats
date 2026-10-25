@@ -1326,7 +1326,7 @@ class TestCaseListenerTest {
 
     @Test
     void shouldLoadFuzzerSpecificResponseCode() {
-        catsGlobalContext = new CatsGlobalContext();
+        catsGlobalContext.getFuzzersConfiguration().clear();
         catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.expectedResponseCode", "201,202");
         ReflectionTestUtils.setField(testCaseListener, "globalContext", catsGlobalContext);
         ResponseCodeFamily family = testCaseListener.getExpectedResponseCodeConfiguredFor("fuzzer", "test", "post", ResponseCodeFamilyPredefined.TWOXX);
@@ -1339,7 +1339,7 @@ class TestCaseListenerTest {
 
     @Test
     void shouldLoadPathSpecificResponseCode() {
-        catsGlobalContext = new CatsGlobalContext();
+        catsGlobalContext.getFuzzersConfiguration().clear();
         catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.expectedResponseCode", "201,202");
         catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.test.expectedResponseCode", "400");
 
@@ -1354,7 +1354,7 @@ class TestCaseListenerTest {
 
     @Test
     void shouldLoadMethodSpecificResponseCode() {
-        catsGlobalContext = new CatsGlobalContext();
+        catsGlobalContext.getFuzzersConfiguration().clear();
         catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.expectedResponseCode", "201,202");
         catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.test.expectedResponseCode", "400");
         catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.test.post.expectedResponseCode", "500");

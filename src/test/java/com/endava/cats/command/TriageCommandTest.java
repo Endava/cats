@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -178,7 +179,7 @@ class TriageCommandTest {
 
     @Test
     void shouldVerifyFixesAgainstLiveServer(@TempDir Path tempDir) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         server.createContext("/billing-plans", exchange -> {
             exchange.sendResponseHeaders(400, 2);
             exchange.getResponseBody().write("{}".getBytes(StandardCharsets.UTF_8));

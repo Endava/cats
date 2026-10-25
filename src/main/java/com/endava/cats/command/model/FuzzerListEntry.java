@@ -47,6 +47,7 @@ public class FuzzerListEntry {
      * Represents details about a fuzzer, including its name and description.
      */
     @Builder
+    @Getter
     public static class FuzzerDetails {
         private String name;
         private String description;

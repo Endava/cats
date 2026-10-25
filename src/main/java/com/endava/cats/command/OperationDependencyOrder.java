@@ -314,7 +314,7 @@ final class OperationDependencyOrder {
         Map<String, Schema> schemas = (api != null && api.getComponents() != null)
                 ? api.getComponents().getSchemas() : null;
         Schema<?> resolved = CatsModelUtils.resolveSchema(schema, schemas);
-        return resolved == schema ? null : resolved;
+        return Objects.equals(resolved, schema) ? null : resolved;
     }
 
     private static Set<String> producerIdentifiers(String path) {

@@ -274,7 +274,7 @@ class SecondPhaseConsistencyFuzzersTest {
             SimpleExecutorContext step = call.getArgument(0);
             CatsResponse response = step.getHttpMethod() == HttpMethod.PUT
                     ? CatsResponse.builder().responseCode(200).body("{}").build()
-                    : CatsResponse.builder().responseCode(200).body("{\"name\":\"" + (++reads[0]) + "\"}").build();
+                    : CatsResponse.builder().responseCode(200).body("{\"name\":\"" + ++reads[0] + "\"}").build();
             step.getResponseProcessor().accept(response, data);
             return null;
         }).when(executor).execute(Mockito.any());

@@ -11,16 +11,18 @@ import picocli.CommandLine;
 @QuarkusTest
 class InfoCommandTest {
     @Inject
-    InfoCommand infoCommand;
+    InfoCommand injectedInfoCommand;
+
+    private InfoCommand infoCommand;
 
     @BeforeEach
     void setup() {
+        infoCommand = Mockito.spy(injectedInfoCommand);
         ReflectionTestUtils.setField(infoCommand, "catsCommand", Mockito.mock(CatsCommand.class));
     }
 
     @Test
     void shouldReturnInfoInText() {
-        infoCommand = Mockito.spy(infoCommand);
         CommandLine commandLine = new CommandLine(infoCommand);
         commandLine.execute();
 
@@ -30,7 +32,6 @@ class InfoCommandTest {
 
     @Test
     void shouldReturnInfoInJson() {
-        infoCommand = Mockito.spy(infoCommand);
         CommandLine commandLine = new CommandLine(infoCommand);
         commandLine.execute("-j");
 

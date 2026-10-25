@@ -105,13 +105,13 @@ class SSNGeneratorTest {
             // Verify BSN checksum (11-proof)
             int sum = 0;
             for (int i = 0; i < 8; i++) {
-                sum += Character.getNumericValue(bsn.charAt(i)) * (9 - i);
+                sum += Character.digit(bsn.charAt(i), 10) * (9 - i);
             }
             int checkDigit = sum % 11;
             if (checkDigit == 10) {
                 checkDigit = 0;
             }
-            Assertions.assertThat(Character.getNumericValue(bsn.charAt(8))).isEqualTo(checkDigit);
+            Assertions.assertThat(Character.digit(bsn.charAt(8), 10)).isEqualTo(checkDigit);
         }
 
         @Test

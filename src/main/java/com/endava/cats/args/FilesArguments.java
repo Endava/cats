@@ -150,6 +150,34 @@ public class FilesArguments {
     @Setter
     private File mutatorsFolder;
 
+    /**
+     * Copies configured file and parameter options from another {@link FilesArguments} instance.
+     *
+     * @param other the source {@link FilesArguments}
+     */
+    public void copyFrom(FilesArguments other) {
+        if (other == null || other == this) {
+            return;
+        }
+        this.errorLeaksKeywords = other.errorLeaksKeywords;
+        this.fuzzersConfig = other.fuzzersConfig;
+        this.params = other.params;
+        this.urlParamsArguments = other.urlParamsArguments;
+        this.headersFile = other.headersFile;
+        this.headersMap = other.headersMap;
+        this.queryFile = other.queryFile;
+        this.pathsOrderFile = other.pathsOrderFile;
+        this.queryParamsArguments = other.queryParamsArguments;
+        this.refDataFile = other.refDataFile;
+        this.refDataArguments = other.refDataArguments;
+        this.customFuzzerFile = other.customFuzzerFile;
+        this.functionalFlowFile = other.functionalFlowFile;
+        this.correlationsFile = other.correlationsFile;
+        this.securityFuzzerFile = other.securityFuzzerFile;
+        this.createRefData = other.createRefData;
+        this.mutatorsFolder = other.mutatorsFolder;
+    }
+
 
     /**
      * Loads all supplied files for --securityFuzzerFile, --customFuzzerFile, --refData, --urlParams and --headers.
@@ -359,11 +387,14 @@ public class FilesArguments {
      * Returns the list of field names marked with {@link com.endava.cats.io.ServiceCaller#CATS_REMOVE_FIELD}
      * in {@code --refData} for the given path.
      *
-     * @param currentPath the current API path
+     * @param refDataForPath the reference data map for the current API path
      * @return list of field names to remove/skip from fuzzing
      */
-    public List<String> getFieldsToRemoveFromRefData(String currentPath) {
-        return getRefData(currentPath).entrySet().stream()
+    public static List<String> getFieldsToRemoveFromRefData(Map<String, Object> refDataForPath) {
+        if (refDataForPath == null || refDataForPath.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return refDataForPath.entrySet().stream()
                 .filter(entry -> ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(entry.getValue())))
                 .map(Map.Entry::getKey)
                 .toList();

@@ -15,6 +15,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -81,9 +82,9 @@ public class FieldsIteratorExecutor {
      *                including FuzzingData, logger, and other relevant parameters.
      */
     public void execute(FieldsIteratorExecutorContext context) {
-        Set<String> allFields = context.getFuzzingData().getAllFieldsByHttpMethod();
+        Set<String> allFields = new java.util.LinkedHashSet<>(context.getFuzzingData().getAllFieldsByHttpMethod());
         context.getLogger().debug("All fields: {}", allFields);
-        List<String> fieldsToBeRemoved = filesArguments.getFieldsToRemoveFromRefData(context.getFuzzingData().getPath());
+        List<String> fieldsToBeRemoved = FilesArguments.getFieldsToRemoveFromRefData(filesArguments.getRefData(context.getFuzzingData().getPath()));
         context.getLogger().note("The following fields marked as [{}] in refData will not be fuzzed: {}", CATS_REMOVE_FIELD, fieldsToBeRemoved);
 
         fieldsToBeRemoved.forEach(allFields::remove);

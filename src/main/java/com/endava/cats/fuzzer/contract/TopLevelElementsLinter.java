@@ -31,7 +31,6 @@ public class TopLevelElementsLinter extends BaseLinter {
     private static final String IS_EMPTY = " is empty";
     private static final String IS_TOO_SHORT = " is too short";
     private static final String COMMA = ", ";
-    private static final String EMPTY = "";
 
     /**
      * Creates a new TopLevelElementsLinter instance.
@@ -76,7 +75,7 @@ public class TopLevelElementsLinter extends BaseLinter {
             return String.format("%s is misconfigured: %s. ", element, errors);
         }
 
-        return EMPTY;
+        return "";
     }
 
     private String inspectServers(List<Server> servers) {
@@ -110,7 +109,7 @@ public class TopLevelElementsLinter extends BaseLinter {
     }
 
     private String emptyOrShort(Supplier<String> supplier) {
-        String result = EMPTY;
+        String result = "";
         if (StringUtils.isBlank(supplier.get())) {
             result += COMMA + DESCRIPTION + IS_EMPTY;
         } else if (supplier.get().split(" ").length < 3) {
@@ -155,7 +154,7 @@ public class TopLevelElementsLinter extends BaseLinter {
         if (function.get() == null) {
             return toReturn;
         }
-        return EMPTY;
+        return "";
     }
 
     @Override

@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
@@ -885,7 +886,7 @@ final class CatsTuiState {
 
     private List<String> detailLines() {
         TestResultSnapshot test = selectedTest();
-        if (test != cachedDetailTest || terminalColumns != cachedDetailColumns) {
+        if (!Objects.equals(test, cachedDetailTest) || terminalColumns != cachedDetailColumns) {
             cachedDetailTest = test;
             cachedDetailColumns = terminalColumns;
             cachedDetailLines = CatsTuiDetailFormatter.format(test, terminalColumns);

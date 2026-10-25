@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ModelUtils {
@@ -731,7 +732,7 @@ public class ModelUtils {
 
     private static boolean hasOrInheritsDiscriminator(Schema schema, Map<String, Schema> allSchemas, List<Schema> visitedSchemas) {
         for (Schema s : visitedSchemas) {
-            if (s == schema) {
+            if (Objects.equals(s, schema)) {
                 return false;
             }
         }

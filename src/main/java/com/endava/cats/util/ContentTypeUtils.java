@@ -75,7 +75,7 @@ public abstract class ContentTypeUtils {
     }
 
     /**
-     * Checks whether the given media type is plain {@code application/json} (with optional parameters) or a wildcard {@code *&#47;*}.
+     * Checks whether the given media type is plain {@code application/json} (with optional parameters) or a wildcard <code>*&#47;*</code>.
      *
      * @param mediaType the media type to inspect
      * @return {@code true} if plain JSON or wildcard
@@ -90,7 +90,7 @@ public abstract class ContentTypeUtils {
 
     /**
      * Resolves the {@code Accept} header value for an operation from its declared {@code 2XX} response content types.
-     * Returns {@code null} when the operation supports plain {@code application/json} or {@code *&#47;*} so the caller's
+     * Returns {@code null} when the operation supports plain {@code application/json} or <code>*&#47;*</code> so the caller's
      * default/configured content type is used; otherwise returns the first declared {@code 2XX} media type
      * (such as {@code application/hal+json}, {@code application/vnd.api+json}, or {@code application/xml}).
      *

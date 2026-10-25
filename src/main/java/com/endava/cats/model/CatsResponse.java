@@ -25,7 +25,6 @@ import java.util.Optional;
 @Getter
 public class CatsResponse {
     private static final String UNKNOWN_MEDIA_TYPE = "unknown/unknown";
-    private static final Exception EMPTY_EXCEPTION = new Exception("");
     private static final int INVALID_ERROR_CODE = 999;
     private final int responseCode;
     private final String httpMethod;
@@ -186,7 +185,7 @@ public class CatsResponse {
 
     private static boolean exceptionContains(IOException ioException, String message) {
         return Optional.ofNullable(ioException.getMessage()).orElse("").toLowerCase(Locale.ROOT).contains(message) ||
-                Optional.ofNullable(ioException.getCause()).orElse(EMPTY_EXCEPTION).getMessage().toLowerCase(Locale.ROOT).contains(message) ||
+                Optional.ofNullable(ioException.getCause()).map(Throwable::getMessage).orElse("").toLowerCase(Locale.ROOT).contains(message) ||
                 Arrays.stream(ioException.getSuppressed()).anyMatch(t -> t.getMessage().toLowerCase(Locale.ROOT).contains(message));
     }
 

@@ -14,6 +14,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
 import java.time.Instant;
@@ -33,14 +34,14 @@ class SmokeCommandTest {
         CheckArguments checkArguments = new CheckArguments();
         Mockito.when(filterArguments.getCheckArguments()).thenReturn(checkArguments);
 
-        catsCommand.executionEventPublisher = new CatsExecutionEventPublisher();
-        catsCommand.processingArguments = new ProcessingArguments();
-        catsCommand.runtimeResourcePool = Mockito.mock(RuntimeResourcePool.class);
+        ReflectionTestUtils.setField(catsCommand, "executionEventPublisher", new CatsExecutionEventPublisher());
+        ReflectionTestUtils.setField(catsCommand, "processingArguments", new ProcessingArguments());
+        ReflectionTestUtils.setField(catsCommand, "runtimeResourcePool", Mockito.mock(RuntimeResourcePool.class));
         Mockito.when(catsCommand.runtimeResourcePool.unresolvedOperations()).thenReturn(List.of());
 
         smokeCommand.catsCommand = catsCommand;
-        smokeCommand.filterArguments = filterArguments;
-        smokeCommand.reportingArguments = new ReportingArguments();
+        ReflectionTestUtils.setField(smokeCommand, "filterArguments", filterArguments);
+        ReflectionTestUtils.setField(smokeCommand, "reportingArguments", new ReportingArguments());
     }
 
     @Test

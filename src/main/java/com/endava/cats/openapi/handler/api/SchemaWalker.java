@@ -67,7 +67,7 @@ public class SchemaWalker {
      */
     public static void walk(OpenAPI api, SchemaHandler... handlers) {
         Objects.requireNonNull(api);
-        WalkContext ctx = new WalkContext(api, Collections.newSetFromMap(new IdentityHashMap<>()), handlers, null, null);
+        WalkContext ctx = new WalkContext(api, Collections.newSetFromMap(new IdentityHashMap<>()), List.of(handlers), null, null);
 
         Optional.ofNullable(api.getComponents())
                 .map(Components::getSchemas)
@@ -247,7 +247,7 @@ public class SchemaWalker {
 /**
  * Encapsulates the traversal context for schema walking.
  */
-record WalkContext(OpenAPI api, Set<Schema<?>> visited, SchemaHandler[] handlers, String url, String method) {
+record WalkContext(OpenAPI api, Set<Schema<?>> visited, List<SchemaHandler> handlers, String url, String method) {
     WalkContext withLocation(String newUrl, String newMethod) {
         return new WalkContext(api, visited, handlers, newUrl, newMethod);
     }

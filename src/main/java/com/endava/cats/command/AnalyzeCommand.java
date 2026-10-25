@@ -250,15 +250,15 @@ public class AnalyzeCommand implements Runnable, CommandLine.IExitCodeGenerator 
         StringBuilder sb = new StringBuilder("flowchart LR\n");
         int nodeIdx = 1;
         for (ProducerConsumerChain chain : chains) {
-            String prodId = "P" + (nodeIdx++);
+            String prodId = "P" + nodeIdx++;
             sb.append("  ").append(prodId).append("[\"").append(chain.producer()).append("\"]\n");
             for (String consumer : chain.consumers()) {
-                String consId = "C" + (nodeIdx++);
+                String consId = "C" + nodeIdx++;
                 sb.append("  ").append(prodId).append(" --> ").append(consId).append("(\"").append(consumer).append("\")\n");
             }
         }
         for (String orphan : orphanParams) {
-            String orphId = "O" + (nodeIdx++);
+            String orphId = "O" + nodeIdx++;
             sb.append("  ").append(orphId).append("{{\"Orphan: ").append(orphan).append("\"}}\n");
         }
         return sb.toString().stripTrailing();

@@ -12,11 +12,13 @@ import static org.mockito.Mockito.verify;
 @QuarkusTest
 class ExplainCommandTest {
     @Inject
-    ExplainCommand explainCommand;
+    ExplainCommand injectedExplainCommand;
+
+    private ExplainCommand explainCommand;
 
     @BeforeEach
     void setup() {
-        explainCommand = spy(explainCommand);
+        explainCommand = spy(injectedExplainCommand);
     }
 
     @Test

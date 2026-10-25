@@ -436,9 +436,9 @@ public abstract class CatsUtil {
     }
 
     private static boolean isUnreservedUriCharacter(int value) {
-        return value >= 'A' && value <= 'Z'
-                || value >= 'a' && value <= 'z'
-                || value >= '0' && value <= '9'
+        return (value >= 'A' && value <= 'Z')
+                || (value >= 'a' && value <= 'z')
+                || (value >= '0' && value <= '9')
                 || value == '-' || value == '.' || value == '_' || value == '~';
     }
 

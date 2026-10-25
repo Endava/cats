@@ -132,7 +132,7 @@ public final class FieldCorrelationEvaluator {
         }
         for (Map.Entry<String, Object> entry : Optional.ofNullable(rule.set()).orElse(Map.of()).entrySet()) {
             String normalizedPath = normalizeFieldPath(entry.getKey());
-            Object resolvedVal = resolveRuleValue(entry.getValue(), current, variables);
+            Object resolvedVal = resolveRuleValue(entry.getValue(), variables);
             if (!isFieldProtected(normalizedPath, protectedFields)) {
                 current = setOrInsertField(current, normalizedPath, resolvedVal);
             } else if (JsonUtils.isFieldInJson(current, normalizedPath)) {
@@ -227,7 +227,7 @@ public final class FieldCorrelationEvaluator {
         return current;
     }
 
-    private static Object resolveRuleValue(Object rawValue, String requestJson, Map<String, String> variables) {
+    private static Object resolveRuleValue(Object rawValue, Map<String, String> variables) {
         if (rawValue instanceof String strVal) {
             return DynamicValueResolver.resolve(strVal, variables);
         }
@@ -319,7 +319,7 @@ public final class FieldCorrelationEvaluator {
 
     private static boolean compareOperands(Object left, Object right, String op) {
         if (left == null || right == null || JsonUtils.isNotSet(String.valueOf(left)) || JsonUtils.isNotSet(String.valueOf(right))) {
-            return ("!=".equals(op)) && !Objects.equals(String.valueOf(left), String.valueOf(right));
+            return "!=".equals(op) && !Objects.equals(String.valueOf(left), String.valueOf(right));
         }
         String leftStr = String.valueOf(left).trim();
         String rightStr = String.valueOf(right).trim();

@@ -18,6 +18,7 @@ import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
+import com.google.common.base.Splitter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -361,15 +362,15 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             if (urlPath == null) {
                 return params;
             }
-            String[] contractSegs = contractPath.split("/");
-            String[] actualSegs = urlPath.split("/");
-            if (contractSegs.length <= actualSegs.length) {
-                int offset = actualSegs.length - contractSegs.length;
-                for (int i = 0; i < contractSegs.length; i++) {
-                    String cSeg = contractSegs[i];
+            List<String> contractSegs = Splitter.on('/').splitToList(contractPath);
+            List<String> actualSegs = Splitter.on('/').splitToList(urlPath);
+            if (contractSegs.size() <= actualSegs.size()) {
+                int offset = actualSegs.size() - contractSegs.size();
+                for (int i = 0; i < contractSegs.size(); i++) {
+                    String cSeg = contractSegs.get(i);
                     if (cSeg.startsWith("{") && cSeg.endsWith("}")) {
                         String paramName = cSeg.substring(1, cSeg.length() - 1);
-                        String val = actualSegs[i + offset];
+                        String val = actualSegs.get(i + offset);
                         if (StringUtils.isNotBlank(val)) {
                             params.put(paramName, val);
                         }
@@ -532,7 +533,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
         if ((code == 400 || code == 422) && (ConsoleUtils.matchesFuzzer(tc.getFuzzer(), HappyPathFuzzer.class)
                 || ConsoleUtils.matchesFuzzer(tc.getFuzzer(), OnlyRequiredFieldsFuzzer.class)
-                || tc.getExpectedResult() != null && tc.getExpectedResult().contains("2XX"))) {
+                || (tc.getExpectedResult() != null && tc.getExpectedResult().contains("2XX")))) {
             String key = "CROSS_FIELD_CONSTRAINT_4XX|" + method + "|" + path + "|" + clusterNormKey;
             return new ClusterClassification(
                     key,
@@ -801,7 +802,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         if (!report.synthesizedCorrelations().isEmpty()) {
             logger.noFormat(AnsiUtils.bold("  Synthesized --correlations YAML Rules (pass --export-correlations <file>):"));
             logger.noFormat("--------------------------------------------------------------------------------");
-            for (String line : report.synthesizedCorrelationsYaml().split("\n")) {
+            for (String line : Splitter.on('\n').split(report.synthesizedCorrelationsYaml())) {
                 logger.noFormat("  " + line);
             }
         }

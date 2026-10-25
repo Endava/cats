@@ -33,7 +33,7 @@ class RandomCommandTest {
         ApiArguments apiArguments = new ApiArguments();
         apiArguments.setContract("contract");
         apiArguments.setServer("http://server");
-        randomCommand.apiArguments = apiArguments;
+        ReflectionTestUtils.setField(randomCommand, "apiArguments", apiArguments);
 
         MatchArguments matchArguments = Mockito.mock(MatchArguments.class);
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(true);
@@ -41,15 +41,15 @@ class RandomCommandTest {
         StopArguments stopArguments = Mockito.mock(StopArguments.class);
         Mockito.when(stopArguments.isAnyStopConditionProvided()).thenReturn(true);
 
-        randomCommand.stopArguments = stopArguments;
-        randomCommand.matchArguments = matchArguments;
+        ReflectionTestUtils.setField(randomCommand, "stopArguments", stopArguments);
+        ReflectionTestUtils.setField(randomCommand, "matchArguments", matchArguments);
         randomCommand.path = "/path";
         randomCommand.httpMethod = HttpMethod.POST;
 
         CatsCommand catsCommand = Mockito.mock(CatsCommand.class);
         randomCommand.catsCommand = catsCommand;
-        catsCommand.filterArguments = Mockito.mock(FilterArguments.class);
-        catsCommand.processingArguments = Mockito.mock(ProcessingArguments.class);
+        ReflectionTestUtils.setField(catsCommand, "filterArguments", Mockito.mock(FilterArguments.class));
+        ReflectionTestUtils.setField(catsCommand, "processingArguments", Mockito.mock(ProcessingArguments.class));
         randomCommand.run();
         Mockito.verify(catsCommand, Mockito.times(1)).runWithContext(Mockito.any());
     }
@@ -68,7 +68,7 @@ class RandomCommandTest {
         ApiArguments apiArguments = new ApiArguments();
         apiArguments.setContract("contract");
         apiArguments.setServer("server");
-        randomCommand.apiArguments = apiArguments;
+        ReflectionTestUtils.setField(randomCommand, "apiArguments", apiArguments);
         Assertions.assertThatThrownBy(() -> apiArguments.validateValidServer(randomCommand.spec, null)).isInstanceOf(CommandLine.ParameterException.class);
     }
 }

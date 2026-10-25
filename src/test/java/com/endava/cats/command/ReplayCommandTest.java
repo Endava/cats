@@ -48,8 +48,8 @@ class ReplayCommandTest {
     @BeforeEach
     void setup() throws IOException {
         replayCommand = new ReplayCommand(serviceCaller, testCaseListener);
-        replayCommand.apiArguments = Mockito.mock(ApiArguments.class);
-        replayCommand.authArguments = Mockito.mock(AuthArguments.class);
+        ReflectionTestUtils.setField(replayCommand, "apiArguments", Mockito.mock(ApiArguments.class));
+        ReflectionTestUtils.setField(replayCommand, "authArguments", Mockito.mock(AuthArguments.class));
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         if (tempDir == null) {
             tempDir = Files.createTempDirectory("replay-test-temp");

@@ -78,7 +78,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         logger.debug("All required fields, including subfields: {}", data.getAllRequiredFields());
         logger.debug("All fields {}", allFields);
 
-        List<String> fieldsToBeRemoved = filesArguments.getFieldsToRemoveFromRefData(data.getPath());
+        List<String> fieldsToBeRemoved = FilesArguments.getFieldsToRemoveFromRefData(filesArguments.getRefData(data.getPath()));
         logger.note("The following fields marked as [{}] in refData will not be fuzzed: {}",
                 ServiceCaller.CATS_REMOVE_FIELD, fieldsToBeRemoved);
 

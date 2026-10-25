@@ -522,7 +522,7 @@ public class FilterArguments {
      */
     public List<Fuzzer> getSecondPhaseFuzzers() {
         if (isLinting() || containsOnlySpecialFuzzers(this.getSuppliedFuzzers()) ||
-                !checkArguments.isCheckHttp() && (checkArguments.isCheckFields() || checkArguments.isCheckHeaders())) {
+                (!checkArguments.isCheckHttp() && (checkArguments.isCheckFields() || checkArguments.isCheckHeaders()))) {
             return Collections.emptyList();
         }
         List<String> secondPhaseFuzzersAsString = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SecondPhaseFuzzer.class);
