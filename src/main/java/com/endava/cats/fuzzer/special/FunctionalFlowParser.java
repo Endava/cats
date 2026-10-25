@@ -151,7 +151,7 @@ public final class FunctionalFlowParser {
         List<String> omit = parseStringList(node.get("omit"));
         VariantSpec variantSpec = parseVariant(node.get("variant"));
         List<FieldCorrelationRule> correlate = parseCorrelations(node.get("correlate"));
-        Map<String, String> save = parseStringMap(node.has("save") ? node.get("save") : node.get("output"));
+        Map<String, String> save = parseStringMap(node.get(node.has("save") ? "save" : "output"));
         FunctionalFlowExpectation expect = parseExpectation(node);
         return new FunctionalFlowStep(
                 name, methodAndTarget.method(), methodAndTarget.rawTarget(),
@@ -194,14 +194,15 @@ public final class FunctionalFlowParser {
     }
 
     private static FunctionalFlowExpectation parseExpectation(JsonNode stepNode) {
-        JsonNode expectNode = stepNode.has("expect") ? stepNode.get("expect") : stepNode.get("verify");
+        JsonNode expectNode = stepNode.get(stepNode.has("expect") ? "expect" : "verify");
         List<String> topStatus = parseStatusCodes(stepNode.get("status"));
         if (expectNode == null || !expectNode.isObject()) {
             List<String> status = topStatus.isEmpty() ? List.of("2XX") : topStatus;
             return new FunctionalFlowExpectation(status, Map.of(), Map.of(), List.of(), List.of(), List.of(), true);
         }
         List<String> expectStatus = parseStatusCodes(expectNode.get("status"));
-        List<String> finalStatus = !expectStatus.isEmpty() ? expectStatus : (!topStatus.isEmpty() ? topStatus : List.of("2XX"));
+        List<String> fallbackStatus = topStatus.isEmpty() ? List.of("2XX") : topStatus;
+        List<String> finalStatus = expectStatus.isEmpty() ? fallbackStatus : expectStatus;
         Map<String, Object> fields = new LinkedHashMap<>(parseObjectMap(expectNode.get("fields")));
         expectNode.properties().forEach(entry -> {
             if (!RESERVED_EXPECT_KEYS.contains(entry.getKey().toLowerCase(Locale.ROOT))) {

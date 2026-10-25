@@ -118,18 +118,13 @@ public class SmokeCommand implements Runnable, CommandLine.IExitCodeGenerator {
     SmokeReport buildReport(List<TestResultSnapshot> tests) {
         Map<String, OperationProbe> byOperation = new LinkedHashMap<>();
         for (TestResultSnapshot test : tests) {
-            if ("skip_reporting".equalsIgnoreCase(test.result()) || "skipped".equalsIgnoreCase(test.result())) {
-                continue;
-            }
-            String method = test.request() != null && test.request().httpMethod() != null ? test.request().httpMethod() : "GET";
-            String path = test.contractPath() != null ? test.contractPath() : test.path();
-            int code = test.response() != null ? test.response().responseCode() : 0;
-            long timeMs = test.response() != null ? test.response().responseTimeInMs() : 0;
-            String key = method + " " + path;
-            OperationProbe probe = new OperationProbe(method, path, code, timeMs, diagnoseStatusCode(code));
-            OperationProbe existing = byOperation.get(key);
-            if (existing == null || (!ResponseCodeFamily.is2xxCode(existing.statusCode()) && ResponseCodeFamily.is2xxCode(code))) {
-                byOperation.put(key, probe);
+            if (!isSkippedResult(test.result())) {
+                OperationProbe probe = toOperationProbe(test);
+                String key = probe.method() + " " + probe.path();
+                OperationProbe existing = byOperation.get(key);
+                if (shouldReplaceProbe(existing, probe.statusCode())) {
+                    byOperation.put(key, probe);
+                }
             }
         }
         List<OperationProbe> probes = List.copyOf(byOperation.values());
@@ -148,6 +143,22 @@ public class SmokeCommand implements Runnable, CommandLine.IExitCodeGenerator {
         String verdict = determineVerdict(probes.size(), ok2xx, authErrors, server5xx, ioErrors);
         return new SmokeReport(probes, probes.size(), ok2xx, authErrors, notFound404,
                 validation4xx, server5xx, ioErrors, unresolved, verdict);
+    }
+
+    private static boolean isSkippedResult(String result) {
+        return "skip_reporting".equalsIgnoreCase(result) || "skipped".equalsIgnoreCase(result);
+    }
+
+    private static OperationProbe toOperationProbe(TestResultSnapshot test) {
+        String method = test.request() != null && test.request().httpMethod() != null ? test.request().httpMethod() : "GET";
+        String path = test.contractPath() != null ? test.contractPath() : test.path();
+        int code = test.response() != null ? test.response().responseCode() : 0;
+        long timeMs = test.response() != null ? test.response().responseTimeInMs() : 0;
+        return new OperationProbe(method, path, code, timeMs, diagnoseStatusCode(code));
+    }
+
+    private static boolean shouldReplaceProbe(OperationProbe existing, int newCode) {
+        return existing == null || (!ResponseCodeFamily.is2xxCode(existing.statusCode()) && ResponseCodeFamily.is2xxCode(newCode));
     }
 
     private List<String> collectUnresolvedParameters() {

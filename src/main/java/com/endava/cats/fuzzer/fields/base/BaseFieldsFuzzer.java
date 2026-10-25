@@ -27,7 +27,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -197,6 +196,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      * @return the appropriate ResponseCodeFamily based on the supplied conditions
      */
     protected ResponseCodeFamily getExpectedResponseCodeBasedOnConstraints(FuzzingData data, String fuzzedField, boolean isFuzzedValueMatchingPattern, FuzzingConstraints fuzzingConstraints) {
+        logger.trace("Evaluating response code constraints for field {} on path {}", fuzzedField, data.getPath());
         return this.getExpectedResponseCodeBasedOnConstraints(isFuzzedValueMatchingPattern, fuzzingConstraints);
     }
 
@@ -226,29 +226,32 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      * @return true if the fuzzed value matches the pattern, false otherwise
      */
     private boolean isFuzzedValueMatchingPattern(Object fieldValue, FuzzingData data, String fuzzedField) {
-        if (this.shouldCheckForFuzzedValueMatchingPattern()) {
-            Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-            if (CatsModelUtils.isByteArraySchema(fieldSchema)) {
-                return true;
-            }
-            String sanitized = this.sanitizeString(fieldValue);
-            if (fieldValue != null && fieldSchema.getMaxLength() != null && sanitized.length() > fieldSchema.getMaxLength()) {
-                return false;
-            }
-            if (fieldValue != null && fieldSchema.getMinLength() != null && sanitized.length() < fieldSchema.getMinLength()) {
-                return false;
-            }
-            if (fieldValue != null && fieldSchema.getEnum() != null && !fieldSchema.getEnum().isEmpty()) {
-                return fieldSchema.getEnum().stream().anyMatch(enumVal -> String.valueOf(enumVal).equals(sanitized));
-            }
-            if (fieldSchema.getPattern() != null) {
-                Pattern pattern = Pattern.compile(fieldSchema.getPattern());
-                return fieldValue == null || pattern.matcher(sanitized).matches();
-            }
-
-            return fieldValue == null || isValueMatchingFormat(fieldSchema, sanitized);
+        if (!this.shouldCheckForFuzzedValueMatchingPattern()) {
+            return true;
         }
-        return true;
+        Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+        if (CatsModelUtils.isByteArraySchema(fieldSchema) || fieldValue == null) {
+            return true;
+        }
+        String sanitized = this.sanitizeString(fieldValue);
+        if (violatesLengthOrEnumBounds(fieldSchema, sanitized)) {
+            return false;
+        }
+        if (fieldSchema.getPattern() != null) {
+            return Pattern.compile(fieldSchema.getPattern()).matcher(sanitized).matches();
+        }
+        return isValueMatchingFormat(fieldSchema, sanitized);
+    }
+
+    private static boolean violatesLengthOrEnumBounds(Schema<?> fieldSchema, String sanitized) {
+        if (fieldSchema.getMaxLength() != null && sanitized.length() > fieldSchema.getMaxLength()) {
+            return true;
+        }
+        if (fieldSchema.getMinLength() != null && sanitized.length() < fieldSchema.getMinLength()) {
+            return true;
+        }
+        return fieldSchema.getEnum() != null && !fieldSchema.getEnum().isEmpty()
+                && fieldSchema.getEnum().stream().noneMatch(enumVal -> String.valueOf(enumVal).equals(sanitized));
     }
 
     private boolean isValueMatchingFormat(Schema<?> fieldSchema, String sanitizedValue) {

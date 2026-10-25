@@ -364,34 +364,7 @@ final class CatsTuiState {
             screen = Screen.OVERVIEW;
             return EventResult.HANDLED;
         }
-        int total = fuzzerCount();
-        int pageSize = fuzzerPageSize(screen);
-        int maximumOffset = Math.max(0, total - pageSize);
-        if (event.isUp() || event.isCharIgnoreCase('k')) {
-            selectedFuzzerIndex = Math.max(0, selectedFuzzerIndex - 1);
-            if (selectedFuzzerIndex < fuzzerOffset) {
-                fuzzerOffset = selectedFuzzerIndex;
-            }
-            syncFuzzerSelection();
-            return EventResult.HANDLED;
-        }
-        if (event.isDown() || event.isCharIgnoreCase('j')) {
-            selectedFuzzerIndex = total == 0 ? 0 : Math.min(total - 1, selectedFuzzerIndex + 1);
-            if (selectedFuzzerIndex >= fuzzerOffset + pageSize) {
-                fuzzerOffset = Math.min(maximumOffset, selectedFuzzerIndex - pageSize + 1);
-            }
-            syncFuzzerSelection();
-            return EventResult.HANDLED;
-        }
-        if (event.isPageUp()) {
-            fuzzerOffset = Math.max(0, fuzzerOffset - pageSize);
-            selectedFuzzerIndex = Math.max(0, selectedFuzzerIndex - pageSize);
-            syncFuzzerSelection();
-            return EventResult.HANDLED;
-        }
-        if (event.isPageDown()) {
-            fuzzerOffset = Math.min(maximumOffset, fuzzerOffset + pageSize);
-            selectedFuzzerIndex = total == 0 ? 0 : Math.clamp(fuzzerOffset, selectedFuzzerIndex + pageSize, total - 1);
+        if (moveFuzzerSelection(event)) {
             syncFuzzerSelection();
             return EventResult.HANDLED;
         }
@@ -403,6 +376,35 @@ final class CatsTuiState {
             return EventResult.HANDLED;
         }
         return EventResult.UNHANDLED;
+    }
+
+    private boolean moveFuzzerSelection(KeyEvent event) {
+        int total = fuzzerCount();
+        int pageSize = fuzzerPageSize(screen);
+        int maximumOffset = Math.max(0, total - pageSize);
+        if (event.isUp() || event.isCharIgnoreCase('k')) {
+            selectedFuzzerIndex = Math.max(0, selectedFuzzerIndex - 1);
+            fuzzerOffset = Math.min(fuzzerOffset, selectedFuzzerIndex);
+            return true;
+        }
+        if (event.isDown() || event.isCharIgnoreCase('j')) {
+            selectedFuzzerIndex = total == 0 ? 0 : Math.min(total - 1, selectedFuzzerIndex + 1);
+            if (selectedFuzzerIndex >= fuzzerOffset + pageSize) {
+                fuzzerOffset = Math.min(maximumOffset, selectedFuzzerIndex - pageSize + 1);
+            }
+            return true;
+        }
+        if (event.isPageUp()) {
+            fuzzerOffset = Math.max(0, fuzzerOffset - pageSize);
+            selectedFuzzerIndex = Math.max(0, selectedFuzzerIndex - pageSize);
+            return true;
+        }
+        if (event.isPageDown()) {
+            fuzzerOffset = Math.min(maximumOffset, fuzzerOffset + pageSize);
+            selectedFuzzerIndex = total == 0 ? 0 : Math.clamp(fuzzerOffset, selectedFuzzerIndex + pageSize, total - 1);
+            return true;
+        }
+        return false;
     }
 
     private void syncFuzzerSelection() {
@@ -483,13 +485,20 @@ final class CatsTuiState {
             copySelectedTestCurl();
             return EventResult.HANDLED;
         }
+        if (navigateDetailTest(event) || scrollDetailOffset(event)) {
+            return EventResult.HANDLED;
+        }
+        return EventResult.UNHANDLED;
+    }
+
+    private boolean navigateDetailTest(KeyEvent event) {
         if (event.isCharIgnoreCase('n') || event.isChar(']')) {
             if (selectedIndex + 1 < filteredResults().size()) {
                 selectedIndex++;
                 syncTableSelection();
                 detailOffset = 0;
             }
-            return EventResult.HANDLED;
+            return true;
         }
         if (event.isCharIgnoreCase('p') || event.isChar('[')) {
             if (selectedIndex > 0) {
@@ -497,25 +506,29 @@ final class CatsTuiState {
                 syncTableSelection();
                 detailOffset = 0;
             }
-            return EventResult.HANDLED;
+            return true;
         }
+        return false;
+    }
+
+    private boolean scrollDetailOffset(KeyEvent event) {
         if (event.isUp() || event.isCharIgnoreCase('k')) {
             detailOffset = Math.max(0, detailOffset - 1);
-            return EventResult.HANDLED;
+            return true;
         }
         if (event.isDown() || event.isCharIgnoreCase('j')) {
             detailOffset = Math.min(maxDetailOffset(), detailOffset + 1);
-            return EventResult.HANDLED;
+            return true;
         }
         if (event.isPageUp()) {
             detailOffset = Math.max(0, detailOffset - detailPageSize());
-            return EventResult.HANDLED;
+            return true;
         }
         if (event.isPageDown()) {
             detailOffset = Math.min(maxDetailOffset(), detailOffset + detailPageSize());
-            return EventResult.HANDLED;
+            return true;
         }
-        return EventResult.UNHANDLED;
+        return false;
     }
 
     private void register(TestResultSnapshot test) {

@@ -360,9 +360,9 @@ public class CustomFuzzerUtil {
 
     static String extractResponseValue(CatsResponse response, String selector) {
         if (selector.startsWith(RESPONSE_HEADER_PREFIX) || selector.toLowerCase(Locale.ROOT).startsWith("header.")) {
-            String headerName = selector.contains(".")
-                    ? selector.substring(selector.indexOf('.') + 1)
-                    : selector.substring(RESPONSE_HEADER_PREFIX.length());
+            String headerName = selector.substring(selector.contains(".")
+                    ? selector.indexOf('.') + 1
+                    : RESPONSE_HEADER_PREFIX.length());
             KeyValuePair<String, String> header = response.getHeader(headerName);
             return header == null ? JsonUtils.NOT_SET : header.getValue();
         }

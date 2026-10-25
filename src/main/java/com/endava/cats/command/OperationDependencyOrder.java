@@ -249,15 +249,7 @@ final class OperationDependencyOrder {
                 for (Map.Entry<String, Schema> entry : resolved.getProperties().entrySet()) {
                     String propertyName = entry.getKey();
                     addIdentifierCandidate(propertyName, parentProperty, names);
-                    Schema<?> propSchema = resolvedRequestSchema(api, entry.getValue());
-                    if (propSchema != null && propSchema.getEnum() != null) {
-                        for (Object enumItem : propSchema.getEnum()) {
-                            String normEnum = normalize(String.valueOf(enumItem));
-                            if (!normEnum.isEmpty()) {
-                                WordUtils.nounForms(normEnum).forEach(form -> names.add("noun:" + form));
-                            }
-                        }
-                    }
+                    collectEnumNounIdentifiers(resolvedRequestSchema(api, entry.getValue()), names);
                     collectSchemaIdentifiers(api, entry.getValue(), propertyName, depth + 1, visited, names);
                 }
             }
@@ -269,6 +261,18 @@ final class OperationDependencyOrder {
             }
         } finally {
             visited.remove(resolved);
+        }
+    }
+
+    private static void collectEnumNounIdentifiers(Schema<?> propSchema, Set<String> names) {
+        if (propSchema == null || propSchema.getEnum() == null) {
+            return;
+        }
+        for (Object enumItem : propSchema.getEnum()) {
+            String normEnum = normalize(String.valueOf(enumItem));
+            if (!normEnum.isEmpty()) {
+                WordUtils.nounForms(normEnum).forEach(form -> names.add("noun:" + form));
+            }
         }
     }
 
@@ -330,24 +334,21 @@ final class OperationDependencyOrder {
                 identifiers.add(paramName);
             }
             if (segments.size() >= 2 && !segments.get(segments.size() - 2).startsWith("{")) {
-                String parentResource = normalize(segments.get(segments.size() - 2));
-                for (String form : WordUtils.nounForms(parentResource)) {
-                    identifiers.add("noun:" + form);
-                    for (String suffix : ID_SUFFIXES) {
-                        identifiers.add(form + suffix);
-                    }
-                }
+                addResourceFormsAndSuffixes(normalize(segments.get(segments.size() - 2)), identifiers);
             }
             return identifiers;
         }
-        String resource = normalize(lastSegment);
+        addResourceFormsAndSuffixes(normalize(lastSegment), identifiers);
+        return identifiers;
+    }
+
+    private static void addResourceFormsAndSuffixes(String resource, Set<String> identifiers) {
         for (String form : WordUtils.nounForms(resource)) {
             identifiers.add("noun:" + form);
             for (String suffix : ID_SUFFIXES) {
                 identifiers.add(form + suffix);
             }
         }
-        return identifiers;
     }
 
     private static String normalize(String value) {
@@ -401,17 +402,13 @@ final class OperationDependencyOrder {
         Map<String, String> producers = new LinkedHashMap<>();
         for (Map.Entry<String, PathItem> entry : api.getPaths().entrySet()) {
             PathItem item = entry.getValue();
-            if (item == null) {
-                continue;
-            }
-            String noun = lastConcreteSegment(entry.getKey());
-            if (noun.isEmpty()) {
-                continue;
-            }
-            if (item.getPost() != null) {
-                producers.put(noun, "POST " + entry.getKey());
-            } else if (!postOnly && item.getGet() != null && !stripTrailingSlash(entry.getKey()).endsWith("}")) {
-                producers.putIfAbsent(noun, "GET " + entry.getKey());
+            String noun = item == null ? "" : lastConcreteSegment(entry.getKey());
+            if (!noun.isEmpty()) {
+                if (item.getPost() != null) {
+                    producers.put(noun, "POST " + entry.getKey());
+                } else if (!postOnly && item.getGet() != null && !stripTrailingSlash(entry.getKey()).endsWith("}")) {
+                    producers.putIfAbsent(noun, "GET " + entry.getKey());
+                }
             }
         }
         return producers;

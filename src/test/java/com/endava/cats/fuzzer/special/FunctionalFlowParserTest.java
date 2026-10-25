@@ -120,13 +120,15 @@ class FunctionalFlowParserTest {
         Assertions.assertThat(step.headers()).containsEntry("X-Tenant", "${tenant}");
         Assertions.assertThat(step.query()).containsEntry("dryRun", false);
         Assertions.assertThat(step.save()).containsEntry("createdId", "ruleId");
-        Assertions.assertThat(step.expect().status()).containsExactly("200", "201");
-        Assertions.assertThat(step.expect().fields()).containsEntry("active", true);
-        Assertions.assertThat(step.expect().headers()).containsEntry("content-type", "application/json");
-        Assertions.assertThat(step.expect().bodyContains()).containsExactly("VELOCITY");
-        Assertions.assertThat(step.expect().bodyNotContains()).containsExactly("ERROR");
-        Assertions.assertThat(step.expect().where()).containsExactly("priority >= 10 & active = true");
-        Assertions.assertThat(step.expect().matchesSchema()).isFalse();
+        Assertions.assertThat(step.expect()).satisfies(expect -> {
+            Assertions.assertThat(expect.status()).containsExactly("200", "201");
+            Assertions.assertThat(expect.fields()).containsEntry("active", true);
+            Assertions.assertThat(expect.headers()).containsEntry("content-type", "application/json");
+            Assertions.assertThat(expect.bodyContains()).containsExactly("VELOCITY");
+            Assertions.assertThat(expect.bodyNotContains()).containsExactly("ERROR");
+            Assertions.assertThat(expect.where()).containsExactly("priority >= 10 & active = true");
+            Assertions.assertThat(expect.matchesSchema()).isFalse();
+        });
         Assertions.assertThat(step.body()).isInstanceOf(Map.class);
     }
 

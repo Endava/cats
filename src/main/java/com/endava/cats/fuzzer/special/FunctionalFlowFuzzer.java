@@ -252,13 +252,29 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         if (candidates.size() <= 1) {
             return candidates.stream().findFirst();
         }
-        if (StringUtils.isNotBlank(step.variant())) {
-            for (FuzzingData candidate : candidates) {
-                if (candidate.getReqSchemaName() != null && candidate.getReqSchemaName().endsWith(step.variant())) {
-                    return Optional.of(candidate);
-                }
+        Optional<FuzzingData> byVariantName = findCandidateByVariantName(candidates, step.variant());
+        if (byVariantName.isPresent()) {
+            return byVariantName;
+        }
+        Map<String, String> matchMap = buildVariantMatchMap(step);
+        for (FuzzingData candidate : candidates) {
+            if (matchesDiscriminatorFields(candidate.getPayload(), matchMap)) {
+                return Optional.of(candidate);
             }
         }
+        return Optional.of(candidates.getFirst());
+    }
+
+    private static Optional<FuzzingData> findCandidateByVariantName(List<FuzzingData> candidates, String variant) {
+        if (StringUtils.isBlank(variant)) {
+            return Optional.empty();
+        }
+        return candidates.stream()
+                .filter(c -> c.getReqSchemaName() != null && c.getReqSchemaName().endsWith(variant))
+                .findFirst();
+    }
+
+    private static Map<String, String> buildVariantMatchMap(FunctionalFlowStep step) {
         Map<String, String> matchMap = new LinkedHashMap<>(step.variantMatch());
         if (step.body() instanceof Map<?, ?> bodyMap) {
             bodyMap.forEach((k, v) -> {
@@ -267,12 +283,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                 }
             });
         }
-        for (FuzzingData candidate : candidates) {
-            if (matchesDiscriminatorFields(candidate.getPayload(), matchMap)) {
-                return Optional.of(candidate);
-            }
-        }
-        return Optional.of(candidates.getFirst());
+        return matchMap;
     }
 
     private static boolean matchesDiscriminatorFields(String candidatePayload, Map<String, String> matchMap) {

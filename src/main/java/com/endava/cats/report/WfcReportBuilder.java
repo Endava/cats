@@ -6,7 +6,6 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.ProcessingError;
-import com.endava.cats.util.JsonUtils;
 import com.webfuzzing.commons.VersionNumbers;
 import com.webfuzzing.commons.report.Coverage;
 import com.webfuzzing.commons.report.CoverageCriterion;

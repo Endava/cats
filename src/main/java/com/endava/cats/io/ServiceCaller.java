@@ -8,7 +8,6 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.auth.wfc.WfcAuthProvider;
-import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsExecutionCancelledException;

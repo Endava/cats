@@ -417,7 +417,7 @@ public abstract class CatsModelUtils {
      * Resolves a possibly chained {@code $ref} schema against the supplied schema map with cycle protection.
      */
     @SuppressWarnings("rawtypes")
-    public static Schema<?> resolveSchema(Schema<?> schema, Map<String, Schema> schemaMap) {
+    public static Schema resolveSchema(Schema<?> schema, Map<String, Schema> schemaMap) {
         if (schema == null || schemaMap == null) {
             return schema;
         }

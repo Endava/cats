@@ -16,6 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -171,42 +172,53 @@ public final class RequiredOnlyPayloadGenerator {
             Set<String> required = requiredFields == null ? Set.of() : Set.copyOf(requiredFields);
             Set<String> candidates = new LinkedHashSet<>();
 
-            if (requestPropertyTypes != null && !requestPropertyTypes.isEmpty()) {
-                Set<String> requiredOrDefaulted = new LinkedHashSet<>(required);
-                requestPropertyTypes.forEach((field, schema) -> {
-                    if (field != null && schema != null && (schema.getDefault() != null || schema.getExample() != null)) {
-                        requiredOrDefaulted.add(field);
-                    }
-                });
-                if (!requiredOrDefaulted.equals(required)) {
-                    String withDefaults = JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(retainRequired(root, requiredOrDefaulted, ""));
-                    if (!withDefaults.equals(requiredOnlyPayload) && !withDefaults.equals(payload)) {
-                        candidates.add(withDefaults);
-                    }
-                }
-            }
-
-            int addedSingle = 0;
-            for (Map.Entry<String, JsonElement> entry : root.getAsJsonObject().entrySet()) {
-                if (addedSingle >= maxSingleOptional) {
-                    break;
-                }
-                String topKey = entry.getKey();
-                if (!required.contains(topKey) && !isServerGeneratedField(topKey, Set.of())) {
-                    Set<String> singlePlusRequired = new LinkedHashSet<>(required);
-                    singlePlusRequired.add(topKey);
-                    String candidate = JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(retainRequired(root, singlePlusRequired, ""));
-                    if (!candidate.equals(requiredOnlyPayload) && !candidate.equals(payload) && candidates.add(candidate)) {
-                        addedSingle++;
-                    }
-                }
-            }
+            addDefaultedVariantIfDistinct(root, payload, requiredOnlyPayload, required, requestPropertyTypes, candidates);
+            addSingleOptionalVariants(root.getAsJsonObject(), payload, requiredOnlyPayload, required, maxSingleOptional, candidates);
             if (requestPropertyTypes != null && !requestPropertyTypes.isEmpty()) {
                 addEnumVariantFallbacks(root.getAsJsonObject(), required, requestPropertyTypes, candidates, maxSingleOptional);
             }
             return new ArrayList<>(candidates);
         } catch (RuntimeException _) {
             return List.of();
+        }
+    }
+
+    private static void addDefaultedVariantIfDistinct(JsonElement root, String payload, String requiredOnlyPayload,
+                                                      Set<String> required, Map<String, Schema> requestPropertyTypes,
+                                                      Set<String> candidates) {
+        if (requestPropertyTypes == null || requestPropertyTypes.isEmpty()) {
+            return;
+        }
+        Set<String> requiredOrDefaulted = new LinkedHashSet<>(required);
+        requestPropertyTypes.forEach((field, schema) -> {
+            if (field != null && schema != null && (schema.getDefault() != null || schema.getExample() != null)) {
+                requiredOrDefaulted.add(field);
+            }
+        });
+        if (!requiredOrDefaulted.equals(required)) {
+            String withDefaults = JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(retainRequired(root, requiredOrDefaulted, ""));
+            if (!withDefaults.equals(requiredOnlyPayload) && !withDefaults.equals(payload)) {
+                candidates.add(withDefaults);
+            }
+        }
+    }
+
+    private static void addSingleOptionalVariants(JsonObject rootObj, String payload, String requiredOnlyPayload,
+                                                  Set<String> required, int maxSingleOptional, Set<String> candidates) {
+        int addedSingle = 0;
+        for (Map.Entry<String, JsonElement> entry : rootObj.entrySet()) {
+            if (addedSingle >= maxSingleOptional) {
+                break;
+            }
+            String topKey = entry.getKey();
+            if (!required.contains(topKey) && !isServerGeneratedField(topKey, Set.of())) {
+                Set<String> singlePlusRequired = new LinkedHashSet<>(required);
+                singlePlusRequired.add(topKey);
+                String candidate = JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(retainRequired(rootObj, singlePlusRequired, ""));
+                if (!candidate.equals(requiredOnlyPayload) && !candidate.equals(payload) && candidates.add(candidate)) {
+                    addedSingle++;
+                }
+            }
         }
     }
 
@@ -220,40 +232,46 @@ public final class RequiredOnlyPayloadGenerator {
             String topKey = entry.getKey();
             Schema<?> schema = requestPropertyTypes.get(topKey);
             if (schema != null && schema.getEnum() != null && schema.getEnum().size() > 1) {
-                for (Object enumVal : schema.getEnum()) {
-                    if (candidates.size() >= maxCandidates) {
-                        return;
-                    }
-                    if (enumVal == null) {
-                        continue;
-                    }
-                    String enumStr = String.valueOf(enumVal);
-                    JsonObject idVariant = new JsonObject();
-                    idVariant.addProperty(topKey, enumStr);
-                    for (Map.Entry<String, JsonElement> other : rootObj.entrySet()) {
-                        String otherKey = other.getKey();
-                        String normOther = normalize(otherKey);
-                        if (!otherKey.equals(topKey) && (required.contains(otherKey)
-                                || "key".equals(normOther)
-                                || WordUtils.IDENTIFIER_SUFFIXES.stream().anyMatch(normOther::endsWith))) {
-                            idVariant.add(otherKey, other.getValue().deepCopy());
-                        }
-                    }
-                    candidates.add(JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(idVariant));
+                addVariantsForEnumField(rootObj, required, topKey, schema.getEnum(), candidates, maxCandidates);
+            }
+        }
+    }
 
-                    if (candidates.size() < maxCandidates) {
-                        JsonObject allVariant = new JsonObject();
-                        allVariant.addProperty(topKey, enumStr);
-                        for (Map.Entry<String, JsonElement> other : rootObj.entrySet()) {
-                            String otherKey = other.getKey();
-                            if (!otherKey.equals(topKey) && !isServerGeneratedField(otherKey, Set.of())) {
-                                allVariant.add(otherKey, other.getValue().deepCopy());
-                            }
-                        }
-                        candidates.add(JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(allVariant));
-                    }
+    private static void addVariantsForEnumField(JsonObject rootObj, Set<String> required, String topKey,
+                                                List<?> enumValues, Set<String> candidates, int maxCandidates) {
+        for (Object enumVal : enumValues) {
+            if (candidates.size() >= maxCandidates) {
+                return;
+            }
+            if (enumVal != null) {
+                String enumStr = String.valueOf(enumVal);
+                candidates.add(buildEnumVariantJson(rootObj, topKey, enumStr,
+                        otherKey -> isRequiredOrIdentifierSibling(otherKey, required)));
+                if (candidates.size() < maxCandidates) {
+                    candidates.add(buildEnumVariantJson(rootObj, topKey, enumStr,
+                            otherKey -> !isServerGeneratedField(otherKey, Set.of())));
                 }
             }
         }
+    }
+
+    private static boolean isRequiredOrIdentifierSibling(String otherKey, Set<String> required) {
+        String normOther = normalize(otherKey);
+        return required.contains(otherKey)
+                || "key".equals(normOther)
+                || WordUtils.IDENTIFIER_SUFFIXES.stream().anyMatch(normOther::endsWith);
+    }
+
+    private static String buildEnumVariantJson(JsonObject rootObj, String topKey, String enumStr,
+                                               Predicate<String> includeSibling) {
+        JsonObject variant = new JsonObject();
+        variant.addProperty(topKey, enumStr);
+        for (Map.Entry<String, JsonElement> other : rootObj.entrySet()) {
+            String otherKey = other.getKey();
+            if (!otherKey.equals(topKey) && includeSibling.test(otherKey)) {
+                variant.add(otherKey, other.getValue().deepCopy());
+            }
+        }
+        return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(variant);
     }
 }

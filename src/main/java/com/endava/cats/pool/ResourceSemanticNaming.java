@@ -54,7 +54,7 @@ final class ResourceSemanticNaming {
             "(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
     private static final Pattern DATE_PART = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}$");
     private static final Pattern TIME_PART = Pattern.compile(
-            "^\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?(Z|[+-]\\d{2}:?\\d{2})?$");
+            "^\\d{2}:\\d{2}[0-9:.]*(Z|[+-]\\d{2}:?\\d{2})?$");
     private static final Splitter SEMANTIC_PATH_SPLITTER = Splitter.on(Pattern.compile("[.#]")).omitEmptyStrings();
 
     private ResourceSemanticNaming() {

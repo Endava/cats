@@ -21,7 +21,6 @@ import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.ParseContext;
-import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.internal.ParseContextImpl;
 import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
@@ -188,8 +187,7 @@ public abstract class JsonUtils {
     private static final int MAX_SERIALIZED_PAYLOAD_CHARS = 512 * 1024;
 
     public static String serialize(Object obj) {
-        try {
-            BoundedStringWriter writer = new BoundedStringWriter(MAX_SERIALIZED_PAYLOAD_CHARS);
+        try (BoundedStringWriter writer = new BoundedStringWriter(MAX_SERIALIZED_PAYLOAD_CHARS)) {
             SIMPLE_OBJECT_MAPPER.writeValue(writer, obj);
             return writer.toString();
         } catch (IOException | OutOfMemoryError e) {
@@ -199,9 +197,8 @@ public abstract class JsonUtils {
     }
 
     public static String serializeWithDepthAwareSerializer(Object exampleObject) {
-        try {
-            BoundedStringWriter stringWriter = new BoundedStringWriter(MAX_SERIALIZED_PAYLOAD_CHARS);
-            JsonGenerator jsonGenerator = JsonUtils.getCustomDepthMapper().getFactory().createGenerator(stringWriter);
+        try (BoundedStringWriter stringWriter = new BoundedStringWriter(MAX_SERIALIZED_PAYLOAD_CHARS);
+             JsonGenerator jsonGenerator = JsonUtils.getCustomDepthMapper().getFactory().createGenerator(stringWriter)) {
             JsonUtils.getCustomDepthMapper().writeValue(jsonGenerator, exampleObject);
             return stringWriter.toString();
         } catch (IOException | OutOfMemoryError e) {
@@ -456,19 +453,24 @@ public abstract class JsonUtils {
             try {
                 return JsonPath.parse(payload).delete(sanitizeToJsonPath(node)).jsonString();
             } catch (InvalidPathException _) {
-                if (node != null && !node.contains("#") && payload.stripLeading().startsWith("{")) {
-                    try {
-                        JsonElement el = parseAsJsonElement(payload);
-                        if (el.isJsonObject() && el.getAsJsonObject().has(node)) {
-                            el.getAsJsonObject().remove(node);
-                            return GSON_NO_PRETTY_PRINTING.toJson(el);
-                        }
-                    } catch (RuntimeException _) {
-                        // return original payload below
-                    }
-                }
-                return payload;
+                return removeTopLevelPropertyFallback(payload, node);
             }
+        }
+        return payload;
+    }
+
+    private static String removeTopLevelPropertyFallback(String payload, String node) {
+        if (node == null || node.contains("#") || !payload.stripLeading().startsWith("{")) {
+            return payload;
+        }
+        try {
+            JsonElement el = parseAsJsonElement(payload);
+            if (el.isJsonObject() && el.getAsJsonObject().has(node)) {
+                el.getAsJsonObject().remove(node);
+                return GSON_NO_PRETTY_PRINTING.toJson(el);
+            }
+        } catch (RuntimeException _) {
+            // return original payload below
         }
         return payload;
     }

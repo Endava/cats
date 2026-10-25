@@ -47,9 +47,9 @@ public class ShorthandFunctionParser implements Parser {
             Map.entry("nowminusdays", args -> OffsetDateTime.now(ZoneOffset.UTC).minusDays(args[0]).toString()),
             Map.entry("nowplushours", args -> OffsetDateTime.now(ZoneOffset.UTC).plusHours(args[0]).toString()),
             Map.entry("nowminushours", args -> OffsetDateTime.now(ZoneOffset.UTC).minusHours(args[0]).toString()),
-            Map.entry("randomint", args -> args.length == 1
-                    ? String.valueOf(CatsRandom.instance().nextInt(Math.max(1, args[0])))
-                    : String.valueOf(args[0] + CatsRandom.instance().nextInt(Math.max(1, args[1] - args[0]))))
+            Map.entry("randomint", args -> String.valueOf( args.length == 1
+                    ? CatsRandom.instance().nextInt(Math.max(1, args[0]))
+                    : args[0] + CatsRandom.instance().nextInt(Math.max(1, args[1] - args[0]))))
     );
 
     private static final Map<String, String> NO_ARG_FUNCTIONS = Map.of(
@@ -87,16 +87,12 @@ public class ShorthandFunctionParser implements Parser {
         int idx = 0;
         while (idx < expression.length()) {
             int start = expression.indexOf("#(", idx);
-            if (start < 0) {
+            int end = start >= 0 ? findMatchingClosingParen(expression, start + 2) : -1;
+            if (start < 0 || end < 0) {
                 out.append(expression, idx, expression.length());
                 break;
             }
             out.append(expression, idx, start);
-            int end = findMatchingClosingParen(expression, start + 2);
-            if (end < 0) {
-                out.append(expression, start, expression.length());
-                break;
-            }
             String token = expression.substring(start, end + 1);
             String inner = expression.substring(start + 2, end).trim();
             out.append(evaluateSingleToken(inner, token));

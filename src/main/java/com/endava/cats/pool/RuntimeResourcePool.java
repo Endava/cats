@@ -411,15 +411,24 @@ public class RuntimeResourcePool {
         Optional<StoredValue> locId = ResourceValueExtractor.locationIdentifier(response);
         if (locId.isPresent()) {
             values.put("id", locId.get());
-        } else if (data.getHttpMethod() == HttpMethod.POST && response.getBody() != null) {
-            String trimmedBody = response.getBody().trim().replace("\"", "");
+        } else {
+            populateFallbackBodyIdentifier(data, response.getBody(), values);
+        }
+        addResource(data, values, ResourceValueExtractor.isFuzzedRequest(data));
+    }
+
+    private static void populateFallbackBodyIdentifier(ServiceData data, String body, Map<String, StoredValue> values) {
+        if (data.getHttpMethod() == HttpMethod.POST && body != null) {
+            String trimmedBody = body.trim().replace("\"", "");
             if (ResourceValueExtractor.isScalarIdentifierBody(trimmedBody)) {
                 values.put("id", new StoredValue(trimmedBody, "response.body.$", Set.of("id")));
+                return;
             }
-        } else if (data.getHttpMethod() == HttpMethod.GET &&
-                ResourceSemanticNaming.isCollectionPath(data.getRelativePath()) &&
-                JsonUtils.isValidJson(response.getBody())) {
-            JsonElement root = JsonUtils.parseAsJsonElement(response.getBody());
+        }
+        boolean collectionGet = data.getHttpMethod() == HttpMethod.GET &&
+                ResourceSemanticNaming.isCollectionPath(data.getRelativePath());
+        if (collectionGet && JsonUtils.isValidJson(body)) {
+            JsonElement root = JsonUtils.parseAsJsonElement(body);
             if (ResourceValueExtractor.isPrimitiveArray(root)) {
                 Object val = ResourceSemanticNaming.primitiveValue(root.getAsJsonArray().get(0).getAsJsonPrimitive());
                 String resource = ResourceSemanticNaming.resourceName(data.getRelativePath());
@@ -429,10 +438,11 @@ public class RuntimeResourcePool {
                     aliases.add(form + "id");
                 }
                 values.put("$[]", new StoredValue(val, "response.body.$[]", Set.copyOf(aliases)));
+                return;
             }
-        } else if (data.getHttpMethod() == HttpMethod.POST
-                || (data.getHttpMethod() == HttpMethod.GET && ResourceSemanticNaming.isCollectionPath(data.getRelativePath()))) {
-            ResourceValueExtractor.extractXmlIdentifier(response.getBody()).ifPresent(parsedXmlId -> {
+        }
+        if (data.getHttpMethod() == HttpMethod.POST || collectionGet) {
+            ResourceValueExtractor.extractXmlIdentifier(body).ifPresent(parsedXmlId -> {
                 Set<String> aliases = new LinkedHashSet<>(Set.of("id"));
                 aliases.addAll(ResourceSemanticNaming.primaryResourceIdentifierAliases(data.getRelativePath()));
                 StoredValue storedXmlId = new StoredValue(parsedXmlId, "response.body.xml.id", Set.copyOf(aliases));
@@ -440,7 +450,6 @@ public class RuntimeResourcePool {
                 values.put("$.id", storedXmlId);
             });
         }
-        addResource(data, values, ResourceValueExtractor.isFuzzedRequest(data));
     }
 
     private void addResource(ServiceData data, Map<String, StoredValue> values) {

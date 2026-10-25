@@ -16,28 +16,35 @@ public enum PayloadFormat {
         }
         try {
             MediaType mediaType = MediaType.parse(contentType);
-            String type = mediaType.type();
-            String subtype = mediaType.subtype();
-            if ("application".equals(type) && ("x-ndjson".equals(subtype) || "ndjson".equals(subtype))) {
-                return NDJSON;
-            }
-            if ("application".equals(type) && ("json".equals(subtype) || subtype.endsWith("+json"))) {
-                return JSON;
-            }
-            if ("application".equals(type) && "x-www-form-urlencoded".equals(subtype)) {
-                return FORM;
-            }
-            if ((("application".equals(type) || "text".equals(type)) && "xml".equals(subtype))
-                    || subtype.endsWith("+xml")) {
-                return XML;
-            }
-            if ("text".equals(type) && "plain".equals(subtype)) {
-                return TEXT;
-            }
-            return UNKNOWN;
+            return classifyMediaType(mediaType.type(), mediaType.subtype());
         } catch (IllegalArgumentException _) {
             return UNKNOWN;
         }
+    }
+
+    private static PayloadFormat classifyMediaType(String type, String subtype) {
+        if (isXmlSubtype(type, subtype)) {
+            return XML;
+        }
+        if ("application".equals(type)) {
+            return classifyApplicationSubtype(subtype);
+        }
+        return ("text".equals(type) && "plain".equals(subtype)) ? TEXT : UNKNOWN;
+    }
+
+    private static PayloadFormat classifyApplicationSubtype(String subtype) {
+        if ("x-ndjson".equals(subtype) || "ndjson".equals(subtype)) {
+            return NDJSON;
+        }
+        if ("json".equals(subtype) || subtype.endsWith("+json")) {
+            return JSON;
+        }
+        return "x-www-form-urlencoded".equals(subtype) ? FORM : UNKNOWN;
+    }
+
+    private static boolean isXmlSubtype(String type, String subtype) {
+        return subtype.endsWith("+xml")
+                || ("xml".equals(subtype) && ("application".equals(type) || "text".equals(type)));
     }
 
     public boolean supportsNamedFields() {

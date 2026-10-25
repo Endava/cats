@@ -174,22 +174,34 @@ public class AnalyzeCommand implements Runnable, CommandLine.IExitCodeGenerator 
         int constrainedProps = 0;
         int exampleProps = 0;
         for (Schema<?> schema : schemas.values()) {
-            if (schema == null || schema.getProperties() == null) {
-                continue;
-            }
-            for (Object propObj : schema.getProperties().values()) {
-                if (propObj instanceof Schema<?> prop) {
-                    totalProps++;
-                    if (hasValidationConstraint(prop)) {
-                        constrainedProps++;
-                    }
-                    if (prop.getExample() != null || prop.getExamples() != null || prop.getDefault() != null) {
-                        exampleProps++;
-                    }
+            for (Schema<?> prop : extractProperties(schema)) {
+                totalProps++;
+                if (hasValidationConstraint(prop)) {
+                    constrainedProps++;
+                }
+                if (hasExampleOrDefault(prop)) {
+                    exampleProps++;
                 }
             }
         }
         return new SchemaMetrics(totalProps, constrainedProps, exampleProps);
+    }
+
+    private static List<Schema<?>> extractProperties(Schema<?> schema) {
+        if (schema == null || schema.getProperties() == null) {
+            return List.of();
+        }
+        List<Schema<?>> props = new ArrayList<>();
+        for (Object propObj : schema.getProperties().values()) {
+            if (propObj instanceof Schema<?> prop) {
+                props.add(prop);
+            }
+        }
+        return props;
+    }
+
+    private static boolean hasExampleOrDefault(Schema<?> prop) {
+        return prop.getExample() != null || prop.getExamples() != null || prop.getDefault() != null;
     }
 
     private static boolean hasValidationConstraint(Schema<?> prop) {

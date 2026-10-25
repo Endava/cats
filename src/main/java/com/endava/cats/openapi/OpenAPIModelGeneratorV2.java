@@ -99,7 +99,7 @@ public class OpenAPIModelGeneratorV2 {
     private boolean bypassExamplesCache;
     private boolean bypassDeclaredExamples;
     private int arrayItemVariantDepth;
-    private final int maxExamples;
+    private int maxExamples;
 
     /**
      * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
@@ -129,10 +129,6 @@ public class OpenAPIModelGeneratorV2 {
      * @param discriminatorCasing The casing convention for discriminator values
      */
     public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int maxArraySize, String discriminatorCasing) {
-        this(catsGlobalContext, validDataFormat, useExamplesArgument, selfReferenceDepth, useDefaults, maxArraySize, discriminatorCasing, LIMIT_OF_EXAMPLES);
-    }
-
-    public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int maxArraySize, String discriminatorCasing, int maxExamples) {
         this.globalContext = catsGlobalContext;
         this.random = CatsRandom.instance();
         this.examplesFlags = useExamplesArgument;
@@ -142,10 +138,15 @@ public class OpenAPIModelGeneratorV2 {
         this.useDefaults = useDefaults;
         this.maxArraySize = maxArraySize;
         this.discriminatorCasing = discriminatorCasing;
-        this.maxExamples = maxExamples > 0 ? Math.min(LIMIT_OF_EXAMPLES, maxExamples) : LIMIT_OF_EXAMPLES;
+        this.maxExamples = LIMIT_OF_EXAMPLES;
 
         this.resolveAnyOfAsMultipleSchema = true;
         this.totalDepth = REQUEST_TOTAL_DEPTH;
+    }
+
+    public OpenAPIModelGeneratorV2 withMaxExamples(int customMaxExamples) {
+        this.maxExamples = customMaxExamples > 0 ? Math.min(LIMIT_OF_EXAMPLES, customMaxExamples) : LIMIT_OF_EXAMPLES;
+        return this;
     }
 
     /**
@@ -225,30 +226,26 @@ public class OpenAPIModelGeneratorV2 {
      * @return generated payloads and their variant-specific required fields
      */
     public List<GeneratedPayload> generateWithMetadata(String modelName) {
+        if (modelName == null) {
+            currentProperty = "";
+            return Collections.emptyList();
+        }
+        final Schema schema = this.globalContext.getSchemaFromReference(modelName);
+        if (schema == null) {
+            this.globalContext.recordError("Schema is not declared: " + modelName);
+            return List.of(new GeneratedPayload("{}", List.of()));
+        }
         List<GeneratedPayload> examples = new ArrayList<>();
-        if (modelName != null) {
-            final Schema schema = this.globalContext.getSchemaFromReference(modelName);
-            if (schema != null) {
-                List<GeneratedExample> generatedExamples = generateExamplesForSchema(modelName, schema);
-                for (GeneratedExample generatedExample : generatedExamples) {
-                    if (examples.size() >= maxExamples) {
-                        break;
-                    }
-                    String example = this.transformInJson(modelName, generatedExample.value());
-
-                    if (example != null) {
-                        examples.add(new GeneratedPayload(example, List.copyOf(generatedExample.requiredFields())));
-                    }
-                }
-                return examples.isEmpty() ? List.of(new GeneratedPayload("{}", List.of())) : examples;
-            } else {
-                this.globalContext.recordError("Schema is not declared: " + modelName);
-                return List.of(new GeneratedPayload("{}", List.of()));
+        for (GeneratedExample generatedExample : generateExamplesForSchema(modelName, schema)) {
+            if (examples.size() >= maxExamples) {
+                break;
+            }
+            String example = this.transformInJson(modelName, generatedExample.value());
+            if (example != null) {
+                examples.add(new GeneratedPayload(example, List.copyOf(generatedExample.requiredFields())));
             }
         }
-
-        currentProperty = "";
-        return Collections.emptyList();
+        return examples.isEmpty() ? List.of(new GeneratedPayload("{}", List.of())) : examples;
     }
 
     private @Nullable String transformInJson(String modelName, Object generatedExample) {
@@ -480,30 +477,26 @@ public class OpenAPIModelGeneratorV2 {
 
     private List<GeneratedExample> handleAnyOrOneOf(String name, Schema schema, List<GeneratedExample> parentPropertyExamples, List<GeneratedExample> examples) {
         List<GeneratedExample> oneOfAnyOfExamples = resolveAnyOfOneOfSchemaProperties(name, schema);
-
-        if (!parentPropertyExamples.isEmpty()) {
-            List<GeneratedExample> mergedExamples = new ArrayList<>();
-            for (GeneratedExample oneOfExample : oneOfAnyOfExamples) {
-                if (mergedExamples.size() >= maxExamples) {
-                    break;
-                }
-                for (GeneratedExample parentExample : parentPropertyExamples) {
-                    if (mergedExamples.size() >= maxExamples) {
-                        break;
-                    }
-                    Map<String, Object> merged = new HashMap<>(asMap(oneOfExample));
-
-                    for (Map.Entry<String, Object> entry : asMap(parentExample).entrySet()) {
-                        merged.putIfAbsent(entry.getKey(), entry.getValue());
-                    }
-                    mergedExamples.add(new GeneratedExample(merged, unionRequiredFields(oneOfExample, parentExample)));
-                }
-            }
-            examples = combineExampleLists(examples, mergedExamples);
-        } else {
-            examples = combineExampleLists(examples, oneOfAnyOfExamples.stream().limit(maxExamples).toList());
+        if (parentPropertyExamples.isEmpty()) {
+            return combineExampleLists(examples, oneOfAnyOfExamples.stream().limit(maxExamples).toList());
         }
-        return examples;
+        return combineExampleLists(examples, mergeOneOfWithParentExamples(oneOfAnyOfExamples, parentPropertyExamples));
+    }
+
+    private List<GeneratedExample> mergeOneOfWithParentExamples(List<GeneratedExample> oneOfAnyOfExamples,
+                                                                List<GeneratedExample> parentPropertyExamples) {
+        List<GeneratedExample> mergedExamples = new ArrayList<>();
+        for (GeneratedExample oneOfExample : oneOfAnyOfExamples) {
+            for (GeneratedExample parentExample : parentPropertyExamples) {
+                if (mergedExamples.size() >= maxExamples) {
+                    return mergedExamples;
+                }
+                Map<String, Object> merged = new HashMap<>(asMap(oneOfExample));
+                asMap(parentExample).forEach(merged::putIfAbsent);
+                mergedExamples.add(new GeneratedExample(merged, unionRequiredFields(oneOfExample, parentExample)));
+            }
+        }
+        return mergedExamples;
     }
 
     private Map formatExampleAsMap(Object fromExample) {
@@ -677,31 +670,29 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private void mergeAllOfExamples(Schema subSchema, List<GeneratedExample> subExamples, List<GeneratedExample> examples) {
-        List<GeneratedExample> interimExamples = new ArrayList<>();
-
-        if (CatsModelUtils.isAnyOf(subSchema) || CatsModelUtils.isOneOf(subSchema)) {
-            interimExamples.addAll(subExamples.stream().limit(maxExamples).toList());
-        } else if (examples.isEmpty()) {
-            examples.addAll(subExamples.stream().limit(maxExamples).toList());
-        } else {
-            for (GeneratedExample subExample : subExamples) {
-                if (interimExamples.size() >= maxExamples) {
-                    break;
-                }
-                for (GeneratedExample existingExample : examples) {
-                    if (interimExamples.size() >= maxExamples) {
-                        break;
-                    }
-                    interimExamples.add(mergeExamples(existingExample, subExample));
-                }
-            }
-        }
+        List<GeneratedExample> interimExamples = (CatsModelUtils.isAnyOf(subSchema) || CatsModelUtils.isOneOf(subSchema) || examples.isEmpty())
+                ? new ArrayList<>(subExamples.stream().limit(maxExamples).toList())
+                : crossMergeAllOfExamples(subExamples, examples);
         if (!interimExamples.isEmpty()) {
             examples.clear();
         }
         examples.addAll(interimExamples.stream()
                 .limit(Math.min(interimExamples.size(), maxExamples))
                 .toList());
+    }
+
+    private List<GeneratedExample> crossMergeAllOfExamples(List<GeneratedExample> subExamples,
+                                                           List<GeneratedExample> existingExamples) {
+        List<GeneratedExample> merged = new ArrayList<>();
+        for (GeneratedExample subExample : subExamples) {
+            for (GeneratedExample existingExample : existingExamples) {
+                if (merged.size() >= maxExamples) {
+                    return merged;
+                }
+                merged.add(mergeExamples(existingExample, subExample));
+            }
+        }
+        return merged;
     }
 
     private void applyDiscriminatorValue(String propertyName, Schema parentWithDiscriminator,
@@ -763,29 +754,7 @@ public class OpenAPIModelGeneratorV2 {
                 if (examples.size() >= maxExamples) {
                     break;
                 }
-                if (hasValidRef(subSchema)) {
-                    Schema resolved = globalContext.getSchemaFromReference(subSchema.get$ref());
-                    if (resolved != null) {
-                        String schemaName = CatsModelUtils.getSimpleRefUsingOAT(subSchema.get$ref());
-                        List<GeneratedExample> variantExamples = generateExamplesForSchema(schemaName, resolved);
-                        for (GeneratedExample variantExample : variantExamples) {
-                            if (examples.size() >= maxExamples) {
-                                break;
-                            }
-                            Map<String, Object> wrappedExample = new HashMap<>();
-                            Map<String, Object> variantValue = asMap(variantExample);
-                            wrappedExample.put(propertyName, variantValue.getOrDefault(schemaName, variantValue));
-                            examples.add(new GeneratedExample(wrappedExample, variantExample.requiredFields()));
-                        }
-                    }
-                } else {
-                    for (GeneratedExample generatedExample : generateExamplesForSchema(propertyName, subSchema)) {
-                        if (examples.size() >= maxExamples) {
-                            break;
-                        }
-                        examples.add(generatedExample);
-                    }
-                }
+                appendVariantExamples(propertyName, subSchema, examples);
             }
         } finally {
             if (pushedDiscriminator) {
@@ -807,6 +776,31 @@ public class OpenAPIModelGeneratorV2 {
                     return new GeneratedExample(example.value(), requiredFields);
                 })
                 .toList();
+    }
+
+    private void appendVariantExamples(String propertyName, Schema subSchema, List<GeneratedExample> examples) {
+        if (hasValidRef(subSchema)) {
+            Schema resolved = globalContext.getSchemaFromReference(subSchema.get$ref());
+            if (resolved != null) {
+                String schemaName = CatsModelUtils.getSimpleRefUsingOAT(subSchema.get$ref());
+                for (GeneratedExample variantExample : generateExamplesForSchema(schemaName, resolved)) {
+                    if (examples.size() >= maxExamples) {
+                        return;
+                    }
+                    Map<String, Object> wrappedExample = new HashMap<>();
+                    Map<String, Object> variantValue = asMap(variantExample);
+                    wrappedExample.put(propertyName, variantValue.getOrDefault(schemaName, variantValue));
+                    examples.add(new GeneratedExample(wrappedExample, variantExample.requiredFields()));
+                }
+            }
+            return;
+        }
+        for (GeneratedExample generatedExample : generateExamplesForSchema(propertyName, subSchema)) {
+            if (examples.size() >= maxExamples) {
+                return;
+            }
+            examples.add(generatedExample);
+        }
     }
 
     private static Schema getArrayItemsOrDefault(Schema schema) {
@@ -994,33 +988,40 @@ public class OpenAPIModelGeneratorV2 {
         boolean generateDistinctNestedItems = uniqueItems || arrayItemVariantDepth == 0;
 
         for (int itemIndex = 0; itemIndex < arraySize; itemIndex++) {
-            GeneratedExample itemExample = (itemIndex == 0 || !generateDistinctNestedItems)
-                    ? template
-                    : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, uniqueItems);
+            GeneratedExample itemExample = resolveDistinctArrayItem(propertyName, itemSchema, itemMapper,
+                    uniqueItems, generateDistinctNestedItems, template, variantIndex, itemIndex, items);
             Object item = itemMapper.apply(itemExample.value());
-
-            boolean avoidDuplicateObjectItems = shouldAvoidDuplicateObjectItems(
-                    uniqueItems, generateDistinctNestedItems, item, itemSchema);
-            int maxAttempts = uniqueItems ? MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS : 1;
-            int attempts = 0;
-            while (avoidDuplicateObjectItems && containsEquivalent(items, item) && attempts++ < maxAttempts) {
-                Object previousAttempt = item;
-                itemExample = generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, true);
-                item = itemMapper.apply(itemExample.value());
-                if (Objects.deepEquals(previousAttempt, item)) {
-                    break;
-                }
-            }
-
             if (uniqueItems && containsEquivalent(items, item)) {
                 logger.debug("Could not generate {} unique items for array {}", arraySize, propertyName);
                 break;
             }
-
             items.add(item);
             requiredFields.addAll(itemExample.requiredFields());
         }
         return new GeneratedExample(items, requiredFields);
+    }
+
+    private GeneratedExample resolveDistinctArrayItem(String propertyName, Schema itemSchema,
+                                                      UnaryOperator<Object> itemMapper, boolean uniqueItems,
+                                                      boolean generateDistinctNestedItems, GeneratedExample template,
+                                                      int variantIndex, int itemIndex, List<Object> existingItems) {
+        GeneratedExample itemExample = (itemIndex == 0 || !generateDistinctNestedItems)
+                ? template
+                : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, uniqueItems);
+        Object item = itemMapper.apply(itemExample.value());
+        boolean avoidDuplicateObjectItems = shouldAvoidDuplicateObjectItems(
+                uniqueItems, generateDistinctNestedItems, item, itemSchema);
+        int maxAttempts = uniqueItems ? MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS : 1;
+        int attempts = 0;
+        while (avoidDuplicateObjectItems && containsEquivalent(existingItems, item) && attempts++ < maxAttempts) {
+            Object previousAttempt = item;
+            itemExample = generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, true);
+            item = itemMapper.apply(itemExample.value());
+            if (Objects.deepEquals(previousAttempt, item)) {
+                break;
+            }
+        }
+        return itemExample;
     }
 
     private static boolean shouldAvoidDuplicateObjectItems(boolean uniqueItems, boolean generateDistinctNestedItems,

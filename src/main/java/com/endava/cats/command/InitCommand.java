@@ -290,15 +290,17 @@ public class InitCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     headers.putIfAbsent("Authorization", "Bearer $$" + envName + "_TOKEN");
                 }
             }
-            case APIKEY -> {
-                if (scheme.getIn() == SecurityScheme.In.HEADER && StringUtils.isNotBlank(scheme.getName())) {
-                    headers.putIfAbsent(scheme.getName(), "$$" + envName + "_KEY");
-                }
-            }
+            case APIKEY -> addApiKeyHeader(scheme, envName, headers);
             case OAUTH2, OPENIDCONNECT -> headers.putIfAbsent("Authorization", "Bearer $$" + envName + "_TOKEN");
             case MUTUALTLS -> {
                 // Mutual TLS is configured via --sslKeystore rather than HTTP headers.
             }
+        }
+    }
+
+    private static void addApiKeyHeader(SecurityScheme scheme, String envName, Map<String, String> headers) {
+        if (scheme.getIn() == SecurityScheme.In.HEADER && StringUtils.isNotBlank(scheme.getName())) {
+            headers.putIfAbsent(scheme.getName(), "$$" + envName + "_KEY");
         }
     }
 

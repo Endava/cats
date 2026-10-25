@@ -367,6 +367,16 @@ final class ResourceRequestEnricher {
             }
             return this;
         }
+
+        private static boolean isHigherRanked(ResolvedValue candidate, ResolvedValue currentBest) {
+            if (currentBest == null) {
+                return true;
+            }
+            if (candidate.score() != currentBest.score()) {
+                return candidate.score() > currentBest.score();
+            }
+            return candidate.resource().sequence() > currentBest.resource().sequence();
+        }
     }
 
     Optional<ResolvedValue> resolve(String targetPath, TargetField target, ResourceInstance boundResource,
@@ -487,16 +497,6 @@ final class ResourceRequestEnricher {
             best = best.pickBetter(candidate, quality);
         }
         return best;
-    }
-
-    private static boolean isHigherRanked(ResolvedValue candidate, ResolvedValue currentBest) {
-        if (currentBest == null) {
-            return true;
-        }
-        if (candidate.score() != currentBest.score()) {
-            return candidate.score() > currentBest.score();
-        }
-        return candidate.resource().sequence() > currentBest.resource().sequence();
     }
 
     private record AlternativeQuery(String targetPath, TargetField target, Set<String> targetAliases,
@@ -724,27 +724,35 @@ final class ResourceRequestEnricher {
                 ResourceSemanticNaming.isMetadataKey(fieldName)) {
             return false;
         }
-        Set<String> fieldForms = new LinkedHashSet<>(WordUtils.nounForms(normalizedField));
-        if (!targetSegments.isEmpty()) {
-            String targetPath = "/" + String.join("/", targetSegments);
-            for (String headForm : ResourceSemanticNaming.headWordFormsOfResourcePath(targetPath)) {
-                fieldForms.add(headForm + normalizedField);
-            }
-        }
+        Set<String> fieldForms = expandTargetFieldForms(targetSegments, normalizedField);
         for (ResourceInstance resource : resources) {
-            if (resource.pathSegments().equals(targetSegments)) {
-                continue;
-            }
-            boolean matchesResourceNoun = !Collections.disjoint(resource.resourceNameForms(), fieldForms) ||
-                    resource.resourceNameForms().stream()
-                            .anyMatch(form -> fieldForms.stream().anyMatch(f -> (f.startsWith(form) || f.endsWith(form)) && f.length() > form.length()));
-            if (resource.active() && !resource.fuzzed() &&
-                    (resource.collectionPath() || resource.sourceMethod() == HttpMethod.POST) &&
-                    matchesResourceNoun &&
-                    (!Collections.disjoint(resource.allAliases(), fieldForms) || !Collections.disjoint(resource.allAliases(), resource.resourceNameForms()))) {
+            if (!resource.pathSegments().equals(targetSegments) && isMatchingCollectionResource(resource, fieldForms)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static Set<String> expandTargetFieldForms(List<String> targetSegments, String normalizedField) {
+        Set<String> fieldForms = new LinkedHashSet<>(WordUtils.nounForms(normalizedField));
+        if (!targetSegments.isEmpty()) {
+            String targetPath = String.join(" ", targetSegments);
+            for (String headForm : ResourceSemanticNaming.headWordFormsOfResourcePath(targetPath)) {
+                fieldForms.add(headForm + normalizedField);
+            }
+        }
+        return fieldForms;
+    }
+
+    private static boolean isMatchingCollectionResource(ResourceInstance resource, Set<String> fieldForms) {
+        if (!resource.active() || resource.fuzzed() || (!resource.collectionPath() && resource.sourceMethod() != HttpMethod.POST)) {
+            return false;
+        }
+        boolean matchesResourceNoun = !Collections.disjoint(resource.resourceNameForms(), fieldForms) ||
+                resource.resourceNameForms().stream()
+                        .anyMatch(form -> fieldForms.stream().anyMatch(f -> (f.startsWith(form) || f.endsWith(form)) && f.length() > form.length()));
+        return matchesResourceNoun &&
+                (!Collections.disjoint(resource.allAliases(), fieldForms)
+                        || !Collections.disjoint(resource.allAliases(), resource.resourceNameForms()));
     }
 }

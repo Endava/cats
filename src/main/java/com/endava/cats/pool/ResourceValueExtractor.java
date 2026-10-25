@@ -169,7 +169,7 @@ final class ResourceValueExtractor {
         if (!matcher.find()) {
             return Optional.empty();
         }
-        String xmlId = matcher.group(2) != null ? matcher.group(2) : matcher.group(4);
+        String xmlId = matcher.group(matcher.group(2) != null ? 2 : 4);
         if (StringUtils.isBlank(xmlId)) {
             return Optional.empty();
         }

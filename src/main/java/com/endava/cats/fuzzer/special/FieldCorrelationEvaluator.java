@@ -200,31 +200,37 @@ public final class FieldCorrelationEvaluator {
 
     private static JsonObject navigateToParentObject(JsonObject root, String[] parts, boolean createMissingParents) {
         JsonObject current = root;
-        for (int i = 0; i < parts.length - 1; i++) {
+        for (int i = 0; i < parts.length - 1 && current != null; i++) {
             String segment = parts[i];
             int bracketOpen = segment.indexOf('[');
-            if (bracketOpen > 0 && segment.endsWith("]")) {
-                String arrayName = segment.substring(0, bracketOpen);
-                int index = Integer.parseInt(segment.substring(bracketOpen + 1, segment.length() - 1));
-                if (!current.has(arrayName) || !current.get(arrayName).isJsonArray()) {
-                    return null;
-                }
-                JsonArray arr = current.getAsJsonArray(arrayName);
-                if (index < 0 || index >= arr.size() || !arr.get(index).isJsonObject()) {
-                    return null;
-                }
-                current = arr.get(index).getAsJsonObject();
-            } else {
-                if (!current.has(segment) || !current.get(segment).isJsonObject()) {
-                    if (!createMissingParents) {
-                        return null;
-                    }
-                    current.add(segment, new JsonObject());
-                }
-                current = current.getAsJsonObject(segment);
-            }
+            current = (bracketOpen > 0 && segment.endsWith("]"))
+                    ? navigateArraySegment(current, segment, bracketOpen)
+                    : navigateObjectSegment(current, segment, createMissingParents);
         }
         return current;
+    }
+
+    private static JsonObject navigateArraySegment(JsonObject current, String segment, int bracketOpen) {
+        String arrayName = segment.substring(0, bracketOpen);
+        int index = Integer.parseInt(segment.substring(bracketOpen + 1, segment.length() - 1));
+        if (!current.has(arrayName) || !current.get(arrayName).isJsonArray()) {
+            return null;
+        }
+        JsonArray arr = current.getAsJsonArray(arrayName);
+        if (index < 0 || index >= arr.size() || !arr.get(index).isJsonObject()) {
+            return null;
+        }
+        return arr.get(index).getAsJsonObject();
+    }
+
+    private static JsonObject navigateObjectSegment(JsonObject current, String segment, boolean createMissingParents) {
+        if (!current.has(segment) || !current.get(segment).isJsonObject()) {
+            if (!createMissingParents) {
+                return null;
+            }
+            current.add(segment, new JsonObject());
+        }
+        return current.getAsJsonObject(segment);
     }
 
     private static Object resolveRuleValue(Object rawValue, Map<String, String> variables) {
@@ -499,19 +505,26 @@ public final class FieldCorrelationEvaluator {
                 inSingle = !inSingle;
             } else if (c == '"' && !inSingle) {
                 inDouble = !inDouble;
-            } else if (!inSingle && !inDouble && text.regionMatches(true, i, op, 0, op.length())) {
-                if ("=".equals(op) && i > 0) {
-                    char prev = text.charAt(i - 1);
-                    if (prev == '!' || prev == '>' || prev == '<' || prev == '=') {
-                        continue;
-                    }
-                }
-                if ("=".equals(op) && i + 1 < text.length() && text.charAt(i + 1) == '=') {
-                    continue;
-                }
+            } else if (!inSingle && !inDouble && isOperatorMatchAt(text, op, i)) {
                 return i;
             }
         }
         return -1;
+    }
+
+    private static boolean isOperatorMatchAt(String text, String op, int i) {
+        if (!text.regionMatches(true, i, op, 0, op.length())) {
+            return false;
+        }
+        if (!"=".equals(op)) {
+            return true;
+        }
+        boolean partOfCompoundPrev = i > 0 && isCompoundOperatorPrefix(text.charAt(i - 1));
+        boolean partOfCompoundNext = i + 1 < text.length() && text.charAt(i + 1) == '=';
+        return !partOfCompoundPrev && !partOfCompoundNext;
+    }
+
+    private static boolean isCompoundOperatorPrefix(char prev) {
+        return prev == '!' || prev == '>' || prev == '<' || prev == '=';
     }
 }

@@ -699,7 +699,7 @@ public class FuzzingDataFactory {
     private GenerationResult getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
         OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, processingArguments.examplesFlags(),
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE,
-                processingArguments.getDiscriminatorCasing(), processingArguments.getLimitXxxOfCombinations());
+                processingArguments.getDiscriminatorCasing()).withMaxExamples(processingArguments.getLimitXxxOfCombinations());
 
         /* Event though the media type might have an example set, we still generate samples in order to properly map each field with its corresponding data type*/
         GenerationResult generated = this.generateRequestSamples(reqSchemaName, generator);

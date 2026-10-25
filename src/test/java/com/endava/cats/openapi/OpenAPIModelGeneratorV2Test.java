@@ -610,7 +610,7 @@ class OpenAPIModelGeneratorV2Test {
         globalContext.getSchemaMap().put("ChildTrue", child);
 
         OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
-                new ProcessingArguments.ExamplesFlags(true, true, true, true), 2, true, 2, "UPPER_SNAKE_CASE", 5);
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 2, true, 2, "UPPER_SNAKE_CASE").withMaxExamples(5);
         List<String> generated = generator.generate("ParentBoolean");
 
         Assertions.assertThat(generated).isNotEmpty();
