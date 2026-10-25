@@ -5,6 +5,7 @@ import com.endava.cats.model.CatsResponse;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -84,7 +85,7 @@ class FieldCorrelationEvaluatorTest {
     }
 
     @Test
-    void shouldProtectFuzzedFieldsAndInsertMissingNestedFieldsAndParseCorrelationFile(@org.junit.jupiter.api.io.TempDir Path tempDir) throws Exception {
+    void shouldProtectFuzzedFieldsAndInsertMissingNestedFieldsAndParseCorrelationFile(@TempDir Path tempDir) throws Exception {
         String yaml = """
                 correlate:
                   - paths: ["/billing-plans*"]
@@ -122,7 +123,7 @@ class FieldCorrelationEvaluatorTest {
     }
 
     @Test
-    void shouldExpandWildcardArrayCorrelationsPerElement(@org.junit.jupiter.api.io.TempDir Path tempDir) throws Exception {
+    void shouldExpandWildcardArrayCorrelationsPerElement(@TempDir Path tempDir) throws Exception {
         String yaml = """
                 correlations:
                   - paths: ["/billing-plans*"]
@@ -160,7 +161,8 @@ class FieldCorrelationEvaluatorTest {
     void shouldEvaluateWhereExpectationsAndComplexBooleanExpressions() {
         CatsResponse response = CatsResponse.builder()
                 .responseCode(201)
-                .body("{\"id\":\"ord_1\",\"amount\":50,\"status\":\"ACTIVE\",\"tags\":\"fast,priority\"}")
+                .responseTimeInMs(12)
+                .body("{\"id\":\"ord_1\",\"amount\":50,\"status\":\"ACTIVE\",\"active\":true,\"tags\":\"fast,priority\",\"items\":[1,2]}")
                 .build();
         String reqJson = "{\"amount\":50,\"mode\":\"EXPRESS\"}";
         Map<String, String> vars = Map.of("expectedStatus", "ACTIVE");
@@ -171,9 +173,17 @@ class FieldCorrelationEvaluatorTest {
                         "response.status == '${expectedStatus}' || response.status == 'PENDING'",
                         "response.tags contains 'fast' && response.id matches 'ord_\\d+'",
                         "response.id is not null && response.missingField is null",
-                        "response.missingField != 'SOMETHING'"
+                        "response.missingField != 'SOMETHING'",
+                        "responseTimeMs <= 100 && response.amount < 60 && response.amount > 10",
+                        "size(items) == 2 && active"
                 ),
                 reqJson, response, vars)).isEmpty();
+
+        String arrayItemPayload = "{\"items\":[{\"name\":\"old\"}]}";
+        List<FieldCorrelationRule> itemRules = List.of(
+                new FieldCorrelationRule(List.of("/orders"), "items[0].name == 'old'", Map.of("items[0].name", "new"), List.of()));
+        String mutatedArray = FieldCorrelationEvaluator.applyRequestCorrelations("/orders", arrayItemPayload, itemRules, Map.of());
+        Assertions.assertThat(mutatedArray).contains("\"name\":\"new\"");
 
         Assertions.assertThat(FieldCorrelationEvaluator.evaluateWhereExpectations(
                 List.of("response.amount > 100"), reqJson, response, vars))

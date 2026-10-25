@@ -38,7 +38,8 @@ class FunctionalFlowParserTest {
 
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(flowFile)).isTrue();
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(new File("src/test/resources/functionalFuzzer.yml"))).isFalse();
-        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(new File("src/test/resources/securityFuzzer.yml"))).isFalse();
+        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(new File("src/test/resources/securityFuzzer.yml"))).isTrue();
+        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowYaml("/pet:\n  test1:\n    httpMethod: POST\n")).isFalse();
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(null)).isFalse();
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowYaml("")).isFalse();
     }
@@ -162,7 +163,7 @@ class FunctionalFlowParserTest {
     }
 
     @Test
-    void shouldHandleExplicitMethodPathAndEdgeCases(@org.junit.jupiter.api.io.TempDir java.nio.file.Path tempDir) throws Exception {
+    void shouldHandleExplicitMethodPathAndEdgeCases(@TempDir Path tempDir) throws Exception {
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(null)).isFalse();
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(tempDir.resolve("missing.yml").toFile())).isFalse();
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowYaml("")).isFalse();
@@ -172,9 +173,9 @@ class FunctionalFlowParserTest {
         String explicitMethodPathYaml = """
                 - method: POST
                   path: /items
-                  output:
+                  save:
                     id: id
-                  verify:
+                  expect:
                     status: 201
                 """;
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowYaml(explicitMethodPathYaml)).isTrue();
@@ -186,8 +187,8 @@ class FunctionalFlowParserTest {
             Assertions.assertThat(step.expect().status()).containsExactly("201");
         });
 
-        java.io.File corrArrayFile = tempDir.resolve("corr-array.yml").toFile();
-        java.nio.file.Files.writeString(corrArrayFile.toPath(), """
+        File corrArrayFile = tempDir.resolve("corr-array.yml").toFile();
+        Files.writeString(corrArrayFile.toPath(), """
                 - paths: ["/items"]
                   if: "kind == 'A'"
                   set:

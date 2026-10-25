@@ -6,6 +6,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.util.JsonUtils;
@@ -2481,12 +2482,12 @@ class RuntimeResourcePoolTest {
         RuntimeResourcePool.ResolvedRequest scalarEnriched = resourcePool.enrich(enableMovie, enableMovie.getPayload());
         Assertions.assertThat(scalarEnriched.payload()).isEqualTo("77");
 
-        for (com.endava.cats.model.CatsResponse.ExceptionalResponse ex : com.endava.cats.model.CatsResponse.ExceptionalResponse.values()) {
-            Assertions.assertThat(com.endava.cats.model.CatsResultFactory.createExceptionalResponse(ex, 120).message()).isNotBlank();
+        for (CatsResponse.ExceptionalResponse ex : CatsResponse.ExceptionalResponse.values()) {
+            Assertions.assertThat(CatsResultFactory.createExceptionalResponse(ex, 120).message()).isNotBlank();
         }
-        Assertions.assertThat(com.endava.cats.model.CatsResultFactory.createNotMatchingResponseSchema("200").message()).contains("200");
-        Assertions.assertThat(com.endava.cats.model.CatsResultFactory.createNotFound().reason()).isEqualTo("Not found");
-        Assertions.assertThat(com.endava.cats.model.CatsResultFactory.createUnexpectedBehaviour("401", "2XX").message()).contains("authentication");
+        Assertions.assertThat(CatsResultFactory.createNotMatchingResponseSchema("200").message()).contains("200");
+        Assertions.assertThat(CatsResultFactory.createNotFound().reason()).isEqualTo("Not found");
+        Assertions.assertThat(CatsResultFactory.createUnexpectedBehaviour("401", "2XX").message()).contains("authentication");
     }
 
     private void enableResourceReuse() {

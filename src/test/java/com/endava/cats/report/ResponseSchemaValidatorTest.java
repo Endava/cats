@@ -6,9 +6,11 @@ import com.endava.cats.util.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.parser.OpenAPIV3Parser;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
@@ -80,8 +82,8 @@ class ResponseSchemaValidatorTest {
                               items:
                                 type: string
                 """;
-        OpenAPI openAPI = new io.swagger.v3.parser.OpenAPIV3Parser().readContents(openApiYaml, null, null).getOpenAPI();
-        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, java.util.List.of("application/json"));
+        OpenAPI openAPI = new OpenAPIV3Parser().readContents(openApiYaml, null, null).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
         Schema<?> responseSchema = openAPI.getPaths().get("/billing-plans").getGet()
                 .getResponses().get("200").getContent().get("application/json").getSchema();
 
@@ -119,7 +121,7 @@ class ResponseSchemaValidatorTest {
 
         // Invalid response body with > 5 errors truncates details()
         ResponseSchemaValidator.ValidationResult manyErrors = ResponseSchemaValidator.ValidationResult.invalid(
-                java.util.List.of("e1", "e2", "e3", "e4", "e5", "e6", "e7"));
+                List.of("e1", "e2", "e3", "e4", "e5", "e6", "e7"));
         Assertions.assertThat(manyErrors.details()).contains("... and 2 more validation errors");
 
         // Null data / missing schema / invalid JSON body

@@ -333,9 +333,10 @@ public class InitCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     private static String renderFunctionalTestsYaml(String samplePath, String sampleMethod) {
         return """
-                # Starter CATS stateful functional flow (run with: cats run -c <spec> -s <url> --functionalFlow functionalTests.yml)
+                # Starter CATS stateful functional flow (run with: cats run -c <spec> -s <url> functionalTests.yml)
                 steps:
-                  - name: "Verify happy-path %s on %s"
+                  - name: "happyPathCheck"
+                    description: "Verify happy-path %s on %s"
                     %s: "%s"
                     expect:
                       status: 2XX

@@ -1068,6 +1068,29 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldSupportDotNotationWildcardAndMethodScopedRefDataAndHeaders() {
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of(
+                "POST /orders*", Map.of(
+                        "address.city", "Bucharest",
+                        "omit", List.of("address.zip")
+                )
+        ));
+        ServiceData data = ServiceData.builder()
+                .relativePath("/orders/create")
+                .contractPath("/orders/create")
+                .httpMethod(HttpMethod.POST)
+                .payload("{\"address\":{\"city\":\"OldCity\",\"zip\":\"010101\"}}")
+                .contentType("application/json")
+                .replaceRefData(true)
+                .build();
+
+        String replaced = serviceCaller.replacePayloadWithRefData(data);
+        Assertions.assertThat(replaced)
+                .contains("\"city\":\"Bucharest\"")
+                .doesNotContain("zip");
+    }
+
+    @Test
     void shouldUrlEncodePathParamsForPostMethod() {
         String json = """
                 {

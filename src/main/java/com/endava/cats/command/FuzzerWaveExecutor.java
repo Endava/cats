@@ -267,7 +267,7 @@ final class FuzzerWaveExecutor {
                         .filter(remainingFilter)
                         .toList();
                 List<FuzzingData> nonDeleteData = path.filteredFuzzingData().stream()
-                        .filter(data -> data.getMethod() != HttpMethod.DELETE)
+                        .filter(data -> !isDestructiveOperation(data))
                         .toList();
                 runFuzzers(nonDeleteData, waveFuzzers);
                 runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
@@ -281,7 +281,7 @@ final class FuzzerWaveExecutor {
                         .filter(remainingFilter)
                         .toList();
                 List<FuzzingData> deleteData = path.filteredFuzzingData().stream()
-                        .filter(data -> data.getMethod() == HttpMethod.DELETE)
+                        .filter(this::isDestructiveOperation)
                         .toList();
                 runFuzzers(deleteData, waveFuzzers);
                 command.executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));
@@ -299,10 +299,10 @@ final class FuzzerWaveExecutor {
                         .filter(waveFilter)
                         .toList();
                 List<FuzzingData> nonDeleteData = path.filteredFuzzingData().stream()
-                        .filter(data -> data.getMethod() != HttpMethod.DELETE)
+                        .filter(data -> !isDestructiveOperation(data))
                         .toList();
                 List<FuzzingData> deleteData = path.filteredFuzzingData().stream()
-                        .filter(data -> data.getMethod() == HttpMethod.DELETE)
+                        .filter(this::isDestructiveOperation)
                         .toList();
                 runFuzzers(nonDeleteData, waveFuzzers);
                 runFuzzers(deleteData, waveFuzzers);
@@ -571,7 +571,7 @@ final class FuzzerWaveExecutor {
                 .filter(this::isSafeResourceSeed)
                 .sorted(Comparator.comparingInt(data -> seedMethodOrder(data.getMethod())))
                 .toList();
-        List<FuzzingData> deleteData = fuzzingData.stream().filter(data -> data.getMethod() == HttpMethod.DELETE).toList();
+        List<FuzzingData> deleteData = fuzzingData.stream().filter(this::isDestructiveOperation).toList();
         List<FuzzingData> deferredHappyPathData = fuzzingData.stream()
                 .filter(data -> !seedData.contains(data) && !deleteData.contains(data)).toList();
         runFuzzers(seedData, seedFuzzers);
@@ -582,9 +582,34 @@ final class FuzzerWaveExecutor {
     }
 
     private boolean isSafeResourceSeed(FuzzingData data) {
+        if (isDestructiveOperation(data)) {
+            return false;
+        }
         return data.getMethod() == HttpMethod.POST || data.getMethod() == HttpMethod.PUT ||
                 data.getMethod() == HttpMethod.PATCH || data.getMethod() == HttpMethod.GET ||
                 data.getMethod() == HttpMethod.HEAD;
+    }
+
+    private boolean isDestructiveOperation(FuzzingData data) {
+        if (data.getMethod() == HttpMethod.DELETE) {
+            return true;
+        }
+        if (data.getMethod() != HttpMethod.POST && data.getMethod() != HttpMethod.PUT) {
+            return false;
+        }
+        String path = data.getPath();
+        if (path == null) {
+            return false;
+        }
+        int slash = path.lastIndexOf('/');
+        String lastSeg = (slash >= 0 ? path.substring(slash + 1) : path).toLowerCase(Locale.ROOT);
+        if (lastSeg.startsWith("delete") || lastSeg.startsWith("remove") || lastSeg.startsWith("unsubscribe")
+                || lastSeg.startsWith("logout") || lastSeg.startsWith("signout") || lastSeg.startsWith("passwordreset")) {
+            return true;
+        }
+        return ("profile".equals(lastSeg) || "changepassword".equals(lastSeg))
+                && data.getRequestPropertyTypes() != null
+                && data.getRequestPropertyTypes().containsKey("password");
     }
 
     private static int seedMethodOrder(HttpMethod method) {

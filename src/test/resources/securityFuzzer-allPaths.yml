@@ -1,9 +1,11 @@
-all:
-  test1:
+steps:
+  - name: test1
     description: XSS strings
-    firstName: 2
-    targetFields:
-      - name
-    stringsFile: files/xss.txt
-    httpMethod: ALL
-    expectedResponseCode: 200
+    ALL: all
+    body:
+      firstName: 2
+    fuzz:
+      fields:
+        - name
+      payloadsFile: files/xss.txt
+    status: 200

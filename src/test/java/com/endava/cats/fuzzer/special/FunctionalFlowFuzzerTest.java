@@ -18,6 +18,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.AdditionalMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -271,7 +272,7 @@ class FunctionalFlowFuzzerTest {
         FuzzingData postPlan = FuzzingData.builder()
                 .method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
                 .payload("{\"nested\":{\"existing\":\"v\"}}").reqSchema(new ObjectSchema()).schemaMap(Map.of())
-                .headers(Set.of(com.endava.cats.model.CatsHeader.builder().name("X-Default").value("1").build()))
+                .headers(Set.of(CatsHeader.builder().name("X-Default").value("1").build()))
                 .queryParams(Set.of("region", "flag"))
                 .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
         fuzzer.fuzz(postPlan);
@@ -280,11 +281,222 @@ class FunctionalFlowFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
                 CatsResponse.builder().responseCode(201).body(respBody)
                         .jsonBody(JsonParser.parseString(respBody))
-                        .headers(List.of(new com.endava.cats.util.KeyValuePair<>("X-Rate", "100"))).build());
+                        .headers(List.of(new KeyValuePair<>("X-Rate", "100"))).build());
 
         fuzzer.executeFlows();
         Mockito.verify(serviceCaller, Mockito.times(3)).call(Mockito.any());
         Assertions.assertThat(fuzzer.description()).isNotBlank();
         Assertions.assertThat(fuzzer).hasToString("FunctionalFlowFuzzer");
+    }
+
+    @Test
+    void shouldSupportStepDescriptionsAllCapabilitiesCrossStepReferencesAndFuzzBlocks(@TempDir Path tempDir) throws Exception {
+        String flowYaml = """
+                variables:
+                  globalTag: "Enterprise"
+                steps:
+                  - name: createPlan
+                    description: Create enterprise plan with extra properties and field omissions
+                    POST: /billing-plans
+                    variant:
+                      planType: "STATIC"
+                    omit: [obsoleteField, obsoleteList]
+                    body:
+                      planType: "STATIC"
+                      name: "${globalTag}-Plan"
+                      extraMeta:
+                        region: "EMEA"
+                    save:
+                      createdCode: "code"
+                      reqPlanName: "request.name"
+                    expect:
+                      status: 201
+                      name.first: "Cats"
+                      planName: "$request.name"
+                      maxResponseTimeMs: 500
+                      where:
+                        - "size($) == 5"
+                        - "T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(expiry.toString()))"
+                        - "!T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))"
+                  - name: getCreatedPlan
+                    description: Verify cross-step $steps and $prev references
+                    GET: /billing-plans/${steps.createPlan.response.id}
+                    expect:
+                      status: 200
+                      id: "$prev.response.id"
+                      where:
+                        - "$steps.createPlan.status == 201"
+                        - "response.id == $steps.createPlan.response.id"
+                        - "$steps.createPlan.request.planType == 'STATIC'"
+                  - name: crossFieldSecurityStep
+                    description: Cross-field security fuzzing
+                    POST: /billing-plans
+                    fuzz:
+                      fields: [name, planType]
+                      payloads: ["<script>1</script>"]
+                      mode: cross
+                    expect:
+                      status: 201
+                """;
+        File flowFile = tempDir.resolve("complete-flow.yml").toFile();
+        Files.writeString(flowFile.toPath(), flowYaml);
+        filesArguments.setFunctionalFlowFile(flowFile);
+
+        FuzzingData postPlan = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
+                .payload("{\"planType\":\"STATIC\",\"name\":\"Old\",\"obsoleteField\":\"x\",\"obsoleteList\":[\"y\"]}")
+                .reqSchema(new ObjectSchema()).schemaMap(Map.of()).headers(Set.of())
+                .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
+        FuzzingData getPlan = FuzzingData.builder()
+                .method(HttpMethod.GET).path("/billing-plans/{planId}").contractPath("/billing-plans/{planId}")
+                .payload("{}").pathParamsPayload("{\"planId\":\"gen\"}")
+                .reqSchema(new ObjectSchema()).schemaMap(Map.of()).headers(Set.of())
+                .responseCodes(Set.of("200")).requestContentTypes(List.of("application/json")).build();
+        fuzzer.fuzz(postPlan);
+        fuzzer.fuzz(getPlan);
+
+        Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(inv -> {
+            ServiceData sd = inv.getArgument(0);
+            if (sd.getHttpMethod() == HttpMethod.POST) {
+                String body = "{\"id\":\"plan_99\",\"code\":\"200\",\"name\":{\"first\":\"Cats\"},\"planName\":\"Enterprise-Plan\",\"expiry\":\"2000-02-02\"}";
+                return CatsResponse.builder().responseCode(201).responseTimeInMs(15).body(body)
+                        .jsonBody(JsonParser.parseString(body)).headers(List.of()).build();
+            }
+            String body = "{\"id\":\"plan_99\",\"status\":\"ACTIVE\"}";
+            return CatsResponse.builder().responseCode(200).responseTimeInMs(10).body(body)
+                    .jsonBody(JsonParser.parseString(body)).headers(List.of()).build();
+        });
+
+        fuzzer.executeFlows();
+
+        Mockito.verify(testCaseListener).addScenario(
+                Mockito.any(), Mockito.eq("Scenario: {}"),
+                AdditionalMatchers.aryEq(new Object[]{"Create enterprise plan with extra properties and field omissions"}));
+        Mockito.verify(testCaseListener).addScenario(
+                Mockito.any(), Mockito.eq("Scenario: {}"),
+                AdditionalMatchers.aryEq(new Object[]{"Verify cross-step $steps and $prev references"}));
+        Mockito.verify(testCaseListener).addScenario(
+                Mockito.any(), Mockito.eq("Scenario: {}"),
+                AdditionalMatchers.aryEq(new Object[]{"Cross-field security fuzzing, cross-fields [name, planType]"}));
+        Assertions.assertThat(fuzzer.getVariables())
+                .containsEntry("createdCode", "200")
+                .containsEntry("reqPlanName", "Enterprise-Plan");
+    }
+
+    @Test
+    void shouldReportMissingVerifyFieldsAndWarnOnStatusMismatch(@TempDir Path tempDir) throws Exception {
+        String flowYaml = """
+                steps:
+                  - description: Check missing field in response
+                    POST: /billing-plans
+                    expect:
+                      missingAddress: "Main St"
+                  - description: Check status mismatch warning when expect passes
+                    POST: /billing-plans
+                    status: 200
+                    expect:
+                      id: "plan_99"
+                """;
+        File flowFile = tempDir.resolve("missing-and-warn.yml").toFile();
+        Files.writeString(flowFile.toPath(), flowYaml);
+        filesArguments.setFunctionalFlowFile(flowFile);
+
+        FuzzingData postPlan = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
+                .payload("{\"name\":\"Plan\"}").reqSchema(new ObjectSchema()).schemaMap(Map.of()).headers(Set.of())
+                .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
+        fuzzer.fuzz(postPlan);
+
+        String respBody = "{\"id\":\"plan_99\"}";
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(201).body(respBody)
+                        .jsonBody(JsonParser.parseString(respBody)).headers(List.of()).build());
+
+        fuzzer.executeFlows();
+
+        Mockito.verify(testCaseListener).reportResultError(
+                Mockito.any(), Mockito.eq(postPlan),
+                Mockito.eq("Verify parameters not present in response"),
+                Mockito.eq("The following Verify parameters were not present in the response: {}"),
+                Mockito.any());
+        Mockito.verify(testCaseListener).reportResultWarn(
+                Mockito.any(), Mockito.eq(postPlan),
+                Mockito.eq("Returned response code not matching expected response code"),
+                Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldCoverSingleFieldFuzzingVariantMatchingOnlyRequiredPathSelectorAndCreateRefData(@TempDir Path tempDir) throws Exception {
+        String flowYaml = """
+                steps:
+                  - name: matchVariantByMap
+                    POST: /billing-plans
+                    base: onlyRequired
+                    variant:
+                      planType: "METERED"
+                    body:
+                      planType: "METERED"
+                    save:
+                      savedPlanId: "id"
+                    expect:
+                      status: 201
+                      maxResponseTimeMs: 1
+                  - name: patchWithPathSave
+                    PATCH: /billing-plans/${savedPlanId}
+                    save:
+                      fromPathId: "path.planId"
+                    expect:
+                      status: 200
+                  - name: singleFieldAndHeaderFuzz
+                    POST: /billing-plans
+                    fuzz:
+                      fields: [planType]
+                      fieldTypes: [headers, body]
+                      payloads: ["bad"]
+                      mode: single
+                    expect:
+                      status: 201
+                """;
+        File flowFile = tempDir.resolve("extra-flow.yml").toFile();
+        Files.writeString(flowFile.toPath(), flowYaml);
+        filesArguments.setFunctionalFlowFile(flowFile);
+        filesArguments.setCreateRefData(true);
+        filesArguments.setRefDataFile(null);
+
+        FuzzingData staticVariant = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
+                .reqSchemaName("StaticPlan").payload("{\"planType\":\"STATIC\",\"extra\":\"drop\"}")
+                .allRequiredFields(List.of("planType"))
+                .reqSchema(new ObjectSchema()).schemaMap(Map.of())
+                .headers(Set.of(CatsHeader.builder().name("X-Hdr").value("v").build()))
+                .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
+        FuzzingData meteredVariant = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
+                .reqSchemaName("MeteredPlan").payload("{\"planType\":\"METERED\",\"extra\":\"drop\"}")
+                .allRequiredFields(List.of("planType"))
+                .reqSchema(new ObjectSchema()).schemaMap(Map.of())
+                .headers(Set.of(CatsHeader.builder().name("X-Hdr").value("v").build()))
+                .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
+        FuzzingData patchPlan = FuzzingData.builder()
+                .method(HttpMethod.PATCH).path("/billing-plans/{planId}").contractPath("/billing-plans/{planId}")
+                .payload("{}").pathParamsPayload("{\"planId\":\"gen\"}")
+                .reqSchema(new ObjectSchema()).schemaMap(Map.of()).headers(Set.of())
+                .responseCodes(Set.of("200")).requestContentTypes(List.of("application/json")).build();
+
+        fuzzer.fuzz(staticVariant);
+        fuzzer.fuzz(meteredVariant);
+        fuzzer.fuzz(patchPlan);
+
+        String respBody = "{\"id\":\"p_77\",\"planType\":\"METERED\"}";
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(201).responseTimeInMs(25).body(respBody)
+                        .jsonBody(JsonParser.parseString(respBody)).headers(List.of()).build());
+
+        fuzzer.executeFlows();
+
+        Assertions.assertThat(fuzzer.getVariables()).containsEntry("fromPathId", "p_77");
+        File customRef = new File("refData_custom.yml");
+        Assertions.assertThat(customRef).exists();
+        customRef.deleteOnExit();
     }
 }

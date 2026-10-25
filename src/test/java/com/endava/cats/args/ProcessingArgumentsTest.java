@@ -88,6 +88,24 @@ class ProcessingArgumentsTest {
     }
 
     @Test
+    void shouldRequireAllXxxSelectionsToMatchWhenMultipleProvided() {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+        String payload = """
+                {
+                  "address": {
+                    "type": "Local",
+                    "country": "RO"
+                  }
+                }
+                """;
+        processingArguments.xxxOfSelections = Map.of("address.type", "Local", "address.country", "US");
+        Assertions.assertThat(processingArguments.matchesXxxSelection(payload)).isFalse();
+
+        processingArguments.xxxOfSelections = Map.of("address.type", "Local", "address.country", "RO");
+        Assertions.assertThat(processingArguments.matchesXxxSelection(payload)).isTrue();
+    }
+
+    @Test
     void shouldReturnDefaultContentTypes() {
         ProcessingArguments processingArguments = new ProcessingArguments();
         Assertions.assertThat(processingArguments.getContentType()).containsExactly(

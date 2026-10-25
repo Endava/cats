@@ -4,9 +4,12 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
+import com.endava.cats.model.CatsHeader;
+import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.JsonUtils;
+import com.google.gson.JsonElement;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -21,6 +24,7 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class OnlyRequiredFieldsFuzzerTest {
@@ -270,9 +274,9 @@ class OnlyRequiredFieldsFuzzerTest {
         FuzzingData data = FuzzingData.builder()
                 .method(HttpMethod.POST)
                 .path("/version/v1/registrationToken")
-                .headers(java.util.Set.of(
-                        com.endava.cats.model.CatsHeader.builder().name("cwa-fake").value("random").required(false).build(),
-                        com.endava.cats.model.CatsHeader.builder().name("Authorization").value("Bearer x").required(true).build()))
+                .headers(Set.of(
+                        CatsHeader.builder().name("cwa-fake").value("random").required(false).build(),
+                        CatsHeader.builder().name("Authorization").value("Bearer x").required(true).build()))
                 .payload("{\"key\":\"KTXQ7YH6F5\",\"keyDob\":\"x3712\",\"keyType\":\"GUID\"}")
                 .reqSchema(new ObjectSchema())
                 .schemaMap(Map.of())
@@ -284,7 +288,7 @@ class OnlyRequiredFieldsFuzzerTest {
         Mockito.doAnswer(inv -> {
             SimpleExecutorContext ctx = inv.getArgument(0);
             int code = ctx.getPayload().contains("\"TELETAN\"") && !ctx.getPayload().contains("keyDob") ? 201 : 400;
-            ctx.getResponseProcessor().accept(com.endava.cats.model.CatsResponse.builder().responseCode(code).build(), data);
+            ctx.getResponseProcessor().accept(CatsResponse.builder().responseCode(code).build(), data);
             return null;
         }).when(simpleExecutor).execute(Mockito.any());
 
@@ -294,7 +298,7 @@ class OnlyRequiredFieldsFuzzerTest {
         Mockito.verify(simpleExecutor, Mockito.atLeast(2)).execute(captor.capture());
         SimpleExecutorContext winningContext = captor.getAllValues().getLast();
         Assertions.assertThat(winningContext.getPayload()).contains("\"keyType\":\"TELETAN\"", "\"key\":\"KTXQ7YH6F5\"");
-        Assertions.assertThat(winningContext.getHeaders()).extracting(com.endava.cats.model.CatsHeader::getName)
+        Assertions.assertThat(winningContext.getHeaders()).extracting(CatsHeader::getName)
                 .containsExactly("Authorization");
 
         // Also cover defaulted field fallback and edge cases on RequiredOnlyPayloadGenerator
@@ -313,7 +317,7 @@ class OnlyRequiredFieldsFuzzerTest {
         // Exercise JsonPayloadTarget branches
         JsonPayloadTarget rootTarget = JsonPayloadTarget.root(new ObjectSchema(), Map.of());
         Assertions.assertThat(rootTarget.valueFrom("invalid-json")).isEmpty();
-        Assertions.assertThat(rootTarget.valueFrom((com.google.gson.JsonElement) null)).isEmpty();
+        Assertions.assertThat(rootTarget.valueFrom((JsonElement) null)).isEmpty();
         Assertions.assertThat(rootTarget.displayName()).isEqualTo("root");
         JsonPayloadTarget fieldTarget = JsonPayloadTarget.field("items[*]#code", new StringSchema(), Map.of());
         Assertions.assertThat(fieldTarget.valueFrom("{\"items\":[]}")).isEmpty();

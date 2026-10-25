@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
@@ -29,15 +30,17 @@ class EnumCaseVariantFieldsFuzzerTest {
     @InjectSpy
     TestCaseListener testCaseListener;
     FieldsIteratorExecutor catsExecutor;
+    private ProcessingArguments processingArguments;
     private EnumCaseVariantFieldsFuzzer enumCaseVariantFieldsFuzzer;
 
     @BeforeEach
     void setup() {
         CatsRandom.initRandom(0);
         serviceCaller = Mockito.mock(ServiceCaller.class);
+        processingArguments = new ProcessingArguments();
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         catsExecutor = new FieldsIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class), Mockito.mock(FilesArguments.class));
-        enumCaseVariantFieldsFuzzer = new EnumCaseVariantFieldsFuzzer(catsExecutor);
+        enumCaseVariantFieldsFuzzer = new EnumCaseVariantFieldsFuzzer(catsExecutor, processingArguments);
     }
 
     @Test
@@ -115,6 +118,11 @@ class EnumCaseVariantFieldsFuzzerTest {
                         }
                     }
                 """);
+        enumCaseVariantFieldsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+
+        Mockito.reset(testCaseListener);
+        processingArguments.setAllowInvalidEnumValues(true);
         enumCaseVariantFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
     }

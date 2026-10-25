@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -49,7 +50,7 @@ class ErrorSimilarityDetectorTest {
         );
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldExtractRootCausesAndNormalizedKeysAcrossJsonAndStackTraces() {
         String rfc7807 = "{\"type\":\"about:blank\",\"title\":\"Bad Request\",\"detail\":\"Field 'amount' failed\",\"trace\":\"\\tat java.lang.Thread.run(Thread.java:1)\\n\\tat com.acme.OrderService.create(OrderService.java:88)\"}";
         String summary1 = ErrorSimilarityDetector.extractRootCauseSummary(rfc7807, "fallback");

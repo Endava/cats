@@ -1,8 +1,9 @@
-/pets/{id}/move:
-  test1:
+steps:
+  - name: test1
     description: XSS strings
-    targetFieldTypes:
-      - http_body
-    stringsFile: files/xss.txt
-    httpMethod: POST
-    expectedResponseCode: 200
+    POST: /pets/{id}/move
+    fuzz:
+      fieldTypes:
+        - body
+      payloadsFile: files/xss.txt
+    status: 200

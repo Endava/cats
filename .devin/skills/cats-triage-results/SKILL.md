@@ -64,9 +64,17 @@ cats triage -r cats-report --verify -s <server_url> -j
 
 ## 3. Replay Individual Test Cases (`cats replay`)
 
-To inspect or debug a single test case with full request/response logging:
+To inspect, replay, or export a single test case (including its upstream stateful producer chain):
 ```bash
+# Replay Test 42 and Test 108 with full request/response logging
 cats replay Test42 Test108 -r cats-report -s <server_url> -H "Authorization=Bearer $$API_TOKEN" -v
+
+# Replay Test 42 statefully (re-runs upstream 2XX POST producer step(s) from the report first,
+# extracts fresh resource IDs from the live responses, and substitutes them into Test 42!)
+cats replay Test42 -r cats-report -s <server_url> --stateful
+
+# Export Test 42 + its upstream producer chain as a reusable --functionalFlow YAML regression test
+cats replay Test42 -r cats-report --export-flow reproducer-flow.yml
 ```
 
 ---

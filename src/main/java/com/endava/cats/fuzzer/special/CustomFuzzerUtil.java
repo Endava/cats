@@ -358,7 +358,7 @@ public class CustomFuzzerUtil {
         return extractResponseValue(response, selector);
     }
 
-    static String extractResponseValue(CatsResponse response, String selector) {
+    public static String extractResponseValue(CatsResponse response, String selector) {
         if (selector.startsWith(RESPONSE_HEADER_PREFIX) || selector.toLowerCase(Locale.ROOT).startsWith("header.")) {
             String headerName = selector.substring(selector.contains(".")
                     ? selector.indexOf('.') + 1

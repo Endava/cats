@@ -1,8 +1,7 @@
-/pets/{id}/move:
-  test1:
+steps:
+  - name: test1
     description: XSS strings
-    targetF:
-      - id
-      - name
-    stringsFile: files/xss.txt
-    expectedResponseCode: 200
+    path: /pets/{id}/move
+    fuzz:
+      payloadsFile: files/xss.txt
+    status: 200

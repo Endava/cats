@@ -1,8 +1,10 @@
-/pet:
-  test1:
+steps:
+  - name: test1
     description: XSS strings
-    targetFields:
-      - id
-      - name
-    stringsFile: files/xss.txt
-    expectedResponseCode: 200
+    POST: /pet
+    fuzz:
+      fields:
+        - id
+        - name
+      payloadsFile: files/xss.txt
+    status: 200

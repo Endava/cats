@@ -64,13 +64,14 @@ correlate:
         - "flatFeeAmount"
 
 steps:
-  - name: "Create a metered billing plan"
+  - name: "createPlan"
+    description: "Create a metered billing plan and verify its response contract"
     POST: "/billing-plans"
     # Base payload mode:
-    #   FULL (default) - start from a full schema-generated payload
-    #   REQUIRED_ONLY  - start from required fields only
-    #   EMPTY          - start from an empty body (use only what is in `body:`)
-    base: FULL
+    #   merge (default) - start from a full schema-generated payload
+    #   onlyRequired    - start from required fields only
+    #   empty           - start from an empty body (use only what is in `body:`)
+    base: merge
     # Optional oneOf/anyOf variant selection (by schema name or field match)
     variant:
       planType: "METERED"
@@ -93,6 +94,7 @@ steps:
     expect:
       status: [200, 201]
       matchesSchema: true
+      maxResponseTimeMs: 1000
       headers:
         Content-Type: "application/json"
       fields:
@@ -107,17 +109,17 @@ steps:
         - "response.name == request.name"
         - "response.unitPrice >= 10"
 
-  - name: "Fetch the created billing plan and verify persistence"
-    GET: "/billing-plans/${createdPlanId}"
-    path:
-      planId: "${createdPlanId}"
+  - name: "getPlan"
+    description: "Fetch the created billing plan and verify cross-step persistence"
+    GET: "/billing-plans/${steps.createPlan.response.id}"
     query:
       includeDetails: true
     expect:
       status: 200
       where:
-        - "response.id == '${createdPlanId}'"
-        - "response.name == '${createdPlanName}'"
+        - "$steps.createPlan.status == 201"
+        - "response.id == $steps.createPlan.response.id"
+        - "response.name == $prev.response.name"
 
   - name: "Reject invalid negative unit price on update"
     PUT: "/billing-plans/${createdPlanId}"
@@ -141,9 +143,8 @@ steps:
 
 ### Running a Functional Flow
 ```bash
-cats run -c <spec> -s <server_url> --functionalFlow flows.yml
+cats run -c <spec> -s <server_url> flows.yml
 ```
-*(You can also validate a flow offline in dry-run mode with `cats run -c <spec> -s http://localhost:8080 --functionalFlow flows.yml --dryRun`.)*
 
 ---
 
@@ -177,11 +178,15 @@ correlations:
 
 ### Supported `when:` and `expect.where:` Operators
 - Logical connectives: `&&` (`AND`), `||` (`OR`), `!`
-- Comparison operators: `==`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `matches` (regex), `in ['A', 'B']`
-- Prefixes in `expect.where:`:
+-Comparison operators: `==`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `matches` (regex), `is null`, `is not null`
+- Prefixes & functions in `expect.where:` (and `${...}` expressions):
   - `request.<fieldPath>` — reads from the sent JSON request body
   - `response.<fieldPath>` — reads from the received JSON response body
-  - `status` — HTTP status code integer (e.g., `status == 201`)
+  - `status` / `responseTimeMs` — HTTP status code integer and response latency in ms
+  - `size($)` / `size(<fieldPath>)` — number of properties or elements on the root JSON object/array or a nested array
+  - `T(...)` — full SpEL boolean expression evaluated against `request` and `response` (e.g., `T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(expiry.toString()))`)
+  - `$steps.<stepName>.response.<fieldPath>` / `$steps.<stepName>.request.<fieldPath>` / `$steps.<stepName>.status` — cross-step & cross-endpoint reference to any earlier step
+  - `$prev.response.<fieldPath>` / `$prev.request.<fieldPath>` / `$prev.status` — reference to the immediately preceding step
   - `${varName}` — variable extracted by an earlier step's `save:` block
 
 ---
@@ -203,15 +208,29 @@ Anywhere in `flows.yml`, `correlations.yml`, `refData.yml`, or `headers.yml`, yo
 
 ---
 
-## 5. Reference Data (`--refData refData.yml`)
+## 5. Reference Data & Headers (`--refData refData.yml`, `--headers headers.yml`)
 
-Use `refData.yml` to pin fixed field values or remove fields (`cats_remove_field`) per path or across `all` paths:
+Both `refData.yml` and `headers.yml` support:
+- **`all`** — applied to all paths
+- **Wildcard path prefixes (`"/orders*"`)** — applied to all matching sub-paths
+- **HTTP method scoping (`"POST /orders"`, `"PUT /orders*"`)** — applied only to the specified HTTP method
+- **Dot-notation or `#`-notation for nested fields (`shippingAddress.country` or `shippingAddress#country`)**
+- **Dynamic expressions (`#(...)`, `T(...)`, `$$ENV_VAR`)** and **`omit: [...]`** to remove fields from payloads and skip fuzzing them
+
 ```yaml
 all:
   tenantId: "tenant_default"
+  omit:
+    - "internalTrace"
 
-"/customers/{customerId}/orders":
+"/customers*":
+  region: "EU"
+
+"POST /customers/{customerId}/orders":
   customerId: "cust_1001"
-  shippingAddress#country: "DE"
-  legacyField: "cats_remove_field"
+  shippingAddress.country: "DE"
+  requestId: "#(uuid)"
+  omit:
+    - "legacyField"
+    - "shippingAddress.zip"
 ```

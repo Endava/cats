@@ -5,6 +5,8 @@ import com.endava.cats.fuzzer.special.FunctionalFlowDocument.BasePayloadMode;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRule;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FunctionalFlowExpectation;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FunctionalFlowStep;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FuzzMode;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument.StepFuzzConfig;
 import com.endava.cats.http.HttpMethod;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,12 +25,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Detects and parses sequential functional flow YAML documents (`steps:` or top-level step list).
+ * Detects and parses sequential functional and security flow YAML documents (`steps:` or top-level step list).
  */
 public final class FunctionalFlowParser {
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
     private static final Set<String> RESERVED_EXPECT_KEYS = Set.of(
-            "status", "fields", "headers", "bodycontains", "bodynotcontains", "where", "matchesschema");
+            "status", "fields", "headers",
+            "bodycontains", "bodynotcontains", "where", "matchesschema",
+            "maxresponsetimems");
 
     private FunctionalFlowParser() {
         // utility class
@@ -41,6 +45,18 @@ public final class FunctionalFlowParser {
         try {
             return isFunctionalFlowYaml(Files.readString(file.toPath()));
         } catch (IOException _) {
+            return false;
+        }
+    }
+
+    public static boolean isSecurityFlowFile(File file) {
+        if (!isFunctionalFlowFile(file)) {
+            return false;
+        }
+        try {
+            FunctionalFlowDocument doc = parse(file);
+            return doc.steps().stream().anyMatch(s -> s.fuzz() != null && s.fuzz().isConfigured());
+        } catch (IOException | RuntimeException _) {
             return false;
         }
     }
@@ -67,12 +83,13 @@ public final class FunctionalFlowParser {
     }
 
     private static boolean hasHttpMethodEntry(JsonNode stepNode) {
-        if (stepNode.has("method") && stepNode.has("path")) {
+        if (stepNode.has("method") && (stepNode.has("path") || stepNode.has("paths"))) {
             return true;
         }
         var fieldNames = stepNode.fieldNames();
         while (fieldNames.hasNext()) {
-            if (HttpMethod.fromString(fieldNames.next()).isPresent()) {
+            String fieldName = fieldNames.next();
+            if ("ALL".equalsIgnoreCase(fieldName) || HttpMethod.fromString(fieldName).isPresent()) {
                 return true;
             }
         }
@@ -93,7 +110,8 @@ public final class FunctionalFlowParser {
                 return new FunctionalFlowDocument(Map.of(), List.of(), parseSteps(root));
             }
             Map<String, String> variables = parseStringMap(root.get("variables"));
-            List<FieldCorrelationRule> correlate = parseCorrelations(root.get("correlate"));
+            JsonNode corrNode = root.has("correlate") ? root.get("correlate") : root.get("correlations");
+            List<FieldCorrelationRule> correlate = parseCorrelations(corrNode);
             List<FunctionalFlowStep> steps = parseSteps(root.get("steps"));
             return new FunctionalFlowDocument(variables, correlate, steps);
         } catch (IOException e) {
@@ -113,12 +131,8 @@ public final class FunctionalFlowParser {
             return parseCorrelations(root);
         }
         if (root.isObject()) {
-            if (root.has("correlate")) {
-                return parseCorrelations(root.get("correlate"));
-            }
-            if (root.has("correlations")) {
-                return parseCorrelations(root.get("correlations"));
-            }
+            JsonNode corrNode = root.has("correlate") ? root.get("correlate") : root.get("correlations");
+            return parseCorrelations(corrNode);
         }
         return List.of();
     }
@@ -139,45 +153,106 @@ public final class FunctionalFlowParser {
 
     private static FunctionalFlowStep parseSingleStep(JsonNode node, int index) {
         MethodAndTarget methodAndTarget = extractMethodAndTarget(node, index);
-        String name = firstNonBlankText(node, "name", "description");
-        if (StringUtils.isBlank(name)) {
-            name = "Step " + index + ": " + methodAndTarget.method() + " " + methodAndTarget.rawTarget();
-        }
-        Map<String, Object> path = parseObjectMap(node.get("path"));
+        String explicitName = firstNonBlankText(node, "name", "id");
+        String description = firstNonBlankText(node, "description");
+        String name = resolveStepName(explicitName, description, index, methodAndTarget);
+        Map<String, Object> path = parsePathMap(node.get("path"));
         Map<String, Object> query = parseObjectMap(node.get("query"));
         Map<String, Object> headers = parseObjectMap(node.get("headers"));
         Object body = node.has("body") ? convertJsonNode(node.get("body")) : null;
-        BasePayloadMode base = BasePayloadMode.fromString(firstNonBlankText(node, "base", "mode"));
+        BasePayloadMode base = BasePayloadMode.fromString(firstNonBlankText(node, "base"));
         List<String> omit = parseStringList(node.get("omit"));
         VariantSpec variantSpec = parseVariant(node.get("variant"));
-        List<FieldCorrelationRule> correlate = parseCorrelations(node.get("correlate"));
-        Map<String, String> save = parseStringMap(node.get(node.has("save") ? "save" : "output"));
+        JsonNode corrNode = node.has("correlate") ? node.get("correlate") : node.get("correlations");
+        List<FieldCorrelationRule> correlate = parseCorrelations(corrNode);
+        Map<String, String> save = parseStringMap(node.get("save"));
         FunctionalFlowExpectation expect = parseExpectation(node);
+        StepFuzzConfig fuzz = parseFuzzConfig(node);
         return new FunctionalFlowStep(
-                name, methodAndTarget.method(), methodAndTarget.rawTarget(),
+                name, description, methodAndTarget.method(), methodAndTarget.allMethods(),
+                methodAndTarget.rawTarget(), methodAndTarget.targetPaths(),
                 path, query, headers, body, base, omit,
-                variantSpec.name(), variantSpec.match(), correlate, save, expect);
+                variantSpec.name(), variantSpec.match(), correlate, save, expect, fuzz);
     }
 
-    private record MethodAndTarget(HttpMethod method, String rawTarget) {
+    private static String resolveStepName(String explicitName, String description, int index, MethodAndTarget target) {
+        if (StringUtils.isNotBlank(explicitName)) {
+            return explicitName;
+        }
+        if (StringUtils.isNotBlank(description)) {
+            return description;
+        }
+        String verb = target.allMethods() ? "ALL" : String.valueOf(target.method());
+        return "Step " + index + ": " + verb + " " + target.rawTarget();
+    }
+
+    private static Map<String, Object> parsePathMap(JsonNode pathNode) {
+        if (pathNode != null && pathNode.isObject()) {
+            return parseObjectMap(pathNode);
+        }
+        return Map.of();
+    }
+
+    private static StepFuzzConfig parseFuzzConfig(JsonNode stepNode) {
+        if (!stepNode.has("fuzz") || !stepNode.get("fuzz").isObject()) {
+            return null;
+        }
+        JsonNode fuzzNode = stepNode.get("fuzz");
+        List<String> fields = parseStringList(fuzzNode.get("fields"));
+        List<String> fieldTypes = parseStringList(fuzzNode.get("fieldTypes"));
+        List<String> payloads = parseStringList(fuzzNode.get("payloads"));
+        List<String> payloadsFiles = parseStringList(fuzzNode.get("payloadsFile"));
+        FuzzMode mode = FuzzMode.fromString(firstNonBlankText(fuzzNode, "mode"));
+        return new StepFuzzConfig(fields, fieldTypes, payloads, payloadsFiles, mode);
+    }
+
+    private record MethodAndTarget(HttpMethod method, boolean allMethods, String rawTarget, List<String> targetPaths) {
     }
 
     private record VariantSpec(String name, Map<String, String> match) {
     }
 
     private static MethodAndTarget extractMethodAndTarget(JsonNode node, int index) {
-        if (node.has("method") && node.has("path") && node.get("path").isTextual()) {
-            HttpMethod method = HttpMethod.fromString(node.get("method").asText())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid HTTP method in step " + index));
-            return new MethodAndTarget(method, node.get("path").asText().trim());
+        String explicitMethod = firstNonBlankText(node, "method");
+        List<String> explicitPaths = extractExplicitTargetPaths(node);
+        if (explicitMethod != null && !explicitPaths.isEmpty()) {
+            return buildMethodAndTarget(explicitMethod, explicitPaths, index);
         }
         for (Map.Entry<String, JsonNode> entry : node.properties()) {
-            var maybeMethod = HttpMethod.fromString(entry.getKey());
-            if (maybeMethod.isPresent() && entry.getValue().isTextual()) {
-                return new MethodAndTarget(maybeMethod.get(), entry.getValue().asText().trim());
+            String key = entry.getKey();
+            if (("ALL".equalsIgnoreCase(key) || HttpMethod.fromString(key).isPresent()) && isPathValueNode(entry.getValue())) {
+                List<String> paths = parseStringList(entry.getValue());
+                return buildMethodAndTarget(key, paths, index);
             }
         }
+        if (!explicitPaths.isEmpty() && node.has("fuzz")) {
+            return new MethodAndTarget(null, false, explicitPaths.getFirst(), explicitPaths);
+        }
         throw new IllegalArgumentException("Functional flow step " + index + " must specify an HTTP method and target path (e.g. 'POST: /items')");
+    }
+
+    private static boolean isPathValueNode(JsonNode valueNode) {
+        return valueNode != null && (valueNode.isTextual() || valueNode.isArray());
+    }
+
+    private static List<String> extractExplicitTargetPaths(JsonNode node) {
+        List<String> paths = new ArrayList<>();
+        if (node.has("path") && isPathValueNode(node.get("path"))) {
+            paths.addAll(parseStringList(node.get("path")));
+        }
+        if (node.has("paths") && isPathValueNode(node.get("paths"))) {
+            paths.addAll(parseStringList(node.get("paths")));
+        }
+        return paths;
+    }
+
+    private static MethodAndTarget buildMethodAndTarget(String methodRaw, List<String> paths, int index) {
+        if ("ALL".equalsIgnoreCase(methodRaw) || "*".equals(methodRaw)) {
+            return new MethodAndTarget(null, true, paths.getFirst(), List.copyOf(paths));
+        }
+        HttpMethod method = HttpMethod.fromString(methodRaw)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid HTTP method in step " + index));
+        return new MethodAndTarget(method, false, paths.getFirst(), List.copyOf(paths));
     }
 
     private static VariantSpec parseVariant(JsonNode variantNode) {
@@ -194,11 +269,11 @@ public final class FunctionalFlowParser {
     }
 
     private static FunctionalFlowExpectation parseExpectation(JsonNode stepNode) {
-        JsonNode expectNode = stepNode.get(stepNode.has("expect") ? "expect" : "verify");
+        JsonNode expectNode = stepNode.get("expect");
         List<String> topStatus = parseStatusCodes(stepNode.get("status"));
         if (expectNode == null || !expectNode.isObject()) {
             List<String> status = topStatus.isEmpty() ? List.of("2XX") : topStatus;
-            return new FunctionalFlowExpectation(status, Map.of(), Map.of(), List.of(), List.of(), List.of(), true);
+            return new FunctionalFlowExpectation(status, Map.of(), Map.of(), List.of(), List.of(), List.of(), true, null);
         }
         List<String> expectStatus = parseStatusCodes(expectNode.get("status"));
         List<String> fallbackStatus = topStatus.isEmpty() ? List.of("2XX") : topStatus;
@@ -214,9 +289,11 @@ public final class FunctionalFlowParser {
         List<String> bodyNotContains = parseStringList(expectNode.get("bodyNotContains"));
         List<String> where = parseStringList(expectNode.get("where"));
         boolean matchesSchema = !expectNode.has("matchesSchema") || expectNode.get("matchesSchema").asBoolean(true);
+        JsonNode timeNode = expectNode.get("maxResponseTimeMs");
+        Long maxTimeMs = (timeNode != null && timeNode.isNumber()) ? timeNode.longValue() : null;
         return new FunctionalFlowExpectation(
                 finalStatus, Collections.unmodifiableMap(fields), headers,
-                bodyContains, bodyNotContains, where, matchesSchema);
+                bodyContains, bodyNotContains, where, matchesSchema, maxTimeMs);
     }
 
     private static List<FieldCorrelationRule> parseCorrelations(JsonNode correlateNode) {
@@ -249,7 +326,7 @@ public final class FunctionalFlowParser {
             return List.of();
         }
         List<String> codes = new ArrayList<>();
-        for (String token : raw.split(",", -1)) {
+        for (String token : raw.split("[,|]", -1)) {
             if (StringUtils.isNotBlank(token)) {
                 codes.add(token.trim());
             }
@@ -262,7 +339,7 @@ public final class FunctionalFlowParser {
             return List.of();
         }
         if (node.isTextual()) {
-            return List.of(node.asText().trim());
+            return parseStatusCodes(node);
         }
         if (!node.isArray()) {
             return List.of();

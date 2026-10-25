@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields.base;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -47,6 +48,10 @@ public abstract class BaseEnumIteratorFieldsFuzzer implements Fuzzer {
      */
     protected abstract String scenario();
 
+    protected ResponseCodeFamily getExpectedResponseCode() {
+        return ResponseCodeFamilyPredefined.TWOXX;
+    }
+
     @Override
     public void fuzz(FuzzingData data) {
         Predicate<Schema<?>> schemaFilter = schema -> schema.getEnum() != null;
@@ -58,7 +63,7 @@ public abstract class BaseEnumIteratorFieldsFuzzer implements Fuzzer {
                         .scenario(this.scenario())
                         .fuzzingData(data)
                         .fuzzingStrategy(FuzzingStrategy.replace())
-                        .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
+                        .expectedResponseCode(this.getExpectedResponseCode())
                         .skipMessage("It's either not an enum or it's a discriminator.")
                         .fieldFilter(notADiscriminator.and(fieldExists))
                         .schemaFilter(schemaFilter)

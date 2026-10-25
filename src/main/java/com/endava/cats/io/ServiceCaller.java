@@ -931,7 +931,7 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
-        Map<String, Object> userSuppliedHeaders = filesArguments.getHeaders(data.getContractPath());
+        Map<String, Object> userSuppliedHeaders = resolveHeadersForOperation(data);
         logger.debug("Path {} (including ALL headers) has the following headers: {}", data.getContractPath(),
                 SensitiveDataPolicy.maskHeadersForDisplay(userSuppliedHeaders, reportingArguments));
 
@@ -1022,8 +1022,20 @@ public class ServiceCaller {
         }
     }
 
+    private Map<String, Object> resolveHeadersForOperation(ServiceData data) {
+        Map<String, Object> merged = new HashMap<>(filesArguments.getHeaders(data.getContractPath(), data.getHttpMethod()));
+        filesArguments.getHeaders(data.getContractPath()).forEach(merged::putIfAbsent);
+        return merged;
+    }
+
+    private Map<String, Object> resolveRefDataForOperation(ServiceData data) {
+        Map<String, Object> merged = new HashMap<>(filesArguments.getRefData(data.getRelativePath(), data.getHttpMethod()));
+        filesArguments.getRefData(data.getRelativePath()).forEach(merged::putIfAbsent);
+        return merged;
+    }
+
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
-        Map<String, Object> currentPathRefData = filesArguments.getRefData(data.getRelativePath());
+        Map<String, Object> currentPathRefData = resolveRefDataForOperation(data);
         logger.debug("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
         for (Map.Entry<String, Object> entry : currentPathRefData.entrySet()) {
@@ -1051,7 +1063,7 @@ public class ServiceCaller {
             logger.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
             return initialPayload;
         } else {
-            Map<String, Object> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
+            Map<String, Object> refDataForCurrentPath = resolveRefDataForOperation(data);
             logger.debug("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
 
             Map<String, Object> refDataWithoutAdditionalProperties =
@@ -1087,19 +1099,23 @@ public class ServiceCaller {
         if (SUBSTITUTE_FOR_NULL.equals(String.valueOf(refDataValue))) {
             refDataValue = null;
         }
+        String rawKey = entry.getKey();
+        String targetKey = (!JsonUtils.isFieldInJson(payload, rawKey) && rawKey != null && rawKey.contains("."))
+                ? FieldCorrelationEvaluator.normalizeFieldPath(rawKey)
+                : rawKey;
         try {
             if (CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(refDataValue))) {
-                payload = JsonUtils.deleteNode(payload, entry.getKey());
+                payload = JsonUtils.deleteNode(payload, targetKey);
             } else {
-                logger.debug("Replacing field {} with value {}", entry.getKey(), refDataValue);
+                logger.debug("Replacing field {} with value {}", targetKey, refDataValue);
                 FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
-                boolean mergeFuzzing = data.isFuzzedField(entry.getKey(), RequestTarget.Location.BODY) ||
-                        data.isFuzzedField(entry.getKey(), RequestTarget.Location.PATH) ||
-                        data.isFuzzedField(entry.getKey(), RequestTarget.Location.QUERY);
-                payload = FuzzingStrategy.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();
+                boolean mergeFuzzing = data.isFuzzedField(targetKey, RequestTarget.Location.BODY) ||
+                        data.isFuzzedField(targetKey, RequestTarget.Location.PATH) ||
+                        data.isFuzzedField(targetKey, RequestTarget.Location.QUERY);
+                payload = FuzzingStrategy.replaceField(payload, targetKey, fuzzingStrategy, mergeFuzzing).json();
             }
         } catch (PathNotFoundException _) {
-            logger.debug("Ref data key {} was not found within the payload!", entry.getKey());
+            logger.debug("Ref data key {} was not found within the payload!", targetKey);
         }
         return payload;
     }

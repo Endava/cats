@@ -1,6 +1,10 @@
 package com.endava.cats.args;
 
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.fuzzer.special.FieldCorrelationEvaluator;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument;
+import com.endava.cats.fuzzer.special.FunctionalFlowParser;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsUtil;
@@ -29,9 +33,11 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Holds all arguments related to different files used by CATS like: headers, reference data, etc.
@@ -54,6 +60,8 @@ public class FilesArguments {
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     @Getter
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
+    @Getter
+    private FunctionalFlowDocument securityFlowDocument;
 
 
     @CommandLine.Option(names = {"--errorLeaksKeywords", "-K"},
@@ -174,6 +182,7 @@ public class FilesArguments {
         this.functionalFlowFile = other.functionalFlowFile;
         this.correlationsFile = other.correlationsFile;
         this.securityFuzzerFile = other.securityFuzzerFile;
+        this.securityFlowDocument = other.securityFlowDocument;
         this.createRefData = other.createRefData;
         this.mutatorsFolder = other.mutatorsFolder;
     }
@@ -223,6 +232,14 @@ public class FilesArguments {
      * @throws IOException if something happens while reading the file
      */
     public void loadSecurityFuzzerFile() throws IOException {
+        if (FunctionalFlowParser.isFunctionalFlowFile(securityFuzzerFile)) {
+            log.config(AnsiUtils.bold("SecurityFuzzer file: {}"),
+                    AnsiUtils.blue(securityFuzzerFile.getCanonicalPath()));
+            securityFlowDocument = FunctionalFlowParser.parse(securityFuzzerFile);
+            securityFuzzerDetails = new HashMap<>();
+            return;
+        }
+        securityFlowDocument = null;
         securityFuzzerDetails = this.loadFileAsMapOfMapsOfStrings(securityFuzzerFile, "SecurityFuzzer");
     }
 
@@ -368,7 +385,11 @@ public class FilesArguments {
      * @return a Map representation of the --headers file with paths being the Map keys
      */
     public Map<String, Object> getHeaders(String path) {
-        return mergePathAndAll(headers, path);
+        return mergePathAndAll(headers, path, null);
+    }
+
+    public Map<String, Object> getHeaders(String path, HttpMethod method) {
+        return mergePathAndAll(headers, path, method);
     }
 
     /**
@@ -380,7 +401,11 @@ public class FilesArguments {
      * @return a Map with the supplied --refData
      */
     public Map<String, Object> getRefData(String currentPath) {
-        return mergePathAndAll(refData, currentPath);
+        return mergePathAndAll(refData, currentPath, null);
+    }
+
+    public Map<String, Object> getRefData(String currentPath, HttpMethod method) {
+        return mergePathAndAll(refData, currentPath, method);
     }
 
     /**
@@ -394,10 +419,32 @@ public class FilesArguments {
         if (refDataForPath == null || refDataForPath.isEmpty()) {
             return Collections.emptyList();
         }
-        return refDataForPath.entrySet().stream()
-                .filter(entry -> ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(entry.getValue())))
-                .map(Map.Entry::getKey)
-                .toList();
+        Set<String> removed = new HashSet<>();
+        refDataForPath.forEach((key, val) -> {
+            if ("omit".equalsIgnoreCase(key)) {
+                extractOmittedFields(val).forEach(f -> removed.add(FieldCorrelationEvaluator.normalizeFieldPath(f)));
+            } else if (ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(val))) {
+                removed.add(FieldCorrelationEvaluator.normalizeFieldPath(key));
+            }
+        });
+        return List.copyOf(removed);
+    }
+
+    private static List<String> extractOmittedFields(Object omitValue) {
+        if (omitValue instanceof List<?> list) {
+            return list.stream().filter(java.util.Objects::nonNull).map(o -> String.valueOf(o).trim())
+                    .filter(Predicate.not(String::isEmpty)).toList();
+        }
+        if (omitValue instanceof String str && !str.isBlank()) {
+            List<String> items = new ArrayList<>();
+            for (String token : str.replace("[", "").replace("]", "").split(",", -1)) {
+                if (!token.isBlank()) {
+                    items.add(token.trim());
+                }
+            }
+            return items;
+        }
+        return List.of();
     }
 
     /**
@@ -408,7 +455,7 @@ public class FilesArguments {
      * @return a key-value map with all additional query params
      */
     public Map<String, Object> getAdditionalQueryParamsForPath(String path) {
-        return mergePathAndAll(queryParams, path);
+        return mergePathAndAll(queryParams, path, null);
     }
 
     /**
@@ -459,17 +506,70 @@ public class FilesArguments {
 
 
     Map<String, Object> mergePathAndAll(Map<String, Map<String, Object>> collection, String path) {
-        Map<String, Object> allMerged = new HashMap<>();
+        return mergePathAndAll(collection, path, null);
+    }
+
+    Map<String, Object> mergePathAndAll(Map<String, Map<String, Object>> collection, String path, HttpMethod method) {
+        if (collection == null || collection.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<String, Object> result = new HashMap<>();
+        if (path != null) {
+            if (method != null) {
+                putMatchingEntries(collection, key -> isExactMethodPathMatch(key, path, method), result);
+            }
+            putMatchingEntries(collection, key -> path.equals(key), result);
+            if (method != null) {
+                putMatchingEntries(collection, key -> isWildcardMethodPathMatch(key, path, method), result);
+            }
+            putMatchingEntries(collection, key -> isWildcardPathMatch(key, path), result);
+        }
+        putMatchingEntries(collection, ALL::equalsIgnoreCase, result);
+        return result;
+    }
+
+    private static void putMatchingEntries(Map<String, Map<String, Object>> collection,
+                                           Predicate<String> keyMatcher,
+                                           Map<String, Object> target) {
         collection.forEach((k, v) -> {
-            if (ALL.equalsIgnoreCase(k)) {
-                v.forEach(allMerged::putIfAbsent);
+            if (k != null && v != null && keyMatcher.test(k.trim())) {
+                v.forEach((entryKey, entryVal) -> {
+                    if ("omit".equalsIgnoreCase(entryKey)) {
+                        extractOmittedFields(entryVal).forEach(f -> target.putIfAbsent(f, ServiceCaller.CATS_REMOVE_FIELD));
+                    } else {
+                        target.putIfAbsent(entryKey, entryVal);
+                    }
+                });
             }
         });
+    }
 
-        Map<String, Object> result = new HashMap<>(collection.getOrDefault(path, Map.of()));
-        allMerged.forEach(result::putIfAbsent);
+    private static boolean isExactMethodPathMatch(String key, String path, HttpMethod method) {
+        int space = key.indexOf(' ');
+        if (space <= 0) {
+            return false;
+        }
+        String keyMethod = key.substring(0, space).trim();
+        String keyPath = key.substring(space + 1).trim();
+        return method.name().equalsIgnoreCase(keyMethod) && path.equals(keyPath);
+    }
 
-        return result;
+    private static boolean isWildcardMethodPathMatch(String key, String path, HttpMethod method) {
+        int space = key.indexOf(' ');
+        if (space <= 0) {
+            return false;
+        }
+        String keyMethod = key.substring(0, space).trim();
+        String keyPath = key.substring(space + 1).trim();
+        return method.name().equalsIgnoreCase(keyMethod) && isWildcardPathMatch(keyPath, path);
+    }
+
+    private static boolean isWildcardPathMatch(String pattern, String path) {
+        if (!pattern.endsWith("*") || pattern.contains(" ")) {
+            return false;
+        }
+        String prefix = pattern.substring(0, pattern.length() - 1);
+        return !prefix.isEmpty() && path.startsWith(prefix);
     }
 
     private Map<String, Map<String, Object>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws IOException {

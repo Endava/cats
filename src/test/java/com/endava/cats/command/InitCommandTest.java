@@ -1,6 +1,9 @@
 package com.endava.cats.command;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -9,6 +12,7 @@ import picocli.CommandLine;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 @QuarkusTest
 class InitCommandTest {
@@ -110,25 +114,25 @@ class InitCommandTest {
 
     @Test
     void shouldExtractAllSecuritySchemeTypesAndHandlePlatformAliases() {
-        io.swagger.v3.oas.models.OpenAPI api = new io.swagger.v3.oas.models.OpenAPI();
+        OpenAPI api = new OpenAPI();
         Assertions.assertThat(InitCommand.extractSecurityHeaders(api)).containsEntry("Authorization", "Bearer $$API_TOKEN");
 
-        io.swagger.v3.oas.models.Components components = new io.swagger.v3.oas.models.Components()
-                .addSecuritySchemes("basicAuth", new io.swagger.v3.oas.models.security.SecurityScheme()
-                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.HTTP).scheme("basic"))
-                .addSecuritySchemes("headerKey", new io.swagger.v3.oas.models.security.SecurityScheme()
-                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.APIKEY)
-                        .in(io.swagger.v3.oas.models.security.SecurityScheme.In.HEADER).name("X-API-Key"))
-                .addSecuritySchemes("queryKey", new io.swagger.v3.oas.models.security.SecurityScheme()
-                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.APIKEY)
-                        .in(io.swagger.v3.oas.models.security.SecurityScheme.In.QUERY).name("api_key"))
-                .addSecuritySchemes("oauth", new io.swagger.v3.oas.models.security.SecurityScheme()
-                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.OAUTH2))
-                .addSecuritySchemes("mtls", new io.swagger.v3.oas.models.security.SecurityScheme()
-                        .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.MUTUALTLS));
+        Components components = new Components()
+                .addSecuritySchemes("basicAuth", new SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP).scheme("basic"))
+                .addSecuritySchemes("headerKey", new SecurityScheme()
+                        .type(SecurityScheme.Type.APIKEY)
+                        .in(SecurityScheme.In.HEADER).name("X-API-Key"))
+                .addSecuritySchemes("queryKey", new SecurityScheme()
+                        .type(SecurityScheme.Type.APIKEY)
+                        .in(SecurityScheme.In.QUERY).name("api_key"))
+                .addSecuritySchemes("oauth", new SecurityScheme()
+                        .type(SecurityScheme.Type.OAUTH2))
+                .addSecuritySchemes("mtls", new SecurityScheme()
+                        .type(SecurityScheme.Type.MUTUALTLS));
         api.setComponents(components);
 
-        java.util.Map<String, String> headers = InitCommand.extractSecurityHeaders(api);
+        Map<String, String> headers = InitCommand.extractSecurityHeaders(api);
         Assertions.assertThat(headers).containsKeys("Authorization", "X-API-Key");
 
         Assertions.assertThat(InitCommand.AgentPlatform.parsePlatforms(List.of("codex", "cursor")))

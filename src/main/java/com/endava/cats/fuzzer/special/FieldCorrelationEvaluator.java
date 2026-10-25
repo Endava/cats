@@ -7,6 +7,7 @@ import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang3.StringUtils;
@@ -319,6 +320,17 @@ public final class FieldCorrelationEvaluator {
                 return compareOperands(leftVal, rightVal, op.trim());
             }
         }
+        if (atom.startsWith("T(")) {
+            Map<String, String> ctx = new LinkedHashMap<>(Optional.ofNullable(variables).orElse(Map.of()));
+            if (requestJson != null) {
+                ctx.put("request", requestJson);
+            }
+            if (responseJson != null) {
+                ctx.put("response", responseJson);
+            }
+            String evaluated = DynamicValueResolver.resolve(atom, ctx);
+            return Boolean.parseBoolean(evaluated);
+        }
         Object truthy = resolveOperand(atom, requestJson, responseJson, response, variables);
         return Boolean.parseBoolean(String.valueOf(truthy));
     }
@@ -381,7 +393,41 @@ public final class FieldCorrelationEvaluator {
         }
         if (trimmed.startsWith("${") && trimmed.endsWith("}") && variables != null) {
             String varKey = trimmed.substring(2, trimmed.length() - 1);
-            return Optional.of(variables.getOrDefault(varKey, JsonUtils.NOT_SET));
+            Optional<Object> stepRef = resolveStepReference(varKey, variables);
+            return Optional.of(stepRef.orElseGet(() -> variables.getOrDefault(varKey, JsonUtils.NOT_SET)));
+        }
+        return Optional.empty();
+    }
+
+    static Optional<Object> resolveStepReference(String rawToken, Map<String, String> variables) {
+        if (variables == null || StringUtils.isBlank(rawToken)) {
+            return Optional.empty();
+        }
+        String clean = rawToken.startsWith("$") ? rawToken.substring(1) : rawToken;
+        if (variables.containsKey(clean)) {
+            return Optional.ofNullable(variables.get(clean));
+        }
+        if (clean.startsWith("prev.request.") || clean.startsWith("prev.response.")) {
+            boolean isReq = clean.startsWith("prev.request.");
+            String prefix = isReq ? "prev.request" : "prev.response";
+            String fieldPath = clean.substring(prefix.length() + 1);
+            return Optional.of(lookupJsonPath(variables.get(prefix), fieldPath));
+        }
+        if (!clean.startsWith("steps.")) {
+            return Optional.empty();
+        }
+        String afterSteps = clean.substring("steps.".length());
+        int reqIdx = afterSteps.indexOf(".request.");
+        if (reqIdx > 0) {
+            String stepKey = afterSteps.substring(0, reqIdx);
+            String fieldPath = afterSteps.substring(reqIdx + ".request.".length());
+            return Optional.of(lookupJsonPath(variables.get("steps." + stepKey + ".request"), fieldPath));
+        }
+        int respIdx = afterSteps.indexOf(".response.");
+        if (respIdx > 0) {
+            String stepKey = afterSteps.substring(0, respIdx);
+            String fieldPath = afterSteps.substring(respIdx + ".response.".length());
+            return Optional.of(lookupJsonPath(variables.get("steps." + stepKey + ".response"), fieldPath));
         }
         return Optional.empty();
     }
@@ -404,17 +450,17 @@ public final class FieldCorrelationEvaluator {
 
     private static Object resolveJsonFieldOperand(String trimmed, String requestJson,
                                                   String responseJson, Map<String, String> variables) {
-        if (trimmed.startsWith("$request.")) {
-            return lookupJsonPath(requestJson, trimmed.substring("$request.".length()));
+        Optional<Object> stepRef = resolveStepReference(trimmed, variables);
+        if (stepRef.isPresent()) {
+            return stepRef.get();
         }
-        if (trimmed.startsWith("request.")) {
-            return lookupJsonPath(requestJson, trimmed.substring("request.".length()));
+        if (trimmed.startsWith("$request.") || trimmed.startsWith("request.")) {
+            String field = trimmed.substring(trimmed.indexOf('.') + 1);
+            return lookupJsonPath(requestJson, field);
         }
-        if (trimmed.startsWith("$response.")) {
-            return lookupJsonPath(responseJson, trimmed.substring("$response.".length()));
-        }
-        if (trimmed.startsWith("response.")) {
-            return lookupJsonPath(responseJson, trimmed.substring("response.".length()));
+        if (trimmed.startsWith("$response.") || trimmed.startsWith("response.")) {
+            String field = trimmed.substring(trimmed.indexOf('.') + 1);
+            return lookupJsonPath(responseJson, field);
         }
         String primaryJson = responseJson != null ? responseJson : requestJson;
         Object fromPrimary = lookupJsonPath(primaryJson, trimmed);
@@ -437,6 +483,16 @@ public final class FieldCorrelationEvaluator {
         if (StringUtils.isBlank(json)) {
             return 0;
         }
+        if ("$".equals(fieldPath) || "response".equalsIgnoreCase(fieldPath) || "$response".equalsIgnoreCase(fieldPath)) {
+            JsonElement root = JsonUtils.parseAsJsonElement(json);
+            if (root.isJsonObject()) {
+                return root.getAsJsonObject().size();
+            }
+            if (root.isJsonArray()) {
+                return root.getAsJsonArray().size();
+            }
+            return 0;
+        }
         Object value = JsonUtils.getVariableFromJson(json, normalizeFieldPath(fieldPath));
         if (value instanceof List<?> list) {
             return list.size();
@@ -456,7 +512,7 @@ public final class FieldCorrelationEvaluator {
             return "";
         }
         String trimmed = fieldPath.trim();
-        if (trimmed.startsWith("$.")) {
+        if (trimmed.startsWith("$.") || trimmed.startsWith("$#")) {
             trimmed = trimmed.substring(2);
         }
         return trimmed.replace('.', '#');

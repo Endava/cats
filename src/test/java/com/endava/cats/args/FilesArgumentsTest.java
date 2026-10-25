@@ -1,8 +1,10 @@
 package com.endava.cats.args;
 
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.http.HttpMethod;
+import com.endava.cats.io.ServiceCaller;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.Assertions;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -24,8 +26,8 @@ class FilesArgumentsTest {
         String existingProperty = filesArguments.getFuzzConfigProperties().getProperty("DummyAcceptHeaders.expectedResponseCode");
         String nonExistingProperty = filesArguments.getFuzzConfigProperties().getProperty("DummyAcceptHeaders.expectedScenario");
 
-        org.assertj.core.api.Assertions.assertThat(existingProperty).isEqualTo("403");
-        org.assertj.core.api.Assertions.assertThat(nonExistingProperty).isNull();
+        Assertions.assertThat(existingProperty).isEqualTo("403");
+        Assertions.assertThat(nonExistingProperty).isNull();
     }
 
     @Test
@@ -35,7 +37,7 @@ class FilesArgumentsTest {
         filesArguments.loadErrorLeaksKeywords();
 
         Set<String> errorLeaksKeywords = filesArguments.getErrorLeaksKeywordsList();
-        org.assertj.core.api.Assertions.assertThat(errorLeaksKeywords).hasSize(2)
+        Assertions.assertThat(errorLeaksKeywords).hasSize(2)
                 .containsOnly("this is an error leak", "which is very bad");
     }
 
@@ -46,7 +48,7 @@ class FilesArgumentsTest {
         filesArguments.loadURLParams();
 
         String url = "http://localhost:8080";
-        org.assertj.core.api.Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(url);
+        Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(url);
     }
 
     @Test
@@ -58,7 +60,7 @@ class FilesArgumentsTest {
         String url = "http://localhost:8080/{version}";
         String expected = "http://localhost:8080/v1.0";
 
-        org.assertj.core.api.Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(expected);
+        Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(expected);
     }
 
 
@@ -71,7 +73,7 @@ class FilesArgumentsTest {
         String url = "http://localhost:8080/tenants/{tenantId}";
         String expected = "http://localhost:8080/tenants/special%20chars%2Fand%26more";
 
-        org.assertj.core.api.Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(expected);
+        Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(expected);
     }
 
     @Test
@@ -82,7 +84,7 @@ class FilesArgumentsTest {
 
         String result = filesArguments.replacePathWithUrlParams("http://localhost:3000/run/{schemaPath}");
 
-        org.assertj.core.api.Assertions.assertThat(result)
+        Assertions.assertThat(result)
                 .isEqualTo("http://localhost:3000/run/localhost%3A3000%2Fswagger");
     }
 
@@ -94,7 +96,7 @@ class FilesArgumentsTest {
 
         String result = filesArguments.replacePathWithUrlParams("http://localhost:3000/run/{schemaPath}");
 
-        org.assertj.core.api.Assertions.assertThat(result)
+        Assertions.assertThat(result)
                 .isEqualTo("http://localhost:3000/run/https%3A%2F%2Flocalhost%3A3000%2Fswagger");
     }
 
@@ -104,9 +106,9 @@ class FilesArgumentsTest {
         filesArguments.setParams(List.of("identifier:wrong", "id:localhost:3000/swagger"));
         filesArguments.loadURLParams();
 
-        org.assertj.core.api.Assertions.assertThat(filesArguments.getUrlParam("id"))
+        Assertions.assertThat(filesArguments.getUrlParam("id"))
                 .isEqualTo("localhost:3000/swagger");
-        org.assertj.core.api.Assertions.assertThat(filesArguments.isNotUrlParam("ident")).isTrue();
+        Assertions.assertThat(filesArguments.isNotUrlParam("ident")).isTrue();
     }
 
     @Test
@@ -117,7 +119,7 @@ class FilesArgumentsTest {
 
         String url = "http://localhost:8080/{version}";
 
-        org.assertj.core.api.Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(url);
+        Assertions.assertThat(filesArguments.replacePathWithUrlParams(url)).isEqualTo(url);
     }
 
     @Test
@@ -125,7 +127,7 @@ class FilesArgumentsTest {
         FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "refDataFile", new File("mumu"));
 
-        Assertions.assertThrows(IOException.class, filesArguments::loadRefData);
+        Assertions.assertThatThrownBy(filesArguments::loadRefData).isInstanceOf(IOException.class);
     }
 
     @Test
@@ -133,7 +135,7 @@ class FilesArgumentsTest {
         FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("mumu"));
 
-        Assertions.assertThrows(IOException.class, filesArguments::loadHeaders);
+        Assertions.assertThatThrownBy(filesArguments::loadHeaders).isInstanceOf(IOException.class);
     }
 
     @Test
@@ -144,7 +146,7 @@ class FilesArgumentsTest {
         filesArguments.loadHeaders();
         Map<String, Object> headers = filesArguments.getHeaders("/some-path");
 
-        org.assertj.core.api.Assertions.assertThat(headers).hasSize(3).containsOnlyKeys("auth", "catsFuzzedHeader", "header");
+        Assertions.assertThat(headers).hasSize(3).containsOnlyKeys("auth", "catsFuzzedHeader", "header");
     }
 
     @Test
@@ -152,14 +154,14 @@ class FilesArgumentsTest {
         FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("mumu"));
 
-        Assertions.assertThrows(IOException.class, filesArguments::loadQueryParams);
+        Assertions.assertThatThrownBy(filesArguments::loadQueryParams).isInstanceOf(IOException.class);
     }
 
     @Test
     void shouldThrowExceptionAsInvalidFormatForHeaders() {
         FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/wrong_headers.yml"));
-        org.assertj.core.api.Assertions.assertThatThrownBy(filesArguments::loadHeaders).isInstanceOf(CatsException.class)
+        Assertions.assertThatThrownBy(filesArguments::loadHeaders).isInstanceOf(CatsException.class)
                 .hasMessage("File format is wrong for Headers. Make sure you supply a valid yaml file!");
     }
 
@@ -169,7 +171,7 @@ class FilesArgumentsTest {
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParams.yml"));
         filesArguments.loadQueryParams();
 
-        org.assertj.core.api.Assertions.assertThat(filesArguments.getAdditionalQueryParamsForPath("/pets"))
+        Assertions.assertThat(filesArguments.getAdditionalQueryParamsForPath("/pets"))
                 .containsOnlyKeys("param", "jwt");
     }
 
@@ -179,7 +181,7 @@ class FilesArgumentsTest {
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParams.yml"));
         filesArguments.loadQueryParams();
 
-        org.assertj.core.api.Assertions.assertThat(filesArguments.getAdditionalQueryParamsForPath("/no-pets"))
+        Assertions.assertThat(filesArguments.getAdditionalQueryParamsForPath("/no-pets"))
                 .containsOnlyKeys("param");
     }
 
@@ -188,7 +190,7 @@ class FilesArgumentsTest {
         FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/refFields.yml"));
         filesArguments.loadQueryParams();
-        org.assertj.core.api.Assertions.assertThat(filesArguments.getAdditionalQueryParamsForPath("/no-pets")).isEmpty();
+        Assertions.assertThat(filesArguments.getAdditionalQueryParamsForPath("/no-pets")).isEmpty();
     }
 
     @Test
@@ -196,15 +198,15 @@ class FilesArgumentsTest {
         FilesArguments filesArguments = new FilesArguments();
 
         filesArguments.loadURLParams();
-        org.assertj.core.api.Assertions.assertThat(filesArguments.getUrlParamsList()).isEmpty();
+        Assertions.assertThat(filesArguments.getUrlParamsList()).isEmpty();
     }
 
     @Test
     void shouldProperlyParseYamlFile() throws Exception {
         Map<String, Map<String, Object>> yaml = FilesArguments.parseYaml("src/test/resources/test.yml");
 
-        org.assertj.core.api.Assertions.assertThat(yaml.get("all")).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(yaml.get("all").get("Authorization")).isNotNull();
+        Assertions.assertThat(yaml.get("all")).isNotNull();
+        Assertions.assertThat(yaml.get("all").get("Authorization")).isNotNull();
     }
 
     @Test
@@ -214,7 +216,7 @@ class FilesArgumentsTest {
         filesArguments.setRefDataArguments(Map.of("argRefData", "argValue", "anotherArgRefData", "anotherValue"));
         filesArguments.loadRefData();
         Map<String, Object> refDataForPets = filesArguments.getRefData("/pets");
-        org.assertj.core.api.Assertions.assertThat(refDataForPets).containsOnlyKeys("argRefData", "anotherArgRefData", "allField", "anotherAllField", "field", "name");
+        Assertions.assertThat(refDataForPets).containsOnlyKeys("argRefData", "anotherArgRefData", "allField", "anotherAllField", "field", "name");
     }
 
     @Test
@@ -224,7 +226,7 @@ class FilesArgumentsTest {
         filesArguments.setQueryParamsArguments(Map.of("argRefData", "argValue", "anotherArgRefData", "anotherValue"));
         filesArguments.loadQueryParams();
         Map<String, Object> queryParamsForPets = filesArguments.getAdditionalQueryParamsForPath("/pets");
-        org.assertj.core.api.Assertions.assertThat(queryParamsForPets).containsOnlyKeys("argRefData", "anotherArgRefData", "allField", "anotherAllField", "field", "name");
+        Assertions.assertThat(queryParamsForPets).containsOnlyKeys("argRefData", "anotherArgRefData", "allField", "anotherAllField", "field", "name");
     }
 
     @Test
@@ -234,7 +236,7 @@ class FilesArgumentsTest {
         filesArguments.setUrlParamsArguments(Map.of("param3", "value3", "param4", "value4"));
         filesArguments.loadURLParams();
         List<String> urlParams = filesArguments.getUrlParamsList();
-        org.assertj.core.api.Assertions.assertThat(urlParams).containsOnly("param1:value1", "param2:value2", "param3:value3", "param4:value4");
+        Assertions.assertThat(urlParams).containsOnly("param1:value1", "param2:value2", "param3:value3", "param4:value4");
     }
 
     @Test
@@ -243,7 +245,7 @@ class FilesArgumentsTest {
         filesArguments.setUrlParamsArguments(Map.of("param3", "value3", "param4", "value4"));
         filesArguments.loadURLParams();
         List<String> urlParams = filesArguments.getUrlParamsList();
-        org.assertj.core.api.Assertions.assertThat(urlParams).containsOnly("param3:value3", "param4:value4");
+        Assertions.assertThat(urlParams).containsOnly("param3:value3", "param4:value4");
     }
 
     @Test
@@ -251,7 +253,7 @@ class FilesArgumentsTest {
         FilesArguments filesArguments = new FilesArguments();
         filesArguments.loadURLParams();
         String urlParamValue = filesArguments.getUrlParam("myParam");
-        org.assertj.core.api.Assertions.assertThat(urlParamValue).isEmpty();
+        Assertions.assertThat(urlParamValue).isEmpty();
     }
 
     @Test
@@ -260,7 +262,7 @@ class FilesArgumentsTest {
         filesArguments.setUrlParamsArguments(Map.of("param3", "value3", "param4", "value4"));
         filesArguments.loadURLParams();
         String urlParamValue = filesArguments.getUrlParam("param3");
-        org.assertj.core.api.Assertions.assertThat(urlParamValue).isEqualTo("value3");
+        Assertions.assertThat(urlParamValue).isEqualTo("value3");
     }
 
     @Test
@@ -268,7 +270,7 @@ class FilesArgumentsTest {
         FilesArguments filesArguments = new FilesArguments();
         filesArguments.setPathsOrderFile(new File("src/test/resources/paths.order"));
         filesArguments.loadPathsOrder();
-        org.assertj.core.api.Assertions.assertThat(filesArguments.getPathsOrder()).hasSize(2).containsExactly("/path1", "/path2");
+        Assertions.assertThat(filesArguments.getPathsOrder()).hasSize(2).containsExactly("/path1", "/path2");
     }
 
     @Test
@@ -277,7 +279,7 @@ class FilesArgumentsTest {
         filesArguments.setMutatorsFolder(new File("src/test/resources/mutators"));
         filesArguments.loadMutators();
 
-        org.assertj.core.api.Assertions.assertThat(filesArguments.getMutatorsFolder()).isDirectory();
+        Assertions.assertThat(filesArguments.getMutatorsFolder()).isDirectory();
     }
 
     @Test
@@ -294,11 +296,44 @@ class FilesArgumentsTest {
         target.copyFrom(target);
         target.copyFrom(source);
 
-        org.assertj.core.api.Assertions.assertThat(target.isCreateRefData()).isTrue();
-        org.assertj.core.api.Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(null)).isEmpty();
-        org.assertj.core.api.Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(Map.of())).isEmpty();
-        org.assertj.core.api.Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(
-                Map.of("keep", "val", "drop", com.endava.cats.io.ServiceCaller.CATS_REMOVE_FIELD)))
-                .containsExactly("drop");
+        Assertions.assertThat(target.isCreateRefData()).isTrue();
+        Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(null)).isEmpty();
+        Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(Map.of())).isEmpty();
+        Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(
+                Map.of("keep", "val", "address.city", ServiceCaller.CATS_REMOVE_FIELD, "omit", List.of("nested.drop", "legacy"))))
+                .containsExactlyInAnyOrder("address#city", "nested#drop", "legacy");
+        Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(
+                Map.of("omit", "a.b, c.d")))
+                .containsExactlyInAnyOrder("a#b", "c#d");
+
+        Map<String, Map<String, Object>> scopedData = Map.of(
+                "all", Map.of("globalKey", "g", "overrideKey", "fromAll", "omit", List.of("globalOmitted")),
+                "/orders*", Map.of("wildcardKey", "w", "overrideKey", "fromWildcard"),
+                "POST /orders*", Map.of("methodWildcardKey", "mw", "overrideKey", "fromMethodWildcard"),
+                "/orders/{id}", Map.of("exactPathKey", "ep", "overrideKey", "fromExactPath"),
+                "POST /orders/{id}", Map.of("exactMethodKey", "em", "overrideKey", "fromExactMethod", "omit", List.of("postOmitted"))
+        );
+        ReflectionTestUtils.setField(target, "refData", scopedData);
+        ReflectionTestUtils.setField(target, "headers", scopedData);
+
+        Map<String, Object> postOrders = target.getRefData("/orders/{id}", HttpMethod.POST);
+        Assertions.assertThat(postOrders)
+                .containsEntry("overrideKey", "fromExactMethod")
+                .containsEntry("exactMethodKey", "em")
+                .containsEntry("exactPathKey", "ep")
+                .containsEntry("methodWildcardKey", "mw")
+                .containsEntry("wildcardKey", "w")
+                .containsEntry("globalKey", "g")
+                .containsEntry("postOmitted", ServiceCaller.CATS_REMOVE_FIELD)
+                .containsEntry("globalOmitted", ServiceCaller.CATS_REMOVE_FIELD);
+
+        Map<String, Object> getOrders = target.getHeaders("/orders/{id}", HttpMethod.GET);
+        Assertions.assertThat(getOrders)
+                .containsEntry("overrideKey", "fromExactPath")
+                .doesNotContainKey("exactMethodKey")
+                .doesNotContainKey("methodWildcardKey");
+
+        Assertions.assertThat(target.mergePathAndAll(null, "/orders", HttpMethod.GET)).isEmpty();
+        Assertions.assertThat(target.mergePathAndAll(Map.of(), "/orders", HttpMethod.GET)).isEmpty();
     }
 }

@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.fuzzer.special.FieldCorrelationEvaluator;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
@@ -104,7 +105,7 @@ public class ProcessingArguments {
 
     @Setter
     @CommandLine.Option(names = {"--strictTypes"}, negatable = true, defaultValue = "true", fallbackValue = "true",
-            description = "When set to @|bold true|@, the Type Coercion Fuzzers will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "When set to @|bold true|@, the Type Coercion Fuzzers will expect a 4XX response code instead of allowing both 4XX and 2XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean strictTypes = true;
 
     @Setter
@@ -169,10 +170,10 @@ public class ProcessingArguments {
      * @return true if payload matches on the arguments, false otherwise
      */
     public boolean matchesXxxSelection(String payload) {
-        if (xxxOfSelections != null) {
-            return xxxOfSelections.entrySet().stream().anyMatch(entry ->
-            {
-                String valueFromPayload = String.valueOf(JsonUtils.getVariableFromJson(payload, entry.getKey()));
+        if (xxxOfSelections != null && !xxxOfSelections.isEmpty()) {
+            return xxxOfSelections.entrySet().stream().allMatch(entry -> {
+                String normalizedKey = FieldCorrelationEvaluator.normalizeFieldPath(entry.getKey());
+                String valueFromPayload = String.valueOf(JsonUtils.getVariableFromJson(payload, normalizedKey));
                 return JsonUtils.isNotSet(valueFromPayload) || valueFromPayload.equalsIgnoreCase(entry.getValue());
             });
         }
@@ -303,25 +304,6 @@ public class ProcessingArguments {
          * Services will first sanitize and then validate. This is default.
          */
         SANITIZE_AND_VALIDATE
-    }
-
-    /**
-     * Fuzzing strategy when removing fields.
-     */
-    public enum SetFuzzingStrategy {
-        /**
-         * Use all possible combinations.
-         */
-        POWERSET,
-
-        /**
-         * Use possible combinations up to a size.
-         */
-        SIZE,
-        /**
-         * Remove one by one.
-         */
-        ONEBYONE
     }
 
     public record ExamplesFlags(boolean useResponseBodyExamples, boolean useRequestBodyExamples,

@@ -8,6 +8,7 @@ import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.report.BaselineComparisonEngine;
 import com.endava.cats.util.JsonUtils;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -102,7 +103,7 @@ class CompareCommandTest {
         Assertions.assertThat(currentDiff.hasRegressions(false)).isFalse();
 
         BaselineComparisonEngine.renderToConsole(
-                io.github.ludovicianul.prettylogger.PrettyLoggerFactory.getConsoleLogger(), currentDiff, true);
+                PrettyLoggerFactory.getConsoleLogger(), currentDiff, true);
 
         Assertions.assertThatThrownBy(() -> BaselineComparisonEngine.loadReport(null))
                 .isInstanceOf(IOException.class);

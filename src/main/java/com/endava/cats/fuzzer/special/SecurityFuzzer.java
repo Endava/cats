@@ -3,30 +3,27 @@ package com.endava.cats.fuzzer.special;
 import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
-import com.endava.cats.model.CatsField;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FunctionalFlowStep;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FuzzMode;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument.StepFuzzConfig;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsDSLWords;
-import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
-import org.apache.commons.lang3.StringUtils;
+import net.minidev.json.JSONArray;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
- * Fuzzer that will perform fuzzing based on user supplied payloads that also support response verification.
+ * Fuzzer that performs security fuzzing based on user-supplied payloads and dictionaries
+ * using the sequential `steps:` + `fuzz:` flow syntax.
  */
 @Singleton
 @SpecialFuzzer
@@ -48,119 +45,118 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
     @Override
     public void fuzz(FuzzingData data) {
-        if (!filesArguments.getSecurityFuzzerDetails().isEmpty()) {
-            this.processSecurityFuzzerFile(data);
+        FunctionalFlowDocument doc = filesArguments.getSecurityFlowDocument();
+        if (doc == null || data == null || data.getContractPath() == null) {
+            return;
+        }
+        int stepIdx = 1;
+        for (FunctionalFlowStep step : doc.steps()) {
+            String stepKey = "step_" + stepIdx++;
+            if (matchesStepPath(step, data.getContractPath())) {
+                executeSecurityStep(step, stepKey, data);
+            }
         }
     }
 
-    private void processSecurityFuzzerFile(FuzzingData data) {
-        Map<String, Object> currentPathValues = this.getCurrentPathValues(data);
-        if (currentPathValues != null) {
-            currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
-        } else {
-            log.skip("Skipping path [{}] for method [{}] as it was not configured in securityFuzzerFile", data.getContractPath(), data.getMethod());
-        }
+    private static boolean matchesStepPath(FunctionalFlowStep step, String contractPath) {
+        List<String> paths = step.targetPaths().isEmpty() ? List.of(step.rawTarget()) : step.targetPaths();
+        return paths.stream().anyMatch(p -> CatsDSLWords.ALL.equalsIgnoreCase(p) || p.equalsIgnoreCase(contractPath));
     }
 
-    private List<String> getMissingRequiredKeywords(Map<String, Object> currentTestCase) {
-        List<String> missing = Stream.concat(requiredKeywords().stream(), Stream.of(CatsDSLWords.STRINGS_FILE))
-                .filter(keyword -> currentTestCase.get(keyword) == null)
-                .collect(Collectors.toList());
-
-        if (currentTestCase.get(CatsDSLWords.TARGET_FIELDS_TYPES) == null && currentTestCase.get(CatsDSLWords.TARGET_FIELDS) == null) {
-            missing.add(CatsDSLWords.TARGET_FIELDS + " or " + CatsDSLWords.TARGET_FIELDS_TYPES);
-        }
-        return missing;
-    }
-
-    private Map<String, Object> getCurrentPathValues(FuzzingData data) {
-        Map<String, Object> currentPathValues = filesArguments.getSecurityFuzzerDetails().get(data.getContractPath());
-        if (CatsUtil.isEmpty(currentPathValues)) {
-            currentPathValues = filesArguments.getSecurityFuzzerDetails().get(CatsDSLWords.ALL);
-        }
-
-        currentPathValues = Optional.ofNullable(currentPathValues)
-                .orElse(Collections.emptyMap()).entrySet().stream()
-                .filter(stringObjectEntry -> customFuzzerUtil.isMatchingHttpMethod(stringObjectEntry.getValue(), data.getMethod()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        return currentPathValues;
-    }
-
-    private void executeTestCases(FuzzingData data, String key, Object value) {
-        log.note("Path [{}] has the following security configuration [{}]", data.getContractPath(), value);
-        Map<String, Object> individualTestConfig = (Map<String, Object>) value;
-
-        List<String> missingRequiredKeywords = this.getMissingRequiredKeywords(individualTestConfig);
-        if (!missingRequiredKeywords.isEmpty()) {
-            String message = "is missing the following mandatory entries: %s".formatted(missingRequiredKeywords);
+    private void executeSecurityStep(FunctionalFlowStep step, String stepKey, FuzzingData data) {
+        List<String> missing = getMissingStepKeywords(step);
+        if (!missing.isEmpty()) {
+            String message = "is missing the following mandatory entries: %s".formatted(missing);
             log.error(message);
             customFuzzerUtil.recordError(message);
             return;
         }
+        if (!step.allMethods() && step.method() != data.getMethod()) {
+            return;
+        }
+        StepFuzzConfig fuzzConfig = step.fuzz();
+        List<String> payloads = FunctionalFlowFuzzer.loadPayloadsForFuzzStep(fuzzConfig, log);
+        if (payloads.isEmpty()) {
+            return;
+        }
+        List<String> targetFields = FunctionalFlowFuzzer.resolveTargetFieldsForOperation(fuzzConfig, data);
+        if (fuzzConfig.mode() == FuzzMode.CROSS && targetFields.size() > 1) {
+            executeCrossFields(data, stepKey, step, payloads, targetFields);
+            return;
+        }
+        Map<String, Object> baseConfig = buildExecutionConfig(step, data);
+        this.fuzzFields(data, stepKey, baseConfig, payloads, targetFields);
+    }
 
-        String stringsFile = String.valueOf(individualTestConfig.get(CatsDSLWords.STRINGS_FILE));
-
-        try {
-            log.start("Parsing stringsFile...");
-            List<String> nastyStrings = Files.readAllLines(Paths.get(stringsFile))
-                    .stream()
-                    .filter(Predicate.not(String::isBlank))
-                    .filter(Predicate.not(line -> line.startsWith("# ")))
-                    .toList();
-            log.complete("stringsFile parsed successfully! Found {} entries", nastyStrings.size());
-            List<String> targetFields = this.getTargetFields(individualTestConfig, data);
-            this.fuzzFields(data, key, individualTestConfig, nastyStrings, targetFields);
-        } catch (Exception e) {
-            log.error("There was a problem reading the stringsFile: {}. The file might not exist or is not reachable. Error message: {}", stringsFile, e.getMessage());
+    private void executeCrossFields(FuzzingData data, String stepKey, FunctionalFlowStep step,
+                                    List<String> payloads, List<String> targetFields) {
+        String joined = String.join(", ", targetFields);
+        for (String payloadVal : payloads) {
+            Map<String, Object> config = buildExecutionConfig(step, data);
+            for (String field : targetFields) {
+                config.put(field, payloadVal);
+            }
+            config.put(CatsDSLWords.DESCRIPTION, step.scenarioText() + ", cross-fields [" + joined + "]");
+            customFuzzerUtil.executeTestCases(data, stepKey, config, this);
         }
     }
 
-    private void fuzzFields(FuzzingData data, String key, Map<String, Object> individualTestConfig, List<String> nastyStrings, List<String> targetFields) {
+    private static Map<String, Object> buildExecutionConfig(FunctionalFlowStep step, FuzzingData data) {
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put(CatsDSLWords.HTTP_METHOD, step.allMethods() ? data.getMethod().name() : step.method().name());
+        config.put(CatsDSLWords.EXPECTED_RESPONSE_CODE, step.expect().status().size() == 1
+                ? step.expect().status().getFirst()
+                : step.expect().status());
+        config.put(CatsDSLWords.DESCRIPTION, step.scenarioText());
+        if (step.body() instanceof Map<?, ?> bodyMap) {
+            bodyMap.forEach((k, v) -> config.put(String.valueOf(k), mapBodyEntry(String.valueOf(k), v, data)));
+        }
+        step.omit().forEach(omitField -> config.put(omitField, "cats_remove_field"));
+        if (!step.save().isEmpty()) {
+            config.put(CatsDSLWords.OUTPUT, step.save());
+        }
+        if (!step.expect().fields().isEmpty()) {
+            config.put(CatsDSLWords.VERIFY, step.expect().fields());
+        }
+        return config;
+    }
+
+    private static Object mapBodyEntry(String key, Object value, FuzzingData data) {
+        if (value instanceof List<?> list && !(JsonUtils.getVariableFromJson(data.getPayload(), key) instanceof JSONArray)) {
+            return list.isEmpty() ? "" : list.getFirst();
+        }
+        return value;
+    }
+
+    private static List<String> getMissingStepKeywords(FunctionalFlowStep step) {
+        List<String> missing = new ArrayList<>();
+        if (step.expect().status().isEmpty()) {
+            missing.add("status");
+        }
+        if (!step.allMethods() && step.method() == null) {
+            missing.add("method");
+        }
+        StepFuzzConfig fuzz = step.fuzz();
+        if (fuzz == null || !fuzz.hasPayloadSource()) {
+            missing.add("payloads or payloadsFile");
+        }
+        if (fuzz == null || !fuzz.hasTargets()) {
+            missing.add("fields or fieldTypes");
+        }
+        return missing;
+    }
+
+    private void fuzzFields(FuzzingData data, String key, Map<String, Object> baseConfig, List<String> nastyStrings, List<String> targetFields) {
         log.debug("Target fields {}", targetFields);
 
         for (String targetField : targetFields) {
             log.info("Fuzzing field [{}]", targetField);
-            Map<String, Object> individualTestConfigClone = individualTestConfig
-                    .entrySet()
-                    .stream()
+            Map<String, Object> configClone = baseConfig.entrySet().stream()
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            individualTestConfigClone.put(targetField, nastyStrings);
-            individualTestConfigClone.put(CatsDSLWords.DESCRIPTION, customFuzzerUtil.getScenarioOrDescription(individualTestConfig) + ", field [" + targetField + "]");
-            individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS);
-            individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS_TYPES);
-            individualTestConfigClone.remove(CatsDSLWords.STRINGS_FILE);
-            customFuzzerUtil.executeTestCases(data, key, individualTestConfigClone, this);
+            configClone.put(targetField, nastyStrings);
+            configClone.put(CatsDSLWords.DESCRIPTION, customFuzzerUtil.getScenarioOrDescription(baseConfig) + ", field [" + targetField + "]");
+            customFuzzerUtil.executeTestCases(data, key, configClone, this);
         }
-    }
-
-    private List<String> getTargetFields(Map<String, Object> individualTestConfig, FuzzingData data) {
-        String[] targetFields = this.extractListEntry(individualTestConfig, CatsDSLWords.TARGET_FIELDS);
-        String[] targetFieldsTypes = this.extractListEntry(individualTestConfig, CatsDSLWords.TARGET_FIELDS_TYPES);
-
-        List<String> catsFields = data.getAllFieldsAsCatsFields().stream()
-                .filter(catsField -> Arrays.asList(targetFieldsTypes).contains(StringUtils.toRootLowerCase(catsField.getSchema().getType()))
-                        || Arrays.asList(targetFieldsTypes).contains(StringUtils.toRootLowerCase(catsField.getSchema().getFormat())))
-                .map(CatsField::getName)
-                .filter(name -> !JsonUtils.getVariableFromJson(data.getPayload(), name).equals(JsonUtils.NOT_SET))
-                .collect(Collectors.toList());
-
-        /*we also add the http_headers and http_body in this list. the actual split logic will be handled in CustomFuzzerUtil*/
-        catsFields.add(Arrays.stream(targetFieldsTypes).filter(type -> type.equalsIgnoreCase(CatsDSLWords.CATS_HEADERS)).findFirst().orElse(""));
-        catsFields.add(Arrays.stream(targetFieldsTypes).filter(type -> type.equalsIgnoreCase(CatsDSLWords.CATS_BODY_FUZZ)).findFirst().orElse(""));
-        catsFields.addAll(Arrays.asList(targetFields));
-        catsFields.removeIf(StringUtils::isBlank);
-
-        return catsFields;
-    }
-
-    private String[] extractListEntry(Map<String, Object> individualTestConfig, String key) {
-        return String.valueOf(individualTestConfig.getOrDefault(key, ""))
-                .replace("[", "")
-                .replace(" ", "")
-                .replace("]", "")
-                .split(",");
     }
 
     @Override

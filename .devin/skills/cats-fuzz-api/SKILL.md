@@ -104,3 +104,32 @@ cats template -s http://localhost:8080/api/login \
   -t "username,password" \
   --stopAfterTimeInSec 30
 ```
+
+---
+
+## Step 6: Custom Security Payload Fuzzing (`--securityFuzzerFile security.yml`)
+
+Use `SecurityFuzzer` with the `steps:` + `fuzz:` syntax to inject inline `payloads` or custom wordlists (`payloadsFile`) across specific `fields`, `fieldTypes` (`string`, `email`, `headers`, `body`), or simultaneously across multiple fields (`mode: cross`), and chain subsequent steps in `steps:` to verify second-order SQLi / stored XSS:
+
+```yaml
+steps:
+  - name: "sqliAndXssCheck"
+    description: "Verify POST /users rejects SQLi and stored XSS payloads"
+    POST: "/users"
+    fuzz:
+      fields: [username, bio]
+      fieldTypes: [string, email]
+      payloads:
+        - "' OR '1'='1"
+        - "<script>alert(1)</script>"
+      payloadsFile: "wordlists/xss.txt"
+      mode: cross   # 'single' (one field at a time) or 'cross' (all target fields simultaneously)
+    expect:
+      status: [201, 400, 422]
+      bodyNotContains: ["SQLException", "syntax error"]
+```
+
+Run with:
+```bash
+cats run -c <spec> -s <url> security.yml
+```

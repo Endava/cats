@@ -3,6 +3,8 @@ package com.endava.cats.command;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument;
+import com.endava.cats.fuzzer.special.FunctionalFlowParser;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsRequest;
@@ -318,5 +320,116 @@ class ReplayCommandTest {
                 .build();
         Assertions.assertThat(replayCommand.buildCurlCommand(getReq))
                 .isEqualTo("curl -i -X GET 'https://api.example.com/items'");
+    }
+
+    @Test
+    void shouldReplayUpstreamProducersStatefullyAndExportFunctionalFlow(@TempDir Path dir) throws Exception {
+        Path reportDir = dir.resolve("stateful-report");
+        Files.createDirectories(reportDir);
+
+        Files.writeString(reportDir.resolve("Test1.json"), """
+                {
+                  "testId": "Test 1",
+                  "scenario": "Create order",
+                  "result": "success",
+                  "contractPath": "/orders",
+                  "path": "/orders",
+                  "request": {
+                    "httpMethod": "POST",
+                    "url": "http://localhost:8080/orders",
+                    "payload": "{\\"item\\":\\"book\\"}",
+                    "headers": []
+                  },
+                  "response": {
+                    "responseCode": 201,
+                    "body": "{\\"id\\":\\"ord_old_100\\"}"
+                  }
+                }
+                """);
+
+        Files.writeString(reportDir.resolve("Test2.json"), """
+                {
+                  "testId": "Test 2",
+                  "scenario": "Update order quantity",
+                  "result": "error",
+                  "contractPath": "/orders/{orderId}",
+                  "path": "/orders/ord_old_100",
+                  "request": {
+                    "httpMethod": "PUT",
+                    "url": "http://localhost:8080/orders/ord_old_100",
+                    "payload": "{\\"orderId\\":\\"ord_old_100\\",\\"qty\\":-1}",
+                    "headers": []
+                  },
+                  "response": {
+                    "responseCode": 500,
+                    "body": "{\\"error\\":\\"crash\\"}"
+                  },
+                  "requestProvenance": {
+                    "runtimeCorrelations": [{
+                      "sourceMethod": "POST",
+                      "sourcePath": "/orders",
+                      "sourceLocation": "response.body.$.id",
+                      "target": {"location": "PATH", "name": "orderId"},
+                      "value": "ord_old_100"
+                    }]
+                  }
+                }
+                """);
+
+        Files.writeString(reportDir.resolve("Test3.json"), """
+                {
+                  "testId": "Test 3",
+                  "scenario": "Fallback parent collection inference",
+                  "result": "error",
+                  "contractPath": "/orders/{orderId}",
+                  "path": "/orders/ord_old_100",
+                  "request": {
+                    "httpMethod": "GET",
+                    "url": "http://localhost:8080/orders/ord_old_100",
+                    "payload": "{}",
+                    "headers": []
+                  },
+                  "response": {
+                    "responseCode": 404,
+                    "body": "{}"
+                  }
+                }
+                """);
+
+        // 1. Export as a runnable FunctionalFlow YAML
+        Path exportedFlow = dir.resolve("reproducer-flow.yml");
+        replayCommand.tests = new String[]{reportDir.resolve("Test2.json").toString(), reportDir.resolve("Test3.json").toString()};
+        replayCommand.exportFlowFile = exportedFlow.toFile();
+        replayCommand.run();
+
+        Assertions.assertThat(exportedFlow).exists();
+        FunctionalFlowDocument doc = FunctionalFlowParser.parse(exportedFlow.toFile());
+        Assertions.assertThat(doc.steps()).hasSize(3);
+        Assertions.assertThat(doc.steps().getFirst().save()).containsEntry("orderId", "id");
+        Assertions.assertThat(doc.steps().get(1).rawTarget()).isEqualTo("/orders/${orderId}");
+        Assertions.assertThat(doc.steps().get(1).expect().where()).containsExactly("status < 500");
+
+        // 2. Live --stateful replay substitutes fresh ID from live POST response into PUT URL & payload
+        replayCommand.exportFlowFile = null;
+        replayCommand.stateful = true;
+        ReflectionTestUtils.setField(replayCommand, "verbose", true);
+        replayCommand.tests = new String[]{reportDir.resolve("Test2.json").toString()};
+
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenAnswer(inv -> {
+            CatsRequest req = inv.getArgument(0);
+            if ("POST".equalsIgnoreCase(req.getHttpMethod())) {
+                return CatsResponse.builder().responseCode(201).body("{\"id\":\"ord_fresh_999\"}").build();
+            }
+            return CatsResponse.builder().responseCode(400).body("{\"message\":\"validated\"}").build();
+        });
+
+        replayCommand.run();
+
+        ArgumentCaptor<CatsRequest> captor = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(serviceCaller, Mockito.times(2)).callService(captor.capture(), Mockito.eq(Collections.emptySet()));
+        List<CatsRequest> calls = captor.getAllValues();
+        Assertions.assertThat(calls.get(0).getHttpMethod()).isEqualTo("POST");
+        Assertions.assertThat(calls.get(1).getUrl()).isEqualTo("http://localhost:8080/orders/ord_fresh_999");
+        Assertions.assertThat(calls.get(1).getPayload()).contains("ord_fresh_999");
     }
 }

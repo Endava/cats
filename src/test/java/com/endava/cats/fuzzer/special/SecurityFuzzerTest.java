@@ -89,7 +89,7 @@ class SecurityFuzzerTest {
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).recordError("is missing the following mandatory entries: [httpMethod, targetFields or targetFieldTypes]");
+        Mockito.verify(testCaseListener, Mockito.times(1)).recordError("is missing the following mandatory entries: [method, fields or fieldTypes]");
     }
 
     @ParameterizedTest
@@ -119,6 +119,33 @@ class SecurityFuzzerTest {
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(expectedTestRuns)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.argThat(arg -> arg.asString().equalsIgnoreCase("200")));
+    }
+
+    @Test
+    void shouldSupportInlinePayloadsAndCrossFieldMode() {
+        String crossStepYaml = """
+                steps:
+                  - name: inline_cross_test
+                    description: Inline SQLi cross-field check
+                    POST: /pets/{id}/move
+                    omit: [city]
+                    save:
+                      savedId: id
+                    fuzz:
+                      fields: [firstName, lastName]
+                      payloads:
+                        - "' OR '1'='1"
+                        - "'; DROP TABLE pets;--"
+                      mode: cross
+                    expect:
+                      status: 200
+                      firstName: "Cats"
+                """;
+        ReflectionTestUtils.setField(filesArguments, "securityFlowDocument", FunctionalFlowParser.parseContent(crossStepYaml));
+        FuzzingData data = setContext("src/test/resources/securityFuzzer-all.yml", "{'firstName': 'Cats', 'id': '25'}");
+        securityFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResultInfo(
+                Mockito.any(), Mockito.eq(data), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) {

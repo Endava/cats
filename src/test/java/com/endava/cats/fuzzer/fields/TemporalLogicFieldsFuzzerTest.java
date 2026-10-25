@@ -1,14 +1,18 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
+import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.DateSchema;
+import io.swagger.v3.oas.models.media.DateTimeSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.Set;
@@ -56,15 +60,15 @@ class TemporalLogicFieldsFuzzerTest {
         schema.setExample("Example");
         Mockito.when(data.getReqSchema()).thenReturn(schema);
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of(fieldName));
-        org.mockito.ArgumentCaptor<com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext> captor =
-                org.mockito.ArgumentCaptor.forClass(com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext.class);
+        ArgumentCaptor<FieldsIteratorExecutorContext> captor =
+                ArgumentCaptor.forClass(FieldsIteratorExecutorContext.class);
         temporalLogicFieldsFuzzer.fuzz(data);
         Mockito.verify(executor, Mockito.times(1)).execute(captor.capture());
 
-        com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext ctx = captor.getValue();
-        Assertions.assertThat(ctx.getFuzzValueProducer().apply(new io.swagger.v3.oas.models.media.DateSchema(), fieldName))
+        FieldsIteratorExecutorContext ctx = captor.getValue();
+        Assertions.assertThat(ctx.getFuzzValueProducer().apply(new DateSchema(), fieldName))
                 .singleElement().asString().matches("\\d{4}-\\d{2}-\\d{2}");
-        Assertions.assertThat(ctx.getFuzzValueProducer().apply(new io.swagger.v3.oas.models.media.DateTimeSchema(), fieldName))
+        Assertions.assertThat(ctx.getFuzzValueProducer().apply(new DateTimeSchema(), fieldName))
                 .hasSize(1);
     }
 }

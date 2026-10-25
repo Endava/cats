@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
@@ -10,7 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @QuarkusTest
 class ExamplesFieldsFuzzerTest {
@@ -70,14 +73,14 @@ class ExamplesFieldsFuzzerTest {
     void shouldExecuteBasedOnPropertyExamplesInPayload() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getReqSchema()).thenReturn(new Schema<>());
-        Mockito.when(data.getMethod()).thenReturn(com.endava.cats.http.HttpMethod.POST);
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
         Mockito.when(data.getPayload()).thenReturn("{\"name\":\"generated\",\"code\":\"gen\"}");
 
         Schema<String> nameSchema = new Schema<>();
         nameSchema.setExample("Alice");
         Schema<String> codeSchema = new Schema<>();
         codeSchema.setExamples(List.of("CODE_1"));
-        java.util.Map<String, Schema> propTypes = new java.util.HashMap<>();
+        Map<String, Schema> propTypes = new HashMap<>();
         propTypes.put("name", nameSchema);
         propTypes.put("code", codeSchema);
         propTypes.put("nullSchema", null);
@@ -86,6 +89,6 @@ class ExamplesFieldsFuzzerTest {
         examplesFieldsFuzzer.fuzz(data);
         Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
         Assertions.assertThat(examplesFieldsFuzzer.skipForHttpMethods())
-                .containsOnly(com.endava.cats.http.HttpMethod.HEAD, com.endava.cats.http.HttpMethod.TRACE, com.endava.cats.http.HttpMethod.DELETE);
+                .containsOnly(HttpMethod.HEAD, HttpMethod.TRACE, HttpMethod.DELETE);
     }
 }

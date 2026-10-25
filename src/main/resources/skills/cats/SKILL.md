@@ -67,5 +67,5 @@ cats smoke -c <spec> -s <server_url> -j
 ### Phase 4: Stateful Functional Flows
 Author end-to-end business workflows in `flows.yml` (see `/cats-write-tests`) and execute them:
 ```bash
-cats run -c <spec> -s <server_url> --functionalFlow flows.yml --correlations correlations.yml
+cats run -c <spec> -s <server_url> flows.yml --correlations correlations.yml
 ```
