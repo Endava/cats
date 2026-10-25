@@ -196,18 +196,33 @@ public class DateRangeInversionFuzzer implements Fuzzer {
         Set<FieldPair> datePairs = new HashSet<>();
 
         for (String currentField : fields) {
-            String sanitizedName = PropertySanitizer.sanitize(currentField);
+            String sanitizedName = PropertySanitizer.sanitize(simpleFieldName(currentField));
 
             if (sanitizedName.endsWith(pattern.startSuffix)) {
-                String expectedEndSuffix = pattern.endSuffix;
+                String prefix = sanitizedName.substring(0, sanitizedName.length() - pattern.startSuffix.length());
+                String expectedEndName = prefix + pattern.endSuffix;
                 fields.stream()
-                        .filter(field -> PropertySanitizer.sanitize(field).endsWith(expectedEndSuffix))
+                        .filter(field -> sameParentPrefix(currentField, field)
+                                && PropertySanitizer.sanitize(simpleFieldName(field)).equals(expectedEndName))
                         .findFirst()
                         .ifPresent(pairField -> datePairs.add(new FieldPair(currentField, pairField)));
             }
         }
 
         return datePairs;
+    }
+
+    private static String simpleFieldName(String field) {
+        int idx = field.lastIndexOf('#');
+        return idx >= 0 ? field.substring(idx + 1) : field;
+    }
+
+    private static boolean sameParentPrefix(String firstField, String secondField) {
+        int idx1 = firstField.lastIndexOf('#');
+        int idx2 = secondField.lastIndexOf('#');
+        String p1 = idx1 >= 0 ? firstField.substring(0, idx1) : "";
+        String p2 = idx2 >= 0 ? secondField.substring(0, idx2) : "";
+        return p1.equals(p2);
     }
 
     private record FieldPair(String startField, String endField) {

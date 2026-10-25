@@ -190,11 +190,11 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
         boolean fuzzerStarted = false;
         String fuzzingPath = null;
         try {
+            testCaseListener.startSession();
+            sessionStarted = true;
             if (executionStopController != null) {
                 executionStopController.startSession();
             }
-            testCaseListener.startSession();
-            sessionStarted = true;
             this.init();
             String payload = this.loadPayload();
             logger.debug("Resolved payload: {}", payload);
@@ -229,6 +229,9 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
             exitCode = CommandLine.ExitCode.SOFTWARE;
             throw e;
         } finally {
+            if (executionStopController != null) {
+                executionStopController.finishSession();
+            }
             if (sessionStarted) {
                 completeLifecycle(fuzzingPath, fuzzerStarted);
             }

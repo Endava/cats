@@ -74,9 +74,12 @@ public class MinGreaterThanMaxFieldsFuzzer implements Fuzzer {
         Object invalidLowValue = lowValue;
         Object invalidHighValue = highValue;
 
-        if (compareNumbers(lowNum, highNum) < 0) {
+        int cmp = compareNumbers(lowNum, highNum);
+        if (cmp < 0) {
             invalidLowValue = highValue;
             invalidHighValue = lowValue;
+        } else if (cmp == 0) {
+            invalidLowValue = isIntegerType(highNum) ? highNum.longValue() + 1L : highNum.doubleValue() + 1.0;
         }
 
         String mutatePayloadWithLowField = CatsUtil.justReplaceField(data.getPayload(), lowField, invalidLowValue).json();
@@ -133,7 +136,9 @@ public class MinGreaterThanMaxFieldsFuzzer implements Fuzzer {
 
         String baseName = lastPart.substring(0, lastPart.length() - lowSuffix.length());
         String pairName = baseName + highSuffix;
-        fields.stream().filter(field -> simpleFieldName(field).endsWith(pairName)).findFirst()
+        fields.stream()
+                .filter(field -> sameParentPrefix(currentField, field) && simpleFieldName(field).equals(pairName))
+                .findFirst()
                 .ifPresent(pairField -> boundPairs.put(currentField, pairField));
 
         return boundPairs;
@@ -144,10 +149,20 @@ public class MinGreaterThanMaxFieldsFuzzer implements Fuzzer {
 
         String baseName = lastPart.substring(lowSuffix.length());
         String pairName = highSuffix + baseName;
-        fields.stream().filter(field -> simpleFieldName(field).startsWith(pairName)).findFirst()
+        fields.stream()
+                .filter(field -> sameParentPrefix(currentField, field) && simpleFieldName(field).equals(pairName))
+                .findFirst()
                 .ifPresent(pairField -> boundPairs.put(currentField, pairField));
 
         return boundPairs;
+    }
+
+    private static boolean sameParentPrefix(String firstField, String secondField) {
+        int idx1 = firstField.lastIndexOf('#');
+        int idx2 = secondField.lastIndexOf('#');
+        String p1 = idx1 >= 0 ? firstField.substring(0, idx1) : "";
+        String p2 = idx2 >= 0 ? secondField.substring(0, idx2) : "";
+        return p1.equals(p2);
     }
 
     private static String simpleFieldName(String fullyQualifiedFieldName) {

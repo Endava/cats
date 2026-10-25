@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -46,11 +47,11 @@ public class TemporalLogicFieldsFuzzer implements Fuzzer {
             String normalizedField = NORMALIZE_PATTERN.matcher(field.toLowerCase(Locale.ROOT)).replaceAll("");
 
             if (isStartDateField(normalizedField)) {
-                temporalViolations.put(field, now.plusDays(5));
-            } else if (isEndDateField(normalizedField)) {
-                temporalViolations.put(field, now.minusDays(5));
+                temporalViolations.put(field, now.plusYears(100));
             } else if (isExpiryField(normalizedField)) {
                 temporalViolations.put(field, now.minusYears(1));
+            } else if (isEndDateField(normalizedField)) {
+                temporalViolations.put(field, now.minusDays(5));
             } else if (isFutureOnlyField(normalizedField)) {
                 temporalViolations.put(field, now.minusDays(1));
             } else if (isPastOnlyField(normalizedField)) {
@@ -70,7 +71,14 @@ public class TemporalLogicFieldsFuzzer implements Fuzzer {
                         .fuzzingStrategy(FuzzingStrategy.replace())
                         .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                         .fieldFilter(temporalViolations::containsKey)
-                        .fuzzValueProducer((schema, field) -> List.of(temporalViolations.get(field)))
+                        .fuzzValueProducer((schema, field) -> {
+                            Object val = temporalViolations.get(field);
+                            if (val instanceof OffsetDateTime odt && schema != null
+                                    && CatsModelUtils.isDateSchema(schema)) {
+                                return List.of(odt.toLocalDate().toString());
+                            }
+                            return List.of(val);
+                        })
                         .simpleReplaceField(true)
                         .logger(logger)
                         .fuzzer(this)
@@ -83,7 +91,7 @@ public class TemporalLogicFieldsFuzzer implements Fuzzer {
     }
 
     private boolean isEndDateField(String field) {
-        return field.toLowerCase(Locale.ROOT).matches(".*(end|to|validto|until|expiry).*date.*");
+        return field.toLowerCase(Locale.ROOT).matches(".*(end|to|validto|until).*date.*");
     }
 
     private boolean isExpiryField(String field) {

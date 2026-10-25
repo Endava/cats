@@ -17,6 +17,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.function.BiFunction;
 
@@ -50,7 +51,7 @@ public abstract class BaseTypeCoercionFuzzer implements Fuzzer {
         Set<String> fieldsToBeFuzzed = getFieldsToBeFuzzed(data);
 
         if (fieldsToBeFuzzed.isEmpty()) {
-            logger.skip("No numeric fields found in the request");
+            logger.skip("No {} fields found in the request", this.getOriginalType());
             return;
         }
 
@@ -60,19 +61,19 @@ public abstract class BaseTypeCoercionFuzzer implements Fuzzer {
     }
 
     private Set<String> getFieldsToBeFuzzed(FuzzingData data) {
-        boolean excludeQueryParams = this.skipForHttpMethods().contains(HttpMethod.GET);
-        Set<String> pathParams = data.getPath() != null ? OpenApiUtils.getPathVariables(data.getPath()) : Set.of();
+        boolean excludeUrlParams = this.skipForHttpMethods().contains(HttpMethod.GET);
+        Set<String> pathParams = excludeUrlParams && data.getPath() != null ? OpenApiUtils.getPathVariables(data.getPath()) : Set.of();
         Set<String> queryParams = data.getQueryParams() != null ? data.getQueryParams() : Set.of();
         return FuzzingData.filterFieldsInPayload(data,
                 field -> !pathParams.contains(field)
-                        && (!excludeQueryParams || !queryParams.contains(field))
+                        && (!excludeUrlParams || !queryParams.contains(field))
                         && !(queryParams.contains(field) && isBlockingQueryParam(field))
                         && Boolean.TRUE.equals(this.fieldsFilterFunction().apply(field, data)),
                 processingArguments.getLimitNumberOfFields());
     }
 
     private static boolean isBlockingQueryParam(String field) {
-        String lower = field.toLowerCase(java.util.Locale.ROOT);
+        String lower = field.toLowerCase(Locale.ROOT);
         return lower.contains("timeout") || lower.contains("wait") || lower.contains("delay") || lower.contains("sleep");
     }
 

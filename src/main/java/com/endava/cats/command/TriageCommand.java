@@ -1,6 +1,7 @@
 package com.endava.cats.command;
 
 import com.endava.cats.command.model.ConfigOptions;
+import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
 import com.endava.cats.fuzzer.http.BypassAuthenticationFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
@@ -362,24 +363,13 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             }
             String[] contractSegs = contractPath.split("/");
             String[] actualSegs = urlPath.split("/");
-            if (contractSegs.length < actualSegs.length) {
+            if (contractSegs.length <= actualSegs.length) {
                 int offset = actualSegs.length - contractSegs.length;
                 for (int i = 0; i < contractSegs.length; i++) {
                     String cSeg = contractSegs[i];
                     if (cSeg.startsWith("{") && cSeg.endsWith("}")) {
                         String paramName = cSeg.substring(1, cSeg.length() - 1);
                         String val = actualSegs[i + offset];
-                        if (StringUtils.isNotBlank(val)) {
-                            params.put(paramName, val);
-                        }
-                    }
-                }
-            } else if (contractSegs.length == actualSegs.length) {
-                for (int i = 0; i < contractSegs.length; i++) {
-                    String cSeg = contractSegs[i];
-                    if (cSeg.startsWith("{") && cSeg.endsWith("}")) {
-                        String paramName = cSeg.substring(1, cSeg.length() - 1);
-                        String val = actualSegs[i];
                         if (StringUtils.isNotBlank(val)) {
                             params.put(paramName, val);
                         }
@@ -421,9 +411,10 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 if (op != null && op.getResponses() != null) {
                     String codeStr = String.valueOf(code);
                     String familyStr = (code / 100) + "XX";
-                    undocumented = !op.getResponses().containsKey(codeStr)
-                            && !op.getResponses().containsKey(familyStr)
-                            && !op.getResponses().containsKey("default");
+                    undocumented = op.getResponses().keySet().stream()
+                            .noneMatch(k -> k.equalsIgnoreCase(codeStr)
+                                    || k.equalsIgnoreCase(familyStr)
+                                    || "default".equalsIgnoreCase(k));
                 }
             }
         } else if (tc.getResultReason() != null && tc.getResultReason().toLowerCase(Locale.ROOT).contains("undocumented")) {
@@ -859,11 +850,9 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             if (verifyClient != null && representativeTestCase != null && representativeTestCase.getRequest() != null) {
                 int replayedCode = executeLiveVerification(verifyClient, representativeTestCase.getRequest(), serverOverride, headerOverrides);
                 verifiedCode = replayedCode;
-                if ("SERVER_CRASH_5XX".equals(classification.category())) {
-                    verificationStatus = (replayedCode >= 200 && replayedCode < 500) ? "FIXED" : "STILL_FAILING";
-                } else {
-                    verificationStatus = ResponseCodeFamily.is2xxCode(replayedCode) ? "FIXED" : "STILL_FAILING";
-                }
+                verificationStatus = isVerifiedFixed(classification.category(), representativeTestCase.getExpectedResult(), replayedCode)
+                        ? "FIXED"
+                        : "STILL_FAILING";
             }
             return new RootCauseCluster(
                     classification.category(),
@@ -880,19 +869,30 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     verifiedCode);
         }
 
+        private static boolean isVerifiedFixed(String category, String expectedResult, int replayedCode) {
+            if ("SERVER_CRASH_5XX".equals(category)) {
+                return replayedCode >= 200 && replayedCode < 500;
+            }
+            if (expectedResult != null && expectedResult.contains("4XX") && !expectedResult.contains("2XX")) {
+                return ResponseCodeFamily.is4xxCode(replayedCode);
+            }
+            return ResponseCodeFamily.is2xxCode(replayedCode);
+        }
+
         private static int executeLiveVerification(OkHttpClient client, CatsRequest catsRequest,
                                                    String serverOverride, Map<String, String> headerOverrides) {
             try {
-                String targetUrl = resolveTargetUrl(catsRequest.getUrl(), serverOverride);
+                String targetUrl = DynamicValueResolver.resolve(resolveTargetUrl(catsRequest.getUrl(), serverOverride), Map.of());
                 String method = StringUtils.defaultIfBlank(catsRequest.getHttpMethod(), "GET").toUpperCase(Locale.ROOT);
                 Headers.Builder headersBuilder = new Headers.Builder();
                 String contentType = "application/json";
                 if (catsRequest.getHeaders() != null) {
                     for (KeyValuePair<String, Object> h : catsRequest.getHeaders()) {
                         if (StringUtils.isNotBlank(h.getKey()) && h.getValue() != null) {
-                            headersBuilder.add(h.getKey(), String.valueOf(h.getValue()));
+                            String resolvedHeaderVal = DynamicValueResolver.resolve(String.valueOf(h.getValue()), Map.of());
+                            headersBuilder.add(h.getKey(), resolvedHeaderVal);
                             if ("content-type".equalsIgnoreCase(h.getKey())) {
-                                contentType = String.valueOf(h.getValue());
+                                contentType = resolvedHeaderVal;
                             }
                         }
                     }
@@ -933,10 +933,16 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             if (orig == null || override == null) {
                 return originalUrl;
             }
+            String overrideBasePath = override.encodedPath();
+            String origPath = orig.encodedPath();
+            String mergedPath = (!"/".equals(overrideBasePath) && !origPath.startsWith(overrideBasePath))
+                    ? (overrideBasePath.endsWith("/") ? overrideBasePath.substring(0, overrideBasePath.length() - 1) : overrideBasePath) + origPath
+                    : origPath;
             return orig.newBuilder()
                     .scheme(override.scheme())
                     .host(override.host())
                     .port(override.port())
+                    .encodedPath(mergedPath)
                     .build()
                     .toString();
         }
