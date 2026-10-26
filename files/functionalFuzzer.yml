@@ -1,35 +1,54 @@
-/pets/{id}/move:
-  test1:
-    pet#id:
-      - stay
-      - at
-      - home
-    httpMethod: POST
-/go:
-  test1:
-    homeId:
-      - 123
-      - 124
-      - 134
-    home#country: "mumu"
-    httpMethod: POST
-    additionalProperties:
-      element: "metadata"
-      mapValues:
+# Example functional flow file (run with: cats run -c openapi.yml -s http://localhost:8080 files/functionalFuzzer.yml)
+variables:
+  defaultCountry: "RO"
+
+correlate:
+  - paths:
+      - "/go"
+    when: "pet.type == 'Dog'"
+    then:
+      omit:
+        - "catOnlyAttribute"
+
+steps:
+  - name: "createDogGo"
+    description: "Create a Dog journey with custom metadata and capture the generated homeId"
+    POST: "/go"
+    variant:
+      pet.type: "Dog"
+    body:
+      home.country: "${defaultCountry}"
+      metadata:
         test: "bubu"
         anotherTest: "juju"
-    expectedResponseCode: 200
-    oneOfSelection:
-      pet#type: "Dog"
-    output:
-      - homeId: home#id
-    verify:
-      pet#name: "Baby"
-      pet#id: "[0-9]+"
-  test2:
-    homeId:
-      - 123
-      - 124
-    home#country: ${homeId}
-    httpMethod: POST
-    expectedResponseCode: 200
+    omit:
+      - "legacyField"
+    save:
+      - id
+      - homeId: "home.id"
+    expect:
+      status: [200, 201]
+      pet.name: "Baby"
+      pet.id: "[0-9]+"
+      that:
+        - "response.home.country == request.home.country"
+
+  - name: "getCreatedGo"
+    description: "Retrieve the created journey and verify cross-step persistence"
+    GET: "/go/${id}"
+    expect:
+      status: 200
+      that:
+        - "response.id == $steps.createDogGo.response.id"
+        - "response.home.id == $prev.response.home.id"
+
+  - name: "movePetToHome"
+    description: "Move the pet using the saved homeId from the first step"
+    POST: "/pets/${id}/move"
+    body:
+      homeId: "${homeId}"
+      referenceCode: "#(alphanumeric(8))"
+    expect:
+      status: 200
+      that:
+        - "$steps.createDogGo.status == 200 || $steps.createDogGo.status == 201"

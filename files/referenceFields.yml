@@ -1,5 +1,19 @@
-# This is an example of a reference data file that can be supplied using the --refData argument
+# Example reference data file (pass with: --refData files/referenceFields.yml)
+# Supports 'all', wildcard path prefixes ('/pets*'), HTTP method scoping ('POST /pets'),
+# dot-notation ('pet.id'), dynamic shorthands ('#(uuid)'), and 'omit' lists.
 all:
-  pet#id: "000000"
-/pets/{id}:
+  pet.id: "000000"
+  omit:
+    - "internalDebugField"
+
+"/pets*":
+  clinicRegion: "EU"
+
+"/pets/{id}":
   id: "251723059453558785"
+
+"POST /pets":
+  externalReference: "#(uuid)"
+  owner.country: "RO"
+  omit:
+    - "deprecatedTag"

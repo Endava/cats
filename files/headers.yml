@@ -1,5 +1,13 @@
+# Example headers file (pass with: --headers files/headers.yml)
+# Supports 'all', wildcard path prefixes ('/pets*'), HTTP method scoping ('POST /pets'),
+# environment variables ('$$API_TOKEN'), and dynamic shorthands ('#(uuid)').
 all:
-  Authorization: Bearer jwt <JWT>
-  TraceId: 1dd361e3-c35e-4439-a67c-47a9ba8d098b
-/pets:
-  API-Key: 123
+  Authorization: "Bearer $$API_TOKEN"
+  X-Correlation-Id: "#(uuid)"
+
+"/pets*":
+  X-Clinic-Region: "EU"
+
+"POST /pets":
+  X-Idempotency-Key: "#(uuid)"
+  API-Key: "123"

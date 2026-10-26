@@ -1,9 +1,32 @@
-/pet:
-  test1:
-    description: XSS strings
-    targetFields:
-      - id
-      - name
-    httpMethod: POST
-    stringsFile: xss.txt
-    expectedResponseCode: 200
+# Example security fuzzer flow file (run with: cats run -c openapi.yml -s http://localhost:8080 files/securityFuzzer.yml)
+steps:
+  - name: "petXssDictionaryCheck"
+    description: "Inject XSS payloads from xss.txt into id and name fields on POST /pet"
+    POST: "/pet"
+    fuzz:
+      fields:
+        - id
+        - name
+      payloadsFile: "files/xss.txt"
+      mode: single
+    expect:
+      status: [200, 400, 422]
+      bodyNotContains:
+        - "<script>"
+        - "SQLException"
+
+  - name: "petCrossFieldInjectionCheck"
+    description: "Inject SQLi and script payloads simultaneously across string and email fields"
+    POST: "/pet"
+    fuzz:
+      fieldTypes:
+        - string
+        - email
+      payloads:
+        - "' OR '1'='1"
+        - "<img src=x onerror=alert(1)>"
+      mode: cross
+    expect:
+      status: [400, 422]
+      bodyNotContains:
+        - "Exception"

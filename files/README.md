@@ -1,110 +1,96 @@
-# Examples of files used by CATS
+# Examples of Configuration Files Used by CATS
 
-This folder contains examples of various files used by CATS. There are also examples on how each file can be used,
-as well as links to the CATS documentation for additional details.
+This folder contains ready-to-use examples of configuration and test files supported by CATS.
 
-## Headers File
+---
 
-CATS support both argument level headers using `-H` as well as path-level headers using the `--headers <FILE>` argument.
+## 1. Headers File (`--headers files/headers.yml`)
 
-The [headers.yml](./headers.yml) is an example on how to supply headers to all requests using the `all:` entry,
-as well as path-specific headers using the `/pets:` entry.
+CATS supports both CLI-level headers using `-H` and path/method-scoped headers using `--headers <FILE>`.
 
-**Please note that headers must be sub-elements of `all` or specific paths.**
+[headers.yml](./headers.yml) demonstrates:
+- **`all:`** — headers sent on every request
+- **Wildcard path prefixes (`"/pets*":`)** — headers sent on all matching sub-paths
+- **HTTP method scoping (`"POST /pets":`)** — headers sent only for the specified HTTP method and path
+- **Environment variables (`$$API_TOKEN`)** — resolved from the environment / `--envFile` and masked in reports
+- **Dynamic shorthand functions (`#(uuid)`)** — freshly generated per request
 
-## Web Fuzzing Commons Auth File
+---
 
-CATS can read a Web Fuzzing Commons authentication file using the `--wfcAuth <FILE>` argument. If the file contains
-multiple authentication entries, select one with `--wfcAuthName <NAME>`. When no name is supplied, CATS uses the first
-entry in the `auth` list.
+## 2. Web Fuzzing Commons Auth File (`--wfcAuth` / `--authConfig`)
 
-The [wfc-auth.yml](./wfc-auth.yml) example shows both static authentication headers and a dynamic login flow that
-extracts a token from the login response and sends it as an authentication header.
+CATS can read a Web Fuzzing Commons authentication file using `--wfcAuth <FILE>` (or `--authConfig <FILE>`). If the file contains multiple authentication entries, select one with `--wfcAuthName <NAME>`.
 
-Additional examples based on the public Web Fuzzing Dataset auth files:
+- [wfc-auth.yml](./wfc-auth.yml) — shows both static authentication headers and a dynamic login flow that extracts a token from the login response.
+- [wfc-auth-static-token.yml](./wfc-auth-static-token.yml) — fixed `Authorization` header.
+- [wfc-auth-dynamic-token.yml](./wfc-auth-dynamic-token.yml) — JSON login endpoint with token extraction from the response body.
+- [wfc-auth-cookie.yml](./wfc-auth-cookie.yml) — form login endpoint that extracts session cookies.
+- [wfc-auth-external-token.yml](./wfc-auth-external-token.yml) — token login endpoint hosted outside the API server using `externalEndpointURL`.
 
-* [wfc-auth-static-token.yml](./wfc-auth-static-token.yml) shows a fixed `Authorization` header.
-* [wfc-auth-dynamic-token.yml](./wfc-auth-dynamic-token.yml) shows a JSON login endpoint with token extraction from
-  the response body.
-* [wfc-auth-cookie.yml](./wfc-auth-cookie.yml) shows a form login endpoint that expects cookies.
-* [wfc-auth-external-token.yml](./wfc-auth-external-token.yml) shows a token login endpoint hosted outside the API
-  server using `externalEndpointURL`.
+---
 
-WFC authentication material is applied as request credentials, not as business headers. Header fuzzers and
-authentication-bypass logic can therefore distinguish WFC auth headers such as `Authorization`, `Cookie` or custom
-token headers from the rest of the request headers.
+## 3. Reference Data File (`--refData files/referenceFields.yml`)
 
-## Reference Data File
+Use `--refData <FILE>` to pin fixed field values or omit fields from generated payloads and fuzzing.
 
-Supplying reference data is typically needed for more in-depth fuzzing. You can supply such a file using
-the `--refData <FILE>` argument.
+[referenceFields.yml](./referenceFields.yml) demonstrates:
+- **`all:`**, **wildcard path prefixes (`"/pets*":`)**, **exact paths (`"/pets/{id}":`)**, and **HTTP method scoping (`"POST /pets":`)**
+- **Dot-notation (`pet.id`, `owner.country`)** and `#`-notation (`pet#id`) for nested JSON fields
+- **Dynamic shorthand functions (`#(uuid)`)** and SpEL (`T(...)`)
+- **`omit: [...]`** to remove fields from outgoing payloads and skip fuzzing them
 
-The [referenceFields.yml](./referenceFields.yml) is an example on how you can supply reference data for all requests
-using the `all:` entry, as well as to individual paths using the `/pets/{id}:` entry.
+---
 
-**Please note that reference data entries must be sub-elements of `all` or specific paths.**
+## 4. Cross-Field Correlations File (`--correlations files/correlations.yml`)
 
-## Security Fuzzer File
+Use `--correlations <FILE>` when an API enforces conditional cross-field invariants (for example, when a discriminator or enum field requires or forbids sibling fields).
 
-The [Security Fuzzer](https://endava.github.io/cats/docs/fuzzers/special-fuzzers/security-fuzzer) allows fuzzing using
-custom dictionaries.
+[correlations.yml](./correlations.yml) demonstrates `paths:` (exact or wildcard `*`), `when:` boolean conditions, and `then:` actions (`set:` and `omit:`).
 
-The [securityFuzzer](./securityFuzzer.yml) is such an example that can be run using
-the `cats run ... securityFuzzer.yml` sub-command.
+---
 
-Please note that the structure of the file expects entries per path and each path to have a series of tests.
-Paths must match exactly with the OpenAPI specs. Each test expects certain keywords which are defined in the
-documentation.
+## 5. Functional Flow File (`cats run -c openapi.yml -s <url> files/functionalFuzzer.yml`)
 
-The current example will iterate through all the values form the [xss.txt](./xss.txt) file and subsequently replace
-`id` and `name` with those values and expect to receive a `200` response code from the service.
+The [FunctionalFlowFuzzer](https://endava.github.io/cats/docs/fuzzers/special-fuzzers/functional-fuzzer) executes sequential, stateful multi-step API workflows (`steps:`), starting from schema-valid payloads and headers generated from the OpenAPI contract and overriding only the fields needed for each scenario.
 
-## Functional Fuzzer File
+[functionalFuzzer.yml](./functionalFuzzer.yml) demonstrates:
+- Top-level `variables:` and flow-scoped `correlate:` rules
+- Sequential `steps:` with `name:`, `description:`, `<METHOD>: /path`, `variant:`, `body:`, and `omit:`
+- `save:` using both shorthand list (`- id`) and named alias (`- homeId: "home.id"`)
+- `expect:` with `status:`, direct field assertions (exact and regex), and `that:` expressions using `request.*`, `response.*`, `$steps.<stepName>.*`, and `$prev.*`
 
-The [Functional Fuzzer](https://endava.github.io/cats/docs/fuzzers/special-fuzzers/functional-fuzzer) leverages the
-payload generation capabilities of CATS and allows to write simple functional tests with minimum syntax, overriding just
-the fields that require specific values.
+---
 
-The [functionalFuzzer.yml](./functionalFuzzer.yml) is such an example that can be run using
-the `cats run ... functionalFuzzer.yml` sub-command.
+## 6. Security Fuzzer File (`cats run -c openapi.yml -s <url> files/securityFuzzer.yml`)
 
-The structure is similar to the security fuzzer file with entries per path and each pat having a series of tests.
-Please check the documentation for more details about syntax, keywords, test correlation and so on.
+The [SecurityFuzzer](https://endava.github.io/cats/docs/fuzzers/special-fuzzers/security-fuzzer) injects custom payload dictionaries or inline payloads into targeted fields or field types using the `steps:` + `fuzz:` syntax.
 
-## Fuzz Configuration
+[securityFuzzer.yml](./securityFuzzer.yml) demonstrates:
+- `fuzz.fields` (specific field paths) and `fuzz.fieldTypes` (`string`, `email`, `headers`, `body`)
+- `fuzz.payloadsFile` (referencing [xss.txt](./xss.txt)) and inline `fuzz.payloads`
+- `fuzz.mode: single` (one field at a time) and `fuzz.mode: cross` (all target fields simultaneously)
+- `expect:` assertions (`status:` and `bodyNotContains:`)
 
-By default, each Fuzzer has an expected response code based on its specific test case. You can override the expected
-response code by providing a properties file through the `--fuzzersConfig` argument.
+---
 
-The [fuzzConfig.properties](./fuzzConfig.properties) shows how you can override the default response code
-for the `DummyAcceptHeaders` fuzzer to expect `403` instead of the default `406`.
+## 7. Fuzz Configuration (`--fuzzersConfig files/fuzzConfig.properties`)
 
-More documentation here: [--fuzzConfig](https://endava.github.io/cats/docs/advanced-topics/fuzzers-config).
+[fuzzConfig.properties](./fuzzConfig.properties) shows how to override default expected response codes per fuzzer (for example, configuring `DummyAcceptHeaders` to expect `403` instead of `406`).
 
-## Custom Mutators
+---
 
-When
-doing [continuous fuzzing](https://endava.github.io/cats/docs/getting-started/running-cats/#continuous-fuzzing-mode)
-you can supply custom mutators using the `cats random ... --mutators <FOLDER>`.
+## 8. Custom Mutators (`cats random ... --mutators files/mutators`)
 
-The [mutators](./mutators) folder contains some sample mutators that can be used for continuous fuzzing.
+The [mutators](./mutators) folder contains sample mutators ([first.yml](./mutators/first.yml), [second.yml](./mutators/second.yml), [third.yml](./mutators/third.yml) loading [nosql.txt](./nosql.txt)) for `cats random`.
 
-[first.yml](./mutators/first.yml) and [second.yml](./mutators/second.yml) provides the mutation values
-through an array of values within the yaml file, while the [third.yml](./mutators/third.yml) will load
-the values from the [nosql.txt](./nosql.txt) file.
+---
 
-## Error Leaks Keywords
+## 9. Error Leaks Keywords (`--errorLeaksKeywords files/errorLeaks.txt`)
 
-CATS automatically checks for error leaks in the responses. It has an internal list of keywords for the most popular
-programming languages.
-You can supply custom error leak keywords using the `--errorLeakKeywords <FILE>` argument.
+[errorLeaks.txt](./errorLeaks.txt) contains custom error-leak substrings checked against response bodies.
 
-The provided keywords are search as substrings in the response body and if found, the response is marked as an error
-leak. Example [errorLeaks.txt](./errorLeaks.txt) file contains some custom keywords that can be used.
+---
 
-## Paths ordering
+## 10. Paths Ordering (`--pathsRunOrder files/pathsOrder.txt`)
 
-By default, CATS runs paths in alphabetical order. You can override this behavior by providing a file with the desired
-order using the `--pathsRunOrder <FILE>` argument. An example file [pathsOrder.txt](./pathsOrder.txt).
-
-
+[pathsOrder.txt](./pathsOrder.txt) specifies an explicit execution order for OpenAPI paths.

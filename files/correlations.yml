@@ -1,0 +1,22 @@
+# Example cross-field correlations file (pass with: --correlations files/correlations.yml)
+correlations:
+  - paths:
+      - "/billing-plans"
+      - "/billing-plans/{planId}"
+    when: "planType == 'RECURRING'"
+    then:
+      set:
+        billingSchedule: "MONTHLY"
+        gracePeriodDays: 7
+      omit:
+        - "oneTimeSetupFee"
+
+  - paths:
+      - "/billing-plans*"
+    when: "planType == 'ONE_TIME'"
+    then:
+      set:
+        oneTimeSetupFee: 99
+      omit:
+        - "billingSchedule"
+        - "gracePeriodDays"
