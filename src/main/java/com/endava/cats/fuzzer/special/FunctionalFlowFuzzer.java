@@ -359,6 +359,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
 
         CatsResponse response = serviceCaller.call(ServiceData.from(data)
                 .replaceRefData(false)
+                .replaceUrlParams(false)
                 .headers(headers)
                 .payload(payloads.bodyPayload())
                 .pathParamsPayload(payloads.pathParamsPayload())
