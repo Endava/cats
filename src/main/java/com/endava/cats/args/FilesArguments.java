@@ -33,7 +33,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -502,11 +501,6 @@ public class FilesArguments {
 
         log.config(AnsiUtils.bold("Error leaks keywords file: {}"),
                 AnsiUtils.blue(errorLeaksKeywords.getCanonicalPath()));
-    }
-
-
-    Map<String, Object> mergePathAndAll(Map<String, Map<String, Object>> collection, String path) {
-        return mergePathAndAll(collection, path, null);
     }
 
     Map<String, Object> mergePathAndAll(Map<String, Map<String, Object>> collection, String path, HttpMethod method) {

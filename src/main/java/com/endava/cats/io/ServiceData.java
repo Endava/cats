@@ -178,15 +178,6 @@ public class ServiceData {
         return ContentTypeUtils.resolveAcceptHeader(data.getResponseContentTypes());
     }
 
-    /**
-     * Checks if the content type of the response is JSON.
-     *
-     * @return {@code true} if the content type matches the pattern "application/.*[+]?json;?.*", {@code false} otherwise.
-     */
-    public boolean isJsonContentType() {
-        return getPayloadFormat() == PayloadFormat.JSON;
-    }
-
     public PayloadFormat getPayloadFormat() {
         return PayloadFormat.from(contentType);
     }

@@ -896,18 +896,6 @@ public class ServiceCaller {
         return value.isJsonPrimitive() ? value.getAsString() : value.toString();
     }
 
-    /**
-     * Retrieves the raw response body as a string from the provided HTTP response.
-     * If the response body is null, an empty string is returned.
-     *
-     * @param response The HTTP response containing the body to be extracted.
-     * @return The raw response body as a string, or an empty string if the body is null.
-     * @throws IOException If an I/O error occurs while reading the response body.
-     */
-    public String getAsRawString(Response response) throws IOException {
-        return BoundedResponseBodyReader.read(response, apiArguments.getMaxResponseBytes()).body();
-    }
-
     private void recordServiceData(ServiceData serviceData) {
         testCaseListener.addPath(serviceData.getContractPath());
         testCaseListener.addContractPath(serviceData.getContractPath());

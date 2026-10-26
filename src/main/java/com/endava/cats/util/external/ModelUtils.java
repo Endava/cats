@@ -435,14 +435,6 @@ public class ModelUtils {
                 && !schema.getEnum().isEmpty();
     }
 
-    public static Schema getSchema(OpenAPI openAPI, String name) {
-        if (name == null) {
-            return null;
-        }
-
-        return getSchemas(openAPI).get(name);
-    }
-
     /**
      * Return a Map of the schemas defined under /components/schemas in the OAS document.
      * The returned Map only includes the direct children of /components/schemas in the OAS document; the Map
@@ -774,38 +766,13 @@ public class ModelUtils {
         }
 
         Object xParent = schema.getExtensions().get(X_PARENT);
-        if (xParent == null) {
-            return false;
-        } else if (xParent instanceof Boolean xParentB) {
-            return xParentB;
-        } else if (xParent instanceof String xParentS) {
-            return StringUtils.isNotEmpty(xParentS);
-        } else {
-            return false;
-        }
+        return switch (xParent) {
+            case null -> false;
+            case Boolean xParentB -> xParentB;
+            case String xParentS -> StringUtils.isNotEmpty(xParentS);
+            default -> false;
+        };
     }
-
-    /**
-     * isNullType returns true if the input schema is the 'null' type.
-     * <p>
-     * The 'null' type is supported in OAS 3.1 and above. It is not supported
-     * in OAS 2.0 and OAS 3.0.x.
-     * <p>
-     * For example, the "null" type could be used to specify that a value must
-     * either be null or a specified type:
-     * <p>
-     * OptionalOrder:
-     * oneOf:
-     * - type: 'null'
-     * - $ref: '#/components/schemas/Order'
-     *
-     * @param schema the OpenAPI schema
-     * @return true if the schema is the 'null' type
-     */
-    public static boolean isNullType(Schema schema) {
-        return "null".equals(getType(schema));
-    }
-
 
     /**
      * Returns true if the schema contains allOf but

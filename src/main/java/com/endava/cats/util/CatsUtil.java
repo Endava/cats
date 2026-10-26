@@ -504,14 +504,4 @@ public abstract class CatsUtil {
     public static boolean isEmpty(Map<?, ?> map) {
         return map == null || map.isEmpty();
     }
-
-    /**
-     * Checks if a map is not empty.
-     *
-     * @param map the given map
-     * @return true if not empty, false otherwise
-     */
-    public static boolean isNotEmpty(Map<?, ?> map) {
-        return !isEmpty(map);
-    }
 }

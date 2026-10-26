@@ -37,13 +37,6 @@ public abstract class BaseLinter implements Fuzzer {
         this.testCaseListener = tcl;
     }
 
-    /**
-     * Clears the cached run keys for a new linting session.
-     */
-    public void reset() {
-        fuzzedPaths.clear();
-    }
-
     @Override
     public void fuzz(FuzzingData data) {
         int currentOpenApiIdentity = System.identityHashCode(data.getOpenApi());

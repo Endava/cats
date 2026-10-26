@@ -59,25 +59,6 @@ public final class FormEncoder {
     }
 
     /**
-     * Creates the HTTP query string for a given map of parameters.
-     *
-     * @param params The map of parameters.
-     * @return The query string.
-     */
-    public static String createQueryString(Map<String, Object> params) {
-        if (params == null) {
-            return "";
-        }
-
-        Collection<KeyValuePair<String, String>> flatParams =
-                flattenParams(params).stream()
-                        .filter(kvp -> kvp.getValue() instanceof String)
-                        .map(kvp -> new KeyValuePair<>(kvp.getKey(), (String) kvp.getValue()))
-                        .toList();
-        return createQueryString(flatParams);
-    }
-
-    /**
      * Creates the HTTP query string for a collection of name/value tuples.
      *
      * @param nameValueCollection The collection of name/value tuples.

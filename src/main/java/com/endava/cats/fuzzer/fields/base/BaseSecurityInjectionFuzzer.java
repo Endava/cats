@@ -24,7 +24,6 @@ import lombok.Getter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Base class for security injection fuzzers (SQL injection, XSS, Command injection, etc.).

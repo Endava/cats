@@ -585,26 +585,30 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             case MERGE -> bodyMethod
                     ? StringUtils.defaultIfBlank(data.getPayload(), "{}")
                     : RequiredOnlyPayloadGenerator.generate(
-                            data.getPayload(), data.getAllRequiredFields(), data.getPath(), false);
+                    data.getPayload(), data.getAllRequiredFields(), data.getPath(), false);
         };
     }
 
     private String applyBodyOverrides(String basePayload, Object bodySpec, String contractPath, Set<String> changedFields) {
-        if (bodySpec == null) {
-            return basePayload;
-        }
-        if (bodySpec instanceof String rawText) {
-            String resolved = resolveStringExpression(rawText, basePayload);
-            changedFields.add("$");
-            return JsonUtils.isValidJson(resolved) ? resolved : JsonUtils.serialize(resolved);
-        }
-        if (bodySpec instanceof List<?> listSpec) {
-            Object resolvedList = resolveValueRecursive(contractPath, "$", listSpec, basePayload, changedFields);
-            changedFields.add("$");
-            return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(resolvedList);
-        }
-        if (bodySpec instanceof Map<?, ?> mapSpec) {
-            return applyMapBodyOverrides(basePayload, mapSpec, contractPath, changedFields);
+        switch (bodySpec) {
+            case null -> {
+                return basePayload;
+            }
+            case String rawText -> {
+                String resolved = resolveStringExpression(rawText, basePayload);
+                changedFields.add("$");
+                return JsonUtils.isValidJson(resolved) ? resolved : JsonUtils.serialize(resolved);
+            }
+            case List<?> listSpec -> {
+                Object resolvedList = resolveValueRecursive(contractPath, "$", listSpec, basePayload, changedFields);
+                changedFields.add("$");
+                return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(resolvedList);
+            }
+            case Map<?, ?> mapSpec -> {
+                return applyMapBodyOverrides(basePayload, mapSpec, contractPath, changedFields);
+            }
+            default -> {
+            }
         }
         return basePayload;
     }

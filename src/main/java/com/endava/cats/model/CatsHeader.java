@@ -11,7 +11,6 @@ import lombok.Getter;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.UUID;
 
 /**
  * This class represents the HTTP headers from the OpenAPI contract and use them as the data model across all layers.

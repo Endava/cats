@@ -397,10 +397,6 @@ public abstract class CatsModelUtils {
         return ModelUtils.getInterfaces(schema);
     }
 
-    public static Schema getSchemaItems(Schema schema) {
-        return ModelUtils.getSchemaItems(schema);
-    }
-
     public static boolean isMapSchema(Schema<?> schema) {
         return ModelUtils.isMapSchema(schema);
     }

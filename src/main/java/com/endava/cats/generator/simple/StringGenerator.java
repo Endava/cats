@@ -161,7 +161,7 @@ public class StringGenerator {
         if (initialValue.length() < length) {
             char lastChar = initialValue.charAt(initialValue.length() - 1);
             int charsToAdd = length - initialValue.length();
-            initialValue.append(String.valueOf(lastChar).repeat(charsToAdd));
+            initialValue.repeat(String.valueOf(lastChar), charsToAdd);
         }
 
         return initialValue.substring(0, length);

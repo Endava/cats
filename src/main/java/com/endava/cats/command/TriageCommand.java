@@ -58,7 +58,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -221,10 +220,6 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private static int extractTestNumber(Path path) {
         Matcher m = TEST_FILE_PATTERN.matcher(path.getFileName().toString());
         return m.find() ? Integer.parseInt(m.group(1)) : Integer.MAX_VALUE;
-    }
-
-    TriageReport buildTriageReport(String folderPath, List<IndexedTestCase> allTests) {
-        return buildTriageReport(folderPath, allTests, null);
     }
 
     TriageReport buildTriageReport(String folderPath, List<IndexedTestCase> allTests, OpenAPI openAPI) {
