@@ -295,6 +295,9 @@ public class TestCaseListener {
      * @param mutationTargets mutations applied while constructing the request
      */
     public void addMutationTargets(Collection<RequestTarget> mutationTargets) {
+        if ("FunctionalFlow".equals(getCurrentFuzzer())) {
+            return;
+        }
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
         if (testCase != null) {
             testCase.getRequestProvenance().addMutationTargets(mutationTargets);

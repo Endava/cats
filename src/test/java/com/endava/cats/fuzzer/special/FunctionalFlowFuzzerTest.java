@@ -396,10 +396,10 @@ class FunctionalFlowFuzzerTest {
         ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
         Mockito.verify(serviceCaller, Mockito.times(3)).call(captor.capture());
         List<ServiceData> calls = captor.getAllValues();
-        Assertions.assertThat(calls.get(0).getAllMutationTargets()).isEmpty();
+        Assertions.assertThat(calls.get(0).getAllMutationTargets()).isNotEmpty();
         Assertions.assertThat(calls.get(0).isReplaceRefData()).isFalse();
-        Assertions.assertThat(calls.get(0).isReplaceUrlParams()).isFalse();
-        Assertions.assertThat(calls.get(1).getAllMutationTargets()).isEmpty();
+        Assertions.assertThat(calls.get(0).isReplaceUrlParams()).isTrue();
+        Assertions.assertThat(calls.get(1).getAllMutationTargets()).isNotEmpty();
         Assertions.assertThat(calls.get(2).getAllMutationTargets()).isNotEmpty();
     }
 

@@ -352,14 +352,11 @@ public class FunctionalFlowFuzzer implements Fuzzer {
 
         PreparedStepPayloads payloads = preparePayloads(document, step, target, data);
         Set<CatsHeader> headers = prepareHeaders(step, data, payloads.bodyPayload());
-        List<RequestTarget> mutationTargets = (step.fuzz() != null && step.fuzz().isConfigured())
-                ? computeMutationTargets(data, payloads.bodyPayload(),
-                        payloads.pathParamsPayload(), headers, payloads.changedFields())
-                : List.of();
+        List<RequestTarget> mutationTargets = computeMutationTargets(data, payloads.bodyPayload(),
+                payloads.pathParamsPayload(), headers, payloads.changedFields());
 
         CatsResponse response = serviceCaller.call(ServiceData.from(data)
                 .replaceRefData(false)
-                .replaceUrlParams(false)
                 .headers(headers)
                 .payload(payloads.bodyPayload())
                 .pathParamsPayload(payloads.pathParamsPayload())
