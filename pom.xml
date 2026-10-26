@@ -56,14 +56,10 @@
         <assertj-core.version>4.0.0-M1</assertj-core.version>
         <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.2.0</maven-install-plugin.version>
-        <json.version>20260814</json.version>
         <error-prone.version>2.41.0</error-prone.version>
         <archunit-junit5.version>1.5.1</archunit-junit5.version>
         <json-smart.version>2.6.0</json-smart.version>
-        <jettison.version>1.5.7</jettison.version>
-        <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
         <snakeyaml.version>2.7</snakeyaml.version>
-        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
@@ -523,11 +519,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>${json.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj-core.version}</version>
@@ -602,6 +593,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>nativeimage</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5</artifactId>
             <version>${archunit-junit5.version}</version>
@@ -613,16 +609,6 @@
             <version>${json-smart.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.jettison</groupId>
-            <artifactId>jettison</artifactId>
-            <version>${jettison.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>${jaxb-api.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>${snakeyaml.version}</version>
@@ -631,11 +617,6 @@
             <groupId>org.snakeyaml</groupId>
             <artifactId>snakeyaml-engine</artifactId>
             <version>${snakeyaml-engine.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
-            <version>${javax.validation-api.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fusesource.jansi</groupId>
