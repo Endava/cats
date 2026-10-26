@@ -60,19 +60,19 @@ class ReplayCommandTest {
 
     @Test
     void shouldResolveReplayValuesFromEnvironmentFileContext() {
-        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of("Authorization", "Bearer from-file"));
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of("CATS_TEST_REPLAY_AUTH_HEADER", "Bearer from-file"));
 
-        String resolved = ReflectionTestUtils.invokeMethod(replayCommand, "resolveReplayValue", "$$Authorization", "header Authorization");
+        String resolved = ReflectionTestUtils.invokeMethod(replayCommand, "resolveReplayValue", "$$CATS_TEST_REPLAY_AUTH_HEADER", "header Authorization");
 
         Assertions.assertThat(resolved).isEqualTo("Bearer from-file");
     }
 
     @Test
     void shouldResolveReplayUrlValuesFromEnvironmentFileContext() {
-        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of("ACCESS_TOKEN", "from-file"));
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of("CATS_TEST_REPLAY_ACCESS_TOKEN", "from-file"));
 
         String resolved = ReflectionTestUtils.invokeMethod(replayCommand, "resolveReplayUrl",
-                "https://service.test/items?access_token=$$ACCESS_TOKEN");
+                "https://service.test/items?access_token=$$CATS_TEST_REPLAY_ACCESS_TOKEN");
 
         Assertions.assertThat(resolved).isEqualTo("https://service.test/items?access_token=from-file");
     }
