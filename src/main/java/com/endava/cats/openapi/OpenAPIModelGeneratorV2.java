@@ -985,11 +985,10 @@ public class OpenAPIModelGeneratorV2 {
                                                  GeneratedExample template, int variantIndex) {
         List<Object> items = new ArrayList<>();
         Set<String> requiredFields = new LinkedHashSet<>();
-        boolean generateDistinctNestedItems = uniqueItems || arrayItemVariantDepth == 0;
 
         for (int itemIndex = 0; itemIndex < arraySize; itemIndex++) {
             GeneratedExample itemExample = resolveDistinctArrayItem(propertyName, itemSchema, itemMapper,
-                    uniqueItems, generateDistinctNestedItems, template, variantIndex, itemIndex, items);
+                    uniqueItems, template, variantIndex, items);
             Object item = itemMapper.apply(itemExample.value());
             if (uniqueItems && containsEquivalent(items, item)) {
                 logger.debug("Could not generate {} unique items for array {}", arraySize, propertyName);
@@ -1003,9 +1002,10 @@ public class OpenAPIModelGeneratorV2 {
 
     private GeneratedExample resolveDistinctArrayItem(String propertyName, Schema itemSchema,
                                                       UnaryOperator<Object> itemMapper, boolean uniqueItems,
-                                                      boolean generateDistinctNestedItems, GeneratedExample template,
-                                                      int variantIndex, int itemIndex, List<Object> existingItems) {
-        GeneratedExample itemExample = (itemIndex == 0 || !generateDistinctNestedItems)
+                                                      GeneratedExample template, int variantIndex,
+                                                      List<Object> existingItems) {
+        boolean generateDistinctNestedItems = uniqueItems || arrayItemVariantDepth == 0;
+        GeneratedExample itemExample = (existingItems.isEmpty() || !generateDistinctNestedItems)
                 ? template
                 : generateArrayItemVariant(propertyName, itemSchema, variantIndex, template, uniqueItems);
         Object item = itemMapper.apply(itemExample.value());

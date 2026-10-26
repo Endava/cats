@@ -144,13 +144,11 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
         CommandContext context = new CommandContext();
 
         // Set fuzzer type based on file content
-        if (FunctionalFlowParser.isSecurityFlowFile(file)) {
-            context.setFuzzerType(FuzzerTypes.SECURITY);
-            context.setSecurityFuzzerFile(file);
-        } else if (FunctionalFlowParser.isFunctionalFlowFile(file)) {
+        boolean functionalFlowFile = FunctionalFlowParser.isFunctionalFlowFile(file);
+        if (functionalFlowFile && !FunctionalFlowParser.isSecurityFlowFile(file)) {
             context.setFuzzerType(FuzzerTypes.FUNCTIONAL_FLOW);
             context.setFunctionalFlowFile(file);
-        } else if (this.isFunctionalFuzzerFile()) {
+        } else if (!functionalFlowFile && this.isFunctionalFuzzerFile()) {
             context.setFuzzerType(FuzzerTypes.FUNCTIONAL);
             context.setCustomFuzzerFile(file);
         } else {

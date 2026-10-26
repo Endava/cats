@@ -503,7 +503,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
 
         if (code == 404) {
-            return classifyNotFound404(indexed, method, path, code, correlations,
+            return classifyNotFound404(indexed, method, path, correlations,
                     pathsWithSuccessfulPost, firstDeleteTestByPath, minedRefData);
         }
 
@@ -550,7 +550,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         return null;
     }
 
-    private static ClusterClassification classifyNotFound404(IndexedTestCase indexed, String method, String path, int code,
+    private static ClusterClassification classifyNotFound404(IndexedTestCase indexed, String method, String path,
                                                              List<ResourceCorrelation> correlations,
                                                              Set<String> pathsWithSuccessfulPost,
                                                              Map<String, Integer> firstDeleteTestByPath,
@@ -564,7 +564,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                         "SUSPICIOUS_CORRELATION_404",
                         2,
                         method + " " + path,
-                        code,
+                        404,
                         "Path parameter [" + corr.getTarget().name() + "] was correlated from non-ID field ["
                                 + corr.getSourceLocation() + " = " + corr.getValue() + "]",
                         "Ensure collection responses expose a primary resource identifier or map '" + corr.getTarget().name() + "' via --refData.");
@@ -578,7 +578,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     "RESOURCE_POOL_DEPLETED_404",
                     2,
                     method + " " + path,
-                    code,
+                    404,
                     "Resource pool depleted after earlier DELETE on [" + parentDeletePath + "] (starting at Test "
                             + firstDeleteTestByPath.get(parentDeletePath) + ")",
                     "Run non-DELETE operations across child paths before parent DELETEs or pass --export-refdata refData.yml.");
@@ -597,7 +597,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 "UNRESOLVED_PATH_PARAM_404",
                 2,
                 method + " " + path,
-                code,
+                404,
                 diagnosis,
                 remediation);
     }

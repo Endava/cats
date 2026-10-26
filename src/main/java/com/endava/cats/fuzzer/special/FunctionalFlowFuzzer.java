@@ -700,7 +700,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         Matcher matcher = STEP_TOKEN_PATTERN.matcher(expr);
         StringBuilder sb = new StringBuilder();
         while (matcher.find()) {
-            String token = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+            String token = matcher.group(matcher.group(1) != null ? 1 : 2);
             String replacement = FieldCorrelationEvaluator.resolveStepReference(token, variables)
                     .map(String::valueOf)
                     .orElse(matcher.group(0));
@@ -793,6 +793,9 @@ public class FunctionalFlowFuzzer implements Fuzzer {
 
     private String extractValueBySelector(String selector, CatsResponse response,
                                           String requestPayload, String pathParamsPayload) {
+        if (StringUtils.isBlank(selector)) {
+            return JsonUtils.NOT_SET;
+        }
         Optional<Object> stepRef = FieldCorrelationEvaluator.resolveStepReference(selector, variables);
         if (stepRef.isPresent()) {
             return String.valueOf(stepRef.get());

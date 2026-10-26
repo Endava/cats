@@ -509,7 +509,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private static String sanitizeVarName(String raw) {
-        String clean = StringUtils.defaultIfBlank(raw, "resourceId").replaceAll("[^A-Za-z0-9_]", "");
+        String clean = StringUtils.defaultIfBlank(raw, "resourceId").replaceAll("\\W", "");
         return clean.isEmpty() ? "resourceId" : clean;
     }
 

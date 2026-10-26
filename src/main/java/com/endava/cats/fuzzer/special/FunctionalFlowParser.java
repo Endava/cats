@@ -110,7 +110,7 @@ public final class FunctionalFlowParser {
                 return new FunctionalFlowDocument(Map.of(), List.of(), parseSteps(root));
             }
             Map<String, String> variables = parseStringMap(root.get("variables"));
-            JsonNode corrNode = root.has("correlate") ? root.get("correlate") : root.get("correlations");
+            JsonNode corrNode = root.get(root.has("correlate") ? "correlate" : "correlations");
             List<FieldCorrelationRule> correlate = parseCorrelations(corrNode);
             List<FunctionalFlowStep> steps = parseSteps(root.get("steps"));
             return new FunctionalFlowDocument(variables, correlate, steps);
@@ -131,7 +131,7 @@ public final class FunctionalFlowParser {
             return parseCorrelations(root);
         }
         if (root.isObject()) {
-            JsonNode corrNode = root.has("correlate") ? root.get("correlate") : root.get("correlations");
+            JsonNode corrNode = root.get(root.has("correlate") ? "correlate" : "correlations");
             return parseCorrelations(corrNode);
         }
         return List.of();
@@ -163,7 +163,7 @@ public final class FunctionalFlowParser {
         BasePayloadMode base = BasePayloadMode.fromString(firstNonBlankText(node, "base"));
         List<String> omit = parseStringList(node.get("omit"));
         VariantSpec variantSpec = parseVariant(node.get("variant"));
-        JsonNode corrNode = node.has("correlate") ? node.get("correlate") : node.get("correlations");
+        JsonNode corrNode = node.get(node.has("correlate") ? "correlate" : "correlations");
         List<FieldCorrelationRule> correlate = parseCorrelations(corrNode);
         Map<String, String> save = parseSaveMap(node.get("save"));
         FunctionalFlowExpectation expect = parseExpectation(node);

@@ -112,11 +112,11 @@ class FunctionalFlowParserTest {
 
         Assertions.assertThat(doc.steps()).hasSize(1);
         FunctionalFlowStep step = doc.steps().getFirst();
-        Assertions.assertThat(step.name()).isEqualTo("Create velocity rule");
-        Assertions.assertThat(step.method()).isEqualTo(HttpMethod.POST);
-        Assertions.assertThat(step.rawTarget()).isEqualTo("/rules");
-        Assertions.assertThat(step.base()).isEqualTo(BasePayloadMode.ONLY_REQUIRED);
-        Assertions.assertThat(step.variant()).isEqualTo("VelocityRule");
+        Assertions.assertThat(step)
+                .extracting(FunctionalFlowStep::name, FunctionalFlowStep::method, FunctionalFlowStep::rawTarget,
+                        FunctionalFlowStep::base, FunctionalFlowStep::variant)
+                .containsExactly("Create velocity rule", HttpMethod.POST, "/rules",
+                        BasePayloadMode.ONLY_REQUIRED, "VelocityRule");
         Assertions.assertThat(step.omit()).containsExactly("id", "createdAt");
         Assertions.assertThat(step.headers()).containsEntry("X-Tenant", "${tenant}");
         Assertions.assertThat(step.query()).containsEntry("dryRun", false);

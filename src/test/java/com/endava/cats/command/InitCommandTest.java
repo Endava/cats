@@ -138,7 +138,8 @@ class InitCommandTest {
         Assertions.assertThat(InitCommand.AgentPlatform.parsePlatforms(List.of("codex", "cursor")))
                 .containsExactlyInAnyOrder(InitCommand.AgentPlatform.CODEX, InitCommand.AgentPlatform.CURSOR);
         Assertions.assertThat(InitCommand.AgentPlatform.parsePlatforms(null)).hasSize(5);
-        Assertions.assertThatThrownBy(() -> InitCommand.AgentPlatform.parsePlatforms(List.of("unknown-agent")))
+        List<String> unknownPlatforms = List.of("unknown-agent");
+        Assertions.assertThatThrownBy(() -> InitCommand.AgentPlatform.parsePlatforms(unknownPlatforms))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

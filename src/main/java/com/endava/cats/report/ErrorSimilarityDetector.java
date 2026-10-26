@@ -28,7 +28,7 @@ public final class ErrorSimilarityDetector {
     private static final LevenshteinDistance LEVENSHTEIN = LevenshteinDistance.getDefaultInstance();
     private static final JaccardSimilarity JACCARD = new JaccardSimilarity();
 
-    private static final Pattern TIMESTAMP = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[0-9.Z+-:]*");
+    private static final Pattern TIMESTAMP = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[0-9.Z+:-]*");
     private static final Pattern UUID = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
     private static final Pattern HASH = Pattern.compile("[0-9a-f]{32,}");
     private static final Pattern URL = Pattern.compile("(file|https?|ftp)://\\S+");

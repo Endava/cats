@@ -512,7 +512,7 @@ public class FilesArguments {
             if (method != null) {
                 putMatchingEntries(collection, key -> isExactMethodPathMatch(key, path, method), result);
             }
-            putMatchingEntries(collection, key -> path.equals(key), result);
+            putMatchingEntries(collection, path::equals, result);
             if (method != null) {
                 putMatchingEntries(collection, key -> isWildcardMethodPathMatch(key, path, method), result);
             }
