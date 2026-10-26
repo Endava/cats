@@ -158,7 +158,7 @@ public final class FieldCorrelationEvaluator {
                 : unindexed;
         return protectedFields.contains(normalizedPath)
                 || protectedFields.contains(unindexed)
-                || protectedFields.contains(leaf);
+                || (!unindexed.contains("#") && protectedFields.contains(leaf));
     }
 
     private static String deleteFieldAtPath(String jsonPayload, String fieldPath) {

@@ -352,8 +352,10 @@ public class FunctionalFlowFuzzer implements Fuzzer {
 
         PreparedStepPayloads payloads = preparePayloads(document, step, target, data);
         Set<CatsHeader> headers = prepareHeaders(step, data, payloads.bodyPayload());
-        List<RequestTarget> mutationTargets = computeMutationTargets(data, payloads.bodyPayload(),
-                payloads.pathParamsPayload(), headers, payloads.changedFields());
+        List<RequestTarget> mutationTargets = (step.fuzz() != null && step.fuzz().isConfigured())
+                ? computeMutationTargets(data, payloads.bodyPayload(),
+                        payloads.pathParamsPayload(), headers, payloads.changedFields())
+                : List.of();
 
         CatsResponse response = serviceCaller.call(ServiceData.from(data)
                 .replaceRefData(false)
@@ -571,7 +573,8 @@ public class FunctionalFlowFuzzer implements Fuzzer {
 
         List<FieldCorrelationRule> allRules = new ArrayList<>(document.correlate());
         allRules.addAll(step.correlate());
-        bodyPayload = FieldCorrelationEvaluator.applyRequestCorrelations(data.getContractPath(), bodyPayload, allRules, variables);
+        bodyPayload = FieldCorrelationEvaluator.applyRequestCorrelations(
+                data.getContractPath(), bodyPayload, allRules, variables, changedFields);
 
         return new PreparedStepPayloads(bodyPayload, pathParamsPayload, changedFields);
     }
@@ -598,7 +601,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             return JsonUtils.isValidJson(resolved) ? resolved : JsonUtils.serialize(resolved);
         }
         if (bodySpec instanceof List<?> listSpec) {
-            Object resolvedList = resolveValueRecursive(contractPath, "$", listSpec, basePayload);
+            Object resolvedList = resolveValueRecursive(contractPath, "$", listSpec, basePayload, changedFields);
             changedFields.add("$");
             return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(resolvedList);
         }
@@ -616,27 +619,33 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             if (!JsonUtils.isFieldInJson(current, normalizedKey)) {
                 changedFields.add("$");
             }
-            changedFields.add(normalizedKey);
-            Object resolvedVal = resolveValueRecursive(contractPath, normalizedKey, entry.getValue(), current);
+            if (!(entry.getValue() instanceof Map<?, ?>)) {
+                changedFields.add(normalizedKey);
+            }
+            Object resolvedVal = resolveValueRecursive(contractPath, normalizedKey, entry.getValue(), current, changedFields);
             current = setOrMergeField(current, normalizedKey, resolvedVal);
         }
         return current;
     }
 
-    private Object resolveValueRecursive(String contractPath, String fieldPath, Object value, String currentPayload) {
+    private Object resolveValueRecursive(String contractPath, String fieldPath, Object value,
+                                         String currentPayload, Set<String> changedFields) {
         if (value instanceof Map<?, ?> nestedMap) {
             Map<String, Object> resolvedMap = new LinkedHashMap<>();
             nestedMap.forEach((k, v) -> {
                 String childKey = String.valueOf(k);
                 String childPath = "$".equals(fieldPath) ? childKey : fieldPath + "#" + childKey;
-                resolvedMap.put(childKey, resolveValueRecursive(contractPath, childPath, v, currentPayload));
+                resolvedMap.put(childKey, resolveValueRecursive(contractPath, childPath, v, currentPayload, changedFields));
             });
             return resolvedMap;
+        }
+        if (!"$".equals(fieldPath)) {
+            changedFields.add(fieldPath);
         }
         if (value instanceof List<?> nestedList) {
             List<Object> resolvedList = new ArrayList<>();
             for (Object item : nestedList) {
-                resolvedList.add(resolveValueRecursive(contractPath, fieldPath, item, currentPayload));
+                resolvedList.add(resolveValueRecursive(contractPath, fieldPath, item, currentPayload, changedFields));
             }
             return resolvedList;
         }

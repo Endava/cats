@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.AdditionalMatchers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -294,6 +295,15 @@ class FunctionalFlowFuzzerTest {
         String flowYaml = """
                 variables:
                   globalTag: "Enterprise"
+                correlate:
+                  - paths: ["/billing-plans"]
+                    when: "planType == 'STATIC'"
+                    then:
+                      set:
+                        extraMeta.region: "OVERWRITTEN"
+                        extraMeta.tier: "GOLD"
+                      omit:
+                        - "extraMeta.unusedChild"
                 steps:
                   - name: createPlan
                     description: Create enterprise plan with extra properties and field omissions
@@ -316,6 +326,8 @@ class FunctionalFlowFuzzerTest {
                       maxResponseTimeMs: 500
                       that:
                         - "size($) == 5"
+                        - "request.extraMeta.region == 'EMEA'"
+                        - "request.extraMeta.tier == 'GOLD'"
                         - "T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(expiry.toString()))"
                         - "!T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))"
                   - name: getCreatedPlan
@@ -381,6 +393,12 @@ class FunctionalFlowFuzzerTest {
         Assertions.assertThat(fuzzer.getVariables())
                 .containsEntry("createdCode", "200")
                 .containsEntry("reqPlanName", "Enterprise-Plan");
+        ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.times(3)).call(captor.capture());
+        List<ServiceData> calls = captor.getAllValues();
+        Assertions.assertThat(calls.get(0).getAllMutationTargets()).isEmpty();
+        Assertions.assertThat(calls.get(1).getAllMutationTargets()).isEmpty();
+        Assertions.assertThat(calls.get(2).getAllMutationTargets()).isNotEmpty();
     }
 
     @Test
