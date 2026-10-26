@@ -18,9 +18,9 @@ triggers:
 Use this orchestrator skill to run a complete, closed-loop API quality and security workflow with CATS. For focused tasks, delegate to or follow the specialized CATS skills:
 
 1. **`/cats-analyze-api`** — Validate the OpenAPI contract, compute the 0–100 Fuzzability Score & Producer $\rightarrow$ Consumer dependency DAG, and run 31 contract linters (`cats validate`, `cats analyze`, `cats stats`, `cats lint`).
-2. **`/cats-fuzz-api`** — Run a pre-flight smoke probe (`cats smoke`), configure auth/headers, and execute stateful negative, boundary, and security fuzzing (`cats run`, `cats random`, `cats template`).
+2. **`/cats-fuzz-api`** — Run a pre-flight smoke probe (`cats smoke`), configure auth/headers, and execute stateful negative, boundary, and security fuzzing (`cats`, `cats random`, `cats template`, `cats run security.yml`).
 3. **`/cats-triage-results`** — Cluster `cats-report` failures into deduplicated root causes, auto-mine `refData.yml` and `correlations.yml`, replay reproducers, verify fixes live (`cats triage --verify`), and compare baselines (`cats compare`).
-4. **`/cats-write-tests`** — Generate schema-valid payloads (`cats generate`) and write stateful multi-step functional flows (`steps:`) and cross-field correlation rules (`correlations:`).
+4. **`/cats-write-tests`** — Generate schema-valid payloads (`cats generate`) and write stateful multi-step functional flows (`cats run flows.yml`) and cross-field correlation rules (`correlations:`).
 
 ---
 
@@ -46,9 +46,9 @@ cats smoke -c <spec> -s <server_url> -j
 - **`NEEDS_SEED_OR_AUTH_CONFIG`**: Run `cats init -c <spec>` to scaffold `headers.yml` and `refData.yml` for unresolved path parameters.
 
 ### Phase 3: Stateful Fuzzing & Triage Loop
-1. Run stateful fuzzing (`--srs` enables runtime resource correlation; `--srw` enables 4-wave execution):
+1. Run stateful fuzzing using the root `cats` command (`--srs` enables runtime resource correlation; `--srw` enables 4-wave execution):
    ```bash
-   cats run -c <spec> -s <server_url> --srs --srw --profile ci -o cats-report
+   cats -c <spec> -s <server_url> --srs --srw --profile ci -o cats-report
    ```
 2. Triage the report and auto-extract configuration fixes:
    ```bash

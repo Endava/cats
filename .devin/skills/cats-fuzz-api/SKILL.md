@@ -50,7 +50,9 @@ Inspect `verdict` in the JSON output:
 
 ---
 
-## Step 3: Run Stateful Profile-Based or Targeted Fuzzing (`cats run`)
+## Step 3: Run Stateful Profile-Based or Targeted Fuzzing (`cats`)
+
+*(Note: Use the root `cats` command for built-in fuzzers and profiles. The `cats run <file.yml>` subcommand is only for executing custom YAML functional or security flow files.)*
 
 ### Recommended Stateful Flags
 Always enable stateful resource correlation when fuzzing multi-endpoint CRUD APIs:
@@ -61,25 +63,25 @@ Always enable stateful resource correlation when fuzzing multi-endpoint CRUD API
 ### Built-In Fuzzer Profiles (`--profile`)
 | Profile | When to Use | Command |
 | :--- | :--- | :--- |
-| **`quick`** | Fast smoke + core boundary/required-field checks (~15 fuzzers) | `cats run -c <spec> -s <url> --srs --srw --profile quick` |
-| **`ci`** | Balanced functional, boundary, type-coercion & security suite (~45 fuzzers) | `cats run -c <spec> -s <url> --srs --srw --profile ci` |
-| **`security`** | OWASP API Top 10 (SQLi, NoSQLi, XSS, Command/LDAP/XXE/SSTI injection, SSRF, IDOR, Mass Assignment, Auth Bypass, Security Headers) | `cats run -c <spec> -s <url> --srs --srw --profile security` |
-| **`coverage`** | Fast positive + combinatorial field-removal blitz to maximize `2XX` operation & code coverage | `cats run -c <spec> -s <url> --srs --srw --profile coverage` |
-| **`crash`** | High-yield boundary, type-coercion, control-char & injection fuzzers targeting `5XX` server faults | `cats run -c <spec> -s <url> --srs --srw --profile crash` |
+| **`quick`** | Fast smoke + core boundary/required-field checks (~15 fuzzers) | `cats -c <spec> -s <url> --srs --srw --profile quick` |
+| **`ci`** | Balanced functional, boundary, type-coercion & security suite (~45 fuzzers) | `cats -c <spec> -s <url> --srs --srw --profile ci` |
+| **`security`** | OWASP API Top 10 (SQLi, NoSQLi, XSS, Command/LDAP/XXE/SSTI injection, SSRF, IDOR, Mass Assignment, Auth Bypass, Security Headers) | `cats -c <spec> -s <url> --srs --srw --profile security` |
+| **`coverage`** | Fast positive + combinatorial field-removal blitz to maximize `2XX` operation & code coverage | `cats -c <spec> -s <url> --srs --srw --profile coverage` |
+| **`crash`** | High-yield boundary, type-coercion, control-char & injection fuzzers targeting `5XX` server faults | `cats -c <spec> -s <url> --srs --srw --profile crash` |
 
 ### Scoped / Targeted Fuzzing
 ```bash
 # Fuzz specific paths and HTTP methods
-cats run -c <spec> -s <url> --srs -p "/orders,/orders/{orderId}" -X POST,PUT
+cats -c <spec> -s <url> --srs -p "/orders,/orders/{orderId}" -X POST,PUT
 
 # Run specific fuzzers (discover names with `cats list -f`)
-cats run -c <spec> -s <url> --srs -f "HappyPath,RemoveFields,MassAssignment,SqlInjectionInStringFields"
+cats -c <spec> -s <url> --srs -f "HappyPath,RemoveFields,MassAssignment,SqlInjectionInStringFields"
 
 # Bound execution time or error count
-cats run -c <spec> -s <url> --srs --srw --stopAfterTimeInSec 120 --stopAfterErrors 50
+cats -c <spec> -s <url> --srs --srw --stopAfterTimeInSec 120 --stopAfterErrors 50
 
 # Blackbox mode: only report 5XX server crashes as errors (ignore 2XX/4XX contract mismatches)
-cats run -c <spec> -s <url> --srs --srw -b -k
+cats -c <spec> -s <url> --srs --srw -b -k
 ```
 
 ---

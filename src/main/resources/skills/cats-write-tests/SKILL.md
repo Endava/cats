@@ -51,6 +51,9 @@ A functional flow YAML file executes an ordered sequence of HTTP steps (`steps:`
 4. **Use shorthand `save: [field1, field2]`** when the variable name matches the response JSON field name, or `save: { alias: fieldPath }` (or `$steps.<stepName>.response.<field>`) when renaming.
 5. **Only override fields in `body:` and `query:` that matter to the scenario** — with `base: merge` (default), CATS populates all other required schema fields automatically and omits unrequested optional query parameters on `GET`/`DELETE`.
 6. **Never assert `response.<requiredField> != null` in `expect.that:`** when the field is already required by the OpenAPI response schema or captured in `save:`.
+7. **Always omit recursive self-referencing array/object properties on leaf nodes** — if `cats generate` shows a recursive schema (such as an AST/expression node with `children: [$ref: '#/components/schemas/Expression']`), add `omit: ["expression.children"]` in `correlate:` or on the step so leaf conditions do not carry auto-generated child trees.
+8. **Use captured resource IDs (not display names) for cross-resource references** — when one resource references another (e.g., a rule referencing a watchlist via `IN_WATCHLIST`), pass the captured identifier (`${watchlistId}` or `${steps.createWatchlist.response.watchlistId}`) unless the OpenAPI field description explicitly requires a display name.
+9. **Order stateful steps deterministically (`Create` $\rightarrow$ `Read/List` $\rightarrow$ `Referential/Negative Checks` $\rightarrow$ `Update/Patch` $\rightarrow$ `Delete Teardown`)** — never delete a resource mid-flow while later `GET`/`PUT`/`PATCH` steps still depend on it; if testing a `409`/`422` referential-integrity error on `DELETE`, run that check while the referencing rule/child resource still actively points to the parent resource ID, then unreference/delete the child before the final parent `DELETE`.
 
 ### Complete `flows.yml` Syntax & Reference
 
