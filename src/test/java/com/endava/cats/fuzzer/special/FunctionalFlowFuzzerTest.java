@@ -75,7 +75,7 @@ class FunctionalFlowFuzzerTest {
                       headers:
                         X-Server: "billing"
                       bodyContains: ["plan_42"]
-                      where:
+                      that:
                         - "priority >= 10 & $request.planType = 'STATIC'"
 
                   - name: Fetch and patch created plan
@@ -190,7 +190,7 @@ class FunctionalFlowFuzzerTest {
                         X-Missing: "val"
                       bodyContains: ["must_exist"]
                       bodyNotContains: ["METERED"]
-                      where:
+                      that:
                         - "score > 50"
                 """;
         File flowFile = tempDir.resolve("flow-fail.yml").toFile();
@@ -314,7 +314,7 @@ class FunctionalFlowFuzzerTest {
                       name.first: "Cats"
                       planName: "$request.name"
                       maxResponseTimeMs: 500
-                      where:
+                      that:
                         - "size($) == 5"
                         - "T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(expiry.toString()))"
                         - "!T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))"
@@ -324,7 +324,7 @@ class FunctionalFlowFuzzerTest {
                     expect:
                       status: 200
                       id: "$prev.response.id"
-                      where:
+                      that:
                         - "$steps.createPlan.status == 201"
                         - "response.id == $steps.createPlan.response.id"
                         - "$steps.createPlan.request.planType == 'STATIC'"

@@ -483,7 +483,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         int origCode = target.getResponse() != null ? target.getResponse().getResponseCode() : 200;
         if (ResponseCodeFamily.is5xxCode(origCode)) {
             sb.append("      status: [200, 201, 400, 422]\n");
-            sb.append("      where:\n");
+            sb.append("      that:\n");
             sb.append("        - \"status < 500\"\n");
         } else {
             sb.append("      status: ").append(origCode > 0 ? origCode : "2XX").append("\n");

@@ -581,7 +581,10 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             case EMPTY -> "{}";
             case ONLY_REQUIRED -> RequiredOnlyPayloadGenerator.generate(
                     data.getPayload(), data.getAllRequiredFields(), data.getPath(), bodyMethod);
-            case MERGE -> StringUtils.defaultIfBlank(data.getPayload(), "{}");
+            case MERGE -> bodyMethod
+                    ? StringUtils.defaultIfBlank(data.getPayload(), "{}")
+                    : RequiredOnlyPayloadGenerator.generate(
+                            data.getPayload(), data.getAllRequiredFields(), data.getPath(), false);
         };
     }
 
@@ -817,7 +820,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         verifyExpectedHeaders(expect.headers(), requestPayload, response, failures);
         verifyBodySubstrings(expect.bodyContains(), expect.bodyNotContains(), response, failures);
         verifyMaxResponseTime(expect.maxResponseTimeMs(), response, failures);
-        FieldCorrelationEvaluator.evaluateWhereExpectations(expect.where(), requestPayload, response, variables)
+        FieldCorrelationEvaluator.evaluateThatExpectations(expect.that(), requestPayload, response, variables)
                 .ifPresent(failures::add);
 
         if (!failures.isEmpty()) {
@@ -835,7 +838,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     private static boolean hasCustomAssertions(FunctionalFlowExpectation expect) {
         return !expect.fields().isEmpty() || !expect.headers().isEmpty()
                 || !expect.bodyContains().isEmpty() || !expect.bodyNotContains().isEmpty()
-                || !expect.where().isEmpty() || expect.maxResponseTimeMs() != null;
+                || !expect.that().isEmpty() || expect.maxResponseTimeMs() != null;
     }
 
     private void reportCustomAssertionsOutcome(FuzzingData data, CatsResponse response,

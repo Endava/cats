@@ -73,11 +73,11 @@ class FieldCorrelationEvaluatorTest {
                 "periodEnd > periodStart | totalScore < 0"
         );
 
-        Optional<String> result = FieldCorrelationEvaluator.evaluateWhereExpectations(
+        Optional<String> result = FieldCorrelationEvaluator.evaluateThatExpectations(
                 passingWhere, requestJson, response, Map.of());
         Assertions.assertThat(result).isEmpty();
 
-        Optional<String> failingResult = FieldCorrelationEvaluator.evaluateWhereExpectations(
+        Optional<String> failingResult = FieldCorrelationEvaluator.evaluateThatExpectations(
                 List.of("totalScore < decisionMetadata.threshold"), requestJson, response, Map.of());
         Assertions.assertThat(failingResult)
                 .isPresent()
@@ -167,7 +167,7 @@ class FieldCorrelationEvaluatorTest {
         String reqJson = "{\"amount\":50,\"mode\":\"EXPRESS\"}";
         Map<String, String> vars = Map.of("expectedStatus", "ACTIVE");
 
-        Assertions.assertThat(FieldCorrelationEvaluator.evaluateWhereExpectations(
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateThatExpectations(
                 List.of(
                         "$status == 201 && response.amount >= 50",
                         "response.status == '${expectedStatus}' || response.status == 'PENDING'",
@@ -185,7 +185,7 @@ class FieldCorrelationEvaluatorTest {
         String mutatedArray = FieldCorrelationEvaluator.applyRequestCorrelations("/orders", arrayItemPayload, itemRules, Map.of());
         Assertions.assertThat(mutatedArray).contains("\"name\":\"new\"");
 
-        Assertions.assertThat(FieldCorrelationEvaluator.evaluateWhereExpectations(
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateThatExpectations(
                 List.of("response.amount > 100"), reqJson, response, vars))
                 .isPresent()
                 .get().asString().contains("response.amount > 100");

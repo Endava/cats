@@ -40,9 +40,17 @@ cats init -c <spec> -o .
 
 ---
 
-## 2. Authoring Stateful Functional Flows (`--functionalFlow flows.yml`)
+## 2. Authoring Stateful Functional Flows (`cats run -c <spec> -s <url> flows.yml`)
 
-A functional flow YAML file executes an ordered sequence of HTTP steps (`steps:`), automatically starting from a schema-valid payload generated from the OpenAPI contract, applying step overrides/omissions, extracting variables from responses (`save:`), and evaluating rich assertions (`expect:`).
+A functional flow YAML file executes an ordered sequence of HTTP steps (`steps:`), automatically starting from a schema-valid payload and OpenAPI-documented headers generated from the contract, applying step overrides/omissions, extracting variables from responses (`save:`), and evaluating assertions (`expect:`).
+
+### Minimal-by-Default Authoring Rules (Only Specify What Serves a Purpose)
+1. **Never repeat OpenAPI-documented headers (`headers:`)** unless the step intentionally tests a specific header value (e.g., re-sending an identical idempotency key across two steps). CATS automatically generates valid values for all headers declared in the OpenAPI contract.
+2. **Never write `matchesSchema: true`** — response schema validation is enabled by default (`matchesSchema: true` is implicit). Only set `matchesSchema: false` when intentionally asserting an error response that deviates from the documented schema.
+3. **Write expected field values directly under `expect:`** (no `fields:` wrapper needed), and use top-level `status: 204` on steps that only assert the HTTP status code.
+4. **Use shorthand `save: [field1, field2]`** when the variable name matches the response JSON field name, or `save: { alias: fieldPath }` (or `$steps.<stepName>.response.<field>`) when renaming.
+5. **Only override fields in `body:` and `query:` that matter to the scenario** — with `base: merge` (default), CATS populates all other required schema fields automatically and omits unrequested optional query parameters on `GET`/`DELETE`.
+6. **Never assert `response.<requiredField> != null` in `expect.that:`** when the field is already required by the OpenAPI response schema or captured in `save:`.
 
 ### Complete `flows.yml` Syntax & Reference
 
@@ -67,45 +75,31 @@ steps:
   - name: "createPlan"
     description: "Create a metered billing plan and verify its response contract"
     POST: "/billing-plans"
-    # Base payload mode:
-    #   merge (default) - start from a full schema-generated payload
-    #   onlyRequired    - start from required fields only
-    #   empty           - start from an empty body (use only what is in `body:`)
-    base: merge
     # Optional oneOf/anyOf variant selection (by schema name or field match)
     variant:
       planType: "METERED"
-    headers:
-      X-Idempotency-Key: "#(uuid)"
-    # Override specific fields in the generated payload (supports nested paths with # or .)
+    # Override only the fields relevant to this test scenario
     body:
       name: "Plan-${envPrefix}-#(alphanumeric(6))"
       planType: "METERED"
       currency: "${defaultCurrency}"
-    # Omit specific fields from the generated payload
     omit:
       - "flatFeeAmount"
-    # Extract variables from the response (status, headers.<Name>, or JSON path in response body)
+    # Shorthand list saves response.id -> ${id} and response.name -> ${name}
+    # (Also supports named map: `save: { createdPlanId: id, etagHeader: headers.ETag }`)
     save:
-      createdPlanId: "id"
-      createdPlanName: "name"
-      etagHeader: "headers.ETag"
-    # Assertions evaluated against the HTTP response
+      - id
+      - name
     expect:
       status: [200, 201]
-      matchesSchema: true
       maxResponseTimeMs: 1000
-      headers:
-        Content-Type: "application/json"
-      fields:
-        planType: "METERED"
-        currency: "EUR"
+      planType: "METERED"
+      currency: "EUR"
       bodyContains:
         - "Plan-staging-"
       bodyNotContains:
         - "Exception"
-      where:
-        - "response.id != null"
+      that:
         - "response.name == request.name"
         - "response.unitPrice >= 10"
 
@@ -116,29 +110,26 @@ steps:
       includeDetails: true
     expect:
       status: 200
-      where:
+      that:
         - "$steps.createPlan.status == 201"
         - "response.id == $steps.createPlan.response.id"
         - "response.name == $prev.response.name"
 
-  - name: "Reject invalid negative unit price on update"
-    PUT: "/billing-plans/${createdPlanId}"
-    path:
-      planId: "${createdPlanId}"
+  - name: "rejectNegativePrice"
+    description: "Reject invalid negative unit price on update"
+    PUT: "/billing-plans/${id}"
     body:
-      name: "${createdPlanName}"
+      name: "${name}"
       planType: "METERED"
       unitPrice: -5
     expect:
       status: [400, 422]
       matchesSchema: false
 
-  - name: "Delete the billing plan"
-    DELETE: "/billing-plans/${createdPlanId}"
-    path:
-      planId: "${createdPlanId}"
-    expect:
-      status: [200, 204]
+  - name: "deletePlan"
+    description: "Delete the billing plan"
+    DELETE: "/billing-plans/${id}"
+    status: [200, 204]
 ```
 
 ### Running a Functional Flow
@@ -176,10 +167,10 @@ correlations:
         - "gracePeriodDays"
 ```
 
-### Supported `when:` and `expect.where:` Operators
+### Supported `when:` and `expect.that:` Operators
 - Logical connectives: `&&` (`AND`), `||` (`OR`), `!`
--Comparison operators: `==`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `matches` (regex), `is null`, `is not null`
-- Prefixes & functions in `expect.where:` (and `${...}` expressions):
+- Comparison operators: `==`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `matches` (regex), `is null`, `is not null`
+- Prefixes & functions in `expect.that:` (and `${...}` expressions):
   - `request.<fieldPath>` — reads from the sent JSON request body
   - `response.<fieldPath>` — reads from the received JSON response body
   - `status` / `responseTimeMs` — HTTP status code integer and response latency in ms

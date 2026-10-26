@@ -407,7 +407,7 @@ class ReplayCommandTest {
         Assertions.assertThat(doc.steps()).hasSize(3);
         Assertions.assertThat(doc.steps().getFirst().save()).containsEntry("orderId", "id");
         Assertions.assertThat(doc.steps().get(1).rawTarget()).isEqualTo("/orders/${orderId}");
-        Assertions.assertThat(doc.steps().get(1).expect().where()).containsExactly("status < 500");
+        Assertions.assertThat(doc.steps().get(1).expect().that()).containsExactly("status < 500");
 
         // 2. Live --stateful replay substitutes fresh ID from live POST response into PUT URL & payload
         replayCommand.exportFlowFile = null;

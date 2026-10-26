@@ -96,7 +96,7 @@ class FunctionalFlowParserTest {
                         content-type: "application/json"
                       bodyContains: ["VELOCITY"]
                       bodyNotContains: ["ERROR"]
-                      where:
+                      that:
                         - "priority >= 10 & active = true"
                       matchesSchema: false
                 """;
@@ -127,7 +127,7 @@ class FunctionalFlowParserTest {
             Assertions.assertThat(expect.headers()).containsEntry("content-type", "application/json");
             Assertions.assertThat(expect.bodyContains()).containsExactly("VELOCITY");
             Assertions.assertThat(expect.bodyNotContains()).containsExactly("ERROR");
-            Assertions.assertThat(expect.where()).containsExactly("priority >= 10 & active = true");
+            Assertions.assertThat(expect.that()).containsExactly("priority >= 10 & active = true");
             Assertions.assertThat(expect.matchesSchema()).isFalse();
         });
         Assertions.assertThat(step.body()).isInstanceOf(Map.class);
@@ -174,18 +174,30 @@ class FunctionalFlowParserTest {
                 - method: POST
                   path: /items
                   save:
-                    id: id
+                    - id
+                    - nested.code
+                    - aliased: otherField
                   expect:
                     status: 201
+                - method: GET
+                  path: /items
+                  save: "singleField, secondField"
                 """;
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowYaml(explicitMethodPathYaml)).isTrue();
         FunctionalFlowDocument doc = FunctionalFlowParser.parseContent(explicitMethodPathYaml);
-        Assertions.assertThat(doc.steps()).singleElement().satisfies(step -> {
+        Assertions.assertThat(doc.steps()).hasSize(2);
+        Assertions.assertThat(doc.steps().getFirst()).satisfies(step -> {
             Assertions.assertThat(step.method()).isEqualTo(HttpMethod.POST);
             Assertions.assertThat(step.rawTarget()).isEqualTo("/items");
-            Assertions.assertThat(step.save()).containsEntry("id", "id");
+            Assertions.assertThat(step.save())
+                    .containsEntry("id", "id")
+                    .containsEntry("code", "nested.code")
+                    .containsEntry("aliased", "otherField");
             Assertions.assertThat(step.expect().status()).containsExactly("201");
         });
+        Assertions.assertThat(doc.steps().get(1).save())
+                .containsEntry("singleField", "singleField")
+                .containsEntry("secondField", "secondField");
 
         File corrArrayFile = tempDir.resolve("corr-array.yml").toFile();
         Files.writeString(corrArrayFile.toPath(), """

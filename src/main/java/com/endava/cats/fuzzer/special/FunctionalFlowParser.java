@@ -31,7 +31,7 @@ public final class FunctionalFlowParser {
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
     private static final Set<String> RESERVED_EXPECT_KEYS = Set.of(
             "status", "fields", "headers",
-            "bodycontains", "bodynotcontains", "where", "matchesschema",
+            "bodycontains", "bodynotcontains", "that", "matchesschema",
             "maxresponsetimems");
 
     private FunctionalFlowParser() {
@@ -165,7 +165,7 @@ public final class FunctionalFlowParser {
         VariantSpec variantSpec = parseVariant(node.get("variant"));
         JsonNode corrNode = node.has("correlate") ? node.get("correlate") : node.get("correlations");
         List<FieldCorrelationRule> correlate = parseCorrelations(corrNode);
-        Map<String, String> save = parseStringMap(node.get("save"));
+        Map<String, String> save = parseSaveMap(node.get("save"));
         FunctionalFlowExpectation expect = parseExpectation(node);
         StepFuzzConfig fuzz = parseFuzzConfig(node);
         return new FunctionalFlowStep(
@@ -287,13 +287,13 @@ public final class FunctionalFlowParser {
         Map<String, String> headers = parseStringMap(expectNode.get("headers"));
         List<String> bodyContains = parseStringList(expectNode.get("bodyContains"));
         List<String> bodyNotContains = parseStringList(expectNode.get("bodyNotContains"));
-        List<String> where = parseStringList(expectNode.get("where"));
+        List<String> that = parseStringList(expectNode.get("that"));
         boolean matchesSchema = !expectNode.has("matchesSchema") || expectNode.get("matchesSchema").asBoolean(true);
         JsonNode timeNode = expectNode.get("maxResponseTimeMs");
         Long maxTimeMs = (timeNode != null && timeNode.isNumber()) ? timeNode.longValue() : null;
         return new FunctionalFlowExpectation(
                 finalStatus, Collections.unmodifiableMap(fields), headers,
-                bodyContains, bodyNotContains, where, matchesSchema, maxTimeMs);
+                bodyContains, bodyNotContains, that, matchesSchema, maxTimeMs);
     }
 
     private static List<FieldCorrelationRule> parseCorrelations(JsonNode correlateNode) {
@@ -351,6 +351,44 @@ public final class FunctionalFlowParser {
             }
         }
         return Collections.unmodifiableList(list);
+    }
+
+    private static Map<String, String> parseSaveMap(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return Map.of();
+        }
+        if (node.isObject()) {
+            return parseStringMap(node);
+        }
+        Map<String, String> map = new LinkedHashMap<>();
+        if (node.isTextual()) {
+            for (String item : parseStatusCodes(node)) {
+                addShorthandSaveEntry(map, item);
+            }
+            return Collections.unmodifiableMap(map);
+        }
+        if (node.isArray()) {
+            for (JsonNode item : node) {
+                if (item != null && item.isTextual()) {
+                    addShorthandSaveEntry(map, item.asText());
+                } else if (item != null && item.isObject()) {
+                    map.putAll(parseStringMap(item));
+                }
+            }
+        }
+        return Collections.unmodifiableMap(map);
+    }
+
+    private static void addShorthandSaveEntry(Map<String, String> map, String rawSelector) {
+        String selector = rawSelector == null ? "" : rawSelector.trim();
+        if (selector.isEmpty()) {
+            return;
+        }
+        int lastSep = Math.max(selector.lastIndexOf('.'), selector.lastIndexOf('#'));
+        String varName = lastSep >= 0 ? selector.substring(lastSep + 1).trim() : selector;
+        if (!varName.isEmpty()) {
+            map.put(varName, selector);
+        }
     }
 
     private static Map<String, String> parseStringMap(JsonNode node) {

@@ -81,7 +81,7 @@ public record FunctionalFlowDocument(
             Map<String, String> headers,
             List<String> bodyContains,
             List<String> bodyNotContains,
-            List<String> where,
+            List<String> that,
             boolean matchesSchema,
             Long maxResponseTimeMs) {
     }

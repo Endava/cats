@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 
 /**
  * Evaluates request-side cross-field correlation rules (`correlate:`) and response-side
- * boolean correlation assertions (`expect.where:`).
+ * boolean correlation assertions (`expect.that:`).
  */
 public final class FieldCorrelationEvaluator {
     private static final List<String> OPERATORS = List.of(">=", "<=", "!=", "==", "=", ">", "<", " contains ", " matches ");
@@ -242,17 +242,17 @@ public final class FieldCorrelationEvaluator {
     }
 
     /**
-     * Evaluates all `expect.where` correlation expressions against the response and request,
+     * Evaluates all `expect.that` correlation expressions against the response and request,
      * returning the first failed expression with resolved field values, or empty if all pass.
      */
-    public static Optional<String> evaluateWhereExpectations(List<String> whereExpressions,
-                                                             String requestJson,
-                                                             CatsResponse response,
-                                                             Map<String, String> variables) {
-        if (whereExpressions == null || whereExpressions.isEmpty()) {
+    public static Optional<String> evaluateThatExpectations(List<String> thatExpressions,
+                                                            String requestJson,
+                                                            CatsResponse response,
+                                                            Map<String, String> variables) {
+        if (thatExpressions == null || thatExpressions.isEmpty()) {
             return Optional.empty();
         }
-        for (String expr : whereExpressions) {
+        for (String expr : thatExpressions) {
             if (StringUtils.isNotBlank(expr)
                     && !evaluateBooleanExpression(expr, requestJson, response.getBody(), response, variables)) {
                 return Optional.of("Correlation condition failed: [" + expr + "]");
