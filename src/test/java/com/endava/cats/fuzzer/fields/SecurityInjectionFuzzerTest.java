@@ -498,6 +498,9 @@ class SecurityInjectionFuzzerTest {
                     Arguments.of("4xx rejection", 400,
                             "Bad Request",
                             "rejected", false, false),
+                    Arguments.of("4xx JSON error echoing invalid key", 404,
+                            "{\"message\":\"Requested resource was not found under key <img src=x onerror=alert(1)>\"}",
+                            "rejected", false, false),
                     Arguments.of("5xx error", 500,
                             "Internal Server Error",
                             "Server error", true, false)

@@ -4,9 +4,11 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -113,6 +115,9 @@ public class XssInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
     protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data) {
         String responseBody = response.getBody() != null ? response.getBody().toLowerCase(Locale.ROOT) : "";
         int responseCode = response.getResponseCode();
+        if (ResponseCodeFamily.is4xxCode(responseCode) && isJsonResponse(response)) {
+            return InjectionDetectionResult.notVulnerable();
+        }
 
         // Check if dangerous XSS patterns are reflected in the response
         // This is a WARN (not ERROR) because APIs should return raw data,
@@ -131,5 +136,13 @@ public class XssInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
         }
 
         return InjectionDetectionResult.notVulnerable();
+    }
+
+    private static boolean isJsonResponse(CatsResponse response) {
+        String contentType = response.getResponseContentType();
+        if (contentType != null && contentType.toLowerCase(Locale.ROOT).contains("json")) {
+            return true;
+        }
+        return JsonUtils.isValidJson(response.getBody());
     }
 }
