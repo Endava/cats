@@ -2507,6 +2507,23 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(resourcePool.hasLiveResourceFor("/customers/{customerId}")).isFalse();
     }
 
+    @Test
+    void shouldPreferPostResponseStringIdentifierOverGetCollectionDigitStringWhenTargetExampleHasDigits() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/merchants/{merchantId}/vouchers", "{\"customVoucher\":\"1111222233334444\"}"),
+                request("POST", "/merchants/m-1/vouchers", "{\"customVoucher\":\"1111222233334444\"}"),
+                response(201, "{\"voucher\":\"VCH-ALPHA-999\"}"));
+        resourcePool.observe(getData("/merchants/{merchantId}/vouchers", "{}"),
+                request("GET", "/merchants/m-1/vouchers", "{}"),
+                response(200, "[{\"voucher\":\"9999888877776666\"}]"));
+
+        ServiceData getVoucher = getData("/merchants/{merchantId}/vouchers/{voucher}",
+                "{\"merchantId\":\"m-1\",\"voucher\":\"11223344556677\"}");
+        RuntimeResourcePool.ResolvedRequest resolved = resourcePool.enrich(getVoucher, getVoucher.getPayload());
+
+        Assertions.assertThat(resolved.payload()).contains("\"voucher\":\"VCH-ALPHA-999\"");
+    }
+
     private void enableResourceReuse() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
     }

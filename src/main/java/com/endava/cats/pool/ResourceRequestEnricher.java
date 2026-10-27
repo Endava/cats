@@ -673,10 +673,29 @@ final class ResourceRequestEnricher {
                                  ResourceSemanticNaming.TargetMatchContext matchCtx, ResourceInstance boundResource) {
         int feedbackQuality = feedbackScore < 0 ? feedbackScore - MIN_FEEDBACK_PENALTY : -MIN_FEEDBACK_PENALTY;
         int compatibilityQuality = ResourceSemanticNaming.compatibilityQuality(candidate.storedValue(), target);
+        if (compatibilityQuality > 1 && target != null && target.shape().isNumericString() &&
+                (candidate.resource().sourceMethod() != HttpMethod.POST || storedValuePriority(candidate.storedValue()) < 2) &&
+                hasActiveNonNumericPostResponseForResource(matchCtx.targetResourceForms())) {
+            compatibilityQuality = 1;
+        }
         int semanticConfidence = ResourceSemanticNaming.semanticConfidence(candidate, similarity, matchCtx);
         int bindingQuality = boundResource != null && candidate.resource().sequence() == boundResource.sequence() ? 1 : 0;
         return feedbackQuality * 10_000 + compatibilityQuality * 1_000 + semanticConfidence * 100 +
                 bindingQuality * 10 + (candidate.resource().fuzzed() ? 0 : 1);
+    }
+
+    private boolean hasActiveNonNumericPostResponseForResource(Set<String> targetResourceForms) {
+        if (targetResourceForms.isEmpty()) {
+            return false;
+        }
+        for (ResourceInstance r : resources) {
+            if (r.active() && !r.fuzzed() && r.sourceMethod() == HttpMethod.POST &&
+                    !Collections.disjoint(r.resourceNameForms(), targetResourceForms) &&
+                    r.values().values().stream().anyMatch(v -> storedValuePriority(v) >= 2 && v.shape() == ValueShape.STRING)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private int feedbackScore(ResourceInstance resource, StoredValue value, String targetPath, TargetField target) {
