@@ -95,6 +95,11 @@ public class ProcessingArguments {
             description = "When set to @|bold true|@, the InvalidValuesInEnumsFieldsFuzzer will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean allowInvalidEnumValues;
 
+    @Setter
+    @CommandLine.Option(names = {"--allowDifferentCaseEnumValues"}, negatable = true, defaultValue = "true", fallbackValue = "true",
+            description = "When set to @|bold true|@, the EnumCaseVariantFieldsFuzzer will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean allowDifferentCaseEnumValues = true;
+
     @CommandLine.Option(names = {"--checkAllowHeader"},
             description = "When set to @|bold true|@, the XXXHttpMethodsFuzzer will check that the Allow header is provided in response and contains the allowed methods. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean checkAllowHeader;

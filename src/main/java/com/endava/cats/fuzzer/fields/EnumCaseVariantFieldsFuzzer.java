@@ -34,7 +34,7 @@ public class EnumCaseVariantFieldsFuzzer extends BaseEnumIteratorFieldsFuzzer {
 
     @Override
     protected ResponseCodeFamily getExpectedResponseCode() {
-        return processingArguments.isAllowInvalidEnumValues()
+        return processingArguments.isAllowDifferentCaseEnumValues()
                 ? ResponseCodeFamilyPredefined.TWOXX
                 : ResponseCodeFamilyPredefined.FOURXX;
     }
