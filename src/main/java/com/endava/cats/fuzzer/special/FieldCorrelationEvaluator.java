@@ -54,6 +54,20 @@ public final class FieldCorrelationEvaluator {
         if (StringUtils.isBlank(jsonPayload) || !JsonUtils.isValidJson(jsonPayload) || rules == null || rules.isEmpty()) {
             return jsonPayload;
         }
+        JsonElement parsedRoot = JsonUtils.parseAsJsonElement(jsonPayload);
+        if (parsedRoot != null && parsedRoot.isJsonArray()) {
+            JsonArray arr = parsedRoot.getAsJsonArray();
+            JsonArray updatedArr = new JsonArray(arr.size());
+            for (JsonElement el : arr) {
+                if (el.isJsonObject()) {
+                    String updatedEl = applyRequestCorrelations(contractPath, el.toString(), rules, variables, protectedFields);
+                    updatedArr.add(JsonParser.parseString(updatedEl));
+                } else {
+                    updatedArr.add(el);
+                }
+            }
+            return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(updatedArr);
+        }
         String updated = jsonPayload;
         for (FieldCorrelationRule rule : rules) {
             if (!matchesPathPattern(contractPath, rule.paths())) {

@@ -53,6 +53,23 @@ class FieldCorrelationEvaluatorTest {
     }
 
     @Test
+    void shouldApplyRequestCorrelationsToRootJsonArrayElements() {
+        String payload = "[{\"format\":{\"type\":\"SUPPLIED\"}},{\"format\":{\"type\":\"NUMERIC\"},\"suppliedToken\":\"123\"},\"scalar\"]";
+        List<FieldCorrelationRule> rules = List.of(
+                new FieldCorrelationRule(List.of("/tokens/batch"), "format.type == 'SUPPLIED'",
+                        Map.of("suppliedToken", "999999999999999"), List.of()),
+                new FieldCorrelationRule(List.of("/tokens/batch"), "format.type != 'SUPPLIED'",
+                        Map.of(), List.of("suppliedToken"))
+        );
+
+        String updated = FieldCorrelationEvaluator.applyRequestCorrelations("/tokens/batch", payload, rules, Map.of());
+
+        Assertions.assertThat(updated)
+                .contains("\"suppliedToken\":\"999999999999999\"")
+                .doesNotContain("\"suppliedToken\":\"123\"");
+    }
+
+    @Test
     void shouldEvaluateResponseWhereCorrelationsWithSingleAndDoubleAmpersandAndPipe() {
         String requestJson = "{\"partyId\":\"party_1\",\"email\":\"john@email.com\"}";
         String responseBody = """
