@@ -21,59 +21,59 @@ class FieldCorrelationEvaluatorTest {
     @Test
     void shouldApplyRequestCorrelationOmitAndSetWhenConditionHolds() {
         String payload = """
-                {"counter":{"metric":"COUNT","metricField":"amount"},"transactionFacts":{"country":"US","amount":150,"currency":"EUR"}}
+                {"pricing":{"tier":"FLAT","unitRate":"10"},"shipping":{"country":"US","weight":150,"currency":"EUR"}}
                 """;
         List<FieldCorrelationRule> rules = List.of(
-                new FieldCorrelationRule(List.of("/billing-plans*"), "counter.metric == 'COUNT'",
-                        Map.of(), List.of("counter.metricField")),
-                new FieldCorrelationRule(List.of("*"), "transactionFacts.country = 'US' & transactionFacts.amount > 100",
-                        Map.of("transactionFacts.currency", "${preferredCurrency}"), List.of())
+                new FieldCorrelationRule(List.of("/billing-plans*"), "pricing.tier == 'FLAT'",
+                        Map.of(), List.of("pricing.unitRate")),
+                new FieldCorrelationRule(List.of("*"), "shipping.country = 'US' & shipping.weight > 100",
+                        Map.of("shipping.currency", "${preferredCurrency}"), List.of())
         );
 
         String updated = FieldCorrelationEvaluator.applyRequestCorrelations(
                 "/billing-plans", payload, rules, Map.of("preferredCurrency", "USD"));
 
         Assertions.assertThat(updated)
-                .doesNotContain("metricField")
+                .doesNotContain("unitRate")
                 .contains("\"currency\":\"USD\"");
     }
 
     @Test
     void shouldSkipRequestCorrelationWhenPathOrConditionDoesNotMatch() {
-        String payload = "{\"counter\":{\"metric\":\"SUM\",\"metricField\":\"amount\"}}";
+        String payload = "{\"pricing\":{\"tier\":\"TIERED\",\"unitRate\":\"10\"}}";
         List<FieldCorrelationRule> rules = List.of(
-                new FieldCorrelationRule(List.of("/other*"), "counter.metric == 'SUM'",
-                        Map.of(), List.of("counter.metricField")),
-                new FieldCorrelationRule(List.of("/billing-plans*"), "counter.metric == 'COUNT'",
-                        Map.of(), List.of("counter.metricField"))
+                new FieldCorrelationRule(List.of("/other*"), "pricing.tier == 'TIERED'",
+                        Map.of(), List.of("pricing.unitRate")),
+                new FieldCorrelationRule(List.of("/billing-plans*"), "pricing.tier == 'FLAT'",
+                        Map.of(), List.of("pricing.unitRate"))
         );
 
         String updated = FieldCorrelationEvaluator.applyRequestCorrelations("/billing-plans", payload, rules, Map.of());
-        Assertions.assertThat(updated).contains("metricField");
+        Assertions.assertThat(updated).contains("unitRate");
     }
 
     @Test
     void shouldApplyRequestCorrelationsToRootJsonArrayElements() {
-        String payload = "[{\"format\":{\"type\":\"SUPPLIED\"}},{\"format\":{\"type\":\"NUMERIC\"},\"suppliedToken\":\"123\"},\"scalar\"]";
+        String payload = "[{\"delivery\":{\"mode\":\"EXPRESS\"}},{\"delivery\":{\"mode\":\"STANDARD\"},\"trackingCode\":\"TRK-1\"},\"scalar\"]";
         List<FieldCorrelationRule> rules = List.of(
-                new FieldCorrelationRule(List.of("/tokens/batch"), "format.type == 'SUPPLIED'",
-                        Map.of("suppliedToken", "999999999999999"), List.of()),
-                new FieldCorrelationRule(List.of("/tokens/batch"), "format.type != 'SUPPLIED'",
-                        Map.of(), List.of("suppliedToken"))
+                new FieldCorrelationRule(List.of("/shipments"), "delivery.mode == 'EXPRESS'",
+                        Map.of("trackingCode", "EXP-900"), List.of()),
+                new FieldCorrelationRule(List.of("/shipments"), "delivery.mode != 'EXPRESS'",
+                        Map.of(), List.of("trackingCode"))
         );
 
-        String updated = FieldCorrelationEvaluator.applyRequestCorrelations("/tokens/batch", payload, rules, Map.of());
+        String updated = FieldCorrelationEvaluator.applyRequestCorrelations("/shipments", payload, rules, Map.of());
 
         Assertions.assertThat(updated)
-                .contains("\"suppliedToken\":\"999999999999999\"")
-                .doesNotContain("\"suppliedToken\":\"123\"");
+                .contains("\"trackingCode\":\"EXP-900\"")
+                .doesNotContain("\"trackingCode\":\"TRK-1\"");
     }
 
     @Test
     void shouldEvaluateResponseWhereCorrelationsWithSingleAndDoubleAmpersandAndPipe() {
-        String requestJson = "{\"partyId\":\"party_1\",\"email\":\"john@email.com\"}";
+        String requestJson = "{\"customerId\":\"cust_1\",\"email\":\"john@email.com\"}";
         String responseBody = """
-                {"totalScore":80,"decision":"FLAGGED","decisionMetadata":{"threshold":50},"matchedItems":[{"id":"r1"}],"periodStart":"2026-01-01","periodEnd":"2026-01-02"}
+                {"orderTotal":80,"state":"APPROVED","limits":{"minAmount":50},"lineItems":[{"id":"r1"}],"startDate":"2026-01-01","endDate":"2026-01-02"}
                 """;
         CatsResponse response = CatsResponse.builder()
                 .responseCode(200)
@@ -82,12 +82,12 @@ class FieldCorrelationEvaluatorTest {
                 .build();
 
         List<String> passingWhere = List.of(
-                "totalScore >= decisionMetadata.threshold && decision == 'FLAGGED'",
+                "orderTotal >= limits.minAmount && state == 'APPROVED'",
                 "time > 10 & $request.email = 'john@email.com'",
                 "responseTimeMs < 500 & status == 200",
-                "size(matchedItems) > 0 & decision is not null & missingField is null",
-                "decision contains 'FLAG' & decision matches 'FLAG.*'",
-                "periodEnd > periodStart | totalScore < 0"
+                "size(lineItems) > 0 & state is not null & missingField is null",
+                "state contains 'APPROV' & state matches 'APPROV.*'",
+                "endDate > startDate | orderTotal < 0"
         );
 
         Optional<String> result = FieldCorrelationEvaluator.evaluateThatExpectations(
@@ -95,10 +95,10 @@ class FieldCorrelationEvaluatorTest {
         Assertions.assertThat(result).isEmpty();
 
         Optional<String> failingResult = FieldCorrelationEvaluator.evaluateThatExpectations(
-                List.of("totalScore < decisionMetadata.threshold"), requestJson, response, Map.of());
+                List.of("orderTotal < limits.minAmount"), requestJson, response, Map.of());
         Assertions.assertThat(failingResult)
                 .isPresent()
-                .get().asString().contains("totalScore < decisionMetadata.threshold");
+                .get().asString().contains("orderTotal < limits.minAmount");
     }
 
     @Test
@@ -106,36 +106,36 @@ class FieldCorrelationEvaluatorTest {
         String yaml = """
                 correlate:
                   - paths: ["/billing-plans*"]
-                    when: "counter.metric == 'SUM'"
+                    when: "pricing.tier == 'TIERED'"
                     then:
                       set:
-                        counter.metricField: "amount"
+                        pricing.unitRate: "amount"
                   - paths: ["/billing-plans*"]
-                    when: "expression.type == 'CONDITION' & expression.field is null"
+                    when: "filter.kind == 'SIMPLE' & filter.target is null"
                     then:
                       set:
-                        expression.field: "country"
+                        filter.target: "region"
                 """;
         File corrFile = tempDir.resolve("correlations.yml").toFile();
         Files.writeString(corrFile.toPath(), yaml);
         List<FieldCorrelationRule> rules = FunctionalFlowParser.parseCorrelationFile(corrFile);
         Assertions.assertThat(rules).hasSize(2);
 
-        String missingFieldsPayload = "{\"counter\":{\"metric\":\"SUM\"},\"expression\":{\"type\":\"CONDITION\"}}";
+        String missingFieldsPayload = "{\"pricing\":{\"tier\":\"TIERED\"},\"filter\":{\"kind\":\"SIMPLE\"}}";
         String enriched = FieldCorrelationEvaluator.applyRequestCorrelations(
                 "/billing-plans", missingFieldsPayload, rules, Map.of(), Set.of());
         Assertions.assertThat(enriched)
-                .contains("\"metricField\":\"amount\"")
-                .contains("\"field\":\"country\"");
+                .contains("\"unitRate\":\"amount\"")
+                .contains("\"target\":\"region\"");
 
-        String fuzzedPayload = "{\"counter\":{\"metric\":\"SUM\",\"metricField\":\"FUZZED_VAL\"},\"expression\":{\"type\":\"CONDITION\"}}";
+        String fuzzedPayload = "{\"pricing\":{\"tier\":\"TIERED\",\"unitRate\":\"FUZZED_VAL\"},\"filter\":{\"kind\":\"SIMPLE\"}}";
         String preserved = FieldCorrelationEvaluator.applyRequestCorrelations(
-                "/billing-plans", fuzzedPayload, rules, Map.of(), Set.of("counter#metricField"));
-        Assertions.assertThat(preserved).contains("\"metricField\":\"FUZZED_VAL\"");
+                "/billing-plans", fuzzedPayload, rules, Map.of(), Set.of("pricing#unitRate"));
+        Assertions.assertThat(preserved).contains("\"unitRate\":\"FUZZED_VAL\"");
 
-        String zwspPayload = "{\"counter\":{\"metric\":\"SUM\",\"metricField\":\"am\\u200bount\"},\"expression\":{\"type\":\"CONDITION\"}}";
+        String zwspPayload = "{\"pricing\":{\"tier\":\"TIERED\",\"unitRate\":\"am\\u200bount\"},\"filter\":{\"kind\":\"SIMPLE\"}}";
         String merged = FieldCorrelationEvaluator.applyRequestCorrelations(
-                "/billing-plans", zwspPayload, rules, Map.of(), Set.of("counter#metricField"));
+                "/billing-plans", zwspPayload, rules, Map.of(), Set.of("pricing#unitRate"));
         Assertions.assertThat(merged).contains("amo\u200bunt");
     }
 
@@ -144,32 +144,32 @@ class FieldCorrelationEvaluatorTest {
         String yaml = """
                 correlations:
                   - paths: ["/billing-plans*"]
-                    when: "schedules[*].metric == 'COUNT'"
+                    when: "tiers[*].mode == 'FIXED'"
                     then:
-                      omit: ["schedules[*].metricField"]
+                      omit: ["tiers[*].unitField"]
                   - paths: ["/billing-plans*"]
-                    when: "schedules[*].metric == 'DISTINCT_COUNT'"
+                    when: "tiers[*].mode == 'METERED'"
                     then:
                       set:
-                        schedules[*].metricField: "country"
+                        tiers[*].unitField: "SeatCount"
                   - paths: ["/billing-plans*"]
-                    when: "expression.type == 'CONDITION'"
+                    when: "filter.kind == 'SIMPLE'"
                     then:
                       set:
-                        expression.operator: "EQ"
+                        filter.operator: "EQ"
                         name: "Plan-Updated"
                 """;
         File corrFile = tempDir.resolve("wildcard-correlations.yml").toFile();
         Files.writeString(corrFile.toPath(), yaml);
         List<FieldCorrelationRule> rules = FunctionalFlowParser.parseCorrelationFile(corrFile);
         String payload = """
-                {"expression":{"type":"CONDITION"},"planType":"RECURRING","name":"Plan-Old","schedules":[{"name":"c1","metricField":"amount","dimension":"region","metric":"COUNT"},{"name":"c2","metricField":"RANDOM","dimension":"ipv4","metric":"DISTINCT_COUNT"}]}
+                {"filter":{"kind":"SIMPLE"},"planType":"RECURRING","name":"Plan-Old","tiers":[{"name":"t1","unitField":"hours","group":"region","mode":"FIXED"},{"name":"t2","unitField":"RANDOM","group":"zone","mode":"METERED"}]}
                 """;
         String updated = FieldCorrelationEvaluator.applyRequestCorrelations(
                 "/billing-plans", payload, rules, Map.of(), Set.of());
         Assertions.assertThat(updated)
-                .doesNotContain("\"metricField\":\"amount\"")
-                .contains("\"metricField\":\"country\"")
+                .doesNotContain("\"unitField\":\"hours\"")
+                .contains("\"unitField\":\"SeatCount\"")
                 .contains("\"operator\":\"EQ\"")
                 .doesNotContain("Plan-Old");
     }
