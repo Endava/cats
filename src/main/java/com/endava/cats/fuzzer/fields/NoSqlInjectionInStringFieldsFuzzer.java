@@ -147,10 +147,24 @@ public class NoSqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuz
     }
 
     private boolean exposesMongoInternals(String responseBody) {
-        return responseBody.contains("objectid") || responseBody.contains("_id")
+        return responseBody.contains("objectid") || hasMongoIdField(responseBody)
                 || responseBody.contains("bson") || responseBody.contains("mongodb")
                 || responseBody.contains("collection") || responseBody.contains("db.")
                 || responseBody.contains("pipeline");
+    }
+
+    private static boolean hasMongoIdField(String responseBody) {
+        int idx = responseBody.indexOf("_id");
+        while (idx >= 0) {
+            boolean validPrefix = idx == 0 || !Character.isLetterOrDigit(responseBody.charAt(idx - 1));
+            int end = idx + 3;
+            boolean validSuffix = end >= responseBody.length() || !Character.isLetterOrDigit(responseBody.charAt(end));
+            if (validPrefix && validSuffix) {
+                return true;
+            }
+            idx = responseBody.indexOf("_id", idx + 3);
+        }
+        return false;
     }
 
     private boolean containsDatabaseError(String responseBody) {

@@ -78,8 +78,12 @@ public class SstiInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
     );
 
     private static final List<String> SSTI_ERROR_KEYWORDS = List.of(
-            "template",
-            "expression",
+            "template processing",
+            "template engine",
+            "in template",
+            "template error",
+            "expression evaluation",
+            "invalid expression",
             "velocity",
             "freemarker",
             "thymeleaf",
@@ -95,7 +99,6 @@ public class SstiInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             "razor",
             "smarty",
             "tornado",
-            "engine",
             "parsing error",
             "syntax error",
             "render error",

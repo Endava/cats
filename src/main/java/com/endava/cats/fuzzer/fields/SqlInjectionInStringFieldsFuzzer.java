@@ -147,14 +147,18 @@ public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
     }
 
     private boolean hasUnionSelectWithData(String responseBody) {
-        boolean hasUnionSelect = responseBody.contains("union") && responseBody.contains("select");
+        String cleaned = responseBody;
+        for (String payload : ALL_SQL_INJECTION_PAYLOADS) {
+            cleaned = cleaned.replace(payload.toLowerCase(Locale.ROOT), "");
+        }
+        boolean hasUnionSelect = cleaned.contains("union") && cleaned.contains("select");
         if (!hasUnionSelect) {
             return false;
         }
 
-        boolean hasFromClause = responseBody.contains(" from ") || responseBody.contains("from ");
-        boolean hasSchemaKeyword = containsAny(responseBody, SCHEMA_KEYWORDS);
-        boolean hasColumnStructure = responseBody.contains("|") && responseBody.contains("----");
+        boolean hasFromClause = cleaned.contains(" from ") || cleaned.contains("from ");
+        boolean hasSchemaKeyword = containsAny(cleaned, SCHEMA_KEYWORDS);
+        boolean hasColumnStructure = cleaned.contains("|") && cleaned.contains("----");
 
         return (hasFromClause || hasSchemaKeyword || hasColumnStructure);
     }

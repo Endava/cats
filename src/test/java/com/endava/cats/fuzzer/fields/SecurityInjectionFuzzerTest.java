@@ -176,6 +176,9 @@ class SecurityInjectionFuzzerTest {
                     Arguments.of("Only schema keyword", 200,
                             "information_schema",
                             "accepted", false),
+                    Arguments.of("Echoed UNION SELECT payload with schema keyword", 200,
+                            "{\"input\":\"' UNION SELECT username, password FROM users--\",\"column_name\":\"id\"}",
+                            "accepted", false),
                     Arguments.of("Clean response", 200,
                             "{\"status\": \"ok\"}",
                             "accepted", false),
@@ -545,6 +548,30 @@ class SecurityInjectionFuzzerTest {
                 Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
                         Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment), Mockito.any());
             }
+        }
+
+        @Test
+        void shouldReportInfoInsteadOfWarnForUnreflectedXssOnGet() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("filter", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("filter"));
+            Mockito.when(data.getPayload()).thenReturn("{\"filter\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.GET);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder().responseCode(200).body("[]").build());
+
+            xssFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                    Mockito.any(), Mockito.any(), Mockito.contains("Injection payload accepted"), Mockito.any());
+            Mockito.verify(testCaseListener, Mockito.never()).reportResultWarn(
+                    Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
         }
     }
 
@@ -990,6 +1017,9 @@ class SecurityInjectionFuzzerTest {
                     Arguments.of("Small response with repeated pattern", 200,
                             "lol lol lol lol lol",
                             "accepted", false),
+                    Arguments.of("422 Unprocessable Entity JSON error", 422,
+                            "{\"error\":\"Unprocessable Entity\",\"link\":\"http://localhost:8080/items\"}",
+                            "rejected", false),
                     Arguments.of("Clean response", 200,
                             "{\"status\": \"ok\"}",
                             "accepted", false),
@@ -1256,6 +1286,9 @@ class SecurityInjectionFuzzerTest {
                             "accepted", false),
                     Arguments.of("Reflected payload without template indicators", 200,
                             "Your input was: 83*97",
+                            "accepted", false),
+                    Arguments.of("JSON field named expression or template", 200,
+                            "{\"expression\":{\"operator\":\"EQ\"},\"template\":\"default\"}",
                             "accepted", false),
                     Arguments.of("Template keyword triggers error detection", 200,
                             "Template processing completed successfully",

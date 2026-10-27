@@ -62,8 +62,9 @@ public class XxeInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             "xmlreader",
 
             // Entity-related errors
-            "entity",
             "external entity",
+            "entity reference",
+            "entity expansion",
             "doctype",
             "dtd",
 
@@ -71,16 +72,16 @@ public class XxeInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             "unexpected token",
             "content is not allowed in prolog",
             "premature end of file",
-            "malformed",
+            "malformed xml",
             "invalid xml",
 
             // Security errors
             "access denied",
             "permission denied",
-            "security",
+            "security exception",
+            "security policy",
             "prohibited",
             "blocked",
-            "entity expansion",
 
             // Parser-specific errors
             "jaxp",
@@ -103,7 +104,8 @@ public class XxeInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             "root:x:0:0:",           // /etc/passwd
             "daemon:x:",             // /etc/passwd
             "bin:x:",                // /etc/passwd
-            "localhost",             // /etc/hostname might return this
+            "hostname: localhost",   // /etc/hostname
+            "127.0.0.1 localhost",   // /etc/hosts
 
             // Windows file indicators
             "[fonts]",               // win.ini

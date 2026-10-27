@@ -170,7 +170,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
         }
 
         if (ResponseCodeFamily.is2xxCode(responseCode)) {
-            if ("XSS".equals(getInjectionType())) {
+            if ("XSS".equals(getInjectionType()) && data.getMethod() != HttpMethod.GET) {
                 testCaseListener.reportResultWarn(
                         logger, data, "XSS payload accepted without validation",
                         "API accepted XSS payload (response code %d). For APIs, implement input validation to reject dangerous characters (e.g., <, >, script tags) for constrained fields. APIs should store raw data, but validate to prevent abuse and unsafe usage in secondary contexts (emails, PDFs, logs, admin UIs)."
