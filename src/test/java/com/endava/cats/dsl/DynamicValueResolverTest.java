@@ -39,4 +39,13 @@ class DynamicValueResolverTest {
         Assertions.assertThat(DynamicValueResolver.resolve(null, Map.of("token", "123"))).isNull();
         Assertions.assertThat(DynamicValueResolver.resolve("static-value", null)).isEqualTo("static-value");
     }
+
+    @Test
+    void shouldResolveShorthandFunctionsWithDefaultLengthsAndAlphaAlias() {
+        Assertions.assertThat(DynamicValueResolver.resolve("#(numeric)", Map.of())).matches("\\d{12}");
+        Assertions.assertThat(DynamicValueResolver.resolve("#(alpha)", Map.of())).matches("[A-Za-z]{12}");
+        Assertions.assertThat(DynamicValueResolver.resolve("#(alpha(6))", Map.of())).matches("[A-Za-z]{6}");
+        Assertions.assertThat(DynamicValueResolver.resolve("#(alphanumeric)", Map.of())).matches("[A-Za-z0-9]{12}");
+        Assertions.assertThat(DynamicValueResolver.resolve("#(ascii)", Map.of())).hasSize(12);
+    }
 }

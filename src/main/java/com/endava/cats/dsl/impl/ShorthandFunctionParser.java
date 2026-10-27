@@ -36,9 +36,12 @@ public class ShorthandFunctionParser implements Parser {
     private static final String CROCKFORD_BASE32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
     private static final String[] ISO_COUNTRIES = Locale.getISOCountries();
 
+    private static final int DEFAULT_RANDOM_LENGTH = 12;
+
     private static final Map<String, Function<int[], String>> PARAMETERIZED_FUNCTIONS = Map.ofEntries(
             Map.entry("alphanumeric", args -> args.length == 1 ? CatsRandom.alphanumeric(args[0]) : CatsRandom.alphanumeric(args[0], args[1])),
             Map.entry("alphabetic", args -> args.length == 1 ? CatsRandom.alphabetic(args[0]) : CatsRandom.alphabetic(args[0], args[1])),
+            Map.entry("alpha", args -> args.length == 1 ? CatsRandom.alphabetic(args[0]) : CatsRandom.alphabetic(args[0], args[1])),
             Map.entry("numeric", args -> args.length == 1 ? CatsRandom.numeric(args[0]) : CatsRandom.numeric(args[0], args[1])),
             Map.entry("ascii", args -> args.length == 1 ? CatsRandom.ascii(args[0]) : CatsRandom.ascii(args[0], args[1])),
             Map.entry("todayplus", args -> LocalDate.now(ZoneOffset.UTC).plusDays(args[0]).toString()),
@@ -52,14 +55,19 @@ public class ShorthandFunctionParser implements Parser {
                     : args[0] + CatsRandom.instance().nextInt(Math.max(1, args[1] - args[0]))))
     );
 
-    private static final Map<String, String> NO_ARG_FUNCTIONS = Map.of(
-            "uuid", UUID.class.getName(),
-            "ulid", "ulid",
-            "email", "email",
-            "now", "now",
-            "today", "today",
-            "country", "country",
-            "countrycode", "countrycode"
+    private static final Map<String, String> NO_ARG_FUNCTIONS = Map.ofEntries(
+            Map.entry("uuid", UUID.class.getName()),
+            Map.entry("ulid", "ulid"),
+            Map.entry("email", "email"),
+            Map.entry("now", "now"),
+            Map.entry("today", "today"),
+            Map.entry("country", "country"),
+            Map.entry("countrycode", "countrycode"),
+            Map.entry("alphanumeric", "alphanumeric"),
+            Map.entry("alphabetic", "alphabetic"),
+            Map.entry("alpha", "alpha"),
+            Map.entry("numeric", "numeric"),
+            Map.entry("ascii", "ascii")
     );
 
     @Override
@@ -139,6 +147,10 @@ public class ShorthandFunctionParser implements Parser {
             case "now" -> OffsetDateTime.now(ZoneOffset.UTC).toString();
             case "today" -> LocalDate.now(ZoneOffset.UTC).toString();
             case "country", "countrycode" -> ISO_COUNTRIES[CatsRandom.instance().nextInt(ISO_COUNTRIES.length)];
+            case "alphanumeric" -> CatsRandom.alphanumeric(DEFAULT_RANDOM_LENGTH);
+            case "alphabetic", "alpha" -> CatsRandom.alphabetic(DEFAULT_RANDOM_LENGTH);
+            case "numeric" -> CatsRandom.numeric(DEFAULT_RANDOM_LENGTH);
+            case "ascii" -> CatsRandom.ascii(DEFAULT_RANDOM_LENGTH);
             default -> null;
         };
     }
