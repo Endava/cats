@@ -2228,7 +2228,7 @@ class RuntimeResourcePoolTest {
                 .payload("{\"planId\":\"placeholder\"}")
                 .build();
         Assertions.assertThat(resourcePool.enrich(fuzzedDeletePlan, fuzzedDeletePlan.getPayload()).payload())
-                .contains("\"planId\":\"placeholder\"");
+                .contains("\"planId\":\"plan_01m5mr4szb916cwmjy9xwebafh\"");
         Assertions.assertThat(resourcePool.enrich(deletePlan, deletePlan.getPayload()).payload())
                 .contains("\"planId\":\"plan_01m5mr4szb916cwmjy9xwebafh\"");
     }
@@ -2522,6 +2522,117 @@ class RuntimeResourcePoolTest {
         RuntimeResourcePool.ResolvedRequest resolved = resourcePool.enrich(getVoucher, getVoucher.getPayload());
 
         Assertions.assertThat(resolved.payload()).contains("\"voucher\":\"VCH-ALPHA-999\"");
+
+        resourcePool.clear();
+        resourcePool.observe(postData("/merchants", "{}"), request("POST", "/merchants", "{}"),
+                response(201, "{\"merchantId\":\"m-other\"}"));
+        resourcePool.observe(postData("/merchants/{merchantId}/vouchers", "{}"),
+                request("POST", "/merchants/m-1/vouchers", "{}"),
+                response(201, "{\"voucher\":\"VCH-ALPHA-999\"}"));
+        resourcePool.observe(postData("/merchants/{merchantId}/vouchers", "{}"),
+                request("POST", "/merchants/m-1/vouchers", "{}"),
+                response(201, "{\"voucher\":\"VCH-BETA-888\"}"));
+        ServiceData deleteFirst = ServiceData.builder()
+                .relativePath("/merchants/{merchantId}/vouchers/{voucher}")
+                .contractPath("/merchants/{merchantId}/vouchers/{voucher}")
+                .httpMethod(HttpMethod.DELETE)
+                .payload("{\"merchantId\":\"m-1\",\"voucher\":\"VCH-BETA-888\"}")
+                .build();
+        RuntimeResourcePool.ResolvedRequest resolvedFirst = resourcePool.enrich(deleteFirst, deleteFirst.getPayload());
+        resourcePool.observe(deleteFirst, request("DELETE", "http://localhost:8080/merchants/m-1/vouchers/VCH-BETA-888", resolvedFirst.payload()),
+                response(204, ""), resolvedFirst);
+
+        ServiceData headerMutatedDelete = ServiceData.builder()
+                .relativePath("/merchants/{merchantId}/vouchers/{voucher}")
+                .contractPath("/merchants/{merchantId}/vouchers/{voucher}")
+                .httpMethod(HttpMethod.DELETE)
+                .mutationTargets(Set.of(RequestTarget.header("X-Fuzz")))
+                .payload("{\"merchantId\":\"m-1\",\"voucher\":\"placeholder\"}")
+                .build();
+        Assertions.assertThat(resourcePool.enrich(headerMutatedDelete, headerMutatedDelete.getPayload()).payload())
+                .contains("\"voucher\":\"VCH-ALPHA-999\"");
+
+        ServiceData pathMutatedDelete = ServiceData.builder()
+                .relativePath("/merchants/{merchantId}/vouchers/{voucher}")
+                .contractPath("/merchants/{merchantId}/vouchers/{voucher}")
+                .httpMethod(HttpMethod.DELETE)
+                .mutationTargets(Set.of(RequestTarget.path("merchantId")))
+                .payload("{\"merchantId\":\"m-1-fuzzed\",\"voucher\":\"placeholder\"}")
+                .build();
+        RuntimeResourcePool.ResolvedRequest pathMutatedResolved = resourcePool.enrich(pathMutatedDelete, pathMutatedDelete.getPayload());
+        Assertions.assertThat(pathMutatedResolved.payload())
+                .contains("\"voucher\":\"VCH-ALPHA-999\"");
+        resourcePool.observe(pathMutatedDelete, request("DELETE", "http://localhost:8080/merchants/m-1-fuzzed/vouchers/VCH-ALPHA-999", pathMutatedResolved.payload()),
+                response(404, ""), pathMutatedResolved);
+
+        Map<String, String> resolvedDeleteParams = resourcePool.resolvePathParameters(deleteFirst);
+        Assertions.assertThat(resolvedDeleteParams)
+                .containsEntry("merchantId", "m-1")
+                .containsEntry("voucher", "VCH-ALPHA-999");
+
+        String preResolvedDeletePayload = "{\"merchantId\":\"m-1\",\"voucher\":\"VCH-ALPHA-999\"}";
+        RuntimeResourcePool.ResolvedRequest enrichedAfterResolvePathParams =
+                resourcePool.enrich(deleteFirst, preResolvedDeletePayload);
+        Assertions.assertThat(enrichedAfterResolvePathParams.payload())
+                .isEqualTo("{\"merchantId\":\"m-1\",\"voucher\":\"VCH-ALPHA-999\"}");
+
+        resourcePool.observe(pathMutatedDelete, request("DELETE", "http://localhost:8080/merchants/m-1-fuzzed/vouchers/VCH-ALPHA-999", pathMutatedResolved.payload()),
+                response(204, ""), pathMutatedResolved);
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/merchants/{merchantId}/vouchers/{voucher}")).isFalse();
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/merchants/{merchantId}")).isTrue();
+
+        ServiceData concreteRelativePathPost = ServiceData.builder()
+                .relativePath("/merchants/fuzzed-owner/vouchers")
+                .contractPath("/merchants/{merchantId}/vouchers")
+                .httpMethod(HttpMethod.POST)
+                .contentType("application/json")
+                .payload("{}")
+                .originalPayload("{}")
+                .build();
+        resourcePool.observe(concreteRelativePathPost,
+                request("POST", "http://localhost:8080/merchants/fuzzed-owner/vouchers", "{}"),
+                response(201, "{\"voucher\":\"VCH-FROM-FUZZED-PATH\"}"));
+        ServiceData deleteAfterFuzzedPost = ServiceData.builder()
+                .relativePath("/merchants/{merchantId}/vouchers/{voucher}")
+                .contractPath("/merchants/{merchantId}/vouchers/{voucher}")
+                .httpMethod(HttpMethod.DELETE)
+                .payload("{\"merchantId\":\"placeholder\",\"voucher\":\"placeholder\"}")
+                .build();
+        Assertions.assertThat(resourcePool.enrich(deleteAfterFuzzedPost, deleteAfterFuzzedPost.getPayload()).payload())
+                .isEqualTo("{\"merchantId\":\"fuzzed-owner\",\"voucher\":\"VCH-FROM-FUZZED-PATH\"}");
+
+        resourcePool.observe(getData("/merchants/{merchantId}/vouchers", "{}"),
+                request("GET", "http://localhost:8080/merchants/fuzzed-owner/vouchers", "{}"),
+                response(200, "[{\"voucher\":\"VCH-DEAD\",\"state\":\"DELETED\"},{\"voucher\":\"VCH-LIVE\",\"state\":\"ACTIVE\"}]"));
+        Assertions.assertThat(resourcePool.enrich(deleteAfterFuzzedPost, deleteAfterFuzzedPost.getPayload()).payload())
+                .isEqualTo("{\"merchantId\":\"fuzzed-owner\",\"voucher\":\"VCH-LIVE\"}");
+
+        ServiceData putInactiveState = ServiceData.builder()
+                .relativePath("/merchants/{merchantId}/vouchers/{voucher}/states")
+                .contractPath("/merchants/{merchantId}/vouchers/{voucher}/states")
+                .httpMethod(HttpMethod.PUT)
+                .contentType("application/json")
+                .payload("{\"state\":\"SUSPENDED\"}")
+                .originalPayload("{\"state\":\"SUSPENDED\"}")
+                .build();
+        resourcePool.observe(putInactiveState,
+                request("PUT", "http://localhost:8080/merchants/fuzzed-owner/vouchers/VCH-LIVE/states", "{\"state\":\"SUSPENDED\"}"),
+                response(200, "{\"voucher\":\"VCH-LIVE\",\"state\":\"SUSPENDED\"}"));
+        Assertions.assertThat(resourcePool.enrich(deleteAfterFuzzedPost, deleteAfterFuzzedPost.getPayload()).payload())
+                .isEqualTo("{\"merchantId\":\"fuzzed-owner\",\"voucher\":\"VCH-FROM-FUZZED-PATH\"}");
+
+        resourcePool.observe(postData("/clinics/{id}/inventory", "{}"),
+                request("POST", "/clinics/3/inventory", "{}"),
+                response(200, "{\"id\":\"prod-900\"}"));
+        ServiceData transferAction = ServiceData.builder()
+                .relativePath("/clinics/{id}/transfer/{productId}/confirm")
+                .contractPath("/clinics/{id}/transfer/{productId}/confirm")
+                .httpMethod(HttpMethod.POST)
+                .pathParamsPayload("{\"id\":\"placeholder\",\"productId\":\"placeholder\"}")
+                .payload("{\"quantity\":1}")
+                .build();
+        Assertions.assertThat(resourcePool.enrich(transferAction, transferAction.getPayload()).pathParamsPayload())
+                .isEqualTo("{\"id\":\"3\",\"productId\":\"prod-900\"}");
     }
 
     private void enableResourceReuse() {

@@ -65,6 +65,7 @@ final class FuzzerWaveExecutor {
     private LongSupplier clock = System::currentTimeMillis;
     private long cleanupDeadlineMillis = Long.MAX_VALUE;
     private boolean cleanupGraceExpiryLogged;
+    private boolean replayingProducer;
 
     private record DeferredHappyPathDelete(List<FuzzingData> pathData, List<FuzzingData> deleteData,
                                            List<Fuzzer> deleteFuzzers) {
@@ -172,6 +173,9 @@ final class FuzzerWaveExecutor {
 
         List<PreparedPath> preparedPaths = preparePathsForExecution(paths, suppliedPaths, openAPI);
         preparedPathsByKey = preparedPaths.stream().collect(Collectors.toMap(PreparedPath::pathKey, Function.identity()));
+        if (command.testCaseListener != null) {
+            command.testCaseListener.setBeforeDeleteTestCallback(this::refillIfEmptied);
+        }
         boolean slicePerOperation = shouldRunContinuousRandom() && hasMultipleOperationsInScope(preparedPaths);
         if (command.randomFuzzer != null) {
             command.randomFuzzer.setMultipleOperationsInScope(slicePerOperation);
@@ -368,6 +372,9 @@ final class FuzzerWaveExecutor {
      * all gone, so later operations do not run against stale identifiers.
      */
     private void refillIfEmptied(String consumerPath) {
+        if (replayingProducer) {
+            return;
+        }
         Set<String> producers = producersByConsumer.getOrDefault(consumerPath, Set.of());
         if (command.runtimeResourcePool == null || producers.isEmpty()) {
             return;
@@ -379,11 +386,34 @@ final class FuzzerWaveExecutor {
         if (!pathsWithObservedLiveResources.contains(consumerPath)) {
             return;
         }
-        producers.stream()
-                .filter(producersRefilledInWave::add)
-                .map(preparedPathsByKey::get)
-                .filter(Objects::nonNull)
-                .forEach(producer -> replayProducer(producer, consumerPath));
+        replayingProducer = true;
+        try {
+            List<PreparedPath> toReplay = producers.stream()
+                    .filter(producerKey -> !hasLiveIntermediateParent(consumerPath, producerKey))
+                    .filter(producersRefilledInWave::add)
+                    .map(preparedPathsByKey::get)
+                    .filter(Objects::nonNull)
+                    .toList();
+            toReplay.forEach(producer -> replayProducer(producer, consumerPath));
+            if (command.runtimeResourcePool.hasLiveResourceFor(consumerPath)) {
+                toReplay.forEach(producer -> producersRefilledInWave.remove(producer.pathKey()));
+            }
+        } finally {
+            replayingProducer = false;
+        }
+    }
+
+    private boolean hasLiveIntermediateParent(String consumerPath, String producerPath) {
+        if (!consumerPath.startsWith(producerPath + "/")) {
+            return false;
+        }
+        int nextSlash = consumerPath.indexOf('/', producerPath.length() + 1);
+        if (nextSlash < 0) {
+            return false;
+        }
+        String intermediateItemPath = consumerPath.substring(0, nextSlash);
+        return intermediateItemPath.endsWith("}") &&
+                command.runtimeResourcePool.hasLiveResourceFor(intermediateItemPath);
     }
 
     private void replayProducer(PreparedPath producer, String consumerPath) {

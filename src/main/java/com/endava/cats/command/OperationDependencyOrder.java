@@ -69,14 +69,32 @@ final class OperationDependencyOrder {
      */
     static Map<String, Set<String>> producersByConsumer(OpenAPI api, List<Map.Entry<String, PathItem>> paths) {
         Map<String, Set<String>> dependencies = buildDependencies(api, paths, buildProducersByIdentifier(api, paths));
+        Map<String, PathItem> byPath = new LinkedHashMap<>();
+        paths.forEach(entry -> byPath.put(stripTrailingSlash(entry.getKey()), entry.getValue()));
         Map<String, Set<String>> producers = new LinkedHashMap<>();
         for (Map.Entry<String, PathItem> entry : paths) {
-            Set<String> pathProducers = dependencies.getOrDefault(entry.getKey(), Set.of());
+            Set<String> pathProducers = new LinkedHashSet<>(dependencies.getOrDefault(entry.getKey(), Set.of()));
+            for (String ancestor : ancestorPaths(stripTrailingSlash(entry.getKey()))) {
+                PathItem ancestorItem = byPath.get(ancestor);
+                if (ancestorItem != null && ancestorItem.getPost() != null) {
+                    pathProducers.add(ancestor);
+                }
+            }
             if (!pathProducers.isEmpty()) {
-                producers.put(entry.getKey(), Collections.unmodifiableSet(new LinkedHashSet<>(pathProducers)));
+                producers.put(entry.getKey(), Collections.unmodifiableSet(pathProducers));
             }
         }
         return Collections.unmodifiableMap(producers);
+    }
+
+    private static List<String> ancestorPaths(String path) {
+        List<String> ancestors = new ArrayList<>();
+        String current = parentDirectory(path);
+        while (!current.isEmpty()) {
+            ancestors.add(current);
+            current = parentDirectory(current);
+        }
+        return ancestors.reversed();
     }
 
     private static Map<String, Set<String>> buildProducersByIdentifier(OpenAPI api, List<Map.Entry<String, PathItem>> defaultOrder) {

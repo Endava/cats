@@ -229,7 +229,7 @@ public abstract class OpenApiUtils {
      * @return a set of path variables in the form: {var1}, {var2}, etc.
      */
     public static Set<String> getPathVariables(String path) {
-        Set<String> parameters = new HashSet<>();
+        Set<String> parameters = new LinkedHashSet<>();
         Pattern pattern = Pattern.compile("\\{(.*?)}");
         Matcher matcher = pattern.matcher(path);
 

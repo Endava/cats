@@ -127,7 +127,9 @@ final class ResourceRequestEnricher {
         String bindingKey = ResourceSemanticNaming.bindingKey(data.getRelativePath(), target);
         ResourceInstance boundResource = session.requestBindings.getOrDefault(bindingKey,
                 target.location() == RequestTarget.Location.PATH ? session.pathBoundResource : null);
-        Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, boundResource, false, data.getHttpMethod(), data);
+        boolean boundOnly = target.location() == RequestTarget.Location.PATH && boundResource != null &&
+                boundResource.values().containsKey(target.name());
+        Optional<ResolvedValue> resolved = resolve(data.getRelativePath(), target, boundResource, boundOnly, data.getHttpMethod(), data);
         if (resolved.isEmpty()) {
             return currentJson;
         }
@@ -143,7 +145,11 @@ final class ResourceRequestEnricher {
         } catch (RuntimeException _) {
             return currentJson;
         }
-        if (!currentJson.equals(updated)) {
+        session.requestBindings.put(bindingKey, value.resource());
+        if (target.location() == RequestTarget.Location.PATH && session.pathBoundResource == null) {
+            session.pathBoundResource = value.resource();
+        }
+        if (!currentJson.equals(updated) || data.getHttpMethod() == HttpMethod.DELETE) {
             recordEnrichmentCorrelation(target, bindingKey, value, session);
         }
         return updated;
@@ -402,7 +408,8 @@ final class ResourceRequestEnricher {
                 best = evaluateResourceForResolve(resource, query, best);
             }
         }
-        if (best.value() == null && target.location() == RequestTarget.Location.PATH && !boundOnly) {
+        if (best.value() == null && target.location() == RequestTarget.Location.PATH && !boundOnly &&
+                !(query.targetMethod() == HttpMethod.DELETE && query.data() != null && query.data().hasDeclaredMutation())) {
             best = evaluateChildPathFallbacks(query, best);
         }
         return Optional.ofNullable(best.value());
@@ -418,30 +425,7 @@ final class ResourceRequestEnricher {
         if (query.destructivePathTarget() && isSelfIdentityGetResource(resource)) {
             return false;
         }
-        if (query.targetMethod() == HttpMethod.DELETE &&
-                query.target().location() == RequestTarget.Location.PATH &&
-                query.data() != null && query.data().hasDeclaredMutation() &&
-                isLastRemainingActiveResourceAfterDeletions(resource, query.data())) {
-            return false;
-        }
         return !query.canSkipByDirectAlias() || resource.hasAnyAlias(query.matchCtx().allDirectAliases());
-    }
-
-    private boolean isLastRemainingActiveResourceAfterDeletions(ResourceInstance candidate, ServiceData data) {
-        int activeSameResource = 0;
-        int deletedSameResource = 0;
-        for (ResourceInstance r : resources) {
-            if (!r.fuzzed() && !Collections.disjoint(r.resourceNameForms(), candidate.resourceNameForms())) {
-                if (r.active()) {
-                    activeSameResource++;
-                } else {
-                    deletedSameResource++;
-                }
-            }
-        }
-        boolean headerOnlyDeleteMutation = resources.size() > 1
-                && data.getAllMutationTargets().stream().allMatch(t -> t.location() == RequestTarget.Location.HEADER);
-        return activeSameResource <= 1 && (deletedSameResource >= 1 || headerOnlyDeleteMutation);
     }
 
     private RankedCandidate evaluateResourceForResolve(ResourceInstance resource, ResolutionQuery query,
@@ -471,6 +455,12 @@ final class ResourceRequestEnricher {
         if (!query.protectedSelfValues().isEmpty() && query.protectedSelfValues().contains(String.valueOf(value.value()))) {
             return currentBest;
         }
+        if (query.target().location() == RequestTarget.Location.PATH &&
+                value.sourceLocation().startsWith("response.body.") &&
+                resource.values().containsKey(query.target().name()) &&
+                !value.aliases().contains(ResourceSemanticNaming.normalize(query.target().name()))) {
+            return currentBest;
+        }
         int similarity = matchedSimilarity(value, query.target(), query.matchCtx());
         if (similarity == 0) {
             return currentBest;
@@ -490,7 +480,9 @@ final class ResourceRequestEnricher {
 
     private RankedCandidate evaluateChildPathFallbacks(ResolutionQuery query, RankedCandidate currentBest) {
         RankedCandidate best = currentBest;
-        for (ResolvedValue candidate : childPathFallbackCandidates(query.matchCtx().targetPathSegments(), query.boundResource())) {
+        int targetLevel = targetParameterLevel(query.targetPath(), query.target().name());
+        for (ResolvedValue candidate : childPathFallbackCandidates(
+                query.matchCtx().targetPathSegments(), targetLevel, query.boundResource())) {
             int similarity = ResourceSemanticNaming.nameSimilarity(candidate.storedValue(), query.matchCtx());
             int feedback = feedbackScore(candidate.resource(), candidate.storedValue(), query.targetPath(), query.target());
             int quality = candidateQuality(candidate, similarity, feedback, query.target(), query.matchCtx(), query.boundResource());
@@ -629,8 +621,9 @@ final class ResourceRequestEnricher {
                 .collect(Collectors.toSet());
     }
 
-    private List<ResolvedValue> childPathFallbackCandidates(List<String> targetSegs, ResourceInstance boundParentResource) {
-        if (targetSegs.size() < 2) {
+    private List<ResolvedValue> childPathFallbackCandidates(List<String> targetSegs, int targetLevel,
+                                                            ResourceInstance boundParentResource) {
+        if (targetSegs.size() < 2 || targetLevel < 2) {
             return List.of();
         }
         String rootSegment = targetSegs.getFirst();
@@ -646,11 +639,39 @@ final class ResourceRequestEnricher {
                 })
                 .flatMap(resource -> resource.values().values().stream()
                         .filter(value -> value.aliases().contains("id"))
+                        .filter(value -> storedValueLevel(resource, value) == targetLevel)
                         .filter(value -> !boundValues.contains(String.valueOf(value.value())))
                         .map(value -> new ResolvedValue(resource, value,
                                 ResourceSemanticNaming.pathAffinity(resource.pathSegments(), targetSegs) * 1_000 +
                                         sourcePriority(resource))))
                 .toList();
+    }
+
+    private static int targetParameterLevel(String targetPath, String parameterName) {
+        int level = 0;
+        for (String varName : OpenApiUtils.getPathVariables(targetPath)) {
+            level++;
+            if (varName.equalsIgnoreCase(parameterName)) {
+                return level;
+            }
+        }
+        return level;
+    }
+
+    private static int storedValueLevel(ResourceInstance resource, StoredValue value) {
+        List<String> srcVars = new ArrayList<>(OpenApiUtils.getPathVariables(resource.sourcePath()));
+        String loc = value.sourceLocation();
+        if (loc != null && loc.startsWith("request.path.")) {
+            String paramName = loc.substring("request.path.".length());
+            for (int i = 0; i < srcVars.size(); i++) {
+                if (srcVars.get(i).equalsIgnoreCase(paramName)) {
+                    return i + 1;
+                }
+            }
+        }
+        List<String> segs = resource.pathSegments();
+        boolean collectionSource = !segs.isEmpty() && !ResourceSemanticNaming.isTemplateSegment(segs.getLast());
+        return collectionSource ? srcVars.size() + 1 : srcVars.size();
     }
 
     private int matchedSimilarity(StoredValue value, TargetField target,

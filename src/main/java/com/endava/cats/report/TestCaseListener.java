@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -107,6 +108,7 @@ public class TestCaseListener {
     private final ExecutionSummaryProvider executionSummaryProvider;
     private final ResponseSchemaValidator responseSchemaValidator;
     private boolean reportingInitialized;
+    private Consumer<String> beforeDeleteTestCallback;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
 
@@ -193,6 +195,10 @@ public class TestCaseListener {
         MDC.remove(HTTP_METHOD);
     }
 
+    public void setBeforeDeleteTestCallback(Consumer<String> beforeDeleteTestCallback) {
+        this.beforeDeleteTestCallback = beforeDeleteTestCallback;
+    }
+
     /**
      * Creates and executes a test by running the provided runnable.
      * Logs test start, catches exceptions during execution, logs results, and performs necessary cleanup.
@@ -203,6 +209,16 @@ public class TestCaseListener {
      */
     public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s, FuzzingData data) {
         executionStopController.checkBeforeTest();
+        if (beforeDeleteTestCallback != null && data != null && data.getMethod() == HttpMethod.DELETE) {
+            Map<String, String> savedMdc = MDC.getCopyOfContextMap();
+            try {
+                beforeDeleteTestCallback.accept(data.getPath());
+            } finally {
+                if (savedMdc != null) {
+                    MDC.setContextMap(savedMdc);
+                }
+            }
+        }
         this.startTestCase(data);
         try {
             s.run();

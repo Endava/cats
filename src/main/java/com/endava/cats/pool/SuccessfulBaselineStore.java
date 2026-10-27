@@ -76,6 +76,10 @@ final class SuccessfulBaselineStore {
         baselines.entrySet().removeIf(entry -> containsPrimitiveValue(entry.getValue(), deletedPrimitiveValues));
     }
 
+    void evict(ServiceData data) {
+        baselineKey(data).ifPresent(baselines::remove);
+    }
+
     private boolean isSubsetOfOriginalPayload(ServiceData data, String effectivePayload) {
         String originalPayload = originalPayload(data);
         if (!JsonUtils.isValidJson(originalPayload) || !JsonUtils.isValidJson(effectivePayload)) {

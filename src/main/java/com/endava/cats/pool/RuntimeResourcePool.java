@@ -144,7 +144,8 @@ public class RuntimeResourcePool {
             }
             String bindingKey = ResourceSemanticNaming.bindingKey(data.getRelativePath(), target);
             ResourceInstance bound = requestBindings.getOrDefault(bindingKey, pathBoundResource[0]);
-            enricher.resolve(data.getRelativePath(), target, bound, false, data.getHttpMethod(), data).ifPresent(value -> {
+            boolean boundOnly = bound != null && bound.values().containsKey(name);
+            enricher.resolve(data.getRelativePath(), target, bound, boundOnly, data.getHttpMethod(), data).ifPresent(value -> {
                 resolvedParameters.put(name, String.valueOf(value.value()));
                 requestBindings.put(bindingKey, value.resource());
                 if (pathBoundResource[0] == null) {
@@ -280,6 +281,10 @@ public class RuntimeResourcePool {
                             return enricher.reusableTargets(isPathParams ? d.getPathParamsPayload() : d.getPayload(), d, isPathParams);
                         }));
         updateCorrelationFeedback(data, response, resolvedRequest);
+        if (response.getResponseCode() == 409 && data.getHttpMethod() == HttpMethod.POST &&
+                !ResourceValueExtractor.isRequestBodyFuzzed(data)) {
+            baselineStore.evict(data);
+        }
         if (!ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
             return;
         }
@@ -292,19 +297,20 @@ public class RuntimeResourcePool {
         if (!isResourceProducingMethod(data.getHttpMethod())) {
             return;
         }
-        Map<String, StoredValue> pathValues = ResourceValueExtractor.extractPathValues(data.getRelativePath(), request.getUrl());
+        String templatePath = templatePath(data);
+        Map<String, StoredValue> pathValues = ResourceValueExtractor.extractPathValues(templatePath, request.getUrl());
         List<JsonObject> requestObjects = HttpMethod.requiresBody(data.getHttpMethod()) &&
                 !ResourceValueExtractor.isRequestBodyFuzzed(data)
                 ? ResourceValueExtractor.requestObjects(effectiveRequestPayload) : List.of();
         if (response.isBodyTruncated()) {
-            addFromLocation(data, response, pathValues, requestObjects);
+            addFromLocation(data, request.getUrl(), response, resolvedRequest, pathValues, requestObjects);
             return;
         }
         if (isUnmatchedCollectionGet(data, response)) {
             addResourceFromReusableIndicators(data, response, pathValues);
             return;
         }
-        observeResponseObjects(data, effectiveRequestPayload, response, pathValues, requestObjects);
+        observeResponseObjects(data, request.getUrl(), effectiveRequestPayload, response, resolvedRequest, pathValues, requestObjects);
     }
 
     private static boolean isResourceProducingMethod(HttpMethod method) {
@@ -343,12 +349,13 @@ public class RuntimeResourcePool {
         }
     }
 
-    private void observeResponseObjects(ServiceData data, String effectiveRequestPayload, CatsResponse response,
+    private void observeResponseObjects(ServiceData data, String actualUrl, String effectiveRequestPayload,
+                                        CatsResponse response, ResolvedRequest resolvedRequest,
                                         Map<String, StoredValue> pathValues, List<JsonObject> requestObjects) {
         List<ResponseObject> responseObjects = ResourceValueExtractor.responseObjects(
                 response.getBody(), data.getHttpMethod() == HttpMethod.GET);
         if (responseObjects.isEmpty()) {
-            addFromLocation(data, response, pathValues, requestObjects);
+            addFromLocation(data, actualUrl, response, resolvedRequest, pathValues, requestObjects);
             return;
         }
         boolean singleResponseObject = responseObjects.size() == 1;
@@ -366,8 +373,17 @@ public class RuntimeResourcePool {
                         collectionResource)
                 : Optional.empty();
         for (int i = 0; i < limit; i++) {
-            Map<String, StoredValue> values = new LinkedHashMap<>(pathValues);
             ResponseObject responseObject = responseObjects.get(i);
+            boolean inactiveState = data.getHttpMethod() != HttpMethod.POST &&
+                    (ResourceSemanticNaming.hasInactiveLifecycleState(responseObject.value()) ||
+                            (alignedRequestObjects && ResourceSemanticNaming.hasInactiveLifecycleState(requestObjects.get(i))));
+            if (inactiveState) {
+                if (singleResponseObject && !pathValues.isEmpty() && data.getHttpMethod() != HttpMethod.GET) {
+                    markDeleted(data, actualUrl, resolvedRequest);
+                }
+                continue;
+            }
+            Map<String, StoredValue> values = new LinkedHashMap<>(pathValues);
             ResourceValueExtractor.collectPrimitiveValues(
                     responseObject.value(), responseObject.sourcePrefix(), "response.body.", values);
             if (alignedRequestObjects) {
@@ -401,8 +417,15 @@ public class RuntimeResourcePool {
                 .ifPresent(value -> values.put("id", value));
     }
 
-    private void addFromLocation(ServiceData data, CatsResponse response, Map<String, StoredValue> pathValues,
+    private void addFromLocation(ServiceData data, String actualUrl, CatsResponse response,
+                                 ResolvedRequest resolvedRequest, Map<String, StoredValue> pathValues,
                                  List<JsonObject> requestObjects) {
+        if (requestObjects.size() == 1 && ResourceSemanticNaming.hasInactiveLifecycleState(requestObjects.getFirst())) {
+            if (!pathValues.isEmpty() && data.getHttpMethod() != HttpMethod.GET) {
+                markDeleted(data, actualUrl, resolvedRequest);
+            }
+            return;
+        }
         Map<String, StoredValue> values = new LinkedHashMap<>(pathValues);
         if (requestObjects.size() == 1) {
             ResourceValueExtractor.collectPrimitiveValues(requestObjects.getFirst(), "$.", "request.body.", values);
@@ -460,9 +483,10 @@ public class RuntimeResourcePool {
         if (values.isEmpty()) {
             return;
         }
-        Set<String> resourceIdentifierAliases = ResourceSemanticNaming.resourceIdentifierAliases(data.getRelativePath());
+        String path = templatePath(data);
+        Set<String> resourceIdentifierAliases = ResourceSemanticNaming.resourceIdentifierAliases(path);
         Set<String> resourceNounForms = ResourceSemanticNaming.resourceWithTailWordForms(
-                ResourceSemanticNaming.lastRawResourceSegment(data.getRelativePath()));
+                ResourceSemanticNaming.lastRawResourceSegment(path));
         boolean hasRootSimpleIdentifier = values.entrySet().stream()
                 .anyMatch(entry -> ResourceSemanticNaming.isTopLevelResponseKey(entry.getKey()) &&
                         entry.getValue().aliases().stream().anyMatch(ResourceSemanticNaming.SIMPLE_IDENTIFIERS::contains));
@@ -484,21 +508,25 @@ public class RuntimeResourcePool {
         if (!fuzzedRequest && (data.getHttpMethod() == HttpMethod.POST
                 || data.getHttpMethod() == HttpMethod.PUT
                 || data.getHttpMethod() == HttpMethod.PATCH
-                || (data.getHttpMethod() == HttpMethod.GET && ResourceSemanticNaming.isCollectionPath(data.getRelativePath())))) {
-            observedProducers.add(data.getHttpMethod() + " " + data.getRelativePath());
+                || (data.getHttpMethod() == HttpMethod.GET && ResourceSemanticNaming.isCollectionPath(path)))) {
+            observedProducers.add(data.getHttpMethod() + " " + path);
         }
         String primaryId = extractPrimaryIdentifierValue(enrichedValues, resourceIdentifierAliases);
         if (deduplicateExistingResource(data, enrichedValues, fuzzedRequest, resourceIdentifierAliases, primaryId)) {
             return;
         }
-        if (!enforcePerPathCap(data.getRelativePath(), data.getHttpMethod(), fuzzedRequest)) {
+        if (!enforcePerPathCap(path, data.getHttpMethod(), fuzzedRequest)) {
             return;
         }
-        resources.add(new ResourceInstance(sequence.incrementAndGet(), data.getRelativePath(), data.getHttpMethod(),
+        resources.add(new ResourceInstance(sequence.incrementAndGet(), path, data.getHttpMethod(),
                 Collections.unmodifiableMap(enrichedValues), fuzzedRequest, true));
         if (resources.size() > MAX_RESOURCES) {
             evictLeastValuableResource();
         }
+    }
+
+    private static String templatePath(ServiceData data) {
+        return StringUtils.isNotBlank(data.getContractPath()) ? data.getContractPath() : data.getRelativePath();
     }
 
     private String extractPrimaryIdentifierValue(Map<String, StoredValue> values, Set<String> resourceIdAliases) {
@@ -678,9 +706,13 @@ public class RuntimeResourcePool {
                 .map(String::valueOf)
                 .collect(Collectors.toSet());
         baselineStore.evictContainingPrimitiveValues(deletedPrimitiveStrings);
+        Map<String, StoredValue> unfuzzedDeletedValues = deletedValues.entrySet().stream()
+                .filter(e -> !data.isFuzzedField(e.getKey(), RequestTarget.Location.PATH))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, _) -> a, LinkedHashMap::new));
+        Map<String, StoredValue> matchCriteria = unfuzzedDeletedValues.isEmpty() ? deletedValues : unfuzzedDeletedValues;
         for (int i = 0; i < resources.size(); i++) {
             ResourceInstance resource = resources.get(i);
-            boolean matches = deletedValues.entrySet().stream().allMatch(deleted -> {
+            boolean matches = matchCriteria.entrySet().stream().allMatch(deleted -> {
                 Set<String> deletedAliases = ResourceSemanticNaming.deletedAliases(
                         data.getRelativePath(), deleted.getKey(), deleted.getValue());
                 return resource.values().values().stream()
@@ -735,13 +767,29 @@ public class RuntimeResourcePool {
         if (StringUtils.isBlank(path)) {
             return true;
         }
-        Set<String> variables = OpenApiUtils.getPathVariables(path);
+        List<String> variables = new ArrayList<>(OpenApiUtils.getPathVariables(path));
         if (variables.isEmpty()) {
             return true;
         }
-        return variables.stream()
-                .map(variable -> new TargetField(variable, variable, RequestTarget.Location.PATH, ValueShape.STRING))
-                .allMatch(target -> enricher.resolve(path, target, null).isPresent());
+        Map<String, ResourceInstance> requestBindings = new LinkedHashMap<>();
+        ResourceInstance[] pathBoundResource = new ResourceInstance[1];
+        for (int i = variables.size() - 1; i >= 0; i--) {
+            String variable = variables.get(i);
+            TargetField target = new TargetField(variable, variable, RequestTarget.Location.PATH, ValueShape.STRING);
+            String bindingKey = ResourceSemanticNaming.bindingKey(path, target);
+            ResourceInstance bound = requestBindings.getOrDefault(bindingKey, pathBoundResource[0]);
+            boolean boundOnly = bound != null && bound.values().containsKey(variable);
+            Optional<ResolvedValue> resolved = enricher.resolve(path, target, bound, boundOnly, null, null);
+            if (resolved.isEmpty() || correlationFeedbackScore(resolved.get().resource(),
+                    resolved.get().storedValue().sourceLocation(), path, target) < 0) {
+                return false;
+            }
+            requestBindings.put(bindingKey, resolved.get().resource());
+            if (pathBoundResource[0] == null) {
+                pathBoundResource[0] = resolved.get().resource();
+            }
+        }
+        return true;
     }
 
     public synchronized List<SuccessfulExchange> successfulExchanges(String path, HttpMethod method) {
@@ -779,9 +827,16 @@ public class RuntimeResourcePool {
         if (adjustment == 0) {
             return;
         }
+        List<String> pathVariables = new ArrayList<>(OpenApiUtils.getPathVariables(data.getRelativePath()));
+        String leafPathVar = pathVariables.isEmpty() ? null : pathVariables.getLast();
         Set<CorrelationFeedbackKey> keys = new LinkedHashSet<>();
         Set<PairFeedbackKey> pairKeys = new LinkedHashSet<>();
         correlationSources.forEach((correlation, resourceSequence) -> {
+            if (adjustment < 0 && pathVariables.size() > 1 &&
+                    correlation.getTarget().location() == RequestTarget.Location.PATH &&
+                    !correlation.getTarget().name().equalsIgnoreCase(leafPathVar)) {
+                return;
+            }
             keys.add(new CorrelationFeedbackKey(resourceSequence, data.getRelativePath(), correlation.getTarget()));
             if (correlation.getSourcePath() != null && correlation.getSourceLocation() != null) {
                 pairKeys.add(new PairFeedbackKey(correlation.getSourcePath(), correlation.getSourceLocation(),
@@ -802,7 +857,9 @@ public class RuntimeResourcePool {
         return switch (responseCode) {
             case 404, 410 -> NOT_FOUND_PENALTY;
             case 409, 422 -> CONFLICT_PENALTY;
-            case 400 -> correlatedTargetsCount == 1 && isSingleInputRequest(data) ? CONFLICT_PENALTY : 0;
+            case 400 -> (correlatedTargetsCount == 1 && isSingleInputRequest(data)) ||
+                    (data.getHttpMethod() == HttpMethod.DELETE && data.getQueryParams().isEmpty())
+                    ? CONFLICT_PENALTY : 0;
             default -> 0;
         };
     }

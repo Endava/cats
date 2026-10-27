@@ -377,7 +377,7 @@ public final class FieldCorrelationEvaluator {
         try {
             return new BigDecimal(left).compareTo(new BigDecimal(right));
         } catch (NumberFormatException _) {
-            return left.compareTo(right);
+            return left.compareToIgnoreCase(right);
         }
     }
 

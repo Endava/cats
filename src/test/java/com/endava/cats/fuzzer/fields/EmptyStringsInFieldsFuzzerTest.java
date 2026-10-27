@@ -149,4 +149,40 @@ class EmptyStringsInFieldsFuzzerTest {
                 Mockito.any(), Mockito.eq(data), Mockito.any(),
                 Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
+
+    @Test
+    void shouldExpect4xxForOptionalBodyEnumFieldWithoutEmptyStringInEnum() {
+        StringSchema modeSchema = new StringSchema();
+        modeSchema.setEnum(List.of("SINGLE", "RECURRING"));
+        Mockito.when(filesArguments.getRefData("/orders")).thenReturn(Map.of());
+        Mockito.when(filterArguments.getSkipFields()).thenReturn(List.of());
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(422).body("{}").build());
+
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.POST)
+                .path("/orders")
+                .headers(Set.of())
+                .payload("{\"mode\":\"SINGLE\"}")
+                .allFields(Set.of("mode"))
+                .allRequiredFields(List.of())
+                .reqSchema(new StringSchema())
+                .requestPropertyTypes(Map.of("mode", modeSchema))
+                .requestContentTypes(List.of("application/json"))
+                .queryParams(Set.of())
+                .responseCodes(Set.of("200", "422"))
+                .build();
+
+        emptyStringsInFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener).reportResult(
+                Mockito.any(), Mockito.eq(data), Mockito.any(),
+                Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+
+        Mockito.reset(testCaseListener);
+        modeSchema.setDefault("SINGLE");
+        emptyStringsInFieldsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener).reportResult(
+                Mockito.any(), Mockito.eq(data), Mockito.any(),
+                Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+    }
 }

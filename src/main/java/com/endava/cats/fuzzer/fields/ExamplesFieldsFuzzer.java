@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -16,7 +17,12 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -95,12 +101,23 @@ public class ExamplesFieldsFuzzer implements Fuzzer {
             if (example == null && schema.getExamples() != null && !schema.getExamples().isEmpty()) {
                 example = schema.getExamples().getFirst();
             }
+            example = formatTemporalExample(schema, example);
             if (example != null && JsonUtils.isFieldInJson(candidate, entry.getKey())) {
                 candidate = CatsUtil.justReplaceField(candidate, entry.getKey(), example).json();
                 replaced = true;
             }
         }
         return replaced && !candidate.equals(data.getPayload()) ? Optional.of(candidate) : Optional.empty();
+    }
+
+    private static Object formatTemporalExample(Schema<?> schema, Object example) {
+        if (example instanceof Date date && CatsModelUtils.isDateSchema(schema)) {
+            return LocalDate.ofInstant(date.toInstant(), ZoneOffset.UTC).toString();
+        }
+        if (example instanceof OffsetDateTime dateTime) {
+            return dateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        }
+        return example;
     }
 
     @Override

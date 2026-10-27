@@ -3,6 +3,8 @@ package com.endava.cats.pool;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.WordUtils;
 import com.google.common.base.Splitter;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import okhttp3.HttpUrl;
 import org.apache.commons.lang3.StringUtils;
@@ -11,6 +13,7 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -49,6 +52,13 @@ final class ResourceSemanticNaming {
             "message", "error");
     private static final Set<String> PER_REQUEST_TRACE_SUFFIXES = Set.of(
             "correlationid", "requestid", "traceid", "spanid", "idempotencykey", "traceparent", "tracestate");
+    private static final Set<String> LIFECYCLE_STATE_KEYS = Set.of(
+            "state", "status", "lifecyclestate", "resourcestate");
+    private static final Set<String> INACTIVE_LIFECYCLE_VALUES = Set.of(
+            "inactive", "deleted", "expired", "cancelled", "canceled",
+            "closed", "revoked", "archived", "disabled", "terminated", "deactivated",
+            "suspended", "blocked", "locked", "invalid", "invalidated",
+            "deprecated", "obsolete", "retired", "void", "voided");
 
     private static final Pattern UUID_VALUE = Pattern.compile(
             "(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
@@ -63,6 +73,20 @@ final class ResourceSemanticNaming {
 
     static String normalize(String value) {
         return WordUtils.normalizeAlphaNumeric(value);
+    }
+
+    static boolean hasInactiveLifecycleState(JsonObject object) {
+        if (object == null) {
+            return false;
+        }
+        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+            if (entry.getValue() != null && entry.getValue().isJsonPrimitive() &&
+                    LIFECYCLE_STATE_KEYS.contains(normalize(entry.getKey())) &&
+                    INACTIVE_LIFECYCLE_VALUES.contains(normalize(entry.getValue().getAsString()))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static boolean isIdentifierName(String name) {

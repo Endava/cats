@@ -54,7 +54,7 @@ class FieldCorrelationEvaluatorTest {
 
     @Test
     void shouldApplyRequestCorrelationsToRootJsonArrayElements() {
-        String payload = "[{\"delivery\":{\"mode\":\"EXPRESS\"}},{\"delivery\":{\"mode\":\"STANDARD\"},\"trackingCode\":\"TRK-1\"},\"scalar\"]";
+        String payload = "[{\"delivery\":{\"mode\":\"eXpReSs\"}},{\"delivery\":{\"mode\":\"STANDARD\"},\"trackingCode\":\"TRK-1\"},\"scalar\"]";
         List<FieldCorrelationRule> rules = List.of(
                 new FieldCorrelationRule(List.of("/shipments"), "delivery.mode == 'EXPRESS'",
                         Map.of("trackingCode", "EXP-900"), List.of()),

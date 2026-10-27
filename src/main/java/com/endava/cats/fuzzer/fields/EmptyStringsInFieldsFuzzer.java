@@ -12,6 +12,7 @@ import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
+import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.Collections;
@@ -57,6 +58,12 @@ public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFu
     protected ResponseCodeFamily getExpectedResponseCodeBasedOnConstraints(FuzzingData data, String fuzzedField, boolean isFuzzedValueMatchingPattern, FuzzingConstraints fuzzingConstraints) {
         if (data.isQueryParam(fuzzedField) && !fuzzingConstraints.hasMinLengthOrMandatoryFieldsFuzzed()) {
             return ResponseCodeFamilyPredefined.FOURXX_TWOXX;
+        }
+        Schema<?> fieldSchema = data.getRequestPropertyTypes() != null ? data.getRequestPropertyTypes().get(fuzzedField) : null;
+        if (fieldSchema != null && fieldSchema.getEnum() != null && !fieldSchema.getEnum().isEmpty() && !fieldSchema.getEnum().contains("")) {
+            return fieldSchema.getDefault() != null && !fuzzingConstraints.hasMinLengthOrMandatoryFieldsFuzzed()
+                    ? ResponseCodeFamilyPredefined.TWOXX
+                    : ResponseCodeFamilyPredefined.FOURXX;
         }
         return super.getExpectedResponseCodeBasedOnConstraints(data, fuzzedField, isFuzzedValueMatchingPattern, fuzzingConstraints);
     }

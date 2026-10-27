@@ -577,6 +577,11 @@ final class ResourceValueExtractor {
     }
 
     static boolean isFuzzedRequest(ServiceData data) {
+        if (StringUtils.isNotBlank(data.getContractPath()) &&
+                StringUtils.isNotBlank(data.getRelativePath()) &&
+                !data.getContractPath().equals(data.getRelativePath())) {
+            return true;
+        }
         boolean hasDeclaredMutation = data.hasDeclaredMutation();
         if (hasDeclaredMutation || StringUtils.isBlank(data.getOriginalPayload())) {
             return hasDeclaredMutation;
