@@ -321,10 +321,10 @@ class TriageCommandTest {
                   "request": {
                     "httpMethod": "POST",
                     "url": "http://localhost:8080/orders",
-                    "payload": "{\\"orderType\\":\\"DIGITAL\\",\\"shippingAddress\\":\\"123 Main St\\"}",
+                    "payload": "{\\"delivery\\":{\\"mode\\":\\"DIGITAL\\"},\\"shippingAddress\\":\\"123 Main St\\"}",
                     "sendBody": true
                   },
-                  "response": {"responseCode": 422, "jsonBody": {"message": "'shippingAddress' must be null for DIGITAL orders"}}
+                  "response": {"responseCode": 422, "jsonBody": {"message": "Shipping address must be null for DIGITAL orders"}}
                 }
                 """, StandardCharsets.UTF_8);
 
@@ -352,7 +352,8 @@ class TriageCommandTest {
         Assertions.assertThat(cmd.getLastReport().clusters()).extracting(TriageCommand.RootCauseCluster::category)
                 .contains("HEADER_CORRELATION_COLLISION", "CROSS_FIELD_CONSTRAINT_4XX",
                         "AUTH_CONFIGURATION_GAP", "UNRESOLVED_PATH_PARAM_404", "CONTRACT_MISMATCH");
-        Assertions.assertThat(cmd.getLastReport().synthesizedCorrelationsYaml()).contains("omit:", "- \"shippingAddress\"");
+        Assertions.assertThat(cmd.getLastReport().synthesizedCorrelationsYaml())
+                .contains("when: \"delivery.mode == 'DIGITAL'\"", "omit:", "- \"shippingAddress\"");
         Assertions.assertThat(cmd.getLastReport().minedRefDataYaml()).contains("id: 9001", "activeId: true");
     }
 }

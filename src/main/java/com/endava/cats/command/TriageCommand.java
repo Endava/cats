@@ -18,6 +18,7 @@ import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
+import com.endava.cats.util.WordUtils;
 import com.google.common.base.Splitter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -90,6 +91,9 @@ import java.util.stream.Stream;
 public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private static final Pattern TEST_FILE_PATTERN = Pattern.compile("Test(\\d+)\\.json$");
     private static final Pattern QUOTED_FIELD_PATTERN = Pattern.compile("['\"]([A-Za-z0-9_.#$-]+)['\"]");
+    private static final Pattern UNQUOTED_REQUIRED_PREFIX_PATTERN = Pattern.compile(
+            "^([A-Za-z][A-Za-z0-9_ ]{1,40}?)\\s+(?:must\\s+not\\s+be\\s+(?:null|blank|empty)|must\\s+be\\s+null|is\\s+required|cannot\\s+be\\s+(?:null|empty))\\b",
+            Pattern.CASE_INSENSITIVE);
     private static final Pattern ENUM_LIKE_CONSTANT_PATTERN = Pattern.compile("^[A-Z][A-Z0-9_]{1,31}$");
     private static final Set<String> DISCRIMINATOR_KEY_SUFFIXES = Set.of(
             "type", "kind", "mode", "category", "channel", "method", "operator", "status", "action", "role", "state");
@@ -665,30 +669,24 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             return;
         }
         JsonElement reqEl = JsonUtils.parseAsJsonElement(payload);
+        if (reqEl.isJsonArray() && !reqEl.getAsJsonArray().isEmpty() && reqEl.getAsJsonArray().get(0).isJsonObject()) {
+            reqEl = reqEl.getAsJsonArray().get(0);
+        }
         if (!reqEl.isJsonObject()) {
             return;
         }
-        String errSig = extractErrorSignature(tc);
-        Matcher m = QUOTED_FIELD_PATTERN.matcher(errSig);
-        if (!m.find()) {
-            return;
-        }
-        String referencedField = m.group(1);
         JsonObject root = reqEl.getAsJsonObject();
-        String discriminatorKey = null;
-        String discriminatorVal = null;
-        for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
-            String k = entry.getKey();
-            if (!k.equals(referencedField) && entry.getValue() != null && entry.getValue().isJsonPrimitive()
-                    && isDiscriminatorCandidate(k, entry.getValue().getAsString())) {
-                discriminatorKey = k;
-                discriminatorVal = entry.getValue().getAsString();
-                break;
-            }
-        }
-        if (discriminatorKey == null) {
+        String errSig = extractErrorSignature(tc);
+        String referencedField = extractReferencedField(errSig, root);
+        if (referencedField == null) {
             return;
         }
+        KeyValuePair<String, String> discriminator = findDiscriminatorCandidate(root, "", referencedField, 0);
+        if (discriminator == null) {
+            return;
+        }
+        String discriminatorKey = discriminator.getKey();
+        String discriminatorVal = discriminator.getValue();
         String path = Objects.requireNonNullElse(tc.getContractPath(), Objects.requireNonNullElse(tc.getPath(), ""));
         String lowerSig = errSig.toLowerCase(Locale.ROOT);
         String action = (lowerSig.contains("must be null") || lowerSig.contains("not allowed")
@@ -699,6 +697,85 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         if (seenRuleKeys.add(dedupKey)) {
             rules.add(new SynthesizedCorrelationRule(path, discriminatorKey, discriminatorVal, action, referencedField, errSig));
         }
+    }
+
+    private static String extractReferencedField(String errSig, JsonObject root) {
+        Matcher quoted = QUOTED_FIELD_PATTERN.matcher(errSig);
+        if (quoted.find()) {
+            return quoted.group(1);
+        }
+        Matcher prefix = UNQUOTED_REQUIRED_PREFIX_PATTERN.matcher(errSig.trim());
+        if (prefix.find()) {
+            String rawWords = prefix.group(1).trim();
+            String matchedExisting = findMatchingFieldInObject(root, "", WordUtils.normalizeAlphaNumeric(rawWords), 0);
+            if (matchedExisting != null) {
+                return matchedExisting;
+            }
+            return toCamelCaseFieldName(rawWords);
+        }
+        return null;
+    }
+
+    private static String findMatchingFieldInObject(JsonObject obj, String prefix, String targetNorm, int depth) {
+        if (obj == null || depth > 3 || targetNorm.isEmpty()) {
+            return null;
+        }
+        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+            String fullPath = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
+            if (WordUtils.normalizeAlphaNumeric(entry.getKey()).equals(targetNorm)) {
+                return fullPath;
+            }
+            if (entry.getValue() != null && entry.getValue().isJsonObject()) {
+                String nested = findMatchingFieldInObject(entry.getValue().getAsJsonObject(), fullPath, targetNorm, depth + 1);
+                if (nested != null) {
+                    return nested;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String toCamelCaseFieldName(String rawWords) {
+        String[] parts = rawWords.trim().split("\\s+");
+        if (parts.length == 1) {
+            return parts[0];
+        }
+        StringBuilder sb = new StringBuilder(parts[0].toLowerCase(Locale.ROOT));
+        for (int i = 1; i < parts.length; i++) {
+            if (!parts[i].isEmpty()) {
+                sb.append(Character.toUpperCase(parts[i].charAt(0)))
+                        .append(parts[i].substring(1).toLowerCase(Locale.ROOT));
+            }
+        }
+        return sb.toString();
+    }
+
+    private static KeyValuePair<String, String> findDiscriminatorCandidate(JsonObject obj, String prefix,
+                                                                           String referencedField, int depth) {
+        if (obj == null || depth > 3) {
+            return null;
+        }
+        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+            String k = entry.getKey();
+            String fullPath = prefix.isEmpty() ? k : prefix + "." + k;
+            JsonElement val = entry.getValue();
+            if (!fullPath.equals(referencedField) && !k.equals(referencedField)
+                    && val != null && val.isJsonPrimitive()
+                    && isDiscriminatorCandidate(k, val.getAsString())) {
+                return new KeyValuePair<>(fullPath, val.getAsString());
+            }
+        }
+        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+            String fullPath = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
+            if (entry.getValue() != null && entry.getValue().isJsonObject()) {
+                KeyValuePair<String, String> nested = findDiscriminatorCandidate(
+                        entry.getValue().getAsJsonObject(), fullPath, referencedField, depth + 1);
+                if (nested != null) {
+                    return nested;
+                }
+            }
+        }
+        return null;
     }
 
     private static boolean isDiscriminatorCandidate(String fieldName, String fieldValue) {
@@ -727,7 +804,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 sb.append("        - \"").append(r.targetField()).append("\"\n");
             } else {
                 sb.append("      set:\n");
-                sb.append("        ").append(r.targetField()).append(": \"<REQUIRED_VALUE>\"\n");
+                sb.append("        ").append(r.targetField()).append(": \"#(alphanumeric(12))\"\n");
             }
         }
         return sb.toString();
