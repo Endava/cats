@@ -7,6 +7,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.auth.session.SessionHealthMonitor;
 import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.api.Parser;
@@ -108,6 +109,7 @@ public class ServiceCaller {
     private final WfcAuthProvider wfcAuthProvider;
     private final RuntimeResourcePool runtimeResourcePool;
     private final FilterArguments filterArguments;
+    private final SessionHealthMonitor sessionHealthMonitor;
     OkHttpClient okHttpClient;
 
     private RateLimiter rateLimiter;
@@ -120,10 +122,12 @@ public class ServiceCaller {
      * @param authArguments       The authentication arguments.
      * @param apiArguments        The API arguments.
      * @param processingArguments The processing arguments.
+     * @param sessionHealthMonitor Detects mid-run session loss from response codes.
      */
     @Inject
     public ServiceCaller(TestCaseListener lr, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments,
-                         ReportingArguments reportingArguments, WfcAuthProvider wfcAuthProvider, RuntimeResourcePool runtimeResourcePool, FilterArguments filterArguments) {
+                         ReportingArguments reportingArguments, WfcAuthProvider wfcAuthProvider, RuntimeResourcePool runtimeResourcePool, FilterArguments filterArguments,
+                         SessionHealthMonitor sessionHealthMonitor) {
         this.testCaseListener = lr;
         this.filesArguments = filesArguments;
         this.authArguments = authArguments;
@@ -133,6 +137,7 @@ public class ServiceCaller {
         this.wfcAuthProvider = wfcAuthProvider;
         this.runtimeResourcePool = runtimeResourcePool;
         this.filterArguments = filterArguments;
+        this.sessionHealthMonitor = sessionHealthMonitor;
     }
 
     /**
@@ -285,6 +290,8 @@ public class ServiceCaller {
                         data.getRelativePath(), data.getHttpMethod() == null ? "" : data.getHttpMethod().name(),
                         response.getResponseCode());
             }
+            sessionHealthMonitor.record(data.getRelativePath(), data.getHttpMethod(), response.getResponseCode(),
+                    hasIntactCredentials(data));
 
             this.recordResponse(response);
             this.observeRuntimeResources(data, catsRequest, response, resolvedRequest);
@@ -311,6 +318,25 @@ public class ServiceCaller {
 
             return catsResponse;
         }
+    }
+
+    /**
+     * Credentials are intact when the request was not sent with removed, fuzzed or skipped authentication data,
+     * nor with a mutated HTTP method, so a 401 response can only mean the credentials themselves stopped working.
+     */
+    private boolean hasIntactCredentials(ServiceData data) {
+        return data.isAddUserHeaders() &&
+                data.getSkippedHeaders().stream().noneMatch(this::isAuthenticationHeader) &&
+                data.getAllMutationTargets().stream().noneMatch(this::isCredentialOrMethodMutation);
+    }
+
+    private boolean isCredentialOrMethodMutation(RequestTarget target) {
+        return switch (target.location()) {
+            case HTTP_METHOD, PATH -> true;
+            case HEADER -> isAuthenticationHeader(target.name());
+            case QUERY -> wfcAuthProvider.getAuthenticationQueryParamNames().contains(target.name());
+            default -> false;
+        };
     }
 
     private RuntimeResourcePool.ResolvedHeaders enrichHeadersWithRuntimeResources(

@@ -7,6 +7,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsExecutionCancelledException;
@@ -15,9 +16,13 @@ import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.contract.PathTagsLinter;
+import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.RemoveFieldsFuzzer;
+import com.endava.cats.fuzzer.headers.DummyContentTypeHeadersFuzzer;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.fuzzer.http.CheckReadsStillWorkFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
+import com.endava.cats.fuzzer.http.HttpMethodsFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.io.ServiceCaller;
@@ -40,6 +45,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.media.Schema;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -59,6 +65,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -967,6 +974,231 @@ class CatsCommandTest {
     }
 
     @Test
+    void shouldRunDeleteOperationsLastInEveryWaveInReversePathOrder() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> order = new ArrayList<>();
+        HappyPathFuzzer happy = namedFuzzer(HappyPathFuzzer.class, "HappyPath", order);
+        OnlyRequiredFieldsFuzzer onlyRequired = namedFuzzer(OnlyRequiredFieldsFuzzer.class, "OnlyRequiredFields", order);
+        Fuzzer removeFields = namedFuzzer(Fuzzer.class, "RemoveFields", order);
+        Fuzzer customNegative = namedFuzzer(Fuzzer.class, "CustomNegative", order);
+        PathItem collection = new PathItem().post(new Operation()).delete(new Operation());
+        PathItem item = new PathItem().get(new Operation()).delete(new Operation());
+        OpenAPI api = new OpenAPI().paths(new Paths().addPathItem("/items", collection)
+                .addPathItem("/items/{id}", item));
+        Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/items", "/items/{id}"));
+        Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
+        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                .thenReturn(List.of(happy, onlyRequired, removeFields, customNegative));
+        Mockito.doReturn(List.of(fuzzingData(HttpMethod.POST, "/items"), fuzzingData(HttpMethod.DELETE, "/items")))
+                .when(fuzzingDataFactory).fromPathItem("/items", collection, api);
+        Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/items/{id}"), fuzzingData(HttpMethod.TRACE, "/items/{id}"),
+                        fuzzingData(HttpMethod.DELETE, "/items/{id}")))
+                .when(fuzzingDataFactory).fromPathItem("/items/{id}", item, api);
+
+        catsMain.startFuzzing(api);
+
+        Assertions.assertThat(order).containsExactly(
+                "HappyPath:POST /items", "OnlyRequiredFields:POST /items",
+                "HappyPath:GET /items/{id}", "OnlyRequiredFields:GET /items/{id}",
+                "HappyPath:TRACE /items/{id}",
+                "RemoveFields:POST /items", "RemoveFields:GET /items/{id}", "RemoveFields:TRACE /items/{id}",
+                "RemoveFields:DELETE /items/{id}", "RemoveFields:DELETE /items",
+                "CustomNegative:POST /items", "CustomNegative:GET /items/{id}", "CustomNegative:TRACE /items/{id}",
+                "CustomNegative:DELETE /items/{id}", "CustomNegative:DELETE /items",
+                "HappyPath:DELETE /items/{id}", "HappyPath:DELETE /items");
+    }
+
+    @Test
+    void shouldRunEveryConfiguredFuzzerPerPathWhenResourceReuseIsDisabled() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", false);
+        List<String> order = new ArrayList<>();
+        HappyPathFuzzer happy = namedFuzzer(HappyPathFuzzer.class, "HappyPath", order);
+        Fuzzer other = namedFuzzer(Fuzzer.class, "Other", order);
+        try {
+            PathItem logout = new PathItem().post(new Operation());
+            OpenAPI api = new OpenAPI().paths(new Paths().addPathItem("/logout", logout));
+            Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/logout"));
+            Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
+            Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                    .thenReturn(List.of(other, happy));
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.POST, "/logout"))).when(fuzzingDataFactory).fromPathItem("/logout", logout, api);
+
+            catsMain.startFuzzing(api);
+
+            Assertions.assertThat(order).containsExactly("Other:POST /logout", "HappyPath:POST /logout");
+        } finally {
+            ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        }
+    }
+
+    @Test
+    void shouldRunFuzzersOnDestructiveOperationsFromLeastToMostLikelyToSucceed() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> order = new ArrayList<>();
+        HappyPathFuzzer happy = namedFuzzer(HappyPathFuzzer.class, "HappyPath", order);
+        OnlyRequiredFieldsFuzzer onlyRequired = namedFuzzer(OnlyRequiredFieldsFuzzer.class, "OnlyRequiredFields", order);
+        Fuzzer header = namedFuzzer(DummyContentTypeHeadersFuzzer.class, "DummyContentTypeHeaders", order);
+        Fuzzer http = namedFuzzer(HttpMethodsFuzzer.class, "HttpMethods", order);
+        Fuzzer field = namedFuzzer(RemoveFieldsFuzzer.class, "RemoveFields", order);
+        Fuzzer plain = namedFuzzer(Fuzzer.class, "Plain", order);
+
+        Assertions.assertThat(FuzzerWaveExecutor.orderedBySuccessLikelihood(List.of(happy, onlyRequired, header, http, field, plain)))
+                .containsExactly(field, plain, http, header, onlyRequired, happy);
+
+        catsMain.runFirstPhaseFuzzers(List.of(fuzzingData(HttpMethod.DELETE, "/carts/{id}")),
+                List.of(header, happy, http, field, onlyRequired));
+
+        Assertions.assertThat(order).containsExactly("RemoveFields:DELETE /carts/{id}",
+                "HttpMethods:DELETE /carts/{id}", "DummyContentTypeHeaders:DELETE /carts/{id}");
+        catsMain.runDeferredHappyPathDeletes();
+        Assertions.assertThat(order).containsExactly("RemoveFields:DELETE /carts/{id}",
+                "HttpMethods:DELETE /carts/{id}", "DummyContentTypeHeaders:DELETE /carts/{id}",
+                "HappyPath:DELETE /carts/{id}");
+    }
+
+    @Test
+    void shouldReplayProducerOncePerWaveWhenADestructiveOperationEmptiesItsResources() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> order = new ArrayList<>();
+        HappyPathFuzzer happy = namedFuzzer(HappyPathFuzzer.class, "HappyPath", order);
+        Fuzzer removeFields = namedFuzzer(Fuzzer.class, "RemoveFields", order);
+        RuntimeResourcePool pool = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(pool.hasLiveResourceFor("/items/{id}")).thenReturn(true, false);
+        Object originalPool = ReflectionTestUtils.getField(catsMain, "runtimeResourcePool");
+        ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", pool);
+        try {
+            PathItem collection = new PathItem().post(new Operation()).get(new Operation());
+            PathItem item = new PathItem().get(new Operation()).delete(new Operation());
+            OpenAPI api = new OpenAPI().paths(new Paths().addPathItem("/items", collection).addPathItem("/items/{id}", item));
+            Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/items", "/items/{id}"));
+            Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
+            Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                    .thenReturn(List.of(happy, removeFields));
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/items"), fuzzingData(HttpMethod.POST, "/items")))
+                    .when(fuzzingDataFactory).fromPathItem("/items", collection, api);
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/items/{id}"), fuzzingData(HttpMethod.DELETE, "/items/{id}")))
+                    .when(fuzzingDataFactory).fromPathItem("/items/{id}", item, api);
+
+            catsMain.startFuzzing(api);
+
+            Assertions.assertThat(order).containsExactly(
+                    "HappyPath:GET /items", "HappyPath:POST /items", "HappyPath:GET /items/{id}",
+                    "RemoveFields:GET /items", "RemoveFields:POST /items", "RemoveFields:GET /items/{id}",
+                    "RemoveFields:DELETE /items/{id}", "HappyPath:POST /items",
+                    "HappyPath:DELETE /items/{id}");
+        } finally {
+            ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", originalPool);
+        }
+    }
+
+    @Test
+    void shouldReplayCollectionGetWhenTheProducerHasNoPost() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> order = new ArrayList<>();
+        HappyPathFuzzer happy = namedFuzzer(HappyPathFuzzer.class, "HappyPath", order);
+        Fuzzer removeFields = namedFuzzer(Fuzzer.class, "RemoveFields", order);
+        RuntimeResourcePool pool = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(pool.hasLiveResourceFor("/items/{id}")).thenReturn(true, false);
+        Object originalPool = ReflectionTestUtils.getField(catsMain, "runtimeResourcePool");
+        ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", pool);
+        try {
+            OpenAPI api = itemsApiWithFuzzers(List.of(happy, removeFields), new PathItem().get(new Operation()),
+                    List.of(fuzzingData(HttpMethod.GET, "/items")));
+
+            catsMain.startFuzzing(api);
+
+            Assertions.assertThat(order).containsExactly(
+                    "HappyPath:GET /items", "HappyPath:GET /items/{id}",
+                    "RemoveFields:GET /items", "RemoveFields:GET /items/{id}", "RemoveFields:DELETE /items/{id}",
+                    "HappyPath:GET /items", "HappyPath:DELETE /items/{id}");
+        } finally {
+            ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", originalPool);
+        }
+    }
+
+    @Test
+    void shouldNotReplayProducersWithoutHappyPath() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        List<String> order = new ArrayList<>();
+        Fuzzer removeFields = namedFuzzer(Fuzzer.class, "RemoveFields", order);
+        RuntimeResourcePool pool = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(pool.hasLiveResourceFor("/items/{id}")).thenReturn(true, false);
+        Mockito.when(pool.observedResourceCount()).thenReturn(0L, 1L);
+        Object originalPool = ReflectionTestUtils.getField(catsMain, "runtimeResourcePool");
+        ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", pool);
+        try {
+            OpenAPI api = itemsApiWithFuzzers(List.of(removeFields), new PathItem().post(new Operation()),
+                    List.of(fuzzingData(HttpMethod.POST, "/items")));
+
+            catsMain.startFuzzing(api);
+
+            Assertions.assertThat(order).containsExactly(
+                    "RemoveFields:POST /items", "RemoveFields:GET /items/{id}", "RemoveFields:DELETE /items/{id}");
+        } finally {
+            ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", originalPool);
+        }
+    }
+
+    private OpenAPI itemsApiWithFuzzers(List<Fuzzer> fuzzers, PathItem collection, List<FuzzingData> collectionData) {
+        PathItem item = new PathItem().get(new Operation()).delete(new Operation());
+        OpenAPI api = new OpenAPI().paths(new Paths().addPathItem("/items", collection).addPathItem("/items/{id}", item));
+        Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/items", "/items/{id}"));
+        Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
+        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                .thenReturn(fuzzers);
+        Mockito.doReturn(collectionData).when(fuzzingDataFactory).fromPathItem("/items", collection, api);
+        Mockito.doReturn(List.of(fuzzingData(HttpMethod.GET, "/items/{id}"), fuzzingData(HttpMethod.DELETE, "/items/{id}")))
+                .when(fuzzingDataFactory).fromPathItem("/items/{id}", item, api);
+        return api;
+    }
+
+    @Test
+    void shouldSkipDeferredCleanupOnceTheGracePeriodExpires() {
+        ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
+        FuzzerWaveExecutor executor = (FuzzerWaveExecutor) ReflectionTestUtils.getField(catsMain, "waveExecutor");
+        List<String> order = new ArrayList<>();
+        HappyPathFuzzer happy = namedFuzzer(HappyPathFuzzer.class, "HappyPath", order);
+        Fuzzer limitFuzzer = namedFuzzer(Fuzzer.class, "RemoveFields", order);
+        Mockito.doThrow(new CatsExecutionLimitReachedException("time limit reached")).when(limitFuzzer).fuzz(Mockito.any());
+        AtomicLong now = new AtomicLong();
+        executor.setClock(() -> now.getAndAdd(10_000));
+        try {
+            PathItem item = new PathItem().post(new Operation()).delete(new Operation());
+            PathItem note = new PathItem().delete(new Operation());
+            OpenAPI api = new OpenAPI().paths(new Paths().addPathItem("/files/{id}", item).addPathItem("/notes/{id}", note));
+            Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(List.of("/files/{id}", "/notes/{id}"));
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.DELETE, "/notes/{id}")))
+                    .when(fuzzingDataFactory).fromPathItem("/notes/{id}", note, api);
+            Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
+            Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                    .thenReturn(List.of(happy, limitFuzzer));
+            Mockito.doReturn(List.of(fuzzingData(HttpMethod.POST, "/files/{id}"), fuzzingData(HttpMethod.DELETE, "/files/{id}")))
+                    .when(fuzzingDataFactory).fromPathItem("/files/{id}", item, api);
+
+            Assertions.assertThatThrownBy(() -> catsMain.startFuzzing(api)).isInstanceOf(CatsExecutionLimitReachedException.class);
+
+            Assertions.assertThat(order).containsExactly("HappyPath:POST /files/{id}");
+        } finally {
+            executor.setClock(System::currentTimeMillis);
+        }
+    }
+
+    @Test
+    void shouldBoundCleanupGraceByFivePercentOfTheTimeBudgetAndFiveSeconds() {
+        FuzzerWaveExecutor executor = (FuzzerWaveExecutor) ReflectionTestUtils.getField(catsMain, "waveExecutor");
+        try {
+            ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 0L);
+            Assertions.assertThat(executor.cleanupGraceMillis()).isEqualTo(5_000);
+            ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 60L);
+            Assertions.assertThat(executor.cleanupGraceMillis()).isEqualTo(3_000);
+            ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 600L);
+            Assertions.assertThat(executor.cleanupGraceMillis()).isEqualTo(5_000);
+        } finally {
+            ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 0L);
+        }
+    }
+
+    @Test
     void shouldMatchEveryWaveFuzzerNameAgainstARegisteredFirstPhaseFuzzer() {
         Set<String> allRegisteredFuzzerNames = registeredFuzzers.stream()
                 .flatMap(f -> Stream.of(
@@ -1041,6 +1273,19 @@ class CatsCommandTest {
         Mockito.doAnswer(invocation -> {
             FuzzingData data = invocation.getArgument(0);
             executionOrder.add(label + "-" + data.getMethod());
+            return null;
+        }).when(fuzzer).fuzz(Mockito.any());
+        return fuzzer;
+    }
+
+    private <T extends Fuzzer> T namedFuzzer(Class<T> type, String name, List<String> executionOrder) {
+        T fuzzer = Mockito.mock(type);
+        Mockito.when(fuzzer.skipForHttpMethods()).thenReturn(List.of());
+        Mockito.when(fuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
+        Mockito.when(fuzzer.toString()).thenReturn(name);
+        Mockito.doAnswer(invocation -> {
+            FuzzingData data = invocation.getArgument(0);
+            executionOrder.add(name + ":" + data.getMethod() + " " + data.getPath());
             return null;
         }).when(fuzzer).fuzz(Mockito.any());
         return fuzzer;

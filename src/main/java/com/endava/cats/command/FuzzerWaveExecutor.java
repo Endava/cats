@@ -1,5 +1,7 @@
 package com.endava.cats.command;
 
+import com.endava.cats.annotations.HeaderFuzzer;
+import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.SecondPhaseFuzzer;
 import com.endava.cats.args.util.ProfileLoader;
 import com.endava.cats.exception.CatsExecutionCancelledException;
@@ -27,29 +29,42 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Orchestrates path ordering, collection GET pre-seeding, breadth-first fuzzer waves (loaded from
- * {@code fuzzer-profiles.yml}), deferred {@code DELETE} execution, and optional time-budget filling
- * with {@link com.endava.cats.fuzzer.special.RandomFuzzer}.
+ * {@code fuzzer-profiles.yml}), deferred DELETE execution, producer pool refilling, and optional
+ * time-budget filling with {@link RandomFuzzer}.
  */
 final class FuzzerWaveExecutor {
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
     private static final int MAX_CONTINUOUS_RANDOM_ROUNDS = 200;
+    private static final long MAX_CLEANUP_GRACE_MILLIS = 5_000;
+    private static final long CLEANUP_GRACE_BUDGET_DIVISOR = 20;
 
     private final CatsCommand command;
     private final PrettyLogger logger;
     private final List<DeferredHappyPathDelete> deferredHappyPathDeletes = new ArrayList<>();
+    private final Set<String> pathsWithObservedLiveResources = new HashSet<>();
+    private final Set<String> producersRefilledInWave = new HashSet<>();
+    private Map<String, Set<String>> producersByConsumer = Map.of();
+    private Map<String, PreparedPath> preparedPathsByKey = Map.of();
+    private LongSupplier clock = System::currentTimeMillis;
+    private long cleanupDeadlineMillis = Long.MAX_VALUE;
+    private boolean cleanupGraceExpiryLogged;
 
     private record DeferredHappyPathDelete(List<FuzzingData> pathData, List<FuzzingData> deleteData,
                                            List<Fuzzer> deleteFuzzers) {
@@ -111,11 +126,19 @@ final class FuzzerWaveExecutor {
             ensureInitialized();
             return fuzzersToRun;
         }
+
+        boolean isRunnable() {
+            return !binaryStreamOnly && (!filteredFuzzingData().isEmpty() || !fuzzersToRun().isEmpty());
+        }
     }
 
     FuzzerWaveExecutor(CatsCommand command, PrettyLogger logger) {
         this.command = command;
         this.logger = logger;
+    }
+
+    void setClock(LongSupplier clock) {
+        this.clock = clock;
     }
 
     private ProfileLoader activeProfileLoader() {
@@ -137,20 +160,24 @@ final class FuzzerWaveExecutor {
     void startFuzzing(OpenAPI openAPI) {
         List<String> suppliedPaths = command.filterArguments.getPathsToRun(openAPI);
         deferredHappyPathDeletes.clear();
+        pathsWithObservedLiveResources.clear();
+        boolean reuseResources = command.processingArguments.isReuseSuccessfulResources();
         List<Map.Entry<String, PathItem>> paths = new ArrayList<>(sortPathsAlphabetically(openAPI, command.filesArguments.getPathsOrder()));
-        if (command.processingArguments.isReuseSuccessfulResources() && command.filesArguments.getPathsOrder().isEmpty() &&
+        if (reuseResources && command.filesArguments.getPathsOrder().isEmpty() &&
                 command.filterArguments.isHttpMethodSupplied(HttpMethod.POST)) {
             paths = OperationDependencyOrder.order(openAPI, paths);
         }
+        producersByConsumer = reuseResources ? OperationDependencyOrder.producersByConsumer(openAPI, paths) : Map.of();
         preseedCollectionGets(paths, suppliedPaths, openAPI);
 
         List<PreparedPath> preparedPaths = preparePathsForExecution(paths, suppliedPaths, openAPI);
+        preparedPathsByKey = preparedPaths.stream().collect(Collectors.toMap(PreparedPath::pathKey, Function.identity()));
         boolean slicePerOperation = shouldRunContinuousRandom() && hasMultipleOperationsInScope(preparedPaths);
         if (command.randomFuzzer != null) {
             command.randomFuzzer.setMultipleOperationsInScope(slicePerOperation);
         }
 
-        if (!command.processingArguments.isReuseSuccessfulResources() || command.filterArguments.isDryRun()) {
+        if (!reuseResources || command.filterArguments.isDryRun()) {
             try {
                 for (PreparedPath path : preparedPaths) {
                     CatsExecutionCancelledException.check();
@@ -175,15 +202,20 @@ final class FuzzerWaveExecutor {
             unparameterizedBinaryRan = true;
             runContinuousRandomUntilTimeLimit(preparedPaths);
         } catch (CatsExecutionLimitReachedException e) {
-            runDeferredHappyPathDeletes();
-            if (!unparameterizedBinaryRan) {
-                runBinaryStreamHappyPathOnly(preparedPaths);
-            }
+            boolean binaryAlreadyRan = unparameterizedBinaryRan;
+            runWithinCleanupGrace(() -> runLimitReachedCleanup(preparedPaths, binaryAlreadyRan));
             throw e;
         } finally {
             if (command.randomFuzzer != null) {
                 command.randomFuzzer.setMultipleOperationsInScope(false);
             }
+        }
+    }
+
+    private void runLimitReachedCleanup(List<PreparedPath> preparedPaths, boolean unparameterizedBinaryRan) {
+        runDeferredHappyPathDeletes();
+        if (!unparameterizedBinaryRan) {
+            runBinaryStreamHappyPathOnly(preparedPaths);
         }
     }
 
@@ -224,7 +256,7 @@ final class FuzzerWaveExecutor {
     private void runSeedWave(List<PreparedPath> preparedPaths) {
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 1, 4, "Seed"));
         for (PreparedPath path : preparedPaths) {
-            if (!path.binaryStreamOnly() && (!path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty())) {
+            if (path.isRunnable()) {
                 CatsExecutionCancelledException.check();
                 logger.start(AnsiUtils.bold("Start fuzzing path {}"), path.pathKey());
                 command.executionEventPublisher.publish(new CatsExecutionEvent.PathStarted(Instant.now(), path.pathKey()));
@@ -236,9 +268,11 @@ final class FuzzerWaveExecutor {
     private void runCoverageWave(List<PreparedPath> preparedPaths, Set<String> coverageWaveFuzzers) {
         long resourcesBeforeCoverageWave = command.runtimeResourcePool != null ? command.runtimeResourcePool.observedResourceCount() : 0;
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 2, 4, "Coverage"));
+        producersRefilledInWave.clear();
         for (String coverageFuzzerName : coverageWaveFuzzers) {
             Set<String> singleWave = Set.of(coverageFuzzerName);
-            runNonSeedWaveAcrossPaths(preparedPaths, fuzzer -> isInWave(fuzzer, singleWave), false);
+            runWave(preparedPaths, fuzzer -> isInWave(fuzzer, singleWave), _ -> {
+            });
         }
         if (command.runtimeResourcePool != null && command.runtimeResourcePool.observedResourceCount() > resourcesBeforeCoverageWave) {
             retryUnresolvedSeedOperations(preparedPaths);
@@ -247,10 +281,12 @@ final class FuzzerWaveExecutor {
 
     private void runCrashWave(List<PreparedPath> preparedPaths, Set<String> coverageWaveFuzzers, Set<String> crashWaveFuzzers) {
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 3, 4, "Crash"));
+        producersRefilledInWave.clear();
         for (String crashFuzzerName : crashWaveFuzzers) {
             if (!coverageWaveFuzzers.contains(crashFuzzerName)) {
                 Set<String> singleWave = Set.of(crashFuzzerName);
-                runNonSeedWaveAcrossPaths(preparedPaths, fuzzer -> isInWave(fuzzer, singleWave), false);
+                runWave(preparedPaths, fuzzer -> isInWave(fuzzer, singleWave), _ -> {
+                });
             }
         }
     }
@@ -258,60 +294,109 @@ final class FuzzerWaveExecutor {
     private void runRemainingWaveAndSecondPhase(List<PreparedPath> preparedPaths,
                                                 Set<String> coverageWaveFuzzers, Set<String> crashWaveFuzzers) {
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 4, 4, "Full"));
+        producersRefilledInWave.clear();
         Predicate<Fuzzer> remainingFilter =
                 fuzzer -> !isInWave(fuzzer, coverageWaveFuzzers) && !isInWave(fuzzer, crashWaveFuzzers);
-        for (PreparedPath path : preparedPaths) {
-            if (!path.binaryStreamOnly() && (!path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty())) {
-                CatsExecutionCancelledException.check();
-                List<Fuzzer> waveFuzzers = nonSeedFuzzers(path.fuzzersToRun()).stream()
-                        .filter(remainingFilter)
-                        .toList();
-                List<FuzzingData> nonDeleteData = path.filteredFuzzingData().stream()
-                        .filter(data -> !isDestructiveOperation(data))
-                        .toList();
-                runFuzzers(nonDeleteData, waveFuzzers);
-                runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
-            }
-        }
-        for (int i = preparedPaths.size() - 1; i >= 0; i--) {
-            PreparedPath path = preparedPaths.get(i);
-            if (!path.binaryStreamOnly() && (!path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty())) {
-                CatsExecutionCancelledException.check();
-                List<Fuzzer> waveFuzzers = nonSeedFuzzers(path.fuzzersToRun()).stream()
-                        .filter(remainingFilter)
-                        .toList();
-                List<FuzzingData> deleteData = path.filteredFuzzingData().stream()
-                        .filter(this::isDestructiveOperation)
-                        .toList();
-                runFuzzers(deleteData, waveFuzzers);
+        runWave(preparedPaths, remainingFilter,
+                path -> runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED));
+        for (PreparedPath path : preparedPaths.reversed()) {
+            if (path.isRunnable()) {
                 command.executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));
             }
         }
     }
 
-    private void runNonSeedWaveAcrossPaths(List<PreparedPath> preparedPaths,
-                                           Predicate<Fuzzer> waveFilter,
-                                           boolean completePathAfterWave) {
+    /**
+     * Runs one wave in two passes: non-DELETE operations in dependency order, then DELETE operations in reverse
+     * path order (children first) with on-demand producer pool refill.
+     */
+    private void runWave(List<PreparedPath> preparedPaths, Predicate<Fuzzer> waveFilter,
+                         Consumer<PreparedPath> afterNonDeletePhase) {
+        boolean waveHasFuzzers = preparedPaths.stream().filter(PreparedPath::isRunnable)
+                .anyMatch(path -> !waveFuzzers(path, waveFilter).isEmpty());
+        if (waveHasFuzzers) {
+            preparedPaths.stream().filter(PreparedPath::isRunnable).map(PreparedPath::pathKey).forEach(this::refillIfEmptied);
+        }
         for (PreparedPath path : preparedPaths) {
-            if (!path.binaryStreamOnly() && (!completePathAfterWave || !path.filteredFuzzingData().isEmpty() || !path.fuzzersToRun().isEmpty())) {
+            if (path.isRunnable()) {
                 CatsExecutionCancelledException.check();
-                List<Fuzzer> waveFuzzers = nonSeedFuzzers(path.fuzzersToRun()).stream()
-                        .filter(waveFilter)
-                        .toList();
-                List<FuzzingData> nonDeleteData = path.filteredFuzzingData().stream()
-                        .filter(data -> !isDestructiveOperation(data))
-                        .toList();
-                List<FuzzingData> deleteData = path.filteredFuzzingData().stream()
-                        .filter(this::isDestructiveOperation)
-                        .toList();
-                runFuzzers(nonDeleteData, waveFuzzers);
-                runFuzzers(deleteData, waveFuzzers);
-                if (completePathAfterWave) {
-                    runSecondPhaseFuzzers(path.filteredFuzzingData(), SecondPhaseFuzzer.Trigger.PATH_COMPLETED);
-                    command.executionEventPublisher.publish(new CatsExecutionEvent.PathCompleted(Instant.now(), path.pathKey()));
-                }
+                runFuzzers(nonDeleteData(path.filteredFuzzingData()), waveFuzzers(path, waveFilter));
+                afterNonDeletePhase.accept(path);
             }
         }
+        for (PreparedPath path : preparedPaths.reversed()) {
+            if (path.isRunnable()) {
+                CatsExecutionCancelledException.check();
+                runDeleteOperations(deleteData(path.filteredFuzzingData()), waveFuzzers(path, waveFilter));
+            }
+        }
+    }
+
+    private List<Fuzzer> waveFuzzers(PreparedPath path, Predicate<Fuzzer> waveFilter) {
+        return nonSeedFuzzers(path.fuzzersToRun()).stream().filter(waveFilter).toList();
+    }
+
+    private void runDeleteOperations(List<FuzzingData> deleteData, List<Fuzzer> fuzzers) {
+        if (deleteData.isEmpty()) {
+            return;
+        }
+        for (Fuzzer fuzzer : orderedBySuccessLikelihood(fuzzers)) {
+            runFuzzers(deleteData, List.of(fuzzer));
+            deleteData.stream().map(FuzzingData::getPath).distinct().forEach(this::refillIfEmptied);
+        }
+    }
+
+    static List<Fuzzer> orderedBySuccessLikelihood(List<Fuzzer> fuzzers) {
+        return fuzzers.stream().sorted(Comparator.comparingInt(FuzzerWaveExecutor::successLikelihood)).toList();
+    }
+
+    private static int successLikelihood(Fuzzer fuzzer) {
+        if (fuzzer instanceof HappyPathFuzzer) {
+            return 4;
+        }
+        if (fuzzer instanceof OnlyRequiredFieldsFuzzer) {
+            return 3;
+        }
+        if (AnnotationUtils.findAnnotation(fuzzer.getClass(), HeaderFuzzer.class) != null) {
+            return 2;
+        }
+        return AnnotationUtils.findAnnotation(fuzzer.getClass(), HttpFuzzer.class) != null ? 1 : 0;
+    }
+
+    /**
+     * Replays the producers of a consumer path once per wave when its resources were observed earlier but are now
+     * all gone, so later operations do not run against stale identifiers.
+     */
+    private void refillIfEmptied(String consumerPath) {
+        Set<String> producers = producersByConsumer.getOrDefault(consumerPath, Set.of());
+        if (command.runtimeResourcePool == null || producers.isEmpty()) {
+            return;
+        }
+        if (command.runtimeResourcePool.hasLiveResourceFor(consumerPath)) {
+            pathsWithObservedLiveResources.add(consumerPath);
+            return;
+        }
+        if (!pathsWithObservedLiveResources.contains(consumerPath)) {
+            return;
+        }
+        producers.stream()
+                .filter(producersRefilledInWave::add)
+                .map(preparedPathsByKey::get)
+                .filter(Objects::nonNull)
+                .forEach(producer -> replayProducer(producer, consumerPath));
+    }
+
+    private void replayProducer(PreparedPath producer, String consumerPath) {
+        Optional<Fuzzer> happyPath = producer.fuzzersToRun().stream().filter(HappyPathFuzzer.class::isInstance).findFirst();
+        List<FuzzingData> safeSeeds = producer.filteredFuzzingData().stream().filter(this::isSafeResourceSeed).toList();
+        List<FuzzingData> posts = safeSeeds.stream().filter(data -> data.getMethod() == HttpMethod.POST).toList();
+        List<FuzzingData> replayData = posts.isEmpty()
+                ? safeSeeds.stream().filter(data -> data.getMethod() == HttpMethod.GET).toList() : posts;
+        if (happyPath.isEmpty() || replayData.isEmpty()) {
+            return;
+        }
+        logger.note("No live resources left for {}; replaying producer {}", consumerPath, producer.pathKey());
+        runFuzzers(replayData, List.of(happyPath.get()));
     }
 
     private void retryUnresolvedSeedOperations(List<PreparedPath> preparedPaths) {
@@ -326,20 +411,10 @@ final class FuzzerWaveExecutor {
     }
 
     private void retryUnresolvedSeedForPath(PreparedPath path) {
-        Fuzzer happyPath = path.fuzzersToRun().stream()
-                .filter(HappyPathFuzzer.class::isInstance)
-                .findFirst()
-                .orElse(null);
-        if (happyPath == null) {
+        List<Fuzzer> seedFuzzers = seedFuzzers(path.fuzzersToRun());
+        if (seedFuzzers.isEmpty()) {
             return;
         }
-        Fuzzer onlyRequiredFields = path.fuzzersToRun().stream()
-                .filter(OnlyRequiredFieldsFuzzer.class::isInstance)
-                .findFirst()
-                .orElse(null);
-        List<Fuzzer> seedFuzzers = onlyRequiredFields != null
-                ? List.of(happyPath, onlyRequiredFields)
-                : List.of(happyPath);
         List<FuzzingData> unresolvedSeedData = path.filteredFuzzingData().stream()
                 .filter(this::isSafeResourceSeed)
                 .filter(data -> !command.runtimeResourcePool.hasSucceededWithUnmodifiedRequest(data.getPath(), data.getMethod()))
@@ -424,6 +499,15 @@ final class FuzzerWaveExecutor {
         return configuredFuzzers.stream().filter(fuzzer -> !isSeedFuzzer(fuzzer)).toList();
     }
 
+    private static List<Fuzzer> seedFuzzers(List<Fuzzer> configuredFuzzers) {
+        Optional<Fuzzer> happyPathFuzzer = configuredFuzzers.stream().filter(HappyPathFuzzer.class::isInstance).findFirst();
+        if (happyPathFuzzer.isEmpty()) {
+            return List.of();
+        }
+        return Stream.concat(happyPathFuzzer.stream(),
+                configuredFuzzers.stream().filter(OnlyRequiredFieldsFuzzer.class::isInstance).limit(1)).toList();
+    }
+
     private boolean isInWave(Fuzzer fuzzer, Set<String> waveLowerNames) {
         String sanitized = ConsoleUtils.removeTrimSanitize(fuzzer.toString()).toLowerCase(Locale.ROOT);
         String simple = fuzzer.getClass().getSimpleName().replace("Fuzzer", "").toLowerCase(Locale.ROOT);
@@ -494,13 +578,46 @@ final class FuzzerWaveExecutor {
     }
 
     void runDeferredHappyPathDeletes() {
-        List<DeferredHappyPathDelete> deferred = List.copyOf(deferredHappyPathDeletes);
+        List<DeferredHappyPathDelete> deferred = List.copyOf(deferredHappyPathDeletes).reversed();
         deferredHappyPathDeletes.clear();
-        for (DeferredHappyPathDelete delete : deferred.reversed()) {
-            CatsExecutionCancelledException.check();
-            runFuzzers(delete.deleteData(), delete.deleteFuzzers());
-            runSecondPhaseFuzzers(delete.pathData(), SecondPhaseFuzzer.Trigger.PATH_RESOURCES_DELETED);
+        for (DeferredHappyPathDelete delete : deferred) {
+            if (!delete.deleteData().isEmpty()) {
+                CatsExecutionCancelledException.check();
+                runFuzzers(delete.deleteData(), delete.deleteFuzzers());
+                runSecondPhaseFuzzers(delete.pathData(), SecondPhaseFuzzer.Trigger.PATH_RESOURCES_DELETED);
+            }
         }
+    }
+
+    /**
+     * Runs cleanup after an execution limit was reached, bounded by {@code min(5s, 5% of --stopAfterTimeInSec)}.
+     */
+    private void runWithinCleanupGrace(Runnable cleanup) {
+        long graceMillis = cleanupGraceMillis();
+        cleanupDeadlineMillis = clock.getAsLong() + graceMillis;
+        cleanupGraceExpiryLogged = false;
+        try {
+            cleanup.run();
+        } finally {
+            cleanupDeadlineMillis = Long.MAX_VALUE;
+        }
+    }
+
+    long cleanupGraceMillis() {
+        long budgetMillis = command.stopArguments.getStopAfterTimeInSec() * 1000;
+        return budgetMillis > 0 ? Math.min(MAX_CLEANUP_GRACE_MILLIS, budgetMillis / CLEANUP_GRACE_BUDGET_DIVISOR)
+                : MAX_CLEANUP_GRACE_MILLIS;
+    }
+
+    private boolean isCleanupGraceExpired() {
+        if (cleanupDeadlineMillis == Long.MAX_VALUE || clock.getAsLong() < cleanupDeadlineMillis) {
+            return false;
+        }
+        if (!cleanupGraceExpiryLogged) {
+            cleanupGraceExpiryLogged = true;
+            logger.warning("Cleanup grace period expired; skipping the remaining deferred operations");
+        }
+        return true;
     }
 
     void runSecondPhaseFuzzers(List<FuzzingData> fuzzingData, SecondPhaseFuzzer.Trigger trigger) {
@@ -542,74 +659,41 @@ final class FuzzerWaveExecutor {
         }
         runSeedFuzzersForPath(fuzzingData, configuredFuzzers);
         List<Fuzzer> remainingFuzzers = nonSeedFuzzers(configuredFuzzers);
-        List<FuzzingData> nonDeleteData = fuzzingData.stream()
-                .filter(data -> data.getMethod() != HttpMethod.DELETE)
-                .toList();
-        List<FuzzingData> deleteData = fuzzingData.stream()
-                .filter(data -> data.getMethod() == HttpMethod.DELETE)
-                .toList();
-        runFuzzers(nonDeleteData, remainingFuzzers);
-        runFuzzers(deleteData, remainingFuzzers);
+        runFuzzers(nonDeleteData(fuzzingData), remainingFuzzers);
+        runDeleteOperations(deleteData(fuzzingData), remainingFuzzers);
     }
 
     private void runSeedFuzzersForPath(List<FuzzingData> fuzzingData, List<Fuzzer> configuredFuzzers) {
-        Fuzzer happyPathFuzzer = configuredFuzzers.stream()
-                .filter(HappyPathFuzzer.class::isInstance)
-                .findFirst()
-                .orElse(null);
-        if (happyPathFuzzer == null) {
+        List<Fuzzer> seedFuzzers = seedFuzzers(configuredFuzzers);
+        if (seedFuzzers.isEmpty()) {
             return;
         }
-        Fuzzer onlyRequiredFieldsFuzzer = configuredFuzzers.stream()
-                .filter(OnlyRequiredFieldsFuzzer.class::isInstance)
-                .findFirst()
-                .orElse(null);
-        List<Fuzzer> seedFuzzers = onlyRequiredFieldsFuzzer != null
-                ? List.of(happyPathFuzzer, onlyRequiredFieldsFuzzer)
-                : List.of(happyPathFuzzer);
-        List<FuzzingData> seedData = fuzzingData.stream()
+        List<FuzzingData> nonDelete = nonDeleteData(fuzzingData);
+        List<FuzzingData> seedData = nonDelete.stream()
                 .filter(this::isSafeResourceSeed)
                 .sorted(Comparator.comparingInt(data -> seedMethodOrder(data.getMethod())))
                 .toList();
-        List<FuzzingData> deleteData = fuzzingData.stream().filter(this::isDestructiveOperation).toList();
-        List<FuzzingData> deferredHappyPathData = fuzzingData.stream()
-                .filter(data -> !seedData.contains(data) && !deleteData.contains(data)).toList();
+        List<FuzzingData> remainingData = nonDelete.stream().filter(data -> !seedData.contains(data)).toList();
         runFuzzers(seedData, seedFuzzers);
-        runFuzzers(deferredHappyPathData, List.of(happyPathFuzzer));
-        if (!deleteData.isEmpty()) {
-            deferredHappyPathDeletes.add(new DeferredHappyPathDelete(fuzzingData, deleteData, List.of(happyPathFuzzer)));
+        runFuzzers(remainingData, List.of(seedFuzzers.getFirst()));
+        List<FuzzingData> deletes = deleteData(fuzzingData);
+        if (!deletes.isEmpty()) {
+            deferredHappyPathDeletes.add(new DeferredHappyPathDelete(fuzzingData, deletes, List.of(seedFuzzers.getFirst())));
         }
+    }
+
+    private List<FuzzingData> nonDeleteData(List<FuzzingData> fuzzingData) {
+        return fuzzingData.stream().filter(data -> data.getMethod() != HttpMethod.DELETE).toList();
+    }
+
+    private List<FuzzingData> deleteData(List<FuzzingData> fuzzingData) {
+        return fuzzingData.stream().filter(data -> data.getMethod() == HttpMethod.DELETE).toList();
     }
 
     private boolean isSafeResourceSeed(FuzzingData data) {
-        if (isDestructiveOperation(data)) {
-            return false;
-        }
         return data.getMethod() == HttpMethod.POST || data.getMethod() == HttpMethod.PUT ||
                 data.getMethod() == HttpMethod.PATCH || data.getMethod() == HttpMethod.GET ||
                 data.getMethod() == HttpMethod.HEAD;
-    }
-
-    private boolean isDestructiveOperation(FuzzingData data) {
-        if (data.getMethod() == HttpMethod.DELETE) {
-            return true;
-        }
-        if (data.getMethod() != HttpMethod.POST && data.getMethod() != HttpMethod.PUT) {
-            return false;
-        }
-        String path = data.getPath();
-        if (path == null) {
-            return false;
-        }
-        int slash = path.lastIndexOf('/');
-        String lastSeg = (slash >= 0 ? path.substring(slash + 1) : path).toLowerCase(Locale.ROOT);
-        if (lastSeg.startsWith("delete") || lastSeg.startsWith("remove") || lastSeg.startsWith("unsubscribe")
-                || lastSeg.startsWith("logout") || lastSeg.startsWith("signout") || lastSeg.startsWith("passwordreset")) {
-            return true;
-        }
-        return ("profile".equals(lastSeg) || "changepassword".equals(lastSeg))
-                && data.getRequestPropertyTypes() != null
-                && data.getRequestPropertyTypes().containsKey("password");
     }
 
     private static int seedMethodOrder(HttpMethod method) {
@@ -628,6 +712,9 @@ final class FuzzerWaveExecutor {
             List<FuzzingData> filteredData = filterFuzzingData(fuzzingDataListWithHttpMethodsFiltered, fuzzer);
             for (FuzzingData data : filteredData) {
                 CatsExecutionCancelledException.check();
+                if (isCleanupGraceExpired()) {
+                    return;
+                }
                 runSingleFuzzer(fuzzer, data);
             }
         }

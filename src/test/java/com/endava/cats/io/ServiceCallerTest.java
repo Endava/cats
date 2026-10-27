@@ -6,6 +6,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.auth.session.SessionHealthMonitor;
 import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.factory.FuzzingDataFactory;
@@ -144,7 +145,8 @@ class ServiceCallerTest {
         testCaseListener = Mockito.mock(TestCaseListener.class);
         runtimeResourcePool = new RuntimeResourcePool(processingArguments, filesArguments);
         serviceCaller = new ServiceCaller(testCaseListener, filesArguments, authArguments, apiArguments, processingArguments,
-                reportingArguments, wfcAuthProvider, runtimeResourcePool, filterArguments);
+                reportingArguments, wfcAuthProvider, runtimeResourcePool, filterArguments,
+                new SessionHealthMonitor(wfcAuthProvider));
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(authArguments, "wfcAuthFile", null);
@@ -201,7 +203,8 @@ class ServiceCallerTest {
         Mockito.when(resourcePool.enrich(Mockito.any(), Mockito.anyString())).thenAnswer(invocation ->
                 new RuntimeResourcePool.ResolvedRequest(invocation.getArgument(1), null, List.of()));
         ServiceCaller caller = new ServiceCaller(testCaseListener, filesArguments, authArguments,
-                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool, filterArguments);
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool, filterArguments,
+                new SessionHealthMonitor(wfcAuthProvider));
         caller.initRateLimiter();
         caller.initHttpClient();
 
@@ -223,7 +226,8 @@ class ServiceCallerTest {
         Mockito.when(resourcePool.enrichHeaders(Mockito.any(), Mockito.anyList(), Mockito.any())).thenReturn(
                 new RuntimeResourcePool.ResolvedHeaders(List.of(new KeyValuePair<>("If-Match", "\"version-7\"")), List.of()));
         ServiceCaller caller = new ServiceCaller(testCaseListener, filesArguments, authArguments,
-                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool, filterArguments);
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool, filterArguments,
+                new SessionHealthMonitor(wfcAuthProvider));
         caller.initRateLimiter();
         caller.initHttpClient();
 
@@ -245,7 +249,8 @@ class ServiceCallerTest {
                 .when(failingPool).observe(Mockito.any(), Mockito.any(CatsRequest.class), Mockito.any(CatsResponse.class),
                         Mockito.any(RuntimeResourcePool.ResolvedRequest.class));
         ServiceCaller caller = new ServiceCaller(testCaseListener, filesArguments, authArguments,
-                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, failingPool, filterArguments);
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, failingPool, filterArguments,
+                new SessionHealthMonitor(wfcAuthProvider));
         caller.initRateLimiter();
         caller.initHttpClient();
 
@@ -256,6 +261,39 @@ class ServiceCallerTest {
         Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
         Mockito.verify(failingPool).observe(Mockito.any(), Mockito.any(CatsRequest.class), Mockito.same(response),
                 Mockito.any(RuntimeResourcePool.ResolvedRequest.class));
+    }
+
+    @Test
+    void shouldReportWhetherCredentialsWereSentIntactToTheSessionHealthMonitor() {
+        SessionHealthMonitor monitor = Mockito.mock(SessionHealthMonitor.class);
+        WfcAuthProvider queryAuthProvider = Mockito.mock(WfcAuthProvider.class);
+        Mockito.when(queryAuthProvider.getAuthenticationQueryParamNames()).thenReturn(Set.of("access_token"));
+        Mockito.when(queryAuthProvider.applyQueryParams(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        ServiceCaller caller = new ServiceCaller(testCaseListener, filesArguments, authArguments, apiArguments,
+                processingArguments, reportingArguments, queryAuthProvider, runtimeResourcePool, filterArguments, monitor);
+        caller.initRateLimiter();
+        caller.initHttpClient();
+
+        caller.call(secureRequest().build());
+        caller.call(secureRequest().skippedHeaders(Set.of("Authorization")).build());
+        caller.call(secureRequest().mutationTarget(RequestTarget.header("Authorization")).build());
+        caller.call(secureRequest().mutationTarget(RequestTarget.httpMethod()).build());
+        caller.call(secureRequest().mutationTarget(RequestTarget.path("id")).build());
+        caller.call(secureRequest().addUserHeaders(false).build());
+        caller.call(secureRequest().mutationTarget(RequestTarget.query("access_token")).build());
+        caller.call(secureRequest().mutationTarget(RequestTarget.header("X-Trace"))
+                .mutationTarget(RequestTarget.query("limit")).mutationTarget(RequestTarget.body("name")).build());
+
+        ArgumentCaptor<Boolean> intact = ArgumentCaptor.forClass(Boolean.class);
+        Mockito.verify(monitor, Mockito.times(8)).record(Mockito.eq("/secure"), Mockito.eq(HttpMethod.GET),
+                Mockito.eq(200), intact.capture());
+        Assertions.assertThat(intact.getAllValues()).containsExactly(true, false, false, false, false, false, false, true);
+    }
+
+    private ServiceData.ServiceDataBuilder secureRequest() {
+        return ServiceData.builder().relativePath("/secure").headers(Set.of()).payload("{}")
+                .httpMethod(HttpMethod.GET).contentType("application/json");
     }
 
     @Test
@@ -395,7 +433,8 @@ class ServiceCallerTest {
         Mockito.when(resourcePool.applySuccessfulRequestBaseline(Mockito.any())).thenReturn("{}");
         Mockito.when(resourcePool.enrich(Mockito.any(), Mockito.anyString())).thenReturn(resolved);
         ServiceCaller caller = new ServiceCaller(testCaseListener, filesArguments, authArguments,
-                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool, filterArguments);
+                apiArguments, processingArguments, reportingArguments, wfcAuthProvider, resourcePool, filterArguments,
+                new SessionHealthMonitor(wfcAuthProvider));
         caller.initHttpClient();
         caller.initRateLimiter();
 

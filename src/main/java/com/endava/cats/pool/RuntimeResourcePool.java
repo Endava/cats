@@ -725,6 +725,25 @@ public class RuntimeResourcePool {
         return exchangeRecorder.hasSucceededWithUnmodifiedRequest(path, method);
     }
 
+    /**
+     * Checks whether all path parameters of the given path can currently be resolved from active resources.
+     *
+     * @param path the contract path to check
+     * @return true when the path has no parameters or every parameter resolves to an active resource
+     */
+    public synchronized boolean hasLiveResourceFor(String path) {
+        if (StringUtils.isBlank(path)) {
+            return true;
+        }
+        Set<String> variables = OpenApiUtils.getPathVariables(path);
+        if (variables.isEmpty()) {
+            return true;
+        }
+        return variables.stream()
+                .map(variable -> new TargetField(variable, variable, RequestTarget.Location.PATH, ValueShape.STRING))
+                .allMatch(target -> enricher.resolve(path, target, null).isPresent());
+    }
+
     public synchronized List<SuccessfulExchange> successfulExchanges(String path, HttpMethod method) {
         return exchangeRecorder.successfulExchanges(path, method);
     }

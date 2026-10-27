@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class OperationDependencyOrderTest {
@@ -34,6 +35,24 @@ class OperationDependencyOrderTest {
 
         Assertions.assertThat(OperationDependencyOrder.order(api, alphabetical)).extracting(Map.Entry::getKey)
                 .containsExactly("/pets", "/orders", "/unrelated");
+    }
+
+    @Test
+    void exposesProducersOfEachConsumerAndOmitsPathsWithoutProducers() {
+        OpenAPI api = new OpenAPI().components(new Components().addSchemas("Order",
+                        new ObjectSchema().addProperty("petId", new StringSchema())))
+                .paths(new Paths()
+                        .addPathItem("/orders", new PathItem().post(post(new Schema<>().$ref("#/components/schemas/Order"))))
+                        .addPathItem("/pets", new PathItem().post(new Operation()))
+                        .addPathItem("/pets/{id}", new PathItem().get(new Operation()).delete(new Operation()))
+                        .addPathItem("/unrelated", new PathItem().get(new Operation())));
+        List<Map.Entry<String, PathItem>> alphabetical = api.getPaths().entrySet().stream().toList();
+
+        Map<String, Set<String>> producers = OperationDependencyOrder.producersByConsumer(api, alphabetical);
+
+        Assertions.assertThat(producers).containsOnlyKeys("/orders", "/pets/{id}");
+        Assertions.assertThat(producers.get("/orders")).containsExactly("/pets");
+        Assertions.assertThat(producers.get("/pets/{id}")).containsExactly("/pets");
     }
 
     @Test

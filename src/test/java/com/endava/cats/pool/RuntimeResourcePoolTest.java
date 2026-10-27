@@ -2490,6 +2490,23 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(CatsResultFactory.createUnexpectedBehaviour("401", "2XX").message()).contains("authentication");
     }
 
+    @Test
+    void shouldReportLiveResourcesForPathParameters() {
+        enableResourceReuse();
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/customers")).isTrue();
+        Assertions.assertThat(resourcePool.hasLiveResourceFor(null)).isTrue();
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/customers/{customerId}")).isFalse();
+
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"),
+                response(201, "{\"id\":\"customer-42\"}"));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/customers/{customerId}")).isTrue();
+
+        ServiceData delete = ServiceData.builder().relativePath("/customers/{customerId}")
+                .httpMethod(HttpMethod.DELETE).contentType("application/json").build();
+        resourcePool.observe(delete, request("DELETE", "/customers/customer-42", "{}"), response(204, ""));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/customers/{customerId}")).isFalse();
+    }
+
     private void enableResourceReuse() {
         ReflectionTestUtils.setField(processingArguments, "reuseSuccessfulResources", true);
     }

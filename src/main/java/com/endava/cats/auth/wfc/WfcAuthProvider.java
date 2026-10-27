@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -68,7 +69,17 @@ public class WfcAuthProvider {
     private final Map<String, Long> lastRefreshByName = new HashMap<>();
     private final Map<String, Integer> activeIndexByOperation = new HashMap<>();
     private final Set<String> lockedOperations = new HashSet<>();
+    private final Map<String, EntryHealth> healthByName = new HashMap<>();
     private int lastSuccessfulIndex;
+    private boolean anyLoginSucceeded;
+
+    /**
+     * Session health of a credential entry. {@code REAUTH} forces one new login; {@code DEAD} entries are never
+     * logged in again and operations bound to them rotate to the next healthy entry.
+     */
+    private enum EntryHealth {
+        HEALTHY, REAUTH, DEAD
+    }
 
     /**
      * Creates a new WFC auth provider.
@@ -237,8 +248,136 @@ public class WfcAuthProvider {
             activeIndexByOperation.put(opKey, currentIdx);
             lastSuccessfulIndex = currentIdx;
         } else if (!lockedOperations.contains(opKey) && (statusCode == 401 || statusCode == 403)) {
-            int nextIdx = (currentIdx + 1) % authEntries.size();
-            activeIndexByOperation.put(opKey, nextIdx);
+            int nextIdx = nextUsableIndex(currentIdx);
+            if (nextIdx >= 0) {
+                activeIndexByOperation.put(opKey, nextIdx);
+            }
+        }
+    }
+
+    /**
+     * Gets the name of the WFC entry used for the specified operation without resolving credentials.
+     *
+     * @param path   contract path
+     * @param method HTTP method
+     * @return the active entry name, or an empty string when WFC Auth is disabled
+     */
+    public synchronized String getActiveEntryName(String path, String method) {
+        if (!isEnabled()) {
+            return "";
+        }
+        return selectedAuth(operationKey(path, method)).getName();
+    }
+
+    /**
+     * Forces a new login for a dynamic entry on its next use, e.g. after a session destructive operation succeeded.
+     * Entries with fixed headers or entries already marked as unusable are left unchanged.
+     *
+     * @param entryName WFC entry name
+     */
+    public synchronized void requestReauthentication(String entryName) {
+        AuthenticationInfo auth = entry(entryName);
+        if (auth == null || auth.getLoginEndpointAuth() == null || health(entryName) == EntryHealth.DEAD) {
+            return;
+        }
+        cachedCredentialsByName.remove(entryName);
+        lastRefreshByName.remove(entryName);
+        healthByName.put(entryName, EntryHealth.REAUTH);
+        logger.note("WFC Auth entry {} will log in again before the next request", entryName);
+    }
+
+    /**
+     * Reacts to a confirmed session loss: a healthy dynamic entry logs in again once, while an entry that already
+     * re-authenticated, or that cannot log in again, is marked unusable and rotated away from.
+     *
+     * @param entryName WFC entry name
+     */
+    public synchronized void reportSessionLost(String entryName) {
+        reportSessionLost(entryName, null, null);
+    }
+
+    /**
+     * Reacts to a confirmed session loss while keeping the suspect operation that preceded the failure streak
+     * quarantined on the invalidated entry so it cannot destroy the replacement entry as well.
+     *
+     * @param entryName     WFC entry name
+     * @param suspectPath   contract path of the last state-changing 2XX operation before the 401 streak
+     * @param suspectMethod HTTP method of the last state-changing 2XX operation before the 401 streak
+     */
+    public synchronized void reportSessionLost(String entryName, String suspectPath, String suspectMethod) {
+        AuthenticationInfo auth = entry(entryName);
+        if (auth == null || health(entryName) == EntryHealth.DEAD) {
+            return;
+        }
+        String quarantinedOpKey = StringUtils.isNotBlank(suspectPath) && StringUtils.isNotBlank(suspectMethod)
+                ? operationKey(suspectPath, suspectMethod) : null;
+        if (auth.getLoginEndpointAuth() != null && health(entryName) == EntryHealth.HEALTHY) {
+            requestReauthentication(entryName);
+            return;
+        }
+        markDead(entryName, quarantinedOpKey);
+    }
+
+    /**
+     * Records that a request authenticated with the entry succeeded, completing a pending re-authentication.
+     *
+     * @param entryName WFC entry name
+     */
+    public synchronized void recordSessionHealthy(String entryName) {
+        if (health(entryName) == EntryHealth.REAUTH && cachedCredentialsByName.containsKey(entryName)) {
+            healthByName.put(entryName, EntryHealth.HEALTHY);
+        }
+    }
+
+    private AuthenticationInfo entry(String entryName) {
+        if (!isEnabled() || StringUtils.isBlank(entryName)) {
+            return null;
+        }
+        selectedAuth("");
+        return authEntries.stream().filter(auth -> auth.getName().equals(entryName)).findFirst().orElse(null);
+    }
+
+    private EntryHealth health(String entryName) {
+        return healthByName.getOrDefault(entryName, EntryHealth.HEALTHY);
+    }
+
+    private int nextUsableIndex(int fromIndex) {
+        for (int step = 1; step <= authEntries.size(); step++) {
+            int candidate = Math.floorMod(fromIndex + step, authEntries.size());
+            if (health(authEntries.get(candidate).getName()) != EntryHealth.DEAD) {
+                return candidate;
+            }
+        }
+        return -1;
+    }
+
+    private void markDead(String entryName) {
+        markDead(entryName, null);
+    }
+
+    private void markDead(String entryName, String quarantinedOpKey) {
+        healthByName.put(entryName, EntryHealth.DEAD);
+        int deadIndex = authEntries.indexOf(entry(entryName));
+        int nextIndex = nextUsableIndex(deadIndex);
+        if (StringUtils.isNotBlank(authArguments.getWfcAuthName()) || nextIndex < 0) {
+            logger.warning("WFC Auth entry {} is no longer usable and no other entry is available; later authenticated results may be unreliable", entryName);
+            return;
+        }
+        String nextName = authEntries.get(nextIndex).getName();
+        logger.warning("WFC Auth entry {} is no longer usable; rotating to entry {}", entryName, nextName);
+        for (Map.Entry<String, Integer> binding : activeIndexByOperation.entrySet()) {
+            if (Math.floorMod(binding.getValue(), authEntries.size()) == deadIndex &&
+                    !binding.getKey().equals(quarantinedOpKey)) {
+                binding.setValue(nextIndex);
+                lockedOperations.remove(binding.getKey());
+            }
+        }
+        if (quarantinedOpKey != null) {
+            activeIndexByOperation.put(quarantinedOpKey, deadIndex);
+            lockedOperations.add(quarantinedOpKey);
+        }
+        if (Math.floorMod(lastSuccessfulIndex, authEntries.size()) == deadIndex) {
+            lastSuccessfulIndex = nextIndex;
         }
     }
 
@@ -261,12 +400,26 @@ public class WfcAuthProvider {
         if (existing != null && !refreshIntervalElapsed(lastRefresh)) {
             return existing;
         }
+        if (health(entryName) == EntryHealth.DEAD) {
+            return existing != null ? existing : fixedCredentials(auth);
+        }
 
         if (okHttpClient == null) {
             throw new CatsException("WFC Auth requires an initialized HTTP client before resolving dynamic credentials");
         }
 
-        WfcCredentials resolved = login(auth, okHttpClient);
+        WfcCredentials resolved;
+        try {
+            resolved = login(auth, okHttpClient);
+        } catch (CatsException e) {
+            if (!anyLoginSucceeded) {
+                throw e;
+            }
+            logger.warning("WFC Auth re-login failed for entry {}: {}", entryName, e.getMessage());
+            markDead(entryName);
+            return resolveCredentials(okHttpClient, opKey);
+        }
+        anyLoginSucceeded = true;
         long now = System.currentTimeMillis();
         cachedCredentialsByName.put(entryName, resolved);
         lastRefreshByName.put(entryName, now);
@@ -286,7 +439,9 @@ public class WfcAuthProvider {
             lastRefreshByName.clear();
             activeIndexByOperation.clear();
             lockedOperations.clear();
+            healthByName.clear();
             lastSuccessfulIndex = 0;
+            anyLoginSucceeded = false;
         }
         if (StringUtils.isBlank(currentAuthName) && authEntries.size() > 1 && StringUtils.isNotBlank(opKey) && !":".equals(opKey)) {
             int idx = activeIndexByOperation.getOrDefault(opKey, lastSuccessfulIndex);

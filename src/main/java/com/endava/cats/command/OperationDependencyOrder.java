@@ -63,6 +63,22 @@ final class OperationDependencyOrder {
         return ordered;
     }
 
+    /**
+     * Returns, for every consumer path, the producer paths whose resources it references.
+     * Paths without inferred producers are omitted.
+     */
+    static Map<String, Set<String>> producersByConsumer(OpenAPI api, List<Map.Entry<String, PathItem>> paths) {
+        Map<String, Set<String>> dependencies = buildDependencies(api, paths, buildProducersByIdentifier(api, paths));
+        Map<String, Set<String>> producers = new LinkedHashMap<>();
+        for (Map.Entry<String, PathItem> entry : paths) {
+            Set<String> pathProducers = dependencies.getOrDefault(entry.getKey(), Set.of());
+            if (!pathProducers.isEmpty()) {
+                producers.put(entry.getKey(), Collections.unmodifiableSet(new LinkedHashSet<>(pathProducers)));
+            }
+        }
+        return Collections.unmodifiableMap(producers);
+    }
+
     private static Map<String, Set<String>> buildProducersByIdentifier(OpenAPI api, List<Map.Entry<String, PathItem>> defaultOrder) {
         Map<String, Set<String>> producersByIdentifier = new HashMap<>();
         defaultOrder.stream().filter(OperationDependencyOrder::isProducerPath)

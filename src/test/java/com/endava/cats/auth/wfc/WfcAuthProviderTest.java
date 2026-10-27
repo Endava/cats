@@ -335,6 +335,257 @@ class WfcAuthProviderTest {
                 .hasCauseInstanceOf(IOException.class);
     }
 
+    @Test
+    void shouldExposeNoSessionDataWhenDisabled() {
+        Mockito.when(authArguments.isWfcAuthSupplied()).thenReturn(false);
+
+        provider.requestReauthentication("user1");
+        provider.reportSessionLost("user1");
+        provider.recordSessionHealthy("user1");
+
+        Assertions.assertThat(provider.getActiveEntryName("/orders", "GET")).isEmpty();
+    }
+
+    @Test
+    void shouldQuarantineSuspectOperationWhenRotatingAwayFromDeadEntry() throws IOException {
+        enable(config("""
+                auth:
+                  - name: admin
+                    fixedHeaders:
+                      - name: Authorization
+                        value: Basic admin
+                  - name: customer
+                    fixedHeaders:
+                      - name: X-Api-Key
+                        value: customer-key
+                """), null);
+        provider.recordOutcome("/orders", "GET", 200);
+        provider.recordOutcome("/user/deleteAccount", "POST", 200);
+
+        provider.reportSessionLost("admin", "/user/deleteAccount", "POST");
+
+        Assertions.assertThat(provider.getActiveEntryName("/orders", "GET")).isEqualTo("customer");
+        Assertions.assertThat(provider.getActiveEntryName("/user/deleteAccount", "POST")).isEqualTo("admin");
+    }
+
+    @Test
+    void shouldLogInAgainOnceWhenSessionIsLostAndRotateWhenItStaysLost() throws IOException {
+        enable(multiUserConfig(), null);
+        Mockito.when(apiArguments.getServer()).thenReturn("https://example.com");
+        OkHttpClient client = successfulClient("{\"accessToken\":\"token\"}", Map.of());
+
+        Assertions.assertThat(provider.getHeaders(client, "/orders", "GET")).containsEntry("Authorization", "Bearer token");
+        provider.recordOutcome("/orders", "GET", 200);
+        Assertions.assertThat(provider.getActiveEntryName("/orders", "GET")).isEqualTo("user1");
+
+        provider.reportSessionLost("user1");
+        provider.recordSessionHealthy("user1");
+        provider.getHeaders(client, "/orders", "GET");
+        provider.recordSessionHealthy("user1");
+        provider.getHeaders(client, "/orders", "GET");
+        Mockito.verify(client, Mockito.times(2)).newCall(Mockito.any());
+
+        provider.reportSessionLost("user1");
+        provider.reportSessionLost("user1");
+        Assertions.assertThat(provider.getActiveEntryName("/orders", "GET")).isEqualTo("user2");
+        Assertions.assertThat(provider.getActiveEntryName("/unbound", "GET")).isEqualTo("user2");
+
+        provider.recordOutcome("/orders", "GET", 401);
+        Assertions.assertThat(provider.getActiveEntryName("/orders", "GET")).isEqualTo("static");
+        provider.reportSessionLost("user1");
+        provider.requestReauthentication("user1");
+        provider.requestReauthentication("static");
+        provider.requestReauthentication("missing");
+        provider.reportSessionLost("missing");
+        provider.recordSessionHealthy("user2");
+        Assertions.assertThat(provider.getHeaders(client, "/orders", "GET")).containsEntry("X-Api-Key", "static-key");
+    }
+
+    @Test
+    void shouldRotateInsteadOfFailingWhenReloginFailsAfterASuccessfulLogin() throws IOException {
+        enable(multiUserConfig(), null);
+        Mockito.when(apiArguments.getServer()).thenReturn("https://example.com");
+        OkHttpClient client = clientSucceedingOnceThenFailing(new IOException("account deleted"));
+
+        Assertions.assertThat(provider.getHeaders(client, "/orders", "GET")).containsEntry("Authorization", "Bearer token");
+        provider.requestReauthentication("user1");
+
+        Assertions.assertThat(provider.getHeaders(client, "/orders", "GET")).containsEntry("X-Api-Key", "static-key");
+        Assertions.assertThat(provider.getActiveEntryName("/orders", "GET")).isEqualTo("static");
+        provider.recordOutcome("/orders", "GET", 403);
+        Assertions.assertThat(provider.getActiveEntryName("/orders", "GET")).isEqualTo("external");
+        provider.recordOutcome("/orders", "GET", 403);
+        Assertions.assertThat(provider.getActiveEntryName("/orders", "GET")).isEqualTo("static");
+        Mockito.verify(client, Mockito.times(3)).newCall(Mockito.any());
+    }
+
+    @Test
+    void shouldStopLoggingInWhenTheOnlyEntryCannotLogInAgain() throws IOException {
+        enable(new File("src/test/resources/wfc-token-auth.yml"), "cats");
+        Mockito.when(apiArguments.getServer()).thenReturn("https://example.com");
+        OkHttpClient client = clientSucceedingOnceThenFailing(new IOException("down"));
+
+        provider.getHeaders(client);
+        provider.requestReauthentication("cats");
+
+        Assertions.assertThat(provider.getHeaders(client)).isEmpty();
+        Assertions.assertThat(provider.getHeaders(client)).isEmpty();
+        Mockito.verify(client, Mockito.times(2)).newCall(Mockito.any());
+    }
+
+    @Test
+    void shouldKeepStaleCredentialsWhenRefreshFailsWithoutAlternativeEntry() throws IOException {
+        enable(new File("src/test/resources/wfc-token-auth.yml"), "cats");
+        Mockito.when(apiArguments.getServer()).thenReturn("https://example.com");
+        Mockito.when(authArguments.getAuthRefreshInterval()).thenReturn(1);
+        OkHttpClient client = clientSucceedingOnceThenFailing(new IOException("down"));
+
+        provider.getHeaders(client);
+        lastRefreshByName().put("cats", 0L);
+
+        Assertions.assertThat(provider.getHeaders(client)).containsEntry("Authorization", "Bearer token");
+    }
+
+    @Test
+    void shouldMarkFixedHeaderEntriesUnusableAndUnlockTheirOperations() throws IOException {
+        enable(config("""
+                auth:
+                  - name: admin
+                    fixedHeaders:
+                      - name: Authorization
+                        value: Basic admin
+                  - name: customer
+                    fixedHeaders:
+                      - name: X-Api-Key
+                        value: customer-key
+                  - name: guest
+                    fixedHeaders:
+                      - name: X-Guest
+                        value: guest
+                """), null);
+        provider.recordOutcome("/customer", "GET", 200);
+
+        provider.reportSessionLost("admin");
+        Assertions.assertThat(provider.getActiveEntryName("/customer", "GET")).isEqualTo("customer");
+        provider.recordOutcome("/customer", "GET", 401);
+
+        Assertions.assertThat(provider.getActiveEntryName("/customer", "GET")).isEqualTo("guest");
+        Assertions.assertThat(provider.getHeaders(null, "/other", "GET")).containsEntry("X-Api-Key", "customer-key");
+    }
+
+    @Test
+    void shouldKeepUnrelatedBindingsAndStopRotatingWhenEveryEntryIsUnusable() throws IOException {
+        enable(config("""
+                auth:
+                  - name: admin
+                    fixedHeaders:
+                      - name: Authorization
+                        value: Basic admin
+                  - name: customer
+                    fixedHeaders:
+                      - name: X-Api-Key
+                        value: customer-key
+                  - name: guest
+                    fixedHeaders:
+                      - name: X-Guest
+                        value: guest
+                """), null);
+        provider.recordOutcome("/admin", "GET", 200);
+        provider.recordOutcome("/guest", "GET", 403);
+        provider.recordOutcome("/guest", "GET", 403);
+        Assertions.assertThat(provider.getActiveEntryName("/guest", "GET")).isEqualTo("guest");
+
+        provider.reportSessionLost("guest");
+        Assertions.assertThat(provider.getActiveEntryName("/admin", "GET")).isEqualTo("admin");
+        Assertions.assertThat(provider.getActiveEntryName("/guest", "GET")).isEqualTo("admin");
+
+        provider.reportSessionLost("admin");
+        provider.reportSessionLost("customer");
+        provider.recordOutcome("/fresh", "GET", 401);
+        provider.requestReauthentication("");
+        provider.recordSessionHealthy("admin");
+
+        Assertions.assertThat(provider.getActiveEntryName("/fresh", "GET")).isEqualTo("customer");
+        Assertions.assertThat(provider.getHeaders(null, "/fresh", "GET")).containsEntry("X-Api-Key", "customer-key");
+    }
+
+    @Test
+    void shouldNotRotateWhenEntryIsPinned() throws IOException {
+        enable(multiUserConfig(), "user1");
+
+        provider.reportSessionLost("user1");
+        provider.reportSessionLost("user1");
+
+        Assertions.assertThat(provider.getActiveEntryName("/orders", "GET")).isEqualTo("user1");
+    }
+
+    private File multiUserConfig() throws IOException {
+        return config("""
+                auth:
+                  - name: user1
+                    loginEndpointAuth:
+                      endpoint: /api/auth/login
+                      verb: POST
+                      contentType: application/json
+                      payloadUserPwd:
+                        username: u1
+                        password: p1
+                        usernameField: login
+                        passwordField: secret
+                      token:
+                        extractFrom: body
+                        extractSelector: /accessToken
+                        sendIn: header
+                        sendName: Authorization
+                        sendTemplate: "Bearer {token}"
+                  - name: user2
+                    loginEndpointAuth:
+                      endpoint: /api/auth/login
+                      verb: POST
+                      contentType: application/json
+                      payloadUserPwd:
+                        username: u2
+                        password: p2
+                        usernameField: login
+                        passwordField: secret
+                      token:
+                        extractFrom: body
+                        extractSelector: /accessToken
+                        sendIn: header
+                        sendName: Authorization
+                        sendTemplate: "Bearer {token}"
+                  - name: static
+                    fixedHeaders:
+                      - name: X-Api-Key
+                        value: static-key
+                  - name: external
+                    loginEndpointAuth:
+                      externalEndpointURL: https://login.example.com/token
+                      verb: GET
+                      token:
+                        extractFrom: header
+                        extractSelector: X-Token
+                        sendIn: header
+                        sendName: X-Token
+                """);
+    }
+
+    private OkHttpClient clientSucceedingOnceThenFailing(IOException failure) throws IOException {
+        OkHttpClient client = Mockito.mock(OkHttpClient.class);
+        Call call = Mockito.mock(Call.class);
+        Response response = response("{\"accessToken\":\"token\"}", Map.of());
+        Mockito.when(response.isSuccessful()).thenReturn(true);
+        Mockito.when(response.code()).thenReturn(200);
+        Mockito.when(client.newCall(Mockito.any())).thenReturn(call);
+        Mockito.when(call.execute()).thenReturn(response).thenThrow(failure);
+        return client;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Long> lastRefreshByName() {
+        return (Map<String, Long>) ReflectionTestUtils.getField(provider, "lastRefreshByName");
+    }
+
     private void enable(File file, String name) {
         Mockito.when(authArguments.isWfcAuthSupplied()).thenReturn(true);
         Mockito.when(authArguments.getWfcAuthFile()).thenReturn(file);
