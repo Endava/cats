@@ -514,11 +514,19 @@ public final class FieldCorrelationEvaluator {
         return JsonUtils.isNotSet(String.valueOf(value)) ? 0 : 1;
     }
 
-    private static Object lookupJsonPath(String json, String path) {
+    public static Object lookupJsonPath(String json, String path) {
         if (StringUtils.isBlank(json)) {
             return JsonUtils.NOT_SET;
         }
-        return JsonUtils.getVariableFromJson(json, normalizeFieldPath(path));
+        String normalized = normalizeFieldPath(path);
+        Object value = JsonUtils.getVariableFromJson(json, normalized);
+        if (JsonUtils.isNotSet(String.valueOf(value)) && json.trim().startsWith("[") && JsonUtils.isValidJson(json)) {
+            JsonElement root = JsonUtils.parseAsJsonElement(json);
+            if (root.isJsonArray() && !root.getAsJsonArray().isEmpty() && root.getAsJsonArray().get(0).isJsonObject()) {
+                return JsonUtils.getVariableFromJson(root.getAsJsonArray().get(0).toString(), normalized);
+            }
+        }
+        return value;
     }
 
     public static String normalizeFieldPath(String fieldPath) {

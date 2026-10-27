@@ -843,7 +843,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             return;
         }
         if (hasCustomAssertions(expect)) {
-            reportCustomAssertionsOutcome(data, response, expectedCodeFamily);
+            reportCustomAssertionsOutcome(data, response, expectedCodeFamily, expect.matchesSchema());
             return;
         }
         testCaseListener.reportResult(logger, data, response, expectedCodeFamily, expect.matchesSchema(), true);
@@ -856,14 +856,32 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     }
 
     private void reportCustomAssertionsOutcome(FuzzingData data, CatsResponse response,
-                                               ResponseCodeFamily expectedCodeFamily) {
+                                               ResponseCodeFamily expectedCodeFamily, boolean matchesSchema) {
         if (expectedCodeFamily.matchesAllowedResponseCodes(response.responseCodeAsString())) {
-            testCaseListener.reportResultInfo(logger, data, "Response matches all 'verify' parameters");
-        } else {
+            if (matchesSchema && data.getResponses() != null && !data.getResponses().isEmpty()) {
+                testCaseListener.reportResult(logger, data, response, expectedCodeFamily, true, true);
+            } else {
+                testCaseListener.reportResultInfo(logger, data, "Response matches all 'verify' parameters");
+            }
+        } else if (isSameStatusFamily(expectedCodeFamily, response)) {
             testCaseListener.reportResultWarn(logger, data, "Returned response code not matching expected response code",
                     "Response matches all 'verify' parameters, but response code doesn't match expected response code: expected [{}], actual [{}]",
                     expectedCodeFamily, response.responseCodeAsString());
+        } else {
+            testCaseListener.reportResultError(logger, data, "Unexpected response code: %s".formatted(response.getResponseCode()),
+                    "Response matches all 'verify' parameters, but response code doesn't match expected response code: expected [{}], actual [{}]",
+                    expectedCodeFamily.allowedResponseCodes(), response.responseCodeAsString());
         }
+    }
+
+    private static boolean isSameStatusFamily(ResponseCodeFamily expectedCodeFamily, CatsResponse response) {
+        String actualCode = response.responseCodeAsString();
+        if (StringUtils.isBlank(actualCode)) {
+            return false;
+        }
+        char familyPrefix = actualCode.charAt(0);
+        return expectedCodeFamily.allowedResponseCodes().stream()
+                .anyMatch(allowed -> StringUtils.isNotBlank(allowed) && allowed.charAt(0) == familyPrefix);
     }
 
     private void verifyExpectedFields(Map<String, Object> expectedFields, String requestPayload,

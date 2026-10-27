@@ -371,7 +371,7 @@ public class CustomFuzzerUtil {
             return response.getBody().trim().replace("\"", "");
         }
         String cleanSelector = selector.startsWith("$response.") ? selector.substring("$response.".length()) : selector;
-        return String.valueOf(JsonUtils.getVariableFromJson(response.getBody(), FieldCorrelationEvaluator.normalizeFieldPath(cleanSelector)));
+        return String.valueOf(FieldCorrelationEvaluator.lookupJsonPath(response.getBody(), cleanSelector));
     }
 
     static void writeReplacedRefDataFile(File refDataFile, Map<String, String> variables) throws IOException {

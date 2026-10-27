@@ -416,6 +416,11 @@ class FunctionalFlowFuzzerTest {
                     status: 200
                     expect:
                       id: "plan_99"
+                  - description: Check status mismatch error across families when expect passes
+                    POST: /billing-plans
+                    status: 400
+                    expect:
+                      id: "plan_99"
                 """;
         File flowFile = tempDir.resolve("missing-and-warn.yml").toFile();
         Files.writeString(flowFile.toPath(), flowYaml);
@@ -427,7 +432,7 @@ class FunctionalFlowFuzzerTest {
                 .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
         fuzzer.fuzz(postPlan);
 
-        String respBody = "{\"id\":\"plan_99\"}";
+        String respBody = "[{\"id\":\"plan_99\"}]";
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
                 CatsResponse.builder().responseCode(201).body(respBody)
                         .jsonBody(JsonParser.parseString(respBody)).headers(List.of()).build());
@@ -442,6 +447,10 @@ class FunctionalFlowFuzzerTest {
         Mockito.verify(testCaseListener).reportResultWarn(
                 Mockito.any(), Mockito.eq(postPlan),
                 Mockito.eq("Returned response code not matching expected response code"),
+                Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener).reportResultError(
+                Mockito.any(), Mockito.eq(postPlan),
+                Mockito.eq("Unexpected response code: 201"),
                 Mockito.anyString(), Mockito.any());
     }
 
