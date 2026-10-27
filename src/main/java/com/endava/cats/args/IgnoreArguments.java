@@ -4,6 +4,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
 import jakarta.inject.Singleton;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
@@ -28,6 +29,11 @@ public class IgnoreArguments {
     @CommandLine.Option(names = {"--ignoreResponseBodyCheck", "--ib"},
             description = "Don't check if the response body received from the service matches the schema supplied inside the contract. This will mark the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
     private boolean ignoreResponseBodyCheck;
+
+    @Setter
+    @CommandLine.Option(names = {"--checkFieldInResponse"},
+            description = "When set to @|bold true|@, 4XX error responses will also be checked to ensure they contain the name of the fuzzed field. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean checkFieldInResponse;
 
     @CommandLine.Option(names = {"--ignoreErrorLeaksCheck", "--ie"},
             description = "Don't check if the response body received from the service contains keywords suggesting an error leak. This will mark the test result as @|bold,underline success|@ instead of @|bold,underline error|@")

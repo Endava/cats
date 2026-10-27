@@ -892,6 +892,7 @@ class TestCaseListenerTest {
                 .responseValidationField("networkConfiguration#wan#enabled")
                 .build();
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        Mockito.when(ignoreArguments.isCheckFieldInResponse()).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("POST").build());
@@ -903,6 +904,27 @@ class TestCaseListenerTest {
                 .startsWith("Response matches expected result");
         Mockito.verify(executionStatisticsListener).increaseSuccess(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+
+        CatsResponse missingFieldResponse = CatsResponse.builder()
+                .body(body).jsonBody(JsonParser.parseString(body)).responseCode(400)
+                .responseContentType("application/json; charset=utf-8")
+                .responseValidationField("unrelatedMissingField")
+                .build();
+        Mockito.when(ignoreArguments.isCheckFieldInResponse()).thenReturn(false);
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("POST").build());
+            testCaseListener.addResponse(missingFieldResponse);
+            testCaseListener.reportResult(logger, data, missingFieldResponse, ResponseCodeFamilyPredefined.FOURXX);
+        }, data);
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+
+        Mockito.when(ignoreArguments.isCheckFieldInResponse()).thenReturn(true);
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("POST").build());
+            testCaseListener.addResponse(missingFieldResponse);
+            testCaseListener.reportResult(logger, data, missingFieldResponse, ResponseCodeFamilyPredefined.FOURXX);
+        }, data);
+        Mockito.verify(executionStatisticsListener).increaseWarns(Mockito.any());
     }
 
     @Test
@@ -1141,6 +1163,7 @@ class TestCaseListenerTest {
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.getResponseValidationField()).thenReturn("someField");
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        Mockito.when(ignoreArguments.isCheckFieldInResponse()).thenReturn(true);
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
