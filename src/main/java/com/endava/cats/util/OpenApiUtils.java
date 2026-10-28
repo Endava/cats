@@ -166,7 +166,9 @@ public abstract class OpenApiUtils {
      * @return A map of examples, where keys are example names and values are corresponding Example objects.
      */
     public static Map<String, Example> getExamples(OpenAPI openAPI) {
-        return Optional.ofNullable(openAPI.getComponents().getExamples()).orElse(Collections.emptyMap());
+        return Optional.ofNullable(openAPI.getComponents())
+                .map(Components::getExamples)
+                .orElse(Collections.emptyMap());
     }
 
 

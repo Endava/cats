@@ -55,6 +55,12 @@ import com.oracle.svm.core.annotate.TargetClass;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.swagger.parser.Swagger20Parser;
 import io.swagger.parser.SwaggerParser;
+import io.swagger.v3.core.jackson.ApiResponsesSerializer;
+import io.swagger.v3.core.jackson.ExampleSerializer;
+import io.swagger.v3.core.jackson.MediaTypeSerializer;
+import io.swagger.v3.core.jackson.PathsSerializer;
+import io.swagger.v3.core.jackson.Schema31Serializer;
+import io.swagger.v3.core.jackson.SchemaSerializer;
 import io.swagger.v3.core.jackson.mixin.Components31Mixin;
 import io.swagger.v3.core.jackson.mixin.ComponentsMixin;
 import io.swagger.v3.core.jackson.mixin.DateSchemaMixin;
@@ -204,6 +210,7 @@ import java.util.UUID;
         Instant.class, Duration.class, Period.class, ZoneOffset.class, DateTimeFormatter.class, LocalTime.class, ZoneId.class, ChronoUnit.class,
         String.class, UUID.class, net.minidev.asm.ConvertDate.class, net.minidev.asm.DefaultConverter.class,
         SwaggerParserExtension.class, OpenAPIV3Parser.class, AuthorizationValue.class, SwaggerParseResult.class, ParseOptions.class,
+        ApiResponsesSerializer.class, ExampleSerializer.class, MediaTypeSerializer.class, PathsSerializer.class, SchemaSerializer.class, Schema31Serializer.class,
         ComponentsMixin.class, DateSchemaMixin.class, ExtensionsMixin.class, OpenAPIMixin.class, OperationMixin.class,
         Components31Mixin.class, Discriminator31Mixin.class, Info31Mixin.class, OpenAPI31Mixin.class, Schema31Mixin.class,
         OpenAPI30.class, OpenAPI31.class, OpenAPI31Traverser.class, OpenAPIDereferencer.class,
