@@ -44,6 +44,7 @@ profiles:
       - CommandInjectionInStringFields
       - XssInjectionInStringFields
       - SSRFInUrlFields
+      - SortColumnOrmLeakFields
 
       # Authentication & Authorization
       - BypassAuthentication
@@ -71,6 +72,8 @@ profiles:
       # Unicode Attacks
       - ZalgoTextInFields
       - ZeroWidthCharsInValuesFields
+      - ControlCharsInStringFields
+      - EmojisInStringFields
       - BidirectionalOverrideFields
 
       # HTTP Method Manipulation
@@ -91,6 +94,7 @@ profiles:
       - UpdateReadConsistency
       - ConditionalEtag
       - PutIdempotency
+      - IdempotencyKeyConflict
       - RandomResources
       - InvalidReferencesFields
 
@@ -279,6 +283,8 @@ profiles:
       - MinGreaterThanMaxFields
       - DateRangeInversion
       - TemporalLogicFields
+      - SortColumnOrmLeakFields
+      - IdempotencyKeyConflict
 
       # Security Essentials
       - BypassAuthentication
@@ -298,6 +304,8 @@ profiles:
       - MalformedJson
       - EmptyJsonBody
       - DummyRequest
+      - ControlCharsInStringFields
+      - EmojisInStringFields
 
       # Array/Object Validation
       - OverflowArraySizeFields
@@ -359,6 +367,7 @@ profiles:
       - CommandInjectionInStringFields
       - SstiInjectionInStringFields
       - XssInjectionInStringFields
+      - SortColumnOrmLeakFields
       - BypassAuthentication
       - InsecureDirectObjectReferences
       - MassAssignment
@@ -370,6 +379,8 @@ profiles:
       - LeadingControlCharsInFields
       - TrailingControlCharsInFields
       - OnlyControlCharsInFields
+      - ControlCharsInStringFields
+      - EmojisInStringFields
       - ZalgoTextInFields
       - AbugidasInStringFields
       - LowercaseExpandingBytesInStringFields

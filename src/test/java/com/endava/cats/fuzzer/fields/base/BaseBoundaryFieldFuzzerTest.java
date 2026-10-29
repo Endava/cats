@@ -20,6 +20,7 @@ import org.mockito.Mockito;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class BaseBoundaryFieldFuzzerTest {
@@ -109,6 +110,18 @@ class BaseBoundaryFieldFuzzerTest {
         schema.setType(schemaType);
 
         Assertions.assertThat(myBaseBoundaryFuzzer.isRequestSchemaMatchingFuzzerType(schema)).isEqualTo(matching);
+    }
+
+    @Test
+    void shouldMatchFuzzerTypeForOpenApi31TypesSet() {
+        BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer = Mockito.mock(MyBaseBoundaryWithBoundariesFuzzer.class);
+        Mockito.doCallRealMethod().when(myBaseBoundaryFuzzer).isRequestSchemaMatchingFuzzerType(Mockito.any());
+        Mockito.when(myBaseBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo()).thenReturn(List.of("string"));
+
+        Schema<?> openApi31StringSchema = new Schema<>();
+        openApi31StringSchema.setTypes(Set.of("string"));
+
+        Assertions.assertThat(myBaseBoundaryFuzzer.isRequestSchemaMatchingFuzzerType(openApi31StringSchema)).isTrue();
     }
 
     private FuzzingData getMockFuzzingData() {

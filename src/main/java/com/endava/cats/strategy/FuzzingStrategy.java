@@ -2,6 +2,7 @@ package com.endava.cats.strategy;
 
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.FuzzingResult;
 import com.endava.cats.util.JsonUtils;
@@ -152,7 +153,7 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
         if (value == null || value.isEmpty()) {
             return value;
         }
-        String stripped = value.replaceAll("[\\p{C}\\p{M}\\u115F\\u1160\\u3164\\uFFA0]+", "");
+        String stripped = value.replaceAll("[\\p{C}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0]+", "");
         return stripped.isEmpty() ? value : stripped;
     }
 
@@ -333,7 +334,7 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
         Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
         String initialValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), fuzzedField));
 
-        boolean isNotString = !"string".equalsIgnoreCase(fuzzedFieldSchema.getType());
+        boolean isNotString = !CatsModelUtils.isStringSchema(fuzzedFieldSchema);
         boolean isBinaryFormat = "binary".equalsIgnoreCase(fuzzedFieldSchema.getFormat());
         boolean isByteFormat = "byte".equalsIgnoreCase(fuzzedFieldSchema.getFormat());
 

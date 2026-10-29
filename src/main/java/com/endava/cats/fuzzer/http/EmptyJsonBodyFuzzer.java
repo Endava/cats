@@ -6,6 +6,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.PayloadFormat;
+import com.endava.cats.util.CatsModelUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -56,6 +57,9 @@ public class EmptyJsonBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
 
 
     private boolean doesNotHaveRequiredFieldsInRoot(FuzzingData data) {
+        if (CatsModelUtils.isArraySchema(data.getReqSchema())) {
+            return false;
+        }
         return data.getAllRequiredFields().stream().allMatch(field -> field.contains("#"));
     }
 }

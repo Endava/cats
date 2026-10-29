@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 public class InvalidReferencesFieldsFuzzer implements Fuzzer {
     private static final Pattern VARIABLES_PATTERN = Pattern.compile("\\{([^{]*)}");
     private static final String DEFAULT_PATH_VARIABLE_FALLBACK = "1";
-    private static final List<String> RAW_QUERY_REFERENCE_PAYLOADS = List.of("%", "%00");
+    private static final List<String> RAW_QUERY_REFERENCE_PAYLOADS = List.of("%", "%00", "\r\n", "\u0000", "\u001B");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(InvalidReferencesFieldsFuzzer.class);
 
     private final FilesArguments filesArguments;

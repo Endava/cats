@@ -21,6 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -50,6 +51,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFields", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "paths", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "fuzzersToBeRunComputed", false);
+        filterArguments.setTotalCountType(FilterArguments.TotalCountType.FUZZERS);
 
         // Create a mock CommandSpec for testing
         picocli.CommandLine commandLine = new picocli.CommandLine(filterArguments);
@@ -88,7 +90,7 @@ class FilterArgumentsTest {
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
                 , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer", "SingleElementArrayToScalarFieldsFuzzer",
                         "DuplicateItemsInUniqueArraysFieldsFuzzer", "FreeFormObjectFieldsFuzzer",
-                        "FreeFormArrayItemsFieldsFuzzer").hasSize(210);
+                        "FreeFormArrayItemsFieldsFuzzer").hasSize(229);
     }
 
     @Test
@@ -158,7 +160,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(222);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(241);
     }
 
     @Test
@@ -437,7 +439,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnFuzzersAsClasses() {
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(142);
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(146);
     }
 
     @Test
@@ -467,16 +469,27 @@ class FilterArgumentsTest {
 
     @Test
     void shouldCountTotalFuzzers() {
-        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(164);
+        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(153);
+
+        ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
+        ReflectionTestUtils.setField(checkArguments, "includeEmojis", true);
+        ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
+        try {
+            Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(180);
+        } finally {
+            ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", false);
+            ReflectionTestUtils.setField(checkArguments, "includeEmojis", false);
+            ReflectionTestUtils.setField(checkArguments, "includeControlChars", false);
+        }
     }
 
     @Test
     void shouldCountTotalLinters() {
-        Assertions.assertThat(filterArguments.getTotalLinters()).isEqualTo(41);
+        Assertions.assertThat(filterArguments.getTotalLinters()).isEqualTo(56);
     }
 
     @ParameterizedTest
-    @CsvSource({"ALL,205", "FUZZERS,164", "LINTERS,41"})
+    @CsvSource({"ALL,209", "FUZZERS,153", "LINTERS,56"})
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);
@@ -521,12 +534,14 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension",
                 List.of("x-public-endpoint=true:BypassAuthentication,RemoveAuthHeaders"));
 
-        var extensions = new java.util.HashMap<String, Object>();
+        var extensions = new HashMap<String, Object>();
         extensions.put("x-public-endpoint", "true");
+        extensions.put("x-cats-skip-linters", List.of("PathPluralsLinter", "RecommendedHttpCodesLinter"));
 
         var result = filterArguments.getFuzzersToSkipForOperationExtensions(extensions);
 
-        Assertions.assertThat(result).containsExactly("BypassAuthentication", "RemoveAuthHeaders");
+        Assertions.assertThat(result).containsExactlyInAnyOrder(
+                "BypassAuthentication", "RemoveAuthHeaders", "PathPluralsLinter", "RecommendedHttpCodesLinter");
     }
 
     @Test

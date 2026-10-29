@@ -22,7 +22,7 @@ public abstract class UnicodeGenerator {
     private static final List<String> UPPERCASE_EXPANDING_BYTES = List.of("ȿ", "ɜ", "ʞ", "ʇ", "ʝ");
     private static final List<String> UPPERCASE_EXPANDING_LENGTH = List.of("ß", "ﬃ", "ﬀ", "ΐ", "ΰ", "ὔ", "ᾼ", "ﬗ");
 
-    private static final List<String> INVALID_REFERENCES = List.of("?", "??", "/?/", "\u0000", "\u200B", "%", "&", "/.. ;/",
+    private static final List<String> INVALID_REFERENCES = List.of("?", "??", "/?/", "\u0000", "\u200B", "\r\n", "\n", "\r", "\u001B", "%", "&", "/.. ;/",
             "../", ".. /", ".. ;/", "%5c..%5c.%5c", ".././", "%09", "..%00/", "..%0d/", "..%5c/", "..%ff/", ";.json", ".json");
     private static final String ZALGO_TEXT = " ̵̡̡̢̡̨̨̢͚̬̱̤̰̗͉͚̖͙͎͔͔̺̳͕̫̬͚̹͖̬̭̖̪̗͕̜̣̥̣̼͍͉̖͍̪͈̖͚̙͛͒͂̎̊̿̀̅̈͌͋̃̾̈̾̇͛͌͘͜͜͠͝ͅͅͅ ̷͕̗̇͛̅̀̑̇̈͗͌͛̐̀͆̐̊̅̋̈́̂̈́̈́͑̓͂͂̌̈́̽͌͐̐͂͐̈́̍̂͗̂͘͠͝͝͝ͅ ̷̨̢̧̢̡̨̛͕̯̭̹͖̮̘̤̩̥̟̖͈̯̠̖͈̜͈̥̫͔̘̭͉͎͇̤̦̯͙̹̠̼̮͕̲̖̟̲̦̣͇̳͖̳̭͇͓̭͌̓̀̅̋̋̀̈́̎̄͛̾̊͐̎̉̏͊͐̑͊͒̐̔̏̔̋̑̌͆̏̀̉͆̆́̓̆̉̀̒̆̆̉̀̂̎̈̔͗̔̕̕͘̕̚̚̕͘͜͝͝͝͝͝͠ͅ ̷̧̡̥͈͓͙͈̫͙͎͈̻̔̊̎̏̑̒̐̐̆̉̍͠͝͝ ̴̡̛̛͓͎͇̘͈͇̱̟̠̳͇̬̺̲̭̪̬̼̝̠̙̹̩̱̪͔͉͎̱͚͍̬͈̤͈͙͖̝̲̦̞̺̟̟̺͇̳͈̠̘̺̪̱̮̉̀̍̏̐̃̅̐̊̾͆̐͋͊̿̉̆̾͊̀͊͒͌̀͛̎́́͂̐͂̎͛̆͜͜͜͠ͅ ̶̧̧͖̻̥̝̺̼̙̫̩̹̣̲̩̲͍̺̘͕̤͉̹̥͉̮̮̟̘̥̺̯̗̠͈̬͚̦̦͚̫̫̦̉́̾̀̅͋̋̇̕̕͜͜͝ͅͅ ̶̧̛̛̝̟̤̬̙͔̻͙͚̹̣̳̳͔̥̘̠̗̦̠͚͎̖̮̳̗̥̫͚̯̬̩̎́̽͒̋̓̀͂̈́̓́̎͐͊͒̎͒͌̿̿̔͐̈́͑̊̄̓̎͐̓̓̍͘̕̚̚͜͜ ̶̢̡̡̨̡̡̘̫̫̠̟̻̳̻͈̲̖͚͇̼̩̥̥͎̥̯͚̞̘̼̞͍̮̗͈̱͚͙̠͔̞̮̱̭͍͍̪̲̜͓͍̣̯̲̠̲̤̅͊̑̇̆́̈́̓̿̄̐̓̐͐́͛̆͜͝͝͝͠ͅ ̶̧̡̨̧̡̧̥̥̱̪͇̞̭͙͚͔̜̠͓͈̞͈̣̹̝̩̦̟̻̰͙̯̼̜̞̮̬̝͚̺̟͎̻̱̙̦̜̭̲̰͎̳̣̈͜͜͜ͅ ̸̹̟̯̝͚̪̼͓͕͕̹͖̣̠͓̫͇͚͔̼̊́͑̊̊̅͗͠ͅ";
     @Getter
@@ -96,6 +96,12 @@ public abstract class UnicodeGenerator {
             "\u202A", "\u202B", "\u202C", "\u202D", "\u202E", "\u202F");
 
     private static final List<String> ZW_CHARS_SMALL_LIST_FIELDS = List.of("\u200B", "\u200C", "\u200D", "\u200F", "\u202B", "\u202E");
+
+    private static final List<String> CONTROL_CHARS_SMALL_LIST_FIELDS = List.of(
+            "\u0000", "\u0007", "\u0008", "\u001B", "\uFFFE");
+
+    private static final List<String> EMOJIS_SMALL_LIST_FIELDS = List.of(
+            "\uD83D\uDE80", "\uD83D\uDC80", "\uD83D\uDC69\u200D\uD83D\uDE80");
 
     private static final List<String> INVALID_JSONS = List.of("{0}", "{0.0}", "[{}]", "{$}", "[]", "{}",
             """ 
@@ -238,6 +244,24 @@ public abstract class UnicodeGenerator {
      */
     public static List<String> getZwCharsSmallListFields() {
         return ZW_CHARS_SMALL_LIST_FIELDS;
+    }
+
+    /**
+     * Gets a compact list of high-impact control characters and non-characters for field fuzzing.
+     *
+     * @return a compact list of control character payloads
+     */
+    public static List<String> getControlCharsSmallListFields() {
+        return CONTROL_CHARS_SMALL_LIST_FIELDS;
+    }
+
+    /**
+     * Gets a compact list of 4-byte supplementary plane and ZWJ emojis for field fuzzing.
+     *
+     * @return a compact list of emoji payloads
+     */
+    public static List<String> getEmojisSmallListFields() {
+        return EMOJIS_SMALL_LIST_FIELDS;
     }
 
     /**

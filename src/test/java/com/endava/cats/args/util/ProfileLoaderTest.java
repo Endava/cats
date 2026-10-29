@@ -84,7 +84,7 @@ class ProfileLoaderTest {
                     .contains("HappyPath", "OnlyRequiredFields", "RemoveFields", "NumericValuesInStringFields");
             Assertions.assertThat(crash).isPresent();
             Assertions.assertThat(crash.get().fuzzers())
-                    .contains("HappyPath", "ExtremeNegativeNumbersInIntegerFields", "SqlInjectionInStringFields");
+                    .contains("HappyPath", "ExtremeNegativeNumbersInIntegerFields", "SqlInjectionInStringFields", "SortColumnOrmLeakFields");
         }
 
         @Test
@@ -101,7 +101,9 @@ class ProfileLoaderTest {
                             "NoSqlInjectionInStringFields",
                             "XssInjectionInStringFields",
                             "BypassAuthentication",
-                            "MassAssignment"
+                            "MassAssignment",
+                            "SortColumnOrmLeakFields",
+                            "IdempotencyKeyConflict"
                     );
         }
 
@@ -151,7 +153,9 @@ class ProfileLoaderTest {
                             "HappyPath",
                             "OnlyRequiredFields",
                             "MinGreaterThanMaxFields",
-                            "DateRangeInversion"
+                            "DateRangeInversion",
+                            "SortColumnOrmLeakFields",
+                            "IdempotencyKeyConflict"
                     );
         }
 

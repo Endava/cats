@@ -34,6 +34,7 @@ import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -99,6 +100,7 @@ public class FilterArguments {
 
     @CommandLine.Option(names = {"-f", "--fuzzers", "--fuzzer"},
             description = "A comma separated list of fuzzers to be run. They can be full or partial Fuzzer names. All available can be listed using: @|bold cats list -f|@", split = ",")
+    @Setter
     private List<String> suppliedFuzzers;
 
     @CommandLine.Option(names = {"-p", "--paths", "--path"},
@@ -158,22 +160,27 @@ public class FilterArguments {
     @CommandLine.Option(names = {"--skipDeprecatedOperations"},
             description = "Skip fuzzing deprecated API operations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     @Getter
+    @Setter
     private boolean skipDeprecated;
 
     @CommandLine.Option(names = {"-t", "--tags", "--tag"},
             description = "A comma separated list of tags to include. If no tag is supplied, all tags will be considered. All available tags can be listed using: @|bold cats stats -c api.yml|@", split = ",")
+    @Setter
     private List<String> tags;
 
     @CommandLine.Option(names = {"--skipTags", "--skipTag"},
             description = "A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. All available tags can be listed using: @|bold cats stats -c api.yml|@", split = ",")
+    @Setter
     private List<String> skipTags;
 
     @CommandLine.Option(names = {"--operationIds", "--operationId"},
             description = "A comma separated list of operationIds to include. If no operationId is supplied, all operations will be considered. All available operationIds can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
+    @Setter
     private List<String> operationIds;
 
     @CommandLine.Option(names = {"--skipOperationIds", "--skipOperationId"},
             description = "A comma separated list of operationIds to ignore. If no operationId is supplied, no operation will be ignored. All available operationIds can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
+    @Setter
     private List<String> skipOperationIds;
 
     @CommandLine.Option(names = {"--skipFuzzersForExtension", "--skipFuzzerForExtension"},
@@ -317,11 +324,12 @@ public class FilterArguments {
                 .filter(string -> string.contains("="))
                 .map(String::trim)
                 .map(string -> string.split("=", 2))
-                .collect(Collectors.toMap(stringArray -> stringArray[0],
-                        stringArray -> Stream.of(stringArray[1].split(","))
+                .collect(Collectors.toMap(stringArray -> stringArray[0].trim(),
+                        stringArray -> Stream.of(stringArray[1].split("[,;:]", -1))
                                 .map(String::trim)
+                                .filter(s -> !s.isEmpty())
                                 .toList(),
-                        (first, _) -> first));
+                        (first, second) -> Stream.concat(first.stream(), second.stream()).distinct().toList()));
     }
 
     /**
@@ -412,10 +420,14 @@ public class FilterArguments {
         return skipFuzzersForExtensionMap;
     }
 
+    private static final Set<String> DIRECT_SKIP_EXTENSIONS = Set.of("x-cats-skip-linters", "x-cats-skip-fuzzers");
+
     /**
      * Returns the list of fuzzers to skip for a given operation based on its extensions.
+     * Supports both {@code --skipFuzzersForExtension} mappings and direct {@code x-cats-skip-linters}
+     * / {@code x-cats-skip-fuzzers} OpenAPI vendor extensions.
      *
-     * @param operationExtensions the extensions map from the OpenAPI operation
+     * @param operationExtensions the extensions map from the OpenAPI operation/path
      * @return a list of fuzzer names to skip for this operation
      */
     public List<String> getFuzzersToSkipForOperationExtensions(Map<String, Object> operationExtensions) {
@@ -428,8 +440,12 @@ public class FilterArguments {
 
         for (Map.Entry<String, Object> extension : operationExtensions.entrySet()) {
             String extensionName = extension.getKey();
-            String extensionValue = String.valueOf(extension.getValue());
+            Object rawValue = extension.getValue();
+            if (extensionName != null && DIRECT_SKIP_EXTENSIONS.contains(extensionName.toLowerCase(Locale.ROOT))) {
+                extractDirectSkippedFuzzers(rawValue, fuzzersToSkip);
+            }
 
+            String extensionValue = String.valueOf(rawValue);
             Map<String, List<String>> valueToFuzzers = extensionConfig.get(extensionName);
             if (valueToFuzzers != null) {
                 List<String> fuzzersFromExtension = valueToFuzzers.get(extensionValue);
@@ -442,6 +458,21 @@ public class FilterArguments {
         logger.debug("Fuzzers to skip for path based on extensions: {}", fuzzersToSkip);
 
         return Collections.unmodifiableList(fuzzersToSkip);
+    }
+
+    private static void extractDirectSkippedFuzzers(Object rawValue, List<String> fuzzersToSkip) {
+        if (rawValue instanceof Collection<?> collection) {
+            for (Object item : collection) {
+                if (item != null && !item.toString().isBlank()) {
+                    fuzzersToSkip.add(item.toString().trim());
+                }
+            }
+        } else if (rawValue != null) {
+            Stream.of(rawValue.toString().split(",", -1))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .forEach(fuzzersToSkip::add);
+        }
     }
 
     /**
@@ -475,13 +506,25 @@ public class FilterArguments {
         Map<String, List<String>> currentSkipPathFuzzers = skipPathFuzzers.isEmpty() && skipFuzzers != null && !skipFuzzers.isEmpty()
                 ? computeSkipPathFuzzers(skipFuzzers)
                 : skipPathFuzzers;
+        List<String> skippedForPath = getSkippedFuzzersForPath(currentSkipPathFuzzers, path);
         return this.getFirstPhaseFuzzersAsFuzzers().stream()
                 .filter(fuzzer -> !new HashSet<>(fuzzer.skipForHttpMethods()).containsAll(httpMethods))
-                .filter(fuzzer -> Optional.ofNullable(currentSkipPathFuzzers.get(path))
-                        .orElse(List.of())
-                        .stream()
-                        .noneMatch(string -> fuzzer.toString().contains(string)))
+                .filter(fuzzer -> skippedForPath.stream().noneMatch(string -> fuzzer.toString().contains(string)))
                 .toList();
+    }
+
+    private static List<String> getSkippedFuzzersForPath(Map<String, List<String>> currentSkipPathFuzzers, String path) {
+        if (currentSkipPathFuzzers.isEmpty() || path == null) {
+            return List.of();
+        }
+        List<String> matched = new ArrayList<>();
+        for (Map.Entry<String, List<String>> entry : currentSkipPathFuzzers.entrySet()) {
+            String key = entry.getKey();
+            if (key.equals(path) || (key.contains("*") && path.matches(key.replace("*", ".*")))) {
+                matched.addAll(entry.getValue());
+            }
+        }
+        return matched;
     }
 
     /**
@@ -591,6 +634,11 @@ public class FilterArguments {
 
     private List<String> processSuppliedFuzzers() {
         List<String> initialFuzzersList = this.constructFuzzersListFromCheckArguments();
+        if (totalCountType == TotalCountType.LINTERS) {
+            initialFuzzersList = initialFuzzersList.stream()
+                    .filter(fuzzer -> fuzzer.endsWith("Linter"))
+                    .toList();
+        }
 
         if (!this.getSuppliedFuzzers().isEmpty()) {
             List<String> suppliedFuzzerNames = suppliedFuzzers.stream().map(String::trim).toList();
@@ -695,6 +743,11 @@ public class FilterArguments {
         this.suppliedFuzzers = List.copyOf(profileConfig.fuzzers());
     }
 
+    public void setSkipFuzzersForExtension(List<String> skipFuzzersForExtension) {
+        this.skipFuzzersForExtension = skipFuzzersForExtension;
+        this.skipFuzzersForExtensionMap.clear();
+    }
+
     /**
      * Configures only one fuzzer to be run.
      *
@@ -706,7 +759,15 @@ public class FilterArguments {
         this.skipFuzzers = new ArrayList<>();
         this.skipPathFuzzers.clear();
         this.skipPaths = Collections.emptyList();
+        this.tags = Collections.emptyList();
+        this.skipTags = Collections.emptyList();
+        this.operationIds = Collections.emptyList();
+        this.skipOperationIds = Collections.emptyList();
+        this.skipFuzzersForExtension = Collections.emptyList();
+        this.skipFuzzersForExtensionMap.clear();
+        this.skipDeprecated = false;
         this.httpMethods = defaultHttpMethods();
+        this.skippedHttpMethods = Collections.emptyList();
         this.dryRun = false;
         this.fuzzersToBeRunComputed = false;
         FUZZERS_TO_BE_RUN.clear();
@@ -722,7 +783,7 @@ public class FilterArguments {
      * @return {@code true} if the supplied fuzzers include "Linter", {@code false} otherwise
      */
     public boolean isLinting() {
-        return this.getSuppliedFuzzers().stream()
+        return totalCountType == TotalCountType.LINTERS || this.getSuppliedFuzzers().stream()
                 .anyMatch(fuzzer -> fuzzer.equalsIgnoreCase("Linter"));
     }
 
@@ -840,10 +901,13 @@ public class FilterArguments {
      */
     public long getTotalFuzzers() {
         return fuzzers.stream()
-                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), TrimAndValidate.class) == null)
-                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), SanitizeAndValidate.class) == null)
+                .filter(fuzzer -> !AnnotationUtils.isAnnotationDeclaredLocally(TrimAndValidate.class, fuzzer.getClass()))
+                .filter(fuzzer -> !AnnotationUtils.isAnnotationDeclaredLocally(SanitizeAndValidate.class, fuzzer.getClass()))
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), SpecialFuzzer.class) == null)
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), Linter.class) == null)
+                .filter(fuzzer -> checkArguments.isIncludeControlChars() || AnnotationUtils.findAnnotation(fuzzer.getClass(), ControlCharFuzzer.class) == null)
+                .filter(fuzzer -> checkArguments.isIncludeEmojis() || AnnotationUtils.findAnnotation(fuzzer.getClass(), EmojiFuzzer.class) == null)
+                .filter(fuzzer -> checkArguments.isIncludeWhitespaces() || AnnotationUtils.findAnnotation(fuzzer.getClass(), WhitespaceFuzzer.class) == null)
                 .count();
     }
 
@@ -865,7 +929,9 @@ public class FilterArguments {
      */
     public long getTotalFuzzersOrLinters() {
         return switch (totalCountType) {
-            case FUZZERS -> this.getTotalFuzzers();
+            case FUZZERS -> checkArguments.isIncludeContract()
+                    ? this.getTotalFuzzers() + this.getTotalLinters()
+                    : this.getTotalFuzzers();
             case LINTERS -> this.getTotalLinters();
             case ALL -> this.getTotalLinters() + this.getTotalFuzzers();
         };

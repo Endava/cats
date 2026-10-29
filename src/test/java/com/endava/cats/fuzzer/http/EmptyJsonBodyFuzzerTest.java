@@ -10,6 +10,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,5 +97,13 @@ class EmptyJsonBodyFuzzerTest {
         Assertions.assertThat(emptyJsonBodyFuzzer.isApplicableTo(xmlData)).isFalse();
         Assertions.assertThat(emptyJsonBodyFuzzer.getExpectedResponseCode(jsonData))
                 .isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
+
+        FuzzingData rootArrayData = FuzzingData.builder()
+                .requestContentTypes(List.of("application/json"))
+                .reqSchema(new ArraySchema())
+                .allRequiredFields(List.of())
+                .build();
+        Assertions.assertThat(emptyJsonBodyFuzzer.getExpectedResponseCode(rootArrayData))
+                .isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
     }
 }

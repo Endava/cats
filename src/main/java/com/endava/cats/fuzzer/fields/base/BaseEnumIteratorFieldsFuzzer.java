@@ -52,6 +52,10 @@ public abstract class BaseEnumIteratorFieldsFuzzer implements Fuzzer {
         return ResponseCodeFamilyPredefined.TWOXX;
     }
 
+    protected Predicate<String> additionalFieldFilter(FuzzingData data) {
+        return _ -> true;
+    }
+
     @Override
     public void fuzz(FuzzingData data) {
         Predicate<Schema<?>> schemaFilter = schema -> schema.getEnum() != null;
@@ -65,7 +69,7 @@ public abstract class BaseEnumIteratorFieldsFuzzer implements Fuzzer {
                         .fuzzingStrategy(FuzzingStrategy.replace())
                         .expectedResponseCode(this.getExpectedResponseCode())
                         .skipMessage("It's either not an enum or it's a discriminator.")
-                        .fieldFilter(notADiscriminator.and(fieldExists))
+                        .fieldFilter(notADiscriminator.and(fieldExists).and(this.additionalFieldFilter(data)))
                         .schemaFilter(schemaFilter)
                         .fuzzValueProducer(this.fuzzValueProducer())
                         .simpleReplaceField(true)

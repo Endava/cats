@@ -76,7 +76,7 @@ class InvalidReferencesFieldsFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("/test/{id}/{sub}").method(HttpMethod.POST).build();
         invalidReferencesFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(simpleExecutor, Mockito.times(46)).execute(Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(54)).execute(Mockito.any());
     }
 
     @Test
@@ -84,7 +84,7 @@ class InvalidReferencesFieldsFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("/test/{test}").method(HttpMethod.GET).build();
         invalidReferencesFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(simpleExecutor, Mockito.times(23)).execute(Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(27)).execute(Mockito.any());
     }
 
     @Test
@@ -98,7 +98,7 @@ class InvalidReferencesFieldsFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         invalidReferencesFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(46)).reportResultError(Mockito.any(), Mockito.eq(data),
+        Mockito.verify(testCaseListener, Mockito.times(54)).reportResultError(Mockito.any(), Mockito.eq(data),
                 Mockito.eq("Unexpected response code: 500"),
                 Mockito.eq("Request failed unexpectedly for http method [{}]: expected [{}], actual [{}]"),
                 Mockito.eq(new Object[]{"POST", "4XX, 2XX", "500"}));
@@ -116,7 +116,7 @@ class InvalidReferencesFieldsFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         invalidReferencesFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(46)).reportResultInfo(Mockito.any(), Mockito.eq(data),
+        Mockito.verify(testCaseListener, Mockito.times(54)).reportResultInfo(Mockito.any(), Mockito.eq(data),
                 Mockito.eq("Response code expected: [{}]"),
                 Mockito.eq(new Object[]{responseCode}));
     }
@@ -132,7 +132,7 @@ class InvalidReferencesFieldsFuzzerTest {
 
         org.mockito.ArgumentCaptor<com.endava.cats.fuzzer.executor.SimpleExecutorContext> captor =
                 org.mockito.ArgumentCaptor.forClass(com.endava.cats.fuzzer.executor.SimpleExecutorContext.class);
-        Mockito.verify(simpleExecutor, Mockito.times(23)).execute(captor.capture());
+        Mockito.verify(simpleExecutor, Mockito.times(27)).execute(captor.capture());
         Assertions.assertThat(captor.getAllValues())
                 .allMatch(ctx -> !ctx.isReplaceUrlParams() && ctx.getPath().startsWith("/items/42") && !ctx.getPath().contains("{id}"));
     }
@@ -148,9 +148,9 @@ class InvalidReferencesFieldsFuzzerTest {
 
         org.mockito.ArgumentCaptor<com.endava.cats.fuzzer.executor.SimpleExecutorContext> captor =
                 org.mockito.ArgumentCaptor.forClass(com.endava.cats.fuzzer.executor.SimpleExecutorContext.class);
-        Mockito.verify(simpleExecutor, Mockito.times(2)).execute(captor.capture());
+        Mockito.verify(simpleExecutor, Mockito.times(5)).execute(captor.capture());
         Assertions.assertThat(captor.getAllValues())
                 .extracting(com.endava.cats.fuzzer.executor.SimpleExecutorContext::getPath)
-                .containsExactly("/search?q=%", "/search?q=%00");
+                .containsExactly("/search?q=%", "/search?q=%00", "/search?q=\r\n", "/search?q=\u0000", "/search?q=\u001B");
     }
 }

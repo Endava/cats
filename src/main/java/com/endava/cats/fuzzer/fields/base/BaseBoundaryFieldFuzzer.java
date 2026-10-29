@@ -3,10 +3,11 @@ package com.endava.cats.fuzzer.fields.base;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.generator.format.api.InvalidDataFormat;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.JsonUtils;
 import io.swagger.v3.oas.models.media.Schema;
 
 import java.util.Collections;
@@ -91,7 +92,8 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
     }
 
     boolean isRequestSchemaMatchingFuzzerType(Schema schema) {
-        return getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(currentSchemaType -> currentSchemaType.equalsIgnoreCase(schema.getType()));
+        return getSchemaTypesTheFuzzerWillApplyTo().stream()
+                .anyMatch(currentSchemaType -> CatsModelUtils.isType(schema, currentSchemaType));
     }
 
     /**

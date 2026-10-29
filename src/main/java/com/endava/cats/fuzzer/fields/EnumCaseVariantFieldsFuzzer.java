@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseEnumIteratorFieldsFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Inject;
@@ -14,6 +15,7 @@ import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 @Singleton
 @FieldFuzzer
@@ -37,6 +39,11 @@ public class EnumCaseVariantFieldsFuzzer extends BaseEnumIteratorFieldsFuzzer {
         return processingArguments.isAllowDifferentCaseEnumValues()
                 ? ResponseCodeFamilyPredefined.TWOXX
                 : ResponseCodeFamilyPredefined.FOURXX;
+    }
+
+    @Override
+    protected Predicate<String> additionalFieldFilter(FuzzingData data) {
+        return field -> !data.isQueryParam(field);
     }
 
     @Override
