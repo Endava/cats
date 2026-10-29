@@ -354,6 +354,8 @@ class TriageCommandTest {
                         "AUTH_CONFIGURATION_GAP", "UNRESOLVED_PATH_PARAM_404", "VALIDATION_BYPASS_2XX");
         Assertions.assertThat(cmd.getLastReport().synthesizedCorrelationsYaml())
                 .contains("when: \"delivery.mode == 'DIGITAL'\"", "omit:", "- \"shippingAddress\"");
-        Assertions.assertThat(cmd.getLastReport().minedRefDataYaml()).contains("id: 9001", "activeId: true");
+        Assertions.assertThat(cmd.getLastReport().minedRefDataYaml())
+                .contains("id: 9001", "activeId: true")
+                .doesNotContain("999999");
     }
 }

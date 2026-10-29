@@ -145,7 +145,7 @@ final class ResponseSchemaValidator {
                                                     Map<String, Schema> schemaMap, String schemasUri,
                                                     Map<String, Set<String>> childrenByParent, ObjectMapper mapper) {
         populateImplicitDiscriminatorMappings(objectNode, simpleName, schema, schemasUri, childrenByParent);
-        constrainChildDiscriminatorValues(objectNode, simpleName, schema, schemaMap, mapper);
+        constrainChildDiscriminatorValues(objectNode, simpleName, schema, schemaMap, childrenByParent, mapper);
     }
 
     private static void populateImplicitDiscriminatorMappings(ObjectNode objectNode, String simpleName, Schema<?> schema,
@@ -168,11 +168,13 @@ final class ResponseSchemaValidator {
 
     @SuppressWarnings("rawtypes")
     private static void constrainChildDiscriminatorValues(ObjectNode objectNode, String simpleName, Schema<?> schema,
-                                                          Map<String, Schema> schemaMap, ObjectMapper mapper) {
+                                                          Map<String, Schema> schemaMap,
+                                                          Map<String, Set<String>> childrenByParent,
+                                                          ObjectMapper mapper) {
         if (!(objectNode.get("allOf") instanceof ArrayNode allOfArray)) {
             return;
         }
-        for (String parentSimple : CatsModelUtils.findAllOfParents(schema)) {
+        for (String parentSimple : findTransitiveAllOfParents(schema, schemaMap)) {
             Schema<?> parentSchema = schemaMap.get(parentSimple);
             Discriminator parentDisc = parentSchema != null ? parentSchema.getDiscriminator() : null;
             if (parentDisc != null && StringUtils.isNotBlank(parentDisc.getPropertyName())) {
@@ -180,8 +182,28 @@ final class ResponseSchemaValidator {
                 ArrayNode enumNode = constraint.putObject("properties")
                         .putObject(parentDisc.getPropertyName())
                         .putArray("enum");
-                discriminatorValuesForChild(simpleName, parentDisc).forEach(enumNode::add);
+                Set<String> allowedValues = new LinkedHashSet<>(discriminatorValuesForChild(simpleName, parentDisc));
+                for (String descendant : childrenByParent.getOrDefault(simpleName, Set.of())) {
+                    allowedValues.addAll(discriminatorValuesForChild(descendant, parentDisc));
+                }
+                allowedValues.forEach(enumNode::add);
                 allOfArray.add(constraint);
+            }
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static Set<String> findTransitiveAllOfParents(Schema<?> schema, Map<String, Schema> schemaMap) {
+        Set<String> visited = new LinkedHashSet<>();
+        collectTransitiveParents(schema, schemaMap, visited);
+        return visited;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void collectTransitiveParents(Schema<?> schema, Map<String, Schema> schemaMap, Set<String> visited) {
+        for (String parent : CatsModelUtils.findAllOfParents(schema)) {
+            if (visited.add(parent) && schemaMap != null) {
+                collectTransitiveParents(schemaMap.get(parent), schemaMap, visited);
             }
         }
     }
@@ -236,7 +258,7 @@ final class ResponseSchemaValidator {
         Set<String> parentsToPrune = new LinkedHashSet<>();
         for (String refName : refNames) {
             Set<String> children = childrenByParent.get(refName);
-            if (children != null && children.stream().anyMatch(refNames::contains)) {
+            if (children != null && !children.isEmpty() && refNames.containsAll(children)) {
                 parentsToPrune.add(refName);
             }
         }

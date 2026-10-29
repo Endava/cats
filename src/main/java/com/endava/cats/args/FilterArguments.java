@@ -520,11 +520,19 @@ public class FilterArguments {
         List<String> matched = new ArrayList<>();
         for (Map.Entry<String, List<String>> entry : currentSkipPathFuzzers.entrySet()) {
             String key = entry.getKey();
-            if (key.equals(path) || (key.contains("*") && path.matches(key.replace("*", ".*")))) {
+            if (key.equals(path) || (key.contains("*") && matchesWildcardPath(path, key))) {
                 matched.addAll(entry.getValue());
             }
         }
         return matched;
+    }
+
+    private static boolean matchesWildcardPath(String path, String wildcardPattern) {
+        String regex = wildcardPattern
+                .replace("{", "\\{")
+                .replace("}", "\\}")
+                .replace("*", ".*");
+        return path.matches(regex);
     }
 
     /**
@@ -848,14 +856,8 @@ public class FilterArguments {
                     if (!path.contains("*")) {
                         return Stream.of(path);
                     } else {
-                        String regex = path
-                                .replace("*", ".*")
-                                .replace("{", "\\{")
-                                .replace("}", "\\}");
-                        Pattern pattern = Pattern.compile(regex);
-
                         return allContractPaths.stream()
-                                .filter(contractPath -> pattern.matcher(contractPath).matches());
+                                .filter(contractPath -> matchesWildcardPath(contractPath, path));
                     }
                 })
                 .distinct()

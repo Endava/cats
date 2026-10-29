@@ -521,7 +521,7 @@ public abstract class CatsModelUtils {
         if (schemaMap == null || schemaMap.isEmpty()) {
             return Map.of();
         }
-        Map<String, Set<String>> childrenByParent = new LinkedHashMap<>();
+        Map<String, Set<String>> directChildrenByParent = new LinkedHashMap<>();
         schemaMap.forEach((name, schema) -> {
             if (name == null || schema == null) {
                 return;
@@ -532,11 +532,33 @@ public abstract class CatsModelUtils {
             }
             for (String parentSimple : findAllOfParents(schema)) {
                 if (!parentSimple.equals(childSimple)) {
-                    childrenByParent.computeIfAbsent(parentSimple, _ -> new LinkedHashSet<>()).add(childSimple);
+                    directChildrenByParent.computeIfAbsent(parentSimple, _ -> new LinkedHashSet<>()).add(childSimple);
                 }
             }
         });
-        return childrenByParent;
+        Map<String, Set<String>> transitiveChildrenByParent = new LinkedHashMap<>();
+        for (String parent : directChildrenByParent.keySet()) {
+            Set<String> descendants = new LinkedHashSet<>();
+            collectTransitiveDescendants(parent, directChildrenByParent, descendants);
+            descendants.remove(parent);
+            if (!descendants.isEmpty()) {
+                transitiveChildrenByParent.put(parent, descendants);
+            }
+        }
+        return transitiveChildrenByParent;
+    }
+
+    private static void collectTransitiveDescendants(String current, Map<String, Set<String>> directChildrenByParent,
+                                                     Set<String> visited) {
+        Set<String> direct = directChildrenByParent.get(current);
+        if (direct == null) {
+            return;
+        }
+        for (String child : direct) {
+            if (visited.add(child)) {
+                collectTransitiveDescendants(child, directChildrenByParent, visited);
+            }
+        }
     }
 
     /**
@@ -558,7 +580,7 @@ public abstract class CatsModelUtils {
         }
         List<Schema> filtered = schemas.stream()
                 .filter(subSchema -> subSchema.get$ref() == null
-                        || !allOfParentRefs.contains(getSimpleRefUsingOAT(subSchema.get$ref())))
+                        || !allOfParentRefs.contains(getSimpleRef(subSchema.get$ref())))
                 .toList();
         return filtered.isEmpty() ? schemas : filtered;
     }

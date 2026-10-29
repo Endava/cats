@@ -124,4 +124,30 @@ class CollectionPaginationLinterTest {
         Mockito.verify(testCaseListener, Mockito.times(1))
                 .skipTest(Mockito.any(), Mockito.eq("Skipping pagination check for non-GET operations"));
     }
+
+    @Test
+    void shouldHandleCyclicComposedSchemasWithoutStackOverflow() {
+        OpenAPI openAPI = new OpenAPI();
+        Schema<?> petSchema = new Schema<>().oneOf(List.of(new Schema<>().$ref("#/components/schemas/Dog")));
+        Schema<?> dogSchema = new Schema<>().allOf(List.of(new Schema<>().$ref("#/components/schemas/Pet")));
+        Components components = new Components().addSchemas("Pet", petSchema).addSchemas("Dog", dogSchema);
+        openAPI.setComponents(components);
+
+        Operation getCollection = new Operation().responses(new io.swagger.v3.oas.models.responses.ApiResponses()
+                .addApiResponse("200", new io.swagger.v3.oas.models.responses.ApiResponse()
+                        .content(new io.swagger.v3.oas.models.media.Content()
+                                .addMediaType("application/json", new io.swagger.v3.oas.models.media.MediaType()
+                                        .schema(new Schema<>().$ref("#/components/schemas/Pet"))))));
+        PathItem collectionItem = new PathItem().get(getCollection);
+
+        FuzzingData data = FuzzingData.builder()
+                .openApi(openAPI)
+                .pathItem(collectionItem)
+                .path("/pets")
+                .method(HttpMethod.GET)
+                .build();
+
+        org.assertj.core.api.Assertions.assertThatNoException()
+                .isThrownBy(() -> collectionPaginationLinterFuzzer.fuzz(data));
+    }
 }

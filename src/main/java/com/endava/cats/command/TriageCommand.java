@@ -314,14 +314,6 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 firstDeleteTestByPath.putIfAbsent(path, indexed.number());
             }
             mineSuccessfulExchangeForRefData(tc, path, minedRefData);
-        } else if (tc.getRequestProvenance() != null && tc.getRequestProvenance().getRuntimeCorrelations() != null) {
-            for (ResourceCorrelation corr : tc.getRequestProvenance().getRuntimeCorrelations()) {
-                if (corr.getTarget() != null && corr.getTarget().location() == RequestTarget.Location.PATH
-                        && corr.getValue() != null && StringUtils.isNotBlank(path)) {
-                    minedRefData.computeIfAbsent(path, _ -> new LinkedHashMap<>())
-                            .putIfAbsent(corr.getTarget().name(), corr.getValue());
-                }
-            }
         }
         recordContractDriftIfUndocumented(tc, path, method, code, openAPI, undocumentedCodesByPathAndMethod);
     }

@@ -18,7 +18,9 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -148,9 +150,15 @@ public class CollectionPaginationLinter extends BaseLinter {
         return !anySchemaPresent;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private static boolean isArrayOrPaginatedEnvelope(Schema<?> schema, Map<String, Schema> schemas, String lastSegment) {
-        if (schema == null) {
+        return isArrayOrPaginatedEnvelope(schema, schemas, lastSegment, Collections.newSetFromMap(new IdentityHashMap<>()));
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static boolean isArrayOrPaginatedEnvelope(Schema<?> schema, Map<String, Schema> schemas,
+                                                      String lastSegment, Set<Schema<?>> visited) {
+        if (schema == null || !visited.add(schema)) {
             return false;
         }
         if (CatsModelUtils.isArraySchema(schema)) {
@@ -167,7 +175,7 @@ public class CollectionPaginationLinter extends BaseLinter {
             }
         }
         for (Schema<?> composed : CatsModelUtils.getComposedSchemas(schema)) {
-            if (isArrayOrPaginatedEnvelope(CatsModelUtils.resolveSchema(composed, schemas), schemas, lastSegment)) {
+            if (isArrayOrPaginatedEnvelope(CatsModelUtils.resolveSchema(composed, schemas), schemas, lastSegment, visited)) {
                 return true;
             }
         }

@@ -167,6 +167,7 @@ class ResponseSchemaValidatorTest {
                               { "$ref": "#/components/schemas/Pet" },
                               { "$ref": "#/components/schemas/Cat" },
                               { "$ref": "#/components/schemas/Dog" },
+                              { "$ref": "#/components/schemas/Puppy" },
                               { "$ref": "#/components/schemas/Lizard" }
                             ]
                           }
@@ -199,6 +200,17 @@ class ResponseSchemaValidatorTest {
                           }
                         ],
                         "required": ["breed"]
+                      },
+                      "Puppy": {
+                        "allOf": [
+                          { "$ref": "#/components/schemas/Dog" },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "monthsOld": { "type": "integer" }
+                            }
+                          }
+                        ]
                       },
                       "Lizard": {
                         "allOf": [
@@ -238,5 +250,13 @@ class ResponseSchemaValidatorTest {
         Assertions.assertThat(result.performed()).isTrue();
         Assertions.assertThat(result.isValid()).isTrue();
         Assertions.assertThat(result.errors()).isEmpty();
+
+        CatsResponse validPuppyResponse = CatsResponse.builder()
+                .responseCode(200)
+                .responseContentType("application/json")
+                .body("{\"adoptionId\":\"adopt_2\",\"pet\":{\"petType\":\"PUPPY\",\"breed\":\"Beagle\",\"monthsOld\":3}}")
+                .build();
+        ResponseSchemaValidator.ValidationResult puppyResult = validator.validate(validPuppyResponse, data);
+        Assertions.assertThat(puppyResult.isValid()).isTrue();
     }
 }

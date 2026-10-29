@@ -496,6 +496,17 @@ class FilterArgumentsTest {
     }
 
     @Test
+    void shouldHandleTemplatedWildcardInSkipPathFuzzersWithoutPatternSyntaxException() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzers", List.of("/users/{id}/*=HappyPath"));
+
+        List<Fuzzer> filtered = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(
+                Set.of(HttpMethod.GET), "/users/{id}/orders");
+
+        Assertions.assertThat(filtered)
+                .noneMatch(fuzzer -> fuzzer.toString().contains("HappyPath"));
+    }
+
+    @Test
     void shouldParseSkipFuzzersForExtension() {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension",
                 List.of("x-public-endpoint=true:BypassAuthentication,RemoveAuthHeaders"));

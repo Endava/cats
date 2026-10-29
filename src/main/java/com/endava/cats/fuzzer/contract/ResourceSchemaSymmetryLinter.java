@@ -20,6 +20,8 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -192,9 +194,18 @@ public class ResourceSchemaSymmetryLinter extends BaseLinter {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private static void extractProperties(Schema<?> schema, Map<String, Schema> componentSchemas,
                                           Map<String, PropertyTypeInfo> target) {
+        extractProperties(schema, componentSchemas, target, Collections.newSetFromMap(new IdentityHashMap<>()));
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static void extractProperties(Schema<?> schema, Map<String, Schema> componentSchemas,
+                                          Map<String, PropertyTypeInfo> target, Set<Schema<?>> visited) {
+        if (schema == null || !visited.add(schema)) {
+            return;
+        }
         if (schema.getProperties() != null) {
             for (Map.Entry<String, Schema> entry : ((Map<String, Schema>) schema.getProperties()).entrySet()) {
                 Schema<?> propSchema = CatsModelUtils.resolveSchema(entry.getValue(), componentSchemas);
@@ -207,8 +218,8 @@ public class ResourceSchemaSymmetryLinter extends BaseLinter {
         }
         for (Schema<?> sub : CatsModelUtils.getComposedSchemas(schema)) {
             Schema<?> resolvedSub = CatsModelUtils.resolveSchema(sub, componentSchemas);
-            if (resolvedSub != null && resolvedSub.getProperties() != null) {
-                extractProperties(resolvedSub, componentSchemas, target);
+            if (resolvedSub != null) {
+                extractProperties(resolvedSub, componentSchemas, target, visited);
             }
         }
     }

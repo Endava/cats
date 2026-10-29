@@ -709,6 +709,16 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(dogPayload.requiredFields())
                 .contains("pet", "pet#petType", "pet#packSize", "pet#bark", "pet#breed")
                 .doesNotContain("pet#nickname");
+
+        OpenAPIModelGeneratorV2.GeneratedPayload catPayload = payloads.stream()
+                .filter(gp -> gp.payload().contains("\"petType\":\"CAT\""))
+                .findFirst()
+                .orElseThrow();
+        Assertions.assertThat(catPayload.requiredFields())
+                .contains("pet", "pet#petType")
+                .doesNotContain("pet#packSize", "pet#bark", "pet#breed");
+        Assertions.assertThat(globalContext.getSchemaMap().get("Pet").getRequired())
+                .containsExactly("petType");
     }
 
     @Test

@@ -157,4 +157,15 @@ class ResourceSchemaSymmetryLinterTest {
         Assertions.assertThat(linter.description())
                 .isEqualTo("verifies that properties shared between write request schemas (POST/PUT/PATCH) and GET response schemas within a resource group have consistent types and formats");
     }
+
+    @Test
+    void shouldHandleCyclicComposedSchemasWithoutStackOverflow() {
+        Schema<?> petSchema = new Schema<>().oneOf(List.of(new Schema<>().$ref("#/components/schemas/Dog")));
+        Schema<?> dogSchema = new Schema<>().allOf(List.of(new Schema<>().$ref("#/components/schemas/Pet")));
+        OpenAPI openAPI = buildOrdersApi(petSchema, dogSchema);
+        openAPI.getComponents().addSchemas("Pet", petSchema).addSchemas("Dog", dogSchema);
+
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
+        Assertions.assertThatNoException().isThrownBy(() -> linter.fuzz(data));
+    }
 }

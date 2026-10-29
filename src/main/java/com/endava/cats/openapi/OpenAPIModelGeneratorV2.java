@@ -1230,18 +1230,30 @@ public class OpenAPIModelGeneratorV2 {
 
         logger.trace("allRequired size: {}", allRequired.size());
 
-        for (Schema<?> schema : allOfSchemasSanitized) {
-            if (schema.get$ref() != null) {
-                schema = globalContext.getSchemaFromReference(schema.get$ref());
+        for (Schema<?> rawSubSchema : allOfSchema) {
+            if (rawSubSchema == null) {
+                continue;
             }
-            Set<String> propKeys = Optional.ofNullable(schema.getProperties()).orElse(Collections.emptyMap()).keySet();
-            Schema<?> finalSchema = schema;
+            boolean isSharedRef = rawSubSchema.get$ref() != null;
+            Schema<?> targetSchema = isSharedRef
+                    ? globalContext.getSchemaFromReference(rawSubSchema.get$ref())
+                    : rawSubSchema;
+            if (targetSchema == null) {
+                continue;
+            }
+            Set<String> propKeys = Optional.ofNullable(targetSchema.getProperties()).orElse(Collections.emptyMap()).keySet();
+            List<String> sourceRequired = isSharedRef
+                    ? allOfSchemasSanitized.stream()
+                            .map(s -> Optional.ofNullable((List<String>) s.getRequired()).orElse(Collections.emptyList()))
+                            .flatMap(Collection::stream)
+                            .toList()
+                    : allRequired;
 
-            allRequired.stream()
-                    .filter(prop -> propKeys.contains(prop) && !Optional.ofNullable(finalSchema.getRequired())
+            sourceRequired.stream()
+                    .filter(prop -> propKeys.contains(prop) && !Optional.ofNullable(targetSchema.getRequired())
                             .orElse(List.of())
                             .contains(prop))
-                    .forEach(schema::addRequiredItem);
+                    .forEach(targetSchema::addRequiredItem);
         }
     }
 
@@ -1634,9 +1646,6 @@ public class OpenAPIModelGeneratorV2 {
 
         if (schema.getItems() != null) {
             requiredFields.addAll(collectRequiredFields(schema.getItems(), parent, visited));
-        }
-        if (schema.getAllOf() != null) {
-            mergeRequiredProperties(schema, schema.getAllOf());
         }
         for (Schema<?> composedSchema : CatsModelUtils.filterPolymorphicBaseSchemas(
                 CatsModelUtils.getInterfaces(schema), globalContext::getSchemaFromReference)) {
