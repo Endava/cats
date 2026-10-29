@@ -109,7 +109,43 @@ class WfcFaultClassifierTest {
                 Reason.COMMAND_INJECTION.value(), "CommandInjectionInStringFields", "{}");
         Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(cmdInj), cmdInj))
                 .extracting(FaultCategoryId::getCode)
-                .contains(CatsWfcFaultCategory.CATS_COMMAND_INJECTION.getCode());
+                .contains(DefinedFaultCategory.SECURITY_COMMAND_INJECTION.getCode());
+
+        CatsTestCase noSqlInj = buildTestCase("POST", "/query", 200, "error",
+                Reason.NOSQL_INJECTION.value(), "NoSqlInjectionInStringFields", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(noSqlInj), noSqlInj))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.SECURITY_NOSQL_INJECTION.getCode());
+
+        CatsTestCase excessiveData = buildTestCase("GET", "/users/1", 200, "error",
+                Reason.WRITE_ONLY_FIELDS_EXPOSED.value(), "HappyPathFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(excessiveData), excessiveData))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.SECURITY_EXCESSIVE_DATA_EXPOSURE.getCode());
+
+        CatsTestCase missingSecHeaders = buildTestCase("GET", "/users", 200, "error",
+                Reason.MISSING_SECURITY_HEADERS.value(), "CheckSecurityHeadersFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(missingSecHeaders), missingSecHeaders))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.SECURITY_MISSING_HEADERS.getCode());
+
+        CatsTestCase brokenRead = buildTestCase("GET", "/users", 500, "error",
+                Reason.READ_BROKEN_AFTER_FUZZING.value(), "ReadResourcesAfterFuzzingFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(brokenRead), brokenRead))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.HTTP_BROKEN_READ.getCode());
+
+        CatsTestCase updateReadInconsistency = buildTestCase("PUT", "/users/1", 200, "error",
+                Reason.UPDATE_READ_INCONSISTENCY.value(), "UpdateResourcesStateConsistencyFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(updateReadInconsistency), updateReadInconsistency))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.HTTP_UPDATE_READ_INCONSISTENCY.getCode());
+
+        CatsTestCase staleEtag = buildTestCase("PUT", "/users/1", 200, "error",
+                Reason.STALE_IF_MATCH_ACCEPTED.value(), "ConditionalEtagFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(staleEtag), staleEtag))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.HTTP_STALE_ETAG_ACCEPTED.getCode());
 
         CatsTestCase wrongAllow = buildTestCase("TRACE", "/users", 405, "warning",
                 Reason.WRONG_ALLOW_HEADER.value(), "HttpMethodsFuzzer", "{}");
