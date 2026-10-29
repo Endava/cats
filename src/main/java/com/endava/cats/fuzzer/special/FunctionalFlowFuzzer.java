@@ -608,6 +608,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                 return applyMapBodyOverrides(basePayload, mapSpec, contractPath, changedFields);
             }
             default -> {
+                //ignore other types, treat as no overrides
             }
         }
         return basePayload;

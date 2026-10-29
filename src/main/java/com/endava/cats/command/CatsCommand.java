@@ -160,6 +160,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     @Inject
     ExecutionStopController executionStopController;
 
+    @Inject
     @CommandLine.Mixin
     ConfigOptions configOptions;
 
@@ -283,7 +284,14 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         context.getPaths().ifPresent(filterArguments::setPaths);
         context.getHttpMethods().ifPresent(methods -> filterArguments.setHttpMethods(methods));
         context.getSkipFuzzers().ifPresent(filterArguments::setSkipFuzzers);
+        context.getSuppliedFuzzers().ifPresent(filterArguments::setSuppliedFuzzers);
         context.getSkipPaths().ifPresent(skipPaths -> filterArguments.getSkipPaths().addAll(skipPaths));
+        context.getTags().ifPresent(filterArguments::setTags);
+        context.getSkipTags().ifPresent(filterArguments::setSkipTags);
+        context.getOperationIds().ifPresent(filterArguments::setOperationIds);
+        context.getSkipOperationIds().ifPresent(filterArguments::setSkipOperationIds);
+        context.getSkipFuzzersForExtension().ifPresent(filterArguments::setSkipFuzzersForExtension);
+        context.getSkipDeprecated().ifPresent(filterArguments::setSkipDeprecated);
         context.getIncludeContract().ifPresent(include -> {
             if (filterArguments.getCheckArguments() != null) {
                 filterArguments.getCheckArguments().setIncludeContract(include);
@@ -567,6 +575,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         logger.config("--insecure: {}", AnsiUtils.blue(authArguments.isInsecure()));
         logger.config("--showSecrets: {}", AnsiUtils.blue(reportingArguments.isShowSecrets()));
         logger.config("Environment file: {}", AnsiUtils.blue(authArguments.getEnvironmentFileStatus()));
+        if (configOptions != null && configOptions.getResolvedConfigFile() != null) {
+            logger.config("Config file: {}", AnsiUtils.blue(configOptions.getResolvedConfigFile()));
+        }
         if (wfcAuthProvider.isEnabled()) {
             logger.config("WFC Auth file: {}", AnsiUtils.blue(authArguments.getWfcAuthFile()));
             logger.config("WFC Auth entry: {}", AnsiUtils.blue(wfcAuthProvider.getSelectedAuthenticationName()));

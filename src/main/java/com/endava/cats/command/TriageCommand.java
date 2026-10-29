@@ -252,14 +252,24 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         for (IndexedTestCase indexed : allTests) {
             CatsTestCase tc = indexed.testCase();
             if (shouldIncludeInClustering(tc.getResult())) {
-                ClusterClassification classification = classify(indexed, pathsWithSuccessfulPost, firstDeleteTestByPath, minedRefData);
+                maybeSynthesizeCorrelationRule(tc, correlationRules, seenRuleKeys);
+            }
+        }
+        Set<String> pathsWithSynthesizedCorrelations = new LinkedHashSet<>();
+        correlationRules.forEach(r -> pathsWithSynthesizedCorrelations.add(r.path()));
+
+        for (IndexedTestCase indexed : allTests) {
+            CatsTestCase tc = indexed.testCase();
+            if (shouldIncludeInClustering(tc.getResult())) {
+                ClusterClassification classification = classify(indexed, pathsWithSuccessfulPost,
+                        firstDeleteTestByPath, minedRefData, pathsWithSynthesizedCorrelations,
+                        undocumentedCodesByPathAndMethod, openAPI);
                 ClusterAccumulator matching = findMatchingAccumulator(accumulators, classification);
                 if (matching == null) {
                     matching = new ClusterAccumulator(classification, buildCurlReproducer(tc), tc);
                     accumulators.add(matching);
                 }
                 matching.add(tc.getTestId(), tc.getFuzzer());
-                maybeSynthesizeCorrelationRule(tc, correlationRules, seenRuleKeys);
             }
         }
 
@@ -304,6 +314,14 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 firstDeleteTestByPath.putIfAbsent(path, indexed.number());
             }
             mineSuccessfulExchangeForRefData(tc, path, minedRefData);
+        } else if (tc.getRequestProvenance() != null && tc.getRequestProvenance().getRuntimeCorrelations() != null) {
+            for (ResourceCorrelation corr : tc.getRequestProvenance().getRuntimeCorrelations()) {
+                if (corr.getTarget() != null && corr.getTarget().location() == RequestTarget.Location.PATH
+                        && corr.getValue() != null && StringUtils.isNotBlank(path)) {
+                    minedRefData.computeIfAbsent(path, _ -> new LinkedHashMap<>())
+                            .putIfAbsent(corr.getTarget().name(), corr.getValue());
+                }
+            }
         }
         recordContractDriftIfUndocumented(tc, path, method, code, openAPI, undocumentedCodesByPathAndMethod);
     }
@@ -466,7 +484,10 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private ClusterClassification classify(IndexedTestCase indexed,
                                            Set<String> pathsWithSuccessfulPost,
                                            Map<String, Integer> firstDeleteTestByPath,
-                                           Map<String, Map<String, Object>> minedRefData) {
+                                           Map<String, Map<String, Object>> minedRefData,
+                                           Set<String> pathsWithSynthesizedCorrelations,
+                                           Map<String, Map<String, Set<Integer>>> undocumentedCodesByPathAndMethod,
+                                           OpenAPI openAPI) {
         CatsTestCase tc = indexed.testCase();
         int code = tc.getResponse().getResponseCode();
         String method = Objects.requireNonNullElse(tc.getRequest().getHttpMethod(), "").toUpperCase(Locale.ROOT);
@@ -507,12 +528,15 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
 
         if (code == 404) {
-            return classifyNotFound404(indexed, method, path, correlations,
-                    pathsWithSuccessfulPost, firstDeleteTestByPath, minedRefData);
+            return classifyNotFound404(indexed, method, path, errorSig, correlations,
+                    pathsWithSuccessfulPost, firstDeleteTestByPath, minedRefData, openAPI);
         }
 
-        if (isSeedValidationRejection(tc, code)) {
+        if (isSeedValidationRejection(tc, code, path, pathsWithSynthesizedCorrelations)) {
             String key = "CROSS_FIELD_CONSTRAINT_4XX|" + method + "|" + path + "|" + clusterNormKey;
+            String remediation = pathsWithSynthesizedCorrelations.contains(path)
+                    ? "Add the synthesized --correlations rule (`--export-correlations correlations.yml`) for " + path + "."
+                    : "Provide valid domain field values via --refData or --correlations for " + path + ".";
             return new ClusterClassification(
                     key,
                     "CROSS_FIELD_CONSTRAINT_4XX",
@@ -520,11 +544,33 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     method + " " + path,
                     code,
                     "Domain / cross-field validation rejected request (" + errorSig + ")",
-                    "Add the synthesized --correlations rule (`--export-correlations correlations.yml`) for " + path + ".");
+                    remediation);
         }
 
+        if (ResponseCodeFamily.is2xxCode(code) && tc.getExpectedResult() != null && tc.getExpectedResult().contains("4XX")) {
+            String key = "VALIDATION_BYPASS_2XX|" + method + "|" + path + "|" + tc.getFuzzer();
+            String remediation = tc.getFuzzer() != null && tc.getFuzzer().contains("Enum")
+                    ? "Validate enum values in " + method + " " + path + " and reject invalid values with 400/422 (or pass --allowInvalidEnumValues if intentional)."
+                    : "Enforce input validation in " + method + " " + path + " so invalid input from " + tc.getFuzzer() + " is rejected with 4XX.";
+            return new ClusterClassification(
+                    key,
+                    "VALIDATION_BYPASS_2XX",
+                    2,
+                    method + " " + path,
+                    code,
+                    "Fuzzer [" + tc.getFuzzer() + "] expected 4XX rejection, but server accepted input with HTTP " + code,
+                    remediation);
+        }
+
+        boolean isUndocumented = undocumentedCodesByPathAndMethod.getOrDefault(path, Map.of())
+                .getOrDefault(method.toLowerCase(Locale.ROOT), Set.of())
+                .contains(code);
         String reason = StringUtils.defaultIfBlank(tc.getResultReason(), "Unexpected response " + code);
         String key = "CONTRACT_MISMATCH|" + method + "|" + path + "|" + code + "|" + reason;
+        String remediation = isUndocumented
+                ? "Run `cats triage --export-contract-patch contract-patch.yml` to add HTTP " + code + " to the OpenAPI specification for " + method + " " + path + "."
+                : "Fuzzer [" + tc.getFuzzer() + "] (" + StringUtils.defaultIfBlank(tc.getExpectedResult(), "expected different status")
+                        + ") received HTTP " + code + " on " + method + " " + path + "; align service status code or fuzzer expectations.";
         return new ClusterClassification(
                 key,
                 "CONTRACT_MISMATCH",
@@ -532,7 +578,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 method + " " + path,
                 code,
                 reason + " (HTTP " + code + "; " + errorSig + ")",
-                "Run `cats triage --export-contract-patch contract-patch.yml` to align the OpenAPI response specification for " + method + " " + path + ".");
+                remediation);
     }
 
     private static ClusterClassification classifyHeaderCollision(List<ResourceCorrelation> correlations,
@@ -555,10 +601,11 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private static ClusterClassification classifyNotFound404(IndexedTestCase indexed, String method, String path,
-                                                             List<ResourceCorrelation> correlations,
+                                                             String errorSig, List<ResourceCorrelation> correlations,
                                                              Set<String> pathsWithSuccessfulPost,
                                                              Map<String, Integer> firstDeleteTestByPath,
-                                                             Map<String, Map<String, Object>> minedRefData) {
+                                                             Map<String, Map<String, Object>> minedRefData,
+                                                             OpenAPI openAPI) {
         for (ResourceCorrelation corr : correlations) {
             if (corr.getTarget().location() == RequestTarget.Location.PATH
                     && corr.getSourceLocation() != null && corr.getSourceLocation().endsWith(".name")) {
@@ -587,15 +634,35 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                             + firstDeleteTestByPath.get(parentDeletePath) + ")",
                     "Run non-DELETE operations across child paths before parent DELETEs or pass --export-refdata refData.yml.");
         }
+        CatsTestCase tc = indexed.testCase();
+        String payload = tc.getRequest() != null ? tc.getRequest().getPayload() : null;
+        if (StringUtils.isNotBlank(payload) && payload.trim().startsWith("[")) {
+            String key = "UNRESOLVED_BODY_REFERENCE_404|" + method + "|" + path;
+            return new ClusterClassification(
+                    key,
+                    "UNRESOLVED_PATH_PARAM_404",
+                    2,
+                    method + " " + path,
+                    404,
+                    "Request body array on " + path + " references a resource that does not exist (" + errorSig + ")",
+                    "Supply existing resource identifiers in the request body via --refData or skip " + path + " via --skipPaths.");
+        }
         String collectionPath = parentCollectionPath(path);
+        boolean producerExistsInSpec = openAPI == null || openAPI.getPaths() == null
+                || (openAPI.getPaths().get(collectionPath) != null && openAPI.getPaths().get(collectionPath).getPost() != null);
         boolean producerSucceeded = pathsWithSuccessfulPost.contains(collectionPath);
         String key = "UNRESOLVED_PATH_PARAM_404|" + method + "|" + path;
-        String diagnosis = producerSucceeded
-                ? "Path parameter on " + path + " was not enriched with an active resource ID"
+        String diagnosis = producerSucceeded || !producerExistsInSpec
+                ? "Path parameter on " + path + " was not enriched with an active resource ID (" + errorSig + ")"
                 : "No successful 2XX POST producer recorded for [" + collectionPath + "]";
-        String remediation = minedRefData.containsKey(path)
-                ? "Run `cats triage --export-refdata refData.yml` to pin the working IDs mined from 2XX responses: " + minedRefData.get(path)
-                : "Seed a valid resource via POST " + collectionPath + " or pass --urlParams <param>:<value>.";
+        String remediation;
+        if (minedRefData.containsKey(path)) {
+            remediation = "Run `cats triage --export-refdata refData.yml` to pin the working IDs mined from the report: " + minedRefData.get(path);
+        } else if (producerExistsInSpec && !collectionPath.equals(path)) {
+            remediation = "Seed a valid resource via POST " + collectionPath + " or pass --urlParams <param>:<value>.";
+        } else {
+            remediation = "Pass a valid path parameter via --urlParams <param>:<value> or --refData.";
+        }
         return new ClusterClassification(
                 key,
                 "UNRESOLVED_PATH_PARAM_404",
@@ -606,10 +673,14 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 remediation);
     }
 
-    private static boolean isSeedValidationRejection(CatsTestCase tc, int code) {
-        return (code == 400 || code == 422) && (ConsoleUtils.matchesFuzzer(tc.getFuzzer(), HappyPathFuzzer.class)
+    private static boolean isSeedValidationRejection(CatsTestCase tc, int code, String path,
+                                                     Set<String> pathsWithSynthesizedCorrelations) {
+        if (code != 400 && code != 422) {
+            return false;
+        }
+        return ConsoleUtils.matchesFuzzer(tc.getFuzzer(), HappyPathFuzzer.class)
                 || ConsoleUtils.matchesFuzzer(tc.getFuzzer(), OnlyRequiredFieldsFuzzer.class)
-                || (tc.getExpectedResult() != null && tc.getExpectedResult().contains("2XX")));
+                || pathsWithSynthesizedCorrelations.contains(path);
     }
 
     private static String findPrecedingDeletePath(String path, int testNumber, Map<String, Integer> firstDeleteTestByPath) {
@@ -736,7 +807,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private static String toCamelCaseFieldName(String rawWords) {
-        String[] parts = rawWords.trim().split("\\s+");
+        String[] parts = rawWords.trim().split("\\s+", -1);
         if (parts.length == 1) {
             return parts[0];
         }

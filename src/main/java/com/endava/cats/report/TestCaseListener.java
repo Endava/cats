@@ -460,6 +460,12 @@ public class TestCaseListener {
                 executionEventPublisher.publish(new CatsExecutionEvent.TestCompleted(Instant.now(),
                         TestResultSnapshot.from(currentTestCase, reportingArguments.getMaskedHeaders())));
             }
+            if (!reportingArguments.isColor() && reportingArguments.isSummaryInConsole() && TEST.get() % 500 == 0) {
+                ConsoleUtils.renderNewRow(TEST.get() + " tests executed [" + MDC.get(FUZZER_KEY) + "]"
+                        + ConsoleUtils.SEPARATOR + "E " + executionStatisticsListener.getErrors()
+                        + ", W " + executionStatisticsListener.getWarns()
+                        + ", S " + executionStatisticsListener.getSuccess(), ' ');
+            }
             logger.info(SEPARATOR);
             CatsExecutionCancelledException.check();
         } finally {
@@ -502,6 +508,12 @@ public class TestCaseListener {
         if (!reportingArguments.isSummaryInConsole() || globalContext.getCatsConfiguration() == null) {
             return;
         }
+        if (!reportingArguments.isColor()) {
+            if (!runPerPathListener.contains(path)) {
+                runPerPathListener.push(path);
+            }
+            return;
+        }
         String fuzzer = progressChar == '✔' ? "" : MDC.get(FUZZER) + " ";
 
         if (runPerPathListener.contains(path)) {
@@ -542,7 +554,7 @@ public class TestCaseListener {
     }
 
     private void markPreviousPathAsDone() {
-        if (!reportingArguments.isSummaryInConsole()) {
+        if (!reportingArguments.isSummaryInConsole() || !reportingArguments.isColor()) {
             return;
         }
         String previousPath = runPerPathListener.peek();
@@ -560,7 +572,11 @@ public class TestCaseListener {
         for (int linesUp = paths.size() - 1; linesUp >= 0; linesUp--) {
             String path = paths.get(linesUp);
             String toRender = path + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
-            ConsoleUtils.renderSameRowAtOffset(toRender, '✔', linesUp);
+            if (reportingArguments.isColor()) {
+                ConsoleUtils.renderSameRowAtOffset(toRender, '✔', linesUp);
+            } else {
+                ConsoleUtils.renderNewRow(toRender, '✔');
+            }
         }
     }
 

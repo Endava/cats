@@ -7,7 +7,6 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsExecutionCancelledException;
@@ -24,12 +23,12 @@ import com.endava.cats.fuzzer.http.CheckReadsStillWorkFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.fuzzer.http.HttpMethodsFuzzer;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.RunOutcome;
+import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
@@ -45,7 +44,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
-import io.swagger.v3.oas.models.media.Schema;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -167,7 +165,7 @@ class CatsCommandTest {
     }
 
     @Test
-    void shouldCompleteNormallyWhenAnExecutionLimitIsReached() throws Exception {
+    void shouldCompleteNormallyWhenAnExecutionLimitIsReached() {
         ReportingArguments localReportingArguments = Mockito.mock(ReportingArguments.class);
         TestCaseListener localTestCaseListener = Mockito.mock(TestCaseListener.class);
         ExecutionStopController stopController = Mockito.mock(ExecutionStopController.class);
@@ -203,7 +201,7 @@ class CatsCommandTest {
     }
 
     @Test
-    void shouldReturnSoftwareExitCodeWhenSessionFinalizationReportsFailure() throws Exception {
+    void shouldReturnSoftwareExitCodeWhenSessionFinalizationReportsFailure() {
         ReportingArguments localReportingArguments = Mockito.mock(ReportingArguments.class);
         TestCaseListener localTestCaseListener = Mockito.mock(TestCaseListener.class);
         ExecutionStopController stopController = Mockito.mock(ExecutionStopController.class);
@@ -232,7 +230,7 @@ class CatsCommandTest {
     }
 
     @Test
-    void shouldPublishCancelledOutcomeWhenCooperativeCancellationIsRequested() throws Exception {
+    void shouldPublishCancelledOutcomeWhenCooperativeCancellationIsRequested() {
         ReportingArguments localReportingArguments = Mockito.mock(ReportingArguments.class);
         TestCaseListener localTestCaseListener = Mockito.mock(TestCaseListener.class);
         ExecutionStopController stopController = Mockito.mock(ExecutionStopController.class);
@@ -270,7 +268,7 @@ class CatsCommandTest {
     }
 
     @Test
-    void shouldPublishFailedOutcomeWhenUnexpectedRuntimeExceptionOccurs() throws Exception {
+    void shouldPublishFailedOutcomeWhenUnexpectedRuntimeExceptionOccurs() {
         ReportingArguments localReportingArguments = Mockito.mock(ReportingArguments.class);
         TestCaseListener localTestCaseListener = Mockito.mock(TestCaseListener.class);
         ExecutionStopController stopController = Mockito.mock(ExecutionStopController.class);

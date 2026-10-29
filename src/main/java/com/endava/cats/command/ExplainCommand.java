@@ -98,9 +98,13 @@ public class ExplainCommand implements Runnable {
     }
 
     void displayProfileInfo() {
-        profileLoader.getAvailableProfilesDetails().stream()
-                .filter(profile -> profile.name().toLowerCase(Locale.ROOT).contains(info.toLowerCase(Locale.ROOT)) ||
-                        profile.description().toLowerCase(Locale.ROOT).contains(info.toLowerCase(Locale.ROOT)))
+        var allProfiles = profileLoader.getAvailableProfilesDetails();
+        boolean hasExactMatch = allProfiles.stream()
+                .anyMatch(profile -> profile.name().equalsIgnoreCase(info));
+        allProfiles.stream()
+                .filter(profile -> hasExactMatch
+                        ? profile.name().equalsIgnoreCase(info)
+                        : profile.name().toLowerCase(Locale.ROOT).contains(info.toLowerCase(Locale.ROOT)))
                 .sorted(Comparator.comparing(ProfileLoader.Profile::name))
                 .forEach(profile -> {
                     logger.noFormat("* Profile {} - {}", profile.name(), profile.description());

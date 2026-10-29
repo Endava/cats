@@ -351,7 +351,7 @@ class TriageCommandTest {
         Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
         Assertions.assertThat(cmd.getLastReport().clusters()).extracting(TriageCommand.RootCauseCluster::category)
                 .contains("HEADER_CORRELATION_COLLISION", "CROSS_FIELD_CONSTRAINT_4XX",
-                        "AUTH_CONFIGURATION_GAP", "UNRESOLVED_PATH_PARAM_404", "CONTRACT_MISMATCH");
+                        "AUTH_CONFIGURATION_GAP", "UNRESOLVED_PATH_PARAM_404", "VALIDATION_BYPASS_2XX");
         Assertions.assertThat(cmd.getLastReport().synthesizedCorrelationsYaml())
                 .contains("when: \"delivery.mode == 'DIGITAL'\"", "omit:", "- \"shippingAddress\"");
         Assertions.assertThat(cmd.getLastReport().minedRefDataYaml()).contains("id: 9001", "activeId: true");

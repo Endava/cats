@@ -1,6 +1,7 @@
 package com.endava.cats;
 
 import com.endava.cats.command.CatsCommand;
+import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.util.CatsParamExceptionHandler;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -8,12 +9,16 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import jakarta.inject.Inject;
+import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
 
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -22,9 +27,13 @@ import java.util.Properties;
  */
 @QuarkusMain
 public class CatsMain implements QuarkusApplication {
+    private static final List<String> DEFAULT_CONFIG_FILE_NAMES = List.of(".cats.properties", "cats.properties");
 
     @Inject
     CatsCommand catsCommand;
+
+    @Inject
+    ConfigOptions configOptions;
 
     @Inject
     CommandLine.IFactory factory;
@@ -51,16 +60,34 @@ public class CatsMain implements QuarkusApplication {
     }
 
     private void loadConfigIfSupplied(CommandLine commandLine, String... args) {
+        if (configOptions != null) {
+            configOptions.setResolvedConfigFile(null);
+        }
         File configFile = findConfigFile(args);
         if (configFile != null && configFile.exists()) {
-            logger.config("Loading config from {}", configFile.getAbsolutePath());
+            if (configOptions != null) {
+                configOptions.setResolvedConfigFile(configFile.toPath().toAbsolutePath().normalize());
+            }
             Properties props = new Properties();
             try (InputStream in = Files.newInputStream(configFile.toPath())) {
                 props.load(in);
-                commandLine.setDefaultValueProvider(new CommandLine.PropertiesDefaultProvider(props));
+                for (String key : List.copyOf(props.stringPropertyNames())) {
+                    if (key.contains(".") && !key.startsWith("cats.")) {
+                        props.putIfAbsent("cats." + key, props.getProperty(key));
+                    }
+                }
+                CommandLine.IDefaultValueProvider provider = new CommandLine.PropertiesDefaultProvider(props);
+                applyDefaultValueProviderRecursively(commandLine, provider);
             } catch (Exception e) {
                 throw new CatsException(e);
             }
+        }
+    }
+
+    private static void applyDefaultValueProviderRecursively(CommandLine cmd, CommandLine.IDefaultValueProvider provider) {
+        cmd.setDefaultValueProvider(provider);
+        for (CommandLine sub : cmd.getSubcommands().values()) {
+            applyDefaultValueProviderRecursively(sub, provider);
         }
     }
 
@@ -68,7 +95,7 @@ public class CatsMain implements QuarkusApplication {
         boolean colorsDisabled = Arrays.stream(args).anyMatch(arg -> arg.trim().toLowerCase(Locale.ROOT).equals("--no-color"));
         if (colorsDisabled) {
             PrettyLogger.disableColors();
-            PrettyLogger.changeMessageFormat("%1$-12s");
+            Ansi.setEnabled(false);
         }
     }
 
@@ -83,12 +110,56 @@ public class CatsMain implements QuarkusApplication {
                 .build();
     }
 
-    private File findConfigFile(String[] args) {
-        for (int i = 0; i < args.length - 1; i++) {
-            if ("--configFile".equals(args[i])) {
-                return new File(args[i + 1]);
-            } else if (args[i].startsWith("--configFile=")) {
-                return new File(args[i].split("=", 2)[1]);
+    File findConfigFile(String[] args) {
+        String explicitConfig = extractOptionValue(args, "--configFile");
+        if (explicitConfig != null) {
+            return new File(explicitConfig);
+        }
+
+        String contractArg = extractOptionValue(args, "-c", "--contract");
+        if (contractArg != null && !contractArg.startsWith("http://") && !contractArg.startsWith("https://")) {
+            try {
+                Path contractParent = Path.of(contractArg).toAbsolutePath().getParent();
+                File fromContractDir = findDefaultPropertiesInDirectory(contractParent);
+                if (fromContractDir != null) {
+                    return fromContractDir;
+                }
+            } catch (InvalidPathException _) {
+                // ignore malformed contract path and fall back to working/home directory
+            }
+        }
+
+        File fromWorkingDir = findDefaultPropertiesInDirectory(Path.of(System.getProperty("user.dir", ".")));
+        if (fromWorkingDir != null) {
+            return fromWorkingDir;
+        }
+
+        return findDefaultPropertiesInDirectory(Path.of(System.getProperty("user.home", "")));
+    }
+
+    private static String extractOptionValue(String[] args, String... optionNames) {
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
+            for (String opt : optionNames) {
+                if (opt.equals(arg) && i + 1 < args.length) {
+                    return args[i + 1];
+                }
+                if (arg.startsWith(opt + "=")) {
+                    return arg.substring(opt.length() + 1);
+                }
+            }
+        }
+        return null;
+    }
+
+    private static File findDefaultPropertiesInDirectory(Path directory) {
+        if (directory == null || !Files.isDirectory(directory)) {
+            return null;
+        }
+        for (String fileName : DEFAULT_CONFIG_FILE_NAMES) {
+            Path candidate = directory.resolve(fileName);
+            if (Files.isRegularFile(candidate)) {
+                return candidate.toFile();
             }
         }
         return null;

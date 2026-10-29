@@ -78,10 +78,13 @@ class ExplainCommandTest {
     @Test
     void testRun_ProfileType_CallsDisplayProfileInfo() {
         explainCommand.type = ExplainCommand.Type.PROFILE;
-        explainCommand.info = "security";
+        explainCommand.info = "ci";
         explainCommand.run();
         verify(explainCommand).displayProfileInfo();
         verify(explainCommand, never()).displayFuzzerInfo();
         verify(explainCommand, never()).displayLinterInfo();
+
+        explainCommand.info = "sec";
+        explainCommand.displayProfileInfo();
     }
 }
