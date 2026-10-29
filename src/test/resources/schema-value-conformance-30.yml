@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: Schema value conformance
+  version: "1.0"
+paths:
+  /orders:
+    get:
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+components:
+  schemas:
+    Order:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+          example: '2024-02-29T10:15:30Z'
+        id:
+          type: string
+          format: uuid
+          example: 4f553d2e-e328-420f-9458-bd7120fce0d9
+        quantity:
+          type: string
+          example: 7
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+          exclusiveMaximum: true
+          example: 100
+        name:
+          type: string
+          nullable: true
+          maxLength: 10
+          example: John
+        tags:
+          type: array
+          items:
+            type: string
+          example: [a, b]

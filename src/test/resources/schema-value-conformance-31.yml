@@ -1,0 +1,104 @@
+openapi: 3.1.0
+info:
+  title: Schema value conformance
+  version: "1.0"
+paths:
+  /orders:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          example: abc
+          schema:
+            type: integer
+            minimum: 1
+        - name: tags
+          in: query
+          example: a,b
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+components:
+  schemas:
+    Order:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+          default: Current datetime
+        id:
+          type: string
+          format: uuid
+          example: '4f553d2e-e328-420f-9458-bd7120fce0d9 '
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 500
+        price:
+          type: number
+          example: '12.5'
+        quantity:
+          type: string
+          example: 7
+        code:
+          type: string
+          maxLength: 3
+          pattern: '^[A-Z]+$'
+          example: usdx
+        deliveryDate:
+          type: string
+          format: date
+          example: '2024-13-45'
+        lines:
+          type: array
+          maxItems: 2
+          uniqueItems: true
+          items:
+            type: integer
+          example: [1, 1, x]
+        owner:
+          type: object
+          example: prev owner
+        settings:
+          type: object
+          example: '{"theme": "dark"}'
+        metadata:
+          type: object
+          properties:
+            version:
+              type: integer
+          example: '{"version": "v1"}'
+        address:
+          type: object
+          properties:
+            zip:
+              type: string
+              maxLength: 5
+            kind:
+              type: string
+              enum: [home, work]
+          example:
+            zip: '1234567'
+            kind: other
+        note:
+          type: [string, 'null']
+          example: null
+        status:
+          type: string
+          enum: [open, closed]
+          example: pending
+        discount:
+          type: number
+          exclusiveMinimum: 0
+          multipleOf: 0.5
+          examples: [0.5, 0, 0.75]

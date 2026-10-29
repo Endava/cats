@@ -42,6 +42,18 @@ class CatsModelUtilsTest {
 
     @ParameterizedTest
     @CsvSource(value = {
+            "date;2024-02-29;true", "date;2024-13-45;false",
+            "date-time;2024-02-29T10:15:30Z;true", "date-time;2024-02-29T10:15:30+0000;false", "date-time;Current datetime;false",
+            "uuid;4f553d2e-e328-420f-9458-bd7120fce0d9;true", "uuid;4f553d2e-e328-420f-9458-bd7120fce0d9 ;false",
+            "email;not-validated;true", "null;anything;true"}, delimiter = ';', nullValues = "null", ignoreLeadingAndTrailingWhitespace = false)
+    void shouldCheckValueMatchesWellKnownFormat(String format, String value, boolean expected) {
+        Schema<?> schema = new StringSchema().format(format);
+
+        Assertions.assertThat(CatsModelUtils.isValueMatchingFormat(schema, value)).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
             "#/components/schemas/SomeSchema, SomeSchema",
             "#/components/schemas/AnotherSchema, AnotherSchema",
             "#/components/schemas/YetAnotherSchema, YetAnotherSchema",

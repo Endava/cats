@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: Ambiguous oneOf variants
+  version: "1.0"
+paths:
+  /payments:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethod'
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  amount:
+                    oneOf:
+                      - type: integer
+                      - type: number
+components:
+  schemas:
+    PaymentMethod:
+      oneOf:
+        - $ref: '#/components/schemas/Card'
+        - $ref: '#/components/schemas/SavedCard'
+    Card:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+    SavedCard:
+      allOf:
+        - $ref: '#/components/schemas/Card'
+        - type: object
+          required:
+            - last4
+          properties:
+            last4:
+              type: string
+    Identifier:
+      oneOf:
+        - type: string
+        - type: string
+          format: uuid
+    Filter:
+      oneOf:
+        - type: object
+          properties:
+            name:
+              type: string
+        - type: object
+          properties:
+            email:
+              type: string

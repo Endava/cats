@@ -21,14 +21,9 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
 
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
@@ -240,7 +235,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         if (fieldSchema.getPattern() != null) {
             return Pattern.compile(fieldSchema.getPattern()).matcher(sanitized).matches();
         }
-        return isValueMatchingFormat(fieldSchema, sanitized);
+        return CatsModelUtils.isValueMatchingFormat(fieldSchema, sanitized);
     }
 
     private static boolean violatesLengthOrEnumBounds(Schema<?> fieldSchema, String sanitized) {
@@ -252,46 +247,6 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         }
         return fieldSchema.getEnum() != null && !fieldSchema.getEnum().isEmpty()
                 && fieldSchema.getEnum().stream().noneMatch(enumVal -> String.valueOf(enumVal).equals(sanitized));
-    }
-
-    private boolean isValueMatchingFormat(Schema<?> fieldSchema, String sanitizedValue) {
-        String format = fieldSchema.getFormat();
-        if (format == null) {
-            return true;
-        }
-        return switch (format) {
-            case "date" -> isValidDate(sanitizedValue);
-            case "date-time" -> isValidDateTime(sanitizedValue);
-            case "uuid" -> isValidUuid(sanitizedValue);
-            default -> true;
-        };
-    }
-
-    private static boolean isValidDate(String value) {
-        try {
-            LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
-            return true;
-        } catch (DateTimeParseException _) {
-            return false;
-        }
-    }
-
-    private static boolean isValidDateTime(String value) {
-        try {
-            OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-            return true;
-        } catch (DateTimeParseException _) {
-            return false;
-        }
-    }
-
-    private static boolean isValidUuid(String value) {
-        try {
-            UUID.fromString(value);
-            return true;
-        } catch (IllegalArgumentException _) {
-            return false;
-        }
     }
 
     /**

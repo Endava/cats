@@ -23,6 +23,10 @@ import io.swagger.v3.oas.models.media.UUIDSchema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -34,6 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -149,6 +154,54 @@ public abstract class CatsModelUtils {
 
     public static boolean isByteArraySchema(Schema<?> schema) {
         return (schema instanceof ByteArraySchema || isType(schema, SchemaTypeUtil.STRING_TYPE)) && SchemaTypeUtil.BYTE_FORMAT.equals(schema.getFormat());
+    }
+
+    /**
+     * Checks whether the given value is valid for the schema's well-known format ({@code date}, {@code date-time}, {@code uuid}).
+     * Schemas without a format or with any other format are considered matching.
+     *
+     * @param schema the schema declaring the format
+     * @param value  the value to check
+     * @return true if the value matches the format or the format is not validated, false otherwise
+     */
+    public static boolean isValueMatchingFormat(Schema<?> schema, String value) {
+        String format = schema.getFormat();
+        if (format == null) {
+            return true;
+        }
+        return switch (format) {
+            case SchemaTypeUtil.DATE_FORMAT -> isValidDate(value);
+            case SchemaTypeUtil.DATE_TIME_FORMAT -> isValidDateTime(value);
+            case SchemaTypeUtil.UUID_FORMAT -> isValidUuid(value);
+            default -> true;
+        };
+    }
+
+    private static boolean isValidDate(String value) {
+        try {
+            LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
+            return true;
+        } catch (DateTimeParseException _) {
+            return false;
+        }
+    }
+
+    private static boolean isValidDateTime(String value) {
+        try {
+            OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return true;
+        } catch (DateTimeParseException _) {
+            return false;
+        }
+    }
+
+    private static boolean isValidUuid(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException _) {
+            return false;
+        }
     }
 
 

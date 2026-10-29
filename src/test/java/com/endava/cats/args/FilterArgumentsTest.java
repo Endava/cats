@@ -90,7 +90,7 @@ class FilterArgumentsTest {
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
                 , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer", "SingleElementArrayToScalarFieldsFuzzer",
                         "DuplicateItemsInUniqueArraysFieldsFuzzer", "FreeFormObjectFieldsFuzzer",
-                        "FreeFormArrayItemsFieldsFuzzer").hasSize(229);
+                        "FreeFormArrayItemsFieldsFuzzer").hasSize(231);
     }
 
     @Test
@@ -160,7 +160,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(241);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(243);
     }
 
     @Test
@@ -485,11 +485,11 @@ class FilterArgumentsTest {
 
     @Test
     void shouldCountTotalLinters() {
-        Assertions.assertThat(filterArguments.getTotalLinters()).isEqualTo(56);
+        Assertions.assertThat(filterArguments.getTotalLinters()).isEqualTo(58);
     }
 
     @ParameterizedTest
-    @CsvSource({"ALL,209", "FUZZERS,153", "LINTERS,56"})
+    @CsvSource({"ALL,211", "FUZZERS,153", "LINTERS,58"})
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);

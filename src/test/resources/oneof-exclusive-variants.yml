@@ -1,0 +1,107 @@
+openapi: 3.1.0
+info:
+  title: Mutually exclusive oneOf variants
+  version: "1.0"
+paths:
+  /payments:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethod'
+      responses:
+        '201':
+          description: created
+components:
+  schemas:
+    PaymentMethod:
+      oneOf:
+        - $ref: '#/components/schemas/Card'
+        - $ref: '#/components/schemas/BankAccount'
+        - type: 'null'
+    Card:
+      type: object
+      required: [kind, token]
+      properties:
+        kind:
+          const: card
+        token:
+          type: string
+    BankAccount:
+      type: object
+      required: [kind, token, iban]
+      properties:
+        kind:
+          const: bank
+        token:
+          type: string
+        iban:
+          type: string
+    WithDiscriminator:
+      oneOf:
+        - $ref: '#/components/schemas/Cat'
+        - $ref: '#/components/schemas/Dog'
+      discriminator:
+        propertyName: petType
+    Cat:
+      type: object
+      required: [petType]
+      properties:
+        petType:
+          type: string
+    Dog:
+      type: object
+      required: [petType, bark]
+      properties:
+        petType:
+          type: string
+        bark:
+          type: boolean
+    ClosedVariant:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [token]
+          properties:
+            token:
+              type: string
+        - type: object
+          required: [token, last4]
+          properties:
+            token:
+              type: string
+            last4:
+              type: string
+    DistinctRequired:
+      oneOf:
+        - type: object
+          required: [email]
+          properties:
+            email:
+              type: string
+        - type: object
+          required: [phone]
+          properties:
+            phone:
+              type: string
+    DistinctPrimitives:
+      oneOf:
+        - type: string
+        - type: [integer, 'null']
+    ConstrainedPrimitives:
+      oneOf:
+        - type: string
+          format: uuid
+        - type: string
+          format: date-time
+    Negated:
+      oneOf:
+        - type: object
+          not:
+            required: [legacyId]
+        - type: object
+          required: [legacyId]
+          properties:
+            legacyId:
+              type: string
