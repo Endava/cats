@@ -79,6 +79,17 @@ class SecuritySchemesLinterTest {
     }
 
     @Test
+    void shouldReportWarningWithSecurityAtOperationLevelAndSchemeNotDefined() throws Exception {
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/contract-no-path-tags.yml")), null, null).getOpenAPI();
+        openAPI.getComponents().setSecuritySchemes(Collections.emptyMap());
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").method(HttpMethod.PUT).pathItem(openAPI.getPaths().get("/pet")).build();
+        securitySchemesContractInfoFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(),
+                Mockito.eq("The current path has security scheme(s) defined, but they are not present in the [components->securitySchemes] contract element"));
+    }
+
+    @Test
     void shouldNotRunOnSecondAttempt() throws Exception {
         OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/openapi.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").method(HttpMethod.POST).tags(Collections.singletonList("pet")).pathItem(openAPI.getPaths().get("/pet")).build();

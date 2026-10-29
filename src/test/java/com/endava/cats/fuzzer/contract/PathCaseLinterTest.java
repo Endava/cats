@@ -45,7 +45,8 @@ class PathCaseLinterTest {
     @ParameterizedTest
     @CsvSource({"/pets-paths,KEBAB,KEBAB", "/pets_paths,SNAKE,SNAKE", "/pets-path-links,KEBAB,KEBAB", "/pets/paths,KEBAB,KEBAB",
             "/pets/complex-paths,KEBAB,KEBAB", "/pets/{petId},KEBAB,CAMEL", "/pets/{pet_id},KEBAB,SNAKE",
-            "/pets/{ped_id}/run,KEBAB,SNAKE", "/pets/run,KEBAB,KEBAB", "/admin/pets,KEBAB,KEBAB"})
+            "/pets/{ped_id}/run,KEBAB,SNAKE", "/pets/run,KEBAB,KEBAB", "/admin/pets,KEBAB,KEBAB",
+            "/oauth2/s3-buckets,KEBAB,CAMEL", "/pets/{id},KEBAB,CAMEL", "/pets_v2/{pet_id_1},SNAKE,SNAKE"})
     void shouldReportInfo(String path, NamingArguments.Naming pathNaming, NamingArguments.Naming pathVarsNaming) {
         ReflectionTestUtils.setField(namingArguments, "pathNaming", pathNaming);
         ReflectionTestUtils.setField(namingArguments, "pathVariablesNaming", pathVarsNaming);

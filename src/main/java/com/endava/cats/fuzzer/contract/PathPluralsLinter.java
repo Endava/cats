@@ -5,13 +5,17 @@ import com.endava.cats.fuzzer.contract.base.BaseLinter;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Checks that paths follow plural naming conventions.
@@ -19,7 +23,14 @@ import java.util.List;
 @Linter
 @Singleton
 public class PathPluralsLinter extends BaseLinter {
-    private static final String PLURAL_END = "s";
+    private static final Set<String> NAMESPACE_PREFIXES = Set.of(
+            "api", "rest", "bff", "internal", "external", "public", "private", "webhook", "graphql"
+    );
+    private static final Set<String> SINGLETON_OR_UNCOUNTABLE = Set.of(
+            "me", "self", "current", "context", "profile", "health", "healthz", "healthcheck", "health-check",
+            "ready", "readyz", "live", "livez", "ping", "info", "config", "configuration", "branding",
+            "auth", "oauth", "oauth2", "sso", "login", "logout", "metadata", "data"
+    );
 
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
@@ -52,15 +63,30 @@ public class PathPluralsLinter extends BaseLinter {
                 .filter(OpenApiUtils::isNotAPathVariable)
                 .toList();
 
-        List<String> pathElementsWithoutPlural = pathWithoutVariables.stream()
-                .filter(pathElement -> !pathElement.endsWith(PLURAL_END))
-                .toList();
+        List<String> pathElementsWithoutPlural = new ArrayList<>();
+        for (int i = 0; i < pathWithoutVariables.size(); i++) {
+            String pathElement = pathWithoutVariables.get(i);
+            if (!isPluralOrExempt(pathElement, i)) {
+                pathElementsWithoutPlural.add(pathElement);
+            }
+        }
 
         if (pathElementsWithoutPlural.size() > pathWithoutVariables.size() / 2) {
             return String.join(", ", pathElementsWithoutPlural);
         }
 
         return N_A;
+    }
+
+    private static boolean isPluralOrExempt(String pathElement, int index) {
+        if (WordUtils.isPlural(pathElement)) {
+            return true;
+        }
+        String lower = pathElement.toLowerCase(Locale.ROOT);
+        if (index == 0 && NAMESPACE_PREFIXES.contains(lower)) {
+            return true;
+        }
+        return SINGLETON_OR_UNCOUNTABLE.contains(lower);
     }
 
     @Override

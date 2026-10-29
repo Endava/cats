@@ -6,10 +6,12 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import jakarta.inject.Singleton;
 
@@ -27,6 +29,7 @@ public class EmptyRequestSchemaLinter extends BaseLinter {
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public void process(FuzzingData data) {
         testCaseListener.addScenario(log, "Detect empty request schemas (in components or inline) that have no properties, $ref, or allOf/anyOf/oneOf");
         testCaseListener.addExpectedResult(log, "All request schemas should define properties, use $ref, or include oneOf/allOf/anyOf");
@@ -34,12 +37,14 @@ public class EmptyRequestSchemaLinter extends BaseLinter {
         List<String> violations = new ArrayList<>();
         Operation operation = HttpMethod.getOperation(data.getMethod(), data.getPathItem());
 
-        RequestBody rb = operation.getRequestBody();
+        RequestBody rb = operation != null ? OpenApiUtils.resolveRequestBody(operation.getRequestBody(), data.getOpenApi()) : null;
+        Map<String, Schema> schemas = OpenApiUtils.getComponentSchemas(data.getOpenApi());
 
         if (rb != null && rb.getContent() != null) {
             for (Map.Entry<String, MediaType> mediaEntry : rb.getContent().entrySet()) {
                 MediaType media = mediaEntry.getValue();
-                if (media.getSchema() != null && CatsModelUtils.isEmptyObjectSchema(media.getSchema())) {
+                Schema<?> schema = media != null ? CatsModelUtils.resolveSchema(media.getSchema(), schemas) : null;
+                if (schema != null && CatsModelUtils.isEmptyObjectSchema(schema)) {
                     violations.add("Request schema for media type %s is an empty object".formatted(mediaEntry.getKey()));
                 }
             }

@@ -3,12 +3,14 @@ package com.endava.cats.fuzzer.contract.base;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 
+import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractRequestBodyLinter extends BaseLinter {
@@ -25,13 +27,18 @@ public abstract class AbstractRequestBodyLinter extends BaseLinter {
         testCaseListener.addScenario(log, "Check if %s methods does not have a body".formatted(targetHttpMethod()));
         testCaseListener.addExpectedResult(log, "%s methods must define a requestBody with a valid schema".formatted(targetHttpMethod()));
 
+        if (data.getMethod() != null && data.getMethod() != targetHttpMethod()) {
+            testCaseListener.skipTest(log, "%s method not matching target %s".formatted(data.getMethod(), targetHttpMethod()));
+            return;
+        }
+
         Operation op = HttpMethod.getOperation(targetHttpMethod(), data.getPathItem());
         if (op == null) {
             testCaseListener.skipTest(log, "%s method not present".formatted(targetHttpMethod()));
             return;
         }
 
-        RequestBody body = op.getRequestBody();
+        RequestBody body = OpenApiUtils.resolveRequestBody(op.getRequestBody(), data.getOpenApi());
         boolean missing = true;
 
         if (body != null && body.getContent() != null) {
@@ -56,8 +63,15 @@ public abstract class AbstractRequestBodyLinter extends BaseLinter {
     }
 
     @Override
+    public List<HttpMethod> skipForHttpMethods() {
+        return HttpMethod.restMethods().stream()
+                .filter(method -> method != targetHttpMethod())
+                .toList();
+    }
+
+    @Override
     protected String runKey(FuzzingData data) {
-        return data.getPath() + data.getMethod();
+        return data.getPath() + targetHttpMethod();
     }
 
 

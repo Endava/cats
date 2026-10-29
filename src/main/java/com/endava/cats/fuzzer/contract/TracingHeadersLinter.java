@@ -5,6 +5,7 @@ import com.endava.cats.fuzzer.contract.base.BaseLinter;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -19,7 +20,10 @@ import java.util.Locale;
 @Linter
 @Singleton
 public class TracingHeadersLinter extends BaseLinter {
-    static final List<String> HEADERS = Arrays.asList("traceid", "correlationid", "requestid", "sessionid");
+    static final List<String> HEADERS = Arrays.asList(
+            "traceid", "correlationid", "requestid", "sessionid",
+            "traceparent", "tracestate", "b3", "spanid", "amzntraceid", "cloudtracecontext"
+    );
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     /**
@@ -35,6 +39,13 @@ public class TracingHeadersLinter extends BaseLinter {
     public void process(FuzzingData data) {
         testCaseListener.addScenario(log, "Check if the current path contains recommended headers such as CorrelationId/TraceId for HTTP method {}", data.getMethod());
         testCaseListener.addExpectedResult(log, "Recommended headers [TraceId/CorrelationId] must be present");
+
+        if (data.getOpenApi() != null && data.getPath() != null
+                && data.getOpenApi().getPaths() != null
+                && OpenApiUtils.getMonitoringEndpoints(data.getOpenApi()).contains(data.getPath())) {
+            testCaseListener.skipTest(log, "Skipping tracing header check for monitoring endpoint");
+            return;
+        }
 
         List<CatsHeader> recommendedHeaders = data.getHeaders().stream()
                 .filter(catsHeader -> HEADERS.parallelStream().anyMatch(this.replaceSpecialChars(catsHeader.getName()).toLowerCase(Locale.ROOT)::contains)).toList();

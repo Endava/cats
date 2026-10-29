@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -55,5 +56,16 @@ class EnumCollectorTest {
         enumCollector.handle(location, schema);
 
         assertThat(enumCollector.getEnums()).isEmpty();
+    }
+
+    @Test
+    void shouldFilterNullElementsFromEnumValues() {
+        Schema<Object> schema = new Schema<>();
+        schema.setEnum(Arrays.asList("VALUE_ONE", null, "VALUE_TWO"));
+        SchemaLocation location = new SchemaLocation("components", "schemas", "NullableEnum", "#/components/schemas/NullableEnum");
+
+        enumCollector.handle(location, schema);
+
+        assertThat(enumCollector.getEnums().get(location)).containsExactly("VALUE_ONE", "VALUE_TWO");
     }
 }

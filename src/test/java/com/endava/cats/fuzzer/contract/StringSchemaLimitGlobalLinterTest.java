@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
@@ -94,7 +95,7 @@ class StringSchemaLimitGlobalLinterTest {
         Assertions.assertThat(context.filter().test(inline, Mockito.mock(FuzzingData.class))).isFalse();
         Assertions.assertThat(context.validator().test(new Schema<>().maxLength(10))).isTrue();
         Assertions.assertThat(context.validator().test(new Schema<>().maxLength(0))).isFalse();
-        Assertions.assertThat(context.validator().test(new Schema<>()._enum(java.util.List.of("cat")))).isTrue();
+        Assertions.assertThat(context.validator().test(new Schema<>()._enum(List.of("cat")))).isTrue();
         Assertions.assertThat(context.validator().test(new Schema<>())).isFalse();
         Assertions.assertThat(context.format().apply(global, new Schema<>()))
                 .contains("components.schemas.Pet.name", "does not specify maxLength or enum");

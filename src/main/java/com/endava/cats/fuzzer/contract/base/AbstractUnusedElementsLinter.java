@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Base class for linters that check for unused elements in the OpenAPI components section.
@@ -74,7 +75,7 @@ public abstract class AbstractUnusedElementsLinter<T> extends BaseLinter {
                     log,
                     data,
                     "Unused component %s found".formatted(this.getElementType()),
-                    unused.stream().map("- %s"::formatted).collect(java.util.stream.Collectors.joining("\n"))
+                    unused.stream().map("- %s"::formatted).collect(Collectors.joining("\n"))
             );
         } else {
             testCaseListener.reportResultInfo(log, data, "All %s in components.%s are used at least once".formatted(this.getElementType(), this.getElementType()));

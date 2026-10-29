@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
@@ -38,7 +39,7 @@ class ArrayWithoutItemsLinterTest {
 
         FuzzingData data = FuzzingData.builder()
                 .path("/users")
-                .method(com.endava.cats.http.HttpMethod.GET)
+                .method(HttpMethod.GET)
                 .pathItem(pathItem)
                 .build();
 
@@ -80,7 +81,7 @@ class ArrayWithoutItemsLinterTest {
 
         FuzzingData data = FuzzingData.builder()
                 .path("/valid")
-                .method(com.endava.cats.http.HttpMethod.GET)
+                .method(HttpMethod.GET)
                 .pathItem(pathItem)
                 .build();
 
@@ -97,5 +98,33 @@ class ArrayWithoutItemsLinterTest {
     void shouldReturnDescriptionAndClassName() {
         Assertions.assertThat(linter).hasToString("ArrayWithoutItemsLinter");
         Assertions.assertThat(linter.description()).isEqualTo("detects array schemas that do not define an 'items' property, which results in ambiguous data structures for arrays");
+    }
+
+    @Test
+    void shouldWarnWhenNestedPropertyArrayHasNoItems() {
+        Schema<?> parent = new Schema<>().type("object");
+        parent.addProperty("tags", new ArraySchema());
+
+        MediaType media = new MediaType().schema(parent);
+        Content content = new Content().addMediaType("application/json", media);
+        ApiResponse response = new ApiResponse().content(content);
+        ApiResponses responses = new ApiResponses().addApiResponse("200", response);
+        Operation operation = new Operation().responses(responses);
+        PathItem pathItem = new PathItem().get(operation);
+
+        FuzzingData data = FuzzingData.builder()
+                .path("/users")
+                .method(HttpMethod.GET)
+                .pathItem(pathItem)
+                .build();
+
+        linter.fuzz(data);
+
+        Mockito.verify(testCaseListener).reportResultWarn(
+                Mockito.any(),
+                Mockito.eq(data),
+                Mockito.eq("Array schemas missing 'items' definitions"),
+                Mockito.contains("Response 200 content-type 'application/json' property 'tags' has array schema without 'items' definition")
+        );
     }
 }

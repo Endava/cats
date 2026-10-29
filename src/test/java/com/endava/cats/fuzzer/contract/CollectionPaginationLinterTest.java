@@ -5,8 +5,12 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +18,7 @@ import org.mockito.Mockito;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 
 @QuarkusTest
 class CollectionPaginationLinterTest {
@@ -84,5 +89,39 @@ class CollectionPaginationLinterTest {
         collectionPaginationLinterFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("All collection GET endpoints declare pagination support"));
+    }
+
+    @Test
+    void shouldResolveRefPaginationParamsAndSkipSingletonEndpoints() {
+        OpenAPI openAPI = new OpenAPI();
+        Components components = new Components();
+        Parameter pageSizeParam = new Parameter().in("query").name("page-size");
+        components.addParameters("PageSize", pageSizeParam);
+        openAPI.setComponents(components);
+
+        PathItem collectionItem = new PathItem();
+        Operation getCollection = new Operation();
+        getCollection.setParameters(List.of(new Parameter().$ref("#/components/parameters/PageSize")));
+        collectionItem.setGet(getCollection);
+
+        FuzzingData collectionData = FuzzingData.builder()
+                .openApi(openAPI)
+                .pathItem(collectionItem)
+                .path("/orders")
+                .method(HttpMethod.GET)
+                .build();
+        collectionPaginationLinterFuzzer.fuzz(collectionData);
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("All collection GET endpoints declare pagination support"));
+
+        FuzzingData singletonData = FuzzingData.builder()
+                .openApi(openAPI)
+                .pathItem(collectionItem)
+                .path("/context/me")
+                .method(HttpMethod.GET)
+                .build();
+        collectionPaginationLinterFuzzer.fuzz(singletonData);
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .skipTest(Mockito.any(), Mockito.eq("Skipping pagination check for non-GET operations"));
     }
 }

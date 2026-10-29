@@ -358,4 +358,53 @@ class OpenApiRefExtractorTest {
 
         assertThat(result).isEmpty();
     }
+
+    @Test
+    void shouldExtractRefsFromJsonOpenAPIContract() throws IOException {
+        Path jsonFile = tempDir.resolve("openapi.json");
+        Files.writeString(jsonFile, """
+                {
+                  "openapi": "3.0.3",
+                  "paths": {
+                    "/users": {
+                      "get": {
+                        "parameters": [{"$ref": "#/components/parameters/LimitParam"}],
+                        "responses": {
+                          "200": {
+                            "content": {
+                              "application/json": {
+                                "schema": {"$ref": "#/components/schemas/User%20Response"}
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                """);
+
+        Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(jsonFile.toString());
+
+        assertThat(result).containsExactlyInAnyOrder("LimitParam", "User Response");
+    }
+
+    @Test
+    void shouldExtractRefsFromDiscriminatorMapping() throws IOException {
+        Files.writeString(mainFile, """
+                openapi: 3.0.3
+                components:
+                  schemas:
+                    PaymentMethod:
+                      discriminator:
+                        propertyName: type
+                        mapping:
+                          card: '#/components/schemas/Card'
+                          token: "#/components/schemas/Token"
+                """);
+
+        Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
+
+        assertThat(result).containsExactlyInAnyOrder("Card", "Token");
+    }
 }

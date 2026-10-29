@@ -12,6 +12,7 @@ import lombok.Getter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Collects every enum together with its fully qualified name.
@@ -30,7 +31,7 @@ public class EnumCollector implements SchemaHandler {
     @Override
     public void handle(SchemaLocation schemaLocation, Schema<?> s) {
         if (CatsModelUtils.isEnumSchema(s)) {
-            enums.put(schemaLocation, s.getEnum().stream().map(Object::toString).toList());
+            enums.put(schemaLocation, s.getEnum().stream().filter(Objects::nonNull).map(Object::toString).toList());
         }
     }
 }

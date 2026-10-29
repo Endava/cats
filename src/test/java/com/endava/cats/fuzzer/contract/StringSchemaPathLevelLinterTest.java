@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
@@ -96,7 +97,7 @@ class StringSchemaPathLevelLinterTest {
         Assertions.assertThat(context.filter().test(global, data)).isFalse();
         Assertions.assertThat(context.validator().test(new Schema<>().maxLength(1))).isTrue();
         Assertions.assertThat(context.validator().test(new Schema<>().maxLength(-1))).isFalse();
-        Assertions.assertThat(context.validator().test(new Schema<>()._enum(java.util.List.of("cat")))).isTrue();
+        Assertions.assertThat(context.validator().test(new Schema<>()._enum(List.of("cat")))).isTrue();
         Assertions.assertThat(context.validator().test(new Schema<>())).isFalse();
         Assertions.assertThat(context.format().apply(matching, new Schema<>()))
                 .contains("paths./pets.name", "does not specify maxLength or enum");

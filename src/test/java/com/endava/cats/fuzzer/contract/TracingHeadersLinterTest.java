@@ -31,7 +31,7 @@ class TracingHeadersLinterTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"X-Trace-Id", "XTraceid", "X-CorrelationId", "X-APP-Correlation_Id"})
+    @CsvSource({"X-Trace-Id", "XTraceid", "X-CorrelationId", "X-APP-Correlation_Id", "traceparent", "X-B3-TraceId"})
     void shouldReportInfo(String header) {
         CatsHeader catsHeader = CatsHeader.builder().name(header).build();
         FuzzingData data = FuzzingData.builder().headers(Set.of(catsHeader)).method(HttpMethod.POST).build();

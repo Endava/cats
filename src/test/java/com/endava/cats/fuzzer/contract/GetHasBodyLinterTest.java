@@ -1,11 +1,15 @@
 package com.endava.cats.fuzzer.contract;
 
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +17,7 @@ import org.mockito.Mockito;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 
 @QuarkusTest
 class GetHasBodyLinterTest {
@@ -79,5 +84,24 @@ class GetHasBodyLinterTest {
     @Test
     void shouldReturnMeaningfulDescription() {
         Assertions.assertThat(getHasBodyLinterFuzzer.description()).isEqualTo("checks if GET methods have a body");
+    }
+
+    @Test
+    void shouldSkipNonGetHttpMethodsAndHandleRefParametersWithoutNpe() {
+        Assertions.assertThat(getHasBodyLinterFuzzer.skipForHttpMethods())
+                .doesNotContain(HttpMethod.GET)
+                .contains(HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE);
+
+        PathItem pathItem = new PathItem();
+        Operation getOp = new Operation();
+        Parameter refParam = new Parameter();
+        refParam.set$ref("#/components/parameters/SharedId");
+        getOp.setParameters(List.of(refParam));
+        pathItem.setGet(getOp);
+
+        FuzzingData data = FuzzingData.builder().openApi(new OpenAPI()).path("/items").method(HttpMethod.GET).pathItem(pathItem).build();
+        getHasBodyLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("GET method does not have a body"));
     }
 }

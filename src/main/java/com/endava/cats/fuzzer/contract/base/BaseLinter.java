@@ -39,6 +39,9 @@ public abstract class BaseLinter implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
+        if (data != null && data.shouldSkipFuzzerForPath(this.toString())) {
+            return;
+        }
         int currentOpenApiIdentity = System.identityHashCode(data.getOpenApi());
         if (currentOpenApiIdentity != lastOpenApiIdentity) {
             fuzzedPaths.clear();

@@ -33,7 +33,6 @@ import java.util.Set;
 @Linter
 @Singleton
 public class JsonObjectsCaseLinter extends BaseLinter {
-    private static final Set<String> PROPERTIES_CHECKED = new HashSet<>();
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ProcessingArguments processingArguments;
     private final NamingArguments namingArguments;
@@ -53,7 +52,6 @@ public class JsonObjectsCaseLinter extends BaseLinter {
 
     @Override
     public void process(FuzzingData data) {
-        PROPERTIES_CHECKED.clear();
         String expectedResult = "JSON objects and properties must follow naming conventions: JSON objects %s, JSON properties %s"
                 .formatted(namingArguments.getJsonObjectsNaming().getDescription(), namingArguments.getJsonPropertiesNaming().getDescription());
         testCaseListener.addScenario(log, "Check if the JSON elements follow naming conventions: JSON objects {}, JSON properties {}",
@@ -81,13 +79,13 @@ public class JsonObjectsCaseLinter extends BaseLinter {
     }
 
     private String checkJsonProperties(FuzzingData data) {
+        Set<String> propertiesChecked = new HashSet<>();
         Set<CatsField> catsFields = data.getAllFieldsAsCatsFields();
         StringBuilder result = new StringBuilder();
         for (CatsField catsField : catsFields) {
             String[] props = catsField.getName().split("#", -1);
             String propertyToCheck = props[props.length - 1];
-            if (!namingArguments.getJsonPropertiesNaming().getPattern().matcher(propertyToCheck).matches() && !PROPERTIES_CHECKED.contains(catsField.getName())) {
-                PROPERTIES_CHECKED.add(catsField.getName());
+            if (!namingArguments.getJsonPropertiesNaming().getPattern().matcher(propertyToCheck).matches() && propertiesChecked.add(catsField.getName())) {
                 result.append(catsField.getName()).append(", ");
             }
         }
@@ -96,21 +94,28 @@ public class JsonObjectsCaseLinter extends BaseLinter {
 
     private String checkJsonObjects(FuzzingData data) {
         List<String> stringToCheck = new ArrayList<>();
-        stringToCheck.add(data.getReqSchemaName());
+        if (data.getReqSchemaName() != null) {
+            stringToCheck.add(data.getReqSchemaName());
+        }
         Operation operation = HttpMethod.getOperation(data.getMethod(), data.getPathItem());
-        for (ApiResponse apiResponse : operation.getResponses().values()) {
-            String ref = apiResponse.get$ref();
-            if (ref == null && apiResponse.getContent() != null) {
-                MediaType mediaType = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getDefaultContentType());
-                if (mediaType != null) {
-                    ref = Optional.ofNullable(mediaType.getSchema()).orElse(new Schema<>()).get$ref();
+        if (operation != null && operation.getResponses() != null) {
+            for (ApiResponse apiResponse : operation.getResponses().values()) {
+                String ref = apiResponse.get$ref();
+                if (ref == null && apiResponse.getContent() != null) {
+                    MediaType mediaType = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getDefaultContentType());
+                    if (mediaType != null && mediaType.getSchema() != null) {
+                        Schema<?> respSchema = mediaType.getSchema();
+                        ref = respSchema.get$ref();
+                        if (ref == null && CatsModelUtils.isArraySchema(respSchema) && respSchema.getItems() != null) {
+                            ref = respSchema.getItems().get$ref();
+                        }
+                    }
+                }
+
+                if (ref != null) {
+                    stringToCheck.add(ref.substring(ref.lastIndexOf("/") + 1));
                 }
             }
-
-            if (ref != null) {
-                stringToCheck.add(ref.substring(ref.lastIndexOf("/") + 1));
-            }
-
         }
         return CatsUtil.check(stringToCheck.toArray(new String[0]), jsonObject ->
                 !namingArguments.getJsonObjectsNaming().getPattern().matcher(jsonObject).matches()

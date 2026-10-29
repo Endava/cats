@@ -27,11 +27,18 @@ public class CommandContext {
     private File queryFile;
     private Map<String, String> xxxOfSelections;
     private String discriminatorCasing;
+    private List<String> suppliedFuzzers;
     private List<String> paths;
     private List<HttpMethod> httpMethods;
     private List<String> skipFuzzers;
     private List<String> skipPaths;
     private List<HttpMethod> skippedHttpMethods;
+    private List<String> tags;
+    private List<String> skipTags;
+    private List<String> operationIds;
+    private List<String> skipOperationIds;
+    private List<String> skipFuzzersForExtension;
+    private Boolean skipDeprecated;
     private Boolean includeContract;
     private String contract;
     private String server;
@@ -237,5 +244,61 @@ public class CommandContext {
 
     public Optional<FilterArguments.TotalCountType> getTotalCountType() {
         return Optional.ofNullable(totalCountType);
+    }
+
+    public void setSuppliedFuzzers(List<String> suppliedFuzzers) {
+        this.suppliedFuzzers = suppliedFuzzers;
+    }
+
+    public Optional<List<String>> getSuppliedFuzzers() {
+        return Optional.ofNullable(suppliedFuzzers);
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    public Optional<List<String>> getTags() {
+        return Optional.ofNullable(tags);
+    }
+
+    public void setSkipTags(List<String> skipTags) {
+        this.skipTags = skipTags;
+    }
+
+    public Optional<List<String>> getSkipTags() {
+        return Optional.ofNullable(skipTags);
+    }
+
+    public void setOperationIds(List<String> operationIds) {
+        this.operationIds = operationIds;
+    }
+
+    public Optional<List<String>> getOperationIds() {
+        return Optional.ofNullable(operationIds);
+    }
+
+    public void setSkipOperationIds(List<String> skipOperationIds) {
+        this.skipOperationIds = skipOperationIds;
+    }
+
+    public Optional<List<String>> getSkipOperationIds() {
+        return Optional.ofNullable(skipOperationIds);
+    }
+
+    public void setSkipFuzzersForExtension(List<String> skipFuzzersForExtension) {
+        this.skipFuzzersForExtension = skipFuzzersForExtension;
+    }
+
+    public Optional<List<String>> getSkipFuzzersForExtension() {
+        return Optional.ofNullable(skipFuzzersForExtension);
+    }
+
+    public void setSkipDeprecated(Boolean skipDeprecated) {
+        this.skipDeprecated = skipDeprecated;
+    }
+
+    public Optional<Boolean> getSkipDeprecated() {
+        return Optional.ofNullable(skipDeprecated);
     }
 }

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Collections;
+import java.util.Map;
 
 @QuarkusTest
 class XmlContentTypeLinterTest {
@@ -51,5 +52,17 @@ class XmlContentTypeLinterTest {
     @Test
     void shouldReturnMeaningfulDescription() {
         Assertions.assertThat(xmlContentTypeContractInfoFuzzer.description()).isEqualTo("verifies that all OpenAPI contract paths responses and requests does not offer `application/xml` as a Content-Type");
+    }
+
+    @Test
+    void shouldReportErrorWhenResponseBodyIsXml() {
+        FuzzingData data = FuzzingData.builder()
+                .path("/pet")
+                .requestContentTypes(Collections.singletonList("application/json"))
+                .responseContentTypes(Map.of("200", Collections.singletonList("application/xml")))
+                .build();
+        xmlContentTypeContractInfoFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.contains("Path accepts [application/xml] as Content-Type"));
     }
 }

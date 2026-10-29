@@ -103,11 +103,23 @@ public class NamingArguments {
 
     private static Map<String, List<String>> defaultVerbMappings() {
         return Map.of(
-                "get", List.of("get", "fetch", "list", "retrieve", "find", "read", "query", "search", "load", "use", "obtain", "acquire"),
-                "post", List.of("create", "add", "post", "insert", "push", "submit", "send", "upsert", "do", "execute", "trigger", "perform", "process", "invoke", "call", "start", "initiate"),
-                "put", List.of("update", "replace", "put", "modify", "set", "change", "alter", "upsert", "adjust", "reconfigure", "rebuild", "recreate", "refresh", "reinitialize"),
-                "delete", List.of("delete", "remove", "destroy", "purge", "drop", "erase", "clear", "discard", "deactivate", "uninstall", "withdraw", "revoke"),
-                "patch", List.of("patch", "modify", "update", "alter", "change", "set", "upsert", "adjust", "edit", "revise", "tweak", "refine", "improve")
+                "get", List.of("get", "fetch", "list", "retrieve", "find", "read", "query", "search", "load", "use", "obtain", "acquire",
+                        "check", "verify", "validate", "count", "resolve", "export", "download", "preview", "stream", "is", "has", "can",
+                        "calculate", "compute", "inspect", "view", "browse", "ping"),
+                "post", List.of("create", "add", "post", "insert", "push", "submit", "send", "upsert", "save", "do", "execute", "trigger", "perform",
+                        "process", "invoke", "call", "start", "initiate", "check", "verify", "validate", "authenticate", "login", "logout",
+                        "authorize", "register", "approve", "reject", "cancel", "export", "import", "upload", "download", "generate", "sync",
+                        "refresh", "reset", "clone", "copy", "archive", "restore", "notify", "publish", "subscribe", "calculate", "compute"),
+                "put", List.of("update", "replace", "put", "modify", "set", "change", "alter", "upsert", "adjust", "reconfigure", "rebuild",
+                        "recreate", "refresh", "reinitialize", "configure", "assign", "enable", "disable", "activate", "deactivate", "approve",
+                        "reject", "archive", "restore"),
+                "delete", List.of("delete", "remove", "destroy", "purge", "drop", "erase", "clear", "discard", "deactivate", "uninstall",
+                        "withdraw", "revoke", "cancel", "unlink", "unassign", "archive", "close", "terminate", "expire", "invalidate"),
+                "patch", List.of("patch", "modify", "update", "alter", "change", "set", "upsert", "adjust", "edit", "revise", "tweak",
+                        "refine", "improve", "configure", "enable", "disable", "activate", "deactivate", "approve", "reject", "cancel",
+                        "archive", "restore"),
+                "head", List.of("head", "check", "verify", "ping", "exists", "has", "is", "get", "fetch", "inspect"),
+                "trace", List.of("trace", "debug", "diagnose", "inspect")
         );
     }
 
@@ -124,11 +136,11 @@ public class NamingArguments {
         /**
          * Represents the snake_case naming convention.
          */
-        SNAKE("^[a-z]+((_)?[a-z])*+$", "snake_case"),
+        SNAKE("^[a-z][a-z0-9]*(_[a-z0-9]+)*$", "snake_case"),
         /**
          * Represents the kebab-case naming convention.
          */
-        KEBAB("^[a-z]+((-)?[a-z])*+$", "kebab-case"),
+        KEBAB("^[a-z][a-z0-9]*(-[a-z0-9]+)*$", "kebab-case"),
         /**
          * Represents the HTTP header naming convention.
          */
@@ -136,23 +148,23 @@ public class NamingArguments {
         /**
          * Represents the PascalCase naming convention.
          */
-        PASCAL("^[A-Z][A-Za-z0-9]+$", "PascalCase"),
+        PASCAL("^[A-Z](?:[a-zA-Z0-9]*[a-z][a-zA-Z0-9]*)?$", "PascalCase"),
         /**
          * Represents the camelCase naming convention.
          */
-        CAMEL("^[a-z]+[A-Za-z0-9]+$", "camelCase"),
+        CAMEL("^[a-z][a-zA-Z0-9]*$", "camelCase"),
 
         /**
          * Represents the UPPER_UNDERSCORE naming convention.
          * This is typically used for constants in programming languages.
          */
-        UPPER_UNDERSCORE("^[A-Z]+(_[A-Z]+)*$", "UPPER_UNDERSCORE"),
+        UPPER_UNDERSCORE("^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$", "UPPER_UNDERSCORE"),
 
         /**
          * Represents the lower_underscore naming convention.
          * This is typically used for variable names in programming languages.
          */
-        LOWER_UNDERSCORE("^[a-z]+(_[a-z]+)*$", "lower_underscore");
+        LOWER_UNDERSCORE("^[a-z][a-z0-9]*(_[a-z0-9]+)*$", "lower_underscore");
 
         private final Pattern pattern;
         private final String description;

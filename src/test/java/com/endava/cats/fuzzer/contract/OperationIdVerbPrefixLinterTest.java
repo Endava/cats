@@ -56,7 +56,7 @@ class OperationIdVerbPrefixLinterTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"getPeople,/test", "compressPeople,/compress", "cancel,/cancel-tokens"})
+    @CsvSource(value = {"getPeople,/test", "compressPeople,/compress", "cancel,/cancel-tokens", "checkReportName,/parties/{partyId}/reports/name-check"})
     void shouldReportInfo(String operationId, String path) {
         PathItem pathItem = Mockito.mock(PathItem.class);
         Operation operation = new Operation();
@@ -94,5 +94,19 @@ class OperationIdVerbPrefixLinterTest {
     @Test
     void shouldReturnMeaningfulDescription() {
         Assertions.assertThat(operationIdVerbPrefixLinterFuzzer.description()).isEqualTo("verifies that each operationId starts with one of the allowed prefixes per HTTP method, based on configuration");
+    }
+
+    @Test
+    void shouldHandleHeadMethodWithoutNpe() {
+        PathItem pathItem = new PathItem();
+        Operation operation = new Operation();
+        operation.setOperationId("checkResource");
+        pathItem.setHead(operation);
+
+        FuzzingData data = FuzzingData.builder().pathItem(pathItem).path("/test").method(HttpMethod.HEAD).build();
+        operationIdVerbPrefixLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(),
+                Mockito.eq("OperationId [{}] uses an allowed prefix"), Mockito.eq("checkResource"));
     }
 }

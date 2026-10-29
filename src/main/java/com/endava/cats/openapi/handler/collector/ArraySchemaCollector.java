@@ -1,0 +1,27 @@
+package com.endava.cats.openapi.handler.collector;
+
+import com.endava.cats.openapi.handler.api.SchemaHandler;
+import com.endava.cats.openapi.handler.api.SchemaLocation;
+import com.endava.cats.util.CatsModelUtils;
+import io.swagger.v3.oas.models.media.Schema;
+import jakarta.inject.Singleton;
+import lombok.Getter;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * A collector that processes array schemas during a deep traversal of the OpenAPI document.
+ */
+@Singleton
+@Getter
+public class ArraySchemaCollector implements SchemaHandler {
+    private final Map<SchemaLocation, Schema<?>> arraySchemas = new LinkedHashMap<>();
+
+    @Override
+    public void handle(SchemaLocation schemaLocation, Schema<?> schema) {
+        if (CatsModelUtils.isArraySchema(schema)) {
+            arraySchemas.put(schemaLocation, schema);
+        }
+    }
+}

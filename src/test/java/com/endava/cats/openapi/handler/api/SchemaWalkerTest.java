@@ -2,6 +2,11 @@ package com.endava.cats.openapi.handler.api;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import jakarta.enterprise.inject.Instance;
 import org.assertj.core.api.Assertions;
@@ -111,5 +116,19 @@ class SchemaWalkerTest {
         boolean hasGlobalContext = visitedLocations.stream()
                 .anyMatch(SchemaLocation::isGlobalLocation);
         Assertions.assertThat(hasGlobalContext).isTrue();
+    }
+
+    @Test
+    void shouldHandleUnnamedParametersWithoutThrowingNpe() {
+        Parameter unnamedParam = new Parameter().in("query").schema(new Schema<>().type("string"));
+        Operation getOp = new Operation().parameters(List.of(unnamedParam));
+        PathItem pathItem = new PathItem().get(getOp);
+        OpenAPI openAPI = new OpenAPI().paths(new Paths().addPathItem("/items", pathItem));
+
+        SchemaWalker.walk(openAPI, testHandler);
+
+        Assertions.assertThat(visitedLocations)
+                .extracting(SchemaLocation::fqn)
+                .anyMatch(fqn -> fqn.endsWith("param.param0"));
     }
 }

@@ -30,7 +30,9 @@ public class EnumCaseGlobalLinter extends AbstractSchemaLinter<List<String>> {
                 "All enum values should match the pattern %s".formatted(namingArguments.getEnumsNaming().getPattern()),
                 enumCollector::getEnums,
                 (loc, data) -> loc.isGlobalLocation(), // filter for global components
-                list -> list.stream().allMatch(enumValue -> namingArguments.getEnumsNaming().getPattern().matcher(enumValue).matches()),
+                list -> list.stream()
+                        .filter(enumValue -> enumValue.chars().anyMatch(Character::isLetter))
+                        .allMatch(enumValue -> namingArguments.getEnumsNaming().getPattern().matcher(enumValue).matches()),
                 (loc, values) -> "Schema at location '%s' contains enum value(s) %s that violate naming convention"
                         .formatted(loc.fqn(), values),
                 "All enum values respect the case convention",

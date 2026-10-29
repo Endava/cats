@@ -71,7 +71,7 @@ class VersionsLinterTest {
 
     @Test
     void shouldReturnMeaningfulDescription() {
-        Assertions.assertThat(versionsContractInfoFuzzer.description()).isEqualTo("verifies that a given path doesn't contain versioning information");
+        Assertions.assertThat(versionsContractInfoFuzzer.description()).isEqualTo("verifies that the OpenAPI contract contains versioning information");
     }
 
 }

@@ -116,4 +116,9 @@ class EnumCaseGlobalLinterTest {
                 Mockito.argThat((String msg) -> msg != null && msg.contains("Schema at location 'components.schemas.Pet.status' contains enum value(s) [VALID_ENUM, invalidEnum] that violate naming convention"))
         );
     }
+
+    @Test
+    void shouldIgnorePurelyNumericEnumValues() {
+        Assertions.assertThat(enumCaseGlobalLinter.getContext().validator().test(List.of("01", "02", "10", "100"))).isTrue();
+    }
 }

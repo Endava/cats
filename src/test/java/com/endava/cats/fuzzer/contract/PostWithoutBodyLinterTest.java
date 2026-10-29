@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
@@ -80,5 +81,12 @@ class PostWithoutBodyLinterTest {
     @Test
     void shouldReturnMeaningfulDescription() {
         Assertions.assertThat(postWithoutBodyLinterFuzzer.description()).isEqualTo("verifies that all POST operations define a request body schema (not null or empty)");
+    }
+
+    @Test
+    void shouldSkipNonPostHttpMethods() {
+        Assertions.assertThat(postWithoutBodyLinterFuzzer.skipForHttpMethods())
+                .doesNotContain(HttpMethod.POST)
+                .contains(HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH);
     }
 }

@@ -37,7 +37,8 @@ class PathPluralsLinterTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/users", "/users/{userId}/posts", "/users/{userId}/posts/cancel", "/users/addUser", "/tasks/cancelTask", "/{userId}/permissions/csv"})
+    @CsvSource({"/users", "/users/{userId}/posts", "/users/{userId}/posts/cancel", "/users/addUser", "/tasks/cancelTask", "/{userId}/permissions/csv",
+            "/api/me/preferences", "/context/me", "/api/workflows/configure", "/people", "/children", "/metadata"})
     void shouldMatchPluralsNamingStandards(String path) {
         PathItem pathItem = new PathItem();
         Operation operation = new Operation();

@@ -30,6 +30,11 @@ public abstract class AbstractRequestWithoutBodyLinter extends BaseLinter {
         testCaseListener.addScenario(log, "Check if %s methods have a body".formatted(targetHttpMethod()));
         testCaseListener.addExpectedResult(log, "%s methods must not have a body".formatted(targetHttpMethod()));
 
+        if (data.getMethod() != null && data.getMethod() != targetHttpMethod()) {
+            testCaseListener.skipTest(log, "%s method not matching target %s".formatted(data.getMethod(), targetHttpMethod()));
+            return;
+        }
+
         Operation operation = HttpMethod.getOperation(targetHttpMethod(), data.getPathItem());
         if (operation == null) {
             testCaseListener.skipTest(log, "%s method not present".formatted(targetHttpMethod()));
@@ -39,7 +44,8 @@ public abstract class AbstractRequestWithoutBodyLinter extends BaseLinter {
         boolean hasRequestBodyInRoot = operation.getRequestBody() != null;
         boolean hasRequestBodyInParameters = Optional.ofNullable(operation.getParameters())
                 .orElse(List.of())
-                .stream().anyMatch(param -> param.getName().equals("body"));
+                .stream()
+                .anyMatch(param -> param != null && ("body".equals(param.getName()) || "body".equalsIgnoreCase(param.getIn())));
 
         if (hasRequestBodyInRoot || hasRequestBodyInParameters) {
             testCaseListener.reportResultError(log, data, "%s has body".formatted(targetHttpMethod()),
@@ -50,8 +56,15 @@ public abstract class AbstractRequestWithoutBodyLinter extends BaseLinter {
     }
 
     @Override
+    public List<HttpMethod> skipForHttpMethods() {
+        return HttpMethod.restMethods().stream()
+                .filter(method -> method != targetHttpMethod())
+                .toList();
+    }
+
+    @Override
     protected String runKey(FuzzingData data) {
-        return data.getPath();
+        return data.getPath() + targetHttpMethod();
     }
 
     @Override

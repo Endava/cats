@@ -15,6 +15,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
+import java.util.List;
 
 @QuarkusTest
 class LintCommandTest {
@@ -49,8 +50,22 @@ class LintCommandTest {
         ReflectionTestUtils.setField(lintCommand, "contract", "src/test/resources/petstore-empty.yml");
 
         lintCommand.run();
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).hasSize(41);
-        Mockito.verify(testCaseListener, Mockito.times(41)).afterFuzz("/pets/{id}");
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).hasSize(56);
+        Mockito.verify(testCaseListener, Mockito.times(51)).afterFuzz("/pets/{id}");
+    }
+
+    @Test
+    void shouldRunOnlySelectedLintersWhenLintersOptionProvided() {
+        ReflectionTestUtils.setField(lintCommand, "contract", "src/test/resources/petstore-empty.yml");
+        ReflectionTestUtils.setField(lintCommand, "linters", List.of("PathPlurals", "TopLevelElements"));
+
+        try {
+            lintCommand.run();
+            Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath())
+                    .containsExactlyInAnyOrder("PathPluralsLinter", "TopLevelElementsLinter");
+        } finally {
+            ReflectionTestUtils.setField(lintCommand, "linters", null);
+        }
     }
 
     @Test

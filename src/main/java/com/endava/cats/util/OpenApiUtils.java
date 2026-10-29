@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,7 +56,7 @@ public abstract class OpenApiUtils {
 
     private static final Set<String> PAGINATION = Set.of("limit", "offset", "page", "size", "pagesize", "pagenumber", "sort", "perpage", "datefrom", "dateto", "datestart", "dateend");
 
-    private static final Set<String> MONITORING_MATCHES = Set.of("[version\\d*\\.?|v\\d+\\.?]/status", "/status", ".*/health", ".*/monitoring/status", ".*/ping", ".*/healthz", ".*/monitor", ".*/monitoring");
+    private static final Set<String> MONITORING_MATCHES = Set.of("[version\\d*\\.?|v\\d+\\.?]/status", "/status", ".*/health", ".*/healthcheck", ".*/health-check", ".*/monitoring/status", ".*/ping", ".*/healthz", ".*/monitor", ".*/monitoring");
 
     static {
         DeserializationUtils.getOptions().setMaxYamlCodePoints(99999999);
@@ -110,7 +111,12 @@ public abstract class OpenApiUtils {
             return parserExtension.readLocation(location, null, options);
         } else {
             LOGGER.debug("Load local contract {}", location);
-            return parserExtension.readContents(Files.readString(Paths.get(location), StandardCharsets.UTF_8), null, options);
+            String contents = Files.readString(Paths.get(location), StandardCharsets.UTF_8);
+            SwaggerParseResult result = parserExtension.readLocation(Paths.get(location).toAbsolutePath().toString(), null, options);
+            if (result == null || result.getOpenAPI() == null) {
+                return parserExtension.readContents(contents, null, options);
+            }
+            return result;
         }
     }
 
@@ -143,6 +149,7 @@ public abstract class OpenApiUtils {
         Components components = openAPI.getComponents();
         Map<String, Schema> schemas = Optional.ofNullable(components)
                 .map(Components::getSchemas)
+                .map(HashMap::new)
                 .orElseGet(HashMap::new);
 
         for (String contentType : contentTypeList) {
@@ -705,6 +712,8 @@ public abstract class OpenApiUtils {
             }
         });
 
+        versions.addAll(searchHeader(openAPI, "apiversion", "acceptversion", "xversion"));
+
         return versions;
     }
 
@@ -724,5 +733,101 @@ public abstract class OpenApiUtils {
      */
     public static int countPathOperations(PathItem pathItem) {
         return pathItem.readOperationsMap().size();
+    }
+
+    /**
+     * Returns the component schemas map from the given OpenAPI specification, or an empty map if absent.
+     *
+     * @param openAPI the OpenAPI specification
+     * @return the map of component schemas
+     */
+    @SuppressWarnings("rawtypes")
+    public static Map<String, Schema> getComponentSchemas(OpenAPI openAPI) {
+        if (openAPI != null && openAPI.getComponents() != null && openAPI.getComponents().getSchemas() != null) {
+            return openAPI.getComponents().getSchemas();
+        }
+        return Collections.emptyMap();
+    }
+
+    /**
+     * Resolves a {@link Parameter} that may reference {@code #/components/parameters/...}.
+     *
+     * @param parameter the parameter to resolve
+     * @param openAPI   the OpenAPI specification
+     * @return the resolved parameter, or the original parameter if not a reference or unresolved
+     */
+    public static Parameter resolveParameter(Parameter parameter, OpenAPI openAPI) {
+        if (parameter != null && parameter.get$ref() != null
+                && openAPI != null && openAPI.getComponents() != null
+                && openAPI.getComponents().getParameters() != null) {
+            Parameter resolved = openAPI.getComponents().getParameters()
+                    .get(CatsModelUtils.getSimpleRef(parameter.get$ref()));
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+        return parameter;
+    }
+
+    /**
+     * Resolves a {@link RequestBody} that may reference {@code #/components/requestBodies/...}.
+     *
+     * @param body    the request body to resolve
+     * @param openAPI the OpenAPI specification
+     * @return the resolved request body, or the original request body if not a reference or unresolved
+     */
+    public static RequestBody resolveRequestBody(RequestBody body, OpenAPI openAPI) {
+        if (body != null && body.getContent() == null && body.get$ref() != null
+                && openAPI != null && openAPI.getComponents() != null
+                && openAPI.getComponents().getRequestBodies() != null) {
+            RequestBody resolved = openAPI.getComponents().getRequestBodies()
+                    .get(CatsModelUtils.getSimpleRef(body.get$ref()));
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+        return body;
+    }
+
+    /**
+     * Resolves an {@link ApiResponse} that may reference {@code #/components/responses/...}.
+     *
+     * @param response the API response to resolve
+     * @param openAPI  the OpenAPI specification
+     * @return the resolved API response, or the original API response if not a reference or unresolved
+     */
+    public static ApiResponse resolveApiResponse(ApiResponse response, OpenAPI openAPI) {
+        if (response != null && response.get$ref() != null
+                && openAPI != null && openAPI.getComponents() != null
+                && openAPI.getComponents().getResponses() != null) {
+            ApiResponse resolved = openAPI.getComponents().getResponses()
+                    .get(CatsModelUtils.getSimpleRef(response.get$ref()));
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+        return response;
+    }
+
+    /**
+     * Collects and resolves all parameters declared at the {@link PathItem} and {@link Operation} levels.
+     *
+     * @param pathItem  the path item
+     * @param operation the operation
+     * @param openAPI   the OpenAPI specification
+     * @return list of resolved non-null parameters
+     */
+    public static List<Parameter> collectPathAndOperationParameters(PathItem pathItem, Operation operation, OpenAPI openAPI) {
+        List<Parameter> raw = new ArrayList<>();
+        if (pathItem != null && pathItem.getParameters() != null) {
+            raw.addAll(pathItem.getParameters());
+        }
+        if (operation != null && operation.getParameters() != null) {
+            raw.addAll(operation.getParameters());
+        }
+        return raw.stream()
+                .map(p -> resolveParameter(p, openAPI))
+                .filter(Objects::nonNull)
+                .toList();
     }
 }

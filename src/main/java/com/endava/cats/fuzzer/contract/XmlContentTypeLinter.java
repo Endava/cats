@@ -31,7 +31,11 @@ public class XmlContentTypeLinter extends BaseLinter {
         testCaseListener.addScenario(log, "Check if the current path accepts [application/xml] Content-Type for HTTP method {}", data.getMethod());
         testCaseListener.addExpectedResult(log, "Paths should avoid accepting [application/xml] and focus only on [application/json] Content-Type");
 
-        if (data.getRequestContentTypes().contains(APPLICATION_XML)) {
+        boolean acceptsXmlInRequest = data.getRequestContentTypes() != null && data.getRequestContentTypes().contains(APPLICATION_XML);
+        boolean producesXmlInResponse = data.getResponseContentTypes() != null && data.getResponseContentTypes().values().stream()
+                .anyMatch(contentTypes -> contentTypes != null && contentTypes.contains(APPLICATION_XML));
+
+        if (acceptsXmlInRequest || producesXmlInResponse) {
             testCaseListener.reportResultError(log, data, "Path accepts [application/xml]", "Path accepts [application/xml] as Content-Type");
         } else {
             testCaseListener.reportResultInfo(log, data, "Path does not accept [application/xml] as Content-Type");

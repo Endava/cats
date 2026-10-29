@@ -6,13 +6,15 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.List;
 import java.util.Locale;
-import java.util.regex.Pattern;
+import java.util.Set;
 
 /**
  * Checks that paths are using nouns rather than verbs.
@@ -20,7 +22,11 @@ import java.util.regex.Pattern;
 @Linter
 @Singleton
 public class PathNounsLinter extends BaseLinter {
-    private static final Pattern COMMON_VERBS_PATTERN = Pattern.compile("^(retrieve|get|create|update|delete|search|list|find|add|modify|upload|download|register|purchase|send|validate|process|approve|reject|cancel|execute|submit)[a-z][a-z]+$");
+    private static final Set<String> COMMON_VERBS = Set.of(
+            "retrieve", "get", "create", "update", "delete", "search", "list", "find",
+            "add", "modify", "upload", "download", "register", "purchase", "send",
+            "validate", "process", "approve", "reject", "cancel", "execute", "submit"
+    );
 
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
@@ -49,7 +55,13 @@ public class PathNounsLinter extends BaseLinter {
     }
 
     private String checkNouns(String[] pathElements) {
-        return CatsUtil.check(pathElements, pathElement -> OpenApiUtils.isNotAPathVariable(pathElement) && COMMON_VERBS_PATTERN.matcher(pathElement.toLowerCase(Locale.ROOT)).matches());
+        return CatsUtil.check(pathElements, pathElement -> {
+            if (!OpenApiUtils.isNotAPathVariable(pathElement)) {
+                return false;
+            }
+            List<String> words = WordUtils.splitWords(pathElement);
+            return words.size() >= 2 && COMMON_VERBS.contains(words.getFirst().toLowerCase(Locale.ROOT));
+        });
     }
 
     @Override

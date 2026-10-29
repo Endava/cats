@@ -49,6 +49,6 @@ public class VersionsLinter extends BaseLinter {
 
     @Override
     public String description() {
-        return "verifies that a given path doesn't contain versioning information";
+        return "verifies that the OpenAPI contract contains versioning information";
     }
 }

@@ -6,6 +6,8 @@ import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.assertj.core.api.Assertions;
@@ -111,8 +113,8 @@ class EmptyResponseSchemaLinterTest {
                 .getOpenAPI();
 
         ApiResponse api200 = openAPI.getPaths().get("/pets/states").getPost().getResponses().get("200");
-        api200.setContent(new io.swagger.v3.oas.models.media.Content()
-                .addMediaType("application/pdf", new io.swagger.v3.oas.models.media.MediaType())); // application/pdf is ignored
+        api200.setContent(new Content()
+                .addMediaType("application/pdf", new MediaType())); // application/pdf is ignored
 
         FuzzingData data = FuzzingData.builder()
                 .openApi(openAPI)

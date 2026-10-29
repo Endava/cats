@@ -44,7 +44,7 @@ public class QueryParamsCaseLinter extends BaseLinter {
 
         if (this.hasErrors(errors)) {
             testCaseListener.reportResultError(log, data, "Query params not following recommended naming",
-                    "Query params not following {} naming: {}", namingArguments.getHeadersNaming().getDescription(), StringUtils.stripEnd(errors.trim(), ","));
+                    "Query params not following {} naming: {}", namingArguments.getQueryParamsNaming().getDescription(), StringUtils.stripEnd(errors.trim(), ","));
         } else {
             testCaseListener.reportResultInfo(log, data, "Query params follow naming conventions.");
         }

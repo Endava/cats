@@ -36,7 +36,7 @@ class PathNounsLinterTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/users", "/users/cancel", "/users/{userId}/posts", "/users/{userId}/posts/cancel"})
+    @CsvSource({"/users", "/users/cancel", "/users/{userId}/posts", "/users/{userId}/posts/cancel", "/admins/processes", "/users/{userId}/addresses"})
     void shouldMatchNounsNamingStandards(String path) {
         PathItem pathItem = new PathItem();
         Operation operation = new Operation();

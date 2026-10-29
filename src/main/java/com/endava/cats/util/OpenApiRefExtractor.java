@@ -4,6 +4,8 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,7 +27,8 @@ import java.util.stream.Stream;
  */
 public abstract class OpenApiRefExtractor {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(OpenApiRefExtractor.class);
-    private static final Pattern REF_PATTERN = Pattern.compile("\\$ref:\\s*['\"]?\\s*([^'\"\\s]+)['\"]?");
+    private static final Pattern REF_PATTERN = Pattern.compile("['\"]?\\$ref['\"]?\\s*:\\s*['\"]?\\s*([^'\"\\s]+)['\"]?");
+    private static final Pattern COMPONENT_POINTER_PATTERN = Pattern.compile("['\"](#/(?:components|definitions)/[^'\"\\s]+)['\"]");
     private static final Pattern FILE_EXTENSION_PATTERN = Pattern.compile("\\.(ya?ml|json)$", Pattern.CASE_INSENSITIVE);
 
     /**
@@ -73,6 +76,11 @@ public abstract class OpenApiRefExtractor {
             String refValue = refMatcher.group(1);
             processReference(refValue, currentFile, referencedSchemas, visitedFiles);
         }
+
+        Matcher pointerMatcher = COMPONENT_POINTER_PATTERN.matcher(line);
+        while (pointerMatcher.find()) {
+            extractSchemaFromPointer(pointerMatcher.group(1), referencedSchemas);
+        }
     }
 
     private static void processReference(String refValue, Path currentFile, Set<String> referencedSchemas, Set<Path> visitedFiles) {
@@ -112,10 +120,22 @@ public abstract class OpenApiRefExtractor {
         for (int i = segments.length - 1; i >= 0; i--) {
             String segment = segments[i].trim();
             if (!segment.isEmpty()) {
-                referencedSchemas.add(segment);
+                referencedSchemas.add(decodePointerSegment(segment));
                 break;
             }
         }
+    }
+
+    private static String decodePointerSegment(String segment) {
+        String unescaped = segment.replace("~1", "/").replace("~0", "~");
+        if (unescaped.contains("%")) {
+            try {
+                return URLDecoder.decode(unescaped, StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException _) {
+                return unescaped;
+            }
+        }
+        return unescaped;
     }
 
     private static RefInfo parseReference(String refValue) {

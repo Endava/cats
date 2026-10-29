@@ -4,6 +4,8 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +14,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
 import java.util.Collections;
+import java.util.Set;
 
 @QuarkusTest
 class RecommendedHttpCodesLinterTest {
@@ -65,5 +68,30 @@ class RecommendedHttpCodesLinterTest {
     @Test
     void shouldReturnMeaningfulDescription() {
         Assertions.assertThat(recommendedHttpCodesContractInfoFuzzer.description()).isEqualTo("verifies that the current path contains all recommended HTTP response codes for all operations");
+    }
+
+    @Test
+    void shouldNotRequire404OnNonItemGetPathAndAllowRedirectCodes() {
+        PathItem pathItem = new PathItem();
+        pathItem.setGet(new Operation());
+
+        FuzzingData singletonGet = FuzzingData.builder()
+                .path("/branding/resolved")
+                .method(HttpMethod.GET)
+                .pathItem(pathItem)
+                .responseCodes(Set.of("200", "500"))
+                .build();
+        recommendedHttpCodesContractInfoFuzzer.fuzz(singletonGet);
+
+        FuzzingData redirectGet = FuzzingData.builder()
+                .path("/payment-links/validate")
+                .method(HttpMethod.GET)
+                .pathItem(pathItem)
+                .responseCodes(Set.of("302", "500"))
+                .build();
+        recommendedHttpCodesContractInfoFuzzer.fuzz(redirectGet);
+
+        Mockito.verify(testCaseListener, Mockito.times(2))
+                .reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("All recommended HTTP codes are defined!"));
     }
 }

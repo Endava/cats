@@ -21,14 +21,16 @@ public class HttpMethodConsistencyAnalyzer {
 
     private static final Set<String> ACTION_VERBS = Set.of(
             "activate", "deactivate", "suspend", "resume", "reset", "revoke", "approve", "reject", "decline",
-            "login", "logout", "refresh", "reauthenticate", "reauthorize", "validate", "verify",
-            "submit", "process", "finalize", "complete", "execute", "resend", "retry", "reprocess",
+            "login", "logout", "refresh", "reauthenticate", "reauthorize", "validate", "verify", "check", "name-check",
+            "submit", "process", "finalize", "complete", "execute", "resend", "retry", "reprocess", "configure",
             "batch", "bulk", "multi", "mass", "import", "export", "sync", "merge",
-            "search", "filter", "lookup", "find", "query",
+            "search", "filter", "lookup", "find", "query", "count", "exists",
             "report", "reports", "dashboard", "analytics", "statistics", "metrics", "summary",
             "history", "audit", "log", "logs",
             "copy", "clone", "extend", "cancel", "preview", "archive", "unarchive", "download",
-            "upload", "transition", "states", "state", "status"
+            "upload", "transition", "states", "state", "status", "resolved", "me", "self",
+            "health", "healthz", "ready", "readyz", "live", "livez", "ping", "info", "version",
+            "enable", "disable", "lock", "unlock", "assign", "unassign", "link", "unlink"
     );
 
     public boolean isItemPath(String path) {
@@ -37,7 +39,19 @@ public class HttpMethodConsistencyAnalyzer {
 
     public boolean isActionPath(String path) {
         String[] segments = path.split("/", -1);
-        return segments.length > 0 && ACTION_VERBS.contains(segments[segments.length - 1].toLowerCase(Locale.ROOT));
+        if (segments.length == 0) {
+            return false;
+        }
+        String lastSegment = segments[segments.length - 1].toLowerCase(Locale.ROOT);
+        if (ACTION_VERBS.contains(lastSegment)) {
+            return true;
+        }
+        for (String token : lastSegment.split("[-_]", -1)) {
+            if (ACTION_VERBS.contains(token)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String extractResourceGroupKey(String path) {
@@ -53,7 +67,6 @@ public class HttpMethodConsistencyAnalyzer {
 
     private List<String> buildNormalizedSegments(String[] segments) {
         List<String> normalized = new ArrayList<>();
-        int depth = 0;
 
         for (String segment : segments) {
             if (StringUtils.isBlank(segment)) {
@@ -61,11 +74,6 @@ public class HttpMethodConsistencyAnalyzer {
             }
 
             normalized.add(normalizeSegment(segment));
-            depth++;
-
-            if (depth >= MAX_PATH_DEPTH) {
-                return normalized;
-            }
         }
 
         return normalized;

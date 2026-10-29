@@ -49,7 +49,11 @@ public class TopLevelElementsLinter extends BaseLinter {
 
         Set<String> missingFieldsSet = this.checkInfo(data.getOpenApi().getInfo());
 
-        errorString.append(this.checkElement("servers", this.inspectServers(data.getOpenApi().getServers())));
+        if (CatsUtil.isEmpty(data.getOpenApi().getServers())) {
+            missingFieldsSet.add("servers");
+        } else {
+            errorString.append(this.checkElement("servers", this.inspectServers(data.getOpenApi().getServers())));
+        }
 
         if (CatsUtil.isEmpty(data.getOpenApi().getTags())) {
             missingFieldsSet.add("tags");
@@ -121,8 +125,8 @@ public class TopLevelElementsLinter extends BaseLinter {
 
     private Set<String> checkInfo(Info info) {
         if (info == null) {
-            return Set.of("info.title", "info.description", "info.version", "info.contact.name",
-                    "info.contact.email", "info.contact.url");
+            return new HashSet<>(Set.of("info.title", "info.description", "info.version", "info.contact.name",
+                    "info.contact.email", "info.contact.url"));
         }
 
         Set<String> missingFields = new HashSet<>();
@@ -142,16 +146,18 @@ public class TopLevelElementsLinter extends BaseLinter {
         }
 
         Set<String> missingFields = new HashSet<>();
-        missingFields.add(this.getOrEmpty(contact::getEmail, "email"));
         missingFields.add(this.getOrEmpty(contact::getName, "name"));
-        missingFields.add(this.getOrEmpty(contact::getUrl, "url"));
+        if (StringUtils.isBlank(contact.getEmail()) && StringUtils.isBlank(contact.getUrl())) {
+            missingFields.add("email");
+            missingFields.add("url");
+        }
 
         return missingFields.stream().filter(field -> !field.isEmpty())
                 .map(field -> "contact." + field).collect(Collectors.toSet());
     }
 
-    private <T> String getOrEmpty(Supplier<T> function, String toReturn) {
-        if (function.get() == null) {
+    private String getOrEmpty(Supplier<String> function, String toReturn) {
+        if (StringUtils.isBlank(function.get())) {
             return toReturn;
         }
         return "";

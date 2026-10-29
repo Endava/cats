@@ -65,4 +65,14 @@ class TopLevelElementsLinterTest {
     void shouldReturnMeaningfulDescription() {
         Assertions.assertThat(topLevelElementsContractInfoFuzzer.description()).isEqualTo("verifies that all OpenAPI contract level elements are present and provide meaningful information: API description, documentation, title, version, etc. ");
     }
+
+    @Test
+    void shouldHandleNullServersWithoutNpe() {
+        OpenAPI openAPI = new OpenAPI();
+        openAPI.setServers(null);
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
+        topLevelElementsContractInfoFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.contains("servers"));
+    }
 }

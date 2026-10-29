@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Checks that the OpenAPI Contract has security schemes defined either at global level or path level.
@@ -41,17 +42,24 @@ public class SecuritySchemesLinter extends BaseLinter {
         testCaseListener.addExpectedResult(log, "At least one security scheme must be present either globally or at HTTP method level");
 
         Map<String, SecurityScheme> securitySchemeMap = Optional.ofNullable(data.getOpenApi().getComponents()).orElse(new Components()).getSecuritySchemes();
+        Set<String> definedSchemes = Optional.ofNullable(securitySchemeMap).orElse(Collections.emptyMap()).keySet();
         List<SecurityRequirement> securityRequirementList = Optional.ofNullable(data.getOpenApi().getSecurity()).orElse(Collections.emptyList());
 
         boolean hasTopLevelSecuritySchemes = !securityRequirementList.isEmpty();
-        boolean areGlobalSecuritySchemesDefined = securityRequirementList.stream().allMatch(securityRequirement -> Optional.ofNullable(securitySchemeMap).orElse(Collections.emptyMap()).keySet().containsAll(securityRequirement.keySet()));
+        boolean areGlobalSecuritySchemesDefined = securityRequirementList.stream()
+                .allMatch(securityRequirement -> definedSchemes.containsAll(securityRequirement.keySet()));
 
         Operation operation = HttpMethod.getOperation(data.getMethod(), data.getPathItem());
+        List<SecurityRequirement> operationSecurityList = operation != null
+                ? Optional.ofNullable(operation.getSecurity()).orElse(Collections.emptyList())
+                : Collections.emptyList();
 
-        boolean hasSecuritySchemesAtTagLevel = !Optional.ofNullable(operation.getSecurity()).orElse(Collections.emptyList()).isEmpty();
+        boolean hasSecuritySchemesAtTagLevel = !operationSecurityList.isEmpty();
+        boolean areOperationSecuritySchemesDefined = operationSecurityList.stream()
+                .allMatch(securityRequirement -> definedSchemes.containsAll(securityRequirement.keySet()));
 
         if (hasTopLevelSecuritySchemes || hasSecuritySchemesAtTagLevel) {
-            if (areGlobalSecuritySchemesDefined) {
+            if (areGlobalSecuritySchemesDefined && areOperationSecuritySchemesDefined) {
                 testCaseListener.reportResultInfo(log, data, "The current path has security scheme(s) properly defined");
             } else {
                 testCaseListener.reportResultWarn(log, data, "Security scheme not defined", "The current path has security scheme(s) defined, but they are not present in the [components->securitySchemes] contract element");

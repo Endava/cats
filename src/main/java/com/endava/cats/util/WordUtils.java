@@ -289,6 +289,20 @@ public abstract class WordUtils {
     }
 
     /**
+     * Checks whether a word token is already in a plural form (regular {@code -s} plural or irregular plural).
+     *
+     * @param token word token
+     * @return true if the token is plural
+     */
+    public static boolean isPlural(String token) {
+        if (token == null || token.isEmpty()) {
+            return false;
+        }
+        String lower = token.toLowerCase(Locale.ROOT);
+        return lower.endsWith("s") || IRREGULAR_SINGULARS.containsKey(lower);
+    }
+
+    /**
      * Plausible base forms of a lowercase alphanumeric noun token. The set always includes the token itself and
      * may contain non-words, which is harmless as long as forms are only compared with each other.
      *

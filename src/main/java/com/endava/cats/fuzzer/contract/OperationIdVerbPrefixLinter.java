@@ -12,6 +12,8 @@ import io.swagger.v3.oas.models.Operation;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -30,12 +32,18 @@ public class OperationIdVerbPrefixLinter extends BaseLinter {
     @Override
     public void process(FuzzingData data) {
         Map<String, List<String>> prefixMappings = namingArguments.getOperationPrefixMappings();
-        List<String> allowedPrefixes = prefixMappings.get(data.getMethod().name().toLowerCase(Locale.ROOT));
+        List<String> allowedPrefixes = prefixMappings != null
+                ? prefixMappings.getOrDefault(data.getMethod().name().toLowerCase(Locale.ROOT), Collections.emptyList())
+                : Collections.emptyList();
 
         testCaseListener.addScenario(log, "Check if the operationId starts with an allowed prefix: {}", allowedPrefixes);
         testCaseListener.addExpectedResult(log, "OperationId begins with one of the allowed prefixes");
 
         Operation operation = HttpMethod.getOperation(data.getMethod(), data.getPathItem());
+        if (operation == null) {
+            testCaseListener.skipTest(log, "%s method not present".formatted(data.getMethod()));
+            return;
+        }
 
         String operationId = operation.getOperationId();
 
@@ -50,12 +58,17 @@ public class OperationIdVerbPrefixLinter extends BaseLinter {
     }
 
     private static boolean doesNotMatchAllowedPrefixes(List<String> allowedPrefixes, String operationId, String lastPartOfPath) {
+        String lowerOpId = operationId.toLowerCase(Locale.ROOT);
+        String lowerLastPart = lastPartOfPath.toLowerCase(Locale.ROOT);
         boolean doesNotMatchPrefixes = allowedPrefixes.stream()
-                .noneMatch(p -> operationId.toLowerCase(Locale.ROOT).startsWith(p.toLowerCase(Locale.ROOT)));
-        boolean pathDoesntStartsWithOperationId = !lastPartOfPath.toLowerCase(Locale.ROOT).startsWith(operationId.toLowerCase(Locale.ROOT));
-        boolean operationIsDoesntStartsWithPath = !operationId.toLowerCase(Locale.ROOT).startsWith(lastPartOfPath.toLowerCase(Locale.ROOT));
+                .noneMatch(p -> lowerOpId.startsWith(p.toLowerCase(Locale.ROOT)));
+        boolean pathDoesntStartsWithOperationId = !lowerLastPart.startsWith(lowerOpId);
+        boolean operationIsDoesntStartsWithPath = !lowerOpId.startsWith(lowerLastPart);
+        boolean doesNotMatchPathTokens = Arrays.stream(lowerLastPart.split("[-_]", -1))
+                .filter(token -> token.length() >= 3)
+                .noneMatch(lowerOpId::startsWith);
 
-        return doesNotMatchPrefixes && pathDoesntStartsWithOperationId && operationIsDoesntStartsWithPath;
+        return doesNotMatchPrefixes && pathDoesntStartsWithOperationId && operationIsDoesntStartsWithPath && doesNotMatchPathTokens;
     }
 
     @Override

@@ -6,23 +6,27 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Linter
 @Singleton
 public class EmptyResponseSchemaLinter extends BaseLinter {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
-    private final List<String> ignoreStatusCodes = List.of("204", "304");
-    private final List<String> ignoreContentTypes = List.of("application/octet-stream", "image/png", "image/jpeg", "application/pdf");
+    private static final Set<String> IGNORE_STATUS_CODES = Set.of("204", "205", "301", "302", "303", "304", "307", "308");
+    private static final Set<String> LOCATION_ALLOWED_BODYLESS_CODES = Set.of("201", "202");
+    private final List<String> ignoreContentTypes = List.of("application/octet-stream", "image/png", "image/jpeg", "application/pdf", "text/event-stream");
 
     public EmptyResponseSchemaLinter(TestCaseListener tcl) {
         super(tcl);
@@ -46,44 +50,67 @@ public class EmptyResponseSchemaLinter extends BaseLinter {
         List<String> violations = new ArrayList<>();
         Operation operation = HttpMethod.getOperation(data.getMethod(), data.getPathItem());
 
-        if (operation.getResponses() == null) {
+        if (operation == null || operation.getResponses() == null) {
             return violations;
         }
 
         for (Map.Entry<String, ApiResponse> entry : operation.getResponses().entrySet()) {
-            processResponseEntry(violations, entry.getKey(), entry.getValue());
+            processResponseEntry(violations, entry.getKey(), entry.getValue(), data);
         }
 
         return violations;
     }
 
-    private void processResponseEntry(List<String> violations, String status, ApiResponse response) {
-        if (ignoreStatusCodes.contains(status) || response.get$ref() != null) {
+    private void processResponseEntry(List<String> violations, String status, ApiResponse response, FuzzingData data) {
+        if (status != null && (IGNORE_STATUS_CODES.contains(status) || status.startsWith("1"))) {
             return;
         }
 
-        if (response.getContent() == null) {
+        ApiResponse resolvedResponse = OpenApiUtils.resolveApiResponse(response, data.getOpenApi());
+        if (resolvedResponse == null || resolvedResponse.get$ref() != null) {
+            return;
+        }
+
+        if (resolvedResponse.getContent() == null) {
+            if (LOCATION_ALLOWED_BODYLESS_CODES.contains(status) && hasLocationHeader(resolvedResponse)) {
+                return;
+            }
             violations.add("Response %s does not define any content".formatted(status));
             return;
         }
 
-        processMediaTypes(violations, status, response.getContent());
+        processMediaTypes(violations, status, resolvedResponse.getContent(), data);
     }
 
-    private void processMediaTypes(List<String> violations, String status, Map<String, MediaType> content) {
+    private static boolean hasLocationHeader(ApiResponse response) {
+        return response.getHeaders() != null
+                && response.getHeaders().keySet().stream().anyMatch("Location"::equalsIgnoreCase);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void processMediaTypes(List<String> violations, String status, Map<String, MediaType> content, FuzzingData data) {
+        Map<String, Schema> schemas = OpenApiUtils.getComponentSchemas(data.getOpenApi());
 
         for (Map.Entry<String, MediaType> mediaEntry : content.entrySet()) {
             String contentType = mediaEntry.getKey();
             MediaType media = mediaEntry.getValue();
 
-            if (ignoreContentTypes.contains(contentType)) {
+            if (isIgnoredContentType(contentType)) {
                 continue;
             }
 
-            if (media.getSchema() != null && CatsModelUtils.isEmptyObjectSchema(media.getSchema())) {
+            Schema<?> schema = media != null ? CatsModelUtils.resolveSchema(media.getSchema(), schemas) : null;
+            if (schema != null && CatsModelUtils.isEmptyObjectSchema(schema)) {
                 violations.add("Response schema on response %s is an empty object".formatted(status));
             }
         }
+    }
+
+    private boolean isIgnoredContentType(String contentType) {
+        return contentType != null && (ignoreContentTypes.contains(contentType)
+                || contentType.startsWith("image/")
+                || contentType.startsWith("audio/")
+                || contentType.startsWith("video/"));
     }
 
     @Override

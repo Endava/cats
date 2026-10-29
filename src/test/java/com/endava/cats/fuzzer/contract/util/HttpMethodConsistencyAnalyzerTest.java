@@ -22,4 +22,12 @@ class HttpMethodConsistencyAnalyzerTest {
 
         Assertions.assertThat(resourceData.getGroups()).isEmpty();
     }
+
+    @Test
+    void shouldPreserveDeepNestedResourceGroupsWithoutTruncation() {
+        Assertions.assertThat(analyzer.extractResourceGroupKey("/api/v1/parties/{partyId}/accounts/{accountId}"))
+                .isEqualTo("/api/v1/parties/{}/accounts");
+        Assertions.assertThat(analyzer.isActionPath("/parties/{partyId}/reports/name-check")).isTrue();
+        Assertions.assertThat(analyzer.isActionPath("/branding/resolved")).isTrue();
+    }
 }

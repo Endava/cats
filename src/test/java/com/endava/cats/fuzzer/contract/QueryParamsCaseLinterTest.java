@@ -36,7 +36,8 @@ class QueryParamsCaseLinterTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"first_payload,SNAKE", "SecondPayload,PASCAL", "third-payload,KEBAB", "X-Rate,HTTP_HEADER"})
+    @CsvSource({"first_payload,SNAKE", "SecondPayload,PASCAL", "third-payload,KEBAB", "X-Rate,HTTP_HEADER",
+            "address_line_1,SNAKE", "q,CAMEL", "ISO_8601,UPPER_UNDERSCORE", "iso_8601,LOWER_UNDERSCORE"})
     void shouldMatchQueryParamsNamingStandards(String queryParam, NamingArguments.Naming naming) {
         ReflectionTestUtils.setField(namingArguments, "queryParamsNaming", naming);
         FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData(queryParam, "200");
@@ -57,7 +58,7 @@ class QueryParamsCaseLinterTest {
         queryParamsCaseLinterFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1))
-                .reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Query params not following recommended naming"), Mockito.eq("Query params not following {} naming: {}"), Mockito.any(), Mockito.contains(queryParam));
+                .reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Query params not following recommended naming"), Mockito.eq("Query params not following {} naming: {}"), Mockito.eq(naming.getDescription()), Mockito.contains(queryParam));
     }
 
 

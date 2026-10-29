@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Singleton;
 
@@ -106,11 +107,11 @@ public class SchemaWalker {
             List<Parameter> params = Optional.ofNullable(op.getParameters()).orElse(List.of());
             for (int i = 0; i < params.size(); i++) {
                 Parameter p = params.get(i);
-                if (p.getSchema() == null) continue;
+                if (p == null || p.getSchema() == null) continue;
 
                 Deque<String> fqn = new ArrayDeque<>(fqnStem);
                 fqn.add("param");
-                fqn.add(p.getName());
+                fqn.add(Optional.ofNullable(p.getName()).orElse("param" + i));
 
                 Deque<String> ptr = new ArrayDeque<>(ptrStem);
                 ptr.add("parameters");
@@ -122,6 +123,7 @@ public class SchemaWalker {
 
             Optional.ofNullable(op.getRequestBody()).map(RequestBody::getContent)
                     .ifPresent(content -> content.forEach((mt, media) -> {
+                        if (mt == null || media == null) return;
                         Deque<String> fqn = new ArrayDeque<>(fqnStem);
                         fqn.add("request");
                         fqn.add(mt);
@@ -135,22 +137,24 @@ public class SchemaWalker {
                         consumeMedia(media, fqn, ptr, opCtx);
                     }));
 
-            op.getResponses().forEach((code, resp) ->
-                    Optional.ofNullable(resp.getContent()).ifPresent(content ->
-                            content.forEach((mt, media) -> {
-                                Deque<String> fqn = new ArrayDeque<>(fqnStem);
-                                fqn.add("response" + code);
-                                fqn.add(mt);
+            Optional.ofNullable(op.getResponses())
+                    .ifPresent(responses -> responses.forEach((code, resp) ->
+                            Optional.ofNullable(resp).map(ApiResponse::getContent).ifPresent(content ->
+                                    content.forEach((mt, media) -> {
+                                        if (code == null || mt == null || media == null) return;
+                                        Deque<String> fqn = new ArrayDeque<>(fqnStem);
+                                        fqn.add("response" + code);
+                                        fqn.add(mt);
 
-                                Deque<String> ptr = new ArrayDeque<>(ptrStem);
-                                ptr.add("responses");
-                                ptr.add(code);
-                                ptr.add("content");
-                                ptr.add(mt);
-                                ptr.add("schema");
+                                        Deque<String> ptr = new ArrayDeque<>(ptrStem);
+                                        ptr.add("responses");
+                                        ptr.add(code);
+                                        ptr.add("content");
+                                        ptr.add(mt);
+                                        ptr.add("schema");
 
-                                consumeMedia(media, fqn, ptr, opCtx);
-                            })));
+                                        consumeMedia(media, fqn, ptr, opCtx);
+                                    }))));
         });
     }
 
@@ -209,6 +213,7 @@ public class SchemaWalker {
 
         if (schema.getProperties() != null) {
             schema.getProperties().forEach((prop, sub) -> {
+                if (prop == null) return;
                 Deque<String> fqnN = new ArrayDeque<>(fqn);
                 fqnN.add(prop);
 

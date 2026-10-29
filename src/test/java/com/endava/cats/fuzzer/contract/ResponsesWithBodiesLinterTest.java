@@ -4,6 +4,13 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +20,7 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class ResponsesWithBodiesLinterTest {
@@ -50,9 +58,34 @@ class ResponsesWithBodiesLinterTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"204", "304"})
+    @CsvSource({"100", "101", "204", "205", "301", "302", "303", "304", "307", "308"})
     void shouldSkipCodes(String code) {
         FuzzingData data = FuzzingData.builder().responses(Map.of(code, List.of())).build();
+        responsesWithBodiesLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("All HTTP response codes have a response body"));
+    }
+
+    @Test
+    void shouldAllowNonJsonStreamContentAndLocationOn201() {
+        PathItem pathItem = new PathItem();
+        Operation postOp = new Operation();
+        ApiResponses responses = new ApiResponses();
+        responses.addApiResponse("200", new ApiResponse()
+                .content(new Content().addMediaType("text/event-stream",
+                        new MediaType().schema(new StringSchema()))));
+        responses.addApiResponse("201", new ApiResponse());
+        postOp.setResponses(responses);
+        pathItem.setPost(postOp);
+
+        FuzzingData data = FuzzingData.builder()
+                .path("/chat")
+                .method(HttpMethod.POST)
+                .pathItem(pathItem)
+                .responses(Map.of("200", List.of(), "201", List.of()))
+                .responseHeaders(Map.of("201", Set.of("Location")))
+                .build();
+
         responsesWithBodiesLinterFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("All HTTP response codes have a response body"));

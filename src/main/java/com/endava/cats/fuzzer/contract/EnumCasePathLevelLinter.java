@@ -30,7 +30,9 @@ public class EnumCasePathLevelLinter extends AbstractSchemaLinter<List<String>> 
                 "All enum values should match the pattern %s".formatted(namingArguments.getEnumsNaming().getPattern()),
                 enumCollector::getEnums,
                 (loc, data) -> loc.matchesPathAndMethod(data.getPath(), data.getMethod()), // filter for inline schemas of current path/method
-                list -> list.stream().allMatch(enumValue -> namingArguments.getEnumsNaming().getPattern().matcher(enumValue).matches()),
+                list -> list.stream()
+                        .filter(enumValue -> enumValue.chars().anyMatch(Character::isLetter))
+                        .allMatch(enumValue -> namingArguments.getEnumsNaming().getPattern().matcher(enumValue).matches()),
                 (loc, values) -> loc + " => " + values,
                 "All enum values respect the case convention",
                 "Enum-case mismatches detected",
