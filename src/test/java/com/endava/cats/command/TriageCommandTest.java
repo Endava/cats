@@ -343,6 +343,62 @@ class TriageCommandTest {
                 }
                 """, StandardCharsets.UTF_8);
 
+        Files.writeString(tempDir.resolve("Test7.json"), """
+                {
+                  "testId": "Test 7",
+                  "result": "error",
+                  "resultReason": "Unexpected response code: 200",
+                  "expectedResult": "Should return 4XX",
+                  "fuzzer": "NonEnumeratedFieldsFuzzer",
+                  "contractPath": "/pet",
+                  "path": "/pet",
+                  "request": {"httpMethod": "PUT", "url": "http://localhost:8080/pet", "sendBody": true},
+                  "response": {"responseCode": 200, "jsonBody": {"status": "accepted"}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        Files.writeString(tempDir.resolve("Test8.json"), """
+                {
+                  "testId": "Test 8",
+                  "result": "error",
+                  "resultReason": "Not found",
+                  "expectedResult": "Should return 2XX",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/orders/bulk",
+                  "path": "/orders/bulk",
+                  "request": {"httpMethod": "POST", "url": "http://localhost:8080/orders/bulk", "payload": "[\\"ord-1\\"]", "sendBody": true},
+                  "response": {"responseCode": 404, "jsonBody": {"message": "Order not found"}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        Files.writeString(tempDir.resolve("Test9.json"), """
+                {
+                  "testId": "Test 9",
+                  "result": "error",
+                  "resultReason": "Not found",
+                  "expectedResult": "Should return 2XX",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/users/{id}/tags",
+                  "path": "/users/{id}/tags",
+                  "request": {"httpMethod": "POST", "url": "http://localhost:8080/users/999/tags", "payload": "[\\"tag-1\\"]", "sendBody": true},
+                  "response": {"responseCode": 404, "jsonBody": {"message": "User not found"}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        Files.writeString(tempDir.resolve("Test10.json"), """
+                {
+                  "testId": "Test 10",
+                  "result": "error",
+                  "resultReason": "Unexpected response code: 400",
+                  "expectedResult": "Should return 4XX",
+                  "fuzzer": "StringFieldsRightBoundary",
+                  "contractPath": "/orders",
+                  "path": "/orders",
+                  "request": {"httpMethod": "POST", "url": "http://localhost:8080/orders", "payload": "{\\"delivery\\":{\\"mode\\":\\"DIGITAL\\"}}", "sendBody": true},
+                  "response": {"responseCode": 400, "jsonBody": {"message": "Invalid field length"}}
+                }
+                """, StandardCharsets.UTF_8);
+
         TriageCommand cmd = new TriageCommand();
         cmd.reportFolder = tempDir.toString();
         cmd.contractPath = "src/test/resources/petstore.yml";
@@ -351,7 +407,20 @@ class TriageCommandTest {
         Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
         Assertions.assertThat(cmd.getLastReport().clusters()).extracting(TriageCommand.RootCauseCluster::category)
                 .contains("HEADER_CORRELATION_COLLISION", "CROSS_FIELD_CONSTRAINT_4XX",
-                        "AUTH_CONFIGURATION_GAP", "UNRESOLVED_PATH_PARAM_404", "VALIDATION_BYPASS_2XX");
+                        "AUTH_CONFIGURATION_GAP", "UNRESOLVED_PATH_PARAM_404",
+                        "UNRESOLVED_BODY_REFERENCE_404", "VALIDATION_BYPASS_2XX", "CONTRACT_MISMATCH");
+        TriageCommand.RootCauseCluster enumCluster = cmd.getLastReport().clusters().stream()
+                .filter(c -> "VALIDATION_BYPASS_2XX".equals(c.category()) && c.fuzzers().contains("InvalidValuesInEnumsFields"))
+                .findFirst().orElseThrow();
+        Assertions.assertThat(enumCluster.remediation()).contains("--allowInvalidEnumValues");
+        TriageCommand.RootCauseCluster nonEnumCluster = cmd.getLastReport().clusters().stream()
+                .filter(c -> "VALIDATION_BYPASS_2XX".equals(c.category()) && c.fuzzers().contains("NonEnumeratedFieldsFuzzer"))
+                .findFirst().orElseThrow();
+        Assertions.assertThat(nonEnumCluster.remediation()).doesNotContain("--allowInvalidEnumValues");
+        Assertions.assertThat(cmd.getLastReport().clusters())
+                .anyMatch(c -> "UNRESOLVED_BODY_REFERENCE_404".equals(c.category()) && "POST /orders/bulk".equals(c.operation()))
+                .anyMatch(c -> "UNRESOLVED_PATH_PARAM_404".equals(c.category()) && "POST /users/{id}/tags".equals(c.operation()))
+                .anyMatch(c -> "CONTRACT_MISMATCH".equals(c.category()) && c.fuzzers().contains("StringFieldsRightBoundary"));
         Assertions.assertThat(cmd.getLastReport().synthesizedCorrelationsYaml())
                 .contains("when: \"delivery.mode == 'DIGITAL'\"", "omit:", "- \"shippingAddress\"");
         Assertions.assertThat(cmd.getLastReport().minedRefDataYaml())

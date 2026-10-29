@@ -77,4 +77,25 @@ class LintCommandTest {
         int exitCode = lintCommand.getExitCode();
         Assertions.assertThat(exitCode).isEqualTo(1);
     }
+
+    @Test
+    void shouldParseSkipLintersForExtensionWithoutSplittingCommaSeparatedLinters() {
+        new picocli.CommandLine(lintCommand).parseArgs(
+                "-c", "src/test/resources/petstore-empty.yml",
+                "--skipLintersForExtension", "x-public=true:PathPlurals,TopLevelElements,x-internal=yes:Versions");
+
+        try {
+            lintCommand.run();
+            var result = filterArguments.getSkipFuzzersForExtension();
+            Assertions.assertThat(result).containsKeys("x-public", "x-internal");
+            Assertions.assertThat(result.get("x-public").get("true"))
+                    .containsExactly("PathPlurals", "TopLevelElements");
+            Assertions.assertThat(result.get("x-internal").get("yes"))
+                    .containsExactly("Versions");
+        } finally {
+            ReflectionTestUtils.setField(lintCommand, "skipLintersForExtension", null);
+            ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension", null);
+            filterArguments.getSkipFuzzersForExtension().clear();
+        }
+    }
 }

@@ -314,4 +314,11 @@ class FuzzingStrategyTest {
         FuzzingResult result = FuzzingStrategy.replaceField(payload, "arrayWithInteger", FuzzingStrategy.replace().withData(List.of(55, 66)));
         Assertions.assertThat(result.json()).contains("55").contains("66").contains("USA").doesNotContain("88").doesNotContain("99");
     }
+
+    @Test
+    void shouldStripEmojisAndControlCharsWhilePreservingAsciiCaretAndBacktick() {
+        String input = "a^b`c\u0007\uD83D\uDC4D\uD83C\uDFFD\uD83D\uDE80d";
+        Assertions.assertThat(FuzzingStrategy.stripSpecialAndInvisibleChars(input))
+                .isEqualTo("a^b`cd");
+    }
 }

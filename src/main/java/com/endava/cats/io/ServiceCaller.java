@@ -266,10 +266,14 @@ public class ServiceCaller {
                 resolvedRequest);
         headers = resolvedHeaders.headers();
         resolvedHeaders.correlations().forEach(correlation -> testCaseListener.addRuntimeCorrelation(logger, correlation));
+        boolean preserveContentType = data.getAllMutationTargets().stream()
+                .anyMatch(t -> t.location() == RequestTarget.Location.HEADER
+                        && HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(t.name()));
         CatsRequest catsRequest = CatsRequest.builder()
                 .headers(headers).payload(processedPayload)
                 .httpMethod(data.getHttpMethod().name())
                 .sendBody(data.getAllMutationTargets().contains(RequestTarget.requestBody()))
+                .preserveContentType(preserveContentType)
                 .build();
 
         long startTime = System.currentTimeMillis();
@@ -687,10 +691,8 @@ public class ServiceCaller {
             requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8),
                     contentType == null ? null : MediaType.parse(contentType));
         } else {
-            //for GET and HEAD, we remove default Content-Type as some servers don't like it
             String currentContentType = headers.get(HttpHeaders.CONTENT_TYPE);
-            if (currentContentType != null && (currentContentType.equalsIgnoreCase(processingArguments.getDefaultContentType())
-                    || "application/x-www-form-urlencoded".equalsIgnoreCase(currentContentType))) {
+            if (shouldStripBodylessContentType(catsRequest, currentContentType)) {
                 headers.removeAll("Content-Type");
             }
         }
@@ -774,6 +776,28 @@ public class ServiceCaller {
         }
     }
 
+
+    private boolean shouldStripBodylessContentType(CatsRequest catsRequest, String currentContentType) {
+        if (catsRequest.isPreserveContentType() || currentContentType == null) {
+            return false;
+        }
+        String currentBase = baseMediaType(currentContentType);
+        String defaultBase = baseMediaType(processingArguments.getDefaultContentType());
+        return currentBase.equalsIgnoreCase(defaultBase)
+                || "application/x-www-form-urlencoded".equalsIgnoreCase(currentBase);
+    }
+
+    private static String baseMediaType(String contentType) {
+        if (contentType == null) {
+            return "";
+        }
+        MediaType parsed = MediaType.parse(contentType);
+        if (parsed != null) {
+            return parsed.type() + "/" + parsed.subtype();
+        }
+        int semicolon = contentType.indexOf(';');
+        return (semicolon >= 0 ? contentType.substring(0, semicolon) : contentType).trim();
+    }
 
     private String replacePathParams(String path, String processedPayload, ServiceData data) {
         String payloadAsJson = JsonUtils.parseOrConvertToJsonElement(processedPayload).toString();

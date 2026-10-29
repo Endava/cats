@@ -127,7 +127,7 @@ public class ErrorResponseConsistencyLinter extends BaseLinter {
             String endpointDesc = "%s %s (%s)".formatted(method, path, status);
             if (CatsModelUtils.isPrimitiveSchema(resolved)) {
                 violations.add("%s defines a primitive '%s' error schema instead of a structured error object"
-                        .formatted(endpointDesc, resolved.getType()));
+                        .formatted(endpointDesc, CatsModelUtils.getPrimaryType(resolved)));
                 continue;
             }
             Set<String> props = collectPropertyNames(resolved, componentSchemas);

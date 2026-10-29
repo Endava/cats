@@ -53,7 +53,7 @@ import java.util.stream.Stream;
  */
 @Slf4j
 public class OpenAPIModelGeneratorV2 {
-    public static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
+    public static final String SYNTH_SCHEMA_NAME = CatsModelUtils.SYNTH_SCHEMA_NAME;
     public static final String DEFAULT_STRING_WHEN_GENERATION_FAILS = "addOrChangeOrSimplifyThePattern";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final BigDecimal MAX = new BigDecimal("99999999999");
@@ -603,7 +603,6 @@ public class OpenAPIModelGeneratorV2 {
         logger.trace("resolveAllOfSchemaProperties for schema {}", propertyName);
         List<GeneratedExample> examples = new ArrayList<>();
         keepOriginalSchema(propertyName, schema);
-        mergeRequiredProperties(schema, schema.getAllOf());
 
         Schema parentWithDiscriminator = Optional.ofNullable(firstSchemaWithDiscriminator(schema.getAllOf()))
                 .orElse(schema.getDiscriminator() != null ? schema : null);
@@ -625,6 +624,16 @@ public class OpenAPIModelGeneratorV2 {
             // If a discriminator was found, ensure it's populated with the correct value
             if (discriminatorPropertyName != null && !examples.isEmpty()) {
                 applyDiscriminatorValue(propertyName, parentWithDiscriminator, discriminatorPropertyName, examples);
+            }
+            Set<String> allOfRequiredFields = collectAllOfRequiredFields(schema, currentRequiredProperty);
+            if (!allOfRequiredFields.isEmpty()) {
+                examples = examples.stream()
+                        .map(ex -> {
+                            Set<String> mergedReq = new LinkedHashSet<>(ex.requiredFields());
+                            mergedReq.addAll(allOfRequiredFields);
+                            return new GeneratedExample(ex.value(), mergedReq);
+                        })
+                        .toList();
             }
         } finally {
             restoreDiscriminators(previousSubDiscriminators);
@@ -934,9 +943,8 @@ public class OpenAPIModelGeneratorV2 {
     private void addRefExample(String propertyName, Schema property, List<GeneratedExample> examples) {
         Schema<?> resolved = globalContext.getSchemaFromReference(property.get$ref());
         if (resolved != null && CatsModelUtils.isPrimitiveSchema(resolved)) {
-            Schema<?> schemaToRecord = resolved;
-            if (property.getDefault() != null && resolved.getDefault() == null) {
-                schemaToRecord = CatsModelUtils.copySchema(resolved);
+            Schema<?> schemaToRecord = CatsModelUtils.copySchema(resolved);
+            if (property.getDefault() != null && schemaToRecord.getDefault() == null) {
                 schemaToRecord.setDefault(property.getDefault());
             }
             recordRequestSchema(currentProperty, schemaToRecord);
@@ -1202,58 +1210,41 @@ public class OpenAPIModelGeneratorV2 {
         globalContext.getSchemaMap().put(keyToKeep, composedSchema);
     }
 
-    private void mergeRequiredProperties(Schema<?> parentSchema, List<Schema> allOfSchema) {
-        logger.trace("createMergedSchema for allOfSchema");
-        if (allOfSchema == null) {
+    private Set<String> collectAllOfRequiredFields(Schema<?> schema, String parentPrefix) {
+        Set<String> requiredNames = new LinkedHashSet<>();
+        Set<String> propertyKeys = new LinkedHashSet<>();
+        collectAllOfRequiredAndProperties(schema, requiredNames, propertyKeys, Collections.newSetFromMap(new IdentityHashMap<>()));
+        Set<String> result = new LinkedHashSet<>();
+        for (String req : requiredNames) {
+            if (propertyKeys.contains(req)) {
+                result.add(appendRequiredProperty(parentPrefix, req));
+            }
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void collectAllOfRequiredAndProperties(Schema<?> schema, Set<String> requiredNames,
+                                                   Set<String> propertyKeys, Set<Schema<?>> visited) {
+        if (schema == null) {
             return;
         }
-        Collection<Schema> allOfSchemasSanitized = allOfSchema
-                .stream()
-                .filter(CatsModelUtils::isNotEmptySchema)
-                .map(schema -> schema.get$ref() != null ? globalContext.getSchemaFromReference(schema.get$ref()) : schema)
-                .filter(Objects::nonNull)
-                .toList();
-        List<String> parentRequired = parentSchema != null && parentSchema.getRequired() != null
-                ? parentSchema.getRequired()
-                : Collections.emptyList();
-        if (allOfSchemasSanitized.size() == 1 && parentRequired.isEmpty()) {
+        Schema<?> resolved = schema.get$ref() != null ? globalContext.getSchemaFromReference(schema.get$ref()) : schema;
+        if (resolved == null || !visited.add(resolved)) {
             return;
         }
-
-        logger.trace("allOfSchemasSanitized size: {}", allOfSchemasSanitized.size());
-
-        List<String> allRequired = new ArrayList<>(parentRequired);
-        allOfSchemasSanitized.stream()
-                .map(schema -> Optional.ofNullable((List<String>) schema.getRequired()).orElse(Collections.emptyList()))
-                .flatMap(Collection::stream)
-                .forEach(allRequired::add);
-
-        logger.trace("allRequired size: {}", allRequired.size());
-
-        for (Schema<?> rawSubSchema : allOfSchema) {
-            if (rawSubSchema == null) {
-                continue;
+        if (resolved.getRequired() != null) {
+            requiredNames.addAll(resolved.getRequired());
+        }
+        if (resolved.getProperties() != null) {
+            propertyKeys.addAll(resolved.getProperties().keySet());
+        }
+        if (resolved.getAllOf() != null) {
+            for (Object sub : resolved.getAllOf()) {
+                if (sub instanceof Schema<?> subSchema) {
+                    collectAllOfRequiredAndProperties(subSchema, requiredNames, propertyKeys, visited);
+                }
             }
-            boolean isSharedRef = rawSubSchema.get$ref() != null;
-            Schema<?> targetSchema = isSharedRef
-                    ? globalContext.getSchemaFromReference(rawSubSchema.get$ref())
-                    : rawSubSchema;
-            if (targetSchema == null) {
-                continue;
-            }
-            Set<String> propKeys = Optional.ofNullable(targetSchema.getProperties()).orElse(Collections.emptyMap()).keySet();
-            List<String> sourceRequired = isSharedRef
-                    ? allOfSchemasSanitized.stream()
-                            .map(s -> Optional.ofNullable((List<String>) s.getRequired()).orElse(Collections.emptyList()))
-                            .flatMap(Collection::stream)
-                            .toList()
-                    : allRequired;
-
-            sourceRequired.stream()
-                    .filter(prop -> propKeys.contains(prop) && !Optional.ofNullable(targetSchema.getRequired())
-                            .orElse(List.of())
-                            .contains(prop))
-                    .forEach(targetSchema::addRequiredItem);
         }
     }
 
@@ -1646,6 +1637,9 @@ public class OpenAPIModelGeneratorV2 {
 
         if (schema.getItems() != null) {
             requiredFields.addAll(collectRequiredFields(schema.getItems(), parent, visited));
+        }
+        if (schema.getAllOf() != null) {
+            requiredFields.addAll(collectAllOfRequiredFields(schema, parent));
         }
         for (Schema<?> composedSchema : CatsModelUtils.filterPolymorphicBaseSchemas(
                 CatsModelUtils.getInterfaces(schema), globalContext::getSchemaFromReference)) {

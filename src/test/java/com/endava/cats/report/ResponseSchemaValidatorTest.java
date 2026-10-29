@@ -167,7 +167,6 @@ class ResponseSchemaValidatorTest {
                               { "$ref": "#/components/schemas/Pet" },
                               { "$ref": "#/components/schemas/Cat" },
                               { "$ref": "#/components/schemas/Dog" },
-                              { "$ref": "#/components/schemas/Puppy" },
                               { "$ref": "#/components/schemas/Lizard" }
                             ]
                           }

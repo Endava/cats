@@ -211,7 +211,7 @@ public class FuzzingDataFactory {
 
     private Schema<?> buildParameterSchemaCopy(Parameter parameter) {
         Schema<?> originalSchema = Optional.ofNullable(parameter.getSchema()).orElse(new Schema<>());
-        Schema<?> schemaCopy = copySchema(originalSchema);
+        Schema<?> schemaCopy = CatsModelUtils.copySchema(originalSchema);
         if (schemaCopy.get$ref() != null && globalContext.getSchemaFromReference(schemaCopy.get$ref()) == null) {
             globalContext.recordError("Parameter schema %s is not declared; falling back to string".formatted(schemaCopy.get$ref()));
             schemaCopy.set$ref(null);
@@ -222,16 +222,6 @@ public class FuzzingDataFactory {
             schemaCopy.setExample(parameter.getExample());
         }
         return schemaCopy;
-    }
-
-    /**
-     * Creates a copy of a Schema preserving the original class type.
-     * This is needed because {@code Json.mapper().convertValue(schema, Schema.class)} converts
-     * OpenAPI 3.1 JsonSchema instances (which store type in {@code types} Set) into ObjectSchema,
-     * losing the original type information.
-     */
-    private static Schema<?> copySchema(Schema<?> originalSchema) {
-        return CatsModelUtils.copySchema(originalSchema);
     }
 
     List<Parameter> getResolvedParameters(List<Parameter> operationParameters) {

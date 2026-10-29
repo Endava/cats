@@ -43,8 +43,8 @@ cats triage -r cats-report -c <spec> -j \
    - A per-request header was overwritten by runtime correlation. Pin it explicitly in `headers.yml` (`--headers headers.yml`).
 4. **`AUTH_CONFIGURATION_GAP` (Severity 2)**:
    - Non-auth-bypass fuzzers received `401`/`403`. Configure valid credentials via `-H` or `--authConfig`.
-5. **`UNRESOLVED_PATH_PARAM_404` / `SUSPICIOUS_CORRELATION_404` / `RESOURCE_POOL_DEPLETED_404` (Severity 2)**:
-   - Path parameters could not be resolved or were deleted mid-run. Pass the auto-mined `--refData refData.yml` (which extracts real IDs from `2XX` responses in the same report) on the next run.
+5. **`UNRESOLVED_PATH_PARAM_404` / `UNRESOLVED_BODY_REFERENCE_404` / `SUSPICIOUS_CORRELATION_404` / `RESOURCE_POOL_DEPLETED_404` (Severity 2)**:
+   - Path parameters could not be resolved or were deleted mid-run, or an array request body referenced a missing identifier (`UNRESOLVED_BODY_REFERENCE_404`: supply existing identifiers in the body via `--refData`). Pass the auto-mined `--refData refData.yml` (which extracts real IDs from `2XX` responses in the same report) on the next run.
 6. **`CONTRACT_MISMATCH` (Severity 3)**:
    - The API returned an undocumented non-`5XX` status code or response schema mismatch. If the API behavior is intentional, merge the exported `contract-patch.yml` into the OpenAPI specification.
 

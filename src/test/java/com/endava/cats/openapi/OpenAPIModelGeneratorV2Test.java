@@ -726,7 +726,7 @@ class OpenAPIModelGeneratorV2Test {
         StringSchema petStatus = new StringSchema();
         petStatus.setEnum(List.of("AVAILABLE", "PENDING", "ADOPTED"));
         ObjectSchema adoptionRequest = new ObjectSchema();
-        adoptionRequest.addProperty("status", new Schema<>().$ref("#/components/schemas/PetStatus"));
+        adoptionRequest.addProperty("status", new Schema<>().$ref("#/components/schemas/PetStatus")._default("PENDING"));
 
         globalContext.getSchemaMap().put("PetStatus", petStatus);
         globalContext.getSchemaMap().put("AdoptionRequest", adoptionRequest);
@@ -738,7 +738,9 @@ class OpenAPIModelGeneratorV2Test {
         Schema<?> recorded = generator.getRequestDataTypes().get("status");
         Assertions.assertThat(recorded).isNotNull();
         Assertions.assertThat(recorded.getType()).isEqualTo("string");
+        Assertions.assertThat(recorded.getDefault()).isEqualTo("PENDING");
         Assertions.assertThat((List<?>) recorded.getEnum()).isEqualTo(List.of("AVAILABLE", "PENDING", "ADOPTED"));
+        Assertions.assertThat(petStatus.getExtensions()).isNull();
     }
 
     private OpenAPIModelGeneratorV2 generatorFor(String testResource) throws IOException {

@@ -104,7 +104,7 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private Boolean skipDeprecated;
 
     @CommandLine.Option(names = {"--skipLintersForExtension", "--skipLinterForExtension"},
-            description = "Skip specific linters for endpoints with certain OpenAPI extension values. Format: @|bold x-extension-name=value:Linter1,Linter2|@", split = ",")
+            description = "Skip specific linters for endpoints with certain OpenAPI extension values. Format: @|bold x-extension-name=value:Linter1,Linter2|@", split = ",(?=x-)")
     private List<String> skipLintersForExtension;
 
     @CommandLine.ParentCommand

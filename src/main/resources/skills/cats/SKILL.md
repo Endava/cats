@@ -62,7 +62,7 @@ cats smoke -c <spec> -s <server_url> -j
    ```bash
    cats triage -r cats-report --verify -s <server_url>
    ```
-4. For **`UNRESOLVED_PATH_PARAM_404`** or **`CROSS_FIELD_CONSTRAINT_4XX`** clusters: re-run CATS with the exported `--refData refData.yml` and `--correlations correlations.yml`.
+4. For **`UNRESOLVED_PATH_PARAM_404`**, **`UNRESOLVED_BODY_REFERENCE_404`** (supply existing identifiers in the body via `--refData`), or **`CROSS_FIELD_CONSTRAINT_4XX`** clusters: re-run CATS with the exported `--refData refData.yml` and `--correlations correlations.yml`.
 
 ### Phase 4: Stateful Functional Flows
 Author end-to-end business workflows in `flows.yml` (see `/cats-write-tests`) and execute them:

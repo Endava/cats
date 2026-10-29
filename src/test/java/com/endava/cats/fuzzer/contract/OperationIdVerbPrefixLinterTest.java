@@ -56,7 +56,7 @@ class OperationIdVerbPrefixLinterTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"getPeople,/test", "compressPeople,/compress", "cancel,/cancel-tokens", "checkReportName,/parties/{partyId}/reports/name-check"})
+    @CsvSource(value = {"getPeople,/test", "compressPeople,/compress", "cancel,/cancel-tokens", "checkDocumentStatus,/users/{userId}/documents/status-check"})
     void shouldReportInfo(String operationId, String path) {
         PathItem pathItem = Mockito.mock(PathItem.class);
         Operation operation = new Operation();

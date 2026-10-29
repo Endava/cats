@@ -27,7 +27,7 @@ import java.util.Properties;
  */
 @QuarkusMain
 public class CatsMain implements QuarkusApplication {
-    private static final List<String> DEFAULT_CONFIG_FILE_NAMES = List.of(".cats.properties", "cats.properties");
+    private static final List<String> DEFAULT_CONFIG_FILE_NAMES = List.of(".cats.properties");
 
     @Inject
     CatsCommand catsCommand;
@@ -76,18 +76,19 @@ public class CatsMain implements QuarkusApplication {
                         props.putIfAbsent("cats." + key, props.getProperty(key));
                     }
                 }
+                if (extractOptionValue(args, "--configFile") == null) {
+                    for (String key : List.copyOf(props.stringPropertyNames())) {
+                        String lower = key.toLowerCase(Locale.ROOT);
+                        if ("authrefreshscript".equals(lower) || lower.endsWith(".authrefreshscript")) {
+                            props.remove(key);
+                        }
+                    }
+                }
                 CommandLine.IDefaultValueProvider provider = new CommandLine.PropertiesDefaultProvider(props);
-                applyDefaultValueProviderRecursively(commandLine, provider);
+                commandLine.setDefaultValueProvider(provider);
             } catch (Exception e) {
                 throw new CatsException(e);
             }
-        }
-    }
-
-    private static void applyDefaultValueProviderRecursively(CommandLine cmd, CommandLine.IDefaultValueProvider provider) {
-        cmd.setDefaultValueProvider(provider);
-        for (CommandLine sub : cmd.getSubcommands().values()) {
-            applyDefaultValueProviderRecursively(sub, provider);
         }
     }
 
@@ -129,12 +130,7 @@ public class CatsMain implements QuarkusApplication {
             }
         }
 
-        File fromWorkingDir = findDefaultPropertiesInDirectory(Path.of(System.getProperty("user.dir", ".")));
-        if (fromWorkingDir != null) {
-            return fromWorkingDir;
-        }
-
-        return findDefaultPropertiesInDirectory(Path.of(System.getProperty("user.home", "")));
+        return findDefaultPropertiesInDirectory(Path.of(System.getProperty("user.dir", ".")));
     }
 
     private static String extractOptionValue(String[] args, String... optionNames) {

@@ -61,7 +61,7 @@ class SortColumnOrmLeakFieldsFuzzerTest {
 
         Mockito.verify(serviceCaller, Mockito.times(3)).call(Mockito.any());
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(
-                Mockito.any(), Mockito.eq(data), Mockito.eq(response), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+                Mockito.any(), Mockito.eq(data), Mockito.eq(response), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX));
     }
 
     @Test
@@ -77,6 +77,27 @@ class SortColumnOrmLeakFieldsFuzzerTest {
         fuzzer.fuzz(data);
 
         Mockito.verifyNoInteractions(serviceCaller);
+    }
+
+    @Test
+    void shouldFuzzArrayOfStringSortParameter() {
+        CatsResponse response = CatsResponse.builder().responseCode(200).body("{}").build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(response);
+        Schema<?> arraySchema = new Schema<>().type("array").items(new StringSchema());
+
+        FuzzingData data = FuzzingData.builder()
+                .path("/books")
+                .method(HttpMethod.GET)
+                .reqSchema(new Schema<>())
+                .requestContentTypes(List.of("application/json"))
+                .payload("{\"sort\":[\"title,asc\"]}")
+                .allFieldsByHttpMethod(Set.of("sort"))
+                .requestPropertyTypes(Map.of("sort", arraySchema))
+                .build();
+
+        fuzzer.fuzz(data);
+
+        Mockito.verify(serviceCaller, Mockito.times(3)).call(Mockito.any());
     }
 
     @Test

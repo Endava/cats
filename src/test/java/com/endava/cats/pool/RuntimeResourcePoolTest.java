@@ -2505,6 +2505,48 @@ class RuntimeResourcePoolTest {
                 .httpMethod(HttpMethod.DELETE).contentType("application/json").build();
         resourcePool.observe(delete, request("DELETE", "/customers/customer-42", "{}"), response(204, ""));
         Assertions.assertThat(resourcePool.hasLiveResourceFor("/customers/{customerId}")).isFalse();
+
+        resourcePool.clear();
+        resourcePool.observe(postData("/users", "{}"), request("POST", "/users", "{}"),
+                response(201, "{\"id\":\"u-1\"}"));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/users/{id}/")).isTrue();
+        ServiceData deleteUser = ServiceData.builder().relativePath("/users/{id}")
+                .httpMethod(HttpMethod.DELETE).contentType("application/json").build();
+        resourcePool.observe(deleteUser, request("DELETE", "/users/u-1", "{}"), response(204, ""));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/users/{id}")).isFalse();
+        resourcePool.observe(postData("/users/register", "{}"), request("POST", "/users/register", "{}"),
+                response(201, "{\"id\":\"u-2\"}"));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/users/{id}")).isTrue();
+
+        resourcePool.clear();
+        resourcePool.observe(postData("/users", "{}"), request("POST", "/users", "{}"),
+                response(201, "{\"id\":\"u-1\"}"));
+        resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"),
+                response(201, "{\"id\":\"o-1\",\"userId\":\"u-1\"}"));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/users/{id}")).isTrue();
+
+        resourcePool.clear();
+        resourcePool.observe(postData("/users", "{}"), request("POST", "/users", "{}"),
+                response(201, "{\"id\":\"u-1\"}"));
+        resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"),
+                response(201, "{\"id\":\"o-1\"}"));
+        resourcePool.observe(deleteUser, request("DELETE", "/users/u-1", "{}"), response(204, ""));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/users/{id}")).isFalse();
+
+        resourcePool.clear();
+        resourcePool.observe(postData("/users", "{}"), request("POST", "/users", "{}"),
+                response(201, "{\"id\":\"u-1\"}"));
+        resourcePool.observe(postData("/users/{userId}/orders", "{}"), request("POST", "/users/u-1/orders", "{}"),
+                response(201, "{\"id\":\"o-1\"}"));
+        resourcePool.observe(deleteUser, request("DELETE", "/users/u-1", "{}"), response(204, ""));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/users/{id}")).isFalse();
+
+        resourcePool.clear();
+        resourcePool.observe(postData("/users", "{}"), request("POST", "/users", "{}"),
+                response(201, "{\"username\":\"alice\"}"));
+        resourcePool.observe(postData("/users/{userId}/orders", "{}"), request("POST", "/users/u-1/orders", "{}"),
+                response(201, "{\"id\":\"o-1\"}"));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/users/{id}")).isFalse();
     }
 
     @Test

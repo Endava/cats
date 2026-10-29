@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.annotations.Linter;
 import com.endava.cats.fuzzer.contract.base.BaseLinter;
+import com.endava.cats.fuzzer.contract.util.LinterVocabulary;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -24,8 +25,6 @@ import java.util.Set;
 @Linter
 public class ResponsesWithBodiesLinter extends BaseLinter {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
-    private static final Set<String> SKIPPED_CODES = Set.of("204", "205", "301", "302", "303", "304", "307", "308");
-    private static final Set<String> LOCATION_ALLOWED_BODYLESS_CODES = Set.of("201", "202");
 
     /**
      * Creates a new ResponsesWithBodiesLinter instance.
@@ -44,7 +43,7 @@ public class ResponsesWithBodiesLinter extends BaseLinter {
         List<String> httpResponseCodesMissingBody = data.getResponses()
                 .entrySet()
                 .stream()
-                .filter(entry -> !isBodylessStatusCode(entry.getKey()))
+                .filter(entry -> !LinterVocabulary.isBodylessStatus(entry.getKey()))
                 .filter(entry -> entry.getValue().isEmpty() && !hasBodyOrLocationInOpenApi(data, entry.getKey()))
                 .map(Map.Entry::getKey)
                 .toList();
@@ -56,12 +55,9 @@ public class ResponsesWithBodiesLinter extends BaseLinter {
         }
     }
 
-    private static boolean isBodylessStatusCode(String code) {
-        return code != null && (SKIPPED_CODES.contains(code) || code.startsWith("1"));
-    }
-
     private static boolean hasBodyOrLocationInOpenApi(FuzzingData data, String code) {
-        if (LOCATION_ALLOWED_BODYLESS_CODES.contains(code) && hasLocationHeader(data.getResponseHeaders().get(code))) {
+        if (LinterVocabulary.LOCATION_ALLOWED_BODYLESS_CODES.contains(code)
+                && LinterVocabulary.hasLocationHeader(data.getResponseHeaders().get(code))) {
             return true;
         }
         if (data.getPathItem() == null || data.getMethod() == null) {
@@ -75,8 +71,8 @@ public class ResponsesWithBodiesLinter extends BaseLinter {
         if (response == null) {
             return false;
         }
-        if (LOCATION_ALLOWED_BODYLESS_CODES.contains(code) && response.getHeaders() != null
-                && hasLocationHeader(response.getHeaders().keySet())) {
+        if (LinterVocabulary.LOCATION_ALLOWED_BODYLESS_CODES.contains(code) && response.getHeaders() != null
+                && LinterVocabulary.hasLocationHeader(response.getHeaders().keySet())) {
             return true;
         }
         if (response.getContent() == null || response.getContent().isEmpty()) {
@@ -93,16 +89,7 @@ public class ResponsesWithBodiesLinter extends BaseLinter {
         if (mediaType.getSchema() != null || mediaType.getExample() != null || mediaType.getExamples() != null) {
             return true;
         }
-        return contentType != null && (contentType.startsWith("image/")
-                || contentType.startsWith("audio/")
-                || contentType.startsWith("video/")
-                || "application/octet-stream".equalsIgnoreCase(contentType)
-                || "application/pdf".equalsIgnoreCase(contentType)
-                || "text/event-stream".equalsIgnoreCase(contentType));
-    }
-
-    private static boolean hasLocationHeader(Set<String> headers) {
-        return headers != null && headers.stream().anyMatch("Location"::equalsIgnoreCase);
+        return LinterVocabulary.isBinaryOrStreamContentType(contentType);
     }
 
     @Override

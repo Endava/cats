@@ -40,6 +40,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.Builder;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.MDC;
@@ -54,6 +55,7 @@ import java.util.Collections;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -82,6 +84,7 @@ public class TestCaseListener {
     private static final String FUZZER_KEY = "fuzzerKey";
     private static final String FUZZER = "fuzzer";
     private static final String ID_ANSI = "id_ansi";
+    private static final int NO_COLOR_PROGRESS_INTERVAL = 500;
     static final AtomicInteger TEST = new AtomicInteger(0);
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501", "413", "431");
     private static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
@@ -120,6 +123,7 @@ public class TestCaseListener {
     String appBuildTime;
 
     private final Deque<String> runPerPathListener = new ArrayDeque<>();
+    private final Set<String> noColorRenderedPaths = new HashSet<>();
 
     /**
      * Constructs a TestCaseListener with the provided dependencies and configuration.
@@ -460,8 +464,10 @@ public class TestCaseListener {
                 executionEventPublisher.publish(new CatsExecutionEvent.TestCompleted(Instant.now(),
                         TestResultSnapshot.from(currentTestCase, reportingArguments.getMaskedHeaders())));
             }
-            if (!reportingArguments.isColor() && reportingArguments.isSummaryInConsole() && TEST.get() % 500 == 0) {
-                ConsoleUtils.renderNewRow(TEST.get() + " tests executed [" + MDC.get(FUZZER_KEY) + "]"
+            int testNumber = NumberUtils.toInt(testId, 0);
+            if (!reportingArguments.isColor() && reportingArguments.isSummaryInConsole()
+                    && testNumber > 0 && testNumber % NO_COLOR_PROGRESS_INTERVAL == 0) {
+                ConsoleUtils.renderNewRow(testNumber + " tests executed [" + MDC.get(FUZZER_KEY) + "]"
                         + ConsoleUtils.SEPARATOR + "E " + executionStatisticsListener.getErrors()
                         + ", W " + executionStatisticsListener.getWarns()
                         + ", S " + executionStatisticsListener.getSuccess(), ' ');
@@ -510,6 +516,10 @@ public class TestCaseListener {
         }
         if (!reportingArguments.isColor()) {
             if (!runPerPathListener.contains(path)) {
+                String previous = runPerPathListener.peek();
+                if (previous != null && noColorRenderedPaths.add(previous)) {
+                    ConsoleUtils.renderNewRow(previous + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(previous), '✔');
+                }
                 runPerPathListener.push(path);
             }
             return;
@@ -601,6 +611,7 @@ public class TestCaseListener {
         testCaseSummaryDetails.clear();
         testCaseExecutionDetails.clear();
         runPerPathListener.clear();
+        noColorRenderedPaths.clear();
         TEST.set(0);
         MDC.remove(ID);
         MDC.put(ID_ANSI, this.getKeyDefault());

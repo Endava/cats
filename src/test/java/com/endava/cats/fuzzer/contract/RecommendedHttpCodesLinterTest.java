@@ -76,7 +76,7 @@ class RecommendedHttpCodesLinterTest {
         pathItem.setGet(new Operation());
 
         FuzzingData singletonGet = FuzzingData.builder()
-                .path("/branding/resolved")
+                .path("/settings/resolved")
                 .method(HttpMethod.GET)
                 .pathItem(pathItem)
                 .responseCodes(Set.of("200", "500"))

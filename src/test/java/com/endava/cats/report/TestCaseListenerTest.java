@@ -61,7 +61,9 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -1430,6 +1432,37 @@ class TestCaseListenerTest {
         TestCaseListener testCaseListenerSpy = Mockito.spy(testCaseListener);
         testCaseListenerSpy.updateUnknownProgress(data);
         Mockito.verify(testCaseListenerSpy).notifySummaryObservers("/test");
+    }
+
+    @Test
+    void shouldRenderEachPathOnceInNoColorMode() {
+        Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
+        Mockito.when(reportingArguments.isColor()).thenReturn(false);
+        Mockito.when(executionStatisticsListener.resultAsStringPerPath("/a")).thenReturn("E 0, W 0, S 1");
+        Mockito.when(executionStatisticsListener.resultAsStringPerPath("/b")).thenReturn("E 0, W 0, S 2");
+        ReflectionTestUtils.setField(catsGlobalContext, "catsConfiguration",
+                new CatsConfiguration("/a", "test", "test", List.of(), 1, 2, 2, 2));
+        ReflectionTestUtils.setField(testCaseListener, "globalContext", catsGlobalContext);
+
+        PrintStream originalOut = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(captured));
+        try {
+            testCaseListener.startSession();
+            testCaseListener.notifySummaryObservers("/a");
+            testCaseListener.notifySummaryObservers("/b");
+            Mockito.when(executionStatisticsListener.resultAsStringPerPath("/a")).thenReturn("E 1, W 2, S 5");
+            Mockito.when(executionStatisticsListener.resultAsStringPerPath("/b")).thenReturn("E 2, W 1, S 6");
+            testCaseListener.notifySummaryObservers("/a");
+            testCaseListener.notifySummaryObservers("/b");
+            ReflectionTestUtils.invokeMethod(testCaseListener, "markAllPathsAsDone");
+        } finally {
+            System.setOut(originalOut);
+        }
+
+        String output = captured.toString();
+        Assertions.assertThat(output).contains("E 1, W 2, S 5");
+        Assertions.assertThat(output).contains("E 2, W 1, S 6");
     }
 
     private CatsTestCaseSummary assertSchemaMismatch(Schema<?> schema, String generatedSample, String responseBody) {

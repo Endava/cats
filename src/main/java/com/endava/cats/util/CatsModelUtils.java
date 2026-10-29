@@ -1,6 +1,5 @@
 package com.endava.cats.util;
 
-import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.util.external.ModelUtils;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.swagger.v3.core.util.Json;
@@ -45,8 +44,9 @@ import java.util.regex.Pattern;
 @RegisterForReflection
 public abstract class CatsModelUtils {
     public static final String X_CATS_FIELD_NAME = "x-cats-field-name";
+    public static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
     private static final Pattern GENERATED_PREFIX = Pattern.compile("generated_.*");
-    private static final Pattern SYNTHETIC_GET_SCHEMA = Pattern.compile("^" + OpenAPIModelGeneratorV2.SYNTH_SCHEMA_NAME + ".*");
+    private static final Pattern SYNTHETIC_GET_SCHEMA = Pattern.compile("^" + SYNTH_SCHEMA_NAME + ".*");
     private static final Pattern GENERATED_BODY_OBJECTS_1 = Pattern.compile("body_\\d*");
     private static final Pattern GENERATED_BODY_OBJECTS_2 = Pattern.compile("^\\w{1,30}_body");
     private static final Pattern GENERATED_BODY_OBJECTS_3 = Pattern.compile("^\\w{1,30}_body_\\d{1,3}$");
@@ -61,6 +61,26 @@ public abstract class CatsModelUtils {
 
     public static boolean isPrimitiveSchema(Schema<?> schema) {
         return isStringSchema(schema) || isNumberSchema(schema) || isBooleanSchema(schema) || isIntegerSchema(schema);
+    }
+
+    /**
+     * Returns the primary OpenAPI type of {@code schema}, supporting both OpenAPI 3.0 {@code getType()}
+     * and OpenAPI 3.1 {@code getTypes()}.
+     */
+    public static String getPrimaryType(Schema<?> schema) {
+        if (schema == null) {
+            return null;
+        }
+        if (StringUtils.isNotBlank(schema.getType())) {
+            return schema.getType();
+        }
+        if (schema.getTypes() != null && !schema.getTypes().isEmpty()) {
+            return schema.getTypes().stream()
+                    .filter(type -> !"null".equalsIgnoreCase(type))
+                    .findFirst()
+                    .orElseGet(() -> schema.getTypes().iterator().next());
+        }
+        return null;
     }
 
     public static boolean isStringSchema(Schema<?> schema) {
@@ -482,8 +502,7 @@ public abstract class CatsModelUtils {
         if (originalSchema == null) {
             return new Schema<>();
         }
-        boolean isOpenApi31 = originalSchema.getSpecVersion() == SpecVersion.V31
-                || originalSchema instanceof JsonSchema;
+        boolean isOpenApi31 = isOpenApi31SchemaTree(originalSchema);
         Schema<?> schemaCopy = Optional.ofNullable((isOpenApi31 ? Json31.mapper() : Json.mapper())
                         .convertValue(originalSchema, Schema.class))
                 .orElseGet(Schema::new);
@@ -492,6 +511,36 @@ public abstract class CatsModelUtils {
             schemaCopy.setTypes(new HashSet<>(originalTypes));
         }
         return schemaCopy;
+    }
+
+    private static boolean isOpenApi31SchemaTree(Schema<?> schema) {
+        return isOpenApi31SchemaTree(schema, Collections.newSetFromMap(new IdentityHashMap<>()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean isOpenApi31SchemaTree(Schema<?> schema, Set<Schema<?>> visited) {
+        if (schema == null || !visited.add(schema)) {
+            return false;
+        }
+        if (schema.getSpecVersion() == SpecVersion.V31 || schema instanceof JsonSchema) {
+            return true;
+        }
+        if (isOpenApi31SchemaTree(schema.getItems(), visited)) {
+            return true;
+        }
+        if (schema.getProperties() != null) {
+            for (Object prop : schema.getProperties().values()) {
+                if (prop instanceof Schema<?> propSchema && isOpenApi31SchemaTree(propSchema, visited)) {
+                    return true;
+                }
+            }
+        }
+        for (Schema<?> composed : getComposedSchemas(schema)) {
+            if (isOpenApi31SchemaTree(composed, visited)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -517,7 +566,7 @@ public abstract class CatsModelUtils {
      * Builds a map from each {@code allOf} parent schema name to the set of concrete child schema names that extend it.
      */
     @SuppressWarnings("rawtypes")
-    public static Map<String, Set<String>> findAllOfChildrenByParent(Map<String, Schema> schemaMap) {
+    public static Map<String, Set<String>> findDirectAllOfChildrenByParent(Map<String, Schema> schemaMap) {
         if (schemaMap == null || schemaMap.isEmpty()) {
             return Map.of();
         }
@@ -536,6 +585,15 @@ public abstract class CatsModelUtils {
                 }
             }
         });
+        return directChildrenByParent;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public static Map<String, Set<String>> findAllOfChildrenByParent(Map<String, Schema> schemaMap) {
+        Map<String, Set<String>> directChildrenByParent = findDirectAllOfChildrenByParent(schemaMap);
+        if (directChildrenByParent.isEmpty()) {
+            return Map.of();
+        }
         Map<String, Set<String>> transitiveChildrenByParent = new LinkedHashMap<>();
         for (String parent : directChildrenByParent.keySet()) {
             Set<String> descendants = new LinkedHashSet<>();

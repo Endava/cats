@@ -8,11 +8,13 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.v3.oas.models.OpenAPI;
 import jakarta.inject.Singleton;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Checks if OpenAPI contract defines tracing information.
@@ -25,6 +27,8 @@ public class TracingHeadersLinter extends BaseLinter {
             "traceparent", "tracestate", "b3", "spanid", "amzntraceid", "cloudtracecontext"
     );
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
+    private int cachedMonitoringOpenApiIdentity;
+    private Set<String> cachedMonitoringEndpoints = Set.of();
 
     /**
      * Creates a new TracingHeadersLinter instance.
@@ -42,7 +46,7 @@ public class TracingHeadersLinter extends BaseLinter {
 
         if (data.getOpenApi() != null && data.getPath() != null
                 && data.getOpenApi().getPaths() != null
-                && OpenApiUtils.getMonitoringEndpoints(data.getOpenApi()).contains(data.getPath())) {
+                && monitoringEndpointsFor(data.getOpenApi()).contains(data.getPath())) {
             testCaseListener.skipTest(log, "Skipping tracing header check for monitoring endpoint");
             return;
         }
@@ -60,6 +64,15 @@ public class TracingHeadersLinter extends BaseLinter {
     @Override
     protected String runKey(FuzzingData data) {
         return data.getPath() + data.getMethod();
+    }
+
+    private Set<String> monitoringEndpointsFor(OpenAPI openAPI) {
+        int identity = System.identityHashCode(openAPI);
+        if (identity != cachedMonitoringOpenApiIdentity) {
+            cachedMonitoringEndpoints = OpenApiUtils.getMonitoringEndpoints(openAPI);
+            cachedMonitoringOpenApiIdentity = identity;
+        }
+        return cachedMonitoringEndpoints;
     }
 
     private String replaceSpecialChars(String header) {

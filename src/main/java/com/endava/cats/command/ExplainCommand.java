@@ -101,10 +101,12 @@ public class ExplainCommand implements Runnable {
         var allProfiles = profileLoader.getAvailableProfilesDetails();
         boolean hasExactMatch = allProfiles.stream()
                 .anyMatch(profile -> profile.name().equalsIgnoreCase(info));
+        String lowerInfo = info.toLowerCase(Locale.ROOT);
         allProfiles.stream()
                 .filter(profile -> hasExactMatch
                         ? profile.name().equalsIgnoreCase(info)
-                        : profile.name().toLowerCase(Locale.ROOT).contains(info.toLowerCase(Locale.ROOT)))
+                        : profile.name().toLowerCase(Locale.ROOT).contains(lowerInfo)
+                                || profile.description().toLowerCase(Locale.ROOT).contains(lowerInfo))
                 .sorted(Comparator.comparing(ProfileLoader.Profile::name))
                 .forEach(profile -> {
                     logger.noFormat("* Profile {} - {}", profile.name(), profile.description());

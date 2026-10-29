@@ -126,4 +126,20 @@ class EnumCaseVariantFieldsFuzzerTest {
         enumCaseVariantFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
     }
+
+    @Test
+    void shouldSkipQueryParameters() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Schema<String> myEnumSchema = new Schema<>();
+        myEnumSchema.setEnum(List.of("one", "two"));
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("status", myEnumSchema));
+        Mockito.when(testCaseListener.isFieldNotADiscriminator("status")).thenReturn(true);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("status"));
+        Mockito.when(data.isQueryParam("status")).thenReturn(true);
+        Mockito.when(data.getPayload()).thenReturn("{\"status\":\"one\"}");
+
+        enumCaseVariantFieldsFuzzer.fuzz(data);
+
+        Mockito.verifyNoInteractions(serviceCaller);
+    }
 }

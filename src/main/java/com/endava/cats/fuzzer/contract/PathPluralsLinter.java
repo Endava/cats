@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.annotations.Linter;
 import com.endava.cats.fuzzer.contract.base.BaseLinter;
+import com.endava.cats.fuzzer.contract.util.LinterVocabulary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
@@ -26,10 +27,8 @@ public class PathPluralsLinter extends BaseLinter {
     private static final Set<String> NAMESPACE_PREFIXES = Set.of(
             "api", "rest", "bff", "internal", "external", "public", "private", "webhook", "graphql"
     );
-    private static final Set<String> SINGLETON_OR_UNCOUNTABLE = Set.of(
-            "me", "self", "current", "context", "profile", "health", "healthz", "healthcheck", "health-check",
-            "ready", "readyz", "live", "livez", "ping", "info", "config", "configuration", "branding",
-            "auth", "oauth", "oauth2", "sso", "login", "logout", "metadata", "data"
+    private static final Set<String> UNCOUNTABLE_EXTRAS = Set.of(
+            "auth", "oauth", "oauth2", "sso", "login", "logout", "data"
     );
 
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
@@ -86,7 +85,7 @@ public class PathPluralsLinter extends BaseLinter {
         if (index == 0 && NAMESPACE_PREFIXES.contains(lower)) {
             return true;
         }
-        return SINGLETON_OR_UNCOUNTABLE.contains(lower);
+        return LinterVocabulary.SINGLETON_SEGMENTS.contains(lower) || UNCOUNTABLE_EXTRAS.contains(lower);
     }
 
     @Override

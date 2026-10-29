@@ -153,7 +153,7 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
         if (value == null || value.isEmpty()) {
             return value;
         }
-        String stripped = value.replaceAll("[\\p{C}\\p{So}\\p{Sk}\\p{M}\\u115F\\u1160\\u3164\\uFFA0]+", "");
+        String stripped = value.replaceAll("[\\p{C}\\p{So}[\\p{Sk}&&[^\\x00-\\x7F]]\\p{M}\\u115F\\u1160\\u3164\\uFFA0]+", "");
         return stripped.isEmpty() ? value : stripped;
     }
 

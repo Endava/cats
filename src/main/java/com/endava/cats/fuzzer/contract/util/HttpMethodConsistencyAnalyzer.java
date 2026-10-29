@@ -21,15 +21,14 @@ public class HttpMethodConsistencyAnalyzer {
 
     private static final Set<String> ACTION_VERBS = Set.of(
             "activate", "deactivate", "suspend", "resume", "reset", "revoke", "approve", "reject", "decline",
-            "login", "logout", "refresh", "reauthenticate", "reauthorize", "validate", "verify", "check", "name-check",
+            "login", "logout", "refresh", "reauthenticate", "reauthorize", "validate", "verify", "check",
             "submit", "process", "finalize", "complete", "execute", "resend", "retry", "reprocess", "configure",
             "batch", "bulk", "multi", "mass", "import", "export", "sync", "merge",
             "search", "filter", "lookup", "find", "query", "count", "exists",
             "report", "reports", "dashboard", "analytics", "statistics", "metrics", "summary",
             "history", "audit", "log", "logs",
             "copy", "clone", "extend", "cancel", "preview", "archive", "unarchive", "download",
-            "upload", "transition", "states", "state", "status", "resolved", "me", "self",
-            "health", "healthz", "ready", "readyz", "live", "livez", "ping", "info", "version",
+            "upload", "transition", "states", "state", "resolved",
             "enable", "disable", "lock", "unlock", "assign", "unassign", "link", "unlink"
     );
 
@@ -43,7 +42,7 @@ public class HttpMethodConsistencyAnalyzer {
             return false;
         }
         String lastSegment = segments[segments.length - 1].toLowerCase(Locale.ROOT);
-        if (ACTION_VERBS.contains(lastSegment)) {
+        if (ACTION_VERBS.contains(lastSegment) || LinterVocabulary.SINGLETON_SEGMENTS.contains(lastSegment)) {
             return true;
         }
         for (String token : lastSegment.split("[-_]", -1)) {

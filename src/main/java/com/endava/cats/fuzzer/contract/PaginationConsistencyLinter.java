@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.annotations.Linter;
 import com.endava.cats.fuzzer.contract.base.BaseLinter;
+import com.endava.cats.fuzzer.contract.util.LinterVocabulary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
@@ -32,10 +33,6 @@ import java.util.TreeSet;
 @Linter
 @Singleton
 public class PaginationConsistencyLinter extends BaseLinter {
-    private static final Set<String> PAGINATION_PARAM_NAMES = Set.of(
-            "limit", "offset", "page", "perpage", "pagesize", "pagenumber",
-            "pagetoken", "size", "cursor", "after", "before", "skip", "take", "top"
-    );
     private static final Set<String> PAGINATION_HEADER_MARKERS = Set.of(
             "xtotalcount", "totalcount", "xpagination", "link", "xnextpage", "nextpage"
     );
@@ -112,8 +109,8 @@ public class PaginationConsistencyLinter extends BaseLinter {
         Set<String> found = new TreeSet<>();
         for (Parameter param : OpenApiUtils.collectPathAndOperationParameters(pathItem, getOp, openAPI)) {
             if ("query".equalsIgnoreCase(param.getIn()) && param.getName() != null) {
-                String normalized = param.getName().replaceAll("[-_]", "").toLowerCase(Locale.ROOT);
-                if (PAGINATION_PARAM_NAMES.contains(normalized)) {
+                String normalized = LinterVocabulary.normalizeParamName(param.getName());
+                if (LinterVocabulary.PAGINATION_PARAMS.contains(normalized)) {
                     found.add(param.getName());
                 }
             }

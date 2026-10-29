@@ -122,8 +122,9 @@ public class PathVariableConsistencyLinter extends BaseLinter {
                     continue;
                 }
                 Schema<?> resolvedSchema = CatsModelUtils.resolveSchema(param.getSchema(), componentSchemas);
-                if (resolvedSchema != null && StringUtils.isNotBlank(resolvedSchema.getType())) {
-                    String type = resolvedSchema.getType().toLowerCase(Locale.ROOT);
+                String primaryType = CatsModelUtils.getPrimaryType(resolvedSchema);
+                if (resolvedSchema != null && StringUtils.isNotBlank(primaryType)) {
+                    String type = primaryType.toLowerCase(Locale.ROOT);
                     String format = StringUtils.isNotBlank(resolvedSchema.getFormat())
                             ? ":" + resolvedSchema.getFormat().toLowerCase(Locale.ROOT)
                             : "";

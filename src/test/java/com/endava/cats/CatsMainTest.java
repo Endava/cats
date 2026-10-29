@@ -59,15 +59,16 @@ class CatsMainTest {
     }
 
     @Test
-    void shouldFallbackToCatsPropertiesInContractDirectoryWhenDotFileAbsent() throws IOException {
+    void shouldIgnoreNonDotCatsPropertiesAndUrlContractsWhenDotFileAbsent() throws IOException {
         Path contractFile = tempDir.resolve("openapi.yaml");
         Files.writeString(contractFile, "openapi: 3.0.3");
-        Path props = tempDir.resolve("cats.properties");
-        Files.writeString(props, "skipLinters=Versions");
+        Files.writeString(tempDir.resolve("cats.properties"), "skipLinters=Versions");
 
         File resolved = catsMain.findConfigFile(new String[]{"lint", "--contract=" + contractFile});
+        File resolvedUrl = catsMain.findConfigFile(new String[]{"lint", "--contract=http://localhost:8080/v3/api-docs"});
 
-        Assertions.assertThat(resolved).isEqualTo(props.toFile());
+        Assertions.assertThat(resolved).isNull();
+        Assertions.assertThat(resolvedUrl).isNull();
     }
 
     @Test

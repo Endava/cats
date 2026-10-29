@@ -14,6 +14,7 @@ import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.WordUtils;
+import com.endava.cats.util.WordUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -779,7 +780,8 @@ public class RuntimeResourcePool {
         }
         Map<String, ResourceInstance> requestBindings = new LinkedHashMap<>();
         ResourceInstance[] pathBoundResource = new ResourceInstance[1];
-        String parentCollectionPath = directParentCollectionPath(path);
+        String normalizedPath = normalizeTemplatePath(path);
+        String parentCollectionPath = directParentCollectionPath(normalizedPath);
         boolean parentCollectionProduced = parentCollectionPath != null && isObservedProducerPath(parentCollectionPath);
         for (int i = variables.size() - 1; i >= 0; i--) {
             String variable = variables.get(i);
@@ -793,8 +795,8 @@ public class RuntimeResourcePool {
                 return false;
             }
             if (i == variables.size() - 1 && parentCollectionProduced) {
-                String sourcePath = resolved.get().resource().sourcePath();
-                if (!parentCollectionPath.equals(sourcePath) && !path.equals(sourcePath)) {
+                String sourcePath = normalizeTemplatePath(resolved.get().resource().sourcePath());
+                if (!isAllowedLeafProducerSourcePath(sourcePath, parentCollectionPath, normalizedPath)) {
                     return false;
                 }
             }
@@ -807,11 +809,47 @@ public class RuntimeResourcePool {
     }
 
     private boolean isObservedProducerPath(String candidatePath) {
-        return observedProducers.stream().anyMatch(entry -> entry.endsWith(" " + candidatePath));
+        return observedProducers.stream().anyMatch(entry -> {
+            int space = entry.indexOf(' ');
+            return space >= 0 && candidatePath.equals(normalizeTemplatePath(entry.substring(space + 1)));
+        });
+    }
+
+    private static boolean isAllowedLeafProducerSourcePath(String sourcePath, String parentCollectionPath, String itemPath) {
+        if (sourcePath == null || sourcePath.equals(parentCollectionPath) || sourcePath.equals(itemPath)) {
+            return true;
+        }
+        String parentActionSegment = singleLiteralSubSegment(sourcePath, parentCollectionPath);
+        if (parentActionSegment != null) {
+            return true;
+        }
+        String itemSubSegment = singleLiteralSubSegment(sourcePath, itemPath);
+        return itemSubSegment != null && !WordUtils.isPlural(itemSubSegment);
+    }
+
+    private static String singleLiteralSubSegment(String sourcePath, String prefixPath) {
+        if (prefixPath == null || !sourcePath.startsWith(prefixPath + "/")) {
+            return null;
+        }
+        String tail = sourcePath.substring(prefixPath.length() + 1);
+        if (tail.isEmpty() || tail.contains("/") || tail.startsWith("{")) {
+            return null;
+        }
+        return tail;
+    }
+
+    private static String normalizeTemplatePath(String path) {
+        if (path == null) {
+            return null;
+        }
+        return path.endsWith("/") && path.length() > 1 ? path.substring(0, path.length() - 1) : path;
     }
 
     private static String directParentCollectionPath(String path) {
-        String trimmed = path.endsWith("/") && path.length() > 1 ? path.substring(0, path.length() - 1) : path;
+        String trimmed = normalizeTemplatePath(path);
+        if (trimmed == null) {
+            return null;
+        }
         int lastSlash = trimmed.lastIndexOf('/');
         if (lastSlash <= 0 || !trimmed.substring(lastSlash + 1).startsWith("{")) {
             return null;

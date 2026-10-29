@@ -187,7 +187,7 @@ public class FilterArguments {
             description = "Skip specific fuzzers for endpoints with certain OpenAPI extension values. " +
                     "Format: @|bold x-extension-name=value:Fuzzer1,Fuzzer2|@. " +
                     "Example: @|bold --skipFuzzersForExtension \"x-public-endpoint=true:BypassAuthentication\"|@ " +
-                    "will skip BypassAuthentication fuzzer for all endpoints that have x-public-endpoint extension set to true.", split = ",")
+                    "will skip BypassAuthentication fuzzer for all endpoints that have x-public-endpoint extension set to true.", split = ",(?=x-)")
     private List<String> skipFuzzersForExtension;
 
     @CommandLine.Option(
@@ -407,7 +407,7 @@ public class FilterArguments {
                     if (extensionParts.length == 2) {
                         String extensionName = extensionParts[0].trim();
                         String extensionValue = extensionParts[1].trim();
-                        List<String> fuzzersList = Stream.of(parts[1].split(","))
+                        List<String> fuzzersList = Stream.of(parts[1].split("[,;]"))
                                 .map(String::trim)
                                 .toList();
                         skipFuzzersForExtensionMap
@@ -528,10 +528,9 @@ public class FilterArguments {
     }
 
     private static boolean matchesWildcardPath(String path, String wildcardPattern) {
-        String regex = wildcardPattern
-                .replace("{", "\\{")
-                .replace("}", "\\}")
-                .replace("*", ".*");
+        String regex = Stream.of(wildcardPattern.split("\\*", -1))
+                .map(Pattern::quote)
+                .collect(Collectors.joining(".*"));
         return path.matches(regex);
     }
 

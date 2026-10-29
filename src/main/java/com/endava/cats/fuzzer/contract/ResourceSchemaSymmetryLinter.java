@@ -209,9 +209,10 @@ public class ResourceSchemaSymmetryLinter extends BaseLinter {
         if (schema.getProperties() != null) {
             for (Map.Entry<String, Schema> entry : ((Map<String, Schema>) schema.getProperties()).entrySet()) {
                 Schema<?> propSchema = CatsModelUtils.resolveSchema(entry.getValue(), componentSchemas);
-                if (propSchema != null && propSchema.getType() != null) {
+                String primaryType = CatsModelUtils.getPrimaryType(propSchema);
+                if (propSchema != null && primaryType != null) {
                     target.putIfAbsent(entry.getKey(), new PropertyTypeInfo(
-                            propSchema.getType().toLowerCase(Locale.ROOT),
+                            primaryType.toLowerCase(Locale.ROOT),
                             propSchema.getFormat() != null ? propSchema.getFormat().toLowerCase(Locale.ROOT) : null));
                 }
             }

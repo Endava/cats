@@ -488,7 +488,43 @@ class ServiceCallerTest {
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEmpty();
+    }
 
+    @Test
+    void shouldStripFormUrlencodedWithCharsetOnGetWhenContentTypeNotMutated() {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder()
+                .relativePath("/pets/{id}")
+                .payload("{\"id\":\"1\"}")
+                .httpMethod(HttpMethod.GET)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
+                .contentType("application/x-www-form-urlencoded; charset=UTF-8")
+                .build());
+
+        Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
+        wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo("/pets/1"))
+                .withoutHeader("Content-Type"));
+    }
+
+    @Test
+    void shouldPreserveFormUrlencodedOnHeadWhenContentTypeHeaderIsMutated() {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder()
+                .relativePath("/pets/{id}")
+                .payload("{\"id\":\"1\"}")
+                .httpMethod(HttpMethod.HEAD)
+                .headers(Collections.singleton(CatsHeader.builder().name("Content-Type").value("application/x-www-form-urlencoded").build()))
+                .mutationTargets(List.of(RequestTarget.header("Content-Type")))
+                .contentType("application/x-www-form-urlencoded")
+                .build());
+
+        Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
+        wireMockServer.verify(WireMock.headRequestedFor(WireMock.urlEqualTo("/pets/1"))
+                .withHeader("Content-Type", WireMock.equalTo("application/x-www-form-urlencoded")));
     }
 
     @Test

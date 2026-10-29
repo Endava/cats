@@ -11,6 +11,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -144,9 +145,12 @@ public class IdempotencyKeyConflictFuzzer implements Fuzzer {
         if (fields == null || fields.isEmpty()) {
             return Optional.empty();
         }
-        for (String field : fields) {
+        List<String> sortedFields = new ArrayList<>(fields);
+        sortedFields.sort(String::compareTo);
+        sortedFields.sort((a, b) -> Boolean.compare(!isUnconstrainedStringField(data, a), !isUnconstrainedStringField(data, b)));
+        for (String field : sortedFields) {
             Object currentVal = JsonUtils.getVariableFromJson(data.getPayload(), field);
-            if (!JsonUtils.isNotSet(String.valueOf(currentVal))) {
+            if (!JsonUtils.isNotSet(String.valueOf(currentVal)) && !(currentVal instanceof Boolean)) {
                 Object newVal = currentVal instanceof Number num
                         ? num.longValue() + 1L
                         : String.valueOf(currentVal) + "_conflict";
@@ -157,6 +161,17 @@ public class IdempotencyKeyConflictFuzzer implements Fuzzer {
             }
         }
         return Optional.empty();
+    }
+
+    private static boolean isUnconstrainedStringField(FuzzingData data, String field) {
+        if (data.getRequestPropertyTypes() == null) {
+            return false;
+        }
+        var schema = data.getRequestPropertyTypes().get(field);
+        return CatsModelUtils.isStringSchema(schema)
+                && schema.getEnum() == null
+                && schema.getPattern() == null
+                && schema.getFormat() == null;
     }
 
     @Override

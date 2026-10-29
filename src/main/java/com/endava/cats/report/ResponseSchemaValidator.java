@@ -73,11 +73,12 @@ final class ResponseSchemaValidator {
             boolean openApi31 = openAPI.getSpecVersion() == SpecVersion.V31;
             ObjectMapper mapper = openApi31 ? Json31.mapper() : Json.mapper();
             Map<String, Set<String>> childrenByParent = CatsModelUtils.findAllOfChildrenByParent(data.getSchemaMap());
+            Map<String, Set<String>> directChildrenByParent = CatsModelUtils.findDirectAllOfChildrenByParent(data.getSchemaMap());
             SchemaRegistry registry = SchemaRegistry.withDialect(openApi31
                             ? Dialects.getOpenApi31() : Dialects.getOpenApi30(),
-                    builder -> builder.schemas(schemaDocuments(mapper, data.getSchemaMap(), SCHEMAS_URI, childrenByParent))
+                    builder -> builder.schemas(schemaDocuments(mapper, data.getSchemaMap(), SCHEMAS_URI, childrenByParent, directChildrenByParent))
                             .schemaLoader(loader -> loader.fetchRemoteResources(false)));
-            return new DocumentSchemas(mapper, registry, new IdentityHashMap<>(), new LinkedHashMap<>(), childrenByParent);
+            return new DocumentSchemas(mapper, registry, new IdentityHashMap<>(), new LinkedHashMap<>(), directChildrenByParent);
         });
         com.networknt.schema.Schema byIdentity = docSchemas.compiledByIdentity().get(schema);
         if (byIdentity != null) {
@@ -116,7 +117,8 @@ final class ResponseSchemaValidator {
 
     @SuppressWarnings("rawtypes")
     private Map<String, String> schemaDocuments(ObjectMapper mapper, Map<String, Schema> schemaMap,
-                                                String schemasUri, Map<String, Set<String>> childrenByParent) {
+                                                String schemasUri, Map<String, Set<String>> childrenByParent,
+                                                Map<String, Set<String>> directChildrenByParent) {
         if (schemaMap == null || schemaMap.isEmpty()) {
             return Map.of();
         }
@@ -128,9 +130,9 @@ final class ResponseSchemaValidator {
             String simpleName = CatsModelUtils.getSimpleRef(name);
             JsonNode schemaNode = mapper.valueToTree(schema);
             if (schemaNode instanceof ObjectNode objectNode) {
-                enrichPolymorphicSchemaNode(objectNode, simpleName, schema, schemaMap, schemasUri, childrenByParent, mapper);
+                enrichPolymorphicSchemaNode(objectNode, simpleName, schema, schemaMap, childrenByParent, mapper);
             }
-            rewriteSchemaReferences(schemaNode, "#/components/schemas/", schemasUri, childrenByParent);
+            rewriteSchemaReferences(schemaNode, "#/components/schemas/", schemasUri, directChildrenByParent);
             try {
                 result.putIfAbsent(schemasUri + simpleName, mapper.writeValueAsString(schemaNode));
             } catch (IOException e) {
@@ -142,27 +144,22 @@ final class ResponseSchemaValidator {
 
     @SuppressWarnings("rawtypes")
     private static void enrichPolymorphicSchemaNode(ObjectNode objectNode, String simpleName, Schema<?> schema,
-                                                    Map<String, Schema> schemaMap, String schemasUri,
+                                                    Map<String, Schema> schemaMap,
                                                     Map<String, Set<String>> childrenByParent, ObjectMapper mapper) {
-        populateImplicitDiscriminatorMappings(objectNode, simpleName, schema, schemasUri, childrenByParent);
+        removeUnmappedDiscriminator(objectNode, simpleName, schema, childrenByParent);
         constrainChildDiscriminatorValues(objectNode, simpleName, schema, schemaMap, childrenByParent, mapper);
     }
 
-    private static void populateImplicitDiscriminatorMappings(ObjectNode objectNode, String simpleName, Schema<?> schema,
-                                                              String schemasUri, Map<String, Set<String>> childrenByParent) {
+    private static void removeUnmappedDiscriminator(ObjectNode objectNode, String simpleName, Schema<?> schema,
+                                                    Map<String, Set<String>> childrenByParent) {
         Discriminator discriminator = schema.getDiscriminator();
         Set<String> children = childrenByParent.get(simpleName);
         if (discriminator == null || StringUtils.isBlank(discriminator.getPropertyName())
                 || children == null || children.isEmpty()) {
             return;
         }
-        ObjectNode mappingNode = objectNode.withObject("/discriminator").withObject("/mapping");
-        for (String child : children) {
-            for (String alias : discriminatorValuesForChild(child, discriminator)) {
-                if (!mappingNode.has(alias)) {
-                    mappingNode.put(alias, schemasUri + child);
-                }
-            }
+        if (discriminator.getMapping() == null || discriminator.getMapping().isEmpty()) {
+            objectNode.remove("discriminator");
         }
     }
 

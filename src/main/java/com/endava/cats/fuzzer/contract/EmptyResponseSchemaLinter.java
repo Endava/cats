@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.annotations.Linter;
 import com.endava.cats.fuzzer.contract.base.BaseLinter;
+import com.endava.cats.fuzzer.contract.util.LinterVocabulary;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -24,9 +25,6 @@ import java.util.Set;
 @Singleton
 public class EmptyResponseSchemaLinter extends BaseLinter {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
-    private static final Set<String> IGNORE_STATUS_CODES = Set.of("204", "205", "301", "302", "303", "304", "307", "308");
-    private static final Set<String> LOCATION_ALLOWED_BODYLESS_CODES = Set.of("201", "202");
-    private final List<String> ignoreContentTypes = List.of("application/octet-stream", "image/png", "image/jpeg", "application/pdf", "text/event-stream");
 
     public EmptyResponseSchemaLinter(TestCaseListener tcl) {
         super(tcl);
@@ -62,7 +60,7 @@ public class EmptyResponseSchemaLinter extends BaseLinter {
     }
 
     private void processResponseEntry(List<String> violations, String status, ApiResponse response, FuzzingData data) {
-        if (status != null && (IGNORE_STATUS_CODES.contains(status) || status.startsWith("1"))) {
+        if (LinterVocabulary.isBodylessStatus(status)) {
             return;
         }
 
@@ -72,7 +70,9 @@ public class EmptyResponseSchemaLinter extends BaseLinter {
         }
 
         if (resolvedResponse.getContent() == null) {
-            if (LOCATION_ALLOWED_BODYLESS_CODES.contains(status) && hasLocationHeader(resolvedResponse)) {
+            if (LinterVocabulary.LOCATION_ALLOWED_BODYLESS_CODES.contains(status)
+                    && resolvedResponse.getHeaders() != null
+                    && LinterVocabulary.hasLocationHeader(resolvedResponse.getHeaders().keySet())) {
                 return;
             }
             violations.add("Response %s does not define any content".formatted(status));
@@ -80,11 +80,6 @@ public class EmptyResponseSchemaLinter extends BaseLinter {
         }
 
         processMediaTypes(violations, status, resolvedResponse.getContent(), data);
-    }
-
-    private static boolean hasLocationHeader(ApiResponse response) {
-        return response.getHeaders() != null
-                && response.getHeaders().keySet().stream().anyMatch("Location"::equalsIgnoreCase);
     }
 
     @SuppressWarnings("rawtypes")
@@ -95,7 +90,7 @@ public class EmptyResponseSchemaLinter extends BaseLinter {
             String contentType = mediaEntry.getKey();
             MediaType media = mediaEntry.getValue();
 
-            if (isIgnoredContentType(contentType)) {
+            if (LinterVocabulary.isBinaryOrStreamContentType(contentType)) {
                 continue;
             }
 
@@ -104,13 +99,6 @@ public class EmptyResponseSchemaLinter extends BaseLinter {
                 violations.add("Response schema on response %s is an empty object".formatted(status));
             }
         }
-    }
-
-    private boolean isIgnoredContentType(String contentType) {
-        return contentType != null && (ignoreContentTypes.contains(contentType)
-                || contentType.startsWith("image/")
-                || contentType.startsWith("audio/")
-                || contentType.startsWith("video/"));
     }
 
     @Override

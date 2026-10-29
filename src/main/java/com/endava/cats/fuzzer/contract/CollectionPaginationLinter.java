@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.annotations.Linter;
 import com.endava.cats.fuzzer.contract.base.BaseLinter;
+import com.endava.cats.fuzzer.contract.util.LinterVocabulary;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -32,17 +33,9 @@ import java.util.stream.Collectors;
 public class CollectionPaginationLinter extends BaseLinter {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    private static final Set<String> PAGINATION_PARAMS = Set.of(
-            "limit", "offset", "page", "perpage", "pagesize", "pagenumber", "pagetoken",
-            "size", "cursor", "startafter", "after", "before", "next", "nexttoken",
-            "continuationtoken", "token", "skip", "take", "top"
-    );
-
-    private static final Set<String> NON_COLLECTION_SEGMENTS = Set.of(
-            "me", "self", "current", "resolved", "health", "healthz", "ready", "readyz",
-            "live", "livez", "status", "info", "version", "ping", "count", "summary",
-            "check", "name-check", "validate", "verify", "exists", "config", "configuration",
-            "profile", "context", "login", "logout", "export", "download", "metrics", "stats"
+    private static final Set<String> NON_COLLECTION_EXTRAS = Set.of(
+            "resolved", "count", "summary", "check", "validate", "verify", "exists",
+            "login", "logout", "export", "download", "metrics", "stats"
     );
 
     private static final Set<String> ENVELOPE_ARRAY_PROPERTIES = Set.of(
@@ -70,8 +63,8 @@ public class CollectionPaginationLinter extends BaseLinter {
         Set<String> queryParams = collectQueryParams(data, data.getPathItem(), getOp);
 
         boolean hasPagination = queryParams.stream()
-                .map(p -> p.replaceAll("[-_]", "").toLowerCase(Locale.ROOT))
-                .anyMatch(PAGINATION_PARAMS::contains);
+                .map(LinterVocabulary::normalizeParamName)
+                .anyMatch(LinterVocabulary.PAGINATION_PARAMS::contains);
 
         if (!hasPagination) {
             violations.add("Operation is missing pagination query parameters");
@@ -107,7 +100,7 @@ public class CollectionPaginationLinter extends BaseLinter {
     private boolean isCollectionEndpoint(FuzzingData data) {
         if (data.getPath() != null) {
             String lastSegment = data.getPath().substring(data.getPath().lastIndexOf('/') + 1).toLowerCase(Locale.ROOT);
-            if (NON_COLLECTION_SEGMENTS.contains(lastSegment)) {
+            if (LinterVocabulary.SINGLETON_SEGMENTS.contains(lastSegment) || NON_COLLECTION_EXTRAS.contains(lastSegment)) {
                 return false;
             }
         }

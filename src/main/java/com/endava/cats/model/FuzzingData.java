@@ -158,10 +158,10 @@ public class FuzzingData {
     }
 
     private Set<CatsField> getFields(Schema<?> schema, String prefix) {
-        return getFields(schema, prefix, Collections.newSetFromMap(new IdentityHashMap<>()));
+        return getFields(schema, prefix, Collections.newSetFromMap(new IdentityHashMap<>()), Set.of());
     }
 
-    private Set<CatsField> getFields(Schema<?> schema, String prefix, Set<Schema<?>> visitedAtPrefix) {
+    private Set<CatsField> getFields(Schema<?> schema, String prefix, Set<Schema<?>> visitedAtPrefix, Set<String> inheritedRequired) {
         logger.trace("Getting fields for prefix: {}", prefix);
         if (schema == null || JsonUtils.isCyclicReference(prefix, selfReferenceDepth)) {
             return Collections.emptySet();
@@ -174,7 +174,7 @@ public class FuzzingData {
         }
 
         Set<CatsField> catsFields = new HashSet<>();
-        List<String> required = Optional.ofNullable(schema.getRequired()).orElseGet(Collections::emptyList);
+        Set<String> effectiveRequired = collectEffectiveRequired(schema, inheritedRequired);
 
         if (schema.getProperties() != null) {
             for (Map.Entry<String, Schema> prop : schema.getProperties().entrySet()) {
@@ -184,20 +184,27 @@ public class FuzzingData {
                 catsFields.add(CatsField.builder()
                         .name(childPrefix)
                         .schema(resolvedProp)
-                        .required(required.contains(prop.getKey()))
+                        .required(effectiveRequired.contains(prop.getKey()))
                         .readOnly(Boolean.TRUE.equals(propValue.getReadOnly()) || Boolean.TRUE.equals(resolvedProp.getReadOnly()))
                         .writeOnly(Boolean.TRUE.equals(propValue.getWriteOnly()) || Boolean.TRUE.equals(resolvedProp.getWriteOnly()))
                         .build());
                 catsFields.addAll(this.getFields(propValue, childPrefix));
             }
         }
-        CatsModelUtils.getComposedSchemas(schema)
-                .forEach(item -> catsFields.addAll(this.getFields(item, prefix, visitedAtPrefix)));
+        if (schema.getAllOf() != null) {
+            schema.getAllOf().forEach(item -> catsFields.addAll(this.getFields(item, prefix, visitedAtPrefix, effectiveRequired)));
+        }
+        if (schema.getOneOf() != null) {
+            schema.getOneOf().forEach(item -> catsFields.addAll(this.getFields(item, prefix, visitedAtPrefix, Set.of())));
+        }
+        if (schema.getAnyOf() != null) {
+            schema.getAnyOf().forEach(item -> catsFields.addAll(this.getFields(item, prefix, visitedAtPrefix, Set.of())));
+        }
         if (schema.getDiscriminator() != null && schema.getDiscriminator().getMapping() != null) {
             for (String mappedRef : schema.getDiscriminator().getMapping().values()) {
                 Schema<?> mappedSchema = schemaMap.get(CatsModelUtils.getSimpleRef(mappedRef));
                 if (mappedSchema != null) {
-                    catsFields.addAll(this.getFields(mappedSchema, prefix, visitedAtPrefix));
+                    catsFields.addAll(this.getFields(mappedSchema, prefix, visitedAtPrefix, Set.of()));
                 }
             }
         }
@@ -205,6 +212,23 @@ public class FuzzingData {
         return catsFields.stream()
                 .filter(catsField -> this.getRequestPropertyTypes().get(catsField.getName()) != null)
                 .collect(Collectors.toSet());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<String> collectEffectiveRequired(Schema<?> schema, Set<String> inheritedRequired) {
+        Set<String> effective = new LinkedHashSet<>(inheritedRequired);
+        if (schema.getRequired() != null) {
+            effective.addAll(schema.getRequired());
+        }
+        if (schema.getAllOf() != null) {
+            for (Schema<?> sub : schema.getAllOf()) {
+                Schema<?> resolved = CatsModelUtils.resolveSchema(sub, schemaMap);
+                if (resolved != null && resolved.getRequired() != null) {
+                    effective.addAll(resolved.getRequired());
+                }
+            }
+        }
+        return effective;
     }
 
     /**

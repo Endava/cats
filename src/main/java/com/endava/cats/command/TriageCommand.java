@@ -2,6 +2,10 @@ package com.endava.cats.command;
 
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.dsl.DynamicValueResolver;
+import com.endava.cats.fuzzer.fields.EnumCaseVariantFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.EnumNumericOrdinalFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.HomoglyphEnumFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.InvalidValuesInEnumsFieldsFuzzer;
 import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
 import com.endava.cats.fuzzer.http.BypassAuthenticationFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
@@ -97,6 +101,11 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private static final Pattern ENUM_LIKE_CONSTANT_PATTERN = Pattern.compile("^[A-Z][A-Z0-9_]{1,31}$");
     private static final Set<String> DISCRIMINATOR_KEY_SUFFIXES = Set.of(
             "type", "kind", "mode", "category", "channel", "method", "operator", "status", "action", "role", "state");
+    private static final List<Class<?>> ENUM_FUZZERS = List.of(
+            InvalidValuesInEnumsFieldsFuzzer.class,
+            EnumCaseVariantFieldsFuzzer.class,
+            HomoglyphEnumFieldsFuzzer.class,
+            EnumNumericOrdinalFieldsFuzzer.class);
 
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
 
@@ -539,9 +548,12 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     remediation);
         }
 
-        if (ResponseCodeFamily.is2xxCode(code) && tc.getExpectedResult() != null && tc.getExpectedResult().contains("4XX")) {
+        if (ResponseCodeFamily.is2xxCode(code)
+                && tc.getExpectedResult() != null
+                && tc.getExpectedResult().contains("4XX")
+                && !tc.getExpectedResult().contains("2XX")) {
             String key = "VALIDATION_BYPASS_2XX|" + method + "|" + path + "|" + tc.getFuzzer();
-            String remediation = tc.getFuzzer() != null && tc.getFuzzer().contains("Enum")
+            String remediation = isEnumFuzzer(tc.getFuzzer())
                     ? "Validate enum values in " + method + " " + path + " and reject invalid values with 400/422 (or pass --allowInvalidEnumValues if intentional)."
                     : "Enforce input validation in " + method + " " + path + " so invalid input from " + tc.getFuzzer() + " is rejected with 4XX.";
             return new ClusterClassification(
@@ -628,11 +640,12 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
         CatsTestCase tc = indexed.testCase();
         String payload = tc.getRequest() != null ? tc.getRequest().getPayload() : null;
-        if (StringUtils.isNotBlank(payload) && payload.trim().startsWith("[")) {
+        if (StringUtils.isNotBlank(payload) && payload.trim().startsWith("[")
+                && OpenApiUtils.getPathVariables(path).isEmpty()) {
             String key = "UNRESOLVED_BODY_REFERENCE_404|" + method + "|" + path;
             return new ClusterClassification(
                     key,
-                    "UNRESOLVED_PATH_PARAM_404",
+                    "UNRESOLVED_BODY_REFERENCE_404",
                     2,
                     method + " " + path,
                     404,
@@ -665,6 +678,10 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 remediation);
     }
 
+    private static boolean isEnumFuzzer(String fuzzer) {
+        return ENUM_FUZZERS.stream().anyMatch(c -> ConsoleUtils.matchesFuzzer(fuzzer, c));
+    }
+
     private static boolean isSeedValidationRejection(CatsTestCase tc, int code, String path,
                                                      Set<String> pathsWithSynthesizedCorrelations) {
         if (code != 400 && code != 422) {
@@ -672,7 +689,9 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
         return ConsoleUtils.matchesFuzzer(tc.getFuzzer(), HappyPathFuzzer.class)
                 || ConsoleUtils.matchesFuzzer(tc.getFuzzer(), OnlyRequiredFieldsFuzzer.class)
-                || pathsWithSynthesizedCorrelations.contains(path);
+                || (pathsWithSynthesizedCorrelations.contains(path)
+                        && tc.getExpectedResult() != null
+                        && tc.getExpectedResult().contains("2XX"));
     }
 
     private static String findPrecedingDeletePath(String path, int testNumber, Map<String, Integer> firstDeleteTestByPath) {

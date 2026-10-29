@@ -111,6 +111,12 @@ class WfcFaultClassifierTest {
                 .extracting(FaultCategoryId::getCode)
                 .contains(DefinedFaultCategory.SECURITY_COMMAND_INJECTION.getCode());
 
+        CatsTestCase possibleCmdInj = buildTestCase("POST", "/exec", 200, "error",
+                Reason.POSSIBLE_COMMAND_INJECTION.value(), "CommandInjectionInStringFields", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(possibleCmdInj), possibleCmdInj))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.SECURITY_COMMAND_INJECTION.getCode());
+
         CatsTestCase noSqlInj = buildTestCase("POST", "/query", 200, "error",
                 Reason.NOSQL_INJECTION.value(), "NoSqlInjectionInStringFields", "{}");
         Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(noSqlInj), noSqlInj))
@@ -120,6 +126,12 @@ class WfcFaultClassifierTest {
         CatsTestCase excessiveData = buildTestCase("GET", "/users/1", 200, "error",
                 Reason.WRITE_ONLY_FIELDS_EXPOSED.value(), "HappyPathFuzzer", "{}");
         Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(excessiveData), excessiveData))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.SECURITY_EXCESSIVE_DATA_EXPOSURE.getCode());
+
+        CatsTestCase sensitiveData = buildTestCase("GET", "/users/1", 200, "error",
+                Reason.SENSITIVE_DATA_EXPOSED.value(), "SensitiveDataExposureFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(sensitiveData), sensitiveData))
                 .extracting(FaultCategoryId::getCode)
                 .contains(DefinedFaultCategory.SECURITY_EXCESSIVE_DATA_EXPOSURE.getCode());
 

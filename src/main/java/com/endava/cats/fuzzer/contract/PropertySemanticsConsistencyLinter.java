@@ -91,14 +91,15 @@ public class PropertySemanticsConsistencyLinter extends BaseLinter {
             String propLocation = loc.fqn() + "." + propName;
             String normalized = WordUtils.normalizeAlphaNumeric(propName);
 
+            String primaryType = CatsModelUtils.getPrimaryType(propSchema);
             if (MONETARY_FIELD_NAMES.contains(normalized) && isFloatingPointMonetarySchema(propSchema)) {
                 violations.add("Monetary property '%s' uses floating-point type '%s'%s; prefer integer minor units or string decimal"
-                        .formatted(propLocation, propSchema.getType(),
+                        .formatted(propLocation, primaryType,
                                 StringUtils.isNotBlank(propSchema.getFormat()) ? " (" + propSchema.getFormat() + ")" : ""));
             }
 
-            if (WordUtils.isAuditTimestampField(propName) && StringUtils.isNotBlank(propSchema.getType())) {
-                String sig = propSchema.getType().toLowerCase(Locale.ROOT)
+            if (WordUtils.isAuditTimestampField(propName) && StringUtils.isNotBlank(primaryType)) {
+                String sig = primaryType.toLowerCase(Locale.ROOT)
                         + (StringUtils.isNotBlank(propSchema.getFormat()) ? ":" + propSchema.getFormat().toLowerCase(Locale.ROOT) : "");
                 timestampFormats.computeIfAbsent(sig, _ -> new ArrayList<>()).add(propLocation);
             }

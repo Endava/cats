@@ -532,6 +532,21 @@ class FilterArgumentsTest {
     }
 
     @Test
+    void shouldParseSkipFuzzersForExtensionThroughPicocliWithoutSplittingFuzzerCommaList() {
+        new picocli.CommandLine(filterArguments).parseArgs(
+                "--skipFuzzersForExtension",
+                "x-public=true:BypassAuthentication,RemoveAuthHeaders,x-internal=yes:HappyPath");
+
+        var result = filterArguments.getSkipFuzzersForExtension();
+
+        Assertions.assertThat(result).containsKeys("x-public", "x-internal");
+        Assertions.assertThat(result.get("x-public").get("true"))
+                .containsExactly("BypassAuthentication", "RemoveAuthHeaders");
+        Assertions.assertThat(result.get("x-internal").get("yes"))
+                .containsExactly("HappyPath");
+    }
+
+    @Test
     void shouldReturnEmptyMapWhenNoSkipFuzzersForExtension() {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension", null);
 
