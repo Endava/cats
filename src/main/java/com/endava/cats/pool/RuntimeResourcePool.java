@@ -298,7 +298,9 @@ public class RuntimeResourcePool {
             return;
         }
         String templatePath = templatePath(data);
-        Map<String, StoredValue> pathValues = ResourceValueExtractor.extractPathValues(templatePath, request.getUrl());
+        Map<String, StoredValue> pathValues = new LinkedHashMap<>(
+                ResourceValueExtractor.extractPathValues(templatePath, request.getUrl()));
+        pathValues.keySet().removeIf(name -> isPathParameterFuzzed(data, name));
         List<JsonObject> requestObjects = HttpMethod.requiresBody(data.getHttpMethod()) &&
                 !ResourceValueExtractor.isRequestBodyFuzzed(data)
                 ? ResourceValueExtractor.requestObjects(effectiveRequestPayload) : List.of();
@@ -311,6 +313,13 @@ public class RuntimeResourcePool {
             return;
         }
         observeResponseObjects(data, request.getUrl(), effectiveRequestPayload, response, resolvedRequest, pathValues, requestObjects);
+    }
+
+    private boolean isPathParameterFuzzed(ServiceData data, String name) {
+        if (data.isFuzzedField(name, RequestTarget.Location.PATH)) {
+            return true;
+        }
+        return !HttpMethod.requiresBody(data.getHttpMethod()) && enricher.wasModifiedByFuzzer(data, name, false);
     }
 
     private static boolean isResourceProducingMethod(HttpMethod method) {
@@ -326,10 +335,7 @@ public class RuntimeResourcePool {
 
     private void addResourceFromReusableIndicators(ServiceData data, CatsResponse response, Map<String, StoredValue> pathValues) {
         boolean reusableHeaders = ResourceValueExtractor.collectResponseHeaders(response, pathValues);
-        boolean reusableItemPath = !ResourceSemanticNaming.isCollectionPath(data.getRelativePath()) && !pathValues.isEmpty() &&
-                OpenApiUtils.getPathVariables(data.getRelativePath()).stream()
-                        .noneMatch(name -> data.isFuzzedField(name, RequestTarget.Location.PATH) ||
-                                enricher.wasModifiedByFuzzer(data, name, false));
+        boolean reusableItemPath = !ResourceSemanticNaming.isCollectionPath(data.getRelativePath()) && !pathValues.isEmpty();
         if (ResourceSemanticNaming.isCollectionPath(data.getRelativePath()) && JsonUtils.isValidJson(response.getBody())) {
             try {
                 JsonElement root = JsonUtils.parseAsJsonElement(response.getBody());
@@ -773,6 +779,8 @@ public class RuntimeResourcePool {
         }
         Map<String, ResourceInstance> requestBindings = new LinkedHashMap<>();
         ResourceInstance[] pathBoundResource = new ResourceInstance[1];
+        String parentCollectionPath = directParentCollectionPath(path);
+        boolean parentCollectionProduced = parentCollectionPath != null && isObservedProducerPath(parentCollectionPath);
         for (int i = variables.size() - 1; i >= 0; i--) {
             String variable = variables.get(i);
             TargetField target = new TargetField(variable, variable, RequestTarget.Location.PATH, ValueShape.STRING);
@@ -784,12 +792,31 @@ public class RuntimeResourcePool {
                     resolved.get().storedValue().sourceLocation(), path, target) < 0) {
                 return false;
             }
+            if (i == variables.size() - 1 && parentCollectionProduced) {
+                String sourcePath = resolved.get().resource().sourcePath();
+                if (!parentCollectionPath.equals(sourcePath) && !path.equals(sourcePath)) {
+                    return false;
+                }
+            }
             requestBindings.put(bindingKey, resolved.get().resource());
             if (pathBoundResource[0] == null) {
                 pathBoundResource[0] = resolved.get().resource();
             }
         }
         return true;
+    }
+
+    private boolean isObservedProducerPath(String candidatePath) {
+        return observedProducers.stream().anyMatch(entry -> entry.endsWith(" " + candidatePath));
+    }
+
+    private static String directParentCollectionPath(String path) {
+        String trimmed = path.endsWith("/") && path.length() > 1 ? path.substring(0, path.length() - 1) : path;
+        int lastSlash = trimmed.lastIndexOf('/');
+        if (lastSlash <= 0 || !trimmed.substring(lastSlash + 1).startsWith("{")) {
+            return null;
+        }
+        return trimmed.substring(0, lastSlash);
     }
 
     public synchronized List<SuccessfulExchange> successfulExchanges(String path, HttpMethod method) {

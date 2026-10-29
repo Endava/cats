@@ -1,6 +1,9 @@
 package com.endava.cats.util;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.SpecVersion;
+import io.swagger.v3.oas.models.media.DateTimeSchema;
+import io.swagger.v3.oas.models.media.JsonSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
@@ -12,6 +15,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -125,7 +129,80 @@ class CatsModelUtilsTest {
                         "Type≠object, no other markers",
                         new Schema<>().type("string"),
                         false
+                },
+                new Object[]{
+                        "Object with additionalProperties schema (map)",
+                        new Schema<>().type("object").additionalProperties(new StringSchema()),
+                        false
+                },
+                new Object[]{
+                        "Object with additionalProperties=true",
+                        new Schema<>().type("object").additionalProperties(true),
+                        false
+                },
+                new Object[]{
+                        "Object with additionalProperties=false and no properties",
+                        new Schema<>().type("object").additionalProperties(false),
+                        true
                 }
         );
+    }
+
+    @Test
+    void shouldIgnoreSyntheticCatsGetSchemaNames() {
+        Assertions.assertThat(CatsModelUtils.isNotGeneratedPattern("CatsGetSchemaAbCdE")).isFalse();
+        Assertions.assertThat(CatsModelUtils.isNotGeneratedPattern("UserResponse")).isTrue();
+    }
+
+    @Test
+    void shouldCopyOpenApi31JsonSchemaAndOpenApi30DateTimeSchemaWithoutFailing() {
+        Assertions.assertThat(CatsModelUtils.copySchema(null)).isNotNull();
+
+        JsonSchema itemsSchema = new JsonSchema();
+        itemsSchema.setSpecVersion(SpecVersion.V31);
+        itemsSchema.setTypes(Set.of("string"));
+        itemsSchema.setEnum(List.of("CAT", "DOG"));
+
+        JsonSchema arraySchema = new JsonSchema();
+        arraySchema.setSpecVersion(SpecVersion.V31);
+        arraySchema.setTypes(Set.of("array"));
+        arraySchema.setItems(itemsSchema);
+
+        Schema<?> copied31 = CatsModelUtils.copySchema(arraySchema);
+        Assertions.assertThat(CatsModelUtils.isArraySchema(copied31)).isTrue();
+        Assertions.assertThat(CatsModelUtils.isStringSchema(copied31.getItems())).isTrue();
+        Assertions.assertThat(CatsModelUtils.isObjectSchema(copied31.getItems())).isFalse();
+
+        DateTimeSchema dateTime30 = new DateTimeSchema();
+        dateTime30.setSpecVersion(SpecVersion.V30);
+        dateTime30.setTypes(Set.of("string"));
+        Schema<?> copied30 = CatsModelUtils.copySchema(dateTime30);
+        Assertions.assertThat(CatsModelUtils.isDateTimeSchema(copied30)).isTrue();
+    }
+
+    @Test
+    void shouldFindAllOfParentsAndChildrenAndFilterPolymorphicBaseSchemas() {
+        Schema<?> baseSchema = new Schema<>().type("object");
+        Schema<?> dogSchema = new Schema<>().allOf(List.of(new Schema<>().$ref("#/components/schemas/Pet")));
+        Schema<?> catSchema = new Schema<>().allOf(List.of(new Schema<>().$ref("#/components/schemas/Pet")));
+        Map<String, Schema> schemaMap = Map.of(
+                "Pet", baseSchema,
+                "Dog", dogSchema,
+                "Cat", catSchema);
+
+        Assertions.assertThat(CatsModelUtils.findAllOfParents(dogSchema)).containsExactly("Pet");
+        Assertions.assertThat(CatsModelUtils.findAllOfChildrenByParent(schemaMap))
+                .containsEntry("Pet", Set.of("Dog", "Cat"));
+
+        List<Schema> oneOfSchemas = List.of(
+                new Schema<>().$ref("#/components/schemas/Pet"),
+                new Schema<>().$ref("#/components/schemas/Dog"),
+                new Schema<>().$ref("#/components/schemas/Cat"));
+        List<Schema> filtered = CatsModelUtils.filterPolymorphicBaseSchemas(
+                oneOfSchemas, ref -> schemaMap.get(CatsModelUtils.getSimpleRef(ref)));
+
+        Assertions.assertThat(filtered)
+                .extracting(Schema::get$ref)
+                .containsExactly("#/components/schemas/Dog", "#/components/schemas/Cat");
     }
 }

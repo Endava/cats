@@ -290,7 +290,7 @@ public class ServiceCaller {
                         data.getRelativePath(), data.getHttpMethod() == null ? "" : data.getHttpMethod().name(),
                         response.getResponseCode());
             }
-            sessionHealthMonitor.record(data.getRelativePath(), data.getHttpMethod(), response.getResponseCode(),
+            sessionHealthMonitor.recordOutcome(data.getRelativePath(), data.getHttpMethod(), response.getResponseCode(),
                     hasIntactCredentials(data));
 
             this.recordResponse(response);
@@ -689,7 +689,8 @@ public class ServiceCaller {
         } else {
             //for GET and HEAD, we remove default Content-Type as some servers don't like it
             String currentContentType = headers.get(HttpHeaders.CONTENT_TYPE);
-            if (currentContentType != null && currentContentType.equalsIgnoreCase(processingArguments.getDefaultContentType())) {
+            if (currentContentType != null && (currentContentType.equalsIgnoreCase(processingArguments.getDefaultContentType())
+                    || "application/x-www-form-urlencoded".equalsIgnoreCase(currentContentType))) {
                 headers.removeAll("Content-Type");
             }
         }

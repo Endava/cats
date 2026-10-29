@@ -3,6 +3,7 @@ package com.endava.cats.report;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.WordUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -15,7 +16,9 @@ import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.SpecVersion;
+import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,8 +26,10 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 final class ResponseSchemaValidator {
     private static final String SCHEMAS_URI = "https://cats.invalid/schemas/";
@@ -34,7 +39,8 @@ final class ResponseSchemaValidator {
 
     private record DocumentSchemas(ObjectMapper mapper, SchemaRegistry registry,
                                    IdentityHashMap<Schema<?>, com.networknt.schema.Schema> compiledByIdentity,
-                                   Map<String, com.networknt.schema.Schema> compiledByKey) {
+                                   Map<String, com.networknt.schema.Schema> compiledByKey,
+                                   Map<String, Set<String>> childrenByParent) {
     }
 
     ValidationResult validate(CatsResponse response, FuzzingData data) {
@@ -66,11 +72,12 @@ final class ResponseSchemaValidator {
         DocumentSchemas docSchemas = documentCaches.computeIfAbsent(openAPI, ignored -> {
             boolean openApi31 = openAPI.getSpecVersion() == SpecVersion.V31;
             ObjectMapper mapper = openApi31 ? Json31.mapper() : Json.mapper();
+            Map<String, Set<String>> childrenByParent = CatsModelUtils.findAllOfChildrenByParent(data.getSchemaMap());
             SchemaRegistry registry = SchemaRegistry.withDialect(openApi31
                             ? Dialects.getOpenApi31() : Dialects.getOpenApi30(),
-                    builder -> builder.schemas(schemaDocuments(mapper, data.getSchemaMap(), SCHEMAS_URI))
+                    builder -> builder.schemas(schemaDocuments(mapper, data.getSchemaMap(), SCHEMAS_URI, childrenByParent))
                             .schemaLoader(loader -> loader.fetchRemoteResources(false)));
-            return new DocumentSchemas(mapper, registry, new IdentityHashMap<>(), new LinkedHashMap<>());
+            return new DocumentSchemas(mapper, registry, new IdentityHashMap<>(), new LinkedHashMap<>(), childrenByParent);
         });
         com.networknt.schema.Schema byIdentity = docSchemas.compiledByIdentity().get(schema);
         if (byIdentity != null) {
@@ -91,7 +98,7 @@ final class ResponseSchemaValidator {
             throw new IllegalArgumentException("OpenAPI response schema is not an object");
         }
         ObjectNode root = schemaDocument.deepCopy();
-        rewriteSchemaReferences(root, COMPONENTS_REF_PREFIX, SCHEMAS_URI);
+        rewriteSchemaReferences(root, COMPONENTS_REF_PREFIX, SCHEMAS_URI, docSchemas.childrenByParent());
         try {
             String serializedRoot = docSchemas.mapper().writeValueAsString(root);
             String cacheKey = refKey != null ? refKey : serializedRoot;
@@ -107,7 +114,9 @@ final class ResponseSchemaValidator {
         }
     }
 
-    private Map<String, String> schemaDocuments(ObjectMapper mapper, Map<String, Schema> schemaMap, String schemasUri) {
+    @SuppressWarnings("rawtypes")
+    private Map<String, String> schemaDocuments(ObjectMapper mapper, Map<String, Schema> schemaMap,
+                                                String schemasUri, Map<String, Set<String>> childrenByParent) {
         if (schemaMap == null || schemaMap.isEmpty()) {
             return Map.of();
         }
@@ -116,10 +125,14 @@ final class ResponseSchemaValidator {
             if (name == null || schema == null) {
                 return;
             }
+            String simpleName = CatsModelUtils.getSimpleRef(name);
             JsonNode schemaNode = mapper.valueToTree(schema);
-            rewriteSchemaReferences(schemaNode, "#/components/schemas/", schemasUri);
+            if (schemaNode instanceof ObjectNode objectNode) {
+                enrichPolymorphicSchemaNode(objectNode, simpleName, schema, schemaMap, schemasUri, childrenByParent, mapper);
+            }
+            rewriteSchemaReferences(schemaNode, "#/components/schemas/", schemasUri, childrenByParent);
             try {
-                result.putIfAbsent(schemasUri + CatsModelUtils.getSimpleRef(name), mapper.writeValueAsString(schemaNode));
+                result.putIfAbsent(schemasUri + simpleName, mapper.writeValueAsString(schemaNode));
             } catch (IOException e) {
                 throw new IllegalArgumentException("Unable to serialize OpenAPI schema " + name, e);
             }
@@ -127,16 +140,115 @@ final class ResponseSchemaValidator {
         return result;
     }
 
-    private void rewriteSchemaReferences(JsonNode node, String sourcePrefix, String targetPrefix) {
+    @SuppressWarnings("rawtypes")
+    private static void enrichPolymorphicSchemaNode(ObjectNode objectNode, String simpleName, Schema<?> schema,
+                                                    Map<String, Schema> schemaMap, String schemasUri,
+                                                    Map<String, Set<String>> childrenByParent, ObjectMapper mapper) {
+        populateImplicitDiscriminatorMappings(objectNode, simpleName, schema, schemasUri, childrenByParent);
+        constrainChildDiscriminatorValues(objectNode, simpleName, schema, schemaMap, mapper);
+    }
+
+    private static void populateImplicitDiscriminatorMappings(ObjectNode objectNode, String simpleName, Schema<?> schema,
+                                                              String schemasUri, Map<String, Set<String>> childrenByParent) {
+        Discriminator discriminator = schema.getDiscriminator();
+        Set<String> children = childrenByParent.get(simpleName);
+        if (discriminator == null || StringUtils.isBlank(discriminator.getPropertyName())
+                || children == null || children.isEmpty()) {
+            return;
+        }
+        ObjectNode mappingNode = objectNode.withObject("/discriminator").withObject("/mapping");
+        for (String child : children) {
+            for (String alias : discriminatorValuesForChild(child, discriminator)) {
+                if (!mappingNode.has(alias)) {
+                    mappingNode.put(alias, schemasUri + child);
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void constrainChildDiscriminatorValues(ObjectNode objectNode, String simpleName, Schema<?> schema,
+                                                          Map<String, Schema> schemaMap, ObjectMapper mapper) {
+        if (!(objectNode.get("allOf") instanceof ArrayNode allOfArray)) {
+            return;
+        }
+        for (String parentSimple : CatsModelUtils.findAllOfParents(schema)) {
+            Schema<?> parentSchema = schemaMap.get(parentSimple);
+            Discriminator parentDisc = parentSchema != null ? parentSchema.getDiscriminator() : null;
+            if (parentDisc != null && StringUtils.isNotBlank(parentDisc.getPropertyName())) {
+                ObjectNode constraint = mapper.createObjectNode();
+                ArrayNode enumNode = constraint.putObject("properties")
+                        .putObject(parentDisc.getPropertyName())
+                        .putArray("enum");
+                discriminatorValuesForChild(simpleName, parentDisc).forEach(enumNode::add);
+                allOfArray.add(constraint);
+            }
+        }
+    }
+
+    private static Set<String> discriminatorValuesForChild(String childSimpleName, Discriminator discriminator) {
+        Set<String> values = new LinkedHashSet<>();
+        if (discriminator.getMapping() != null) {
+            discriminator.getMapping().forEach((key, target) -> {
+                if (childSimpleName.equalsIgnoreCase(CatsModelUtils.getSimpleRef(target))) {
+                    values.add(key);
+                }
+            });
+        }
+        if (values.isEmpty()) {
+            values.add(childSimpleName);
+            values.add(WordUtils.convertToDetectedCasing(childSimpleName, "UPPER_SNAKE_CASE"));
+            values.add(WordUtils.convertToDetectedCasing(childSimpleName, "lower_snake_case"));
+            values.add(WordUtils.convertToDetectedCasing(childSimpleName, "camelCase"));
+            values.add(WordUtils.convertToDetectedCasing(childSimpleName, "kebab-case"));
+            values.add(childSimpleName.toLowerCase(Locale.ROOT));
+        }
+        return values;
+    }
+
+    private void rewriteSchemaReferences(JsonNode node, String sourcePrefix, String targetPrefix,
+                                         Map<String, Set<String>> childrenByParent) {
         if (node instanceof ObjectNode objectNode) {
+            prunePolymorphicBaseRefs(objectNode.get("oneOf"), childrenByParent);
+            prunePolymorphicBaseRefs(objectNode.get("anyOf"), childrenByParent);
             JsonNode reference = objectNode.get("$ref");
             if (reference != null && reference.isTextual() && reference.textValue().startsWith(sourcePrefix)) {
                 objectNode.put("$ref", targetPrefix + reference.textValue().substring(sourcePrefix.length()));
             }
             rewriteDiscriminatorMapping(objectNode, sourcePrefix, targetPrefix);
-            objectNode.elements().forEachRemaining(child -> rewriteSchemaReferences(child, sourcePrefix, targetPrefix));
+            objectNode.elements().forEachRemaining(child -> rewriteSchemaReferences(child, sourcePrefix, targetPrefix, childrenByParent));
         } else if (node instanceof ArrayNode arrayNode) {
-            arrayNode.elements().forEachRemaining(child -> rewriteSchemaReferences(child, sourcePrefix, targetPrefix));
+            arrayNode.elements().forEachRemaining(child -> rewriteSchemaReferences(child, sourcePrefix, targetPrefix, childrenByParent));
+        }
+    }
+
+    private static void prunePolymorphicBaseRefs(JsonNode compositionNode, Map<String, Set<String>> childrenByParent) {
+        if (!(compositionNode instanceof ArrayNode arrayNode) || arrayNode.size() <= 1 || childrenByParent.isEmpty()) {
+            return;
+        }
+        Set<String> refNames = new LinkedHashSet<>();
+        for (JsonNode element : arrayNode) {
+            JsonNode refNode = element != null ? element.get("$ref") : null;
+            if (refNode != null && refNode.isTextual()) {
+                refNames.add(CatsModelUtils.getSimpleRef(refNode.textValue()));
+            }
+        }
+        Set<String> parentsToPrune = new LinkedHashSet<>();
+        for (String refName : refNames) {
+            Set<String> children = childrenByParent.get(refName);
+            if (children != null && children.stream().anyMatch(refNames::contains)) {
+                parentsToPrune.add(refName);
+            }
+        }
+        if (parentsToPrune.isEmpty() || parentsToPrune.size() >= arrayNode.size()) {
+            return;
+        }
+        for (int i = arrayNode.size() - 1; i >= 0; i--) {
+            JsonNode refNode = arrayNode.get(i) != null ? arrayNode.get(i).get("$ref") : null;
+            if (refNode != null && refNode.isTextual()
+                    && parentsToPrune.contains(CatsModelUtils.getSimpleRef(refNode.textValue()))) {
+                arrayNode.remove(i);
+            }
         }
     }
 

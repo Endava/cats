@@ -22,7 +22,6 @@ import com.endava.cats.util.OpenApiUtils;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -99,7 +98,12 @@ public class FuzzingDataFactory {
      */
     public List<FuzzingData> fromPathItem(String path, PathItem item, OpenAPI openAPI) {
         if (item.get$ref() != null) {
-            item = globalContext.getPathItemFromReference(item.get$ref());
+            PathItem resolved = globalContext.getPathItemFromReference(item.get$ref());
+            if (resolved == null) {
+                globalContext.recordError("PathItem definition for %s could not be resolved".formatted(item.get$ref()));
+                return new ArrayList<>();
+            }
+            item = resolved;
         }
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
         if (item.getPost() != null) {
@@ -214,8 +218,9 @@ public class FuzzingDataFactory {
             schemaCopy.setType("string");
         }
         schemaCopy.setName(parameter.getName() + "|" + parameter.getIn());
-        Object effectiveExample = schemaCopy.getExample() != null ? schemaCopy.getExample() : parameter.getExample();
-        schemaCopy.setExample(effectiveExample);
+        if (schemaCopy.getExample() == null && parameter.getExample() != null) {
+            schemaCopy.setExample(parameter.getExample());
+        }
         return schemaCopy;
     }
 
@@ -225,15 +230,8 @@ public class FuzzingDataFactory {
      * OpenAPI 3.1 JsonSchema instances (which store type in {@code types} Set) into ObjectSchema,
      * losing the original type information.
      */
-    @SuppressWarnings("unchecked")
     private static Schema<?> copySchema(Schema<?> originalSchema) {
-        Schema<?> schemaCopy = Optional.ofNullable(Json.mapper().convertValue(originalSchema, Schema.class))
-                .orElseGet(Schema::new);
-        Set<String> originalTypes = originalSchema.getTypes();
-        if (originalTypes != null && !originalTypes.isEmpty()) {
-            schemaCopy.setTypes(new HashSet<>(originalTypes));
-        }
-        return schemaCopy;
+        return CatsModelUtils.copySchema(originalSchema);
     }
 
     List<Parameter> getResolvedParameters(List<Parameter> operationParameters) {
@@ -366,7 +364,7 @@ public class FuzzingDataFactory {
                             .includeFieldFormats(filterArguments.getFieldFormats())
                             .skipFieldFormats(filterArguments.getSkipFieldFormats())
                             .skippedFieldsForAllFuzzers(filterArguments.getSkipFieldsToBeSkippedForAllFuzzers())
-                            .skippedFuzzersForPath(filterArguments.getFuzzersToSkipForOperationExtensions(operation.getExtensions()))
+                            .skippedFuzzersForPath(filterArguments.getFuzzersToSkipForOperationExtensions(mergeExtensions(item, operation)))
                             .responseHeaders(responseHeaders)
                             .pathParamsPayload(pathParamsExample)
                             .queryParams(queryParams)
@@ -480,10 +478,24 @@ public class FuzzingDataFactory {
                         .includeFieldFormats(filterArguments.getFieldFormats())
                         .skipFieldFormats(filterArguments.getSkipFieldFormats())
                         .skippedFieldsForAllFuzzers(filterArguments.getSkipFieldsToBeSkippedForAllFuzzers())
-                        .skippedFuzzersForPath(filterArguments.getFuzzersToSkipForOperationExtensions(operation.getExtensions()))
+                        .skippedFuzzersForPath(filterArguments.getFuzzersToSkipForOperationExtensions(mergeExtensions(item, operation)))
                         .responseHeaders(responseHeaders)
                         .build())
                 .toList();
+    }
+
+    private static Map<String, Object> mergeExtensions(PathItem item, Operation operation) {
+        Map<String, Object> pathExt = item != null && item.getExtensions() != null ? item.getExtensions() : Collections.emptyMap();
+        Map<String, Object> opExt = operation != null && operation.getExtensions() != null ? operation.getExtensions() : Collections.emptyMap();
+        if (pathExt.isEmpty()) {
+            return opExt;
+        }
+        if (opExt.isEmpty()) {
+            return pathExt;
+        }
+        Map<String, Object> merged = new LinkedHashMap<>(pathExt);
+        merged.putAll(opExt);
+        return merged;
     }
 
     private KeyValuePair<String, Schema<?>> createSyntheticSchemaForGet(PathItem pathItem, Operation operation) {

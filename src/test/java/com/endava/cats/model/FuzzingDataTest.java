@@ -2,6 +2,7 @@ package com.endava.cats.model;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -344,5 +345,38 @@ class FuzzingDataTest {
                 .build();
 
         Assertions.assertThat(data.shouldSkipFuzzerForPath("BypassAuthenticationFuzzer")).isTrue();
+    }
+
+    @Test
+    void shouldCollectFieldsFromCyclicDiscriminatorAndAllOfWithProperties() {
+        Schema<?> baseSchema = new Schema<>().addProperty("session", new Schema<>().type("string"));
+        Discriminator discriminator = new Discriminator()
+                .propertyName("method")
+                .mapping("confirm", "#/components/schemas/ChildInvocation");
+        baseSchema.setDiscriminator(discriminator);
+
+        Schema<?> childSchema = new Schema<>()
+                .addProperty("method", new Schema<>().type("string"))
+                .addProperty("params", new Schema<>().type("string"));
+        childSchema.setAllOf(List.of(new Schema<>().$ref("#/components/schemas/BaseInvocation")));
+        childSchema.setDiscriminator(discriminator);
+
+        FuzzingData data = FuzzingData.builder()
+                .reqSchema(childSchema)
+                .schemaMap(Map.of("BaseInvocation", baseSchema, "ChildInvocation", childSchema))
+                .requestPropertyTypes(Map.of(
+                        "session", new Schema<>().type("string"),
+                        "method", new Schema<>().type("string"),
+                        "params", new Schema<>().type("string")))
+                .includeFieldTypes(List.of())
+                .skipFieldTypes(List.of())
+                .includeFieldFormats(List.of())
+                .skipFieldFormats(List.of())
+                .skippedFieldsForAllFuzzers(List.of())
+                .selfReferenceDepth(2)
+                .build();
+
+        List<String> fieldNames = data.getAllFieldsAsCatsFields().stream().map(CatsField::getName).toList();
+        Assertions.assertThat(fieldNames).containsExactlyInAnyOrder("session", "method", "params");
     }
 }

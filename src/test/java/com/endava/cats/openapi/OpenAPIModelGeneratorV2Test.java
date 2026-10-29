@@ -634,6 +634,103 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(JsonUtils.getVariableFromJson(json, "$.to")).hasToString("2026-01-02T00:00:00Z");
     }
 
+    @Test
+    void shouldSkipPolymorphicBaseSchemaInOneOfAndPropagateTopLevelAllOfRequiredFields() {
+        String openApiJson = """
+                {
+                  "openapi": "3.1.0",
+                  "info": { "title": "Pet Shelter API", "version": "1.0.0" },
+                  "paths": {},
+                  "components": {
+                    "schemas": {
+                      "PetAdoptionRequest": {
+                        "type": "object",
+                        "required": ["pet"],
+                        "properties": {
+                          "pet": {
+                            "oneOf": [
+                              { "$ref": "#/components/schemas/Pet" },
+                              { "$ref": "#/components/schemas/Dog" },
+                              { "$ref": "#/components/schemas/Cat" }
+                            ]
+                          }
+                        }
+                      },
+                      "Pet": {
+                        "discriminator": { "propertyName": "petType" },
+                        "properties": { "petType": { "type": "string" } },
+                        "required": ["petType"]
+                      },
+                      "Dog": {
+                        "allOf": [
+                          { "$ref": "#/components/schemas/Pet" },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "packSize": { "type": "integer", "example": 4 },
+                              "bark": { "type": "boolean", "example": true },
+                              "breed": { "type": "string", "example": "Husky" },
+                              "nickname": { "type": "string", "example": "Rex" }
+                            }
+                          }
+                        ],
+                        "required": ["packSize", "bark", "breed"]
+                      },
+                      "Cat": {
+                        "allOf": [
+                          { "$ref": "#/components/schemas/Pet" },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "huntingSkill": { "type": "string", "example": "adventurous" }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+                """;
+        OpenAPI openAPI = new OpenAPIParser().readContents(openApiJson, null, null).getOpenAPI();
+        globalContext.getSchemaMap().putAll(OpenApiUtils.getSchemas(openAPI, List.of("application/json")));
+
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
+        List<OpenAPIModelGeneratorV2.GeneratedPayload> payloads = generator.generateWithMetadata("PetAdoptionRequest");
+
+        Assertions.assertThat(payloads)
+                .hasSize(2)
+                .noneSatisfy(gp -> Assertions.assertThat(gp.payload()).contains("\"petType\":\"PET\""));
+
+        OpenAPIModelGeneratorV2.GeneratedPayload dogPayload = payloads.stream()
+                .filter(gp -> gp.payload().contains("\"petType\":\"DOG\""))
+                .findFirst()
+                .orElseThrow();
+        Assertions.assertThat(dogPayload.requiredFields())
+                .contains("pet", "pet#petType", "pet#packSize", "pet#bark", "pet#breed")
+                .doesNotContain("pet#nickname");
+    }
+
+    @Test
+    void shouldRecordResolvedPrimitiveSchemaWhenPropertyUsesRef() {
+        StringSchema petStatus = new StringSchema();
+        petStatus.setEnum(List.of("AVAILABLE", "PENDING", "ADOPTED"));
+        ObjectSchema adoptionRequest = new ObjectSchema();
+        adoptionRequest.addProperty("status", new Schema<>().$ref("#/components/schemas/PetStatus"));
+
+        globalContext.getSchemaMap().put("PetStatus", petStatus);
+        globalContext.getSchemaMap().put("AdoptionRequest", adoptionRequest);
+
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
+        generator.generateWithMetadata("AdoptionRequest");
+
+        Schema<?> recorded = generator.getRequestDataTypes().get("status");
+        Assertions.assertThat(recorded).isNotNull();
+        Assertions.assertThat(recorded.getType()).isEqualTo("string");
+        Assertions.assertThat((List<?>) recorded.getEnum()).isEqualTo(List.of("AVAILABLE", "PENDING", "ADOPTED"));
+    }
+
     private OpenAPIModelGeneratorV2 generatorFor(String testResource) throws IOException {
         ParseOptions options = new ParseOptions();
         options.setResolve(true);

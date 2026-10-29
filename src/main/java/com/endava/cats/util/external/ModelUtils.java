@@ -290,11 +290,12 @@ public class ModelUtils {
             return false;
         }
 
-        return schema instanceof ObjectSchema ||
+        String schemaType = getType(schema);
+        return (schema instanceof ObjectSchema && (schemaType == null || SchemaTypeUtil.OBJECT_TYPE.equals(schemaType))) ||
                 // must not be a map
-                (SchemaTypeUtil.OBJECT_TYPE.equals(getType(schema)) && !ModelUtils.isMapSchema(schema)) ||
+                (SchemaTypeUtil.OBJECT_TYPE.equals(schemaType) && !ModelUtils.isMapSchema(schema)) ||
                 // must have at least one property
-                (getType(schema) == null && schema.getProperties() != null && !schema.getProperties().isEmpty());
+                (schemaType == null && schema.getProperties() != null && !schema.getProperties().isEmpty());
     }
 
     /**

@@ -11,7 +11,6 @@ import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Getter;
@@ -322,7 +321,7 @@ public class OpenAPIModelGeneratorV2 {
             composedSchema.setDiscriminator(schema.getDiscriminator());
             schema.getProperties().get(schema.getDiscriminator().getPropertyName()).setEnum(new ArrayList<>(schema.getDiscriminator().getMapping().keySet()));
             globalContext.recordDiscriminator(currentProperty, schema.getDiscriminator(), List.of());
-            Schema<?> newSchema = Json.mapper().convertValue(schema, Schema.class);
+            Schema<?> newSchema = CatsModelUtils.copySchema(schema);
             newSchema.setName("CatsChanged" + name);
             newSchema.getDiscriminator().setMapping(null);
             globalContext.getSchemaMap().put(newSchema.getName(), newSchema);
@@ -604,7 +603,7 @@ public class OpenAPIModelGeneratorV2 {
         logger.trace("resolveAllOfSchemaProperties for schema {}", propertyName);
         List<GeneratedExample> examples = new ArrayList<>();
         keepOriginalSchema(propertyName, schema);
-        mergeRequiredProperties(schema.getAllOf());
+        mergeRequiredProperties(schema, schema.getAllOf());
 
         Schema parentWithDiscriminator = Optional.ofNullable(firstSchemaWithDiscriminator(schema.getAllOf()))
                 .orElse(schema.getDiscriminator() != null ? schema : null);
@@ -748,7 +747,9 @@ public class OpenAPIModelGeneratorV2 {
         }
         List<GeneratedExample> examples = new ArrayList<>();
         try {
-            List<Schema> schemas = CatsModelUtils.getInterfaces(schema).stream().filter(iteratingSchema -> !isNullSchema(iteratingSchema)).toList();
+            List<Schema> schemas = CatsModelUtils.filterPolymorphicBaseSchemas(
+                    CatsModelUtils.getInterfaces(schema).stream().filter(iteratingSchema -> !isNullSchema(iteratingSchema)).toList(),
+                    globalContext::getSchemaFromReference);
 
             for (Schema subSchema : schemas) {
                 if (examples.size() >= maxExamples) {
@@ -933,7 +934,13 @@ public class OpenAPIModelGeneratorV2 {
     private void addRefExample(String propertyName, Schema property, List<GeneratedExample> examples) {
         Schema<?> resolved = globalContext.getSchemaFromReference(property.get$ref());
         if (resolved != null && CatsModelUtils.isPrimitiveSchema(resolved)) {
-            Object value = resolvePropertyToExample(propertyName, resolved);
+            Schema<?> schemaToRecord = resolved;
+            if (property.getDefault() != null && resolved.getDefault() == null) {
+                schemaToRecord = CatsModelUtils.copySchema(resolved);
+                schemaToRecord.setDefault(property.getDefault());
+            }
+            recordRequestSchema(currentProperty, schemaToRecord);
+            Object value = resolvePropertyToExample(propertyName, schemaToRecord);
             if (value != null) {
                 examples.add(GeneratedExample.of(value));
             }
@@ -1195,24 +1202,31 @@ public class OpenAPIModelGeneratorV2 {
         globalContext.getSchemaMap().put(keyToKeep, composedSchema);
     }
 
-    private void mergeRequiredProperties(List<Schema> allOfSchema) {
+    private void mergeRequiredProperties(Schema<?> parentSchema, List<Schema> allOfSchema) {
         logger.trace("createMergedSchema for allOfSchema");
+        if (allOfSchema == null) {
+            return;
+        }
         Collection<Schema> allOfSchemasSanitized = allOfSchema
                 .stream()
                 .filter(CatsModelUtils::isNotEmptySchema)
                 .map(schema -> schema.get$ref() != null ? globalContext.getSchemaFromReference(schema.get$ref()) : schema)
                 .filter(Objects::nonNull)
                 .toList();
-        if (allOfSchemasSanitized.size() == 1) {
+        List<String> parentRequired = parentSchema != null && parentSchema.getRequired() != null
+                ? parentSchema.getRequired()
+                : Collections.emptyList();
+        if (allOfSchemasSanitized.size() == 1 && parentRequired.isEmpty()) {
             return;
         }
 
         logger.trace("allOfSchemasSanitized size: {}", allOfSchemasSanitized.size());
 
-        List<String> allRequired = allOfSchemasSanitized.stream()
-                .map(schema -> Optional.ofNullable(schema.getRequired()).orElse(Collections.emptyList()))
+        List<String> allRequired = new ArrayList<>(parentRequired);
+        allOfSchemasSanitized.stream()
+                .map(schema -> Optional.ofNullable((List<String>) schema.getRequired()).orElse(Collections.emptyList()))
                 .flatMap(Collection::stream)
-                .toList();
+                .forEach(allRequired::add);
 
         logger.trace("allRequired size: {}", allRequired.size());
 
@@ -1621,7 +1635,11 @@ public class OpenAPIModelGeneratorV2 {
         if (schema.getItems() != null) {
             requiredFields.addAll(collectRequiredFields(schema.getItems(), parent, visited));
         }
-        for (Schema<?> composedSchema : CatsModelUtils.getInterfaces(schema)) {
+        if (schema.getAllOf() != null) {
+            mergeRequiredProperties(schema, schema.getAllOf());
+        }
+        for (Schema<?> composedSchema : CatsModelUtils.filterPolymorphicBaseSchemas(
+                CatsModelUtils.getInterfaces(schema), globalContext::getSchemaFromReference)) {
             requiredFields.addAll(collectRequiredFields(composedSchema, parent, visited));
         }
         visited.remove(schema);

@@ -132,4 +132,111 @@ class ResponseSchemaValidatorTest {
         CatsResponse malformedBodyResponse = CatsResponse.builder().responseCode(200).responseContentType("application/json").body("{not-json").build();
         Assertions.assertThat(validator.validate(malformedBodyResponse, data).isValid()).isFalse();
     }
+
+    @Test
+    void shouldValidateSpringDocOpenApi31OneOfWithBaseSchemaAndImplicitDiscriminatorMapping() {
+        String openApiJson = """
+                {
+                  "openapi": "3.1.0",
+                  "info": { "title": "Pet Shelter API", "version": "1.0.0" },
+                  "paths": {
+                    "/pets/{petId}": {
+                      "get": {
+                        "responses": {
+                          "200": {
+                            "description": "OK",
+                            "content": {
+                              "application/json": {
+                                "schema": { "$ref": "#/components/schemas/PetAdoptionResponse" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "components": {
+                    "schemas": {
+                      "PetAdoptionResponse": {
+                        "type": "object",
+                        "required": ["adoptionId", "pet"],
+                        "properties": {
+                          "adoptionId": { "type": "string" },
+                          "pet": {
+                            "oneOf": [
+                              { "$ref": "#/components/schemas/Pet" },
+                              { "$ref": "#/components/schemas/Cat" },
+                              { "$ref": "#/components/schemas/Dog" },
+                              { "$ref": "#/components/schemas/Lizard" }
+                            ]
+                          }
+                        }
+                      },
+                      "Pet": {
+                        "discriminator": { "propertyName": "petType" },
+                        "properties": { "petType": { "type": "string" } },
+                        "required": ["petType"]
+                      },
+                      "Cat": {
+                        "allOf": [
+                          { "$ref": "#/components/schemas/Pet" },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "huntingSkill": { "type": "string" }
+                            }
+                          }
+                        ]
+                      },
+                      "Dog": {
+                        "allOf": [
+                          { "$ref": "#/components/schemas/Pet" },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "breed": { "type": "string" }
+                            }
+                          }
+                        ],
+                        "required": ["breed"]
+                      },
+                      "Lizard": {
+                        "allOf": [
+                          { "$ref": "#/components/schemas/Pet" },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "lovesRocks": { "type": "boolean" }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+                """;
+        OpenAPI openAPI = new OpenAPIV3Parser().readContents(openApiJson, null, null).getOpenAPI();
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        Schema<?> responseSchema = openAPI.getPaths().get("/pets/{petId}").getGet()
+                .getResponses().get("200").getContent().get("application/json").getSchema();
+
+        FuzzingData data = FuzzingData.builder()
+                .openApi(openAPI)
+                .schemaMap(schemas)
+                .responseSchemaDefinitions(Map.of("200", Map.of("application/json", responseSchema)))
+                .build();
+
+        CatsResponse validLizardResponse = CatsResponse.builder()
+                .responseCode(200)
+                .responseContentType("application/json")
+                .body("{\"adoptionId\":\"adopt_1\",\"pet\":{\"petType\":\"LIZARD\",\"lovesRocks\":true}}")
+                .build();
+
+        ResponseSchemaValidator validator = new ResponseSchemaValidator();
+        ResponseSchemaValidator.ValidationResult result = validator.validate(validLizardResponse, data);
+
+        Assertions.assertThat(result.performed()).isTrue();
+        Assertions.assertThat(result.isValid()).isTrue();
+        Assertions.assertThat(result.errors()).isEmpty();
+    }
 }

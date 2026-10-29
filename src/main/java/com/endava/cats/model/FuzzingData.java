@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -157,46 +158,53 @@ public class FuzzingData {
     }
 
     private Set<CatsField> getFields(Schema<?> schema, String prefix) {
+        return getFields(schema, prefix, Collections.newSetFromMap(new IdentityHashMap<>()));
+    }
+
+    private Set<CatsField> getFields(Schema<?> schema, String prefix, Set<Schema<?>> visitedAtPrefix) {
         logger.trace("Getting fields for prefix: {}", prefix);
-        if (JsonUtils.isCyclicReference(prefix, selfReferenceDepth)) {
+        if (schema == null || JsonUtils.isCyclicReference(prefix, selfReferenceDepth)) {
             return Collections.emptySet();
         }
-        Set<CatsField> catsFields = new HashSet<>();
         if (schema.get$ref() != null) {
-            schema = schemaMap.get(this.getDefinitionNameFromRef(schema.get$ref()));
+            schema = schemaMap.get(CatsModelUtils.getSimpleRef(schema.get$ref()));
         }
-
-        if (schema == null) {
+        if (schema == null || !visitedAtPrefix.add(schema)) {
             return Collections.emptySet();
         }
 
+        Set<CatsField> catsFields = new HashSet<>();
         List<String> required = Optional.ofNullable(schema.getRequired()).orElseGet(Collections::emptyList);
 
         if (schema.getProperties() != null) {
             for (Map.Entry<String, Schema> prop : schema.getProperties().entrySet()) {
+                String childPrefix = prefix.isEmpty() ? prop.getKey() : prefix + "#" + prop.getKey();
+                Schema<?> propValue = prop.getValue();
+                Schema<?> resolvedProp = Optional.ofNullable(CatsModelUtils.resolveSchema(propValue, schemaMap)).orElse(propValue);
                 catsFields.add(CatsField.builder()
-                        .name(prefix.isEmpty() ? prop.getKey() : prefix + "#" + prop.getKey())
-                        .schema(prop.getValue())
+                        .name(childPrefix)
+                        .schema(resolvedProp)
                         .required(required.contains(prop.getKey()))
-                        .readOnly(Optional.ofNullable(prop.getValue().getReadOnly()).orElse(false))
-                        .writeOnly(Optional.ofNullable(prop.getValue().getWriteOnly()).orElse(false))
+                        .readOnly(Boolean.TRUE.equals(propValue.getReadOnly()) || Boolean.TRUE.equals(resolvedProp.getReadOnly()))
+                        .writeOnly(Boolean.TRUE.equals(propValue.getWriteOnly()) || Boolean.TRUE.equals(resolvedProp.getWriteOnly()))
                         .build());
-                catsFields.addAll(this.getFields(prop.getValue(), prefix.isEmpty() ? prop.getKey() : prefix + "#" + prop.getKey()));
+                catsFields.addAll(this.getFields(propValue, childPrefix));
             }
-        } else if (CatsModelUtils.isComposedSchema(schema)) {
-            Optional.ofNullable(schema.getAllOf()).ifPresent(allOf -> allOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
-            Optional.ofNullable(schema.getAnyOf()).ifPresent(anyOf -> anyOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
-            Optional.ofNullable(schema.getOneOf()).ifPresent(oneOf -> oneOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
+        }
+        CatsModelUtils.getComposedSchemas(schema)
+                .forEach(item -> catsFields.addAll(this.getFields(item, prefix, visitedAtPrefix)));
+        if (schema.getDiscriminator() != null && schema.getDiscriminator().getMapping() != null) {
+            for (String mappedRef : schema.getDiscriminator().getMapping().values()) {
+                Schema<?> mappedSchema = schemaMap.get(CatsModelUtils.getSimpleRef(mappedRef));
+                if (mappedSchema != null) {
+                    catsFields.addAll(this.getFields(mappedSchema, prefix, visitedAtPrefix));
+                }
+            }
         }
 
         return catsFields.stream()
                 .filter(catsField -> this.getRequestPropertyTypes().get(catsField.getName()) != null)
                 .collect(Collectors.toSet());
-    }
-
-
-    private String getDefinitionNameFromRef(String ref) {
-        return ref.substring(ref.lastIndexOf('/') + 1);
     }
 
     /**
@@ -256,12 +264,12 @@ public class FuzzingData {
         if (allFieldsAsCatsFields == null) {
             allFieldsAsCatsFields = this.getFields(reqSchema, EMPTY);
             if (!includeFieldTypes.isEmpty()) {
-                allFieldsAsCatsFields.removeIf(catsField -> !includeFieldTypes.contains(Optional.ofNullable(catsField.getSchema().getType()).orElse(EMPTY)));
+                allFieldsAsCatsFields.removeIf(catsField -> includeFieldTypes.stream().noneMatch(type -> CatsModelUtils.isType(catsField.getSchema(), type)));
             }
             if (!includeFieldFormats.isEmpty()) {
                 allFieldsAsCatsFields.removeIf(catsField -> !includeFieldFormats.contains(Optional.ofNullable(catsField.getSchema().getFormat()).orElse(EMPTY)));
             }
-            allFieldsAsCatsFields.removeIf(catsField -> skipFieldTypes.contains(Optional.ofNullable(catsField.getSchema().getType()).orElse(EMPTY)));
+            allFieldsAsCatsFields.removeIf(catsField -> skipFieldTypes.stream().anyMatch(type -> CatsModelUtils.isType(catsField.getSchema(), type)));
             allFieldsAsCatsFields.removeIf(catsField -> skipFieldFormats.contains(Optional.ofNullable(catsField.getSchema().getFormat()).orElse(EMPTY)));
             allFieldsAsCatsFields.removeIf(catsField -> skippedFieldsForAllFuzzers.stream().anyMatch(skippedField -> catsField.getName().startsWith(skippedField)));
         }

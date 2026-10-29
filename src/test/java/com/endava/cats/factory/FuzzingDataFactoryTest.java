@@ -1601,4 +1601,70 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(JsonUtils.getVariableFromJson(payload, "$.brandName")).asString().isNotEqualTo(postLongExample);
         Assertions.assertThat(JsonUtils.getVariableFromJson(payload, "$.changeTimeFrom")).asString().isNotEqualTo(postLongExample);
     }
+
+    @Test
+    void shouldGenerateFlatStringArraysForOpenApi31ArrayQueryParameters() throws Exception {
+        String openApiJson = """
+                {
+                  "openapi": "3.1.0",
+                  "info": { "title": "Pet Shelter API", "version": "1.0.0" },
+                  "paths": {
+                    "/shelters/{shelterId}/pets": {
+                      "get": {
+                        "operationId": "listShelterPets",
+                        "parameters": [
+                          {
+                            "name": "shelterId",
+                            "in": "path",
+                            "required": true,
+                            "schema": { "type": "string" }
+                          },
+                          {
+                            "name": "species",
+                            "in": "query",
+                            "required": false,
+                            "schema": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": ["CAT", "DOG", "LIZARD"]
+                              }
+                            }
+                          },
+                          {
+                            "name": "status",
+                            "in": "query",
+                            "required": false,
+                            "schema": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": ["AVAILABLE", "PENDING", "ADOPTED"]
+                              }
+                            }
+                          }
+                        ],
+                        "responses": {
+                          "200": { "description": "OK" }
+                        }
+                      }
+                    }
+                  }
+                }
+                """;
+        var tempContract = Files.createTempFile("openapi31-array-query", ".json");
+        Files.writeString(tempContract, openApiJson);
+        try {
+            List<FuzzingData> dataList = setupFuzzingData("/shelters/{shelterId}/pets", tempContract.toString());
+            Assertions.assertThat(dataList).hasSize(1);
+            String payload = dataList.getFirst().getPayload();
+            JsonNode root = new ObjectMapper().readTree(payload);
+            Assertions.assertThat(root.get("species").isArray()).isTrue();
+            Assertions.assertThat(root.get("species").get(0).isTextual()).isTrue();
+            Assertions.assertThat(root.get("status").isArray()).isTrue();
+            Assertions.assertThat(root.get("status").get(0).isTextual()).isTrue();
+        } finally {
+            Files.deleteIfExists(tempContract);
+        }
+    }
 }

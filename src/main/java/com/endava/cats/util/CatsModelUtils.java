@@ -1,8 +1,12 @@
 package com.endava.cats.util;
 
+import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.util.external.ModelUtils;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.swagger.v3.core.util.Json;
+import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.BinarySchema;
 import io.swagger.v3.oas.models.media.BooleanSchema;
@@ -10,6 +14,7 @@ import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.DateSchema;
 import io.swagger.v3.oas.models.media.DateTimeSchema;
 import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.JsonSchema;
 import io.swagger.v3.oas.models.media.MapSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -21,12 +26,16 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
@@ -37,12 +46,13 @@ import java.util.regex.Pattern;
 public abstract class CatsModelUtils {
     public static final String X_CATS_FIELD_NAME = "x-cats-field-name";
     private static final Pattern GENERATED_PREFIX = Pattern.compile("generated_.*");
+    private static final Pattern SYNTHETIC_GET_SCHEMA = Pattern.compile("^" + OpenAPIModelGeneratorV2.SYNTH_SCHEMA_NAME + ".*");
     private static final Pattern GENERATED_BODY_OBJECTS_1 = Pattern.compile("body_\\d*");
     private static final Pattern GENERATED_BODY_OBJECTS_2 = Pattern.compile("^\\w{1,30}_body");
     private static final Pattern GENERATED_BODY_OBJECTS_3 = Pattern.compile("^\\w{1,30}_body_\\d{1,3}$");
     private static final Pattern INLINE_BODY_OBJECTS = Pattern.compile("^inline_response(?:_\\w{0,30}){1,50}$");
     private static final Pattern CROSS_PATHS_REFERENCES_PATTERN = Pattern.compile("^#/paths/.*");
-    private static final List<Pattern> PATTERNS_TO_IGNORE = List.of(GENERATED_PREFIX, GENERATED_BODY_OBJECTS_1, GENERATED_BODY_OBJECTS_2, GENERATED_BODY_OBJECTS_3,
+    private static final List<Pattern> PATTERNS_TO_IGNORE = List.of(GENERATED_PREFIX, SYNTHETIC_GET_SCHEMA, GENERATED_BODY_OBJECTS_1, GENERATED_BODY_OBJECTS_2, GENERATED_BODY_OBJECTS_3,
             INLINE_BODY_OBJECTS, CROSS_PATHS_REFERENCES_PATTERN);
 
     private CatsModelUtils() {
@@ -139,6 +149,14 @@ public abstract class CatsModelUtils {
      * @return true if ObjectSchema, false otherwise
      */
     public static boolean isObjectSchema(Schema<?> schema) {
+        if (schema == null) {
+            return false;
+        }
+        boolean hasExplicitNonObjectType = (schema.getType() != null && !SchemaTypeUtil.OBJECT_TYPE.equalsIgnoreCase(schema.getType()))
+                || (schema.getTypes() != null && !schema.getTypes().isEmpty() && ! isType(schema, SchemaTypeUtil.OBJECT_TYPE));
+        if (hasExplicitNonObjectType) {
+            return false;
+        }
         return schema instanceof ObjectSchema ||
                 (isType(schema, SchemaTypeUtil.OBJECT_TYPE) && !(schema instanceof MapSchema) && !isComposedSchema(schema));
     }
@@ -337,14 +355,19 @@ public abstract class CatsModelUtils {
      * @return true if the schema is empty, false otherwise
      */
     public static boolean isEmptyObjectSchema(Schema schema) {
+        if (schema == null) {
+            return false;
+        }
         boolean isObject = "object".equalsIgnoreCase(schema.getType()) || (schema.getType() == null && schema.getProperties() != null);
         boolean hasProps = schema.getProperties() != null && !schema.getProperties().isEmpty();
+        boolean hasAdditionalProps = schema.getAdditionalProperties() instanceof Schema<?>
+                || Boolean.TRUE.equals(schema.getAdditionalProperties());
         boolean hasRef = schema.get$ref() != null;
         boolean hasComposition = (schema.getAllOf() != null && !schema.getAllOf().isEmpty())
                 || (schema.getAnyOf() != null && !schema.getAnyOf().isEmpty())
                 || (schema.getOneOf() != null && !schema.getOneOf().isEmpty());
 
-        return isObject && !hasProps && !hasRef && !hasComposition;
+        return isObject && !hasProps && !hasAdditionalProps && !hasRef && !hasComposition;
     }
 
     /**
@@ -449,5 +472,94 @@ public abstract class CatsModelUtils {
             composed.addAll(schema.getAnyOf());
         }
         return composed;
+    }
+
+    /**
+     * Deep-copies an OpenAPI {@link Schema} using the spec-version-appropriate Jackson mapper.
+     */
+    @SuppressWarnings("unchecked")
+    public static Schema<?> copySchema(Schema<?> originalSchema) {
+        if (originalSchema == null) {
+            return new Schema<>();
+        }
+        boolean isOpenApi31 = originalSchema.getSpecVersion() == SpecVersion.V31
+                || originalSchema instanceof JsonSchema;
+        Schema<?> schemaCopy = Optional.ofNullable((isOpenApi31 ? Json31.mapper() : Json.mapper())
+                        .convertValue(originalSchema, Schema.class))
+                .orElseGet(Schema::new);
+        Set<String> originalTypes = originalSchema.getTypes();
+        if (originalTypes != null && !originalTypes.isEmpty() && CatsUtil.isEmpty(schemaCopy.getTypes())) {
+            schemaCopy.setTypes(new HashSet<>(originalTypes));
+        }
+        return schemaCopy;
+    }
+
+    /**
+     * Returns the simple reference names of any {@code $ref} schemas inside {@code schema.getAllOf()}.
+     */
+    public static Set<String> findAllOfParents(Schema<?> schema) {
+        if (schema == null || schema.getAllOf() == null) {
+            return Set.of();
+        }
+        Set<String> parents = new LinkedHashSet<>();
+        for (Object item : schema.getAllOf()) {
+            if (item instanceof Schema<?> allOfSchema && allOfSchema.get$ref() != null) {
+                String parentSimple = getSimpleRef(allOfSchema.get$ref());
+                if (parentSimple != null) {
+                    parents.add(parentSimple);
+                }
+            }
+        }
+        return parents;
+    }
+
+    /**
+     * Builds a map from each {@code allOf} parent schema name to the set of concrete child schema names that extend it.
+     */
+    @SuppressWarnings("rawtypes")
+    public static Map<String, Set<String>> findAllOfChildrenByParent(Map<String, Schema> schemaMap) {
+        if (schemaMap == null || schemaMap.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Set<String>> childrenByParent = new LinkedHashMap<>();
+        schemaMap.forEach((name, schema) -> {
+            if (name == null || schema == null) {
+                return;
+            }
+            String childSimple = getSimpleRef(name);
+            if (!isNotGeneratedPattern(childSimple)) {
+                return;
+            }
+            for (String parentSimple : findAllOfParents(schema)) {
+                if (!parentSimple.equals(childSimple)) {
+                    childrenByParent.computeIfAbsent(parentSimple, _ -> new LinkedHashSet<>()).add(childSimple);
+                }
+            }
+        });
+        return childrenByParent;
+    }
+
+    /**
+     * Filters out polymorphic base {@code $ref} schemas from a {@code oneOf}/{@code anyOf} list when their
+     * {@code allOf} child schemas are present in the same composition.
+     */
+    @SuppressWarnings("rawtypes")
+    public static List<Schema> filterPolymorphicBaseSchemas(List<Schema> schemas, Function<String, Schema> refResolver) {
+        if (schemas == null || schemas.size() <= 1) {
+            return schemas;
+        }
+        Set<String> allOfParentRefs = new HashSet<>();
+        for (Schema<?> subSchema : schemas) {
+            Schema<?> resolved = subSchema.get$ref() != null ? refResolver.apply(subSchema.get$ref()) : subSchema;
+            allOfParentRefs.addAll(findAllOfParents(resolved));
+        }
+        if (allOfParentRefs.isEmpty()) {
+            return schemas;
+        }
+        List<Schema> filtered = schemas.stream()
+                .filter(subSchema -> subSchema.get$ref() == null
+                        || !allOfParentRefs.contains(getSimpleRefUsingOAT(subSchema.get$ref())))
+                .toList();
+        return filtered.isEmpty() ? schemas : filtered;
     }
 }

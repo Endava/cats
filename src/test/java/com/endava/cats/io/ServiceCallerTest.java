@@ -286,7 +286,7 @@ class ServiceCallerTest {
                 .mutationTarget(RequestTarget.query("limit")).mutationTarget(RequestTarget.body("name")).build());
 
         ArgumentCaptor<Boolean> intact = ArgumentCaptor.forClass(Boolean.class);
-        Mockito.verify(monitor, Mockito.times(8)).record(Mockito.eq("/secure"), Mockito.eq(HttpMethod.GET),
+        Mockito.verify(monitor, Mockito.times(8)).recordOutcome(Mockito.eq("/secure"), Mockito.eq(HttpMethod.GET),
                 Mockito.eq(200), intact.capture());
         Assertions.assertThat(intact.getAllValues()).containsExactly(true, false, false, false, false, false, false, true);
     }

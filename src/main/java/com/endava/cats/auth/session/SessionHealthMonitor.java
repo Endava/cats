@@ -70,7 +70,7 @@ public class SessionHealthMonitor {
      * @param statusCode        HTTP response code
      * @param credentialsIntact true when the request carried the configured credentials unmodified
      */
-    public synchronized void record(String path, HttpMethod method, int statusCode, boolean credentialsIntact) {
+    public synchronized void recordOutcome(String path, HttpMethod method, int statusCode, boolean credentialsIntact) {
         if (!credentialsIntact || method == null) {
             return;
         }
