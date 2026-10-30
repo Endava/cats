@@ -40,7 +40,7 @@ class QueryParamsCaseLinterTest {
             "address_line_1,SNAKE", "q,CAMEL", "ISO_8601,UPPER_UNDERSCORE", "iso_8601,LOWER_UNDERSCORE"})
     void shouldMatchQueryParamsNamingStandards(String queryParam, NamingArguments.Naming naming) {
         ReflectionTestUtils.setField(namingArguments, "queryParamsNaming", naming);
-        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData(queryParam, "200");
+        FuzzingData data = ContractFuzzerDataUtilForTesting.prepareFuzzingData(queryParam, "200");
         data.getQueryParams().add(queryParam);
 
         queryParamsCaseLinterFuzzer.fuzz(data);
@@ -52,7 +52,7 @@ class QueryParamsCaseLinterTest {
     @CsvSource({"first-payload,SNAKE", "SecondPayload_2,PASCAL", "third_payload,KEBAB", "x_rate,HTTP_HEADER"})
     void shouldNotMatchQueryParamsNamingStandards(String queryParam, NamingArguments.Naming naming) {
         ReflectionTestUtils.setField(namingArguments, "queryParamsNaming", naming);
-        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData(queryParam, "200");
+        FuzzingData data = ContractFuzzerDataUtilForTesting.prepareFuzzingData(queryParam, "200");
         data.getQueryParams().add(queryParam);
 
         queryParamsCaseLinterFuzzer.fuzz(data);

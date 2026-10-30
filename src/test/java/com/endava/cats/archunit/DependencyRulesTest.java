@@ -144,7 +144,6 @@ class DependencyRulesTest {
     static final ArchRule testClassesAnnotatedWithQuarkusTest = classes()
             .that().haveSimpleNameEndingWith("Test")
             .and().haveSimpleNameNotContaining("DependencyRulesTest")
-            .and().haveSimpleNameNotContaining("ContractFuzzerDataUtilForTest")
             .should().beAnnotatedWith(QuarkusTest.class);
 
 }

@@ -8,7 +8,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponses;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,63 +17,129 @@ import org.mockito.Mockito;
 import java.util.Map;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 @QuarkusTest
 class PathNounsLinterTest {
-
-    private TestCaseListener testCaseListener;
-    private PathNounsLinter pathNounsLinterFuzzer;
+    private TestCaseListener listener;
+    private PathNounsLinter linter;
 
     @BeforeEach
     void setup() {
-        testCaseListener = Mockito.mock(TestCaseListener.class);
+        listener = Mockito.mock(TestCaseListener.class);
         Mockito.doAnswer(invocation -> {
-            Runnable testLogic = invocation.getArgument(2);
-            testLogic.run();
+            invocation.<Runnable>getArgument(2).run();
             return null;
-        }).when(testCaseListener).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-        pathNounsLinterFuzzer = new PathNounsLinter(testCaseListener);
+        }).when(listener).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        linter = new PathNounsLinter(listener);
     }
 
     @ParameterizedTest
-    @CsvSource({"/users", "/users/cancel", "/users/{userId}/posts", "/users/{userId}/posts/cancel", "/admins/processes", "/users/{userId}/addresses"})
-    void shouldMatchNounsNamingStandards(String path) {
-        PathItem pathItem = new PathItem();
-        Operation operation = new Operation();
-        operation.setResponses(new ApiResponses());
-        pathItem.setPost(operation);
-
-        FuzzingData data = FuzzingData.builder().path(path).method(HttpMethod.POST).reqSchema(new Schema().$ref("Cats"))
-                .schemaMap(Map.of("Cats", new Schema().$ref("Cats"))).pathItem(pathItem).headers(Set.of()).reqSchemaName("Cats").build();
-        pathNounsLinterFuzzer.fuzz(data);
-
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path elements use nouns to describe resources."));
+    @CsvSource({
+            "GET, /users",
+            "POST, /reports",
+            "GET, /reports/{reportId}",
+            "GET, /reports/{reportId}/executions",
+            "POST, /reports/schedule",
+            "POST, /reports/batch",
+            "POST, /reports/{reportId}/cancel",
+            "POST, /tickets/{ticketId}/feedback/submit",
+            "GET, /subscriptions/validate",
+            "POST, /subscriptions/validate",
+            "GET, /reports/name-check",
+            "GET, /branding/resolved-configuration",
+            "GET, /branding/effective-configuration",
+            "GET, /branding/default-configuration",
+            "GET, /tickets/{ticketId}/evidence/uploads",
+            "POST, /tickets/{ticketId}/evidence/uploads",
+            "GET, /admin/permissions",
+            "POST, /admin/caches/rebuild",
+            "GET, /api/internal/v1/reports",
+            "GET, /users/current-user",
+            "GET, /users/me",
+            "GET, /users/self/roles",
+            "GET, /subscriptions/current-subscription",
+            "GET, /reports/{reportId}/download-token",
+            "GET, /reports/{reportId}/downloadToken",
+            "GET, /reports/{reportId}/download_token",
+            "GET, /reports/{reportId}/download-tokens",
+            "GET, /assessments/summary",
+            "GET, /people",
+            "GET, /children",
+            "GET, /reports/{reportId}/csv",
+            "GET, /healthcheck",
+            "PATCH, /tickets/{ticketId}/reference-link",
+            "PATCH, /tickets/{ticketId}/document-link",
+            "GET, /api/customers/{id}/shipping-address",
+            "POST, /orders/{orderId}/delivery-attempt-result",
+            "POST, /orders/{orderId}/inspection-method-result",
+            "GET, /patch-notes",
+            "GET, /posts/{postId}/post-comments",
+            "POST, /credentials/{id}/revoke"
+    })
+    void shouldAcceptResourceGrammar(HttpMethod method, String path) {
+        linter.fuzz(data(method, path));
+        Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.any(),
+                Mockito.eq("Path segments use resource nouns and well-formed custom operations."));
+        Mockito.verify(listener, Mockito.never()).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
+        Mockito.verify(listener, Mockito.never()).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
     }
 
     @ParameterizedTest
-    @CsvSource({"/findById", "/executeTask", "/addUser", "/users/addUser", "/tasks/cancelTask"})
-    void shouldNotMatchNounsNamingStandards(String path) {
+    @CsvSource({
+            "GET, /organizations/resolve/{externalOrgId}, resolve",
+            "POST, /reports/schedule/{scheduleId}, schedule",
+            "GET, /branding/resolved, resolved",
+            "GET, /branding/configuration-resolved, configuration-resolved",
+            "GET, /branding/effective, effective",
+            "GET, /reports/{id}/cancel, cancel",
+            "PUT, /reports/{id}/cancel, cancel",
+            "DELETE, /reports/{id}/cancel, cancel",
+            "POST, /reports/create-token, create-token",
+            "POST, /reports/get-report, get-report",
+            "POST, /create-report, create-report",
+            "POST, /reports/update-report, update-report",
+            "GET, /findById, findById",
+            "POST, /addUser, addUser",
+            "POST, /executeTask, executeTask",
+            "POST, /reports/cancel/executions, cancel"
+    })
+    void shouldRejectNamingViolations(HttpMethod method, String path, String invalid) {
+        linter.fuzz(data(method, path));
+        Mockito.verify(listener).reportResultError(Mockito.any(), Mockito.any(),
+                Mockito.eq("Path resource or operation naming violations"),
+                Mockito.eq("The following path segments violate resource or operation naming rules: {}"),
+                Mockito.contains(invalid));
+    }
+
+    @Test
+    void shouldRunOnlyOnceForTheSamePathAndMethod() {
+        FuzzingData data = data(HttpMethod.GET, "/reports");
+        linter.fuzz(data);
+        linter.fuzz(data);
+        Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.anyString());
+    }
+
+    @Test
+    void shouldDescribeTheLinter() {
+        assertThat(linter.toString()).isEqualTo("PathNounsLinter");
+        assertThat(linter.description()).isEqualTo("verifies that path segments use resource nouns and that custom operations "
+                + "are verb-only, terminal, nested under a resource, and invoked with a matching HTTP method");
+    }
+
+    private static FuzzingData data(HttpMethod method, String path) {
         PathItem pathItem = new PathItem();
-        Operation operation = new Operation();
-        operation.setResponses(new ApiResponses());
-        pathItem.setPost(operation);
-
-        FuzzingData data = FuzzingData.builder().path(path).method(HttpMethod.POST).reqSchema(new Schema().$ref("Cats"))
-                .schemaMap(Map.of("Cats", new Schema().$ref("Cats"))).pathItem(pathItem).headers(Set.of()).reqSchemaName("Cats").build();
-        pathNounsLinterFuzzer.fuzz(data);
-
-        Mockito.verify(testCaseListener, Mockito.times(1))
-                .reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Path elements not nouns"),
-                        Mockito.eq("The following path elements are not nouns: {}"), Mockito.contains(path.substring(path.lastIndexOf("/") + 1)));
-    }
-
-
-    @Test
-    void shouldReturnSimpleClassNameForToString() {
-        Assertions.assertThat(pathNounsLinterFuzzer).hasToString(pathNounsLinterFuzzer.getClass().getSimpleName());
+        pathItem.operation(PathItem.HttpMethod.valueOf(method.name()), new Operation().responses(new ApiResponses()));
+        return FuzzingData.builder().path(path).method(method).reqSchema(new Schema().$ref("Cats"))
+                .schemaMap(Map.of("Cats", new Schema().$ref("Cats"))).pathItem(pathItem)
+                .headers(Set.of()).reqSchemaName("Cats").build();
     }
 
     @Test
-    void shouldReturnMeaningfulDescription() {
-        Assertions.assertThat(pathNounsLinterFuzzer.description()).isEqualTo("verifies that path elements use nouns to describe resources");
+    void shouldEvaluateDifferentMethodsIndependently() {
+        linter.fuzz(data(HttpMethod.POST, "/reports/{id}/cancel"));
+        linter.fuzz(data(HttpMethod.GET, "/reports/{id}/cancel"));
+        Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.anyString());
+        Mockito.verify(listener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.contains("cancel"));
     }
 }

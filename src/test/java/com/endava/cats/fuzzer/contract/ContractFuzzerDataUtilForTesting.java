@@ -7,7 +7,6 @@ import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 
@@ -16,7 +15,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-class ContractFuzzerDataUtilForTest {
+class ContractFuzzerDataUtilForTesting {
 
     public static FuzzingData prepareFuzzingData(String schemaName, String onePropName, HttpMethod method, String... responseCodes) {
         PathItem pathItem = new PathItem();
@@ -30,11 +29,11 @@ class ContractFuzzerDataUtilForTest {
         }
         ApiResponse secondApiResponse = new ApiResponse();
         Content content = new Content();
-        content.addMediaType("application/json", new MediaType().schema(new StringSchema()));
+        content.addMediaType("application/json", new MediaType().schema(new Schema<String>().type("string")));
         secondApiResponse.content(content);
         apiResponses.addApiResponse("500", secondApiResponse);
-        StringSchema firstName = new StringSchema();
-        StringSchema lastName = new StringSchema();
+        Schema<String> firstName = new Schema<String>().type("string");
+        Schema<String> lastName = new Schema<String>().type("string");
         Map<String, Schema> properties = Map.of("firstName", firstName, onePropName, lastName);
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put(schemaName, new Schema().$ref(schemaName).properties(properties));

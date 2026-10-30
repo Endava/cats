@@ -23,6 +23,11 @@ public abstract class LinterVocabulary {
             "ping", "info", "version", "config", "configuration", "metadata", "status"
     );
 
+    public static final Set<String> UNCOUNTABLE_SEGMENTS = Set.of(
+            "evidence", "information", "metadata", "data", "branding", "feedback",
+            "equipment", "traffic", "software", "hardware", "advice"
+    );
+
     private LinterVocabulary() {
     }
 

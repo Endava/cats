@@ -3,6 +3,7 @@ package com.endava.cats.report;
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.execution.ExecutionSummaryProvider;
@@ -39,6 +40,7 @@ import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import lombok.Builder;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -110,6 +112,8 @@ public class TestCaseListener {
     private final ExecutionStopController executionStopController;
     private final ExecutionSummaryProvider executionSummaryProvider;
     private final ResponseSchemaValidator responseSchemaValidator;
+    @Inject
+    NamingArguments namingArguments;
     private boolean reportingInitialized;
     private Consumer<String> beforeDeleteTestCallback;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
@@ -830,6 +834,8 @@ public class TestCaseListener {
 
     /**
      * Reports a warning result for a test using the provided logger, reason, message, and parameters.
+     * When {@code --strict} is enabled in {@link NamingArguments}, warnings are escalated to errors
+     * (taking precedence over {@code --skipReportingForWarnings}).
      *
      * @param logger  the logger used to log result-related information
      * @param data    the fuzzing data associated with the test
@@ -838,6 +844,10 @@ public class TestCaseListener {
      * @param params  additional parameters to be formatted into the message
      */
     public void reportResultWarn(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
+        if (namingArguments != null && namingArguments.isStrict()) {
+            this.reportResultError(logger, data, reason, message, params);
+            return;
+        }
         setResultReason(reason);
         this.reportWarn(logger, message, params);
     }

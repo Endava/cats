@@ -2,6 +2,7 @@ package com.endava.cats.report;
 
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
@@ -1630,5 +1631,23 @@ class TestCaseListenerTest {
         Assertions.assertThat(result).isFalse();
         Mockito.verify(logger).skip("Skipping test - expected response code {} does not match {} (--{}Only enabled)",
                 ResponseCodeFamilyPredefined.FIVEXX.allowedResponseCodes(), "4XX", "negative");
+    }
+
+    @Test
+    void shouldEscalateWarningToErrorWhenStrictModeIsEnabled() {
+        NamingArguments namingArgs = Mockito.mock(NamingArguments.class);
+        Mockito.when(namingArgs.isStrict()).thenReturn(true);
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        ReflectionTestUtils.setField(testCaseListener, "namingArguments", namingArgs);
+
+        try {
+            prepareTestCaseListenerSimpleSetup(CatsResponse.builder().build(), () ->
+                    testCaseListener.reportResultWarn(logger, FuzzingData.builder().build(), "Strict warning reason", "Warning message"));
+
+            Mockito.verify(executionStatisticsListener).increaseErrors(Mockito.any());
+            Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+        } finally {
+            ReflectionTestUtils.setField(testCaseListener, "namingArguments", null);
+        }
     }
 }

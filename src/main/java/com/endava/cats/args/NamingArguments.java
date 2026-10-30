@@ -104,12 +104,14 @@ public class NamingArguments {
     private static Map<String, List<String>> defaultVerbMappings() {
         return Map.of(
                 "get", List.of("get", "fetch", "list", "retrieve", "find", "read", "query", "search", "load", "use", "obtain", "acquire",
-                        "check", "verify", "validate", "count", "resolve", "export", "download", "preview", "stream", "is", "has", "can",
-                        "calculate", "compute", "inspect", "view", "browse", "ping"),
+                        "check", "verify", "validate", "count", "resolve", "lookup", "export", "download", "preview", "stream", "is", "has", "can",
+                        "calculate", "compute", "estimate", "inspect", "view", "browse", "ping"),
                 "post", List.of("create", "add", "post", "insert", "push", "submit", "send", "upsert", "save", "do", "execute", "trigger", "perform",
-                        "process", "invoke", "call", "start", "initiate", "check", "verify", "validate", "authenticate", "login", "logout",
-                        "authorize", "register", "approve", "reject", "cancel", "export", "import", "upload", "download", "generate", "sync",
-                        "refresh", "reset", "clone", "copy", "archive", "restore", "notify", "publish", "subscribe", "calculate", "compute"),
+                        "process", "invoke", "call", "start", "stop", "initiate", "initialize", "check", "verify", "validate", "authenticate", "login", "logout",
+                        "authorize", "register", "approve", "accept", "reject", "cancel", "confirm", "revoke", "rotate",
+                        "schedule", "batch", "rebuild", "configure", "activate", "deactivate", "enable", "disable",
+                        "complete", "export", "import", "upload", "download", "generate", "sync", "refresh", "reset", "retry", "clone", "copy", "archive",
+                        "restore", "notify", "publish", "subscribe", "calculate", "compute", "stream"),
                 "put", List.of("update", "replace", "put", "modify", "set", "change", "alter", "upsert", "adjust", "reconfigure", "rebuild",
                         "recreate", "refresh", "reinitialize", "configure", "assign", "enable", "disable", "activate", "deactivate", "approve",
                         "reject", "archive", "restore"),
@@ -118,7 +120,7 @@ public class NamingArguments {
                 "patch", List.of("patch", "modify", "update", "alter", "change", "set", "upsert", "adjust", "edit", "revise", "tweak",
                         "refine", "improve", "configure", "enable", "disable", "activate", "deactivate", "approve", "reject", "cancel",
                         "archive", "restore"),
-                "head", List.of("head", "check", "verify", "ping", "exists", "has", "is", "get", "fetch", "inspect"),
+                "head", List.of("head", "check", "verify", "validate", "ping", "exists", "has", "is", "get", "fetch", "inspect"),
                 "trace", List.of("trace", "debug", "diagnose", "inspect")
         );
     }

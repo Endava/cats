@@ -44,7 +44,7 @@ class JsonObjectsCaseLinterTest {
             "inline_response_200,KEBAB", "CatsGetSchemaAbc,SNAKE", "OAuth2Token,PASCAL"})
     void shouldMatchRestNamingStandards(String schemaName, NamingArguments.Naming naming) {
         ReflectionTestUtils.setField(namingArguments, "jsonObjectsNaming", naming);
-        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData(schemaName, "200");
+        FuzzingData data = ContractFuzzerDataUtilForTesting.prepareFuzzingData(schemaName, "200");
 
         jsonObjectsCaseLinterFuzzer.fuzz(data);
 
@@ -55,7 +55,7 @@ class JsonObjectsCaseLinterTest {
     @ParameterizedTest
     @CsvSource({"first_Payload-test", "secondpayload_tesAaa", "ALLCAPS"})
     void shouldReportErrorWhenJsonObjectsNotMatchingCamelCase(String schemaName) {
-        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData(schemaName, "200");
+        FuzzingData data = ContractFuzzerDataUtilForTesting.prepareFuzzingData(schemaName, "200");
 
         jsonObjectsCaseLinterFuzzer.fuzz(data);
 
@@ -66,7 +66,7 @@ class JsonObjectsCaseLinterTest {
 
     @Test
     void shouldReportErrorWhenPropertiesNotMatchNamingConvention() {
-        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData("FirstPayload", "last_name", "200");
+        FuzzingData data = ContractFuzzerDataUtilForTesting.prepareFuzzingData("FirstPayload", "last_name", "200");
 
         jsonObjectsCaseLinterFuzzer.fuzz(data);
 

@@ -73,6 +73,42 @@ class HttpMethodConsistencyLinterTest {
     }
 
     @Test
+    void shouldPreserveUncountableCollectionPathsInMethodConsistencyCheck() {
+        OpenAPI openAPI = new OpenAPI();
+        Paths paths = new Paths();
+        paths.addPathItem("/evidence", new PathItem().post(new Operation()).get(new Operation()));
+        paths.addPathItem("/evidence/{evidenceId}", new PathItem()
+                .get(new Operation())
+                .put(new Operation())
+                .delete(new Operation()));
+        openAPI.setPaths(paths);
+
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).pathItem(paths.get("/evidence")).build();
+        httpMethodConsistencyLinter.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(),
+                Mockito.eq("All resource groups have consistent REST HTTP methods"));
+    }
+
+    @Test
+    void shouldPreserveVerbPrefixedCompoundCollectionsInMethodConsistencyCheck() {
+        OpenAPI openAPI = new OpenAPI();
+        Paths paths = new Paths();
+        paths.addPathItem("/refund-requests", new PathItem().post(new Operation()).get(new Operation()));
+        paths.addPathItem("/refund-requests/{id}", new PathItem()
+                .get(new Operation())
+                .put(new Operation())
+                .delete(new Operation()));
+        openAPI.setPaths(paths);
+
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).pathItem(paths.get("/refund-requests")).build();
+        httpMethodConsistencyLinter.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(),
+                Mockito.eq("All resource groups have consistent REST HTTP methods"));
+    }
+
+    @Test
     void shouldReturnSimpleClassNameForToString() {
         Assertions.assertThat(httpMethodConsistencyLinter).hasToString(httpMethodConsistencyLinter.getClass().getSimpleName());
     }
