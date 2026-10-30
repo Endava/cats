@@ -14,7 +14,6 @@ import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.WordUtils;
-import com.endava.cats.util.WordUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
