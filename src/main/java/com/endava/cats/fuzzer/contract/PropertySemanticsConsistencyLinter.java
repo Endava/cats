@@ -74,7 +74,7 @@ public class PropertySemanticsConsistencyLinter extends BaseLinter {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private static void inspectSchemaProperties(SchemaLocation loc, Schema<?> schema,
                                                 Map<String, List<String>> timestampFormats,
                                                 List<String> violations) {
@@ -82,27 +82,30 @@ public class PropertySemanticsConsistencyLinter extends BaseLinter {
             return;
         }
         Set<String> seenProps = new LinkedHashSet<>();
-        for (Map.Entry<String, Schema> entry : ((Map<String, Schema>) schema.getProperties()).entrySet()) {
+        for (Map.Entry<String, Schema> entry : schema.getProperties().entrySet()) {
             String propName = entry.getKey();
             Schema<?> propSchema = entry.getValue();
-            if (propSchema == null || !seenProps.add(propName)) {
-                continue;
+            if (propSchema != null && seenProps.add(propName)) {
+                inspectProperty(loc.fqn() + "." + propName, propName, propSchema, timestampFormats, violations);
             }
-            String propLocation = loc.fqn() + "." + propName;
-            String normalized = WordUtils.normalizeAlphaNumeric(propName);
+        }
+    }
 
-            String primaryType = CatsModelUtils.getPrimaryType(propSchema);
-            if (MONETARY_FIELD_NAMES.contains(normalized) && isFloatingPointMonetarySchema(propSchema)) {
-                violations.add("Monetary property '%s' uses floating-point type '%s'%s; prefer integer minor units or string decimal"
-                        .formatted(propLocation, primaryType,
-                                StringUtils.isNotBlank(propSchema.getFormat()) ? " (" + propSchema.getFormat() + ")" : ""));
-            }
+    private static void inspectProperty(String propLocation, String propName, Schema<?> propSchema,
+                                        Map<String, List<String>> timestampFormats, List<String> violations) {
+        String normalized = WordUtils.normalizeAlphaNumeric(propName);
 
-            if (WordUtils.isAuditTimestampField(propName) && StringUtils.isNotBlank(primaryType)) {
-                String sig = primaryType.toLowerCase(Locale.ROOT)
-                        + (StringUtils.isNotBlank(propSchema.getFormat()) ? ":" + propSchema.getFormat().toLowerCase(Locale.ROOT) : "");
-                timestampFormats.computeIfAbsent(sig, _ -> new ArrayList<>()).add(propLocation);
-            }
+        String primaryType = CatsModelUtils.getPrimaryType(propSchema);
+        if (MONETARY_FIELD_NAMES.contains(normalized) && isFloatingPointMonetarySchema(propSchema)) {
+            violations.add("Monetary property '%s' uses floating-point type '%s'%s; prefer integer minor units or string decimal"
+                    .formatted(propLocation, primaryType,
+                            StringUtils.isNotBlank(propSchema.getFormat()) ? " (" + propSchema.getFormat() + ")" : ""));
+        }
+
+        if (WordUtils.isAuditTimestampField(propName) && StringUtils.isNotBlank(primaryType)) {
+            String sig = primaryType.toLowerCase(Locale.ROOT)
+                    + (StringUtils.isNotBlank(propSchema.getFormat()) ? ":" + propSchema.getFormat().toLowerCase(Locale.ROOT) : "");
+            timestampFormats.computeIfAbsent(sig, _ -> new ArrayList<>()).add(propLocation);
         }
     }
 

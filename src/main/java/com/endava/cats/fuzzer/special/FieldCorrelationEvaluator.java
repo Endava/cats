@@ -56,27 +56,39 @@ public final class FieldCorrelationEvaluator {
         }
         JsonElement parsedRoot = JsonUtils.parseAsJsonElement(jsonPayload);
         if (parsedRoot != null && parsedRoot.isJsonArray()) {
-            JsonArray arr = parsedRoot.getAsJsonArray();
-            JsonArray updatedArr = new JsonArray(arr.size());
-            for (JsonElement el : arr) {
-                if (el.isJsonObject()) {
-                    String updatedEl = applyRequestCorrelations(contractPath, el.toString(), rules, variables, protectedFields);
-                    updatedArr.add(JsonParser.parseString(updatedEl));
-                } else {
-                    updatedArr.add(el);
-                }
-            }
-            return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(updatedArr);
+            return applyRequestCorrelationsToArray(contractPath, parsedRoot.getAsJsonArray(), rules, variables, protectedFields);
         }
         String updated = jsonPayload;
         for (FieldCorrelationRule rule : rules) {
-            if (!matchesPathPattern(contractPath, rule.paths())) {
-                continue;
+            if (matchesPathPattern(contractPath, rule.paths())) {
+                updated = applyRuleToPayload(updated, rule, variables, protectedFields);
             }
-            for (FieldCorrelationRule expandedRule : expandWildcardArrayRule(updated, rule)) {
-                if (evaluateBooleanExpression(expandedRule.when(), updated, null, null, variables)) {
-                    updated = applyRuleMutations(updated, expandedRule, variables, protectedFields);
-                }
+        }
+        return updated;
+    }
+
+    private static String applyRequestCorrelationsToArray(String contractPath, JsonArray arr,
+                                                          List<FieldCorrelationRule> rules,
+                                                          Map<String, String> variables,
+                                                          Set<String> protectedFields) {
+        JsonArray updatedArr = new JsonArray(arr.size());
+        for (JsonElement el : arr) {
+            if (el.isJsonObject()) {
+                String updatedEl = applyRequestCorrelations(contractPath, el.toString(), rules, variables, protectedFields);
+                updatedArr.add(JsonParser.parseString(updatedEl));
+            } else {
+                updatedArr.add(el);
+            }
+        }
+        return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(updatedArr);
+    }
+
+    private static String applyRuleToPayload(String payload, FieldCorrelationRule rule,
+                                             Map<String, String> variables, Set<String> protectedFields) {
+        String updated = payload;
+        for (FieldCorrelationRule expandedRule : expandWildcardArrayRule(payload, rule)) {
+            if (evaluateBooleanExpression(expandedRule.when(), updated, null, null, variables)) {
+                updated = applyRuleMutations(updated, expandedRule, variables, protectedFields);
             }
         }
         return updated;

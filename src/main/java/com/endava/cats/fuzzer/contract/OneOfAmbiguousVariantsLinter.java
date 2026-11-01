@@ -111,24 +111,6 @@ public class OneOfAmbiguousVariantsLinter extends BaseLinter {
                 : "oneOf[%d]".formatted(index);
     }
 
-    @SuppressWarnings("rawtypes")
-    private static boolean areCompatible(Schema<?> subsumingProperty, Schema<?> subsumedProperty, Map<String, Schema> componentSchemas) {
-        if (subsumingProperty == null || subsumedProperty == null) {
-            return false;
-        }
-        if (subsumingProperty.get$ref() != null && subsumingProperty.get$ref().equals(subsumedProperty.get$ref())) {
-            return true;
-        }
-        Schema<?> subsuming = CatsModelUtils.resolveSchema(subsumingProperty, componentSchemas);
-        Schema<?> subsumed = CatsModelUtils.resolveSchema(subsumedProperty, componentSchemas);
-        if (CatsModelUtils.isFreeFormSchema(subsuming)) {
-            return true;
-        }
-        String subsumingType = hasValueConstraints(subsuming) || isStructural(subsuming) ? null : singlePrimitiveType(subsuming);
-        String subsumedType = isStructural(subsumed) ? null : singlePrimitiveType(subsumed);
-        return isTypeAccepted(subsumingType, subsumedType);
-    }
-
     private static boolean isTypeAccepted(String subsumingType, String subsumedType) {
         return subsumingType != null && subsumedType != null
                 && (subsumingType.equals(subsumedType) || (NUMBER.equals(subsumingType) && INTEGER.equals(subsumedType)));
@@ -160,14 +142,6 @@ public class OneOfAmbiguousVariantsLinter extends BaseLinter {
                 || schema.getExclusiveMinimumValue() != null || schema.getExclusiveMaximumValue() != null
                 || schema.getMinLength() != null || schema.getMaxLength() != null || schema.getMultipleOf() != null
                 || schema.getMinItems() != null || schema.getMaxItems() != null || schema.getUniqueItems() != null;
-    }
-
-    private static boolean hasUnsupportedKeywords(Schema<?> schema) {
-        return schema.getDiscriminator() != null || !CatsUtil.isEmpty(schema.getOneOf()) || !CatsUtil.isEmpty(schema.getAnyOf())
-                || schema.getNot() != null || schema.getIf() != null || !CatsUtil.isEmpty(schema.getPatternProperties())
-                || !CatsUtil.isEmpty(schema.getDependentRequired()) || !CatsUtil.isEmpty(schema.getDependentSchemas())
-                || schema.getPropertyNames() != null || schema.getUnevaluatedProperties() != null
-                || schema.getMinProperties() != null || schema.getMaxProperties() != null;
     }
 
     /**
@@ -237,6 +211,23 @@ public class OneOfAmbiguousVariantsLinter extends BaseLinter {
             return instance.toString();
         }
 
+        private static boolean areCompatible(Schema<?> subsumingProperty, Schema<?> subsumedProperty, Map<String, Schema> componentSchemas) {
+            if (subsumingProperty == null || subsumedProperty == null) {
+                return false;
+            }
+            if (subsumingProperty.get$ref() != null && subsumingProperty.get$ref().equals(subsumedProperty.get$ref())) {
+                return true;
+            }
+            Schema<?> subsuming = CatsModelUtils.resolveSchema(subsumingProperty, componentSchemas);
+            Schema<?> subsumed = CatsModelUtils.resolveSchema(subsumedProperty, componentSchemas);
+            if (CatsModelUtils.isFreeFormSchema(subsuming)) {
+                return true;
+            }
+            String subsumingType = hasValueConstraints(subsuming) || isStructural(subsuming) ? null : singlePrimitiveType(subsuming);
+            String subsumedType = isStructural(subsumed) ? null : singlePrimitiveType(subsumed);
+            return isTypeAccepted(subsumingType, subsumedType);
+        }
+
         private static JsonNode sampleValue(String type) {
             JsonNodeFactory factory = JsonNodeFactory.instance;
             return switch (type == null ? OBJECT : type) {
@@ -258,7 +249,6 @@ public class OneOfAmbiguousVariantsLinter extends BaseLinter {
         private boolean closed;
         private boolean constrained;
 
-        @SuppressWarnings("unchecked")
         boolean merge(Schema<?> raw, Map<String, Schema> componentSchemas, Set<Schema<?>> visited, int depth) {
             Schema<?> schema = CatsModelUtils.resolveSchema(raw, componentSchemas);
             if (schema == null || schema.get$ref() != null || depth > MAX_DEPTH || !visited.add(schema) || hasUnsupportedKeywords(schema)) {
@@ -268,7 +258,7 @@ public class OneOfAmbiguousVariantsLinter extends BaseLinter {
                 return false;
             }
             if (schema.getProperties() != null) {
-                ((Map<String, Schema>) schema.getProperties()).forEach(properties::putIfAbsent);
+                schema.getProperties().forEach(properties::putIfAbsent);
             }
             if (schema.getRequired() != null) {
                 required.addAll(schema.getRequired());
@@ -280,6 +270,14 @@ public class OneOfAmbiguousVariantsLinter extends BaseLinter {
                 }
             }
             return true;
+        }
+
+        private static boolean hasUnsupportedKeywords(Schema<?> schema) {
+            return schema.getDiscriminator() != null || !CatsUtil.isEmpty(schema.getOneOf()) || !CatsUtil.isEmpty(schema.getAnyOf())
+                    || schema.getNot() != null || schema.getIf() != null || !CatsUtil.isEmpty(schema.getPatternProperties())
+                    || !CatsUtil.isEmpty(schema.getDependentRequired()) || !CatsUtil.isEmpty(schema.getDependentSchemas())
+                    || schema.getPropertyNames() != null || schema.getUnevaluatedProperties() != null
+                    || schema.getMinProperties() != null || schema.getMaxProperties() != null;
         }
 
         private boolean mergeTypes(Set<String> schemaTypes) {

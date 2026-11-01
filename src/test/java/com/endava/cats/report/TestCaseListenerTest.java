@@ -1462,8 +1462,7 @@ class TestCaseListenerTest {
         }
 
         String output = captured.toString();
-        Assertions.assertThat(output).contains("E 1, W 2, S 5");
-        Assertions.assertThat(output).contains("E 2, W 1, S 6");
+        Assertions.assertThat(output).contains("E 1, W 2, S 5").contains("E 2, W 1, S 6");
     }
 
     private CatsTestCaseSummary assertSchemaMismatch(Schema<?> schema, String generatedSample, String responseBody) {

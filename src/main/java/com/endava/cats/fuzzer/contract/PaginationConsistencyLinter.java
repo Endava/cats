@@ -76,22 +76,9 @@ public class PaginationConsistencyLinter extends BaseLinter {
         List<String> violations = new ArrayList<>();
 
         for (Map.Entry<String, PathItem> entry : openAPI.getPaths().entrySet()) {
-            String path = entry.getKey();
             PathItem pathItem = entry.getValue();
-            if (pathItem == null || pathItem.getGet() == null) {
-                continue;
-            }
-            Operation getOp = pathItem.getGet();
-            Set<String> paginationParams = extractPaginationQueryParams(pathItem, getOp, openAPI);
-            if (paginationParams.isEmpty()) {
-                continue;
-            }
-
-            String signature = String.join(",", paginationParams);
-            paramSignatureToEndpoints.computeIfAbsent(signature, _ -> new ArrayList<>()).add("GET " + path);
-
-            if (returnsBareArrayWithoutPaginationHeaders(getOp, openAPI, componentSchemas)) {
-                violations.add("GET %s declares pagination parameters %s but its 2xx response is a bare array without pagination metadata".formatted(path, paginationParams));
+            if (pathItem != null && pathItem.getGet() != null) {
+                analyzePaginatedGet(entry.getKey(), pathItem, openAPI, componentSchemas, paramSignatureToEndpoints, violations);
             }
         }
 
@@ -103,6 +90,23 @@ public class PaginationConsistencyLinter extends BaseLinter {
         }
 
         return violations;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void analyzePaginatedGet(String path, PathItem pathItem, OpenAPI openAPI, Map<String, Schema> componentSchemas,
+                                            Map<String, List<String>> paramSignatureToEndpoints, List<String> violations) {
+        Operation getOp = pathItem.getGet();
+        Set<String> paginationParams = extractPaginationQueryParams(pathItem, getOp, openAPI);
+        if (paginationParams.isEmpty()) {
+            return;
+        }
+
+        String signature = String.join(",", paginationParams);
+        paramSignatureToEndpoints.computeIfAbsent(signature, _ -> new ArrayList<>()).add("GET " + path);
+
+        if (returnsBareArrayWithoutPaginationHeaders(getOp, openAPI, componentSchemas)) {
+            violations.add("GET %s declares pagination parameters %s but its 2xx response is a bare array without pagination metadata".formatted(path, paginationParams));
+        }
     }
 
     private static Set<String> extractPaginationQueryParams(PathItem pathItem, Operation getOp, OpenAPI openAPI) {
@@ -125,23 +129,33 @@ public class PaginationConsistencyLinter extends BaseLinter {
             return false;
         }
         for (Map.Entry<String, ApiResponse> entry : getOp.getResponses().entrySet()) {
-            if (entry.getKey() == null || !entry.getKey().startsWith("2")) {
-                continue;
-            }
-            ApiResponse resolvedResp = OpenApiUtils.resolveApiResponse(entry.getValue(), openAPI);
-            if (resolvedResp == null || resolvedResp.getContent() == null) {
-                continue;
-            }
-            if (hasPaginationHeaders(resolvedResp)) {
-                return false;
-            }
-            for (MediaType media : resolvedResp.getContent().values()) {
-                if (media != null && media.getSchema() != null) {
-                    Schema<?> resolvedSchema = CatsModelUtils.resolveSchema(media.getSchema(), componentSchemas);
-                    if (CatsModelUtils.isArraySchema(resolvedSchema)) {
-                        return true;
-                    }
+            ApiResponse resolvedResp = resolveSuccessResponseWithContent(entry.getKey(), entry.getValue(), openAPI);
+            if (resolvedResp != null) {
+                if (hasPaginationHeaders(resolvedResp)) {
+                    return false;
                 }
+                if (hasArrayMediaSchema(resolvedResp, componentSchemas)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static ApiResponse resolveSuccessResponseWithContent(String status, ApiResponse response, OpenAPI openAPI) {
+        if (status == null || !status.startsWith("2")) {
+            return null;
+        }
+        ApiResponse resolvedResp = OpenApiUtils.resolveApiResponse(response, openAPI);
+        return resolvedResp == null || resolvedResp.getContent() == null ? null : resolvedResp;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static boolean hasArrayMediaSchema(ApiResponse response, Map<String, Schema> componentSchemas) {
+        for (MediaType media : response.getContent().values()) {
+            if (media != null && media.getSchema() != null
+                    && CatsModelUtils.isArraySchema(CatsModelUtils.resolveSchema(media.getSchema(), componentSchemas))) {
+                return true;
             }
         }
         return false;

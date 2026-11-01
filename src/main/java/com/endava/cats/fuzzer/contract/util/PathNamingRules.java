@@ -33,9 +33,10 @@ import java.util.stream.Stream;
  * Vocabulary describes grammatical roles, never individual endpoint exceptions.
  */
 public final class PathNamingRules {
-    private static final Pattern VERSION_SEGMENT = Pattern.compile(
-            "^(?:v(?:ersion)?\\d+(?:[._-]\\d+)*(?:(?:[-_])?(?:alpha|beta|rc)\\d*)?|\\d+(?:\\.\\d+)*|\\d{4}-\\d{2}-\\d{2})$",
-            Pattern.CASE_INSENSITIVE);
+    private static final List<Pattern> VERSION_SEGMENT_PATTERNS = List.of(
+            Pattern.compile("v(?:ersion)?\\d+(?:[._-]\\d+)*(?:[-_]?(?:alpha|beta|rc)\\d*)?", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\d+(?:\\.\\d+)*"),
+            Pattern.compile("\\d{4}-\\d{2}-\\d{2}"));
     private static final Set<String> NAMESPACES = Set.of(
             "api", "rest", "bff", "internal", "external", "public", "private", "admin",
             "webhook", "graphql", "oauth", "oauth2", ".well-known");
@@ -204,121 +205,245 @@ public final class PathNamingRules {
     private static Analysis analyze(String path, HttpMethod method, Set<String> contractPaths,
                                     boolean hasCollectionGet) {
         String[] elements = expandColonActions(OpenApiUtils.getPathElements(path));
-        List<Segment> segments = new ArrayList<>();
-        List<String> nounErrors = new ArrayList<>();
-        List<String> pluralErrors = new ArrayList<>();
-        List<String> warnings = new ArrayList<>();
-        boolean namespacePrefix = true;
         SpecPathIndex specIndex = getSpecPathIndex(contractPaths);
-        boolean hasSiblingItemPath = hasSiblingItemPath(path, specIndex);
+        AnalysisContext context = new AnalysisContext(elements, method, specIndex,
+                hasSiblingItemPath(path, specIndex), hasCollectionGet);
+        boolean namespacePrefix = true;
         for (int index = 0; index < elements.length; index++) {
-            String element = elements[index];
-            String lower = element.toLowerCase(Locale.ROOT);
-            if (namespacePrefix && (NAMESPACES.contains(lower) || isVersionSegment(lower))
-                    && !(index + 1 < elements.length && isPathVariableSegment(elements[index + 1]))) {
-                segments.add(new Segment(element, SegmentRole.NAMESPACE));
-                continue;
+            if (namespacePrefix && isNamespacePrefixSegment(elements, index)) {
+                context.addSegment(elements[index], SegmentRole.NAMESPACE);
+            } else {
+                namespacePrefix = false;
+                classifySegment(context, index);
             }
-            namespacePrefix = false;
-            boolean hasPriorResource = segments.stream().anyMatch(s -> s.role() != SegmentRole.NAMESPACE);
-            boolean underWellKnown = index > 0 && ".well-known".equalsIgnoreCase(elements[index - 1]);
-            boolean underOauth = index > 0 && OAUTH_NAMESPACES.contains(elements[index - 1].toLowerCase(Locale.ROOT));
-            boolean isSpecDocument = !hasPriorResource && index == elements.length - 1
-                    && (lower.startsWith("openapi.") || lower.startsWith("swagger."))
-                    && hasFormatSuffixOnSegment(lower);
-            if (underWellKnown || isSpecDocument || (underOauth && OAUTH_STANDARD_ENDPOINTS.contains(lower))) {
-                segments.add(new Segment(element, SegmentRole.SINGLETON));
-                continue;
+        }
+        return context.toAnalysis();
+    }
+
+    private static boolean isNamespacePrefixSegment(String[] elements, int index) {
+        String lower = elements[index].toLowerCase(Locale.ROOT);
+        return (NAMESPACES.contains(lower) || isVersionSegment(lower))
+                && !(index + 1 < elements.length && isPathVariableSegment(elements[index + 1]));
+    }
+
+    private static void classifySegment(AnalysisContext context, int index) {
+        String element = context.elements[index];
+        String lower = element.toLowerCase(Locale.ROOT);
+        boolean hasPriorResource = context.hasPriorResource();
+        boolean underOauth = index > 0 && OAUTH_NAMESPACES.contains(context.elements[index - 1].toLowerCase(Locale.ROOT));
+        if (isStandardSingletonSegment(context, index, lower, hasPriorResource, underOauth)) {
+            context.addSegment(element, SegmentRole.SINGLETON);
+            return;
+        }
+        if (isPathVariableSegment(element) || isIdentitySelector(context.elements, index)) {
+            context.addSegment(element, SegmentRole.IDENTIFIER);
+            return;
+        }
+        if (hasFormatSuffixOnSegment(element)) {
+            context.addSegment(element, SegmentRole.SINGLETON);
+            context.nounErrors.add(element + ": use Accept header content negotiation instead of a file extension on a resource segment");
+            return;
+        }
+        List<String> words = WordUtils.splitWords(element).stream().map(word -> word.toLowerCase(Locale.ROOT)).toList();
+        if (!words.isEmpty()) {
+            classifyWordSegment(context, index, new SegmentFacts(context, index, element, words), hasPriorResource, underOauth);
+        }
+    }
+
+    private static boolean isStandardSingletonSegment(AnalysisContext context, int index, String lower,
+                                                      boolean hasPriorResource, boolean underOauth) {
+        boolean underWellKnown = index > 0 && ".well-known".equalsIgnoreCase(context.elements[index - 1]);
+        boolean isSpecDocument = !hasPriorResource && context.isLast(index)
+                && (lower.startsWith("openapi.") || lower.startsWith("swagger."))
+                && hasFormatSuffixOnSegment(lower);
+        return underWellKnown || isSpecDocument || (underOauth && OAUTH_STANDARD_ENDPOINTS.contains(lower));
+    }
+
+    private static void classifyWordSegment(AnalysisContext context, int index, SegmentFacts facts,
+                                            boolean hasPriorResource, boolean underOauth) {
+        String operation = resolveOperation(facts);
+        if (operation != null) {
+            context.addSegment(facts.element, SegmentRole.OPERATION);
+            String operationError = operationNamingError(context, index, facts, operation, hasPriorResource, underOauth);
+            if (operationError != null) {
+                context.nounErrors.add(operationError);
             }
-            if (isPathVariableSegment(element) || isIdentitySelector(elements, index)) {
-                segments.add(new Segment(element, SegmentRole.IDENTIFIER));
-                continue;
-            }
-            if (hasFormatSuffixOnSegment(element)) {
-                segments.add(new Segment(element, SegmentRole.SINGLETON));
-                nounErrors.add(element + ": use Accept header content negotiation instead of a file extension on a resource segment");
-                continue;
-            }
-            List<String> words = WordUtils.splitWords(element).stream().map(word -> word.toLowerCase(Locale.ROOT)).toList();
-            if (words.isEmpty()) {
-                continue;
-            }
-            String head = words.getLast();
-            boolean hasSeparator = element.contains("-") || element.contains("_");
-            boolean followedByIdentifier = index + 1 < elements.length && isPathVariableSegment(elements[index + 1]);
+            return;
+        }
+        if (MODIFIERS.contains(facts.head)) {
+            context.addSegment(facts.element, SegmentRole.SINGLETON);
+            context.nounErrors.add(facts.element + ": a resource name needs a head noun, for example resolved-configuration");
+            return;
+        }
+        classifyResourceSegment(context, index, facts, hasPriorResource);
+    }
+
+    private static String resolveOperation(SegmentFacts facts) {
+        boolean resourceName = facts.singletonLiteral
+                || facts.homographWithItemPathEvidence
+                || facts.unverifiedHomographCollection
+                || isNounCompound(facts.words, facts.hasSeparator, facts.collectionEvidence, facts.followedByIdentifier);
+        return resourceName ? null : operationWord(facts.words, facts.hasSeparator);
+    }
+
+    private static String operationNamingError(AnalysisContext context, int index, SegmentFacts facts, String operation,
+                                               boolean hasPriorResource, boolean underOauth) {
+        String element = facts.element;
+        boolean isOauthAuthorize = underOauth && "authorize".equals(operation);
+        boolean isVerbLeadingMultiWord = facts.words.size() >= 2 && operation.equals(facts.words.getFirst());
+        if (CRUD_VERBS.contains(operation)) {
+            return element + ": use the HTTP method instead of a CRUD operation in the path";
+        }
+        if (isVerbLeadingMultiWord) {
+            return element + ": use a noun form or resource collection name instead of a verb-object phrase";
+        }
+        if (!context.isLast(index)) {
+            return element + ": operations must be terminal; put operation arguments in query parameters or the request body";
+        }
+        if (!hasPriorResource && !underOauth) {
+            return element + ": place custom operations under a resource or service namespace";
+        }
+        if (isMethodMismatchedWithOperation(context.method, operation, isOauthAuthorize)) {
+            return element + ": use POST for state-changing operations; GET/HEAD are reserved for read operations";
+        }
+        return null;
+    }
+
+    private static boolean isMethodMismatchedWithOperation(HttpMethod method, String operation, boolean isOauthAuthorize) {
+        return method != HttpMethod.POST
+                && !((READ_OPERATIONS.contains(operation) || isOauthAuthorize)
+                && (method == HttpMethod.GET || method == HttpMethod.HEAD));
+    }
+
+    private static void classifyResourceSegment(AnalysisContext context, int index, SegmentFacts facts, boolean hasPriorResource) {
+        String element = facts.element;
+        boolean plural = isPlural(facts.head);
+        if (facts.followedByIdentifier || plural) {
+            context.addSegment(element, SegmentRole.COLLECTION);
+            addCollectionFindings(context, index, facts, plural);
+        } else if (isSingletonResource(context, index, facts, hasPriorResource)) {
+            context.addSegment(element, SegmentRole.SINGLETON);
+        } else if (isUnknownSingularResource(context, index, facts, hasPriorResource)) {
+            context.addSegment(element, SegmentRole.SINGLETON);
+            context.warnings.add(element + ": unknown singular resource or operation; confirm its naming role");
+        } else {
+            context.addSegment(element, SegmentRole.COLLECTION);
+            context.pluralErrors.add(element + ": use a plural collection name or a recognized singleton resource noun");
+        }
+    }
+
+    private static void addCollectionFindings(AnalysisContext context, int index, SegmentFacts facts, boolean plural) {
+        String element = facts.element;
+        if (!plural) {
+            context.pluralErrors.add(element + ": collections selected by an identifier must use a plural noun");
+        } else if (facts.unverifiedHomographCollection) {
+            context.warnings.add(element + ": verb-prefixed collection without item path or list GET; confirm the name");
+        } else if (facts.homographWithItemPathEvidence && !facts.validHomographCompound
+                && shouldReportHomographCollectionWarning(index, context.elements, context.specIndex)) {
+            context.warnings.add(element + ": verb-prefixed collection name; confirm or rename");
+        }
+    }
+
+    private static boolean isSingletonResource(AnalysisContext context, int index, SegmentFacts facts, boolean hasPriorResource) {
+        String head = facts.head;
+        boolean uncountable = UNCOUNTABLE.contains(head);
+        boolean singletonHead = SINGLETON_HEADS.contains(head)
+                || (index > 0 && isPathVariableSegment(context.elements[index - 1]) && ONE_PER_PARENT_SINGLETON_HEADS.contains(head));
+        return uncountable || facts.singletonLiteral || singletonHead || isSingletonUnderInstance(context, index, facts)
+                || (context.isLast(index) && hasPriorResource && REPRESENTATIONS.contains(facts.lower));
+    }
+
+    private static boolean isSingletonUnderInstance(AnalysisContext context, int index, SegmentFacts facts) {
+        if (!context.isLast(index) || context.segments.isEmpty()) {
+            return false;
+        }
+        SegmentRole previousRole = context.segments.getLast().role();
+        return (previousRole == SegmentRole.IDENTIFIER || previousRole == SegmentRole.SINGLETON)
+                && (ONE_PER_PARENT_SINGLETON_HEADS.contains(facts.head) || isNounCompound(facts.words, facts.hasSeparator, false, false));
+    }
+
+    private static boolean isUnknownSingularResource(AnalysisContext context, int index, SegmentFacts facts, boolean hasPriorResource) {
+        boolean repeatsParentNoun = index > 0 && WordUtils.sameNoun(context.elements[index - 1], facts.element);
+        boolean misplacedNamespace = hasPriorResource && NAMESPACES.contains(facts.lower);
+        return context.isLast(index) && hasPriorResource && !repeatsParentNoun && !misplacedNamespace
+                && !REPRESENTATIONS.contains(facts.lower);
+    }
+
+    /**
+     * Mutable state accumulated while classifying the segments of a single path.
+     */
+    private static final class AnalysisContext {
+        private final String[] elements;
+        private final HttpMethod method;
+        private final SpecPathIndex specIndex;
+        private final boolean hasSiblingItemPath;
+        private final boolean hasCollectionGet;
+        private final List<Segment> segments = new ArrayList<>();
+        private final List<String> nounErrors = new ArrayList<>();
+        private final List<String> pluralErrors = new ArrayList<>();
+        private final List<String> warnings = new ArrayList<>();
+
+        private AnalysisContext(String[] elements, HttpMethod method, SpecPathIndex specIndex,
+                                boolean hasSiblingItemPath, boolean hasCollectionGet) {
+            this.elements = elements;
+            this.method = method;
+            this.specIndex = specIndex;
+            this.hasSiblingItemPath = hasSiblingItemPath;
+            this.hasCollectionGet = hasCollectionGet;
+        }
+
+        private void addSegment(String value, SegmentRole role) {
+            segments.add(new Segment(value, role));
+        }
+
+        private boolean hasPriorResource() {
+            return segments.stream().anyMatch(s -> s.role() != SegmentRole.NAMESPACE);
+        }
+
+        private boolean isLast(int index) {
+            return index == elements.length - 1;
+        }
+
+        private Analysis toAnalysis() {
+            return new Analysis(segments, nounErrors, pluralErrors, warnings);
+        }
+    }
+
+    /**
+     * Word-level facts about one path segment that drive its classification.
+     */
+    private static final class SegmentFacts {
+        private final String element;
+        private final String lower;
+        private final List<String> words;
+        private final String head;
+        private final boolean hasSeparator;
+        private final boolean followedByIdentifier;
+        private final boolean collectionEvidence;
+        private final boolean singletonLiteral;
+        private final boolean validHomographCompound;
+        private final boolean homographWithItemPathEvidence;
+        private final boolean unverifiedHomographCollection;
+
+        private SegmentFacts(AnalysisContext context, int index, String element, List<String> words) {
+            this.element = element;
+            this.lower = element.toLowerCase(Locale.ROOT);
+            this.words = words;
+            this.head = words.getLast();
+            this.hasSeparator = element.contains("-") || element.contains("_");
+            this.followedByIdentifier = index + 1 < context.elements.length && isPathVariableSegment(context.elements[index + 1]);
             boolean itemPathEvidence = followedByIdentifier
-                    || (index == elements.length - 1 && (hasSiblingItemPath || specIndex.itemBackedSegments().contains(lower)));
-            boolean collectionEvidence = itemPathEvidence || hasCollectionGet;
-            boolean singletonLiteral = SINGLETON_HEADS.contains(lower);
-            boolean validHomographCompound = isValidHomographCompound(words, hasSeparator);
-            boolean homographWithItemPathEvidence = itemPathEvidence
+                    || (context.isLast(index) && (context.hasSiblingItemPath || context.specIndex.itemBackedSegments().contains(lower)));
+            this.collectionEvidence = itemPathEvidence || context.hasCollectionGet;
+            this.singletonLiteral = SINGLETON_HEADS.contains(lower);
+            this.validHomographCompound = isValidHomographCompound(words, hasSeparator);
+            this.homographWithItemPathEvidence = itemPathEvidence
                     && words.size() >= 2
                     && !MODIFIERS.contains(head)
                     && isHomographLeading(words, hasSeparator)
                     && operationWord(List.of(head), hasSeparator) == null;
-            boolean unverifiedHomographCollection = validHomographCompound && isPlural(head) && !collectionEvidence;
-            String operation = singletonLiteral
-                    || homographWithItemPathEvidence
-                    || unverifiedHomographCollection
-                    || isNounCompound(words, hasSeparator, collectionEvidence, followedByIdentifier)
-                    ? null
-                    : operationWord(words, hasSeparator);
-            if (operation != null) {
-                segments.add(new Segment(element, SegmentRole.OPERATION));
-                boolean isOauthAuthorize = underOauth && "authorize".equals(operation);
-                boolean isVerbLeadingMultiWord = words.size() >= 2 && operation.equals(words.getFirst());
-                if (CRUD_VERBS.contains(operation)) {
-                    nounErrors.add(element + ": use the HTTP method instead of a CRUD operation in the path");
-                } else if (isVerbLeadingMultiWord) {
-                    nounErrors.add(element + ": use a noun form or resource collection name instead of a verb-object phrase");
-                } else if (index != elements.length - 1) {
-                    nounErrors.add(element + ": operations must be terminal; put operation arguments in query parameters or the request body");
-                } else if (!hasPriorResource && !underOauth) {
-                    nounErrors.add(element + ": place custom operations under a resource or service namespace");
-                } else if (method != HttpMethod.POST
-                        && !((READ_OPERATIONS.contains(operation) || isOauthAuthorize)
-                        && (method == HttpMethod.GET || method == HttpMethod.HEAD))) {
-                    nounErrors.add(element + ": use POST for state-changing operations; GET/HEAD are reserved for read operations");
-                }
-                continue;
-            }
-            if (MODIFIERS.contains(head)) {
-                segments.add(new Segment(element, SegmentRole.SINGLETON));
-                nounErrors.add(element + ": a resource name needs a head noun, for example resolved-configuration");
-                continue;
-            }
-            boolean plural = isPlural(head);
-            boolean uncountable = UNCOUNTABLE.contains(head);
-            boolean repeatsParentNoun = index > 0 && WordUtils.sameNoun(elements[index - 1], element);
-            boolean misplacedNamespace = hasPriorResource && NAMESPACES.contains(lower);
-            boolean singletonHead = SINGLETON_HEADS.contains(head)
-                    || (index > 0 && isPathVariableSegment(elements[index - 1]) && ONE_PER_PARENT_SINGLETON_HEADS.contains(head));
-            boolean singletonUnderInstance = index == elements.length - 1 && !segments.isEmpty()
-                    && (segments.getLast().role() == SegmentRole.IDENTIFIER || segments.getLast().role() == SegmentRole.SINGLETON)
-                    && (ONE_PER_PARENT_SINGLETON_HEADS.contains(head) || isNounCompound(words, hasSeparator, false, false));
-            if (followedByIdentifier || plural) {
-                segments.add(new Segment(element, SegmentRole.COLLECTION));
-                if (!plural) {
-                    pluralErrors.add(element + ": collections selected by an identifier must use a plural noun");
-                } else if (unverifiedHomographCollection) {
-                    warnings.add(element + ": verb-prefixed collection without item path or list GET; confirm the name");
-                } else if (homographWithItemPathEvidence && !validHomographCompound
-                        && shouldReportHomographCollectionWarning(index, elements, specIndex)) {
-                    warnings.add(element + ": verb-prefixed collection name; confirm or rename");
-                }
-            } else if (uncountable || singletonLiteral || singletonHead || singletonUnderInstance
-                    || (index == elements.length - 1 && hasPriorResource && REPRESENTATIONS.contains(lower))) {
-                segments.add(new Segment(element, SegmentRole.SINGLETON));
-            } else if (index == elements.length - 1 && hasPriorResource && !repeatsParentNoun && !misplacedNamespace
-                    && !REPRESENTATIONS.contains(lower)) {
-                segments.add(new Segment(element, SegmentRole.SINGLETON));
-                warnings.add(element + ": unknown singular resource or operation; confirm its naming role");
-            } else {
-                segments.add(new Segment(element, SegmentRole.COLLECTION));
-                pluralErrors.add(element + ": use a plural collection name or a recognized singleton resource noun");
-            }
+            this.unverifiedHomographCollection = validHomographCompound && isPlural(head) && !collectionEvidence;
         }
-        return new Analysis(segments, nounErrors, pluralErrors, warnings);
     }
 
     private static String[] expandColonActions(String[] rawElements) {
@@ -345,7 +470,7 @@ public final class PathNamingRules {
     }
 
     private static boolean isVersionSegment(String lower) {
-        return VERSION_SEGMENT.matcher(lower).matches();
+        return VERSION_SEGMENT_PATTERNS.stream().anyMatch(pattern -> pattern.matcher(lower).matches());
     }
 
     private static boolean isPathVariableSegment(String element) {
@@ -380,7 +505,7 @@ public final class PathNamingRules {
     }
 
     private static SpecPathIndex buildSpecPathIndex(Set<String> contractPaths) {
-        Set<String> normalizedPaths = new HashSet<>(contractPaths.size());
+        Set<String> normalizedPaths = HashSet.newHashSet(contractPaths.size());
         Set<String> itemBackedSegments = new HashSet<>();
         Set<String> parentsWithItemChild = new HashSet<>();
         Map<String, String> shallowestPathByItemPrefix = new HashMap<>();
@@ -455,7 +580,7 @@ public final class PathNamingRules {
         return specIndex.parentsWithItemChild().contains("/" + String.join("/", elems));
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private static boolean hasCollectionGetResponse(String path, PathItem pathItem, OpenAPI openApi, boolean noSpecFallback) {
         if (pathItem == null) {
             return noSpecFallback;
@@ -473,27 +598,46 @@ public final class PathNamingRules {
                 : "";
         boolean anySchema = false;
         for (Map.Entry<String, ApiResponse> entry : getOp.getResponses().entrySet()) {
-            if (entry.getKey() == null || !entry.getKey().startsWith("2") || entry.getValue() == null) {
-                continue;
+            ApiResponse resolvedResp = resolveSuccessResponseWithContent(entry.getKey(), entry.getValue(), openApi);
+            ResponseSchemaKind kind = resolvedResp == null
+                    ? ResponseSchemaKind.NO_SCHEMA
+                    : classifyResponseSchemas(resolvedResp, schemas, lastSegment);
+            if (kind == ResponseSchemaKind.COLLECTION) {
+                return true;
             }
-            ApiResponse resolvedResp = OpenApiUtils.resolveApiResponse(entry.getValue(), openApi);
-            if (resolvedResp == null || resolvedResp.getContent() == null) {
-                continue;
-            }
-            for (MediaType media : resolvedResp.getContent().values()) {
-                if (media != null && media.getSchema() != null) {
-                    anySchema = true;
-                    Schema<?> resolved = CatsModelUtils.resolveSchema(media.getSchema(), schemas);
-                    if (isArrayOrEnvelopeSchema(resolved, schemas, lastSegment, Collections.newSetFromMap(new IdentityHashMap<>()))) {
-                        return true;
-                    }
-                }
-            }
+            anySchema = anySchema || kind == ResponseSchemaKind.NON_COLLECTION;
         }
         return !anySchema && noSpecFallback;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    private enum ResponseSchemaKind {
+        NO_SCHEMA, NON_COLLECTION, COLLECTION
+    }
+
+    private static ApiResponse resolveSuccessResponseWithContent(String status, ApiResponse response, OpenAPI openApi) {
+        if (status == null || !status.startsWith("2") || response == null) {
+            return null;
+        }
+        ApiResponse resolvedResp = OpenApiUtils.resolveApiResponse(response, openApi);
+        return resolvedResp == null || resolvedResp.getContent() == null ? null : resolvedResp;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static ResponseSchemaKind classifyResponseSchemas(ApiResponse response, Map<String, Schema> schemas, String lastSegment) {
+        ResponseSchemaKind kind = ResponseSchemaKind.NO_SCHEMA;
+        for (MediaType media : response.getContent().values()) {
+            if (media != null && media.getSchema() != null) {
+                kind = ResponseSchemaKind.NON_COLLECTION;
+                Schema<?> resolved = CatsModelUtils.resolveSchema(media.getSchema(), schemas);
+                if (isArrayOrEnvelopeSchema(resolved, schemas, lastSegment, Collections.newSetFromMap(new IdentityHashMap<>()))) {
+                    return ResponseSchemaKind.COLLECTION;
+                }
+            }
+        }
+        return kind;
+    }
+
+    @SuppressWarnings("rawtypes")
     private static boolean isArrayOrEnvelopeSchema(Schema<?> schema, Map<String, Schema> schemas,
                                                    String lastSegment, Set<Schema<?>> visited) {
         if (schema == null || !visited.add(schema)) {
@@ -503,7 +647,7 @@ public final class PathNamingRules {
             return true;
         }
         if (schema.getProperties() != null) {
-            for (Map.Entry<String, Schema> prop : ((Map<String, Schema>) schema.getProperties()).entrySet()) {
+            for (Map.Entry<String, Schema> prop : schema.getProperties().entrySet()) {
                 String propName = prop.getKey().replaceAll("[-_]", "").toLowerCase(Locale.ROOT);
                 Schema<?> propSchema = CatsModelUtils.resolveSchema(prop.getValue(), schemas);
                 if (CatsModelUtils.isArraySchema(propSchema)
@@ -560,23 +704,34 @@ public final class PathNamingRules {
         }
         String firstOp = operationWord(List.of(first), hasSeparator);
         if (firstOp == null) {
-            if (followedByIdentifier || (isPlural(head) && operationWord(List.of(head), hasSeparator) == null)) {
-                return true;
-            }
-            return WordUtils.nounForms(head).stream().anyMatch(word ->
-                    COMPOUND_SINGLETON_HEADS.contains(word) || SINGLETON_HEADS.contains(word) || UNCOUNTABLE.contains(word));
+            return isVerbFreeNounCompound(head, hasSeparator, followedByIdentifier);
         }
-        if (!isValidHomographCompound(words, hasSeparator)) {
-            return false;
+        return isValidHomographCompound(words, hasSeparator)
+                && isHomographNounCompound(head, hasSeparator, collectionEvidence, followedByIdentifier);
+    }
+
+    private static boolean isVerbFreeNounCompound(String head, boolean hasSeparator, boolean followedByIdentifier) {
+        if (followedByIdentifier || isPluralNonOperationHead(head, hasSeparator)) {
+            return true;
         }
+        return WordUtils.nounForms(head).stream().anyMatch(word ->
+                COMPOUND_SINGLETON_HEADS.contains(word) || SINGLETON_HEADS.contains(word) || UNCOUNTABLE.contains(word));
+    }
+
+    private static boolean isHomographNounCompound(String head, boolean hasSeparator,
+                                                   boolean collectionEvidence, boolean followedByIdentifier) {
         if (followedByIdentifier) {
             return true;
         }
-        if (isPlural(head) && operationWord(List.of(head), hasSeparator) == null) {
+        if (isPluralNonOperationHead(head, hasSeparator)) {
             return collectionEvidence;
         }
         return WordUtils.nounForms(head).stream().anyMatch(word ->
                 COMPOUND_SINGLETON_HEADS.contains(word) || SINGLETON_HEADS.contains(word));
+    }
+
+    private static boolean isPluralNonOperationHead(String head, boolean hasSeparator) {
+        return isPlural(head) && operationWord(List.of(head), hasSeparator) == null;
     }
 
     private static String operationWord(List<String> words, boolean hasSeparator) {

@@ -126,18 +126,19 @@ public class ResourceSchemaSymmetryLinter extends BaseLinter {
 
         for (Operation op : writeOps) {
             RequestBody rb = OpenApiUtils.resolveRequestBody(op.getRequestBody(), openAPI);
-            if (rb == null || rb.getContent() == null) {
-                continue;
+            if (rb != null && rb.getContent() != null) {
+                collectRequestBodyProperties(path, rb, componentSchemas, writeProps, violations);
             }
-            for (MediaType media : rb.getContent().values()) {
-                if (media == null || media.getSchema() == null) {
-                    continue;
-                }
-                Schema<?> raw = media.getSchema();
-                Schema<?> resolved = CatsModelUtils.resolveSchema(raw, componentSchemas);
-                if (resolved == null) {
-                    continue;
-                }
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void collectRequestBodyProperties(String path, RequestBody rb, Map<String, Schema> componentSchemas,
+                                                     Map<String, PropertyTypeInfo> writeProps, List<String> violations) {
+        for (MediaType media : rb.getContent().values()) {
+            Schema<?> raw = media == null ? null : media.getSchema();
+            Schema<?> resolved = raw == null ? null : CatsModelUtils.resolveSchema(raw, componentSchemas);
+            if (resolved != null) {
                 if (raw.get$ref() == null) {
                     checkInlineRequiredReadOnly(path, resolved, violations);
                 }
@@ -146,7 +147,7 @@ public class ResourceSchemaSymmetryLinter extends BaseLinter {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private static void checkInlineRequiredReadOnly(String path, Schema<?> schema, List<String> violations) {
         if (schema.getRequired() == null || schema.getProperties() == null) {
             return;
@@ -170,27 +171,35 @@ public class ResourceSchemaSymmetryLinter extends BaseLinter {
             return;
         }
         for (Map.Entry<String, ApiResponse> entry : getOp.getResponses().entrySet()) {
-            if (entry.getKey() == null || !entry.getKey().startsWith("2")) {
-                continue;
+            boolean isSuccess = entry.getKey() != null && entry.getKey().startsWith("2");
+            ApiResponse resp = isSuccess ? OpenApiUtils.resolveApiResponse(entry.getValue(), openAPI) : null;
+            if (resp != null && resp.getContent() != null) {
+                collectResponseProperties(resp, isItemPath, componentSchemas, readProps);
             }
-            ApiResponse resp = OpenApiUtils.resolveApiResponse(entry.getValue(), openAPI);
-            if (resp == null || resp.getContent() == null) {
-                continue;
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void collectResponseProperties(ApiResponse resp, boolean isItemPath, Map<String, Schema> componentSchemas,
+                                                  Map<String, PropertyTypeInfo> readProps) {
+        for (MediaType media : resp.getContent().values()) {
+            if (media != null && media.getSchema() != null) {
+                collectResponseSchemaProperties(CatsModelUtils.resolveSchema(media.getSchema(), componentSchemas),
+                        isItemPath, componentSchemas, readProps);
             }
-            for (MediaType media : resp.getContent().values()) {
-                if (media == null || media.getSchema() == null) {
-                    continue;
-                }
-                Schema<?> resolved = CatsModelUtils.resolveSchema(media.getSchema(), componentSchemas);
-                if (CatsModelUtils.isArraySchema(resolved) && resolved.getItems() != null) {
-                    resolved = CatsModelUtils.resolveSchema(resolved.getItems(), componentSchemas);
-                    if (resolved != null) {
-                        extractProperties(resolved, componentSchemas, readProps);
-                    }
-                } else if (isItemPath && resolved != null) {
-                    extractProperties(resolved, componentSchemas, readProps);
-                }
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void collectResponseSchemaProperties(Schema<?> resolved, boolean isItemPath, Map<String, Schema> componentSchemas,
+                                                        Map<String, PropertyTypeInfo> readProps) {
+        if (CatsModelUtils.isArraySchema(resolved) && resolved.getItems() != null) {
+            Schema<?> resolvedItems = CatsModelUtils.resolveSchema(resolved.getItems(), componentSchemas);
+            if (resolvedItems != null) {
+                extractProperties(resolvedItems, componentSchemas, readProps);
             }
+        } else if (isItemPath && resolved != null) {
+            extractProperties(resolved, componentSchemas, readProps);
         }
     }
 
@@ -200,27 +209,33 @@ public class ResourceSchemaSymmetryLinter extends BaseLinter {
         extractProperties(schema, componentSchemas, target, Collections.newSetFromMap(new IdentityHashMap<>()));
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private static void extractProperties(Schema<?> schema, Map<String, Schema> componentSchemas,
                                           Map<String, PropertyTypeInfo> target, Set<Schema<?>> visited) {
         if (schema == null || !visited.add(schema)) {
             return;
         }
         if (schema.getProperties() != null) {
-            for (Map.Entry<String, Schema> entry : ((Map<String, Schema>) schema.getProperties()).entrySet()) {
-                Schema<?> propSchema = CatsModelUtils.resolveSchema(entry.getValue(), componentSchemas);
-                String primaryType = CatsModelUtils.getPrimaryType(propSchema);
-                if (propSchema != null && primaryType != null) {
-                    target.putIfAbsent(entry.getKey(), new PropertyTypeInfo(
-                            primaryType.toLowerCase(Locale.ROOT),
-                            propSchema.getFormat() != null ? propSchema.getFormat().toLowerCase(Locale.ROOT) : null));
-                }
-            }
+            extractDirectProperties(schema.getProperties(), componentSchemas, target);
         }
         for (Schema<?> sub : CatsModelUtils.getComposedSchemas(schema)) {
             Schema<?> resolvedSub = CatsModelUtils.resolveSchema(sub, componentSchemas);
             if (resolvedSub != null) {
                 extractProperties(resolvedSub, componentSchemas, target, visited);
+            }
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void extractDirectProperties(Map<String, Schema> properties, Map<String, Schema> componentSchemas,
+                                                Map<String, PropertyTypeInfo> target) {
+        for (Map.Entry<String, Schema> entry : properties.entrySet()) {
+            Schema<?> propSchema = CatsModelUtils.resolveSchema(entry.getValue(), componentSchemas);
+            String primaryType = CatsModelUtils.getPrimaryType(propSchema);
+            if (propSchema != null && primaryType != null) {
+                target.putIfAbsent(entry.getKey(), new PropertyTypeInfo(
+                        primaryType.toLowerCase(Locale.ROOT),
+                        propSchema.getFormat() != null ? propSchema.getFormat().toLowerCase(Locale.ROOT) : null));
             }
         }
     }

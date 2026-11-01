@@ -96,13 +96,9 @@ public class CollectionPaginationLinter extends BaseLinter {
         return names;
     }
 
-    @SuppressWarnings("rawtypes")
     private boolean isCollectionEndpoint(FuzzingData data) {
-        if (data.getPath() != null) {
-            String lastSegment = data.getPath().substring(data.getPath().lastIndexOf('/') + 1).toLowerCase(Locale.ROOT);
-            if (LinterVocabulary.SINGLETON_SEGMENTS.contains(lastSegment) || NON_COLLECTION_EXTRAS.contains(lastSegment)) {
-                return false;
-            }
+        if (isNonCollectionLastSegment(data.getPath())) {
+            return false;
         }
         if (data.getPathItem() == null || data.getPathItem().getGet() == null) {
             return true;
@@ -118,7 +114,19 @@ public class CollectionPaginationLinter extends BaseLinter {
         if (twoXxResponses.isEmpty()) {
             return false;
         }
+        return hasCollectionResponseOrNoSchema(data, twoXxResponses);
+    }
 
+    private static boolean isNonCollectionLastSegment(String path) {
+        if (path == null) {
+            return false;
+        }
+        String lastSegment = path.substring(path.lastIndexOf('/') + 1).toLowerCase(Locale.ROOT);
+        return LinterVocabulary.SINGLETON_SEGMENTS.contains(lastSegment) || NON_COLLECTION_EXTRAS.contains(lastSegment);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static boolean hasCollectionResponseOrNoSchema(FuzzingData data, List<ApiResponse> twoXxResponses) {
         Map<String, Schema> schemas = OpenApiUtils.getComponentSchemas(data.getOpenApi());
 
         boolean anySchemaPresent = false;
@@ -148,7 +156,7 @@ public class CollectionPaginationLinter extends BaseLinter {
         return isArrayOrPaginatedEnvelope(schema, schemas, lastSegment, Collections.newSetFromMap(new IdentityHashMap<>()));
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private static boolean isArrayOrPaginatedEnvelope(Schema<?> schema, Map<String, Schema> schemas,
                                                       String lastSegment, Set<Schema<?>> visited) {
         if (schema == null || !visited.add(schema)) {
@@ -158,7 +166,7 @@ public class CollectionPaginationLinter extends BaseLinter {
             return true;
         }
         if (schema.getProperties() != null) {
-            for (Map.Entry<String, Schema> prop : ((Map<String, Schema>) schema.getProperties()).entrySet()) {
+            for (Map.Entry<String, Schema> prop : schema.getProperties().entrySet()) {
                 String propName = prop.getKey().replaceAll("[-_]", "").toLowerCase(Locale.ROOT);
                 Schema<?> propSchema = CatsModelUtils.resolveSchema(prop.getValue(), schemas);
                 if (CatsModelUtils.isArraySchema(propSchema)

@@ -84,7 +84,7 @@ public class ArrayWithoutItemsLinter extends BaseLinter {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private void checkSchemaRecursive(Schema<?> schema, String mediaContext, String propertyPath,
                                       Map<String, Schema> componentSchemas, Set<Schema<?>> visited, List<String> violations) {
         Schema<?> resolved = CatsModelUtils.resolveSchema(schema, componentSchemas);
@@ -92,25 +92,36 @@ public class ArrayWithoutItemsLinter extends BaseLinter {
             return;
         }
         if (CatsModelUtils.isArraySchema(resolved)) {
-            if (resolved.getItems() == null) {
-                if (propertyPath == null) {
-                    violations.add("%s has array schema without 'items' definition".formatted(mediaContext));
-                } else {
-                    violations.add("%s property '%s' has array schema without 'items' definition".formatted(mediaContext, propertyPath));
-                }
-            } else {
-                checkSchemaRecursive(resolved.getItems(), mediaContext,
-                        propertyPath == null ? "[]" : propertyPath + "[]", componentSchemas, visited, violations);
-            }
+            checkArrayItems(resolved, mediaContext, propertyPath, componentSchemas, visited, violations);
         }
-        if (resolved.getProperties() != null) {
-            for (Map.Entry<String, Schema> prop : ((Map<String, Schema>) resolved.getProperties()).entrySet()) {
-                String nextPath = propertyPath == null ? prop.getKey() : propertyPath + "." + prop.getKey();
-                checkSchemaRecursive(prop.getValue(), mediaContext, nextPath, componentSchemas, visited, violations);
-            }
-        }
+        checkProperties(resolved, mediaContext, propertyPath, componentSchemas, visited, violations);
         for (Schema<?> subSchema : CatsModelUtils.getComposedSchemas(resolved)) {
             checkSchemaRecursive(subSchema, mediaContext, propertyPath, componentSchemas, visited, violations);
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void checkArrayItems(Schema<?> arraySchema, String mediaContext, String propertyPath,
+                                 Map<String, Schema> componentSchemas, Set<Schema<?>> visited, List<String> violations) {
+        if (arraySchema.getItems() != null) {
+            checkSchemaRecursive(arraySchema.getItems(), mediaContext,
+                    propertyPath == null ? "[]" : propertyPath + "[]", componentSchemas, visited, violations);
+        } else if (propertyPath == null) {
+            violations.add("%s has array schema without 'items' definition".formatted(mediaContext));
+        } else {
+            violations.add("%s property '%s' has array schema without 'items' definition".formatted(mediaContext, propertyPath));
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void checkProperties(Schema<?> schema, String mediaContext, String propertyPath,
+                                 Map<String, Schema> componentSchemas, Set<Schema<?>> visited, List<String> violations) {
+        if (schema.getProperties() == null) {
+            return;
+        }
+        for (Map.Entry<String, Schema> prop : schema.getProperties().entrySet()) {
+            String nextPath = propertyPath == null ? prop.getKey() : propertyPath + "." + prop.getKey();
+            checkSchemaRecursive(prop.getValue(), mediaContext, nextPath, componentSchemas, visited, violations);
         }
     }
 

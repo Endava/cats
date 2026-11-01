@@ -95,9 +95,13 @@ import java.util.stream.Stream;
 public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private static final Pattern TEST_FILE_PATTERN = Pattern.compile("Test(\\d+)\\.json$");
     private static final Pattern QUOTED_FIELD_PATTERN = Pattern.compile("['\"]([A-Za-z0-9_.#$-]+)['\"]");
-    private static final Pattern UNQUOTED_REQUIRED_PREFIX_PATTERN = Pattern.compile(
-            "^([A-Za-z][A-Za-z0-9_ ]{1,40}?)\\s+(?:must\\s+not\\s+be\\s+(?:null|blank|empty)|must\\s+be\\s+null|is\\s+required|cannot\\s+be\\s+(?:null|empty))\\b",
-            Pattern.CASE_INSENSITIVE);
+    private static final int UNQUOTED_FIELD_MIN_LENGTH = 2;
+    private static final int UNQUOTED_FIELD_MAX_LENGTH = 41;
+    private static final List<Pattern> REQUIRED_FIELD_PHRASE_PATTERNS = List.of(
+            Pattern.compile("\\s+must\\s+not\\s+be\\s+(?:null|blank|empty)\\b", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\s+must\\s+be\\s+null\\b", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\s+is\\s+required\\b", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\s+cannot\\s+be\\s+(?:null|empty)\\b", Pattern.CASE_INSENSITIVE));
     private static final Pattern ENUM_LIKE_CONSTANT_PATTERN = Pattern.compile("^[A-Z][A-Z0-9_]{1,31}$");
     private static final Set<String> DISCRIMINATOR_KEY_SUFFIXES = Set.of(
             "type", "kind", "mode", "category", "channel", "method", "operator", "status", "action", "role", "state");
@@ -530,7 +534,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
         if (code == 404) {
             return classifyNotFound404(indexed, method, path, errorSig, correlations,
-                    pathsWithSuccessfulPost, firstDeleteTestByPath, minedRefData, openAPI);
+                    new NotFoundContext(pathsWithSuccessfulPost, firstDeleteTestByPath, minedRefData, openAPI));
         }
 
         if (isSeedValidationRejection(tc, code, path, pathsWithSynthesizedCorrelations)) {
@@ -604,12 +608,32 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         return null;
     }
 
+    private record NotFoundContext(Set<String> pathsWithSuccessfulPost,
+                                   Map<String, Integer> firstDeleteTestByPath,
+                                   Map<String, Map<String, Object>> minedRefData,
+                                   OpenAPI openAPI) {
+    }
+
     private static ClusterClassification classifyNotFound404(IndexedTestCase indexed, String method, String path,
                                                              String errorSig, List<ResourceCorrelation> correlations,
-                                                             Set<String> pathsWithSuccessfulPost,
-                                                             Map<String, Integer> firstDeleteTestByPath,
-                                                             Map<String, Map<String, Object>> minedRefData,
-                                                             OpenAPI openAPI) {
+                                                             NotFoundContext context) {
+        ClusterClassification suspiciousCorrelation = classifySuspiciousCorrelation404(correlations, method, path);
+        if (suspiciousCorrelation != null) {
+            return suspiciousCorrelation;
+        }
+        ClusterClassification depletedPool = classifyResourcePoolDepleted404(indexed, method, path, context.firstDeleteTestByPath());
+        if (depletedPool != null) {
+            return depletedPool;
+        }
+        ClusterClassification unresolvedBody = classifyUnresolvedBodyReference404(indexed.testCase(), method, path, errorSig);
+        if (unresolvedBody != null) {
+            return unresolvedBody;
+        }
+        return classifyUnresolvedPathParam404(method, path, errorSig, context);
+    }
+
+    private static ClusterClassification classifySuspiciousCorrelation404(List<ResourceCorrelation> correlations,
+                                                                          String method, String path) {
         for (ResourceCorrelation corr : correlations) {
             if (corr.getTarget().location() == RequestTarget.Location.PATH
                     && corr.getSourceLocation() != null && corr.getSourceLocation().endsWith(".name")) {
@@ -625,6 +649,11 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                         "Ensure collection responses expose a primary resource identifier or map '" + corr.getTarget().name() + "' via --refData.");
             }
         }
+        return null;
+    }
+
+    private static ClusterClassification classifyResourcePoolDepleted404(IndexedTestCase indexed, String method, String path,
+                                                                         Map<String, Integer> firstDeleteTestByPath) {
         String parentDeletePath = findPrecedingDeletePath(path, indexed.number(), firstDeleteTestByPath);
         if (parentDeletePath != null) {
             String key = "RESOURCE_POOL_DEPLETED_404|" + method + "|" + path + "|after:" + parentDeletePath;
@@ -638,7 +667,11 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                             + firstDeleteTestByPath.get(parentDeletePath) + ")",
                     "Run non-DELETE operations across child paths before parent DELETEs or pass --export-refdata refData.yml.");
         }
-        CatsTestCase tc = indexed.testCase();
+        return null;
+    }
+
+    private static ClusterClassification classifyUnresolvedBodyReference404(CatsTestCase tc, String method, String path,
+                                                                            String errorSig) {
         String payload = tc.getRequest() != null ? tc.getRequest().getPayload() : null;
         if (StringUtils.isNotBlank(payload) && payload.trim().startsWith("[")
                 && OpenApiUtils.getPathVariables(path).isEmpty()) {
@@ -652,22 +685,21 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     "Request body array on " + path + " references a resource that does not exist (" + errorSig + ")",
                     "Supply existing resource identifiers in the request body via --refData or skip " + path + " via --skipPaths.");
         }
+        return null;
+    }
+
+    private static ClusterClassification classifyUnresolvedPathParam404(String method, String path, String errorSig,
+                                                                        NotFoundContext context) {
+        OpenAPI openAPI = context.openAPI();
         String collectionPath = parentCollectionPath(path);
         boolean producerExistsInSpec = openAPI == null || openAPI.getPaths() == null
                 || (openAPI.getPaths().get(collectionPath) != null && openAPI.getPaths().get(collectionPath).getPost() != null);
-        boolean producerSucceeded = pathsWithSuccessfulPost.contains(collectionPath);
+        boolean producerSucceeded = context.pathsWithSuccessfulPost().contains(collectionPath);
         String key = "UNRESOLVED_PATH_PARAM_404|" + method + "|" + path;
         String diagnosis = producerSucceeded || !producerExistsInSpec
                 ? "Path parameter on " + path + " was not enriched with an active resource ID (" + errorSig + ")"
                 : "No successful 2XX POST producer recorded for [" + collectionPath + "]";
-        String remediation;
-        if (minedRefData.containsKey(path)) {
-            remediation = "Run `cats triage --export-refdata refData.yml` to pin the working IDs mined from the report: " + minedRefData.get(path);
-        } else if (producerExistsInSpec && !collectionPath.equals(path)) {
-            remediation = "Seed a valid resource via POST " + collectionPath + " or pass --urlParams <param>:<value>.";
-        } else {
-            remediation = "Pass a valid path parameter via --urlParams <param>:<value> or --refData.";
-        }
+        String remediation = unresolvedPathParamRemediation(path, collectionPath, producerExistsInSpec, context.minedRefData());
         return new ClusterClassification(
                 key,
                 "UNRESOLVED_PATH_PARAM_404",
@@ -676,6 +708,17 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 404,
                 diagnosis,
                 remediation);
+    }
+
+    private static String unresolvedPathParamRemediation(String path, String collectionPath, boolean producerExistsInSpec,
+                                                         Map<String, Map<String, Object>> minedRefData) {
+        if (minedRefData.containsKey(path)) {
+            return "Run `cats triage --export-refdata refData.yml` to pin the working IDs mined from the report: " + minedRefData.get(path);
+        }
+        if (producerExistsInSpec && !collectionPath.equals(path)) {
+            return "Seed a valid resource via POST " + collectionPath + " or pass --urlParams <param>:<value>.";
+        }
+        return "Pass a valid path parameter via --urlParams <param>:<value> or --refData.";
     }
 
     private static boolean isEnumFuzzer(String fuzzer) {
@@ -786,9 +829,9 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         if (quoted.find()) {
             return quoted.group(1);
         }
-        Matcher prefix = UNQUOTED_REQUIRED_PREFIX_PATTERN.matcher(errSig.trim());
-        if (prefix.find()) {
-            String rawWords = prefix.group(1).trim();
+        String unquotedField = extractUnquotedRequiredFieldPrefix(errSig.trim());
+        if (unquotedField != null) {
+            String rawWords = unquotedField.trim();
             String matchedExisting = findMatchingFieldInObject(root, "", WordUtils.normalizeAlphaNumeric(rawWords), 0);
             if (matchedExisting != null) {
                 return matchedExisting;
@@ -796,6 +839,39 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             return toCamelCaseFieldName(rawWords);
         }
         return null;
+    }
+
+    /**
+     * Returns the shortest leading field name (2 to 41 chars: an ASCII letter followed by letters, digits,
+     * underscores or spaces) that is directly followed by whitespace and a "required" phrase, or null.
+     */
+    private static String extractUnquotedRequiredFieldPrefix(String message) {
+        int maxLength = Math.min(UNQUOTED_FIELD_MAX_LENGTH, message.length());
+        if (maxLength < UNQUOTED_FIELD_MIN_LENGTH || !isAsciiLetter(message.charAt(0))) {
+            return null;
+        }
+        for (int length = UNQUOTED_FIELD_MIN_LENGTH; length <= maxLength; length++) {
+            if (!isUnquotedFieldChar(message.charAt(length - 1))) {
+                return null;
+            }
+            if (isFollowedByRequiredPhrase(message, length)) {
+                return message.substring(0, length);
+            }
+        }
+        return null;
+    }
+
+    private static boolean isFollowedByRequiredPhrase(String message, int start) {
+        return REQUIRED_FIELD_PHRASE_PATTERNS.stream()
+                .anyMatch(pattern -> pattern.matcher(message).region(start, message.length()).lookingAt());
+    }
+
+    private static boolean isAsciiLetter(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
+
+    private static boolean isUnquotedFieldChar(char c) {
+        return isAsciiLetter(c) || (c >= '0' && c <= '9') || c == '_' || c == ' ';
     }
 
     private static String findMatchingFieldInObject(JsonObject obj, String prefix, String targetNorm, int depth) {
@@ -837,6 +913,15 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         if (obj == null || depth > 3) {
             return null;
         }
+        KeyValuePair<String, String> direct = findDirectDiscriminatorCandidate(obj, prefix, referencedField);
+        if (direct != null) {
+            return direct;
+        }
+        return findNestedDiscriminatorCandidate(obj, prefix, referencedField, depth);
+    }
+
+    private static KeyValuePair<String, String> findDirectDiscriminatorCandidate(JsonObject obj, String prefix,
+                                                                                 String referencedField) {
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
             String k = entry.getKey();
             String fullPath = prefix.isEmpty() ? k : prefix + "." + k;
@@ -847,6 +932,11 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 return new KeyValuePair<>(fullPath, val.getAsString());
             }
         }
+        return null;
+    }
+
+    private static KeyValuePair<String, String> findNestedDiscriminatorCandidate(JsonObject obj, String prefix,
+                                                                                 String referencedField, int depth) {
         for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
             String fullPath = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
             if (entry.getValue() != null && entry.getValue().isJsonObject()) {

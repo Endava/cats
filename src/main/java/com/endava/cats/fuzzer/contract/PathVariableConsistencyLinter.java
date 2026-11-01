@@ -118,19 +118,24 @@ public class PathVariableConsistencyLinter extends BaseLinter {
         }
         for (Operation op : pathItem.readOperations()) {
             for (Parameter param : OpenApiUtils.collectPathAndOperationParameters(pathItem, op, openAPI)) {
-                if (!"path".equalsIgnoreCase(param.getIn()) || StringUtils.isBlank(param.getName())) {
-                    continue;
-                }
-                Schema<?> resolvedSchema = CatsModelUtils.resolveSchema(param.getSchema(), componentSchemas);
-                String primaryType = CatsModelUtils.getPrimaryType(resolvedSchema);
-                if (resolvedSchema != null && StringUtils.isNotBlank(primaryType)) {
-                    String type = primaryType.toLowerCase(Locale.ROOT);
-                    String format = StringUtils.isNotBlank(resolvedSchema.getFormat())
-                            ? ":" + resolvedSchema.getFormat().toLowerCase(Locale.ROOT)
-                            : "";
-                    varNameToSignatures.computeIfAbsent(param.getName(), _ -> new LinkedHashSet<>()).add(type + format);
+                if ("path".equalsIgnoreCase(param.getIn()) && StringUtils.isNotBlank(param.getName())) {
+                    recordPathParameterSignature(param, componentSchemas, varNameToSignatures);
                 }
             }
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void recordPathParameterSignature(Parameter param, Map<String, Schema> componentSchemas,
+                                                     Map<String, Set<String>> varNameToSignatures) {
+        Schema<?> resolvedSchema = CatsModelUtils.resolveSchema(param.getSchema(), componentSchemas);
+        String primaryType = CatsModelUtils.getPrimaryType(resolvedSchema);
+        if (resolvedSchema != null && StringUtils.isNotBlank(primaryType)) {
+            String type = primaryType.toLowerCase(Locale.ROOT);
+            String format = StringUtils.isNotBlank(resolvedSchema.getFormat())
+                    ? ":" + resolvedSchema.getFormat().toLowerCase(Locale.ROOT)
+                    : "";
+            varNameToSignatures.computeIfAbsent(param.getName(), _ -> new LinkedHashSet<>()).add(type + format);
         }
     }
 

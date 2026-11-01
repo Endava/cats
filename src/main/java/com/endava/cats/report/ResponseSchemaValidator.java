@@ -245,6 +245,15 @@ final class ResponseSchemaValidator {
         if (!(compositionNode instanceof ArrayNode arrayNode) || arrayNode.size() <= 1 || childrenByParent.isEmpty()) {
             return;
         }
+        Set<String> refNames = collectCompositionRefNames(arrayNode);
+        Set<String> parentsToPrune = findParentsWithAllChildrenReferenced(refNames, childrenByParent);
+        if (parentsToPrune.isEmpty() || parentsToPrune.size() >= arrayNode.size()) {
+            return;
+        }
+        removeCompositionRefs(arrayNode, parentsToPrune);
+    }
+
+    private static Set<String> collectCompositionRefNames(ArrayNode arrayNode) {
         Set<String> refNames = new LinkedHashSet<>();
         for (JsonNode element : arrayNode) {
             JsonNode refNode = element != null ? element.get("$ref") : null;
@@ -252,6 +261,10 @@ final class ResponseSchemaValidator {
                 refNames.add(CatsModelUtils.getSimpleRef(refNode.textValue()));
             }
         }
+        return refNames;
+    }
+
+    private static Set<String> findParentsWithAllChildrenReferenced(Set<String> refNames, Map<String, Set<String>> childrenByParent) {
         Set<String> parentsToPrune = new LinkedHashSet<>();
         for (String refName : refNames) {
             Set<String> children = childrenByParent.get(refName);
@@ -259,9 +272,10 @@ final class ResponseSchemaValidator {
                 parentsToPrune.add(refName);
             }
         }
-        if (parentsToPrune.isEmpty() || parentsToPrune.size() >= arrayNode.size()) {
-            return;
-        }
+        return parentsToPrune;
+    }
+
+    private static void removeCompositionRefs(ArrayNode arrayNode, Set<String> parentsToPrune) {
         for (int i = arrayNode.size() - 1; i >= 0; i--) {
             JsonNode refNode = arrayNode.get(i) != null ? arrayNode.get(i).get("$ref") : null;
             if (refNode != null && refNode.isTextual()

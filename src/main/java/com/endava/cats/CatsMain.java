@@ -71,23 +71,31 @@ public class CatsMain implements QuarkusApplication {
             Properties props = new Properties();
             try (InputStream in = Files.newInputStream(configFile.toPath())) {
                 props.load(in);
-                for (String key : List.copyOf(props.stringPropertyNames())) {
-                    if (key.contains(".") && !key.startsWith("cats.")) {
-                        props.putIfAbsent("cats." + key, props.getProperty(key));
-                    }
-                }
+                addCatsPrefixedAliases(props);
                 if (extractOptionValue(args, "--configFile") == null) {
-                    for (String key : List.copyOf(props.stringPropertyNames())) {
-                        String lower = key.toLowerCase(Locale.ROOT);
-                        if ("authrefreshscript".equals(lower) || lower.endsWith(".authrefreshscript")) {
-                            props.remove(key);
-                        }
-                    }
+                    removeAuthRefreshScriptKeys(props);
                 }
                 CommandLine.IDefaultValueProvider provider = new CommandLine.PropertiesDefaultProvider(props);
                 commandLine.setDefaultValueProvider(provider);
             } catch (Exception e) {
                 throw new CatsException(e);
+            }
+        }
+    }
+
+    private static void addCatsPrefixedAliases(Properties props) {
+        for (String key : List.copyOf(props.stringPropertyNames())) {
+            if (key.contains(".") && !key.startsWith("cats.")) {
+                props.putIfAbsent("cats." + key, props.getProperty(key));
+            }
+        }
+    }
+
+    private static void removeAuthRefreshScriptKeys(Properties props) {
+        for (String key : List.copyOf(props.stringPropertyNames())) {
+            String lower = key.toLowerCase(Locale.ROOT);
+            if ("authrefreshscript".equals(lower) || lower.endsWith(".authrefreshscript")) {
+                props.remove(key);
             }
         }
     }

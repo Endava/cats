@@ -78,7 +78,7 @@ public class UnconstrainedAdditionalPropertiesLinter extends BaseLinter {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private static void checkSchemaRecursive(Schema<?> schema, String pathContext,
                                              Map<String, Schema> componentSchemas,
                                              Set<Schema<?>> visited, List<String> violations) {
@@ -94,7 +94,7 @@ public class UnconstrainedAdditionalPropertiesLinter extends BaseLinter {
         }
 
         if (resolved.getProperties() != null) {
-            for (Map.Entry<String, Schema> prop : ((Map<String, Schema>) resolved.getProperties()).entrySet()) {
+            for (Map.Entry<String, Schema> prop : resolved.getProperties().entrySet()) {
                 checkSchemaRecursive(prop.getValue(), pathContext + "." + prop.getKey(), componentSchemas, visited, violations);
             }
         }

@@ -52,6 +52,7 @@ public abstract class BaseEnumIteratorFieldsFuzzer implements Fuzzer {
         return ResponseCodeFamilyPredefined.TWOXX;
     }
 
+    @SuppressWarnings("java:S1172")
     protected Predicate<String> additionalFieldFilter(FuzzingData data) {
         return _ -> true;
     }

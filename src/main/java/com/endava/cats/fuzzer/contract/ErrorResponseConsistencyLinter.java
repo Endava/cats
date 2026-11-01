@@ -64,94 +64,97 @@ public class ErrorResponseConsistencyLinter extends BaseLinter {
         }
     }
 
-    @SuppressWarnings("rawtypes")
     private List<String> analyzeErrorResponses(OpenAPI openAPI) {
-        Map<String, Schema> componentSchemas = OpenApiUtils.getComponentSchemas(openAPI);
-
-        List<String> violations = new ArrayList<>();
-        Map<String, List<String>> signatureLocations = new LinkedHashMap<>();
-        Map<String, Set<String>> signatureProperties = new LinkedHashMap<>();
+        ErrorSchemaCollector collector = new ErrorSchemaCollector(OpenApiUtils.getComponentSchemas(openAPI));
 
         for (Map.Entry<String, PathItem> pathEntry : openAPI.getPaths().entrySet()) {
-            String path = pathEntry.getKey();
             PathItem item = pathEntry.getValue();
-            if (item == null || item.readOperationsMap() == null) {
-                continue;
-            }
-            for (Map.Entry<PathItem.HttpMethod, Operation> opEntry : item.readOperationsMap().entrySet()) {
-                String method = opEntry.getKey().name();
-                Operation op = opEntry.getValue();
-                if (op == null || op.getResponses() == null) {
-                    continue;
-                }
-                for (Map.Entry<String, ApiResponse> respEntry : op.getResponses().entrySet()) {
-                    String status = respEntry.getKey();
-                    if (!isErrorStatus(status)) {
-                        continue;
-                    }
-                    ApiResponse response = OpenApiUtils.resolveApiResponse(respEntry.getValue(), openAPI);
-                    if (response == null || response.getContent() == null) {
-                        continue;
-                    }
-                    inspectErrorContent(path, method, status, response.getContent(), componentSchemas,
-                            signatureLocations, signatureProperties, violations);
-                }
+            if (item != null && item.readOperationsMap() != null) {
+                analyzePathOperations(pathEntry.getKey(), item, openAPI, collector);
             }
         }
 
-        detectDivergentErrorSchemas(signatureLocations, signatureProperties, violations);
-        return violations;
+        detectDivergentErrorSchemas(collector.signatureLocations(), collector.signatureProperties(), collector.violations());
+        return collector.violations();
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void inspectErrorContent(String path, String method, String status,
-                                            Map<String, MediaType> content,
-                                            Map<String, Schema> componentSchemas,
-                                            Map<String, List<String>> signatureLocations,
-                                            Map<String, Set<String>> signatureProperties,
-                                            List<String> violations) {
+    private static void analyzePathOperations(String path, PathItem item, OpenAPI openAPI, ErrorSchemaCollector collector) {
+        for (Map.Entry<PathItem.HttpMethod, Operation> opEntry : item.readOperationsMap().entrySet()) {
+            Operation op = opEntry.getValue();
+            if (op != null && op.getResponses() != null) {
+                analyzeOperationResponses(path, opEntry.getKey().name(), op, openAPI, collector);
+            }
+        }
+    }
+
+    private static void analyzeOperationResponses(String path, String method, Operation op, OpenAPI openAPI,
+                                                  ErrorSchemaCollector collector) {
+        for (Map.Entry<String, ApiResponse> respEntry : op.getResponses().entrySet()) {
+            String status = respEntry.getKey();
+            ApiResponse response = isErrorStatus(status) ? OpenApiUtils.resolveApiResponse(respEntry.getValue(), openAPI) : null;
+            if (response != null && response.getContent() != null) {
+                inspectErrorContent("%s %s (%s)".formatted(method, path, status), response.getContent(), collector);
+            }
+        }
+    }
+
+    private static void inspectErrorContent(String endpointDesc, Map<String, MediaType> content, ErrorSchemaCollector collector) {
         for (Map.Entry<String, MediaType> mediaEntry : content.entrySet()) {
-            String contentType = mediaEntry.getKey();
-            if (contentType == null || !contentType.toLowerCase(Locale.ROOT).contains("json")) {
-                continue;
-            }
-            MediaType media = mediaEntry.getValue();
-            if (media == null || media.getSchema() == null) {
-                continue;
-            }
-            Schema<?> rawSchema = media.getSchema();
-            Schema<?> resolved = CatsModelUtils.resolveSchema(rawSchema, componentSchemas);
-            if (resolved == null) {
-                continue;
-            }
-            String endpointDesc = "%s %s (%s)".formatted(method, path, status);
-            if (CatsModelUtils.isPrimitiveSchema(resolved)) {
-                violations.add("%s defines a primitive '%s' error schema instead of a structured error object"
-                        .formatted(endpointDesc, CatsModelUtils.getPrimaryType(resolved)));
-                continue;
-            }
-            Set<String> props = collectPropertyNames(resolved, componentSchemas);
-            if (!props.isEmpty()) {
-                String signature = String.join(",", props);
-                signatureLocations.computeIfAbsent(signature, _ -> new ArrayList<>()).add(endpointDesc);
-                signatureProperties.put(signature, props);
+            Schema<?> resolved = resolveJsonErrorSchema(mediaEntry.getKey(), mediaEntry.getValue(), collector.componentSchemas());
+            if (resolved != null) {
+                inspectErrorSchema(endpointDesc, resolved, collector);
             }
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
+    private static Schema<?> resolveJsonErrorSchema(String contentType, MediaType media, Map<String, Schema> componentSchemas) {
+        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).contains("json")) {
+            return null;
+        }
+        if (media == null || media.getSchema() == null) {
+            return null;
+        }
+        return CatsModelUtils.resolveSchema(media.getSchema(), componentSchemas);
+    }
+
+    private static void inspectErrorSchema(String endpointDesc, Schema<?> resolved, ErrorSchemaCollector collector) {
+        if (CatsModelUtils.isPrimitiveSchema(resolved)) {
+            collector.violations().add("%s defines a primitive '%s' error schema instead of a structured error object"
+                    .formatted(endpointDesc, CatsModelUtils.getPrimaryType(resolved)));
+            return;
+        }
+        Set<String> props = collectPropertyNames(resolved, collector.componentSchemas());
+        if (!props.isEmpty()) {
+            String signature = String.join(",", props);
+            collector.signatureLocations().computeIfAbsent(signature, _ -> new ArrayList<>()).add(endpointDesc);
+            collector.signatureProperties().put(signature, props);
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
     private static Set<String> collectPropertyNames(Schema<?> schema, Map<String, Schema> componentSchemas) {
         Set<String> props = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         if (schema.getProperties() != null) {
-            props.addAll(((Map<String, Schema>) schema.getProperties()).keySet());
+            props.addAll(schema.getProperties().keySet());
         }
         for (Schema<?> sub : CatsModelUtils.getComposedSchemas(schema)) {
             Schema<?> resolvedSub = CatsModelUtils.resolveSchema(sub, componentSchemas);
             if (resolvedSub != null && resolvedSub.getProperties() != null) {
-                props.addAll(((Map<String, Schema>) resolvedSub.getProperties()).keySet());
+                props.addAll(resolvedSub.getProperties().keySet());
             }
         }
         return props;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private record ErrorSchemaCollector(Map<String, Schema> componentSchemas,
+                                        Map<String, List<String>> signatureLocations,
+                                        Map<String, Set<String>> signatureProperties,
+                                        List<String> violations) {
+        ErrorSchemaCollector(Map<String, Schema> componentSchemas) {
+            this(componentSchemas, new LinkedHashMap<>(), new LinkedHashMap<>(), new ArrayList<>());
+        }
     }
 
     private static void detectDivergentErrorSchemas(Map<String, List<String>> signatureLocations,

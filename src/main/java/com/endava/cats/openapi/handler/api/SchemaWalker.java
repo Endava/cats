@@ -4,6 +4,7 @@ import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.JsonUtils;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -104,58 +105,68 @@ public class SchemaWalker {
             Deque<String> ptrStem = new ArrayDeque<>(List.of("paths", urlEsc, method));
             WalkContext opCtx = ctx.withLocation(rawUrl, m.toString());
 
-            List<Parameter> params = Optional.ofNullable(op.getParameters()).orElse(List.of());
-            for (int i = 0; i < params.size(); i++) {
-                Parameter p = params.get(i);
-                if (p == null || p.getSchema() == null) continue;
-
-                Deque<String> fqn = new ArrayDeque<>(fqnStem);
-                fqn.add("param");
-                fqn.add(Optional.ofNullable(p.getName()).orElse("param" + i));
-
-                Deque<String> ptr = new ArrayDeque<>(ptrStem);
-                ptr.add("parameters");
-                ptr.add(Integer.toString(i));
-                ptr.add("schema");
-
-                dfs(p.getSchema(), fqn, ptr, opCtx);
-            }
-
-            Optional.ofNullable(op.getRequestBody()).map(RequestBody::getContent)
-                    .ifPresent(content -> content.forEach((mt, media) -> {
-                        if (mt == null || media == null) return;
-                        Deque<String> fqn = new ArrayDeque<>(fqnStem);
-                        fqn.add("request");
-                        fqn.add(mt);
-
-                        Deque<String> ptr = new ArrayDeque<>(ptrStem);
-                        ptr.add("requestBody");
-                        ptr.add("content");
-                        ptr.add(mt);
-                        ptr.add("schema");
-
-                        consumeMedia(media, fqn, ptr, opCtx);
-                    }));
-
-            Optional.ofNullable(op.getResponses())
-                    .ifPresent(responses -> responses.forEach((code, resp) ->
-                            Optional.ofNullable(resp).map(ApiResponse::getContent).ifPresent(content ->
-                                    content.forEach((mt, media) -> {
-                                        if (code == null || mt == null || media == null) return;
-                                        Deque<String> fqn = new ArrayDeque<>(fqnStem);
-                                        fqn.add("response" + code);
-                                        fqn.add(mt);
-
-                                        Deque<String> ptr = new ArrayDeque<>(ptrStem);
-                                        ptr.add("responses");
-                                        ptr.add(code);
-                                        ptr.add("content");
-                                        ptr.add(mt);
-                                        ptr.add("schema");
-
-                                        consumeMedia(media, fqn, ptr, opCtx);
-                                    }))));
+            processParameters(op, fqnStem, ptrStem, opCtx);
+            processRequestBody(op, fqnStem, ptrStem, opCtx);
+            processResponses(op, fqnStem, ptrStem, opCtx);
         });
+    }
+
+    private static void processParameters(Operation op, Deque<String> fqnStem, Deque<String> ptrStem, WalkContext opCtx) {
+        List<Parameter> params = Optional.ofNullable(op.getParameters()).orElse(List.of());
+        for (int i = 0; i < params.size(); i++) {
+            Parameter p = params.get(i);
+            if (p == null || p.getSchema() == null) continue;
+
+            Deque<String> fqn = new ArrayDeque<>(fqnStem);
+            fqn.add("param");
+            fqn.add(Optional.ofNullable(p.getName()).orElse("param" + i));
+
+            Deque<String> ptr = new ArrayDeque<>(ptrStem);
+            ptr.add("parameters");
+            ptr.add(Integer.toString(i));
+            ptr.add("schema");
+
+            dfs(p.getSchema(), fqn, ptr, opCtx);
+        }
+    }
+
+    private static void processRequestBody(Operation op, Deque<String> fqnStem, Deque<String> ptrStem, WalkContext opCtx) {
+        Optional.ofNullable(op.getRequestBody()).map(RequestBody::getContent)
+                .ifPresent(content -> content.forEach((mt, media) -> {
+                    if (mt == null || media == null) return;
+                    Deque<String> fqn = new ArrayDeque<>(fqnStem);
+                    fqn.add("request");
+                    fqn.add(mt);
+
+                    Deque<String> ptr = new ArrayDeque<>(ptrStem);
+                    ptr.add("requestBody");
+                    ptr.add("content");
+                    ptr.add(mt);
+                    ptr.add("schema");
+
+                    consumeMedia(media, fqn, ptr, opCtx);
+                }));
+    }
+
+    private static void processResponses(Operation op, Deque<String> fqnStem, Deque<String> ptrStem, WalkContext opCtx) {
+        Optional.ofNullable(op.getResponses())
+                .ifPresent(responses -> responses.forEach((code, resp) ->
+                        Optional.ofNullable(resp).map(ApiResponse::getContent).ifPresent(content ->
+                                content.forEach((mt, media) -> {
+                                    if (code == null || mt == null || media == null) return;
+                                    Deque<String> fqn = new ArrayDeque<>(fqnStem);
+                                    fqn.add("response" + code);
+                                    fqn.add(mt);
+
+                                    Deque<String> ptr = new ArrayDeque<>(ptrStem);
+                                    ptr.add("responses");
+                                    ptr.add(code);
+                                    ptr.add("content");
+                                    ptr.add(mt);
+                                    ptr.add("schema");
+
+                                    consumeMedia(media, fqn, ptr, opCtx);
+                                }))));
     }
 
     /**

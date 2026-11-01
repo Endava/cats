@@ -79,21 +79,32 @@ public class PolymorphismDiscriminatorLinter extends BaseLinter {
             return;
         }
 
-        if (discriminator.getMapping() != null) {
-            for (Map.Entry<String, String> entry : discriminator.getMapping().entrySet()) {
-                String targetName = CatsModelUtils.getSimpleRef(entry.getValue());
-                if (targetName == null || !componentSchemas.containsKey(targetName)) {
-                    violations.add("Schema '%s' discriminator mapping '%s' -> '%s' does not resolve to an existing component schema"
-                            .formatted(location, entry.getKey(), entry.getValue()));
-                }
-            }
-        }
+        validateDiscriminatorMapping(discriminator, location, componentSchemas, violations);
 
         boolean definedOnParent = schema.getProperties() != null && schema.getProperties().containsKey(propName);
-        if (definedOnParent) {
+        if (!definedOnParent) {
+            validateVariantsDeclareProperty(schema, location, propName, componentSchemas, violations);
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void validateDiscriminatorMapping(Discriminator discriminator, String location,
+                                                     Map<String, Schema> componentSchemas, List<String> violations) {
+        if (discriminator.getMapping() == null) {
             return;
         }
+        for (Map.Entry<String, String> entry : discriminator.getMapping().entrySet()) {
+            String targetName = CatsModelUtils.getSimpleRef(entry.getValue());
+            if (targetName == null || !componentSchemas.containsKey(targetName)) {
+                violations.add("Schema '%s' discriminator mapping '%s' -> '%s' does not resolve to an existing component schema"
+                        .formatted(location, entry.getKey(), entry.getValue()));
+            }
+        }
+    }
 
+    @SuppressWarnings("rawtypes")
+    private static void validateVariantsDeclareProperty(Schema<?> schema, String location, String propName,
+                                                        Map<String, Schema> componentSchemas, List<String> violations) {
         List<Schema> variants = new ArrayList<>();
         if (CatsUtil.isNotEmpty(schema.getOneOf())) {
             variants.addAll(schema.getOneOf());

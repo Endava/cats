@@ -117,7 +117,7 @@ class PathPluralsLinterTest {
 
     @Test
     void shouldDescribeTheLinter() {
-        assertThat(linter.toString()).isEqualTo("PathPluralsLinter");
+        assertThat(linter).hasToString("PathPluralsLinter");
         assertThat(linter.description()).isEqualTo("verifies that collection segments use plural nouns and flags singular "
                 + "or verb-prefixed names whose role is uncertain");
     }

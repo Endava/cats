@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -100,18 +99,7 @@ public class JsonObjectsCaseLinter extends BaseLinter {
         Operation operation = HttpMethod.getOperation(data.getMethod(), data.getPathItem());
         if (operation != null && operation.getResponses() != null) {
             for (ApiResponse apiResponse : operation.getResponses().values()) {
-                String ref = apiResponse.get$ref();
-                if (ref == null && apiResponse.getContent() != null) {
-                    MediaType mediaType = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getDefaultContentType());
-                    if (mediaType != null && mediaType.getSchema() != null) {
-                        Schema<?> respSchema = mediaType.getSchema();
-                        ref = respSchema.get$ref();
-                        if (ref == null && CatsModelUtils.isArraySchema(respSchema) && respSchema.getItems() != null) {
-                            ref = respSchema.getItems().get$ref();
-                        }
-                    }
-                }
-
+                String ref = responseSchemaRef(apiResponse);
                 if (ref != null) {
                     stringToCheck.add(ref.substring(ref.lastIndexOf("/") + 1));
                 }
@@ -121,6 +109,23 @@ public class JsonObjectsCaseLinter extends BaseLinter {
                 !namingArguments.getJsonObjectsNaming().getPattern().matcher(jsonObject).matches()
                         && CatsModelUtils.isNotGeneratedPattern(jsonObject)
                         && !NoMediaType.EMPTY_BODY.matches(jsonObject));
+    }
+
+    private String responseSchemaRef(ApiResponse apiResponse) {
+        String ref = apiResponse.get$ref();
+        if (ref != null || apiResponse.getContent() == null) {
+            return ref;
+        }
+        MediaType mediaType = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getDefaultContentType());
+        if (mediaType == null || mediaType.getSchema() == null) {
+            return null;
+        }
+        Schema<?> respSchema = mediaType.getSchema();
+        ref = respSchema.get$ref();
+        if (ref == null && CatsModelUtils.isArraySchema(respSchema) && respSchema.getItems() != null) {
+            ref = respSchema.getItems().get$ref();
+        }
+        return ref;
     }
 
     @Override

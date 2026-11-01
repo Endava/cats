@@ -257,8 +257,11 @@ import java.util.UUID;
         ValidContractEntry.class, MutatorEntry.class, JavaTimeModule.class
 })
 public class ReflectionConfig {
+    private ReflectionConfig() {
+    }
+
     @TargetClass(tools.jackson.databind.ext.OptionalHandlerFactory.class)
-    static final class Target_tools_jackson_databind_ext_OptionalHandlerFactory {
+    static final class TargetOptionalHandlerFactory {
         @Substitute
         public ValueSerializer<?> findSerializer(SerializationConfig config, JavaType type) {
             return null;

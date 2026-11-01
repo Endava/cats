@@ -16,7 +16,6 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Checks if the http response codes have a response body.

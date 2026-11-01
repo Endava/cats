@@ -122,7 +122,7 @@ class PathNounsLinterTest {
 
     @Test
     void shouldDescribeTheLinter() {
-        assertThat(linter.toString()).isEqualTo("PathNounsLinter");
+        assertThat(linter).hasToString("PathNounsLinter");
         assertThat(linter.description()).isEqualTo("verifies that path segments use resource nouns and that custom operations "
                 + "are verb-only, terminal, nested under a resource, and invoked with a matching HTTP method");
     }

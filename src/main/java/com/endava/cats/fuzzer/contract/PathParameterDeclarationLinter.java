@@ -5,7 +5,6 @@ import com.endava.cats.fuzzer.contract.base.BaseLinter;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;

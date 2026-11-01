@@ -212,9 +212,9 @@ public class SchemaValueConformanceLinter extends BaseLinter {
     }
 
     private static Set<String> declaredTypes(Schema<?> schema) {
-        Set<String> types = !CatsUtil.isEmpty(schema.getTypes())
-                ? new LinkedHashSet<>(schema.getTypes())
-                : new LinkedHashSet<>(schema.getType() != null ? Set.of(schema.getType()) : Set.of());
+        Set<String> types = CatsUtil.isEmpty(schema.getTypes())
+                ? new LinkedHashSet<>(schema.getType() != null ? Set.of(schema.getType()) : Set.of())
+                : new LinkedHashSet<>(schema.getTypes());
         types.remove("null");
         return types;
     }
@@ -271,6 +271,15 @@ public class SchemaValueConformanceLinter extends BaseLinter {
     }
 
     private static void checkNumber(BigDecimal value, Schema<?> schema, String path, List<String> problems) {
+        checkMinimum(value, schema, path, problems);
+        checkMaximum(value, schema, path, problems);
+        if (schema.getMultipleOf() != null && schema.getMultipleOf().signum() > 0
+                && value.remainder(schema.getMultipleOf()).signum() != 0) {
+            problems.add("%s%s is not a multiple of %s".formatted(at(path), value, schema.getMultipleOf()));
+        }
+    }
+
+    private static void checkMinimum(BigDecimal value, Schema<?> schema, String path, List<String> problems) {
         BigDecimal minimum = schema.getMinimum();
         if (minimum != null) {
             boolean exclusive = Boolean.TRUE.equals(schema.getExclusiveMinimum());
@@ -281,6 +290,9 @@ public class SchemaValueConformanceLinter extends BaseLinter {
         if (schema.getExclusiveMinimumValue() != null && value.compareTo(schema.getExclusiveMinimumValue()) <= 0) {
             problems.add("%s%s is not greater than exclusiveMinimum %s".formatted(at(path), value, schema.getExclusiveMinimumValue()));
         }
+    }
+
+    private static void checkMaximum(BigDecimal value, Schema<?> schema, String path, List<String> problems) {
         BigDecimal maximum = schema.getMaximum();
         if (maximum != null) {
             boolean exclusive = Boolean.TRUE.equals(schema.getExclusiveMaximum());
@@ -290,10 +302,6 @@ public class SchemaValueConformanceLinter extends BaseLinter {
         }
         if (schema.getExclusiveMaximumValue() != null && value.compareTo(schema.getExclusiveMaximumValue()) >= 0) {
             problems.add("%s%s is not less than exclusiveMaximum %s".formatted(at(path), value, schema.getExclusiveMaximumValue()));
-        }
-        if (schema.getMultipleOf() != null && schema.getMultipleOf().signum() > 0
-                && value.remainder(schema.getMultipleOf()).signum() != 0) {
-            problems.add("%s%s is not a multiple of %s".formatted(at(path), value, schema.getMultipleOf()));
         }
     }
 
@@ -322,13 +330,13 @@ public class SchemaValueConformanceLinter extends BaseLinter {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("rawtypes")
     private static void checkObject(JsonNode node, Schema<?> schema, String path, Map<String, Schema> componentSchemas,
                                     int depth, List<String> problems) {
         if (schema.getProperties() == null) {
             return;
         }
-        ((Map<String, Schema>) schema.getProperties()).forEach((propertyName, propertySchema) -> {
+        schema.getProperties().forEach((propertyName, propertySchema) -> {
             if (node.has(propertyName)) {
                 String propertyPath = path.isEmpty() ? propertyName : path + "." + propertyName;
                 validate(node.get(propertyName), propertySchema, propertyPath, componentSchemas, depth + 1, problems);

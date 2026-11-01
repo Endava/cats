@@ -176,21 +176,36 @@ public class FuzzingData {
         Set<CatsField> catsFields = new HashSet<>();
         Set<String> effectiveRequired = collectEffectiveRequired(schema, inheritedRequired);
 
-        if (schema.getProperties() != null) {
-            for (Map.Entry<String, Schema> prop : schema.getProperties().entrySet()) {
-                String childPrefix = prefix.isEmpty() ? prop.getKey() : prefix + "#" + prop.getKey();
-                Schema<?> propValue = prop.getValue();
-                Schema<?> resolvedProp = Optional.ofNullable(CatsModelUtils.resolveSchema(propValue, schemaMap)).orElse(propValue);
-                catsFields.add(CatsField.builder()
-                        .name(childPrefix)
-                        .schema(resolvedProp)
-                        .required(effectiveRequired.contains(prop.getKey()))
-                        .readOnly(Boolean.TRUE.equals(propValue.getReadOnly()) || Boolean.TRUE.equals(resolvedProp.getReadOnly()))
-                        .writeOnly(Boolean.TRUE.equals(propValue.getWriteOnly()) || Boolean.TRUE.equals(resolvedProp.getWriteOnly()))
-                        .build());
-                catsFields.addAll(this.getFields(propValue, childPrefix));
-            }
+        addPropertyFields(schema, prefix, effectiveRequired, catsFields);
+        addComposedSchemaFields(schema, prefix, visitedAtPrefix, effectiveRequired, catsFields);
+        addDiscriminatorMappedFields(schema, prefix, visitedAtPrefix, catsFields);
+
+        return catsFields.stream()
+                .filter(catsField -> this.getRequestPropertyTypes().get(catsField.getName()) != null)
+                .collect(Collectors.toSet());
+    }
+
+    private void addPropertyFields(Schema<?> schema, String prefix, Set<String> effectiveRequired, Set<CatsField> catsFields) {
+        if (schema.getProperties() == null) {
+            return;
         }
+        for (Map.Entry<String, Schema> prop : schema.getProperties().entrySet()) {
+            String childPrefix = prefix.isEmpty() ? prop.getKey() : prefix + "#" + prop.getKey();
+            Schema<?> propValue = prop.getValue();
+            Schema<?> resolvedProp = Optional.ofNullable(CatsModelUtils.resolveSchema(propValue, schemaMap)).orElse(propValue);
+            catsFields.add(CatsField.builder()
+                    .name(childPrefix)
+                    .schema(resolvedProp)
+                    .required(effectiveRequired.contains(prop.getKey()))
+                    .readOnly(Boolean.TRUE.equals(propValue.getReadOnly()) || Boolean.TRUE.equals(resolvedProp.getReadOnly()))
+                    .writeOnly(Boolean.TRUE.equals(propValue.getWriteOnly()) || Boolean.TRUE.equals(resolvedProp.getWriteOnly()))
+                    .build());
+            catsFields.addAll(this.getFields(propValue, childPrefix));
+        }
+    }
+
+    private void addComposedSchemaFields(Schema<?> schema, String prefix, Set<Schema<?>> visitedAtPrefix,
+                                         Set<String> effectiveRequired, Set<CatsField> catsFields) {
         if (schema.getAllOf() != null) {
             schema.getAllOf().forEach(item -> catsFields.addAll(this.getFields(item, prefix, visitedAtPrefix, effectiveRequired)));
         }
@@ -200,18 +215,19 @@ public class FuzzingData {
         if (schema.getAnyOf() != null) {
             schema.getAnyOf().forEach(item -> catsFields.addAll(this.getFields(item, prefix, visitedAtPrefix, Set.of())));
         }
-        if (schema.getDiscriminator() != null && schema.getDiscriminator().getMapping() != null) {
-            for (String mappedRef : schema.getDiscriminator().getMapping().values()) {
-                Schema<?> mappedSchema = schemaMap.get(CatsModelUtils.getSimpleRef(mappedRef));
-                if (mappedSchema != null) {
-                    catsFields.addAll(this.getFields(mappedSchema, prefix, visitedAtPrefix, Set.of()));
-                }
+    }
+
+    private void addDiscriminatorMappedFields(Schema<?> schema, String prefix, Set<Schema<?>> visitedAtPrefix,
+                                              Set<CatsField> catsFields) {
+        if (schema.getDiscriminator() == null || schema.getDiscriminator().getMapping() == null) {
+            return;
+        }
+        for (String mappedRef : schema.getDiscriminator().getMapping().values()) {
+            Schema<?> mappedSchema = schemaMap.get(CatsModelUtils.getSimpleRef(mappedRef));
+            if (mappedSchema != null) {
+                catsFields.addAll(this.getFields(mappedSchema, prefix, visitedAtPrefix, Set.of()));
             }
         }
-
-        return catsFields.stream()
-                .filter(catsField -> this.getRequestPropertyTypes().get(catsField.getName()) != null)
-                .collect(Collectors.toSet());
     }
 
     @SuppressWarnings("unchecked")

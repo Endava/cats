@@ -64,49 +64,59 @@ public class HttpMethodConsistencyLinter extends BaseLinter {
         Map<String, List<String>> warnings = new LinkedHashMap<>();
 
         for (String group : resourceData.getGroups()) {
-            Set<String> paths = resourceData.getPathsForGroup(group);
-            boolean hasItemPath = paths.stream().anyMatch(analyzer::isItemPath);
-            if (!hasItemPath) {
-                continue;
-            }
-
-            boolean hasCollectionPath = paths.stream().anyMatch(p -> !analyzer.isItemPath(p));
-            Set<String> itemHttpMethods = resourceData.getItemMethods(group);
-            boolean itemHasGetOrUpdate = itemHttpMethods.contains("get")
-                    || itemHttpMethods.contains("put")
-                    || itemHttpMethods.contains("patch");
-            if (!hasCollectionPath && !itemHasGetOrUpdate) {
-                continue;
-            }
-
-            List<String> groupFindings = new ArrayList<>();
-
-            if (!hasCollectionPath || paths.stream()
-                    .filter(p -> !analyzer.isItemPath(p))
-                    .noneMatch(p -> resourceData.pathMethods().getOrDefault(p, Set.of()).contains("post"))) {
-                groupFindings.add("missing POST on collection path [%s]".formatted(analyzer.deriveCollectionPathFromGroup(group)));
-            }
-
-            if (!itemHttpMethods.contains("get")) {
-                groupFindings.add("missing GET on item path [%s]".formatted(analyzer.deriveItemPathFromGroup(group)));
-            }
-
-            if (!itemHttpMethods.contains("delete")) {
-                groupFindings.add("missing DELETE on item path [%s]".formatted(analyzer.deriveItemPathFromGroup(group)));
-            }
-
-            boolean hasUpdateMethod = HttpMethodConsistencyAnalyzer.UPDATE_METHODS.stream()
-                    .anyMatch(itemHttpMethods::contains);
-            if (!hasUpdateMethod) {
-                groupFindings.add("missing at least one of PUT or PATCH on item path [%s]".formatted(analyzer.deriveItemPathFromGroup(group)));
-            }
-
+            List<String> groupFindings = analyzeGroup(group, resourceData);
             if (!groupFindings.isEmpty()) {
                 warnings.put(group, groupFindings);
             }
         }
 
         return warnings;
+    }
+
+    private List<String> analyzeGroup(String group, HttpMethodConsistencyAnalyzer.ResourcePathData resourceData) {
+        Set<String> paths = resourceData.getPathsForGroup(group);
+        boolean hasItemPath = paths.stream().anyMatch(analyzer::isItemPath);
+        if (!hasItemPath) {
+            return List.of();
+        }
+
+        boolean hasCollectionPath = paths.stream().anyMatch(p -> !analyzer.isItemPath(p));
+        Set<String> itemHttpMethods = resourceData.getItemMethods(group);
+        boolean itemHasGetOrUpdate = itemHttpMethods.contains("get")
+                || itemHttpMethods.contains("put")
+                || itemHttpMethods.contains("patch");
+        if (!hasCollectionPath && !itemHasGetOrUpdate) {
+            return List.of();
+        }
+
+        List<String> groupFindings = new ArrayList<>();
+        if (!hasCollectionPath || isMissingPostOnCollection(paths, resourceData)) {
+            groupFindings.add("missing POST on collection path [%s]".formatted(analyzer.deriveCollectionPathFromGroup(group)));
+        }
+        addMissingItemMethodFindings(group, itemHttpMethods, groupFindings);
+        return groupFindings;
+    }
+
+    private boolean isMissingPostOnCollection(Set<String> paths, HttpMethodConsistencyAnalyzer.ResourcePathData resourceData) {
+        return paths.stream()
+                .filter(p -> !analyzer.isItemPath(p))
+                .noneMatch(p -> resourceData.pathMethods().getOrDefault(p, Set.of()).contains("post"));
+    }
+
+    private void addMissingItemMethodFindings(String group, Set<String> itemHttpMethods, List<String> groupFindings) {
+        if (!itemHttpMethods.contains("get")) {
+            groupFindings.add("missing GET on item path [%s]".formatted(analyzer.deriveItemPathFromGroup(group)));
+        }
+
+        if (!itemHttpMethods.contains("delete")) {
+            groupFindings.add("missing DELETE on item path [%s]".formatted(analyzer.deriveItemPathFromGroup(group)));
+        }
+
+        boolean hasUpdateMethod = HttpMethodConsistencyAnalyzer.UPDATE_METHODS.stream()
+                .anyMatch(itemHttpMethods::contains);
+        if (!hasUpdateMethod) {
+            groupFindings.add("missing at least one of PUT or PATCH on item path [%s]".formatted(analyzer.deriveItemPathFromGroup(group)));
+        }
     }
 
     @Override
