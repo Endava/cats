@@ -5,7 +5,7 @@ import io.swagger.v3.oas.models.media.Schema;
 
 /**
  * Represents a custom media type indicating an empty body.
- * Extends {@link io.swagger.v3.oas.models.media.MediaType MediaType}.
+ * Extends {@link MediaType MediaType}.
  */
 public class NoMediaType extends MediaType {
     /**

@@ -1,11 +1,13 @@
 package com.endava.cats.command;
 
 import com.endava.cats.fuzzer.special.FunctionalFlowParser;
+import com.endava.cats.model.CatsTestCase;
 import com.sun.net.httpserver.HttpServer;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
 import java.net.InetAddress;
@@ -426,5 +428,253 @@ class TriageCommandTest {
         Assertions.assertThat(cmd.getLastReport().minedRefDataYaml())
                 .contains("id: 9001", "activeId: true")
                 .doesNotContain("999999");
+    }
+
+    @Test
+    void shouldHandleVerifyFailuresUnquotedFieldsEnumDiscriminatorsAndStatusDescriptions(@TempDir Path tempDir) throws Exception {
+        // Test 1 & Test 2: same 500 crash to hit accumulator merge + unfixed crash exit code
+        for (int i = 1; i <= 2; i++) {
+            Files.writeString(tempDir.resolve("Test" + i + ".json"), """
+                    {
+                      "testId": "Test %d",
+                      "result": "error",
+                      "resultReason": "Unexpected response code: 500",
+                      "fuzzer": "Fuzzer%d",
+                      "contractPath": "/crashes",
+                      "path": "/crashes",
+                      "fullRequestPath": "http://127.0.0.1:1/crashes",
+                      "request": {"httpMethod": "GET", "sendBody": false},
+                      "response": {"responseCode": 500, "body": "Internal crash"}
+                    }
+                    """.formatted(i, i), StandardCharsets.UTF_8);
+        }
+
+        // Test 3: 422 with unquoted multi-word required field not in payload + enum-like constant discriminator
+        Files.writeString(tempDir.resolve("Test3.json"), """
+                {
+                  "testId": "Test 3",
+                  "result": "error",
+                  "resultReason": "Unexpected response code: 422",
+                  "expectedResult": "Should return 2XX",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/invoices",
+                  "path": "/invoices",
+                  "request": {
+                    "httpMethod": "POST",
+                    "url": "http://127.0.0.1:1/invoices",
+                    "payload": "[{\\"planMarker\\":\\"ENTERPRISE_TIER\\"}]",
+                    "sendBody": true
+                  },
+                  "response": {"responseCode": 422, "jsonBody": {"message": "tax number is required"}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        // Test 4: 400 on /invoices with expected 2XX to hit pathsWithSynthesizedCorrelations branch
+        Files.writeString(tempDir.resolve("Test4.json"), """
+                {
+                  "testId": "Test 4",
+                  "result": "error",
+                  "resultReason": "Unexpected response code: 400",
+                  "expectedResult": "Should return 2XX",
+                  "fuzzer": "CustomFuzzer",
+                  "contractPath": "/invoices",
+                  "path": "/invoices",
+                  "request": {
+                    "httpMethod": "POST",
+                    "url": "http://127.0.0.1:1/invoices",
+                    "payload": "{\\"planMarker\\":\\"ENTERPRISE_TIER\\",\\"nested\\":{\\"subType\\":\\"B2B\\"}}",
+                    "sendBody": true
+                  },
+                  "response": {"responseCode": 400, "jsonBody": {"message": "code is required"}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        // Test 5..14: undocumented status codes to cover defaultStatusDescription switch branches
+        int[] codes = {200, 201, 202, 204, 400, 401, 403, 404, 409, 415, 422, 429};
+        for (int idx = 0; idx < codes.length; idx++) {
+            int code = codes[idx];
+            Files.writeString(tempDir.resolve("Test" + (10 + idx) + ".json"), """
+                    {
+                      "testId": "Test %d",
+                      "result": "warn",
+                      "resultReason": "Undocumented response code",
+                      "fuzzer": "HappyPath",
+                      "contractPath": "/drift",
+                      "path": "/drift",
+                      "request": {"httpMethod": "GET", "url": "http://127.0.0.1:1/drift", "sendBody": false},
+                      "response": {"responseCode": %d}
+                    }
+                    """.formatted(10 + idx, code), StandardCharsets.UTF_8);
+        }
+
+        TriageCommand cmd = new TriageCommand();
+        cmd.reportFolder = tempDir.toString();
+        cmd.contractPath = "does-not-exist-contract.yml";
+        cmd.verify = true;
+        cmd.serverUrl = "http://127.0.0.1:1/base";
+        cmd.customHeaders.put("X-Override", "1");
+        cmd.run();
+
+        Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+        Assertions.assertThat(cmd.getLastReport().synthesizedCorrelationsYaml())
+                .contains("taxNumber", "code");
+        Assertions.assertThat(cmd.getLastReport().contractPatchYaml())
+                .contains("OK", "Created", "Accepted", "No Content", "Bad Request",
+                        "Unauthorized", "Forbidden", "Not Found", "Conflict",
+                        "Unsupported Media Type", "Unprocessable Entity", "HTTP 429");
+
+        // Cover OpenAPI contract drift detection when openAPI is supplied (472-481),
+        // minedRefData remediation on 404 (715-717), nested field match (887-890),
+        // nested discriminator candidate (938-950), and String id mining (448)
+        Path openApiDriftDir = tempDir.resolve("openapi-drift");
+        Files.createDirectories(openApiDriftDir);
+        Files.writeString(openApiDriftDir.resolve("Test1.json"), """
+                {
+                  "testId": "Test 1",
+                  "result": "success",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/pets",
+                  "path": "/pets",
+                  "request": {"httpMethod": "POST", "url": "http://localhost:8080/pets", "sendBody": true},
+                  "response": {"responseCode": 200, "jsonBody": {"id": "pet-str-1"}}
+                }
+                """, StandardCharsets.UTF_8);
+        Files.writeString(openApiDriftDir.resolve("Test2.json"), """
+                {
+                  "testId": "Test 2",
+                  "result": "error",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/pets/{id}",
+                  "path": "/pets/{id}",
+                  "request": {"httpMethod": "GET", "url": "invalid url with spaces", "sendBody": false},
+                  "response": {"responseCode": 404, "jsonBody": {"message": "Not found"}}
+                }
+                """, StandardCharsets.UTF_8);
+        Files.writeString(openApiDriftDir.resolve("Test3.json"), """
+                {
+                  "testId": "Test 3",
+                  "result": "error",
+                  "expectedResult": "Should return 2XX",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/pets",
+                  "path": "/pets",
+                  "request": {
+                    "httpMethod": "POST",
+                    "url": "http://localhost:8080/pets",
+                    "payload": "{\\"wrapper\\":{\\"targetField\\":\\"x\\",\\"channelType\\":\\"WEB\\"}}",
+                    "sendBody": true
+                  },
+                  "response": {"responseCode": 422, "jsonBody": {"message": "target field must not be blank"}}
+                }
+                """, StandardCharsets.UTF_8);
+        Files.writeString(openApiDriftDir.resolve("Test4.json"), """
+                {
+                  "testId": "Test 4",
+                  "result": "error",
+                  "expectedResult": "Should return 4XX without 2XX",
+                  "fuzzer": "RemoveFields",
+                  "contractPath": "/pets",
+                  "path": "/pets",
+                  "request": {"httpMethod": "POST", "url": "http://localhost:8080/pets", "sendBody": true},
+                  "response": {"responseCode": 202, "jsonBody": {}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        Path driftSpec = openApiDriftDir.resolve("openapi.yml");
+        Files.writeString(driftSpec, """
+                openapi: 3.0.0
+                info:
+                  title: Drift Spec
+                  version: 1.0.0
+                paths:
+                  /pets:
+                    post:
+                      responses:
+                        '200':
+                          description: OK
+                """, StandardCharsets.UTF_8);
+
+        TriageCommand driftCmd = new TriageCommand();
+        driftCmd.reportFolder = openApiDriftDir.toString();
+        driftCmd.contractPath = driftSpec.toString();
+        driftCmd.run();
+        Assertions.assertThat(driftCmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+        Assertions.assertThat(driftCmd.getLastReport().synthesizedCorrelationsYaml())
+                .contains("wrapper.channelType == 'WEB'", "wrapper.targetField");
+        Assertions.assertThat(driftCmd.getLastReport().contractPatchYaml()).contains("'202':");
+
+        // Cover 404 remediation when producer exists in spec and no mined refData (line 719),
+        // similar diagnosis merging into existing cluster (line 371), and omit correlation action (line 817)
+        Path extraTriageDir = tempDir.resolve("extra-triage");
+        Files.createDirectories(extraTriageDir);
+        Files.writeString(extraTriageDir.resolve("Test1.json"), """
+                {
+                  "testId": "Test 1",
+                  "result": "error",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/pets/{id}",
+                  "path": "/pets/10",
+                  "request": {"httpMethod": "GET", "url": "http://localhost:8080/pets/10"},
+                  "response": {"responseCode": 404, "jsonBody": {"message": "Pet 10 not found at /pets/10"}}
+                }
+                """, StandardCharsets.UTF_8);
+        Files.writeString(extraTriageDir.resolve("Test2.json"), """
+                {
+                  "testId": "Test 2",
+                  "result": "error",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/pets/{id}",
+                  "path": "/pets/20",
+                  "request": {"httpMethod": "GET", "url": "http://localhost:8080/pets/20"},
+                  "response": {"responseCode": 404, "jsonBody": {"message": "Pet 20 not found at /pets/20"}}
+                }
+                """, StandardCharsets.UTF_8);
+        Files.writeString(extraTriageDir.resolve("Test3.json"), """
+                {
+                  "testId": "Test 3",
+                  "result": "error",
+                  "fuzzer": "HappyPath",
+                  "contractPath": "/pets",
+                  "path": "/pets",
+                  "request": {
+                    "httpMethod": "POST",
+                    "url": "http://localhost:8080/pets",
+                    "payload": "{\\"extraField\\":\\"1\\",\\"kind\\":\\"STATIC_KIND\\"}"
+                  },
+                  "response": {"responseCode": 422, "jsonBody": {"message": "'extraField' must be null when kind is STATIC_KIND"}}
+                }
+                """, StandardCharsets.UTF_8);
+
+        TriageCommand extraCmd = new TriageCommand();
+        extraCmd.reportFolder = extraTriageDir.toString();
+        extraCmd.contractPath = driftSpec.toString();
+        extraCmd.run();
+        Assertions.assertThat(extraCmd.getLastReport().synthesizedCorrelationsYaml()).contains("omit:");
+
+        // Cover helper methods in TriageCommand: resolveReplayUrlWithServerOverride, buildCurlForTest, extractUnquotedFieldFromMessage, isClusterVerifiedFixed
+        Class<?> accumClass = Class.forName("com.endava.cats.command.TriageCommand$ClusterAccumulator");
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
+                accumClass, "resolveTargetUrl", "http://localhost:8080/v1/orders", ""))
+                .isEqualTo("http://localhost:8080/v1/orders");
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
+                accumClass, "resolveTargetUrl", "not-a-url", "https://staging.example.com/api/"))
+                .isEqualTo("not-a-url");
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
+                accumClass, "resolveTargetUrl", "http://localhost:8080/orders", "https://staging.example.com/api/"))
+                .isEqualTo("https://staging.example.com/api/orders");
+
+        CatsTestCase noReqTc = new CatsTestCase();
+        noReqTc.setRequest(null);
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
+                TriageCommand.class, "buildCurlReproducer", noReqTc)).isEmpty();
+
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
+                TriageCommand.class, "extractUnquotedRequiredFieldPrefix", "12 is required")).isNull();
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
+                TriageCommand.class, "extractUnquotedRequiredFieldPrefix", "a$b is required")).isNull();
+        Assertions.assertThat((Boolean) ReflectionTestUtils.invokeMethod(
+                accumClass, "isVerifiedFixed", "SERVER_CRASH_5XX", "Should return 2XX", 200)).isTrue();
+        Assertions.assertThat((Boolean) ReflectionTestUtils.invokeMethod(
+                accumClass, "isVerifiedFixed", "CROSS_FIELD_CONSTRAINT_4XX", "Should return 4XX", 400)).isTrue();
     }
 }

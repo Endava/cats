@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.util.List;
+
 @QuarkusTest
 class ResponseCodeFamilyPredefinedTest {
 
@@ -197,5 +199,20 @@ class ResponseCodeFamilyPredefinedTest {
     @CsvSource({"431,true", "432,false"})
     void shouldReturnTooManyHeaders(int code, boolean result) {
         Assertions.assertThat(ResponseCodeFamily.isTooManyHeaders(code)).isEqualTo(result);
+    }
+
+    @Test
+    void shouldSupportDynamicResponseCodeFamilyEqualsAndHashCode() {
+        ResponseCodeFamilyDynamic first = new ResponseCodeFamilyDynamic( List.of("200", "201"));
+        ResponseCodeFamilyDynamic second = new ResponseCodeFamilyDynamic(List.of("200", "201"));
+        ResponseCodeFamilyDynamic third = new ResponseCodeFamilyDynamic(List.of("400"));
+
+        Assertions.assertThat(first)
+                .isEqualTo(second)
+                .hasSameHashCodeAs(second)
+                .isNotEqualTo(third)
+                .isNotEqualTo("200|201");
+        Assertions.assertThat(first.asString()).isEqualTo("200|201");
+        Assertions.assertThat(first.allowedResponseCodes()).containsExactly("200", "201");
     }
 }

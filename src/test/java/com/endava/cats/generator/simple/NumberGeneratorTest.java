@@ -8,6 +8,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 @QuarkusTest
 class NumberGeneratorTest {
@@ -29,7 +30,7 @@ class NumberGeneratorTest {
         schema.setFormat(null);
         Number leftBoundaryValue = NumberGenerator.generateLeftBoundaryIntegerValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(java.math.BigInteger.valueOf(Long.MIN_VALUE).subtract(java.math.BigInteger.valueOf(NumberGenerator.TEN_THOUSANDS)));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(BigInteger.valueOf(Long.MIN_VALUE).subtract(BigInteger.valueOf(NumberGenerator.TEN_THOUSANDS)));
     }
 
     @Test
@@ -65,7 +66,7 @@ class NumberGeneratorTest {
         schema.setFormat(null);
         Number leftBoundaryValue = NumberGenerator.generateRightBoundaryIntegerValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(java.math.BigInteger.valueOf(Long.MAX_VALUE).add(java.math.BigInteger.valueOf(NumberGenerator.TEN_THOUSANDS)));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.valueOf(NumberGenerator.TEN_THOUSANDS)));
     }
 
     @Test

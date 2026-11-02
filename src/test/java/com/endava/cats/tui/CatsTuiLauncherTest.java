@@ -14,6 +14,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -172,7 +173,7 @@ class CatsTuiLauncherTest {
             }).when(runner).run(Mockito.any());
 
             boolean cancelled = launcher.run(() -> {
-                events.publish(new CatsExecutionEvent.SessionStarted(java.time.Instant.now(),
+                events.publish(new CatsExecutionEvent.SessionStarted(Instant.now(),
                         "cats", "1", "today", "test"));
                 executionFinished.countDown();
             }, 10);

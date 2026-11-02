@@ -43,7 +43,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
- * Wrapper on top of {@link com.endava.cats.util.external.ModelUtils} in order to accommodate
+ * Wrapper on top of {@link ModelUtils} in order to accommodate
  * some particular conditions needed by CATS.
  */
 @RegisterForReflection

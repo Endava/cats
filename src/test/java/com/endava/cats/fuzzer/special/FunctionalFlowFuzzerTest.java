@@ -11,6 +11,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.KeyValuePair;
 import com.google.gson.JsonParser;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -18,6 +19,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -526,6 +529,108 @@ class FunctionalFlowFuzzerTest {
         Assertions.assertThat(fuzzer.getVariables()).containsEntry("fromPathId", "p_77");
         File customRef = new File("refData_custom.yml");
         Assertions.assertThat(customRef).exists();
-        customRef.deleteOnExit();
+        Files.deleteIfExists(customRef.toPath());
+    }
+
+    @Test
+    void shouldLoadOnlyPayloadLinesAndRejectMissingPayloadFiles(@TempDir Path tempDir) throws Exception {
+        Path payloads = tempDir.resolve("payloads.txt");
+        Files.writeString(payloads, "# comment line\n\npayload_one\n");
+        var config = new FunctionalFlowDocument.StepFuzzConfig(List.of("name"), List.of(), List.of(),
+                List.of(payloads.toString()), FunctionalFlowDocument.FuzzMode.SINGLE);
+        Assertions.assertThat(FunctionalFlowFuzzer.loadPayloadsForFuzzStep(config, PrettyLoggerFactory.getConsoleLogger()))
+                .containsExactly("payload_one");
+        var missing = new FunctionalFlowDocument.StepFuzzConfig(List.of("name"), List.of(), List.of(),
+                List.of(tempDir.resolve("missing.txt").toString()), FunctionalFlowDocument.FuzzMode.SINGLE);
+        Assertions.assertThat(FunctionalFlowFuzzer.loadPayloadsForFuzzStep(missing, PrettyLoggerFactory.getConsoleLogger())).isEmpty();
+    }
+
+    @Test
+    void shouldRejectMissingFuzzPayloadsAndTargetsWithoutSendingRequests() {
+        TestCaseListener listener = flowListener();
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        flow.fuzz(flowData());
+        flow.executeDocument(FunctionalFlowParser.parseContent("""
+                steps:
+                  - POST: /billing-plans
+                    fuzz:
+                      fields: [name]
+                  - POST: /billing-plans
+                    fuzz:
+                      payloads: [x]
+                """), "invalid-config", flow);
+        Mockito.verify(listener).recordError(Mockito.contains("payloads or payloadsFile"));
+        Mockito.verify(listener).recordError(Mockito.contains("fields or fieldTypes"));
+        Mockito.verify(serviceCaller, Mockito.never()).call(Mockito.any());
+    }
+
+    @Test
+    void shouldSkipFilteredStepsAndAvoidSavingTruncatedResponseValues() {
+        TestCaseListener listener = flowListener();
+        Mockito.when(listener.shouldContinueExecution(Mockito.any(), Mockito.any())).thenReturn(false, true);
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        FuzzingData data = flowData();
+        flow.fuzz(data);
+        CatsResponse truncated = CatsResponse.builder().responseCode(201).body("{\"id\":\"partial\"}").bodyTruncated(true).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(truncated);
+        flow.executeDocument(FunctionalFlowParser.parseContent("""
+                steps:
+                  - name: filtered
+                    POST: /billing-plans
+                  - name: truncated
+                    POST: /billing-plans
+                    save:
+                      createdId: id
+                """), "truncated-flow", flow);
+        Mockito.verify(serviceCaller, Mockito.times(1)).call(Mockito.any());
+        Mockito.verify(listener).skipTest(Mockito.any(), Mockito.eq("Test skipped due to response code filtering"));
+        Mockito.verify(listener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.same(truncated), Mockito.any(), Mockito.anyBoolean(), Mockito.eq(true));
+        Assertions.assertThat(flow.getVariables()).doesNotContainKeys("createdId", "steps.filtered.response")
+                .containsEntry("steps.truncated.status", "201");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,ORD-123,true", "false,ORD-123,false", "true,INVALID,false"})
+    void shouldEvaluateBooleanAndRegexExpectations(boolean flag, String code, boolean matches) {
+        TestCaseListener listener = flowListener();
+        Mockito.when(listener.shouldContinueExecution(Mockito.any(), Mockito.any())).thenReturn(true);
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        FuzzingData data = flowData();
+        flow.fuzz(data);
+        String body = "{\"flag\":%s,\"code\":\"%s\"}".formatted(flag, code);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(201)
+                .body(body).jsonBody(JsonParser.parseString(body)).build());
+        flow.executeDocument(FunctionalFlowParser.parseContent("""
+                steps:
+                  - POST: /billing-plans
+                    status: 201
+                    expect:
+                      flag: "TRUE"
+                      code: 'ORD-\\d+'
+                """), "assertions-flow", flow);
+        Mockito.verify(serviceCaller).call(Mockito.any());
+        if (matches) {
+            Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.eq(data), Mockito.eq("Response matches all 'verify' parameters"));
+            Mockito.verify(listener, Mockito.never()).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString());
+        } else {
+            Mockito.verify(listener).reportResultError(Mockito.any(), Mockito.eq(data),
+                    Mockito.eq("Verify parameters not matching response"), Mockito.contains(flag ? "code" : "flag"));
+            Mockito.verify(listener, Mockito.never()).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.anyString());
+        }
+    }
+
+    private TestCaseListener flowListener() {
+        TestCaseListener listener = Mockito.mock(TestCaseListener.class);
+        Mockito.doAnswer(invocation -> {
+            invocation.<Runnable>getArgument(2).run();
+            return null;
+        }).when(listener).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        return listener;
+    }
+
+    private FuzzingData flowData() {
+        return FuzzingData.builder().method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
+                .payload("{\"name\":\"Plan\"}").reqSchema(new ObjectSchema()).schemaMap(Map.of())
+                .headers(Set.of()).responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
     }
 }

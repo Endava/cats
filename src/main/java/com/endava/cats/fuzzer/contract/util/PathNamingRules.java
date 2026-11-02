@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,8 +35,8 @@ import java.util.stream.Stream;
  */
 public final class PathNamingRules {
     private static final List<Pattern> VERSION_SEGMENT_PATTERNS = List.of(
-            Pattern.compile("v(?:ersion)?\\d+(?:[._-]\\d+)*(?:[-_]?(?:alpha|beta|rc)\\d*)?", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\d+(?:\\.\\d+)*"),
+            Pattern.compile("v(?:ersion)?\\d++(?:[._-]\\d++)*+(?:[-_]?(?:alpha|beta|rc)\\d*+)?+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\d++(?:\\.\\d++)*+"),
             Pattern.compile("\\d{4}-\\d{2}-\\d{2}"));
     private static final Set<String> NAMESPACES = Set.of(
             "api", "rest", "bff", "internal", "external", "public", "private", "admin",
@@ -123,7 +124,7 @@ public final class PathNamingRules {
     private static final Set<String> FILE_EXTENSIONS = Set.of(
             "csv", "json", "xml", "pdf", "txt", "html", "yaml", "yml", "doc", "docx", "xls", "xlsx", "zip", "tar", "gz");
     private static final Set<String> IDENTITY_SELECTORS = Set.of("me", "self", "current");
-    private static volatile CachedSpecIndex lastSpecIndex;
+    private static final AtomicReference<CachedSpecIndex> LAST_SPEC_INDEX = new AtomicReference<>();
 
     private record CachedSpecIndex(WeakReference<Set<String>> keysRef, SpecPathIndex index) {
     }
@@ -163,7 +164,7 @@ public final class PathNamingRules {
      */
     public static Analysis analyze(FuzzingData data) {
         if (data == null) {
-            return analyze("", HttpMethod.GET, Collections.emptySet(), false);
+            return analyze("/", HttpMethod.GET, Collections.emptySet(), false);
         }
         OpenAPI openApi = data.getOpenApi();
         Set<String> contractPaths = openApi != null && openApi.getPaths() != null
@@ -444,6 +445,11 @@ public final class PathNamingRules {
                     && operationWord(List.of(head), hasSeparator) == null;
             this.unverifiedHomographCollection = validHomographCompound && isPlural(head) && !collectionEvidence;
         }
+
+        private static boolean isHomographLeading(List<String> words, boolean hasSeparator) {
+            String firstOp = operationWord(List.of(words.getFirst()), hasSeparator);
+            return firstOp != null && NOUN_VERB_HOMOGRAPHS.contains(firstOp);
+        }
     }
 
     private static String[] expandColonActions(String[] rawElements) {
@@ -495,12 +501,12 @@ public final class PathNamingRules {
         if (contractPaths == null || contractPaths.isEmpty()) {
             return SpecPathIndex.EMPTY;
         }
-        CachedSpecIndex cached = lastSpecIndex;
+        CachedSpecIndex cached = LAST_SPEC_INDEX.get();
         if (cached != null && cached.keysRef().get() == contractPaths) {
             return cached.index();
         }
         SpecPathIndex built = buildSpecPathIndex(contractPaths);
-        lastSpecIndex = new CachedSpecIndex(new WeakReference<>(contractPaths), built);
+        LAST_SPEC_INDEX.set(new CachedSpecIndex(new WeakReference<>(contractPaths), built));
         return built;
     }
 
@@ -662,14 +668,6 @@ public final class PathNamingRules {
             }
         }
         return false;
-    }
-
-    private static boolean isHomographLeading(List<String> words, boolean hasSeparator) {
-        if (words.isEmpty()) {
-            return false;
-        }
-        String firstOp = operationWord(List.of(words.getFirst()), hasSeparator);
-        return firstOp != null && NOUN_VERB_HOMOGRAPHS.contains(firstOp);
     }
 
     private static boolean isValidHomographCompound(List<String> words, boolean hasSeparator) {

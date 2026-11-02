@@ -115,5 +115,8 @@ class XmlPayloadEncoderTest {
 
         String primitiveRootXml = XmlPayloadEncoder.encode("\"hello & world\"", new StringSchema(), Map.of());
         Assertions.assertThat(primitiveRootXml).isEqualTo("\"hello & world\"");
+
+        String jsonStringRootXml = XmlPayloadEncoder.encode("123", new IntegerSchema(), Map.of());
+        Assertions.assertThat(jsonStringRootXml).isEqualTo("123");
     }
 }

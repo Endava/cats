@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -52,7 +53,7 @@ class CatsGlobalContextTest {
         OpenAPI openAPI = Mockito.mock(OpenAPI.class);
         Components components = Mockito.mock(Components.class);
         Mockito.when(openAPI.getComponents()).thenReturn(components);
-        Map<String, io.swagger.v3.oas.models.headers.Header> headerMap = Map.of("Example", new Header());
+        Map<String, Header> headerMap = Map.of("Example", new Header());
         Mockito.when(components.getHeaders()).thenReturn(headerMap);
         context.init(openAPI, List.of(), new Properties(), new CatsConfiguration("1", "2", "3", List.of(), 4, 4, 5, 6), Set.of(), Set.of());
 
@@ -72,7 +73,7 @@ class CatsGlobalContextTest {
         OpenAPI openAPI = Mockito.mock(OpenAPI.class);
         Components components = Mockito.mock(Components.class);
         Mockito.when(openAPI.getComponents()).thenReturn(components);
-        io.swagger.v3.oas.models.responses.ApiResponse notFound = new io.swagger.v3.oas.models.responses.ApiResponse();
+        ApiResponse notFound = new ApiResponse();
         Mockito.when(components.getResponses()).thenReturn(Map.of("NotFound", notFound));
         context.init(openAPI, List.of(), new Properties(), new CatsConfiguration("1", "2", "3", List.of(), 4, 4, 5, 6), Set.of(), Set.of());
 

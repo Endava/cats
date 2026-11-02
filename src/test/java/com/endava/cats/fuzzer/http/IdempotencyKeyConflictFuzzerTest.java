@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @QuarkusTest
@@ -112,5 +113,64 @@ class IdempotencyKeyConflictFuzzerTest {
         Assertions.assertThat(fuzzer).hasToString("IdempotencyKeyConflictFuzzer");
         Assertions.assertThat(fuzzer.skipForHttpMethods())
                 .containsOnly(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE, HttpMethod.PUT);
+    }
+
+    @Test
+    void shouldSkipWhenPayloadEmptyOrHeadersNullOrNoMutableFields() {
+        FuzzingData emptyPayload = FuzzingData.builder().payload("").build();
+        fuzzer.fuzz(emptyPayload);
+
+        FuzzingData nullHeaders = FuzzingData.builder().payload("{\"a\":1}").headers(null).build();
+        fuzzer.fuzz(nullHeaders);
+
+        FuzzingData noFields = FuzzingData.builder()
+                .payload("{\"flag\":true}")
+                .headers(Set.of(CatsHeader.builder().name("Idempotency-Key").value("k1").build()))
+                .allFieldsByHttpMethod(Set.of())
+                .build();
+        fuzzer.fuzz(noFields);
+
+        FuzzingData onlyBooleanField = FuzzingData.builder()
+                .payload("{\"flag\":true}")
+                .headers(Set.of(CatsHeader.builder().name("Idempotency-Key").value("k1").build()))
+                .allFieldsByHttpMethod(Set.of("flag", "missing"))
+                .build();
+        fuzzer.fuzz(onlyBooleanField);
+
+        Mockito.verifyNoInteractions(serviceCaller);
+    }
+
+    @Test
+    void shouldHandleInitial4xxResponseAndNumericAndConstrainedFields() {
+        CatsResponse badRequest = CatsResponse.builder().responseCode(400).body("{\"error\":\"bad\"}").build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(badRequest);
+
+        Schema<String> constrainedString = new Schema<String>().type("string").pattern("^[a-z]+$");
+        Schema<String> unconstrainedString = new Schema<String>().type("string");
+        Schema<Integer> intSchema = new Schema<Integer>().type("integer");
+
+        FuzzingData data = FuzzingData.builder()
+                .path("/orders")
+                .method(HttpMethod.POST)
+                .reqSchema(new Schema<>())
+                .requestContentTypes(List.of("application/json"))
+                .payload("{\"amount\":10,\"code\":\"abc\"}")
+                .headers(Set.of(
+                        CatsHeader.builder().name("Idempotency-Key").value("initial").build(),
+                        CatsHeader.builder().name("X-Correlation-Id").value("corr").build()))
+                .allFieldsByHttpMethod(Set.of("amount", "code"))
+                .requestPropertyTypes(Map.of(
+                        "amount", intSchema,
+                        "code", constrainedString,
+                        "other", unconstrainedString))
+                .build();
+
+        fuzzer.fuzz(data);
+
+        Mockito.verify(serviceCaller, Mockito.times(1)).call(Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("Initial request with {} returned {}; skipping conflict replay"),
+                Mockito.eq("Idempotency-Key"), Mockito.eq("400"));
     }
 }

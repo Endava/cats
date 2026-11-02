@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -130,8 +132,8 @@ class InvalidReferencesFieldsFuzzerTest {
                 .build();
         invalidReferencesFieldsFuzzer.fuzz(data);
 
-        org.mockito.ArgumentCaptor<com.endava.cats.fuzzer.executor.SimpleExecutorContext> captor =
-                org.mockito.ArgumentCaptor.forClass(com.endava.cats.fuzzer.executor.SimpleExecutorContext.class);
+        ArgumentCaptor<SimpleExecutorContext> captor =
+                ArgumentCaptor.forClass(SimpleExecutorContext.class);
         Mockito.verify(simpleExecutor, Mockito.times(27)).execute(captor.capture());
         Assertions.assertThat(captor.getAllValues())
                 .allMatch(ctx -> !ctx.isReplaceUrlParams() && ctx.getPath().startsWith("/items/42") && !ctx.getPath().contains("{id}"));
@@ -146,11 +148,11 @@ class InvalidReferencesFieldsFuzzerTest {
                 .build();
         invalidReferencesFieldsFuzzer.fuzz(data);
 
-        org.mockito.ArgumentCaptor<com.endava.cats.fuzzer.executor.SimpleExecutorContext> captor =
-                org.mockito.ArgumentCaptor.forClass(com.endava.cats.fuzzer.executor.SimpleExecutorContext.class);
+        ArgumentCaptor<SimpleExecutorContext> captor =
+                ArgumentCaptor.forClass(SimpleExecutorContext.class);
         Mockito.verify(simpleExecutor, Mockito.times(5)).execute(captor.capture());
         Assertions.assertThat(captor.getAllValues())
-                .extracting(com.endava.cats.fuzzer.executor.SimpleExecutorContext::getPath)
+                .extracting(SimpleExecutorContext::getPath)
                 .containsExactly("/search?q=%", "/search?q=%00", "/search?q=\r\n", "/search?q=\u0000", "/search?q=\u001B");
     }
 }

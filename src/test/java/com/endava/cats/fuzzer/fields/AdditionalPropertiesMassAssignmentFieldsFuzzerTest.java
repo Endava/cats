@@ -77,4 +77,17 @@ class AdditionalPropertiesMassAssignmentFieldsFuzzerTest {
         additionalPropertiesMassAssignmentFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(any(), eq(data), any(), any());
     }
+
+    @Test
+    void shouldRunIfSinglePropertyObjectWithAdditionalPropertiesFalse() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("field"));
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("field", new Schema().additionalProperties(false)));
+        Mockito.when(data.getPayload()).thenReturn("""
+                   {"field": {"singleProp": "value"}}
+                """);
+
+        additionalPropertiesMassAssignmentFieldsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(any(), eq(data), any(), any());
+    }
 }

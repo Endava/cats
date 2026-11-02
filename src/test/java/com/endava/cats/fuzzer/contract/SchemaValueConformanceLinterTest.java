@@ -4,6 +4,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
@@ -15,8 +16,13 @@ import org.mockito.Mockito;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @QuarkusTest
 class SchemaValueConformanceLinterTest {
@@ -110,6 +116,49 @@ class SchemaValueConformanceLinterTest {
         Assertions.assertThat(linter).hasToString("SchemaValueConformanceLinter");
         Assertions.assertThat(linter.description())
                 .isEqualTo("detects default and example values that violate the type, format, length, range, pattern or item constraints of their own schema");
+    }
+
+    @Test
+    void shouldHandleParsedJavaTypesMinLengthMinItemsExclusiveMaxAndNumericEnums() {
+        Schema<?> uuidSchema = new Schema<>().type("string").format("uuid").example(UUID.randomUUID())
+                ._default(LocalDate.of(2026, 1, 1));
+        Schema<?> binarySchema = new Schema<>().type("string").format("byte").example(new byte[]{1, 2});
+        Schema<?> temporalSchema = new Schema<>().type("string").format("date-time")
+                .example(OffsetDateTime.now(ZoneOffset.UTC))
+                ._default(Instant.EPOCH);
+        Schema<?> jsonNodeSchema = new Schema<>().type("boolean").example(Json.mapper().valueToTree(true));
+        Schema<?> embeddedObjSchema = new Schema<>().type("object")
+                .properties(Map.of(
+                        "shortStr", new Schema<>().type("string").minLength(5),
+                        "numEnum", new Schema<>().type("integer")._enum(List.of(10, 20))))
+                .example("{\"shortStr\":\"ab\",\"numEnum\":10}");
+        Schema<?> minItemsArray = new Schema<>().type("array").minItems(3).items(new Schema<>().type("string"))
+                .example(List.of("onlyOne"));
+        Schema<?> oas31Bounds = new Schema<>().type("number")
+                .minimum(BigDecimal.TEN)
+                .exclusiveMaximumValue(BigDecimal.valueOf(20))
+                .examples(List.of(BigDecimal.ONE, BigDecimal.valueOf(20)));
+
+        OpenAPI openAPI = new OpenAPI().components(new Components()
+                .addSchemas("Uuid", uuidSchema)
+                .addSchemas("Binary", binarySchema)
+                .addSchemas("Temporal", temporalSchema)
+                .addSchemas("JsonNodeBool", jsonNodeSchema)
+                .addSchemas("EmbeddedObj", embeddedObjSchema)
+                .addSchemas("MinItemsArray", minItemsArray)
+                .addSchemas("Oas31Bounds", oas31Bounds));
+
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
+        linter.process(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultWarn(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("Example values not conforming to their schema found"),
+                Mockito.argThat((String msg) -> msg.contains("'shortStr' length 2 is less than minLength 5")
+                        && msg.contains("has 1 items, less than minItems 3")
+                        && msg.contains("1 is less than minimum 10")
+                        && msg.contains("is not less than exclusiveMaximum 20")
+                        && !msg.contains("is not one of")));
     }
 
     private static OpenAPI parse(String contract) throws Exception {

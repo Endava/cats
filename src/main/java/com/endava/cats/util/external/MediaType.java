@@ -1,6 +1,7 @@
 package com.endava.cats.util.external;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -324,6 +325,6 @@ public final class MediaType {
     public static final MediaType ANY_TEXT_TYPE = MediaType.create("text", "*");
     public static final MediaType ANY_APPLICATION_TYPE = MediaType.create("application", "*");
 
-    public static final MediaType JSON_UTF_8 = MediaType.create("application", "json").withCharset(java.nio.charset.StandardCharsets.UTF_8);
-    public static final MediaType PLAIN_TEXT_UTF_8 = MediaType.create("text", "plain").withCharset(java.nio.charset.StandardCharsets.UTF_8);
+    public static final MediaType JSON_UTF_8 = MediaType.create("application", "json").withCharset(StandardCharsets.UTF_8);
+    public static final MediaType PLAIN_TEXT_UTF_8 = MediaType.create("text", "plain").withCharset(StandardCharsets.UTF_8);
 }

@@ -4,6 +4,7 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.exception.CatsException;
+import com.sun.net.httpserver.HttpServer;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -22,6 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -182,7 +184,7 @@ class WfcAuthProviderTest {
 
     @Test
     void shouldHandleRealRedirectingServerForCookieLoginWithoutFollowingRedirects() throws IOException {
-        com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress(0), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
         server.createContext("/WebGoat/login", exchange -> {
             exchange.getResponseHeaders().add("Set-Cookie", "JSESSIONID=authenticated-session; Path=/WebGoat");
             exchange.getResponseHeaders().add("Location", "/WebGoat/start.mvc");

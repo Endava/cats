@@ -7,6 +7,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.args.util.ProfileLoader;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsExecutionCancelledException;
@@ -22,6 +23,7 @@ import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.fuzzer.http.CheckReadsStillWorkFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.fuzzer.http.HttpMethodsFuzzer;
+import com.endava.cats.fuzzer.special.RandomFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.ExecutionSummary;
@@ -38,12 +40,19 @@ import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.VersionChecker;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.QueryParameter;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -58,6 +67,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -633,7 +643,7 @@ class CatsCommandTest {
             HappyPathFuzzer happy = recordingHappyPathFuzzer(order);
             PathItem collection = new PathItem().get(new Operation()).post(new Operation());
             PathItem requiredQuery = new PathItem().get(new Operation().addParametersItem(
-                    new io.swagger.v3.oas.models.parameters.QueryParameter().name("q").required(true)));
+                    new QueryParameter().name("q").required(true)));
             PathItem anotherCollection = new PathItem().get(new Operation());
             OpenAPI api = new OpenAPI().paths(new Paths().addPathItem("/items", collection)
                     .addPathItem("/search", requiredQuery).addPathItem("/widgets", anotherCollection));
@@ -859,12 +869,12 @@ class CatsCommandTest {
             return null;
         }).when(happy).fuzz(Mockito.any());
 
-        com.endava.cats.fuzzer.special.RandomFuzzer randomMock = Mockito.mock(com.endava.cats.fuzzer.special.RandomFuzzer.class);
+        RandomFuzzer randomMock = Mockito.mock(RandomFuzzer.class);
         Mockito.when(randomMock.toString()).thenReturn("RandomFuzzer");
         Mockito.doAnswer(inv -> {
             FuzzingData d = inv.getArgument(0);
             executionOrder.add("RandomContinuous:" + d.getMethod() + " " + d.getPath());
-            throw new com.endava.cats.exception.CatsExecutionLimitReachedException("time limit reached");
+            throw new CatsExecutionLimitReachedException("time limit reached");
         }).when(randomMock).fuzzContinuous(Mockito.any());
 
         Object originalRandom = ReflectionTestUtils.getField(catsMain, "randomFuzzer");
@@ -872,10 +882,10 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 10L);
         ReflectionTestUtils.setField(catsMain.stopArguments, "fillTimeBudget", true);
         try {
-            Operation binaryGet = new Operation().responses(new io.swagger.v3.oas.models.responses.ApiResponses()
-                    .addApiResponse("200", new io.swagger.v3.oas.models.responses.ApiResponse()
-                            .content(new io.swagger.v3.oas.models.media.Content()
-                                    .addMediaType("application/octet-stream", new io.swagger.v3.oas.models.media.MediaType()))));
+            Operation binaryGet = new Operation().responses(new ApiResponses()
+                    .addApiResponse("200", new ApiResponse()
+                            .content(new Content()
+                                    .addMediaType("application/octet-stream", new MediaType()))));
             PathItem templatedBinaryPath = new PathItem().get(binaryGet);
             PathItem dumpBinaryPath = new PathItem().get(binaryGet);
             PathItem itemPath = new PathItem().post(new Operation()).delete(new Operation());
@@ -898,7 +908,7 @@ class CatsCommandTest {
                     .when(fuzzingDataFactory).fromPathItem("/files/{id}", itemPath, api);
 
             Assertions.assertThatThrownBy(() -> catsMain.startFuzzing(api))
-                    .isInstanceOf(com.endava.cats.exception.CatsExecutionLimitReachedException.class);
+                    .isInstanceOf(CatsExecutionLimitReachedException.class);
 
             // Parameterized binary path (/files/{id}/content) runs before deferred DELETE,
             // while unparameterized binary dump (/actuator/heapdump) runs after deferred DELETE.
@@ -917,13 +927,13 @@ class CatsCommandTest {
             Mockito.when(limitFuzzer.isApplicableTo(Mockito.any())).thenReturn(true);
             Mockito.when(limitFuzzer.toString()).thenReturn("RemoveFields");
             Mockito.doAnswer(_ -> {
-                throw new com.endava.cats.exception.CatsExecutionLimitReachedException("time limit reached in wave");
+                throw new CatsExecutionLimitReachedException("time limit reached in wave");
             }).when(limitFuzzer).fuzz(Mockito.any());
             Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
                     .thenReturn(List.of(happy, limitFuzzer));
 
             Assertions.assertThatThrownBy(() -> catsMain.startFuzzing(api))
-                    .isInstanceOf(com.endava.cats.exception.CatsExecutionLimitReachedException.class);
+                    .isInstanceOf(CatsExecutionLimitReachedException.class);
             Assertions.assertThat(executionOrder).containsExactly(
                     "HappyPath:POST /files/{id}",
                     "HappyPath:DELETE /files/{id}",
@@ -932,7 +942,7 @@ class CatsCommandTest {
             // Bug 2 check: retryUnresolvedSeedOperations still runs even when RuntimeResourcePool is at MAX_RESOURCES (500)
             executionOrder.clear();
             RuntimeResourcePool fullPool = Mockito.mock(RuntimeResourcePool.class);
-            java.util.concurrent.atomic.AtomicLong obsCount = new java.util.concurrent.atomic.AtomicLong(500L);
+            AtomicLong obsCount = new AtomicLong(500L);
             Mockito.when(fullPool.observedResourceCount()).thenAnswer(_ -> obsCount.get());
             Mockito.when(fullPool.hasSucceededWithUnmodifiedRequest(Mockito.anyString(), Mockito.any())).thenReturn(false);
             Object origPool = ReflectionTestUtils.getField(catsMain, "runtimeResourcePool");
@@ -1204,8 +1214,8 @@ class CatsCommandTest {
                         f.getClass().getSimpleName().replace("Fuzzer", "").toLowerCase(Locale.ROOT)))
                 .collect(Collectors.toSet());
 
-        com.endava.cats.args.util.ProfileLoader profileLoader = new com.endava.cats.args.util.ProfileLoader();
-        for (com.endava.cats.args.util.ProfileLoader.Profile profile : profileLoader.getAvailableProfilesDetails()) {
+        ProfileLoader profileLoader = new ProfileLoader();
+        for (ProfileLoader.Profile profile : profileLoader.getAvailableProfilesDetails()) {
             Set<String> profileLower = profile.fuzzers().stream()
                     .map(n -> n.toLowerCase(Locale.ROOT))
                     .collect(Collectors.toSet());
@@ -1297,4 +1307,152 @@ class CatsCommandTest {
         Mockito.when(data.getPayload()).thenReturn("{}");
         return data;
     }
+
+    @Test
+    void shouldRejectTuiWithDryRunOrNonPositiveResultLimit() {
+        try {
+            ReflectionTestUtils.setField(catsMain.reportingArguments, "tui", true);
+            Mockito.when(filterArguments.isDryRun()).thenReturn(true);
+            catsMain.run();
+            Assertions.assertThat(catsMain.getExitCode()).isEqualTo(CommandLine.ExitCode.USAGE);
+
+            Mockito.when(filterArguments.isDryRun()).thenReturn(false);
+            ReflectionTestUtils.setField(catsMain.reportingArguments, "tuiMaxResults", 0);
+            catsMain.run();
+            Assertions.assertThat(catsMain.getExitCode()).isEqualTo(CommandLine.ExitCode.USAGE);
+        } finally {
+            ReflectionTestUtils.setField(catsMain.reportingArguments, "tui", false);
+            ReflectionTestUtils.setField(catsMain.reportingArguments, "tuiMaxResults", 10_000);
+            Mockito.when(filterArguments.isDryRun()).thenReturn(false);
+        }
+    }
+
+    @Test
+    void shouldSkipExcludedFuzzerWithoutExecutingIt() {
+        FuzzerWaveExecutor executor = (FuzzerWaveExecutor) ReflectionTestUtils.getField(catsMain, "waveExecutor");
+        FuzzingData skippedFuzzerData = Mockito.mock(FuzzingData.class);
+        Mockito.when(skippedFuzzerData.getMethod()).thenReturn(HttpMethod.GET);
+        Mockito.when(skippedFuzzerData.getPath()).thenReturn("/skip");
+        Mockito.when(skippedFuzzerData.shouldSkipFuzzerForPath("SkippedFuzzer")).thenReturn(true);
+        Fuzzer skippedFuzzer = namedFuzzer(Fuzzer.class, "SkippedFuzzer", new ArrayList<>());
+        ReflectionTestUtils.invokeMethod(executor, "runSingleFuzzer", skippedFuzzer, skippedFuzzerData);
+        Mockito.verify(skippedFuzzer, Mockito.never()).fuzz(Mockito.any());
+    }
+
+    @Test
+    void shouldRequireLiveIntermediateParentUnderMatchingProducer() {
+        FuzzerWaveExecutor executor = (FuzzerWaveExecutor) ReflectionTestUtils.getField(catsMain, "waveExecutor");
+        RuntimeResourcePool mockPool = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(mockPool.hasLiveResourceFor("/orgs/{orgId}")).thenReturn(true);
+        Object origPool = ReflectionTestUtils.getField(catsMain, "runtimeResourcePool");
+        ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", mockPool);
+        try {
+            Boolean hasIntermediate = ReflectionTestUtils.invokeMethod(executor, "hasLiveIntermediateParent",
+                    "/orgs/{orgId}/items/{itemId}", "/orgs");
+            Assertions.assertThat(hasIntermediate).isTrue();
+            Boolean noPrefix = ReflectionTestUtils.invokeMethod(executor, "hasLiveIntermediateParent",
+                    "/other/{id}", "/orgs");
+            Assertions.assertThat(noPrefix).isFalse();
+        } finally {
+            ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", origPool);
+        }
+    }
+
+    @Test
+    void shouldRejectMissingOpenApiAndPaths() {
+        Assertions.assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(catsMain, "checkOpenAPI", (OpenAPI) null))
+                .isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(catsMain, "checkOpenAPI", new OpenAPI()))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldPrintDocumentedUnresolvedOperationAndConfiguredStopConditions() {
+        OpenAPI docApi = new OpenAPI().paths(new Paths().addPathItem("/pets/{id}", new PathItem().get(new Operation())));
+        catsMain.globalContext.setOpenAPI(docApi);
+        RuntimeResourcePool poolWithUnresolved = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(poolWithUnresolved.unresolvedOperations()).thenReturn(List.of(
+                new RuntimeResourcePool.UnresolvedOperation(
+                        new RuntimeResourcePool.OperationOutcome("/pets/{id}", HttpMethod.GET, 1, 0, Map.of(404, 1)),
+                        List.of(new RuntimeResourcePool.UnresolvedParameter(
+                                RequestTarget.path("id"),
+                                RuntimeResourcePool.UnresolvedReason.NO_VALUE_CAPTURED, null)))));
+        PrettyLogger output = Mockito.mock(PrettyLogger.class);
+        Object savedLogger = ReflectionTestUtils.getField(catsMain, "logger");
+        Object savedVerbosity = ReflectionTestUtils.getField(catsMain.reportingArguments, "verbosity");
+        ReflectionTestUtils.setField(catsMain, "logger", output);
+        Object savedPool = ReflectionTestUtils.getField(catsMain, "runtimeResourcePool");
+        ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", poolWithUnresolved);
+        try {
+            ReflectionTestUtils.setField(catsMain.reportingArguments, "verbosity", ReportingArguments.Verbosity.DETAILED);
+            ReflectionTestUtils.setField(catsMain.reportingArguments, "debug", true);
+            catsMain.printUnresolvedParameters();
+            Mockito.verify(output).noFormat(Mockito.eq("{}"), Mockito.contains("GET /pets/{id}"));
+        } finally {
+            ReflectionTestUtils.setField(catsMain.reportingArguments, "debug", false);
+            ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", savedPool);
+            ReflectionTestUtils.setField(catsMain.reportingArguments, "verbosity", savedVerbosity);
+            ReflectionTestUtils.setField(catsMain, "logger", savedLogger);
+        }
+
+        try {
+            ReflectionTestUtils.setField(catsMain, "logger", output);
+            ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 10L);
+            ReflectionTestUtils.setField(catsMain.ignoreArguments, "ignoreResponseCodes", List.of("404"));
+            ReflectionTestUtils.invokeMethod(catsMain, "printConfiguration", docApi);
+            Mockito.verify(output).config(Mockito.eq("Stop conditions: time={}s (fillTimeBudget={}), maxErrors={}, maxTests={}"),
+                    Mockito.contains("10"), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(output).config(Mockito.eq("Ignored response codes: {}, skipReportingForIgnored: {}, skipReportingForSuccess: {}, skipReportingForWarnings: {}"),
+                    Mockito.contains("404"), Mockito.any(), Mockito.any(), Mockito.any());
+        } finally {
+            ReflectionTestUtils.setField(catsMain, "logger", savedLogger);
+            ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 0L);
+            ReflectionTestUtils.setField(catsMain.ignoreArguments, "ignoreResponseCodes", List.of());
+        }
+    }
+
+    @Test
+    void shouldSeedPostAndGetBeforeUpdatesAndOtherMethods() {
+        List<HttpMethod> seedOrder = new ArrayList<>(List.of(HttpMethod.TRACE, HttpMethod.HEAD,
+                HttpMethod.PATCH, HttpMethod.PUT, HttpMethod.GET, HttpMethod.POST));
+        seedOrder.sort(Comparator.comparingInt(method -> (Integer) ReflectionTestUtils.invokeMethod(
+                FuzzerWaveExecutor.class, "seedMethodOrder", method)));
+        Assertions.assertThat(seedOrder).containsExactly(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT,
+                HttpMethod.PATCH, HttpMethod.HEAD, HttpMethod.TRACE);
+    }
+
+    @Test
+    void shouldRecognizeBinaryResponsesAndRequiredQueryMetadata() {
+        FuzzerWaveExecutor executor = (FuzzerWaveExecutor) ReflectionTestUtils.getField(catsMain, "waveExecutor");
+        Operation videoOp = new Operation().responses(new ApiResponses()
+                .addApiResponse("200", new ApiResponse()
+                        .content(new Content()
+                                .addMediaType("video/mp4", new MediaType())
+                                .addMediaType("audio/mpeg", new MediaType()))));
+        Assertions.assertThat((Boolean) ReflectionTestUtils.invokeMethod(executor, "isBinaryStreamOnlyResponse", videoOp)).isTrue();
+
+        PathItem itemWithReqQuery = new PathItem().get(new Operation().addParametersItem(
+                new Parameter().in("query").name("q").required(true)));
+        Assertions.assertThat((Boolean) ReflectionTestUtils.invokeMethod(executor, "hasRequiredQueryParameters", itemWithReqQuery)).isTrue();
+    }
+
+    @Test
+    void shouldHonorRandomFuzzerSelectionForContinuousExecution() {
+        FuzzerWaveExecutor executor = (FuzzerWaveExecutor) ReflectionTestUtils.getField(catsMain, "waveExecutor");
+        try {
+            ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 10L);
+            ReflectionTestUtils.setField(catsMain.stopArguments, "fillTimeBudget", false);
+            Mockito.when(filterArguments.getSkipFuzzers()).thenReturn(List.of("RandomFuzzer"));
+            Assertions.assertThat((Boolean) ReflectionTestUtils.invokeMethod(executor, "shouldRunContinuousRandom")).isFalse();
+
+            Mockito.when(filterArguments.getSkipFuzzers()).thenReturn(List.of());
+            Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of("RandomFuzzer"));
+            Assertions.assertThat((Boolean) ReflectionTestUtils.invokeMethod(executor, "shouldRunContinuousRandom")).isTrue();
+        } finally {
+            ReflectionTestUtils.setField(catsMain.stopArguments, "stopAfterTimeInSec", 0L);
+            Mockito.when(filterArguments.getSkipFuzzers()).thenReturn(List.of());
+            Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of());
+        }
+    }
+
 }

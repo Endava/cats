@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 import static com.endava.cats.openapi.OpenAPIModelGeneratorV2.SYNTH_SCHEMA_NAME;
 
 /**
- * This class is responsible for creating {@link com.endava.cats.model.FuzzingData} objects based on the supplied OpenApi paths
+ * This class is responsible for creating {@link FuzzingData} objects based on the supplied OpenApi paths
  */
 @ApplicationScoped
 public class FuzzingDataFactory {

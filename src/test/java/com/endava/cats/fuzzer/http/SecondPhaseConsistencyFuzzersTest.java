@@ -5,6 +5,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -294,7 +295,7 @@ class SecondPhaseConsistencyFuzzersTest {
         fuzzer.fuzz(FuzzingData.builder().method(HttpMethod.POST).path("/items").build());
 
         FuzzingData getData = FuzzingData.builder().method(HttpMethod.GET).path("/items/{id}").contractPath("/items/{id}")
-                .headers(Set.of(com.endava.cats.model.CatsHeader.from("If-None-Match", "\"old\"", false, null)))
+                .headers(Set.of(CatsHeader.from("If-None-Match", "\"old\"", false, null)))
                 .payload("{}").build();
         Mockito.when(pool.successfulExchanges(getData.getPath(), HttpMethod.GET)).thenReturn(List.of(
                 get(null), get(""), get("\"bad\r\n\"")));
@@ -312,7 +313,7 @@ class SecondPhaseConsistencyFuzzersTest {
         getCaptor.getValue().getResponseProcessor().accept(CatsResponse.builder().responseCode(400).build(), getData);
 
         FuzzingData patchWithoutGet = FuzzingData.builder().method(HttpMethod.PATCH).path("/items/{id}")
-                .headers(Set.of(com.endava.cats.model.CatsHeader.from("If-Match", "\"v1\"", false, null))).build();
+                .headers(Set.of(CatsHeader.from("If-Match", "\"v1\"", false, null))).build();
         fuzzer.fuzz(patchWithoutGet);
 
         FuzzingData patchData = writeData(HttpMethod.PATCH);
@@ -357,7 +358,7 @@ class SecondPhaseConsistencyFuzzersTest {
         putFuzzer.fuzz(FuzzingData.builder().method(HttpMethod.GET).path("/items/{id}").build());
         FuzzingData putWithIfMatch = FuzzingData.builder().method(HttpMethod.PUT).path("/items/{id}")
                 .pathItem(new PathItem().get(new Operation()).put(new Operation()))
-                .headers(Set.of(com.endava.cats.model.CatsHeader.from("If-Match", "\"1\"", false, null))).build();
+                .headers(Set.of(CatsHeader.from("If-Match", "\"1\"", false, null))).build();
         putFuzzer.fuzz(putWithIfMatch);
 
         FuzzingData data = writeData(HttpMethod.PUT);

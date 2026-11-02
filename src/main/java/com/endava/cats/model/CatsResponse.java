@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.ProtocolException;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -56,7 +57,7 @@ public class CatsResponse {
      * @return A CatsResponse instance.
      */
     public static CatsResponse from(int code, String body, String methodType, long ms) {
-        long bodyBytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        long bodyBytes = body.getBytes(StandardCharsets.UTF_8).length;
         return CatsResponse.builder().responseCode(code).body(body)
                 .jsonBody(JsonParser.parseString(body)).httpMethod(methodType)
                 .headers(Collections.emptyList()).responseTimeInMs(ms)

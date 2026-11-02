@@ -11,11 +11,13 @@ import dev.tamboui.toolkit.element.Element;
 import dev.tamboui.toolkit.element.StyledElement;
 import dev.tamboui.toolkit.elements.RichTextElement;
 import dev.tamboui.toolkit.elements.TableElement;
+import dev.tamboui.toolkit.elements.TextElement;
 import dev.tamboui.widgets.table.Cell;
 import dev.tamboui.widgets.table.Row;
 
 import java.util.List;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import static dev.tamboui.toolkit.Toolkit.column;
 import static dev.tamboui.toolkit.Toolkit.fill;
@@ -321,7 +323,7 @@ final class CatsTuiView {
                     outcomeSummaryLine(state));
         }
         String methods = state.configuration().httpMethods().stream()
-                .map(CatsTuiView::display).collect(java.util.stream.Collectors.joining(", "));
+                .map(CatsTuiView::display).collect(Collectors.joining(", "));
         return richLines(
                 labelled("OpenAPI specs: ", display(state.configuration().contract())),
                 labelled("API base url: ", display(state.configuration().basePath())),
@@ -457,7 +459,7 @@ final class CatsTuiView {
         return value == null || value.isBlank() ? "-" : CatsTuiState.singleLine(value);
     }
 
-    private static Element lines(String value, UnaryOperator<dev.tamboui.toolkit.elements.TextElement> style) {
+    private static Element lines(String value, UnaryOperator<TextElement> style) {
         List<String> values = value == null ? List.of("") : value.lines().toList();
         return column(values.stream().map(CatsTuiState::singleLine).map(Toolkit::text).map(style).toArray(Element[]::new));
     }

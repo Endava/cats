@@ -1,10 +1,14 @@
 package com.endava.cats.report;
 
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.ProcessingError;
 import com.endava.cats.model.RunOutcome;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.SensitiveDataPolicy;
@@ -105,21 +109,21 @@ class TestReportsGeneratorTest {
 
     @Test
     void shouldCreateSummaryReportContextAcrossAllOutcomesAndBranches() {
-        com.endava.cats.model.CatsTestReport failingReport = com.endava.cats.model.CatsTestReport.builder()
+        CatsTestReport failingReport = CatsTestReport.builder()
                 .warnings(2).success(7).errors(1).reportedResults(10).requestsAttempted(10)
                 .authErrors(1).ioErrors(2).timestamp("2026-10-19").executionTime(15).catsVersion("14.0.1")
                 .runStatus("LIMIT_REACHED").runStatusDetails("stopped").qualityGatePassed(false)
                 .qualityGateDescription("failed gate").randomSeed(42L).successfulResourceReuseEnabled(true)
                 .stopAfterTests(100).stopAfterErrors(5).stopAfterTimeInSec(60)
                 .processingErrors(List.of(
-                        new com.endava.cats.model.ProcessingError(null, null, "global err"),
-                        new com.endava.cats.model.ProcessingError("/items", "", "path err"),
-                        new com.endava.cats.model.ProcessingError("", "POST", "method err"),
-                        new com.endava.cats.model.ProcessingError("/items", "GET", "full err")))
+                        new ProcessingError(null, null, "global err"),
+                        new ProcessingError("/items", "", "path err"),
+                        new ProcessingError("", "POST", "method err"),
+                        new ProcessingError("/items", "GET", "full err")))
                 .testCases(List.of())
                 .build();
-        com.endava.cats.model.CatsConfiguration config = new com.endava.cats.model.CatsConfiguration(
-                "14.0.1", "openapi.yaml", "http://localhost:8080", List.of(com.endava.cats.http.HttpMethod.GET), 5, 10L, 2, 4);
+        CatsConfiguration config = new CatsConfiguration(
+                "14.0.1", "openapi.yaml", "http://localhost:8080", List.of(HttpMethod.GET), 5, 10L, 2, 4);
 
         for (RunOutcome outcome : List.of(
                 RunOutcome.completed(),
@@ -133,7 +137,7 @@ class TestReportsGeneratorTest {
             assertPopulatedSummaryReportContext(ctx);
         }
 
-        com.endava.cats.model.CatsTestReport emptyReport = com.endava.cats.model.CatsTestReport.builder()
+        CatsTestReport emptyReport = CatsTestReport.builder()
                 .reportedResults(0).runStatus("COMPLETED").qualityGatePassed(true)
                 .successfulResourceReuseEnabled(false).processingErrors(List.of()).testCases(List.of())
                 .build();

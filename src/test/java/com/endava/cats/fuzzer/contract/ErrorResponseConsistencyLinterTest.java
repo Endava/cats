@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
@@ -106,5 +107,34 @@ class ErrorResponseConsistencyLinterTest {
         Assertions.assertThat(linter).hasToString("ErrorResponseConsistencyLinter");
         Assertions.assertThat(linter.description())
                 .isEqualTo("verifies that 4xx and 5xx error responses across the contract share a consistent structured error schema");
+    }
+
+    @Test
+    void shouldSkipWhenNoPathsAndSupportAllOfErrorSchemasAndNonJsonMedia() {
+        linter.process(FuzzingData.builder().build());
+        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.eq("No paths found in OpenAPI contract"));
+
+        Schema<?> baseError = new Schema<>().type("object").properties(Map.of("code", new Schema<>().type("string")));
+        Schema<?> extendedError = new Schema<>().allOf(List.of(
+                new Schema<>().$ref("#/components/schemas/BaseError"),
+                new Schema<>().type("object").properties(Map.of("detail", new Schema<>().type("string")))));
+        Operation opWithTextAndComposed = new Operation().responses(new ApiResponses()
+                .addApiResponse("200", new ApiResponse())
+                .addApiResponse("default", new ApiResponse().content(new Content()
+                        .addMediaType("text/plain", new MediaType().schema(new Schema<>().type("string")))
+                        .addMediaType("application/problem+json", new MediaType().schema(extendedError)))));
+
+        OpenAPI openAPI = new OpenAPI()
+                .components(new Components().addSchemas("BaseError", baseError))
+                .paths(new Paths()
+                        .addPathItem("/a", new PathItem().get(operationWithError("400", "#/components/schemas/BaseError")))
+                        .addPathItem("/b", new PathItem().post(opWithTextAndComposed)));
+
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
+        linter.process(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("All error responses use a consistent structured schema"));
     }
 }

@@ -78,5 +78,16 @@ class ErrorSimilarityDetectorTest {
                 "{\"error\":\"TypeB\",\"message\":\"failed\"}")).isFalse();
         assertThat(ErrorSimilarityDetector.wordTokenJaccard("123 !@#", "456 $%^")).isEqualTo(1.0);
         assertThat(ErrorSimilarityDetector.wordTokenJaccard("123 !@#", "valid tokens here")).isZero();
+
+        // Cover extractCause on blank, non-object JSON array, http:// errorType, and signatureText without detail
+        assertThat(ErrorSimilarityDetector.extractCause("")).isEqualTo(new ErrorSimilarityDetector.ExtractedCause("", "", ""));
+        assertThat(ErrorSimilarityDetector.extractRootCauseSummary("[1, 2]", "fb")).isEqualTo("[1, 2]");
+        assertThat(ErrorSimilarityDetector.extractRootCauseSummary("{\"type\":\"https://errors.example/bad\",\"title\":\"Custom Title\"}", "fb"))
+                .isEqualTo("Custom Title");
+        assertThat(ErrorSimilarityDetector.areErrorsSimilar(
+                "{\"type\":\"https://errors.example/bad\",\"title\":\"Custom Title\"}",
+                "{\"type\":\"https://errors.example/bad\",\"title\":\"Custom Title\",\"extra\":1}")).isTrue();
+        assertThat(ErrorSimilarityDetector.extractNormalizedClusterKey("", null)).isEqualTo("EMPTY|");
+        assertThat(ErrorSimilarityDetector.extractRootCauseSummary("", null)).isEqualTo("[Empty response body]");
     }
 }

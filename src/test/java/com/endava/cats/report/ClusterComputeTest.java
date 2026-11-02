@@ -1,5 +1,6 @@
 package com.endava.cats.report;
 
+import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
@@ -355,7 +356,7 @@ class ClusterComputeTest {
 
     private static CatsTestCaseSummary createTestCaseSummary(int httpResponseCode, String resultReason, String result, String responseBody) {
         CatsTestCase testCase = new CatsTestCase();
-        testCase.setRequest(com.endava.cats.model.CatsRequest.builder().httpMethod("POST").build());
+        testCase.setRequest(CatsRequest.builder().httpMethod("POST").build());
         testCase.setFuzzer("TestFuzzer");
         testCase.setResponse(CatsResponse.builder().responseCode(httpResponseCode).body(responseBody).build());
         testCase.setResult(result);

@@ -6,10 +6,14 @@ import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +21,7 @@ import org.mockito.Mockito;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Map;
 
 @QuarkusTest
 class EmptyResponseSchemaLinterTest {
@@ -126,6 +131,32 @@ class EmptyResponseSchemaLinterTest {
 
         Mockito.verify(testCaseListener, Mockito.times(1))
                 .reportResultInfo(Mockito.any(), Mockito.any(),
+                        Mockito.eq("All response schemas define properties, $ref, or structural composition"));
+    }
+
+    @Test
+    void shouldAllow201WithLocationHeaderAndSkipBodylessAndUnresolvedRefResponses() {
+        PathItem pathItem = new PathItem();
+        Operation postOp = new Operation();
+        ApiResponses responses = new ApiResponses();
+        responses.addApiResponse("204", new ApiResponse());
+        responses.addApiResponse("201", new ApiResponse()
+                .headers(Map.of("Location", new Header())));
+        responses.addApiResponse("202", new ApiResponse().$ref("#/components/responses/MissingRef"));
+        postOp.setResponses(responses);
+        pathItem.setPost(postOp);
+
+        FuzzingData data = FuzzingData.builder()
+                .openApi(new OpenAPI())
+                .path("/orders")
+                .method(HttpMethod.POST)
+                .pathItem(pathItem)
+                .build();
+
+        emptyResponseSchemaLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .reportResultInfo(Mockito.any(), Mockito.eq(data),
                         Mockito.eq("All response schemas define properties, $ref, or structural composition"));
     }
 }

@@ -8,13 +8,29 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -37,21 +53,21 @@ public class MiniDslParser implements Parser {
 
     private static final Map<String, Class<?>> ALLOWED_TYPES = Map.ofEntries(
             // Dates
-            Map.entry("java.time.LocalDate", java.time.LocalDate.class),
-            Map.entry("java.time.LocalDateTime", java.time.LocalDateTime.class),
-            Map.entry("java.time.OffsetDateTime", java.time.OffsetDateTime.class),
-            Map.entry("java.time.ZonedDateTime", java.time.ZonedDateTime.class),
-            Map.entry("java.time.Instant", java.time.Instant.class),
-            Map.entry("java.time.Duration", java.time.Duration.class),
-            Map.entry("java.time.Period", java.time.Period.class),
-            Map.entry("java.time.ZoneOffset", java.time.ZoneOffset.class),
-            Map.entry("java.time.format.DateTimeFormatter", java.time.format.DateTimeFormatter.class),
-            Map.entry("java.time.LocalTime", java.time.LocalTime.class),
-            Map.entry("java.time.ZoneId", java.time.ZoneId.class),
-            Map.entry("java.time.temporal.ChronoUnit", java.time.temporal.ChronoUnit.class),
+            Map.entry("java.time.LocalDate", LocalDate.class),
+            Map.entry("java.time.LocalDateTime", LocalDateTime.class),
+            Map.entry("java.time.OffsetDateTime", OffsetDateTime.class),
+            Map.entry("java.time.ZonedDateTime", ZonedDateTime.class),
+            Map.entry("java.time.Instant", Instant.class),
+            Map.entry("java.time.Duration", Duration.class),
+            Map.entry("java.time.Period", Period.class),
+            Map.entry("java.time.ZoneOffset", ZoneOffset.class),
+            Map.entry("java.time.format.DateTimeFormatter", DateTimeFormatter.class),
+            Map.entry("java.time.LocalTime", LocalTime.class),
+            Map.entry("java.time.ZoneId", ZoneId.class),
+            Map.entry("java.time.temporal.ChronoUnit", ChronoUnit.class),
 
-            Map.entry("java.util.Base64", java.util.Base64.class),
-            Map.entry("java.util.Locale", java.util.Locale.class),
+            Map.entry("java.util.Base64", Base64.class),
+            Map.entry("java.util.Locale", Locale.class),
 
             // Numbers
             Map.entry("java.math.BigDecimal", BigDecimal.class),
@@ -431,18 +447,18 @@ public class MiniDslParser implements Parser {
     private boolean isAllowedInstanceType(Object target) {
         return target instanceof CharSequence
                 || target instanceof Number
-                || target instanceof java.time.temporal.Temporal
-                || target instanceof java.time.ZoneId
-                || target instanceof java.time.format.DateTimeFormatter
-                || target instanceof java.util.Base64.Encoder
-                || target instanceof java.util.Base64.Decoder
-                || target instanceof java.util.Locale;
+                || target instanceof Temporal
+                || target instanceof ZoneId
+                || target instanceof DateTimeFormatter
+                || target instanceof Base64.Encoder
+                || target instanceof Base64.Decoder
+                || target instanceof Locale;
     }
 
     private Object accessFieldOrConstant(Class<?> cls, String fieldName) {
         try {
-            java.lang.reflect.Field field = cls.getField(fieldName);
-            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+            Field field = cls.getField(fieldName);
+            if (!Modifier.isStatic(field.getModifiers())) {
                 throw new SecurityException("Only static fields allowed: " + fieldName);
             }
             return field.get(null);

@@ -8,6 +8,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
@@ -374,5 +375,38 @@ class StringGeneratorTest {
         String generated = StringGenerator.generateUsingRegexpGen(new StringGenerator.GeneratorParams("^[a-zA-Z0-9]{5,10}$", 5, 10, "^[a-zA-Z0-9]{5,10}$"));
 
         Assertions.assertThat(generated).matches("^[a-zA-Z0-9]{5,10}$").hasSizeBetween(5, 10);
+    }
+
+    @Test
+    void shouldCoverFixedLengthUriEmailComplexRegexAndLargerStackMatch() {
+        Assertions.assertThat(StringGenerator.generateFixedLengthEmail(25)).contains("@").hasSize(25);
+        Assertions.assertThat(StringGenerator.generateFixedLengthUri(8)).hasSize(8);
+        Assertions.assertThat(StringGenerator.generateFixedLengthUri(30)).hasSize(30);
+        Assertions.assertThat(StringGenerator.removeLookaheadAssertions("(?=abc)(?!def)(?<=ghi)(?<!jkl)mno")).isNotBlank();
+
+        StringSchema uriSchema = new StringSchema();
+        uriSchema.setPattern("^https?://.*$");
+        uriSchema.setMinLength(30);
+        uriSchema.setMaxLength(10);
+        uriSchema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "callbackUri");
+        Assertions.assertThat(StringGenerator.generateValueBasedOnMinMax(uriSchema)).hasSize(30);
+
+        StringSchema emailSchema = new StringSchema();
+        emailSchema.setPattern("^[a-z]+@[a-z]+\\.[a-z]+$");
+        emailSchema.setMinLength(25);
+        emailSchema.setMaxLength(25);
+        emailSchema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "userEmail");
+        Assertions.assertThat(StringGenerator.generateValueBasedOnMinMax(emailSchema)).contains("@");
+
+        StringSchema pwdSchema = new StringSchema();
+        pwdSchema.setPattern("^(?=.*[A-Z]).{16,}$");
+        pwdSchema.setMinLength(20);
+        pwdSchema.setMaxLength(20);
+        pwdSchema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "userPassword");
+        Assertions.assertThat(StringGenerator.generateValueBasedOnMinMax(pwdSchema)).startsWith("catsISC00l#");
+
+        Boolean workerMatch = ReflectionTestUtils.invokeMethod(
+                StringGenerator.class, "matchesPatternWithLargerStack", "abc", "^[a-z]+$");
+        Assertions.assertThat(workerMatch).isTrue();
     }
 }

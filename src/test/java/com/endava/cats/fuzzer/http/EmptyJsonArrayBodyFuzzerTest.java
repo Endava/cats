@@ -6,6 +6,7 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
@@ -79,9 +80,9 @@ class EmptyJsonArrayBodyFuzzerTest {
     @Test
     void shouldCheckApplicabilityByPayloadFormat() {
         FuzzingData jsonData = Mockito.mock(FuzzingData.class);
-        Mockito.when(jsonData.getPayloadFormat()).thenReturn(com.endava.cats.model.PayloadFormat.JSON);
+        Mockito.when(jsonData.getPayloadFormat()).thenReturn(PayloadFormat.JSON);
         FuzzingData xmlData = Mockito.mock(FuzzingData.class);
-        Mockito.when(xmlData.getPayloadFormat()).thenReturn(com.endava.cats.model.PayloadFormat.FORM);
+        Mockito.when(xmlData.getPayloadFormat()).thenReturn(PayloadFormat.FORM);
 
         Assertions.assertThat(emptyJsonArrayBodyFuzzer.isApplicableTo(jsonData)).isTrue();
         Assertions.assertThat(emptyJsonArrayBodyFuzzer.isApplicableTo(xmlData)).isFalse();

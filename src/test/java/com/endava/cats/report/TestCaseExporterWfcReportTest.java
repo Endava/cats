@@ -17,6 +17,7 @@ import com.webfuzzing.commons.VersionNumbers;
 import com.webfuzzing.commons.faults.DefinedFaultCategory;
 import com.webfuzzing.commons.report.Report;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.OpenAPI;
 import jakarta.enterprise.inject.Instance;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -154,5 +155,29 @@ class TestCaseExporterWfcReportTest {
                         DefinedFaultCategory.HTTP_STATUS_500.getCode(),
                         DefinedFaultCategory.SECURITY_CALL_TIMEOUT.getCode());
         Assertions.assertThat(parsed.getWarnings()).hasSize(1);
+    }
+
+    @Test
+    void shouldHandleMissingFilesAndNullInputsInWfcReportBuilder() throws Exception {
+        Path corruptFile = tempDir.resolve("TestCorrupt.json");
+        Files.writeString(corruptFile, "{not-valid-json");
+
+        CatsTestCase tc = new CatsTestCase();
+        tc.setTestId("Test Corrupt");
+        tc.setResult("warning");
+        tc.setResultReason("Custom warning");
+        tc.setRequest(CatsRequest.builder().httpMethod("GET").build());
+        tc.setResponse(CatsResponse.builder().responseCode(200).body("{}").build());
+        CatsTestCaseSummary summary = CatsTestCaseSummary.fromCatsTestCase(tc);
+
+        Report reportWithCorruptFile = WfcReportBuilder.build(
+                List.of(summary), null, null, null, tempDir, "", -5L);
+        Assertions.assertThat(reportWithCorruptFile.getToolVersion()).isEqualTo("1.0.0");
+        Assertions.assertThat(reportWithCorruptFile.getExecutionTimeInSeconds()).isZero();
+        Assertions.assertThat(reportWithCorruptFile.getWarnings()).isEmpty();
+
+        Report reportWithoutDir = WfcReportBuilder.build(
+                List.of(summary), null, new OpenAPI(), List.of(), null, "2.0.0", 3L);
+        Assertions.assertThat(reportWithoutDir.getTotalTests()).isEqualTo(1);
     }
 }

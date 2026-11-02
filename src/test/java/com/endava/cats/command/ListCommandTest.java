@@ -1,13 +1,19 @@
 package com.endava.cats.command;
 
 import com.endava.cats.args.util.ProfileLoader;
+import com.endava.cats.command.model.PathListEntry;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -122,12 +128,12 @@ class ListCommandTest {
         commandLine.execute("-p", "--executionOrder", "-j", "-c", "src/test/resources/openapi.yml");
         Mockito.verify(spyListCommand, Mockito.times(2)).listContractPaths();
 
-        io.swagger.v3.oas.models.OpenAPI api = new io.swagger.v3.oas.models.OpenAPI().paths(new io.swagger.v3.oas.models.Paths()
-                .addPathItem("/items/{id}", new io.swagger.v3.oas.models.PathItem().get(new io.swagger.v3.oas.models.Operation()))
-                .addPathItem("/items", new io.swagger.v3.oas.models.PathItem().post(new io.swagger.v3.oas.models.Operation())));
+        OpenAPI api = new OpenAPI().paths(new Paths()
+                .addPathItem("/items/{id}", new PathItem().get(new Operation()))
+                .addPathItem("/items", new PathItem().post(new Operation())));
         var ordered = spyListCommand.createPathEntryList(api).getPathDetailsList();
-        org.assertj.core.api.Assertions.assertThat(ordered)
-                .extracting(com.endava.cats.command.model.PathListEntry.PathDetails::getPath)
+        Assertions.assertThat(ordered)
+                .extracting(PathListEntry.PathDetails::getPath)
                 .containsExactly("/items", "/items/{id}");
     }
 

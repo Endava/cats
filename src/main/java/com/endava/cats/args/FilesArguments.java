@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -408,7 +409,7 @@ public class FilesArguments {
     }
 
     /**
-     * Returns the list of field names marked with {@link com.endava.cats.io.ServiceCaller#CATS_REMOVE_FIELD}
+     * Returns the list of field names marked with {@link ServiceCaller#CATS_REMOVE_FIELD}
      * in {@code --refData} for the given path.
      *
      * @param refDataForPath the reference data map for the current API path
@@ -431,7 +432,7 @@ public class FilesArguments {
 
     private static List<String> extractOmittedFields(Object omitValue) {
         if (omitValue instanceof List<?> list) {
-            return list.stream().filter(java.util.Objects::nonNull).map(o -> String.valueOf(o).trim())
+            return list.stream().filter(Objects::nonNull).map(o -> String.valueOf(o).trim())
                     .filter(Predicate.not(String::isEmpty)).toList();
         }
         if (omitValue instanceof String str && !str.isBlank()) {

@@ -9,8 +9,13 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +24,8 @@ import org.mockito.Mockito;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class CollectionPaginationLinterTest {
@@ -133,10 +140,10 @@ class CollectionPaginationLinterTest {
         Components components = new Components().addSchemas("Pet", petSchema).addSchemas("Dog", dogSchema);
         openAPI.setComponents(components);
 
-        Operation getCollection = new Operation().responses(new io.swagger.v3.oas.models.responses.ApiResponses()
-                .addApiResponse("200", new io.swagger.v3.oas.models.responses.ApiResponse()
-                        .content(new io.swagger.v3.oas.models.media.Content()
-                                .addMediaType("application/json", new io.swagger.v3.oas.models.media.MediaType()
+        Operation getCollection = new Operation().responses(new ApiResponses()
+                .addApiResponse("200", new ApiResponse()
+                        .content(new Content()
+                                .addMediaType("application/json", new MediaType()
                                         .schema(new Schema<>().$ref("#/components/schemas/Pet"))))));
         PathItem collectionItem = new PathItem().get(getCollection);
 
@@ -147,7 +154,40 @@ class CollectionPaginationLinterTest {
                 .method(HttpMethod.GET)
                 .build();
 
-        org.assertj.core.api.Assertions.assertThatNoException()
+        Assertions.assertThatNoException()
                 .isThrownBy(() -> collectionPaginationLinterFuzzer.fuzz(data));
+    }
+
+    @Test
+    void shouldHandleEnvelopeResponsesAndQueryParamsAndNon2xxOperations() {
+        Schema<?> arrayProp = new ArraySchema();
+        Schema<?> envelope = new Schema<>().type("object").properties(Map.of("orders", arrayProp));
+        Operation getEnvelope = new Operation().responses(new ApiResponses()
+                .addApiResponse("200", new ApiResponse()
+                        .content(new Content()
+                                .addMediaType("application/json", new MediaType().schema(envelope)))));
+
+        FuzzingData withQueryParams = FuzzingData.builder()
+                .openApi(new OpenAPI())
+                .pathItem(new PathItem().get(getEnvelope))
+                .path("/orders")
+                .method(HttpMethod.GET)
+                .queryParams(Set.of("limit"))
+                .build();
+        collectionPaginationLinterFuzzer.process(withQueryParams);
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .reportResultInfo(Mockito.any(), Mockito.eq(withQueryParams), Mockito.eq("All collection GET endpoints declare pagination support"));
+
+        Operation only400 = new Operation().responses(new ApiResponses()
+                .addApiResponse("400", new ApiResponse()));
+        FuzzingData non2xxData = FuzzingData.builder()
+                .openApi(new OpenAPI())
+                .pathItem(new PathItem().get(only400))
+                .path("/orders")
+                .method(HttpMethod.GET)
+                .build();
+        collectionPaginationLinterFuzzer.process(non2xxData);
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .skipTest(Mockito.any(), Mockito.eq("Skipping pagination check for non-GET operations"));
     }
 }

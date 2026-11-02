@@ -1,11 +1,24 @@
 package com.endava.cats.fuzzer.contract.util;
 
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -411,5 +424,65 @@ class PathNamingRulesTest {
                 .singleElement().asString().contains("stop-areas");
         assertThat(PathNamingRules.analyze("/api/v1/stop-areas/{id}", HttpMethod.GET, versionedSpec).warnings())
                 .isEmpty();
+    }
+
+    @Test
+    void shouldAnalyzeFuzzingDataWithOpenApiResponsesAndCheckOperationOrSingletonWithSpec() {
+        assertThat(PathNamingRules.analyze(null).segments()).isEmpty();
+        assertThat(PathNamingRules.isOperationOrSingletonSegment("/")).isFalse();
+
+        assertThat(PathNamingRules.analyze("/reports/csv", HttpMethod.GET).segments().getLast().role())
+                .isEqualTo(PathNamingRules.SegmentRole.SINGLETON);
+        assertThat(PathNamingRules.analyze("/items/{id}/normalize", HttpMethod.POST).segments().getLast().role())
+                .isEqualTo(PathNamingRules.SegmentRole.OPERATION);
+        assertThat(PathNamingRules.analyze("/items/{id}/classify", HttpMethod.POST).segments().getLast().role())
+                .isEqualTo(PathNamingRules.SegmentRole.OPERATION);
+
+        OpenAPI openApi = new OpenAPI();
+        Schema<?> itemArray = new ArraySchema();
+        Schema<?> envelope = new Schema<>()
+                .type("object")
+                .properties(Map.of("items", itemArray));
+        Schema<?> composedEnvelope = new Schema<>()
+                .allOf(List.of(envelope));
+        Schema<?> singleObj = new Schema<>()
+                .type("object")
+                .properties(Map.of("id", new StringSchema()));
+
+        Operation getArrayOp = new Operation()
+                .responses(new ApiResponses()
+                        .addApiResponse("200", new ApiResponse()
+                                .content(new Content()
+                                        .addMediaType("application/json", new MediaType().schema(itemArray)))));
+        Operation getComposedOp = new Operation()
+                .responses(new ApiResponses()
+                        .addApiResponse("200", new ApiResponse()
+                                .content(new Content()
+                                        .addMediaType("application/json", new MediaType().schema(composedEnvelope)))));
+        Operation getSingleOp = new Operation()
+                .responses(new ApiResponses()
+                        .addApiResponse("400", new ApiResponse())
+                        .addApiResponse("200", new ApiResponse()
+                                .content(new Content()
+                                        .addMediaType("application/json", new MediaType().schema(singleObj)))));
+
+        openApi.path("/sync-jobs", new PathItem().get(getArrayOp))
+                .path("/export-jobs", new PathItem().get(getComposedOp))
+                .path("/import-jobs", new PathItem().get(getSingleOp))
+                .path("/orders", new PathItem().get(getArrayOp))
+                .path("/orders/{id}", new PathItem().get(getSingleOp))
+                .path("/orders/{id}/cancel", new PathItem().post(new Operation()));
+
+        assertThat(PathNamingRules.analyze(FuzzingData.builder()
+                .openApi(openApi).path("/sync-jobs").method(HttpMethod.GET).build()).warnings()).isEmpty();
+        assertThat(PathNamingRules.analyze(FuzzingData.builder()
+                .openApi(openApi).path("/export-jobs").method(HttpMethod.GET).build()).warnings()).isEmpty();
+        assertThat(PathNamingRules.analyze(FuzzingData.builder()
+                .openApi(openApi).path("/import-jobs").method(HttpMethod.GET).build()).warnings()).isNotEmpty();
+
+        assertThat(PathNamingRules.isOperationOrSingletonSegment("/orders", openApi)).isFalse();
+        assertThat(PathNamingRules.isOperationOrSingletonSegment("/orders/{id}/cancel", openApi)).isTrue();
+        assertThat(PathNamingRules.isOperationOrSingletonSegment("/", openApi)).isFalse();
+        assertThat(PathNamingRules.analyze("/orders/{id}", HttpMethod.GET, Set.of()).segments()).hasSize(2);
     }
 }

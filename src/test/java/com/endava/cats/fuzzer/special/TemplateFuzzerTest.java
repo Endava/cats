@@ -352,4 +352,27 @@ class TemplateFuzzerTest {
         Assertions.assertThat(executionStatisticsListener.getRunOutcome().details())
                 .isEqualTo("Execution stopped after reaching --stopAfterTests (1 test)");
     }
+
+    @Test
+    void shouldHandleSkippedExecutionTruncatedResponseAndRuntimeException() throws Exception {
+        Mockito.when(userArguments.getWords()).thenReturn(new File("src/test/resources/dict.txt"));
+        FuzzingData data = FuzzingData.builder()
+                .targetFields(Set.of("field"))
+                .processedPayload("{\"field\":\"value\"}")
+                .headers(Collections.emptySet())
+                .path("http://url")
+                .method(HttpMethod.POST)
+                .build();
+
+        Mockito.doReturn(false, true, true).when(testCaseListener).shouldContinueExecution(Mockito.any(), Mockito.any());
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any()))
+                .thenReturn(CatsResponse.builder().responseCode(200).bodyTruncated(true).build())
+                .thenThrow(new IllegalStateException("unexpected runtime failure"));
+
+        templateFuzzer.fuzz(data);
+        templateFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                Mockito.any(), Mockito.eq(data), Mockito.eq("Check response details"),
+                Mockito.eq("Something went wrong {}"), Mockito.any());
+    }
 }

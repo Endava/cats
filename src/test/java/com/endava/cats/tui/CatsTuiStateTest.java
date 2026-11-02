@@ -617,6 +617,49 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.RESULTS);
         state.handleKey(KeyEvent.ofKey(KeyCode.ESCAPE));
         Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.OVERVIEW);
+
+        // Copy curl from RESULTS and SLOWEST screens, and when no test / no curl is available
+        state.handleKey(KeyEvent.ofChar('6'));
+        state.handleKey(KeyEvent.ofChar('c'));
+        Assertions.assertThat(state.copyFeedbackMessage()).isNotBlank();
+
+        CatsTuiState emptyState = new CatsTuiState();
+        emptyState.handleKey(KeyEvent.ofChar('2'));
+        emptyState.handleKey(KeyEvent.ofChar('c'));
+        Assertions.assertThat(emptyState.copyFeedbackMessage()).contains("No test selected");
+
+        TestResultSnapshot noCurl = new TestResultSnapshot("T-no-curl", "tr", "sc", "2XX", "error",
+                "reason", "det", "ignored warning", "Fuzzer", "/p", "/p", "/p", "http://localhost", true,
+                new TestResultSnapshot.RequestSnapshot("GET", "/p", "now", "{}", List.of()),
+                new TestResultSnapshot.ResponseSnapshot(500, "GET", 5, 10, 100, true, 1, 1, "application/json", "{}", List.of()),
+                "", "", List.of(), List.of());
+        emptyState.accept(new CatsExecutionEvent.TestCompleted(NOW, noCurl));
+        emptyState.handleKey(KeyEvent.ofChar('c'));
+        Assertions.assertThat(emptyState.copyFeedbackMessage()).contains("No cURL command available");
+        Assertions.assertThat(CatsTuiDetailFormatter.format(noCurl, 80))
+                .anyMatch(line -> line.contains("Warning: ignored warning"))
+                .anyMatch(line -> line.contains("Declared Content Length: 100 bytes"));
+        Assertions.assertThat(CatsTuiDetailFormatter.format(null, 80)).containsExactly("No test selected");
+
+        // Cover 'k' / UP in RESULTS screen, unhandled keys across screens, and live test arrival while on DETAIL screen
+        state.handleKey(KeyEvent.ofChar('2'));
+        state.handleKey(KeyEvent.ofChar('a'));
+        state.handleKey(KeyEvent.ofChar('j'));
+        state.handleKey(KeyEvent.ofChar('k'));
+        state.handleKey(KeyEvent.ofChar('x'));
+        state.handleKey(KeyEvent.ofKey(KeyCode.ENTER));
+        state.handleKey(KeyEvent.ofChar('x'));
+        state.accept(new CatsExecutionEvent.TestCompleted(NOW, third));
+        state.handleKey(KeyEvent.ofChar(']'));
+        state.handleKey(KeyEvent.ofChar('['));
+        state.handleKey(KeyEvent.ofChar('4'));
+        state.handleKey(KeyEvent.ofChar('x'));
+        state.handleKey(KeyEvent.ofChar('5'));
+        state.handleKey(KeyEvent.ofChar('x'));
+        state.handleKey(KeyEvent.ofChar('6'));
+        state.handleKey(KeyEvent.ofChar('x'));
+        state.handleKey(KeyEvent.ofChar('1'));
+        state.handleKey(KeyEvent.ofChar('x'));
     }
 
     private static void navigateAggregate(CatsTuiState state) {

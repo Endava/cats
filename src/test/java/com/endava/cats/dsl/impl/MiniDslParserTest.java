@@ -10,6 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -373,7 +376,7 @@ class MiniDslParserTest {
             String result = parser.parse("\"\"", context);
 
             assertThat(result).isEmpty();
-            System.out.println(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(java.time.Instant.now().atOffset(java.time.ZoneOffset.UTC)));
+            System.out.println(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(Instant.now().atOffset(ZoneOffset.UTC)));
         }
     }
 
@@ -1188,6 +1191,24 @@ class MiniDslParserTest {
             String result = parser.parse("T(java.time.Instant).now().atOffset(T(java.time.ZoneOffset).UTC).toString()", context);
 
             assertThat(result).isNotEmpty().contains("Z");
+        }
+
+        @Test
+        @DisplayName("Should cover Base64 Locale static deny and primitive wrappers")
+        void shouldCoverBase64LocaleStaticDenyAndPrimitiveWrappers() {
+            assertThat(parser.parse("T(java.util.Base64).getEncoder().encodeToString('abc'.getBytes())", context))
+                    .isEqualTo("YWJj");
+            assertThat(parser.parse("T(java.util.Locale).ROOT.getLanguage()", context)).isEmpty();
+            assertThat(parser.parse("T(java.util.UUID).notify()", context)).isEqualTo("T(java.util.UUID).notify()");
+            assertThat(parser.parse("T(java.time.ZoneOffset).NON_EXISTENT_FIELD", context))
+                    .isEqualTo("T(java.time.ZoneOffset).NON_EXISTENT_FIELD");
+            assertThat(parser.parse("T(java.time.LocalDate).now().someField", context))
+                    .isEqualTo("T(java.time.LocalDate).now().someField");
+            assertThat(parser.parse("T(java.lang.String).valueOf(true)", context)).isEqualTo("true");
+            assertThat(parser.parse("T(java.time.LocalDate).parse('2026-01-02') . toString()", context)).isEqualTo("2026-01-02");
+            assertThat(parser.parse("T(java.time.LocalDate).now().invalidChain", context))
+                    .isEqualTo("T(java.time.LocalDate).now().invalidChain");
+            assertThat(parser.parse("${'quoted{brace}'}", context)).isEqualTo("'quoted{brace}'");
         }
     }
 }

@@ -10,12 +10,15 @@ import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import java.util.List;
 
 @QuarkusTest
 class ArrayWithoutItemsLinterTest {
@@ -125,6 +128,34 @@ class ArrayWithoutItemsLinterTest {
                 Mockito.eq(data),
                 Mockito.eq("Array schemas missing 'items' definitions"),
                 Mockito.contains("Response 200 content-type 'application/json' property 'tags' has array schema without 'items' definition")
+        );
+    }
+
+    @Test
+    void shouldSkipWhenOperationMissingAndCheckNestedArraysAndComposedSchemas() {
+        linter.fuzz(FuzzingData.builder().path("/missing").method(HttpMethod.POST).pathItem(new PathItem()).build());
+        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.eq("POST method not present"));
+
+        ArraySchema innerWithoutItems = new ArraySchema();
+        ArraySchema outerArray = new ArraySchema();
+        outerArray.setItems(innerWithoutItems);
+        Schema<?> composed = new Schema<>().allOf(List.of(outerArray));
+
+        Operation postOp = new Operation().requestBody(new RequestBody()
+                .content(new Content().addMediaType("application/json", new MediaType().schema(composed))));
+        FuzzingData data = FuzzingData.builder()
+                .path("/matrix")
+                .method(HttpMethod.POST)
+                .pathItem(new PathItem().post(postOp))
+                .build();
+
+        linter.fuzz(data);
+
+        Mockito.verify(testCaseListener).reportResultWarn(
+                Mockito.any(),
+                Mockito.eq(data),
+                Mockito.eq("Array schemas missing 'items' definitions"),
+                Mockito.contains("Request content-type 'application/json' property '[]' has array schema without 'items' definition")
         );
     }
 }

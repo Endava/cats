@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 @QuarkusTest
 class SchemaWalkerTest {
     private List<SchemaLocation> visitedLocations;
-    private List<io.swagger.v3.oas.models.media.Schema<?>> visitedSchemas;
+    private List<Schema<?>> visitedSchemas;
     private SchemaHandler testHandler;
     private Instance<SchemaHandler> handlerInstance;
 

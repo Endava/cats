@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -141,5 +142,54 @@ class InitCommandTest {
         List<String> unknownPlatforms = List.of("unknown-agent");
         Assertions.assertThatThrownBy(() -> InitCommand.AgentPlatform.parsePlatforms(unknownPlatforms))
                 .isInstanceOf(IllegalArgumentException.class);
+
+        Assertions.assertThat(InitCommand.AgentPlatform.DEVIN.id()).isEqualTo("devin");
+        Assertions.assertThat(InitCommand.AgentPlatform.parsePlatforms(List.of("  "))).hasSize(5);
+        Assertions.assertThatThrownBy(() -> InitCommand.loadBundledSkillContent("non-existent-skill"))
+                .isInstanceOf(IOException.class);
+
+        // Cover bearer HTTP scheme, null scheme in map, and empty headers fallback
+        Components bearerComp = new Components()
+                .addSecuritySchemes("bearerAuth", new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer"))
+                .addSecuritySchemes("nullType", new SecurityScheme());
+        Assertions.assertThat(InitCommand.extractSecurityHeaders(new OpenAPI().components(bearerComp)))
+                .containsEntry("Authorization", "Bearer $$BEARERAUTH_TOKEN");
+        Components onlyMtls = new Components()
+                .addSecuritySchemes("mtls", new SecurityScheme().type(SecurityScheme.Type.MUTUALTLS));
+        Assertions.assertThat(InitCommand.extractSecurityHeaders(new OpenAPI().components(onlyMtls)))
+                .containsEntry("Authorization", "Bearer $$API_TOKEN");
+    }
+
+    @Test
+    void shouldScaffoldContractWithAllResolvedPathParamsAndPostOnlyFirstOperation(@TempDir Path tempDir) throws Exception {
+        Path specFile = tempDir.resolve("resolved-spec.yml");
+        Files.writeString(specFile, """
+                openapi: 3.0.0
+                info:
+                  title: Resolved Spec
+                  version: 1.0.0
+                servers:
+                  - url: /relative-server
+                paths:
+                  /orders:
+                    post:
+                      responses:
+                        '201':
+                          description: Created
+                  /orders/{orderId}:
+                    get:
+                      responses:
+                        '200':
+                          description: OK
+                """);
+        InitCommand cmd = new InitCommand();
+        cmd.contract = specFile.toString();
+        cmd.outputDir = tempDir.toFile();
+        cmd.run();
+        Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+        Assertions.assertThat(Files.readString(tempDir.resolve("refData.yml")))
+                .contains("All path parameters have matching POST producers");
+        Assertions.assertThat(Files.readString(tempDir.resolve("functionalTests.yml")))
+                .contains("POST: \"/orders\"");
     }
 }

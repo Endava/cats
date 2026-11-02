@@ -11,6 +11,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -22,8 +24,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -31,8 +35,10 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class OpenAPIModelGeneratorV2Test {
@@ -552,12 +558,12 @@ class OpenAPIModelGeneratorV2Test {
     void shouldGenerateFromExtensibleEnumAndNormalizeNumericPairs() {
         StringSchema opSchema = new StringSchema();
         opSchema.addExtension("x-extensible-enum", List.of("UNKNOWN", "SET"));
-        io.swagger.v3.oas.models.media.IntegerSchema bedsSchema = new io.swagger.v3.oas.models.media.IntegerSchema();
-        bedsSchema.setMinimum(java.math.BigDecimal.valueOf(10));
-        bedsSchema.setMaximum(java.math.BigDecimal.valueOf(20));
-        io.swagger.v3.oas.models.media.IntegerSchema availSchema = new io.swagger.v3.oas.models.media.IntegerSchema();
-        availSchema.setMinimum(java.math.BigDecimal.valueOf(50));
-        availSchema.setMaximum(java.math.BigDecimal.valueOf(60));
+        IntegerSchema bedsSchema = new IntegerSchema();
+        bedsSchema.setMinimum(BigDecimal.valueOf(10));
+        bedsSchema.setMaximum(BigDecimal.valueOf(20));
+        IntegerSchema availSchema = new IntegerSchema();
+        availSchema.setMinimum(BigDecimal.valueOf(50));
+        availSchema.setMaximum(BigDecimal.valueOf(60));
         ObjectSchema schema = new ObjectSchema();
         schema.addProperty("operation", opSchema);
         schema.addProperty("beds", bedsSchema);
@@ -620,7 +626,7 @@ class OpenAPIModelGeneratorV2Test {
     @Test
     void shouldGenerateSmallPositiveQuantityAndIsoTimestampsForUnformattedFromToFields() {
         ObjectSchema schema = new ObjectSchema();
-        schema.addProperty("quantity", new io.swagger.v3.oas.models.media.IntegerSchema());
+        schema.addProperty("quantity", new IntegerSchema());
         schema.addProperty("from", new StringSchema());
         schema.addProperty("to", new StringSchema());
         globalContext.getSchemaMap().put("FilterQuery", schema);
@@ -741,6 +747,48 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(recorded.getDefault()).isEqualTo("PENDING");
         Assertions.assertThat((List<?>) recorded.getEnum()).isEqualTo(List.of("AVAILABLE", "PENDING", "ADOPTED"));
         Assertions.assertThat(petStatus.getExtensions()).isNull();
+    }
+
+    @Test
+    void shouldCoverOffsetLatLonAdditionalPropertiesRefAndRandomNumberBranches() {
+        ObjectSchema geoSchema = new ObjectSchema();
+        geoSchema.addProperty("pageOffset", new IntegerSchema());
+        geoSchema.addProperty("latitude", new NumberSchema());
+        geoSchema.addProperty("longitude", new NumberSchema().format("float"));
+        Schema<?> mapWithRef = new ObjectSchema().additionalProperties(new Schema<>().$ref("#/components/schemas/TagVal"));
+        Schema<?> namedMap = new ObjectSchema().name("namedEntry").additionalProperties(new StringSchema());
+        geoSchema.addProperty("refMap", mapWithRef);
+        geoSchema.addProperty("namedMap", namedMap);
+
+        globalContext.getSchemaMap().put("TagVal", new StringSchema()._default("v"));
+        globalContext.getSchemaMap().put("GeoQuery", geoSchema);
+
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 1, true, 2);
+        List<String> generated = generator.generate("GeoQuery");
+        Assertions.assertThat(generated).isNotEmpty();
+        Assertions.assertThat(generated.getFirst()).contains("pageOffset", "latitude", "longitude", "refMap", "namedMap");
+        // Calling getExampleFromAdditionalPropertiesSchema a second time hits the globalContext cache
+        Assertions.assertThat(generator.getExampleFromAdditionalPropertiesSchema("refMap", mapWithRef)).isNotEmpty();
+
+        Assertions.assertThat(generator.randomNumber(5.0, 5.0)).isEqualTo(5.0);
+        Assertions.assertThat(generator.randomNumber(null, 0.0)).isZero();
+        Assertions.assertThat(generator.randomNumber(null, 10.0)).isBetween(0.0, 10.0);
+        Assertions.assertThat(generator.generateAndRecordIfExceptionThrown("prop", "[a-z]", () -> {
+            throw new IllegalStateException("fail");
+        })).isEqualTo(OpenAPIModelGeneratorV2.DEFAULT_STRING_WHEN_GENERATION_FAILS);
+
+        // Cover 7-arg constructor, collectRequiredFields edge cases, recordRequestSchema with null, and fallbackStringItemValue
+        OpenAPIModelGeneratorV2 gen7 = new OpenAPIModelGeneratorV2(globalContext, validDataFormat,
+                new ProcessingArguments.ExamplesFlags(true, true, true, true), 2, true, 2, true);
+        Assertions.assertThat(gen7).isNotNull();
+        ReflectionTestUtils.invokeMethod(generator, "recordRequestSchema", "p", (Schema<?>) null);
+        Assertions.assertThat((Set<?>) ReflectionTestUtils.invokeMethod(
+                generator, "collectRequiredFields", (Schema<?>) null, "", new HashSet<>())).isEmpty();
+        Assertions.assertThat((Set<?>) ReflectionTestUtils.invokeMethod(
+                generator, "collectRequiredFields", new Schema<>().$ref("#/components/schemas/Missing"), "", new HashSet<>())).isEmpty();
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
+                OpenAPIModelGeneratorV2.class, "getFreeFormArrayItem", 10)).isEqualTo("cats10");
     }
 
     private OpenAPIModelGeneratorV2 generatorFor(String testResource) throws IOException {

@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRule;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -206,5 +207,74 @@ class FieldCorrelationEvaluatorTest {
                 List.of("response.amount > 100"), reqJson, response, vars))
                 .isPresent()
                 .get().asString().contains("response.amount > 100");
+    }
+
+    @Test
+    void shouldHandleStepReferencesCollectionSizesWildcardOmitAndSpelExpressions() {
+        Assertions.assertThat(FieldCorrelationEvaluator.applyRequestCorrelations("/p", "", List.of(), Map.of())).isEmpty();
+        Assertions.assertThat(FieldCorrelationEvaluator.applyRequestCorrelations("/p", "not-json", List.of(), Map.of())).isEqualTo("not-json");
+        Assertions.assertThat(FieldCorrelationEvaluator.normalizeFieldPath(null)).isEmpty();
+        Assertions.assertThat(FieldCorrelationEvaluator.normalizeFieldPath("$.a.b")).isEqualTo("a#b");
+        Assertions.assertThat(FieldCorrelationEvaluator.normalizeFieldPath("$#a.b")).isEqualTo("a#b");
+        Assertions.assertThat(FieldCorrelationEvaluator.lookupJsonPath("", "a")).isEqualTo(JsonUtils.NOT_SET);
+        Assertions.assertThat(FieldCorrelationEvaluator.lookupJsonPath("[{\"code\":\"X\"}]", "code")).isEqualTo("X");
+
+        // Wildcard in omit and set, plus indexed delete and setOrInsertField with createMissingParents
+        FieldCorrelationRule wildcardOmit = new FieldCorrelationRule(
+                List.of("/orders"), null, Map.of("items[*].tag", "T"), List.of("items[*].secret"));
+        String afterWildcard = FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/orders", "{\"items\":[{\"secret\":\"s1\"}]}", List.of(wildcardOmit), Map.of());
+        Assertions.assertThat(afterWildcard).doesNotContain("secret").contains("\"tag\":\"T\"");
+
+        FieldCorrelationRule wildcardSetOnly = new FieldCorrelationRule(
+                List.of("/orders"), null, Map.of("items[*].added", 1), List.of());
+        Assertions.assertThat(FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/orders", "{\"items\":[]}", List.of(wildcardSetOnly), Map.of())).isEqualTo("{\"items\":[]}");
+
+        String insertedNested = FieldCorrelationEvaluator.setOrInsertField("{}", "a#b#c", "val", true);
+        Assertions.assertThat(insertedNested).isEqualTo("{\"a\":{\"b\":{\"c\":\"val\"}}}");
+        Assertions.assertThat(FieldCorrelationEvaluator.setOrInsertField("{}", "a[0]#b", "val", false)).isEqualTo("{}");
+
+        Map<String, String> stepVars = Map.of(
+                "prev.request", "{\"reqId\":\"r1\"}",
+                "prev.response", "{\"respId\":\"p1\"}",
+                "steps.s1.request", "{\"sReq\":\"sr1\"}",
+                "steps.s1.response", "{\"sResp\":\"sp1\"}",
+                "plainVar", "pv");
+        CatsResponse resp = CatsResponse.builder().responseCode(200).responseTimeInMs(5).body("{\"arr\":[1,2,3],\"scalar\":\"v\"}").build();
+
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "", "{}", resp.getBody(), resp, stepVars)).isTrue();
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "prev.request.reqId == 'r1' & prev.response.respId == 'p1' & steps.s1.request.sReq == 'sr1' & steps.s1.response.sResp == 'sp1'",
+                "{}", resp.getBody(), resp, stepVars)).isTrue();
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "${steps.s1.response.sResp} == 'sp1' & ${missingVar} == null & scalar != null & scalar notNull",
+                "{}", resp.getBody(), resp, stepVars)).isTrue();
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "size($) == 2 & size(scalar) == 1 & size(missing) == 0 & plainVar == 'pv'",
+                "{}", resp.getBody(), resp, stepVars)).isTrue();
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "size($) == 2", "{}", "[10,20]", resp, stepVars)).isTrue();
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "T(org.apache.commons.lang3.StringUtils).isNotBlank('x')", "{}", resp.getBody(), resp, stepVars)).isTrue();
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "true == true & false == false & 'a=b' == 'a=b' & \"x|y\" == \"x|y\" & 5 <= 5",
+                "{}", resp.getBody(), resp, stepVars)).isTrue();
+        Assertions.assertThat(FieldCorrelationEvaluator.resolveStepReference("", stepVars)).isEmpty();
+        Assertions.assertThat(FieldCorrelationEvaluator.resolveStepReference("steps.s1.other", stepVars)).isEmpty();
+
+        // Cover protectedFields array-indexed & leaf matching, non-string rawValue, null/blank json size, and request fallback
+        Assertions.assertThat(FieldCorrelationEvaluator.setOrInsertField("{\"a\":\"prim\"}", "a#b#c", 123, false))
+                .isEqualTo("{\"a\":\"prim\"}");
+        Assertions.assertThat(FieldCorrelationEvaluator.setOrInsertField("{\"arr\":[1]}", "arr[5]#b", 123, true))
+                .isEqualTo("{\"arr\":[1]}");
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "reqOnlyField == 'fromReq' & varOnly == 'v1' & size(missing) == 0",
+                "{\"reqOnlyField\":\"fromReq\"}", "{\"other\":1}", resp, Map.of("varOnly", "v1"))).isTrue();
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "size($) == 0", null, "", null, Map.of())).isTrue();
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "size($) == 0", "{}", "123", resp, Map.of())).isTrue();
     }
 }

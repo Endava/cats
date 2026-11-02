@@ -323,6 +323,19 @@ class OnlyRequiredFieldsFuzzerTest {
         Assertions.assertThat(fieldTarget.valueFrom("{\"items\":[]}")).isEmpty();
         Assertions.assertThat(fieldTarget.valueFrom("{\"items\":[123]}")).isEmpty();
         Assertions.assertThat(fieldTarget.valueFrom("{\"items\":[{\"code\":\"X\"}]}")).isPresent();
+
+        Assertions.assertThat(RequiredOnlyPayloadGenerator.generate(null, List.of())).isNull();
+        Assertions.assertThat(RequiredOnlyPayloadGenerator.generate("   ", List.of())).isEqualTo("   ");
+        Assertions.assertThat(RequiredOnlyPayloadGenerator.generate("[{\"id\":\"1\",\"name\":\"n\"}]", List.of(), "/items", true))
+                .isEqualTo("[{}]");
+        Assertions.assertThat(RequiredOnlyPayloadGenerator.generate("{\"id\":\"1\",\"name\":\"n\"}", List.of(), "/{id}", true))
+                .isEqualTo("{\"name\":\"n\"}");
+        Assertions.assertThat(RequiredOnlyPayloadGenerator.generate("123", null, null, true)).isEqualTo("123");
+        Assertions.assertThat(RequiredOnlyPayloadGenerator.generate("{\"\":1,\"a\":[1,2]}", List.of("a"), "  ", true))
+                .contains("\"a\":[1,2]");
+        Assertions.assertThat(RequiredOnlyPayloadGenerator.generateFallbackMinimalPayloads(
+                "{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5,\"f\":6}", null, "{}", null, 5))
+                .isNotEmpty();
     }
 
     private FuzzingData fuzzingData(String payload, Schema<?> schema, Map<String, Schema> schemaMap,

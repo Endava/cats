@@ -150,4 +150,50 @@ class WordUtilsTest {
         Assertions.assertThat(WordUtils.nounForms("address")).containsExactly("address");
         Assertions.assertThat(WordUtils.nounForms("properties")).contains("properties", "property");
     }
+
+    @Test
+    void shouldCoverNullOrValueOfSingularizePluralKeywordsLeafAndAuditTimestamps() {
+        Assertions.assertThat(WordUtils.nullOrValueOf(null)).isNull();
+        Assertions.assertThat(WordUtils.nullOrValueOf(42)).isEqualTo("42");
+        Assertions.assertThat(WordUtils.matchesAsLowerCase("abc", "ABC")).isTrue();
+        Assertions.assertThat(WordUtils.getKeywordsMatching(null, Set.of())).isEmpty();
+        Assertions.assertThat(WordUtils.getKeywordsMatching("nullpointerexception in log", Set.of()))
+                .contains("nullpointerexception");
+        Assertions.assertThat(WordUtils.getKeywordsMatching("custom_err", Set.of("custom_err")))
+                .containsExactly("custom_err");
+
+        Assertions.assertThat(WordUtils.singularize(null)).isEmpty();
+        Assertions.assertThat(WordUtils.singularize("")).isEmpty();
+        Assertions.assertThat(WordUtils.singularize("children")).isEqualTo("child");
+        Assertions.assertThat(WordUtils.singularize("parties")).isEqualTo("party");
+        Assertions.assertThat(WordUtils.singularize("boxes")).isEqualTo("box");
+        Assertions.assertThat(WordUtils.singularize("quizzes")).isEqualTo("quiz");
+        Assertions.assertThat(WordUtils.singularize("cats")).isEqualTo("cat");
+        Assertions.assertThat(WordUtils.singularize("status")).isEqualTo("status");
+
+        Assertions.assertThat(WordUtils.isPlural(null)).isFalse();
+        Assertions.assertThat(WordUtils.isPlural("")).isFalse();
+        Assertions.assertThat(WordUtils.isPlural("people")).isTrue();
+        Assertions.assertThat(WordUtils.isPlural("cats")).isTrue();
+        Assertions.assertThat(WordUtils.isPlural("cat")).isFalse();
+
+        Assertions.assertThat(WordUtils.normalizeAlphaNumeric(null)).isEmpty();
+        Assertions.assertThat(WordUtils.normalizeAlphaNumeric("")).isEmpty();
+        Assertions.assertThat(WordUtils.splitWords(null)).isEmpty();
+        Assertions.assertThat(WordUtils.splitWords("   ")).isEmpty();
+        Assertions.assertThat(WordUtils.normalizeLeaf(null)).isEmpty();
+        Assertions.assertThat(WordUtils.normalizeLeaf("a#b.c_d")).isEqualTo("cd");
+
+        Assertions.assertThat(WordUtils.isAuditTimestampField(null)).isFalse();
+        Assertions.assertThat(WordUtils.isAuditTimestampField("  ")).isFalse();
+        Assertions.assertThat(WordUtils.isAuditTimestampField("createdAt")).isTrue();
+        Assertions.assertThat(WordUtils.isAuditTimestampField("creation_date")).isTrue();
+        Assertions.assertThat(WordUtils.isAuditTimestampField("singleword")).isFalse();
+        Assertions.assertThat(WordUtils.isAuditTimestampField("random_field")).isFalse();
+
+        Assertions.assertThat(WordUtils.matchesWithInsertedMiddleQualifier(null, "abc")).isFalse();
+        Assertions.assertThat(WordUtils.matchesWithInsertedMiddleQualifier("short", "shorter")).isFalse();
+        Assertions.assertThat(WordUtils.nounForms("categoriesofitem")).contains("categoryofitem");
+        Assertions.assertThat(WordUtils.nounForms("boxesofitem")).contains("boxofitem");
+    }
 }

@@ -18,8 +18,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
+import picocli.CommandLine;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +40,7 @@ class FilterArgumentsTest {
 
     ProcessingArguments processingArguments;
 
-    picocli.CommandLine.Model.CommandSpec spec;
+    CommandLine.Model.CommandSpec spec;
 
     @BeforeEach
     void setup() {
@@ -54,10 +57,10 @@ class FilterArgumentsTest {
         filterArguments.setTotalCountType(FilterArguments.TotalCountType.FUZZERS);
 
         // Create a mock CommandSpec for testing
-        picocli.CommandLine commandLine = new picocli.CommandLine(filterArguments);
+        CommandLine commandLine = new CommandLine(filterArguments);
         spec = commandLine.getCommandSpec();
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension", null);
-        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtensionMap", new java.util.HashMap<>());
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtensionMap", new HashMap<>());
 
         FilterArguments.ALL_CATS_FUZZERS.clear();
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
@@ -533,7 +536,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldParseSkipFuzzersForExtensionThroughPicocliWithoutSplittingFuzzerCommaList() {
-        new picocli.CommandLine(filterArguments).parseArgs(
+        new CommandLine(filterArguments).parseArgs(
                 "--skipFuzzersForExtension",
                 "x-public=true:BypassAuthentication,RemoveAuthHeaders,x-internal=yes:HappyPath");
 
@@ -575,7 +578,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension",
                 List.of("x-public-endpoint=true:BypassAuthentication"));
 
-        var extensions = new java.util.HashMap<String, Object>();
+        var extensions = new HashMap<String, Object>();
         extensions.put("x-public-endpoint", "false");
 
         var result = filterArguments.getFuzzersToSkipForOperationExtensions(extensions);
@@ -655,7 +658,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "profile", "non-existent-profile");
 
         Assertions.assertThatThrownBy(() -> filterArguments.applyProfile(spec))
-                .isInstanceOf(picocli.CommandLine.ParameterException.class)
+                .isInstanceOf(CommandLine.ParameterException.class)
                 .hasMessageContaining("Profile 'non-existent-profile' not found");
     }
 
@@ -670,8 +673,8 @@ class FilterArgumentsTest {
                       - RemoveFieldsFuzzer
                 """;
 
-        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("custom-profile", ".yml");
-        java.nio.file.Files.writeString(tempFile, customProfileContent);
+        Path tempFile = Files.createTempFile("custom-profile", ".yml");
+        Files.writeString(tempFile, customProfileContent);
 
         try {
             ReflectionTestUtils.setField(filterArguments, "profile", "custom-test");
@@ -683,7 +686,7 @@ class FilterArgumentsTest {
             Assertions.assertThat(suppliedFuzzers)
                     .containsExactlyInAnyOrder("HappyPathFuzzer", "RemoveFieldsFuzzer");
         } finally {
-            java.nio.file.Files.deleteIfExists(tempFile);
+            Files.deleteIfExists(tempFile);
         }
     }
 

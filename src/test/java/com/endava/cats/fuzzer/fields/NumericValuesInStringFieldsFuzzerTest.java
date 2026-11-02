@@ -5,6 +5,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -23,7 +24,9 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -259,9 +262,9 @@ class NumericValuesInStringFieldsFuzzerTest {
         Mockito.when(data.getHeaders()).thenReturn(Set.of());
         Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
 
-        java.util.List<String> sentPayloads = new java.util.ArrayList<>();
+        List<String> sentPayloads = new ArrayList<>();
         Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(inv -> {
-            com.endava.cats.io.ServiceData sd = inv.getArgument(0);
+            ServiceData sd = inv.getArgument(0);
             sentPayloads.add(sd.getPayload());
             return CatsResponse.builder().responseCode(400).build();
         });

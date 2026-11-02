@@ -4,6 +4,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
@@ -30,6 +31,8 @@ import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.model.RunOutcome;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
@@ -55,6 +58,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
@@ -65,6 +69,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -1461,7 +1468,7 @@ class TestCaseListenerTest {
             System.setOut(originalOut);
         }
 
-        String output = captured.toString();
+        String output = captured.toString(StandardCharsets.UTF_8);
         Assertions.assertThat(output).contains("E 1, W 2, S 5").contains("E 2, W 1, S 6");
     }
 
@@ -1648,5 +1655,47 @@ class TestCaseListenerTest {
         } finally {
             ReflectionTestUtils.setField(testCaseListener, "namingArguments", null);
         }
+    }
+
+    @Test
+    void shouldEvaluateAndPrintBaselineComparisonAndMatchAdditionalPropertiesResponse(@TempDir Path tempDir) throws Exception {
+        Path baselineFile = tempDir.resolve("cats-summary-report.json");
+        Files.writeString(baselineFile, "{\"testCases\":[]}", StandardCharsets.UTF_8);
+
+        QualityGateArguments qgArgs = new QualityGateArguments();
+        ReflectionTestUtils.setField(qgArgs, "baseline", baselineFile.toFile());
+        ExecutionSummaryProvider provider = Mockito.mock(ExecutionSummaryProvider.class);
+        Mockito.when(provider.getQualityGateArguments()).thenReturn(qgArgs);
+        Object origProvider = ReflectionTestUtils.getField(testCaseListener, "executionSummaryProvider");
+        ReflectionTestUtils.setField(testCaseListener, "executionSummaryProvider", provider);
+        try {
+            ReflectionTestUtils.invokeMethod(testCaseListener, "evaluateBaselineIfConfigured");
+            ReflectionTestUtils.invokeMethod(testCaseListener, "printBaselineComparisonIfConfigured");
+            Assertions.assertThat(qgArgs.getBaselineRegressionDetected()).isFalse();
+
+            ReflectionTestUtils.setField(qgArgs, "baseline", tempDir.resolve("missing.json").toFile());
+            ReflectionTestUtils.invokeMethod(testCaseListener, "evaluateBaselineIfConfigured");
+            Assertions.assertThat(qgArgs.getBaselineRegressionDetected()).isTrue();
+        } finally {
+            ReflectionTestUtils.setField(testCaseListener, "executionSummaryProvider", origProvider);
+        }
+
+        Boolean emptyArrayMatch = ReflectionTestUtils.invokeMethod(testCaseListener, "matchesArrayElement", "[]", new JsonArray());
+        Assertions.assertThat(emptyArrayMatch).isTrue();
+        Boolean emptyArrayMismatch = ReflectionTestUtils.invokeMethod(testCaseListener, "matchesArrayElement", "{}", new JsonArray());
+        Assertions.assertThat(emptyArrayMismatch).isFalse();
+        Boolean noSchemaMatch = ReflectionTestUtils.invokeMethod(testCaseListener, "matchesSingleElement", "", new JsonObject(), "ROOT");
+        Assertions.assertThat(noSchemaMatch).isTrue();
+
+        catsGlobalContext.getAdditionalProperties().put("addPropKey", Map.of());
+        Boolean addPropMatch = ReflectionTestUtils.invokeMethod(testCaseListener, "matchesSingleElement", "{\"other\":1}", new JsonObject(), "addPropKey");
+        Assertions.assertThat(addPropMatch).isTrue();
+        catsGlobalContext.getAdditionalProperties().remove("addPropKey");
+
+        prepareTestCaseListenerSimpleSetup(CatsResponse.builder().responseCode(404).body("nullpointerexception").build(), () -> {
+            testCaseListener.addValidJson(true);
+            ReflectionTestUtils.invokeMethod(testCaseListener, "extractErrorLeaks");
+            testCaseListener.reportWarn(logger, "Warn with error leak");
+        });
     }
 }

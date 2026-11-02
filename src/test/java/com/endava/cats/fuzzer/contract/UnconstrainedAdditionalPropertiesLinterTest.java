@@ -16,6 +16,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.List;
+import java.util.Map;
+
 @QuarkusTest
 class UnconstrainedAdditionalPropertiesLinterTest {
     private TestCaseListener testCaseListener;
@@ -82,5 +85,37 @@ class UnconstrainedAdditionalPropertiesLinterTest {
         Assertions.assertThat(linter).hasToString("UnconstrainedAdditionalPropertiesLinter");
         Assertions.assertThat(linter.description())
                 .isEqualTo("flags request body object schemas that explicitly allow unconstrained additionalProperties (true or an untyped free-form schema)");
+    }
+
+    @Test
+    void shouldSkipWhenOperationMissingAndTraverseNestedArrayAndComposedSchemas() {
+        linter.fuzz(FuzzingData.builder().path("/books").method(HttpMethod.POST).build());
+        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.eq("Operation not present"));
+
+        PathItem noBodyPath = new PathItem().post(new Operation());
+        FuzzingData noBodyData = FuzzingData.builder().openApi(new OpenAPI()).path("/books").method(HttpMethod.POST).pathItem(noBodyPath).build();
+        linter.fuzz(noBodyData);
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(
+                Mockito.any(), Mockito.eq(noBodyData),
+                Mockito.eq("No unconstrained additionalProperties found in request body schemas"));
+
+        Schema<?> freeFormAp = new Schema<>().type("object").additionalProperties(new Schema<>());
+        Schema<?> itemSchema = new Schema<>().type("object").allOf(List.of(freeFormAp));
+        Schema<?> arraySchema = new Schema<>().type("array").items(itemSchema);
+        Schema<?> rootSchema = new Schema<>().type("object").properties(Map.of("items", arraySchema));
+        Operation putOp = new Operation().requestBody(new RequestBody().content(
+                new Content().addMediaType("application/json", new MediaType().schema(rootSchema))));
+
+        FuzzingData nestedData = FuzzingData.builder()
+                .openApi(new OpenAPI())
+                .path("/books")
+                .method(HttpMethod.PUT)
+                .pathItem(new PathItem().put(putOp))
+                .build();
+        linter.fuzz(nestedData);
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultWarn(
+                Mockito.any(), Mockito.eq(nestedData),
+                Mockito.eq("Unconstrained additionalProperties in request schema"),
+                Mockito.contains("application/json.items[]"));
     }
 }

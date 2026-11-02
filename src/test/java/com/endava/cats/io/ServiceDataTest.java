@@ -3,9 +3,12 @@ package com.endava.cats.io;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.QueryParameterSerialization;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -85,5 +88,44 @@ class ServiceDataTest {
         Assertions.assertThat(data.getHttpMethod()).isEqualTo(HttpMethod.POST);
         Assertions.assertThat(data.getContentType()).isEqualTo("application/json");
         Assertions.assertThat(data.getPathParamsPayload()).isEqualTo("{\"orderId\":\"42\"}");
+    }
+
+    @Test
+    void shouldExtractEnumsDiscriminatorsAndCheckFuzzedTargets() {
+        Schema<String> statusSchema = new Schema<>();
+        statusSchema.setEnum(List.of("ACTIVE", "PENDING"));
+        Schema<String> constEnumSchema = new Schema<>();
+        constEnumSchema.setEnum(List.of("FIXED"));
+        Schema<Object> discSchema = new Schema<>();
+        discSchema.setDiscriminator(new Discriminator().propertyName("petType"));
+
+        FuzzingData fuzzingData = FuzzingData.builder()
+                .path("/pets")
+                .contractPath("/pets")
+                .method(HttpMethod.POST)
+                .requestContentTypes(List.of("application/xml"))
+                .reqSchema(discSchema)
+                .requestPropertyTypes(Map.of("status", statusSchema, "kind", constEnumSchema))
+                .schemaMap(Map.of("Pet", discSchema))
+                .build();
+
+        ServiceData data = ServiceData.from(fuzzingData)
+                .mutationTarget(RequestTarget.body("status"))
+                .mutationTarget(RequestTarget.header("X-Api-Key"))
+                .build();
+
+        Assertions.assertThat(data.isAllowedEnumValue("status", "ACTIVE")).isTrue();
+        Assertions.assertThat(data.isAllowedEnumValue("status", "UNKNOWN")).isFalse();
+        Assertions.assertThat(data.isAllowedEnumValue("other", "ANY")).isTrue();
+        Assertions.assertThat(data.isAllowedEnumValue("status", null)).isTrue();
+        Assertions.assertThat(data.isDiscriminatorOrConstantField("kind", "kind")).isTrue();
+        Assertions.assertThat(data.isDiscriminatorOrConstantField("nested#petType", "petType")).isTrue();
+        Assertions.assertThat(data.isDiscriminatorOrConstantField("petType", null)).isTrue();
+        Assertions.assertThat(data.isDiscriminatorOrConstantField("status", "status")).isFalse();
+        Assertions.assertThat(data.getPayloadFormat()).isEqualTo(PayloadFormat.XML);
+        Assertions.assertThat(data.isFuzzedField("status", RequestTarget.Location.BODY)).isTrue();
+        Assertions.assertThat(data.isFuzzedField("status", RequestTarget.Location.QUERY)).isFalse();
+        Assertions.assertThat(data.isFuzzedHeader("x-api-key")).isTrue();
+        Assertions.assertThat(data.isFuzzedHeader("Authorization")).isFalse();
     }
 }

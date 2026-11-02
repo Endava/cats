@@ -52,4 +52,23 @@ class ArraySchemaLimitPathLevelLinterTest {
         Assertions.assertThat(linter.description())
                 .isEqualTo("verifies that array schemas specify maxItems for inline schemas of the current path/method");
     }
+
+    @Test
+    void shouldReportErrorWhenInlineArrayLacksMaxItemsAndTestCollector() {
+        ArraySchemaCollector realCollector = new ArraySchemaCollector();
+        SchemaLocation arrayLoc = new SchemaLocation("/orders", "POST", "paths./orders.tags", null);
+        SchemaLocation stringLoc = new SchemaLocation("/orders", "POST", "paths./orders.name", null);
+        realCollector.handle(arrayLoc, new Schema<>().type("array"));
+        realCollector.handle(stringLoc, new Schema<>().type("string"));
+        Assertions.assertThat(realCollector.getArraySchemas()).containsOnlyKeys(arrayLoc);
+
+        ArraySchemaLimitPathLevelLinter realLinter = new ArraySchemaLimitPathLevelLinter(testCaseListener, realCollector);
+        FuzzingData data = FuzzingData.builder().path("/orders").method(HttpMethod.POST).build();
+        realLinter.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultWarn(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("Array schemas without maxItems found"),
+                Mockito.contains("does not specify maxItems"));
+    }
 }

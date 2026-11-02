@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
+import picocli.CommandLine;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,12 +30,12 @@ class LintCommandTest {
     TestCaseListener testCaseListener;
     @Inject
     FilterArguments filterArguments;
-    picocli.CommandLine.Model.CommandSpec spec;
+    CommandLine.Model.CommandSpec spec;
 
 
     @BeforeEach
     void init() {
-        picocli.CommandLine commandLine = new picocli.CommandLine(lintCommand);
+        CommandLine commandLine = new CommandLine(lintCommand);
         spec = commandLine.getCommandSpec();
         ReflectionTestUtils.setField(lintCommand, "contract", "contract");
         ReflectionTestUtils.setField(filterArguments, "fuzzersToBeRunComputed", false);
@@ -80,7 +81,7 @@ class LintCommandTest {
 
     @Test
     void shouldParseSkipLintersForExtensionWithoutSplittingCommaSeparatedLinters() {
-        new picocli.CommandLine(lintCommand).parseArgs(
+        new CommandLine(lintCommand).parseArgs(
                 "-c", "src/test/resources/petstore-empty.yml",
                 "--skipLintersForExtension", "x-public=true:PathPlurals,TopLevelElements,x-internal=yes:Versions");
 

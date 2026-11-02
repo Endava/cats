@@ -6,12 +6,13 @@ import com.endava.cats.exception.CatsException;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument;
 import com.endava.cats.fuzzer.special.FunctionalFlowParser;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsRequest;
+import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.KeyValuePair;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -78,13 +79,18 @@ class ReplayCommandTest {
     }
 
     @Test
-    void shouldFailReplayWhenEnvironmentVariableIsMissing() {
+    void shouldFailReplayWhenEnvironmentVariableIsMissing() throws IOException {
         Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of());
 
         Assertions.assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(replayCommand, "resolveReplayValue",
                         "$$CATS_MISSING_REPLAY_TOKEN", "header Authorization"))
                 .isInstanceOf(CatsException.class)
                 .hasMessageContaining("CATS_MISSING_REPLAY_TOKEN", "--envFile", "-H");
+        replayCommand.tests = new String[]{"src/test/resources/Test12.json"};
+        replayCommand.headersMap = new HashMap<>(Map.of("Authorization", "$$CATS_MISSING_REPLAY_TOKEN"));
+        replayCommand.run();
+        Assertions.assertThat(replayCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+        Mockito.verify(serviceCaller, Mockito.never()).callService(Mockito.any(), Mockito.anySet());
     }
 
     @Test
@@ -432,4 +438,107 @@ class ReplayCommandTest {
         Assertions.assertThat(calls.get(1).getUrl()).isEqualTo("http://localhost:8080/orders/ord_fresh_999");
         Assertions.assertThat(calls.get(1).getPayload()).contains("ord_fresh_999");
     }
+
+    @Test
+    void shouldRejectMalformedAndIncompleteSummaryReportsWithoutSendingRequests(@TempDir Path dir) throws IOException {
+        Path badSummaryDir = dir.resolve("bad-summary");
+        Files.createDirectories(badSummaryDir);
+        Files.writeString(badSummaryDir.resolve("cats-summary-report.json"), "{invalid-json");
+        ReflectionTestUtils.setField(replayCommand, "reportFolder", badSummaryDir.toString());
+        ReflectionTestUtils.setField(replayCommand, "errors", true);
+        replayCommand.run();
+        Mockito.verifyNoInteractions(serviceCaller);
+
+        Files.writeString(badSummaryDir.resolve("cats-summary-report.json"), "{}");
+        replayCommand.run();
+        Mockito.verifyNoInteractions(serviceCaller);
+    }
+
+    @Test
+    void shouldReportUnchangedImprovedAndRegressedReplayResults(@TempDir Path dir) throws IOException {
+        PrettyLogger replayLog = Mockito.mock(PrettyLogger.class);
+        ReflectionTestUtils.setField(replayCommand, "logger", replayLog);
+        writeReplayReport(dir);
+        ReflectionTestUtils.setField(replayCommand, "reportFolder", dir.toString());
+        ReflectionTestUtils.setField(replayCommand, "errors", true);
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet()))
+                .thenReturn(
+                        CatsResponse.builder().responseCode(400).body("{}").build(),
+                        CatsResponse.builder().responseCode(400).body("{}").build(),
+                        CatsResponse.builder().responseCode(500).body("{}").build());
+        replayCommand.run();
+        Assertions.assertThat(replayCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+
+        Mockito.verify(serviceCaller, Mockito.times(3)).callService(Mockito.any(), Mockito.anySet());
+        Mockito.verify(replayLog).star("Total tests replayed: {}", 3);
+        Mockito.verify(replayLog).star("Unchanged (same response code): {}", 1);
+        Mockito.verify(replayLog).complete("Improved (better response): {}", 1);
+        Mockito.verify(replayLog).error("Regressed (worse response): {}", 1);
+    }
+
+    @Test
+    void shouldExportHeaderCorrelationsAndOriginalExpectedStatus(@TempDir Path dir) throws IOException {
+        writeReplayReport(dir);
+        ReflectionTestUtils.setField(replayCommand, "reportFolder", dir.toString());
+        Path exportedFlow2 = dir.resolve("sub/flow2.yml");
+        replayCommand.exportFlowFile = exportedFlow2.toFile();
+        replayCommand.tests = new String[]{dir.resolve("Test1.json").toString()};
+        Files.writeString(dir.resolve("Test0.json"), """
+                {
+                  "testId": "Test 0",
+                  "result": "success",
+                  "contractPath": "/items",
+                  "path": "/items",
+                  "request": {"httpMethod": "POST", "url": "http://localhost:8080/items", "payload": "{\\"a\\":1}"},
+                  "response": {"responseCode": 201, "body": "{\\"id\\":\\"1\\"}"}
+                }
+                """);
+        replayCommand.run();
+        Assertions.assertThat(exportedFlow2).exists();
+        Assertions.assertThat(Files.readString(exportedFlow2)).contains("header#Location", "status: 400");
+    }
+
+    @Test
+    void shouldUseSafeFallbacksForMissingOrInvalidReplaySelectors() {
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(ReplayCommand.class, "toFlowSelector", "")).isEqualTo("id");
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(ReplayCommand.class, "toFlowSelector", "other.loc")).isEqualTo("id");
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(ReplayCommand.class, "extractPathFromUrl", "")).isEqualTo("/");
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(ReplayCommand.class, "extractPathFromUrl", "http://[::1]:bad")).isEqualTo("http://[::1]:bad");
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(ReplayCommand.class, "extractTrailingSegment", "")).isEmpty();
+        Assertions.assertThat((List<?>) ReflectionTestUtils.invokeMethod(ReplayCommand.class, "loadSuccessfulPostTests", (Path) null)).isEmpty();
+    }
+
+    private void writeReplayReport(Path reportDir) throws IOException {
+        Files.writeString(reportDir.resolve("cats-summary-report.json"), """
+                {"testCases": [
+                  {"id": "Test 1", "result": "error"},
+                  {"id": "Test 2", "result": "error"},
+                  {"id": "Test 3", "result": "error"}
+                ]}
+                """);
+        for (int i = 1; i <= 3; i++) {
+            int initCode = (i == 2) ? 500 : 400;
+            Files.writeString(reportDir.resolve("Test" + i + ".json"), """
+                    {
+                      "testId": "Test %d",
+                      "result": "error",
+                      "contractPath": "/items/{id}",
+                      "path": "/items/1",
+                      "request": {"httpMethod": "GET", "url": "http://localhost:8080/items/1?a=1", "headers": []},
+                      "response": {"responseCode": %d, "body": "{}"},
+                      "requestProvenance": {
+                        "runtimeCorrelations": [{
+                          "sourceMethod": "POST",
+                          "sourcePath": "/items",
+                          "sourceLocation": "response.header.Location",
+                          "target": {"location": "PATH", "name": "---"},
+                          "value": "1"
+                        }]
+                      }
+                    }
+                    """.formatted(i, initCode));
+        }
+
+    }
+
 }

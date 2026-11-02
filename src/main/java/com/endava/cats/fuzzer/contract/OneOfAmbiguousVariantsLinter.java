@@ -111,24 +111,6 @@ public class OneOfAmbiguousVariantsLinter extends BaseLinter {
                 : "oneOf[%d]".formatted(index);
     }
 
-    private static boolean isTypeAccepted(String subsumingType, String subsumedType) {
-        return subsumingType != null && subsumedType != null
-                && (subsumingType.equals(subsumedType) || (NUMBER.equals(subsumingType) && INTEGER.equals(subsumedType)));
-    }
-
-    private static boolean isStructural(Schema<?> schema) {
-        return schema.get$ref() != null || CatsModelUtils.isComposedSchema(schema) || schema.getNot() != null
-                || !CatsUtil.isEmpty(schema.getProperties()) || schema.getItems() != null;
-    }
-
-    private static String singlePrimitiveType(Schema<?> schema) {
-        Set<String> nonNullTypes = declaredTypes(schema).stream().filter(type -> !NULL.equals(type)).collect(Collectors.toSet());
-        if (nonNullTypes.size() == 1 && PRIMITIVE_TYPES.contains(nonNullTypes.iterator().next())) {
-            return nonNullTypes.iterator().next();
-        }
-        return nonNullTypes.isEmpty() && declaredTypes(schema).contains(NULL) ? NULL : null;
-    }
-
     private static Set<String> declaredTypes(Schema<?> schema) {
         if (!CatsUtil.isEmpty(schema.getTypes())) {
             return new LinkedHashSet<>(schema.getTypes());
@@ -226,6 +208,24 @@ public class OneOfAmbiguousVariantsLinter extends BaseLinter {
             String subsumingType = hasValueConstraints(subsuming) || isStructural(subsuming) ? null : singlePrimitiveType(subsuming);
             String subsumedType = isStructural(subsumed) ? null : singlePrimitiveType(subsumed);
             return isTypeAccepted(subsumingType, subsumedType);
+        }
+
+        private static boolean isTypeAccepted(String subsumingType, String subsumedType) {
+            return subsumingType != null && subsumedType != null
+                    && (subsumingType.equals(subsumedType) || (NUMBER.equals(subsumingType) && INTEGER.equals(subsumedType)));
+        }
+
+        private static boolean isStructural(Schema<?> schema) {
+            return schema.get$ref() != null || CatsModelUtils.isComposedSchema(schema) || schema.getNot() != null
+                    || !CatsUtil.isEmpty(schema.getProperties()) || schema.getItems() != null;
+        }
+
+        private static String singlePrimitiveType(Schema<?> schema) {
+            Set<String> nonNullTypes = declaredTypes(schema).stream().filter(type -> !NULL.equals(type)).collect(Collectors.toSet());
+            if (nonNullTypes.size() == 1 && PRIMITIVE_TYPES.contains(nonNullTypes.iterator().next())) {
+                return nonNullTypes.iterator().next();
+            }
+            return nonNullTypes.isEmpty() && declaredTypes(schema).contains(NULL) ? NULL : null;
         }
 
         private static JsonNode sampleValue(String type) {

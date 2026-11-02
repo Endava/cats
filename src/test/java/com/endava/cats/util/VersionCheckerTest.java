@@ -143,5 +143,19 @@ class VersionCheckerTest {
 
         int result = VersionChecker.compare(version1, version2);
         Assertions.assertThat(result).isZero();
+        Assertions.assertThat(VersionChecker.compare("1.1", "1.1.1")).isNegative();
+        Assertions.assertThat(VersionChecker.compare("1.1.2", "1.1")).isPositive();
+    }
+
+    @Test
+    void shouldHandleMissingTagNameAndInvalidJsonInReleaseCheck() {
+        wireMockServer.stubFor(WireMock.get("/latest").willReturn(WireMock.ok("{\"tag_name\": null}")));
+        Assertions.assertThat(versionChecker.checkForNewVersion("1.0.0").isNewVersion()).isFalse();
+
+        wireMockServer.stubFor(WireMock.get("/latest").willReturn(WireMock.ok("{\"tag_name\": []}")));
+        Assertions.assertThat(versionChecker.checkForNewVersion("1.0.0").isNewVersion()).isFalse();
+
+        wireMockServer.stubFor(WireMock.get("/latest").willReturn(WireMock.ok("{invalid")));
+        Assertions.assertThat(versionChecker.checkForNewVersion("1.0.0").isNewVersion()).isFalse();
     }
 }

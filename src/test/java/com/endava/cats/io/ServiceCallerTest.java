@@ -20,9 +20,9 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.NoMediaType;
 import com.endava.cats.model.QueryParameterSerialization;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.KeyValuePair;
@@ -38,8 +38,10 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import jakarta.inject.Inject;
+import javax.net.ssl.SSLHandshakeException;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
+import okhttp3.Response;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -52,7 +54,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.net.ssl.SSLHandshakeException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1562,8 +1563,115 @@ class ServiceCallerTest {
 
     private int callSelfSignedServer() throws IOException {
         Request request = new Request.Builder().url("https://localhost:" + wireMockServer.httpsPort() + "/secure").build();
-        try (okhttp3.Response response = serviceCaller.okHttpClient.newCall(request).execute()) {
+        try (Response response = serviceCaller.okHttpClient.newCall(request).execute()) {
             return response.code();
         }
     }
+
+    @Test
+    void shouldApplyConfiguredCorrelationsWhilePreparingMutatedRequests(@TempDir Path tempDir) throws Exception {
+        File corrFile = tempDir.resolve("corr.yml").toFile();
+        Files.writeString(corrFile.toPath(), """
+                correlate:
+                  - paths: ["/orders*"]
+                    when: "mode == 'EXPRESS'"
+                    then:
+                      set:
+                        priority: "HIGH"
+                """);
+        filesArguments.setCorrelationsFile(corrFile);
+
+        try {
+            String correlated = ReflectionTestUtils.invokeMethod(serviceCaller, "applyConfiguredFieldCorrelations",
+                    ServiceData.builder().relativePath("/orders").contractPath("/orders").httpMethod(HttpMethod.POST)
+                            .contentType("application/json").payload("{\"mode\":\"EXPRESS\",\"fuzzed\":\"1\"}")
+                            .mutationTarget(RequestTarget.body("fuzzed")).build(),
+                    "{\"mode\":\"EXPRESS\",\"fuzzed\":\"1\"}");
+            Assertions.assertThat(correlated).contains("\"priority\":\"HIGH\"");
+        } finally {
+            filesArguments.setCorrelationsFile(null);
+        }
+    }
+
+    @Test
+    void shouldEncodeBodiesForXmlTextAndNdjson() {
+        ServiceData xmlData = ServiceData.builder()
+                .relativePath("/orders")
+                .contractPath("/orders")
+                .httpMethod(HttpMethod.POST)
+                .contentType("application/xml")
+                .payload("{\"id\":1,\"mode\":\"EXPRESS\"}")
+                .build();
+        Object xmlEncoded = ReflectionTestUtils.invokeMethod(serviceCaller, "encodeRequestBody", "{\"id\":1,\"name\":\"A\"}", xmlData);
+        String xmlPayload = ReflectionTestUtils.invokeMethod(xmlEncoded, "payload");
+        Assertions.assertThat(xmlPayload).contains("<name>A</name>").doesNotContain("<id>");
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(xmlEncoded, "contentType")).isEqualTo("application/xml");
+
+        ServiceData textData = ServiceData.builder().httpMethod(HttpMethod.POST).contentType("text/plain").validJson(true).build();
+        Object textEncoded = ReflectionTestUtils.invokeMethod(serviceCaller, "encodeRequestBody", "\"hello\"", textData);
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(textEncoded, "payload")).isEqualTo("hello");
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(textEncoded, "contentType")).isEqualTo("text/plain");
+
+        ServiceData ndjsonData = ServiceData.builder().httpMethod(HttpMethod.POST).contentType("application/x-ndjson").validJson(true).build();
+        for (String input : List.of("[{\"a\":1},{\"b\":2}]", "\"{\\\"a\\\":1}\\n{\\\"b\\\":2}\"")) {
+            Object encoded = ReflectionTestUtils.invokeMethod(serviceCaller, "encodeRequestBody", input, ndjsonData);
+            Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(encoded, "payload"))
+                    .isEqualTo("{\"a\":1}\n{\"b\":2}\n");
+            Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(encoded, "contentType"))
+                    .isEqualTo("application/x-ndjson");
+        }
+        Object singleRecord = ReflectionTestUtils.invokeMethod(serviceCaller, "encodeRequestBody", "{\"a\":1}", ndjsonData);
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(singleRecord, "payload")).isEqualTo("{\"a\":1}\n");
+
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(ServiceCaller.class, "baseMediaType", (String) null)).isEmpty();
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(ServiceCaller.class, "baseMediaType", "invalid-media-type; charset=utf-8"))
+                .isEqualTo("invalid-media-type");
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(serviceCaller, "encodeNdjsonPayload", "", true)).isEmpty();
+        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(serviceCaller, "encodeNdjsonPayload", "[]", true)).isEmpty();
+    }
+
+    @Test
+    void shouldSerializeStructuredQueryParametersAndOmitNullValues() {
+        ServiceData queryData = ServiceData.builder()
+                .relativePath("/search")
+                .httpMethod(HttpMethod.GET)
+                .queryParams(Set.of("deep", "explodedObj", "unexplodedObj", "spaceArr", "pipeArr", "emptyArr"))
+                .queryParameterSerializations(Map.of(
+                        "deep", new QueryParameterSerialization("deepObject", true),
+                        "explodedObj", new QueryParameterSerialization("form", true),
+                        "unexplodedObj", new QueryParameterSerialization("form", false),
+                        "spaceArr", new QueryParameterSerialization("spaceDelimited", false),
+                        "pipeArr", new QueryParameterSerialization("pipeDelimited", false)))
+                .payload("""
+                        {
+                          "deep": {"nested": {"k": "v"}, "arr": ["x", null], "nil": null},
+                          "explodedObj": {"a": "1", "nil": null},
+                          "unexplodedObj": {"b": "2", "nil": null},
+                          "spaceArr": ["s1", "s2"],
+                          "pipeArr": ["p1", "p2"],
+                          "emptyArr": [null],
+                          "nestedUnlisted": {"innerQuery": "val"}
+                        }
+                        """)
+                .build();
+        String constructedUrl = serviceCaller.constructUrl(queryData, queryData.getPayload());
+        HttpUrl url = HttpUrl.get(constructedUrl);
+        Assertions.assertThat(url.queryParameter("deep[nested][k]")).isEqualTo("v");
+        Assertions.assertThat(url.queryParameter("deep[arr]")).isEqualTo("x");
+        Assertions.assertThat(url.queryParameter("a")).isEqualTo("1");
+        Assertions.assertThat(url.queryParameter("unexplodedObj")).isEqualTo("b,2");
+        Assertions.assertThat(url.queryParameter("spaceArr")).isEqualTo("s1 s2");
+        Assertions.assertThat(url.queryParameter("pipeArr")).isEqualTo("p1|p2");
+        Assertions.assertThat(url.queryParameter("innerQuery")).isEqualTo("val");
+        Assertions.assertThat(url.queryParameterNames()).doesNotContain("emptyArr", "nil", "deep[nil]", "deep[arr][1]");
+        ServiceData nullOnlyObjQuery = ServiceData.builder()
+                .relativePath("/search")
+                .httpMethod(HttpMethod.GET)
+                .queryParams(Set.of("emptyObj"))
+                .queryParameterSerializations(Map.of("emptyObj", new QueryParameterSerialization("form", false)))
+                .payload("{\"emptyObj\":{\"nil\":null}}")
+                .build();
+        Assertions.assertThat(serviceCaller.constructUrl(nullOnlyObjQuery, nullOnlyObjQuery.getPayload())).doesNotContain("emptyObj");
+    }
+
 }

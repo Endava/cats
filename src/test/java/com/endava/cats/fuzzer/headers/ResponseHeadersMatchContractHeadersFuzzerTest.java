@@ -14,6 +14,7 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -80,7 +81,7 @@ class  ResponseHeadersMatchContractHeadersFuzzerTest {
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(),
                 Mockito.eq("The following response headers defined in the contract are missing: {}"),
-                org.mockito.AdditionalMatchers.aryEq(new Object[]{new TreeSet<>(Set.of("anotherMissingHeader", "missingHeader"))}));
+                AdditionalMatchers.aryEq(new Object[]{new TreeSet<>(Set.of("anotherMissingHeader", "missingHeader"))}));
     }
 
     @Test

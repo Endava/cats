@@ -346,4 +346,19 @@ class JsonUtilsTest {
 
         Assertions.assertThat(serialized).isEqualTo("{\"key1\":\"value\",\"key2\":\"value2\",\"key3\":{\"subKey1\":\"subValue1\"}}");
     }
+
+    @Test
+    void shouldHandleOversizedPayloadsSpacesInDeleteNodeAndIsValidMap() {
+        String huge = "x".repeat(600_000);
+        Assertions.assertThat(JsonUtils.serialize(Map.of("k", huge))).isNull();
+        Assertions.assertThat(JsonUtils.serializeWithDepthAwareSerializer(Map.of("k", huge))).isEqualTo("{}");
+
+        Assertions.assertThat(JsonUtils.isValidMap("{\"a\":{\"x\":1}}", "a")).isTrue();
+        Assertions.assertThat(JsonUtils.isValidMap("{\"a\":{}}", "a")).isFalse();
+
+        Assertions.assertThat(JsonUtils.deleteNode("{\"key with space\":1,\"keep\":2}", "key with space"))
+                .isEqualTo("{\"keep\":2}");
+        Assertions.assertThat(JsonUtils.deleteNode("{\"bad[key\":1,\"keep\":2}", "bad[key"))
+                .isEqualTo("{\"keep\":2}");
+    }
 }

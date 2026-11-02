@@ -76,4 +76,41 @@ class PolymorphismDiscriminatorLinterTest {
         Assertions.assertThat(linter.description())
                 .isEqualTo("validates that oneOf/anyOf discriminator definitions specify a non-blank propertyName present in sub-schemas and valid mapping references");
     }
+
+    @Test
+    void shouldHandleNullOpenApiBlankPropertyNameParentPropertyAndAllOfVariants() {
+        linter.process(FuzzingData.builder().build());
+        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.eq("OpenAPI specification not available"));
+
+        Schema<?> baseWithRequired = new Schema<>().type("object").required(List.of("kind"));
+        Schema<?> childViaAllOf = new Schema<>().allOf(List.of(new Schema<>().$ref("#/components/schemas/BaseWithRequired")));
+        Schema<?> inlineMissing = new Schema<>().type("object").properties(Map.of("other", new Schema<>().type("string")));
+        Schema<?> anyOfSchema = new Schema<>()
+                .anyOf(List.of(new Schema<>().$ref("#/components/schemas/ChildViaAllOf"), inlineMissing))
+                .discriminator(new Discriminator().propertyName("kind"));
+        Schema<?> blankDiscSchema = new Schema<>().discriminator(new Discriminator().propertyName("  "));
+        Schema<?> parentDefinesProp = new Schema<>()
+                .type("object")
+                .properties(Map.of("type", new Schema<>().type("string")))
+                .oneOf(List.of(inlineMissing))
+                .discriminator(new Discriminator().propertyName("type"));
+
+        OpenAPI openAPI = new OpenAPI().components(new Components()
+                .addSchemas("BaseWithRequired", baseWithRequired)
+                .addSchemas("ChildViaAllOf", childViaAllOf)
+                .addSchemas("AnyOfSchema", anyOfSchema)
+                .addSchemas("BlankDiscSchema", blankDiscSchema)
+                .addSchemas("ParentDefinesProp", parentDefinesProp));
+
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
+        linter.process(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultWarn(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("Polymorphism discriminator issues detected"),
+                Mockito.argThat((String msg) -> msg.contains("Schema 'BlankDiscSchema' defines a discriminator with a blank propertyName")
+                        && msg.contains("Sub-schema 'inline variant' in 'AnyOfSchema' does not define discriminator property 'kind'")
+                        && !msg.contains("ChildViaAllOf")
+                        && !msg.contains("ParentDefinesProp")));
+    }
 }

@@ -110,4 +110,44 @@ class RequestTargetResolverTest {
                         Set.of("name", "orderId", "X-Test")))
                 .containsExactly(RequestTarget.body("name"), RequestTarget.path("orderId"));
     }
+
+    @Test
+    void shouldResolveDeclaredFallbackTargetsAndHandleInvalidUriSyntax() {
+        FuzzingData postUnchanged = FuzzingData.builder()
+                .method(HttpMethod.POST)
+                .path("http://[::1]:8080/orders/{id}?q=1")
+                .processedPayload("{\"name\":\"same\"}")
+                .headers(Set.of(CatsHeader.builder().name("X-Hdr").value("same").build()))
+                .build();
+        CatsRequest sameReq = CatsRequest.builder()
+                .httpMethod("POST")
+                .url("http://[::1]:8080/orders/{id}?q=1")
+                .payload("{\"name\":\"same\"}")
+                .headers(List.of(new KeyValuePair<>("X-Hdr", "same")))
+                .build();
+
+        Assertions.assertThat(RequestTargetResolver.resolveTemplateMutation(postUnchanged, sameReq, "X-Hdr"))
+                .containsExactly(RequestTarget.header("X-Hdr"));
+        Assertions.assertThat(RequestTargetResolver.resolveTemplateMutation(postUnchanged, sameReq, "name"))
+                .containsExactly(RequestTarget.body("name"));
+        Assertions.assertThat(RequestTargetResolver.resolveTemplateMutation(postUnchanged, sameReq, "unknownField"))
+                .containsExactly(RequestTarget.body("unknownField"));
+
+        FuzzingData getUnchanged = FuzzingData.builder()
+                .method(HttpMethod.GET)
+                .path("not a valid uri?filter=1")
+                .processedPayload("{}")
+                .headers(Set.of())
+                .build();
+        CatsRequest sameGet = CatsRequest.builder()
+                .httpMethod("GET")
+                .url("not a valid uri?filter=1")
+                .payload("{}")
+                .headers(List.of())
+                .build();
+        Assertions.assertThat(RequestTargetResolver.resolveTemplateMutation(getUnchanged, sameGet, "unknownQuery"))
+                .containsExactly(RequestTarget.query("unknownQuery"));
+        Assertions.assertThat(RequestTargetResolver.resolvePayloadField(getUnchanged, "undeclaredParam"))
+                .containsExactly(RequestTarget.query("undeclaredParam"));
+    }
 }

@@ -5,6 +5,7 @@ import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseReplaceFieldsFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.JsonUtils;
+import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.Collections;
@@ -41,11 +42,11 @@ public class NullElementsInArrayFieldsFuzzer extends BaseReplaceFieldsFuzzer {
         if (data.getRequestPropertyTypes() == null) {
             return false;
         }
-        io.swagger.v3.oas.models.media.Schema<?> arraySchema = data.getRequestPropertyTypes().get(field);
+        Schema<?> arraySchema = data.getRequestPropertyTypes().get(field);
         if (arraySchema == null || arraySchema.getItems() == null) {
             return false;
         }
-        io.swagger.v3.oas.models.media.Schema<?> itemSchema = arraySchema.getItems();
+        Schema<?> itemSchema = arraySchema.getItems();
         return Boolean.TRUE.equals(itemSchema.getNullable()) ||
                 (itemSchema.getTypes() != null && itemSchema.getTypes().contains("null"));
     }

@@ -11,6 +11,7 @@ import lombok.Setter;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
+import java.net.URI;
 import java.util.List;
 
 /**
@@ -192,7 +193,7 @@ public class ApiArguments {
             return "";
         }
         try {
-            String path = java.net.URI.create(url.trim()).getPath();
+            String path = URI.create(url.trim()).getPath();
             if (path == null || path.isEmpty() || "/".equals(path)) {
                 return "";
             }

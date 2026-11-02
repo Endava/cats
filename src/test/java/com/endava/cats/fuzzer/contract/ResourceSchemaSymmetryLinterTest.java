@@ -168,4 +168,35 @@ class ResourceSchemaSymmetryLinterTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
         Assertions.assertThatNoException().isThrownBy(() -> linter.fuzz(data));
     }
+
+    @Test
+    void shouldSkipWhenNoPathsAndCheckPutPatchArrayResponsesAndFormatMismatch() {
+        linter.process(FuzzingData.builder().build());
+        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.eq("No paths found in OpenAPI contract"));
+
+        Schema<?> writeItem = new Schema<>().type("object").properties(Map.of(
+                "createdAt", new Schema<>().type("string").format("date")));
+        Schema<?> readItem = new Schema<>().type("object").properties(Map.of(
+                "createdAt", new Schema<>().type("string").format("date-time")));
+        Schema<?> arrayResp = new Schema<>().type("array").items(readItem);
+
+        Operation putOp = new Operation().requestBody(new RequestBody().content(
+                new Content().addMediaType("application/json", new MediaType().schema(writeItem))));
+        Operation patchOp = new Operation().requestBody(new RequestBody().content(
+                new Content().addMediaType("application/json", new MediaType().schema(writeItem))));
+        Operation listGetOp = new Operation().responses(new ApiResponses().addApiResponse("200",
+                new ApiResponse().content(new Content().addMediaType("application/json", new MediaType().schema(arrayResp)))));
+
+        OpenAPI openAPI = new OpenAPI().paths(new Paths()
+                .addPathItem("/events", new PathItem().get(listGetOp))
+                .addPathItem("/events/{id}", new PathItem().put(putOp).patch(patchOp)));
+
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
+        linter.process(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultWarn(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("Resource schema symmetry issues detected"),
+                Mockito.contains("between write request (string:date) and GET response (string:date-time)"));
+    }
 }

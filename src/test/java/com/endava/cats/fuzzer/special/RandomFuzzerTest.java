@@ -7,7 +7,11 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.fuzzer.special.mutators.impl.RandomBoundaryNumbersMutator;
+import com.endava.cats.fuzzer.special.mutators.impl.RandomInjectionAndFormatCrashMutator;
+import com.endava.cats.fuzzer.special.mutators.impl.RandomTypeConfusionMutator;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
@@ -27,6 +31,10 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -158,12 +166,12 @@ class RandomFuzzerTest {
 
     @Test
     void shouldApplyNewHighImpactMutatorsAndMultiFieldMutations() {
-        com.endava.cats.fuzzer.special.mutators.impl.RandomBoundaryNumbersMutator boundaryMutator =
-                new com.endava.cats.fuzzer.special.mutators.impl.RandomBoundaryNumbersMutator();
-        com.endava.cats.fuzzer.special.mutators.impl.RandomTypeConfusionMutator typeConfusionMutator =
-                new com.endava.cats.fuzzer.special.mutators.impl.RandomTypeConfusionMutator();
-        com.endava.cats.fuzzer.special.mutators.impl.RandomInjectionAndFormatCrashMutator injectionMutator =
-                new com.endava.cats.fuzzer.special.mutators.impl.RandomInjectionAndFormatCrashMutator();
+        RandomBoundaryNumbersMutator boundaryMutator =
+                new RandomBoundaryNumbersMutator();
+        RandomTypeConfusionMutator typeConfusionMutator =
+                new RandomTypeConfusionMutator();
+        RandomInjectionAndFormatCrashMutator injectionMutator =
+                new RandomInjectionAndFormatCrashMutator();
 
         String baseJson = "{\"a\":\"one\",\"b\":2,\"c\":\"three\"}";
         for (int i = 0; i < 30; i++) {
@@ -209,10 +217,10 @@ class RandomFuzzerTest {
             }
 
             @Override
-            public java.util.Collection<com.endava.cats.model.CatsHeader> mutate(java.util.Collection<com.endava.cats.model.CatsHeader> headers) {
-                return java.util.List.of(
-                        com.endava.cats.model.CatsHeader.from("X-Same", "1", false, null),
-                        com.endava.cats.model.CatsHeader.from("X-Mutated", "2", false, null));
+            public Collection<CatsHeader> mutate(Collection<CatsHeader> headers) {
+                return List.of(
+                        CatsHeader.from("X-Same", "1", false, null),
+                        CatsHeader.from("X-Mutated", "2", false, null));
             }
 
             @Override
@@ -230,14 +238,14 @@ class RandomFuzzerTest {
         Mockito.when(data.getPayload()).thenReturn("{\"id\":\"value\"}");
         Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
         Mockito.when(data.getPath()).thenReturn("/path");
-        Mockito.when(data.getHeaders()).thenReturn(Set.of(com.endava.cats.model.CatsHeader.from("X-Same", "1", false, null)));
+        Mockito.when(data.getHeaders()).thenReturn(Set.of(CatsHeader.from("X-Same", "1", false, null)));
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("missingField", "id"));
 
         cappedFuzzer.fuzzContinuous(data);
         Mockito.verify(simpleExecutor, Mockito.times(25)).execute(Mockito.any());
 
         Mockito.doAnswer(inv -> {
-            com.endava.cats.fuzzer.executor.SimpleExecutorContext ctx = inv.getArgument(0);
+            SimpleExecutorContext ctx = inv.getArgument(0);
             ctx.getResponseProcessor().accept(CatsResponse.builder().responseCode(500).build(), data);
             return null;
         }).when(simpleExecutor).execute(Mockito.any());
@@ -247,13 +255,13 @@ class RandomFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResultError(Mockito.any(), Mockito.eq(data),
                 Mockito.anyString(), Mockito.contains("500"));
 
-        java.nio.file.Path tempDir = java.nio.file.Files.createTempDirectory("bad-mutators");
-        java.nio.file.Path badFile = tempDir.resolve("bad.yml");
-        java.nio.file.Files.writeString(badFile, "name: test\ntype: INVALID_TYPE\nvalues: [1]\n");
+        Path tempDir = Files.createTempDirectory("bad-mutators");
+        Path badFile = tempDir.resolve("bad.yml");
+        Files.writeString(badFile, "name: test\ntype: INVALID_TYPE\nvalues: [1]\n");
         Mockito.when(filesArguments.getMutatorsFolder()).thenReturn(tempDir.toFile());
         cappedFuzzer.fuzz(data);
-        java.nio.file.Files.deleteIfExists(badFile);
-        java.nio.file.Files.deleteIfExists(tempDir);
+        Files.deleteIfExists(badFile);
+        Files.deleteIfExists(tempDir);
     }
 
     @NotNull

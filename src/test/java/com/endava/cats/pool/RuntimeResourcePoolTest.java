@@ -11,16 +11,21 @@ import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2397,7 +2402,7 @@ class RuntimeResourcePoolTest {
 
         Assertions.assertThat(JsonParser.parseString(result.payload()).getAsJsonObject().asMap())
                 .extractingByKeys("propertyId", "entityId", "partyId", "purchaseId", "archiveId", "movieId", "cacheId")
-                .extracting(com.google.gson.JsonElement::getAsString)
+                .extracting(JsonElement::getAsString)
                 .containsExactly("properties-1", "entities-1", "parties-1", "purchases-1", "archives-1", "movies-1", "caches-1");
     }
 
@@ -2675,6 +2680,376 @@ class RuntimeResourcePoolTest {
                 .build();
         Assertions.assertThat(resourcePool.enrich(transferAction, transferAction.getPayload()).pathParamsPayload())
                 .isEqualTo("{\"id\":\"3\",\"productId\":\"prod-900\"}");
+    }
+
+    @Test
+    void shouldMergeNestedBaselineWithoutLosingIntentionalMutationsOrExistingFallbacks() {
+        SuccessfulBaselineStore store = new SuccessfulBaselineStore();
+        ServiceData baseData = ServiceData.builder()
+                .relativePath("/orders")
+                .contractPath("/orders")
+                .httpMethod(HttpMethod.POST)
+                .contentType("application/json; charset=UTF-8")
+                .originalPayload("{\"a\":\"origA\",\"b\":\"origB\",\"arr\":[\"x\",\"y\"],\"nested\":{\"k\":\"v\"}}")
+                .payload("{\"a\":\"origA\",\"b\":\"origB\",\"arr\":[\"x\",\"y\"],\"nested\":{\"k\":\"v\"}}")
+                .build();
+        store.store(baseData, "{\"a\":\"okA\",\"b\":\"okB\",\"arr\":[\"okX\",\"okY\"],\"nested\":{\"k\":\"okV\"}}");
+        // Subset fallback should not overwrite existing baseline
+        ServiceData subsetData = ServiceData.builder()
+                .relativePath("/orders")
+                .contractPath("/orders")
+                .httpMethod(HttpMethod.POST)
+                .contentType("application/json")
+                .originalPayload("{\"a\":\"origA\",\"b\":\"origB\",\"arr\":[\"x\",\"y\"],\"nested\":{\"k\":\"v\"}}")
+                .payload("{\"a\":\"subA\"}")
+                .mutationTarget(RequestTarget.body("b"))
+                .build();
+        store.store(subsetData, "{\"a\":\"subA\"}");
+
+        // Apply baseline to a mutated payload with added key, removed key, modified array, and prefix mutation
+        ServiceData mutated = ServiceData.builder()
+                .relativePath("/orders")
+                .contractPath("/orders")
+                .httpMethod(HttpMethod.POST)
+                .contentType("application/json")
+                .originalPayload("{\"a\":\"origA\",\"b\":\"origB\",\"arr\":[\"x\",\"y\"],\"nested\":{\"k\":\"v\"}}")
+                .payload("{\"a\":\"  origA\",\"c\":\"extra\",\"arr\":[\"x\",\"mutY\",\"extraZ\"],\"nested\":{\"k\":\"fullReplace\"}}")
+                .build();
+        String merged = store.apply(mutated, true);
+        Assertions.assertThat(merged)
+                .contains("\"a\":\"  okA\"", "\"c\":\"extra\"", "\"okX\"", "\"mutY\"", "\"extraZ\"")
+                .doesNotContain("\"b\":");
+
+        Assertions.assertThat(store.apply(mutated, false)).isEqualTo(mutated.getPayload());
+        store.evictContainingPrimitiveValues(Set.of("nonexistent"));
+        Assertions.assertThat(store.apply(mutated, true)).isEqualTo(merged);
+        store.evict(baseData);
+        Assertions.assertThat(store.apply(mutated, true)).isEqualTo(mutated.getPayload());
+        store.store(baseData, "{\"a\":\"restored\"}");
+        store.clear();
+        Assertions.assertThat(store.apply(baseData, true)).isEqualTo(baseData.getPayload());
+    }
+
+    @Test
+    void shouldExtractOnlyUsablePathQueryXmlAndScalarIdentifiers() {
+        ServiceData baseData = postData("/orders", "{}");
+        Assertions.assertThat(ResourceValueExtractor.extractPathValues("", "http://localhost/a")).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.extractPathValues("/a/{b}/c", "://bad-url")).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.extractPathValues("/a/{b}/c", "http://localhost/a")).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.extractIdentifierQueryValues(baseData, "")).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.extractIdentifierQueryValues(baseData, "://bad-url")).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.extractXmlIdentifier(null)).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.extractXmlIdentifier("plain text")).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.extractXmlIdentifier("<root><name>x</name></root>")).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.extractXmlIdentifier("<root><uuid>abc-123</uuid></root>")).contains("abc-123");
+        Assertions.assertThat(ResourceValueExtractor.isScalarIdentifierBody("")).isFalse();
+        Assertions.assertThat(ResourceValueExtractor.isScalarIdentifierBody("true")).isFalse();
+        Assertions.assertThat(ResourceValueExtractor.isScalarIdentifierBody("null")).isFalse();
+        Assertions.assertThat(ResourceValueExtractor.isScalarIdentifierBody("has space")).isFalse();
+    }
+
+    @Test
+    void shouldRecognizeNumericAndBooleanValueShapes() {
+        Assertions.assertThat(ValueShape.BOOLEAN)
+                .returns(false, ValueShape::isString)
+                .returns(false, ValueShape::isNumber)
+                .returns(false, ValueShape::isNumericString)
+                .returns(false, ValueShape::isNumeric);
+        Assertions.assertThat(ValueShape.DECIMAL_NUMBER)
+                .returns(true, ValueShape::isNumber).returns(true, ValueShape::isNumeric);
+        Assertions.assertThat(ValueShape.DECIMAL_STRING)
+                .returns(true, ValueShape::isNumericString).returns(true, ValueShape::isNumeric);
+        Assertions.assertThat(ResourceSemanticNaming.valueShape(new BigDecimal("12.34"))).isEqualTo(ValueShape.DECIMAL_NUMBER);
+        Assertions.assertThat(ResourceSemanticNaming.valueShape(12.34d)).isEqualTo(ValueShape.DECIMAL_NUMBER);
+        Assertions.assertThat(ResourceSemanticNaming.stringShape("12.34")).isEqualTo(ValueShape.DECIMAL_STRING);
+        Assertions.assertThat(ResourceSemanticNaming.stringShape("-")).isEqualTo(ValueShape.STRING);
+        Assertions.assertThat(ResourceSemanticNaming.stringShape("12..34")).isEqualTo(ValueShape.STRING);
+        Assertions.assertThat(ResourceSemanticNaming.sameValue("12.50", "12.5")).isTrue();
+        Assertions.assertThat(ResourceSemanticNaming.sameValue("12..5", "12.5")).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.valueShape((JsonPrimitive) null)).isEqualTo(ValueShape.STRING);
+        Assertions.assertThat(ResourceSemanticNaming.valueShape(new JsonPrimitive(true))).isEqualTo(ValueShape.BOOLEAN);
+        Assertions.assertThat(ResourceSemanticNaming.valueShape(true)).isEqualTo(ValueShape.BOOLEAN);
+        Assertions.assertThat(ResourceSemanticNaming.stringShape("")).isEqualTo(ValueShape.STRING);
+        Assertions.assertThat(ResourceSemanticNaming.stringShape("1".repeat(70))).isEqualTo(ValueShape.STRING);
+        Assertions.assertThat(ResourceSemanticNaming.compatibilityQuality("123",
+                new TargetField("id", "id", RequestTarget.Location.PATH, ValueShape.INTEGER_NUMBER))).isPositive();
+    }
+
+    @Test
+    void shouldRecognizeTemporalValuesAndNormalizeResourcePaths() {
+        Assertions.assertThat(ResourceSemanticNaming.isTemporalValue("2026-01-01")).isTrue();
+        Assertions.assertThat(ResourceSemanticNaming.isTemporalValue("2026-01-01T10:20:30Z")).isTrue();
+        Assertions.assertThat(ResourceSemanticNaming.isTemporalValue("2026-01-01X10:20:30")).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.lastPathSegment("/orders/42?x=1#top")).isEqualTo("42");
+        Assertions.assertThat(ResourceSemanticNaming.lastPathSegment("/orders/42#top")).isEqualTo("42");
+        Assertions.assertThat(ResourceSemanticNaming.hasInactiveLifecycleState(null)).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.isIdentifierName(null)).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.isIdentifierName("   ")).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.isIdentifierName("---")).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.resourceName("/{id}")).isEqualTo("resource");
+        Assertions.assertThat(ResourceSemanticNaming.pathSegments(null)).isEmpty();
+    }
+
+    @Test
+    void shouldDistinguishMetadataAndTraceKeysFromResourceAliases() {
+        Assertions.assertThat(ResourceSemanticNaming.isItemMetadataKey("status")).isTrue();
+        Assertions.assertThat(ResourceSemanticNaming.isItemMetadataKey("totalStatuses")).isTrue();
+        Assertions.assertThat(ResourceSemanticNaming.isItemMetadataKey("customerIdentifier")).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.sameParentPath(List.of("a", "b"), List.of("x", "c"))).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.lastRawResourceSegment("/{id}")).isEqualTo("resource");
+        Assertions.assertThat(ResourceSemanticNaming.resourceWithTailWordForms("")).isEmpty();
+        Assertions.assertThat(ResourceSemanticNaming.resourceIdentifierAliases("/{id}")).isEmpty();
+        Assertions.assertThat(ResourceSemanticNaming.precedingPathSegmentAliases("/a/b", "id")).isEmpty();
+        Assertions.assertThat(ResourceSemanticNaming.targetAliases("/orders",
+                new TargetField("customTag", "customTag", RequestTarget.Location.BODY, ValueShape.STRING))).isNotEmpty();
+        Assertions.assertThat(ResourceSemanticNaming.pathAffinity("/orders/items", "/orders/other")).isPositive();
+        Assertions.assertThat(ResourceSemanticNaming.isPerRequestTraceKey("")).isFalse();
+        Assertions.assertThat(ResourceSemanticNaming.isCorrelatableHeader("X-Customer-Id")).isTrue();
+        Assertions.assertThat(ResourceSemanticNaming.compatibilityQuality(ValueShape.INTEGER_NUMBER,
+                new TargetField("amount", "amount", RequestTarget.Location.BODY, ValueShape.DECIMAL_NUMBER))).isEqualTo(2);
+    }
+
+    @Test
+    void shouldPreviewCapturedIdentifiersAndEnrichScalarRequests() {
+        enableResourceReuse();
+        ServiceData baseData = postData("/orders", "{}");
+        Assertions.assertThat(resourcePool.previewEnrichedPayload(baseData, baseData.getPayload())).isEqualTo(baseData.getPayload());
+        resourcePool.observe(postData("/customers", "{\"name\":\"A\"}"), request("POST", "/customers", "{\"name\":\"A\"}"),
+                response(201, "{\"id\":\"cust-99\"}"));
+        Assertions.assertThat(resourcePool.observedResourceCount()).isEqualTo(1L);
+        ServiceData orderWithCust = postData("/orders", "{\"customerId\":\"gen\"}");
+        Assertions.assertThat(resourcePool.previewEnrichedPayload(orderWithCust, orderWithCust.getPayload()))
+                .contains("cust-99");
+
+        ServiceData scalarPost = ServiceData.builder()
+                .relativePath("/customers/assign")
+                .contractPath("/customers/assign")
+                .httpMethod(HttpMethod.POST)
+                .contentType("text/plain")
+                .payload("\"placeholder\"")
+                .build();
+        Assertions.assertThat(resourcePool.enrich(scalarPost, "\"placeholder\"").payload()).isEqualTo("cust-99");
+    }
+
+    @Test
+    void shouldPreserveFullReplacementMutationsWhenApplyingNestedBaseline() {
+        SuccessfulBaselineStore store = new SuccessfulBaselineStore();
+        ServiceData badOrig = ServiceData.builder().relativePath("/orders").contractPath("/orders")
+                .httpMethod(HttpMethod.POST).contentType("application/json")
+                .originalPayload("{bad").payload("{\"a\":\"1\"}").build();
+        Assertions.assertThat(store.apply(badOrig, true)).isEqualTo("{\"a\":\"1\"}");
+
+        store.store(ServiceData.builder().relativePath("/arr").contractPath("/arr").httpMethod(HttpMethod.POST)
+                .contentType("application/json").originalPayload("{\"a\":\"same\",\"obj\":{\"x\":1},\"arr\":[1,2]}")
+                .payload("{\"a\":\"same\",\"obj\":{\"x\":1},\"arr\":[1,2]}").build(),
+                "{\"a\":\"same\",\"obj\":{\"x\":2},\"arr\":[1]}");
+        ServiceData arrMutated = ServiceData.builder().relativePath("/arr").contractPath("/arr").httpMethod(HttpMethod.POST)
+                .contentType("application/json").originalPayload("{\"a\":\"same\",\"obj\":{\"x\":1},\"arr\":[1,2]}")
+                .payload("{\"a\":\"diff\",\"obj\":\"notObj\",\"arr\":[1,2,3],\"nil\":null}").build();
+        Assertions.assertThat(store.apply(arrMutated, true)).contains("\"a\":\"diff\"", "\"obj\":\"notObj\"");
+    }
+
+    @Test
+    void shouldExtractObjectPayloadsWithoutTreatingMetadataAsIdentifiers() {
+        Assertions.assertThat(ResourceValueExtractor.responseObjects("not-json", false)).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.requestObjects("not-json")).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.requestObjects("123")).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.requestObjects("[{\"a\":1}]")).hasSize(1);
+        Assertions.assertThat(ResourceValueExtractor.alignedObjectPayloads("[{\"a\":1}]", "[{\"b\":2}]", 1, 1)).isTrue();
+        Assertions.assertThat(ResourceValueExtractor.alignedObjectPayloads("[1]", "[2]", 1, 1)).isFalse();
+        Assertions.assertThat(ResourceValueExtractor.valuesAtPath("not-json", "a")).isEmpty();
+        Assertions.assertThat(ResourceValueExtractor.valuesAtPath((JsonElement) null, "a")).isEmpty();
+
+        Assertions.assertThat(ResourceValueExtractor.extractXmlIdentifier("<root><id>   </id></root>")).isEmpty();
+        Map<String, StoredValue> extractedPrim = new LinkedHashMap<>();
+        ResourceValueExtractor.collectPrimitiveValues(
+                JsonParser.parseString("{\"_links\":\"skip\",\"id\":\"1\"}").getAsJsonObject(),
+                "$.", "response.body.", extractedPrim);
+        Assertions.assertThat(extractedPrim).containsKey("$.id");
+        ResourceValueExtractor.applyInferredKeyAlias("items", "$.id", extractedPrim);
+        Assertions.assertThat(ResourceValueExtractor.responseObjects("{\"a\":\"1\"}", true)).hasSize(1);
+        Assertions.assertThat(ResourceValueExtractor.isCollectionResponse("not-json")).isFalse();
+    }
+
+    @Test
+    void shouldInvalidateCancelledCustomerWithoutAffectingOtherResources() {
+        enableResourceReuse();
+        ResourceInstance empty = new ResourceInstance(1L, "/items", HttpMethod.POST, null, false, true);
+        Assertions.assertThat(empty.hasAnyAlias(Set.of("id"))).isFalse();
+        Assertions.assertThat(empty.deleted().active()).isFalse();
+        resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"), response(201, "{\"id\":\"cust-99\"}"));
+        resourcePool.observe(postData("/orders", "{}"), request("POST", "/orders", "{}"), response(201, "{\"id\":\"order-1\"}"));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/customers/{id}")).isTrue();
+        Assertions.assertThat(resourcePool.isKnownPoolValue(null)).isFalse();
+        Assertions.assertThat(resourcePool.alternativePathParameterValue("", "id", "1")).isEmpty();
+        resourcePool.observe(ServiceData.builder().relativePath("/customers/{id}").contractPath("/customers/{id}")
+                        .httpMethod(HttpMethod.PUT).contentType("application/json")
+                        .payload("{\"status\":\"CANCELLED\"}").originalPayload("{\"status\":\"CANCELLED\"}").build(),
+                request("PUT", "/customers/cust-99", "{\"status\":\"CANCELLED\"}"),
+                response(200, "{\"id\":\"cust-99\",\"status\":\"CANCELLED\"}"));
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/customers/{id}")).isFalse();
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/orders/{id}")).isTrue();
+    }
+
+    @Test
+    void shouldInferDistinctRecordKeysInsteadOfMetadataOrDuplicateValues() {
+        String arrayWithCandidates = """
+                {
+                  "widgets": [
+                    {"status": "ACTIVE", "dup": "same", "tooLong": "12345678901234567890123456789012345", "hasSpace": "a b", "reference": "REC-101"},
+                    {"status": "PENDING", "dup": "same", "tooLong": "abcdef12345678901234567890123456789", "hasSpace": "c d", "reference": "REC-102"}
+                  ]
+                }
+                """;
+        Map<String, StoredValue> arrayExtracted = new LinkedHashMap<>();
+        ResourceValueExtractor.collectPrimitiveValues(
+                JsonParser.parseString(arrayWithCandidates).getAsJsonObject(),
+                "$.", "response.body.", arrayExtracted);
+        Assertions.assertThat(arrayExtracted).containsKey("$.widgets[].reference");
+        StoredValue inferred = arrayExtracted.get("$.widgets[].reference");
+        Assertions.assertThat(inferred.value()).isEqualTo("REC-101");
+        Assertions.assertThat(inferred.aliases()).contains("widgetid");
+        Assertions.assertThat(arrayExtracted.get("$.widgets[].dup").aliases()).doesNotContain("widgetid");
+        Assertions.assertThat(arrayExtracted.get("$.widgets[].status").aliases()).doesNotContain("widgetid");
+    }
+
+    @Test
+    void shouldRecognizeFuzzerMutationsAndReusableTargets() {
+        enableResourceReuse();
+        ResourceRequestEnricher enricher = (ResourceRequestEnricher) ReflectionTestUtils.getField(resourcePool, "enricher");
+        ServiceData modData = ServiceData.builder().relativePath("/orders").httpMethod(HttpMethod.POST)
+                .originalPayload("{\"a\":\"1\"}").payload("{\"a\":\"2\"}").build();
+        Assertions.assertThat(enricher.wasModifiedByFuzzer(modData, "a", true)).isFalse();
+        Assertions.assertThat(enricher.wasModifiedByFuzzer(modData, "a", false)).isTrue();
+        ServiceData badJsonMod = ServiceData.builder().relativePath("/orders").httpMethod(HttpMethod.POST)
+                .originalPayload("{bad").payload("{\"a\":\"2\"}").build();
+        Assertions.assertThat(enricher.wasModifiedByFuzzer(badJsonMod, "a", false)).isFalse();
+
+        Assertions.assertThat(enricher.reusableTargets("{bad", modData, false)).isEmpty();
+        Assertions.assertThat(enricher.reusableTargets("123", modData, false)).isEmpty();
+        Assertions.assertThat(enricher.reusableTargets(
+                "[{\"customerId\":\"1\",\"ids\":[\"a\",\"b\"],\"traceId\":\"t1\",\"nil\":null}]", modData, false)).isNotEmpty();
+
+        ServiceData nonJsonMutated = ServiceData.builder().relativePath("/x").httpMethod(HttpMethod.POST)
+                .originalPayload("raw1").payload("raw2").build();
+        Assertions.assertThat(ResourceValueExtractor.isRequestBodyFuzzed(nonJsonMutated)).isTrue();
+        Assertions.assertThat(ResourceValueExtractor.isFuzzedRequest(nonJsonMutated)).isTrue();
+    }
+
+    @Test
+    void shouldResolveNestedPathResourcesAndRejectFailedMappings() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/orgs", "{\"name\":\"O1\"}"), request("POST", "/orgs", "{\"name\":\"O1\"}"),
+                response(201, "{\"id\":\"org-1\"}"));
+        resourcePool.observe(postData("/orgs/{orgId}/orders", "{\"name\":\"Ord1\"}"),
+                request("POST", "/orgs/org-1/orders", "{\"name\":\"Ord1\"}"),
+                response(201, "{\"id\":\"ord-100\"}"));
+        resourcePool.observe(postData("/orgs/{orgId}/orders", "{\"name\":\"Ord2\"}"),
+                request("POST", "/orgs/org-1/orders", "{\"name\":\"Ord2\"}"),
+                response(201, "{\"id\":\"ord-200\"}"));
+
+        ServiceData multiVarGet = ServiceData.builder()
+                .relativePath("/orgs/{orgId}/orders/{orderId}")
+                .contractPath("/orgs/{orgId}/orders/{orderId}")
+                .httpMethod(HttpMethod.GET)
+                .contentType("application/json")
+                .payload("{\"orgId\":\"gen1\",\"orderId\":\"gen2\",\"extraQuery\":\"q\"}")
+                .queryParams(Set.of("extraQuery"))
+                .build();
+        RuntimeResourcePool.ResolvedRequest multiEnriched = resourcePool.enrich(multiVarGet, multiVarGet.getPayload());
+        Assertions.assertThat(multiEnriched.payload()).contains("org-1", "ord-200");
+        Assertions.assertThat(resourcePool.alternativePathParameterValue("/orgs/{orgId}/orders/{orderId}", "orderId", "ord-200"))
+                .contains("ord-100");
+        resourcePool.observe(multiVarGet, request("GET", "/orgs/org-1/orders/ord-200", "{}"),
+                response(404, "{\"error\":\"not found\"}"), multiEnriched);
+        // A failed source-to-target mapping is no longer offered as an alternative.
+        Assertions.assertThat(resourcePool.alternativePathParameterValue("/orgs/{orgId}/orders/{orderId}", "orderId", "ord-200"))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldDiscardSuccessfulPostBaselineAfterConflict() {
+        enableResourceReuse();
+        ServiceData data = postData("/customers", "{\"name\":\"original\"}");
+        resourcePool.observe(data, request("POST", "/customers", "{\"name\":\"accepted\"}"),
+                response(201, "{\"id\":\"cust-1\"}"));
+        Assertions.assertThat(resourcePool.applySuccessfulRequestBaseline(data)).isEqualTo("{\"name\":\"accepted\"}");
+        resourcePool.observe(data, request("POST", "/customers", "{\"name\":\"accepted\"}"), response(409, "{}"));
+        Assertions.assertThat(resourcePool.applySuccessfulRequestBaseline(data)).isEqualTo(data.getPayload());
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/customers/{id}")).isTrue();
+    }
+
+    @Test
+    void shouldEvictOnlyOldestBaselineWhenCapacityIsExceeded() {
+        SuccessfulBaselineStore store = new SuccessfulBaselineStore();
+        for (int i = 0; i < 500; i++) {
+            store.store(postData("/cap-" + i, "{\"name\":\"original\"}"), "{\"name\":\"saved-" + i + "\"}");
+        }
+        ServiceData oldest = postData("/cap-0", "{\"name\":\"original\"}");
+        Assertions.assertThat(store.apply(oldest, true)).isEqualTo("{\"name\":\"saved-0\"}");
+        store.store(postData("/cap-500", "{\"name\":\"original\"}"), "{\"name\":\"newest\"}");
+        Assertions.assertThat(store.apply(oldest, true)).isEqualTo(oldest.getPayload());
+        Assertions.assertThat(store.apply(postData("/cap-1", oldest.getPayload()), true)).isEqualTo("{\"name\":\"saved-1\"}");
+        Assertions.assertThat(store.apply(postData("/cap-500", oldest.getPayload()), true)).isEqualTo("{\"name\":\"newest\"}");
+    }
+
+    @Test
+    void shouldEvictBaselinesContainingDeletedIdentifiersButKeepUnrelatedValues() {
+        SuccessfulBaselineStore store = new SuccessfulBaselineStore();
+        ServiceData affected = postData("/orders", "{\"customerId\":\"generated\"}");
+        ServiceData unrelated = postData("/notes", "{\"name\":\"generated\"}");
+        store.store(affected, "{\"customerId\":\"cust-1\"}");
+        store.store(unrelated, "{\"name\":\"cust-1\"}");
+        Assertions.assertThat(store.apply(affected, true)).contains("cust-1");
+        store.evictContainingPrimitiveValues(Set.of("cust-1"));
+        Assertions.assertThat(store.apply(affected, true)).isEqualTo(affected.getPayload());
+        Assertions.assertThat(store.apply(unrelated, true)).isEqualTo("{\"name\":\"cust-1\"}");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"POST,400,cust-1", "POST,500,cust-2", "DELETE,400,cust-1"})
+    void shouldPenalizeRejectedCorrelationsButPreserveThemForServerErrors(HttpMethod method, int status, String nextId) {
+        enableResourceReuse();
+        for (String id : List.of("cust-1", "cust-2")) {
+            resourcePool.observe(postData("/customers", "{}"), request("POST", "/customers", "{}"), response(201, "{\"id\":\"" + id + "\"}"));
+        }
+        String path = method == HttpMethod.DELETE ? "/customers/{customerId}" : "/orders";
+        ServiceData data = bodyData(path, method, "{\"customerId\":\"generated\"}", "{\"customerId\":\"generated\"}");
+        var resolved = resourcePool.enrich(data, data.getPayload());
+        Assertions.assertThat(resolved.payload()).isEqualTo("{\"customerId\":\"cust-2\"}");
+        resourcePool.observe(data, request(method.name(), path.replace("{customerId}", "cust-2"), resolved.payload()),
+                response(status, "{}"), resolved);
+        Assertions.assertThat(resourcePool.enrich(data, data.getPayload()).payload()).isEqualTo("{\"customerId\":\"" + nextId + "\"}");
+    }
+
+    @Test
+    void shouldKeepPostResourcesWhenPerPathCapRejectsLowerQualityGetObservations() {
+        enableResourceReuse();
+        for (int i = 0; i < 50; i++) {
+            resourcePool.observe(postData("/items", "{}"), request("POST", "/items", "{}"), response(201, "{\"id\":\"post-" + i + "\"}"));
+        }
+        resourcePool.observe(getData("/items", "{}"), request("GET", "/items", "{}"), response(200, "[{\"id\":\"get-ignored\"}]"));
+        Assertions.assertThat(resourcePool.isKnownPoolValue("get-ignored")).isFalse();
+        Assertions.assertThat(resourcePool.isKnownPoolValue("post-0")).isTrue();
+        resourcePool.observe(postData("/items", "{}"), request("POST", "/items", "{}"), response(201, "{\"id\":\"post-new\"}"));
+        Assertions.assertThat(resourcePool.isKnownPoolValue("post-0")).isFalse();
+        Assertions.assertThat(resourcePool.isKnownPoolValue("post-1")).isTrue();
+        Assertions.assertThat(resourcePool.isKnownPoolValue("post-new")).isTrue();
+    }
+
+    @Test
+    void shouldEvictOldestResourceAndExchangeAtTheirRespectiveGlobalLimits() {
+        enableResourceReuse();
+        for (int i = 0; i < 501; i++) {
+            String path = "/bulk-" + i;
+            resourcePool.observe(postData(path, "{}"), request("POST", path, "{}"), response(201, "{\"id\":\"id-" + i + "\"}"));
+        }
+        Assertions.assertThat(resourcePool.isKnownPoolValue("id-0")).isFalse();
+        Assertions.assertThat(resourcePool.isKnownPoolValue("id-1")).isTrue();
+        Assertions.assertThat(resourcePool.isKnownPoolValue("id-500")).isTrue();
+        Assertions.assertThat(resourcePool.successfulExchanges("/bulk-244", HttpMethod.POST)).isEmpty();
+        Assertions.assertThat(resourcePool.successfulExchanges("/bulk-245", HttpMethod.POST)).hasSize(1);
+        Assertions.assertThat(resourcePool.successfulExchanges("/bulk-500", HttpMethod.POST)).hasSize(1);
     }
 
     private void enableResourceReuse() {

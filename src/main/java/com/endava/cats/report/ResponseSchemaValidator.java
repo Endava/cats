@@ -26,7 +26,6 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -220,7 +219,7 @@ final class ResponseSchemaValidator {
             values.add(WordUtils.convertToDetectedCasing(childSimpleName, "lower_snake_case"));
             values.add(WordUtils.convertToDetectedCasing(childSimpleName, "camelCase"));
             values.add(WordUtils.convertToDetectedCasing(childSimpleName, "kebab-case"));
-            values.add(childSimpleName.toLowerCase(Locale.ROOT));
+            values.add(WordUtils.convertToDetectedCasing(childSimpleName, "lowercase"));
         }
         return values;
     }

@@ -1,11 +1,17 @@
 package com.endava.cats.util;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -264,6 +270,30 @@ class OpenApiUtilsTest {
         Set<String> pathVariables = OpenApiUtils.getPathVariables(path);
 
         Assertions.assertThat(pathVariables).containsExactlyInAnyOrder(variables.split("\\|"));
+    }
+
+    @Test
+    void shouldResolveComponentParametersRequestBodiesAndApiResponses() {
+        Parameter targetParam = new Parameter().name("limit").in("query");
+        RequestBody targetBody = new RequestBody().description("resolvedBody");
+        ApiResponse targetResp = new ApiResponse().description("resolvedResp");
+
+        OpenAPI api = new OpenAPI().components(new Components()
+                .addParameters("LimitParam", targetParam)
+                .addRequestBodies("OrderBody", targetBody)
+                .addResponses("OkResp", targetResp));
+
+        Parameter refParam = new Parameter().$ref("#/components/parameters/LimitParam");
+        RequestBody refBody = new RequestBody().$ref("#/components/requestBodies/OrderBody");
+        ApiResponse refResp = new ApiResponse().$ref("#/components/responses/OkResp");
+
+        Assertions.assertThat(OpenApiUtils.resolveParameter(refParam, api)).isSameAs(targetParam);
+        Assertions.assertThat(OpenApiUtils.resolveRequestBody(refBody, api)).isSameAs(targetBody);
+        Assertions.assertThat(OpenApiUtils.resolveApiResponse(refResp, api)).isSameAs(targetResp);
+
+        PathItem pathItem = new PathItem().addParametersItem(refParam);
+        Operation op = new Operation().addParametersItem(targetParam);
+        Assertions.assertThat(OpenApiUtils.collectPathAndOperationParameters(pathItem, op, api)).hasSize(2);
     }
 
 }

@@ -52,7 +52,85 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.JsonSmartMappingProvider;
 import com.oracle.svm.core.annotate.Substitute;
 import com.oracle.svm.core.annotate.TargetClass;
+import com.webfuzzing.commons.auth.Auth;
+import com.webfuzzing.commons.auth.AuthenticationInfo;
+import com.webfuzzing.commons.auth.Configs;
+import com.webfuzzing.commons.auth.LoginEndpoint;
+import com.webfuzzing.commons.auth.PayloadUsernamePassword;
+import com.webfuzzing.commons.auth.TokenHandling;
+import com.webfuzzing.commons.faults.DefinedFaultCategory;
+import com.webfuzzing.commons.faults.FaultCategory;
+import com.webfuzzing.commons.report.Coverage;
+import com.webfuzzing.commons.report.CoverageCriterion;
+import com.webfuzzing.commons.report.CoveredEndpoint;
+import com.webfuzzing.commons.report.FaultCategoryId;
+import com.webfuzzing.commons.report.Faults;
+import com.webfuzzing.commons.report.FoundFault;
+import com.webfuzzing.commons.report.ProblemDetails;
+import com.webfuzzing.commons.report.RESTReport;
+import com.webfuzzing.commons.report.Report;
+import com.webfuzzing.commons.report.TestCase;
+import com.webfuzzing.commons.report.Warning;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.swagger.jackson.mixin.IgnoreOriginalRefMixin;
+import io.swagger.jackson.mixin.OriginalRefMixin;
+import io.swagger.jackson.mixin.ResponseSchemaMixin;
+import io.swagger.models.AbstractModel;
+import io.swagger.models.ArrayModel;
+import io.swagger.models.ComposedModel;
+import io.swagger.models.ExternalDocs;
+import io.swagger.models.HttpMethod;
+import io.swagger.models.Model;
+import io.swagger.models.ModelImpl;
+import io.swagger.models.Path;
+import io.swagger.models.RefModel;
+import io.swagger.models.RefPath;
+import io.swagger.models.RefResponse;
+import io.swagger.models.Response;
+import io.swagger.models.Scheme;
+import io.swagger.models.SecurityScope;
+import io.swagger.models.Swagger;
+import io.swagger.models.Xml;
+import io.swagger.models.auth.AbstractSecuritySchemeDefinition;
+import io.swagger.models.auth.ApiKeyAuthDefinition;
+import io.swagger.models.auth.BasicAuthDefinition;
+import io.swagger.models.auth.In;
+import io.swagger.models.auth.OAuth2Definition;
+import io.swagger.models.auth.SecuritySchemeDefinition;
+import io.swagger.models.parameters.AbstractParameter;
+import io.swagger.models.parameters.AbstractSerializableParameter;
+import io.swagger.models.parameters.BodyParameter;
+import io.swagger.models.parameters.FormParameter;
+import io.swagger.models.parameters.RefParameter;
+import io.swagger.models.parameters.SerializableParameter;
+import io.swagger.models.properties.AbstractNumericProperty;
+import io.swagger.models.properties.AbstractProperty;
+import io.swagger.models.properties.ArrayProperty;
+import io.swagger.models.properties.BaseIntegerProperty;
+import io.swagger.models.properties.BinaryProperty;
+import io.swagger.models.properties.BooleanProperty;
+import io.swagger.models.properties.ByteArrayProperty;
+import io.swagger.models.properties.ComposedProperty;
+import io.swagger.models.properties.DateProperty;
+import io.swagger.models.properties.DateTimeProperty;
+import io.swagger.models.properties.DecimalProperty;
+import io.swagger.models.properties.DoubleProperty;
+import io.swagger.models.properties.EmailProperty;
+import io.swagger.models.properties.FileProperty;
+import io.swagger.models.properties.FloatProperty;
+import io.swagger.models.properties.IntegerProperty;
+import io.swagger.models.properties.LongProperty;
+import io.swagger.models.properties.MapProperty;
+import io.swagger.models.properties.ObjectProperty;
+import io.swagger.models.properties.PasswordProperty;
+import io.swagger.models.properties.Property;
+import io.swagger.models.properties.RefProperty;
+import io.swagger.models.properties.StringProperty;
+import io.swagger.models.properties.UUIDProperty;
+import io.swagger.models.properties.UntypedProperty;
+import io.swagger.models.refs.GenericRef;
+import io.swagger.models.refs.RefFormat;
+import io.swagger.models.refs.RefType;
 import io.swagger.parser.Swagger20Parser;
 import io.swagger.parser.SwaggerParser;
 import io.swagger.v3.core.jackson.ApiResponsesSerializer;
@@ -136,6 +214,8 @@ import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import io.swagger.v3.parser.reference.OpenAPI31Traverser;
 import io.swagger.v3.parser.reference.OpenAPIDereferencer;
+import net.minidev.asm.ConvertDate;
+import net.minidev.asm.DefaultConverter;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import tools.jackson.databind.DeserializationConfig;
@@ -143,6 +223,7 @@ import tools.jackson.databind.JavaType;
 import tools.jackson.databind.SerializationConfig;
 import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.ext.OptionalHandlerFactory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -183,17 +264,17 @@ import java.util.UUID;
         Concatenate.class, Length.class,
         GsonJsonProvider.class, JacksonJsonNodeJsonProvider.class, JacksonJsonProvider.class,
         JsonSmartJsonProvider.class, GsonMappingProvider.class, JacksonMappingProvider.class, JsonSmartMappingProvider.class,
-        com.webfuzzing.commons.auth.Auth.class, com.webfuzzing.commons.auth.AuthenticationInfo.class, com.webfuzzing.commons.auth.Configs.class,
-        com.webfuzzing.commons.auth.Header.class, com.webfuzzing.commons.auth.LoginEndpoint.class, com.webfuzzing.commons.auth.LoginEndpoint.HttpVerb.class,
-        com.webfuzzing.commons.auth.PayloadUsernamePassword.class, com.webfuzzing.commons.auth.TokenHandling.class,
-        com.webfuzzing.commons.auth.TokenHandling.ExtractFrom.class, com.webfuzzing.commons.auth.TokenHandling.SendIn.class,
-        com.webfuzzing.commons.faults.DefinedFaultCategory.class, com.webfuzzing.commons.faults.FaultCategory.class,
-        com.webfuzzing.commons.report.Coverage.class, com.webfuzzing.commons.report.CoverageCriterion.class,
-        com.webfuzzing.commons.report.CoveredEndpoint.class, com.webfuzzing.commons.report.FaultCategoryId.class,
-        com.webfuzzing.commons.report.Faults.class, com.webfuzzing.commons.report.FoundFault.class,
-        com.webfuzzing.commons.report.ProblemDetails.class, com.webfuzzing.commons.report.RESTReport.class,
-        com.webfuzzing.commons.report.Report.class, com.webfuzzing.commons.report.TestCase.class,
-        com.webfuzzing.commons.report.Warning.class,
+        Auth.class, AuthenticationInfo.class, Configs.class,
+        com.webfuzzing.commons.auth.Header.class, LoginEndpoint.class, LoginEndpoint.HttpVerb.class,
+        PayloadUsernamePassword.class, TokenHandling.class,
+        TokenHandling.ExtractFrom.class, TokenHandling.SendIn.class,
+        DefinedFaultCategory.class, FaultCategory.class,
+        Coverage.class, CoverageCriterion.class,
+        CoveredEndpoint.class, FaultCategoryId.class,
+        Faults.class, FoundFault.class,
+        ProblemDetails.class, RESTReport.class,
+        Report.class, TestCase.class,
+        Warning.class,
         TriageCommand.TriageReport.class, TriageCommand.RootCauseCluster.class,
         TriageCommand.SynthesizedCorrelationRule.class,
         AnalyzeCommand.BlueprintReport.class, AnalyzeCommand.ScoreBreakdown.class,
@@ -208,44 +289,44 @@ import java.util.UUID;
         StringUtils.class, RandomStringUtils.class,
         LocalDate.class, LocalDateTime.class, OffsetDateTime.class, OffsetTime.class, ZonedDateTime.class,
         Instant.class, Duration.class, Period.class, ZoneOffset.class, DateTimeFormatter.class, LocalTime.class, ZoneId.class, ChronoUnit.class,
-        String.class, UUID.class, net.minidev.asm.ConvertDate.class, net.minidev.asm.DefaultConverter.class,
+        String.class, UUID.class, ConvertDate.class, DefaultConverter.class,
         SwaggerParserExtension.class, OpenAPIV3Parser.class, AuthorizationValue.class, SwaggerParseResult.class, ParseOptions.class,
         ApiResponsesSerializer.class, ExampleSerializer.class, MediaTypeSerializer.class, PathsSerializer.class, SchemaSerializer.class, Schema31Serializer.class,
         ComponentsMixin.class, DateSchemaMixin.class, ExtensionsMixin.class, OpenAPIMixin.class, OperationMixin.class,
         Components31Mixin.class, Discriminator31Mixin.class, Info31Mixin.class, OpenAPI31Mixin.class, Schema31Mixin.class,
         OpenAPI30.class, OpenAPI31.class, OpenAPI31Traverser.class, OpenAPIDereferencer.class,
         Swagger20Parser.class, SwaggerParser.class, SwaggerConverter.class, io.swagger.parser.SwaggerParserExtension.class,
-        io.swagger.jackson.mixin.IgnoreOriginalRefMixin.class, io.swagger.jackson.mixin.OriginalRefMixin.class, io.swagger.jackson.mixin.ResponseSchemaMixin.class,
-        io.swagger.models.AbstractModel.class, io.swagger.models.ArrayModel.class, io.swagger.models.ComposedModel.class,
-        io.swagger.models.Contact.class, io.swagger.models.ExternalDocs.class, io.swagger.models.HttpMethod.class,
-        io.swagger.models.Info.class, io.swagger.models.License.class, io.swagger.models.Model.class, io.swagger.models.ModelImpl.class,
-        io.swagger.models.Operation.class, io.swagger.models.Path.class, io.swagger.models.RefModel.class, io.swagger.models.RefPath.class,
-        io.swagger.models.RefResponse.class, io.swagger.models.Response.class, io.swagger.models.Scheme.class,
-        io.swagger.models.SecurityRequirement.class, io.swagger.models.SecurityScope.class, io.swagger.models.Swagger.class,
-        io.swagger.models.Tag.class, io.swagger.models.Xml.class,
-        io.swagger.models.auth.AbstractSecuritySchemeDefinition.class, io.swagger.models.auth.ApiKeyAuthDefinition.class,
-        io.swagger.models.auth.AuthorizationValue.class, io.swagger.models.auth.BasicAuthDefinition.class, io.swagger.models.auth.In.class,
-        io.swagger.models.auth.OAuth2Definition.class, io.swagger.models.auth.SecuritySchemeDefinition.class,
-        io.swagger.models.parameters.AbstractParameter.class, io.swagger.models.parameters.AbstractSerializableParameter.class,
-        io.swagger.models.parameters.BodyParameter.class, io.swagger.models.parameters.CookieParameter.class,
-        io.swagger.models.parameters.FormParameter.class, io.swagger.models.parameters.HeaderParameter.class,
+        IgnoreOriginalRefMixin.class, OriginalRefMixin.class, ResponseSchemaMixin.class,
+        AbstractModel.class, ArrayModel.class, ComposedModel.class,
+        io.swagger.models.Contact.class, ExternalDocs.class, HttpMethod.class,
+        io.swagger.models.Info.class, io.swagger.models.License.class, Model.class, ModelImpl.class,
+        io.swagger.models.Operation.class, Path.class, RefModel.class, RefPath.class,
+        RefResponse.class, Response.class, Scheme.class,
+        io.swagger.models.SecurityRequirement.class, SecurityScope.class, Swagger.class,
+        io.swagger.models.Tag.class, Xml.class,
+        AbstractSecuritySchemeDefinition.class, ApiKeyAuthDefinition.class,
+        io.swagger.models.auth.AuthorizationValue.class, BasicAuthDefinition.class, In.class,
+        OAuth2Definition.class, SecuritySchemeDefinition.class,
+        AbstractParameter.class, AbstractSerializableParameter.class,
+        BodyParameter.class, io.swagger.models.parameters.CookieParameter.class,
+        FormParameter.class, io.swagger.models.parameters.HeaderParameter.class,
         io.swagger.models.parameters.Parameter.class, io.swagger.models.parameters.PathParameter.class,
-        io.swagger.models.parameters.QueryParameter.class, io.swagger.models.parameters.RefParameter.class,
-        io.swagger.models.parameters.SerializableParameter.class,
-        io.swagger.models.properties.AbstractNumericProperty.class, io.swagger.models.properties.AbstractProperty.class,
-        io.swagger.models.properties.ArrayProperty.class, io.swagger.models.properties.BaseIntegerProperty.class,
-        io.swagger.models.properties.BinaryProperty.class, io.swagger.models.properties.BooleanProperty.class,
-        io.swagger.models.properties.ByteArrayProperty.class, io.swagger.models.properties.ComposedProperty.class,
-        io.swagger.models.properties.DateProperty.class, io.swagger.models.properties.DateTimeProperty.class,
-        io.swagger.models.properties.DecimalProperty.class, io.swagger.models.properties.DoubleProperty.class,
-        io.swagger.models.properties.EmailProperty.class, io.swagger.models.properties.FileProperty.class,
-        io.swagger.models.properties.FloatProperty.class, io.swagger.models.properties.IntegerProperty.class,
-        io.swagger.models.properties.LongProperty.class, io.swagger.models.properties.MapProperty.class,
-        io.swagger.models.properties.ObjectProperty.class, io.swagger.models.properties.PasswordProperty.class,
-        io.swagger.models.properties.Property.class, io.swagger.models.properties.RefProperty.class,
-        io.swagger.models.properties.StringProperty.class, io.swagger.models.properties.UUIDProperty.class,
-        io.swagger.models.properties.UntypedProperty.class,
-        io.swagger.models.refs.GenericRef.class, io.swagger.models.refs.RefFormat.class, io.swagger.models.refs.RefType.class,
+        io.swagger.models.parameters.QueryParameter.class, RefParameter.class,
+        SerializableParameter.class,
+        AbstractNumericProperty.class, AbstractProperty.class,
+        ArrayProperty.class, BaseIntegerProperty.class,
+        BinaryProperty.class, BooleanProperty.class,
+        ByteArrayProperty.class, ComposedProperty.class,
+        DateProperty.class, DateTimeProperty.class,
+        DecimalProperty.class, DoubleProperty.class,
+        EmailProperty.class, FileProperty.class,
+        FloatProperty.class, IntegerProperty.class,
+        LongProperty.class, MapProperty.class,
+        ObjectProperty.class, PasswordProperty.class,
+        Property.class, RefProperty.class,
+        StringProperty.class, UUIDProperty.class,
+        UntypedProperty.class,
+        GenericRef.class, RefFormat.class, RefType.class,
         FuzzerListEntry.class, FuzzerListEntry.FuzzerDetails.class, TimeExecutionDetails.class, TimeExecution.class,
         CatsTestReport.class, CatsResultFactory.class, CatsResultFactory.CatsResult.class, CatsTestCase.class,
         KeyValuePair.class, CatsResponse.class, CatsRequest.class, ResourceCorrelation.class, RequestProvenance.class,
@@ -260,7 +341,7 @@ public class ReflectionConfig {
     private ReflectionConfig() {
     }
 
-    @TargetClass(tools.jackson.databind.ext.OptionalHandlerFactory.class)
+    @TargetClass(OptionalHandlerFactory.class)
     static final class TargetOptionalHandlerFactory {
         @Substitute
         public ValueSerializer<?> findSerializer(SerializationConfig config, JavaType type) {

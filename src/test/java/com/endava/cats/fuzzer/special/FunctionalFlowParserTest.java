@@ -207,5 +207,67 @@ class FunctionalFlowParserTest {
                     code: 1
                 """);
         Assertions.assertThat(FunctionalFlowParser.parseCorrelationFile(corrArrayFile)).hasSize(1);
+
+        File secFlowFile = tempDir.resolve("sec-flow.yml").toFile();
+        Files.writeString(secFlowFile.toPath(), """
+                steps:
+                  - description: Fuzz step with ALL methods
+                    ALL: /items
+                    path:
+                      id: 42
+                    body:
+                      price: 19.99
+                    fuzz:
+                      fields: [price]
+                      payloads: ["' OR 1=1--"]
+                      mode: cross
+                    expect:
+                      maxResponseTimeMs: 500
+                """);
+        Assertions.assertThat(FunctionalFlowParser.isSecurityFlowFile(secFlowFile)).isTrue();
+        Assertions.assertThat(FunctionalFlowParser.isSecurityFlowFile(corrArrayFile)).isFalse();
+        FunctionalFlowDocument secDoc = FunctionalFlowParser.parse(secFlowFile);
+        FunctionalFlowStep fuzzStep = secDoc.steps().getFirst();
+        Assertions.assertThat(fuzzStep.allMethods()).isTrue();
+        Assertions.assertThat(fuzzStep.scenarioText()).isEqualTo("Fuzz step with ALL methods");
+        Assertions.assertThat(fuzzStep.path()).containsEntry("id", 42L);
+        Assertions.assertThat(fuzzStep.expect().maxResponseTimeMs()).isEqualTo(500L);
+        Assertions.assertThat(fuzzStep.fuzz().isConfigured()).isTrue();
+        Assertions.assertThat(fuzzStep.fuzz().hasPayloadSource()).isTrue();
+        Assertions.assertThat(fuzzStep.fuzz().hasTargets()).isTrue();
+        Assertions.assertThat(fuzzStep.fuzz().mode()).isEqualTo(FunctionalFlowDocument.FuzzMode.CROSS);
+        Assertions.assertThat(FunctionalFlowDocument.FuzzMode.fromString("single")).isEqualTo(FunctionalFlowDocument.FuzzMode.SINGLE);
+        Assertions.assertThat(FunctionalFlowDocument.FuzzMode.fromString(null)).isEqualTo(FunctionalFlowDocument.FuzzMode.SINGLE);
+
+        String pathsAndDescStep = """
+                steps:
+                  - description: Only description provided
+                    paths: ["/a", "/b"]
+                    fuzz:
+                      fieldTypes: [string]
+                    variant: 123
+                    save: 123
+                """;
+        FunctionalFlowDocument pathsDoc = FunctionalFlowParser.parseContent(pathsAndDescStep);
+        Assertions.assertThat(pathsDoc.steps().getFirst().name()).isEqualTo("Only description provided");
+        Assertions.assertThat(pathsDoc.steps().getFirst().targetPaths()).containsExactly("/a", "/b");
+
+        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(null)).isFalse();
+        Assertions.assertThat(FunctionalFlowParser.parseCorrelationFile(null)).isEmpty();
+        Assertions.assertThat(FunctionalFlowParser.parseContent("").steps()).isEmpty();
+        String floatAndEmptySaveYaml = """
+                steps:
+                  - POST: /items
+                    body:
+                      price: 19.99
+                      nilVal: null
+                    save:
+                      - "   "
+                    expect:
+                      status: ""
+                """;
+        FunctionalFlowDocument floatDoc = FunctionalFlowParser.parseContent(floatAndEmptySaveYaml);
+        Assertions.assertThat(floatDoc.steps().getFirst().save()).isEmpty();
+        Assertions.assertThat(FunctionalFlowParser.isSecurityFlowFile(null)).isFalse();
     }
 }

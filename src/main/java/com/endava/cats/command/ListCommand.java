@@ -31,6 +31,7 @@ import io.quarkus.arc.Unremovable;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
 import lombok.extern.slf4j.Slf4j;
@@ -271,7 +272,7 @@ public class ListCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     PathListEntry createPathEntryList(OpenAPI openAPI) {
-        Map<String, PathItem> filteredPaths = Optional.ofNullable(openAPI.getPaths()).orElse(new io.swagger.v3.oas.models.Paths())
+        Map<String, PathItem> filteredPaths = Optional.ofNullable(openAPI.getPaths()).orElse(new Paths())
                 .entrySet()
                 .stream()
                 .filter(entry -> entry.getValue().readOperationsMap().values()

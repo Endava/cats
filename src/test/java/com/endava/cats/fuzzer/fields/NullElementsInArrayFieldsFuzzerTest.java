@@ -12,12 +12,16 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Map;
 import java.util.Set;
 
 @QuarkusTest
@@ -53,13 +57,33 @@ class NullElementsInArrayFieldsFuzzerTest {
                 .reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
 
         // When array items are nullable, [null] is valid and must be skipped
-        io.swagger.v3.oas.models.media.ArraySchema nullableArray = new io.swagger.v3.oas.models.media.ArraySchema();
-        io.swagger.v3.oas.models.media.StringSchema nullableItem = new io.swagger.v3.oas.models.media.StringSchema();
+        ArraySchema nullableArray = new ArraySchema();
+        StringSchema nullableItem = new StringSchema();
         nullableItem.setNullable(true);
         nullableArray.setItems(nullableItem);
-        Mockito.when(data.getRequestPropertyTypes()).thenReturn(java.util.Map.of("arrayField", nullableArray));
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("arrayField", nullableArray));
         nullElementsInArrayFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(1))
+                .reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+
+        // OpenAPI 3.1 types containing "null" should also be skipped
+        ArraySchema oas31NullableArray = new ArraySchema();
+        Schema<?> oas31Item = new Schema<>();
+        oas31Item.setTypes(Set.of("string", "null"));
+        oas31NullableArray.setItems(oas31Item);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("arrayField", oas31NullableArray));
+        nullElementsInArrayFieldsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+
+        // Non-nullable OpenAPI 3.1 types and array without items should run
+        ArraySchema nonNullableOas31Array = new ArraySchema();
+        Schema<?> nonNullItem = new Schema<>();
+        nonNullItem.setTypes(Set.of("string"));
+        nonNullableOas31Array.setItems(nonNullItem);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("arrayField", nonNullableOas31Array));
+        nullElementsInArrayFieldsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(2))
                 .reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
     }
 }

@@ -648,4 +648,20 @@ class FunctionalFuzzerTest {
 
         return result;
     }
+
+    @Test
+    void shouldCoverExtractResponseValueHeaderBodyAndMissingVariableBranches() {
+        CatsResponse resp = CatsResponse.builder()
+                .responseCode(200)
+                .body("\"raw-id\"")
+                .headers(List.of(new KeyValuePair<>("X-Header", "hdr-val")))
+                .build();
+        Assertions.assertThat(CustomFuzzerUtil.extractResponseValue(resp, "header.X-Header")).isEqualTo("hdr-val");
+        Assertions.assertThat(CustomFuzzerUtil.extractResponseValue(resp, "$body")).isEqualTo("raw-id");
+        Assertions.assertThat(CustomFuzzerUtil.extractResponseValue(resp, "$")).isEqualTo("raw-id");
+
+        String unresolvedVerify = ReflectionTestUtils.invokeMethod(customFuzzerUtil, "getVerifyValue",
+                "{}", resp, "$missingVar");
+        Assertions.assertThat(unresolvedVerify).isNull();
+    }
 }

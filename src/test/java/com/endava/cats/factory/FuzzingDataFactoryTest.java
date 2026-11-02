@@ -1115,14 +1115,14 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldFallbackToStringSchemaWhenParameterRefIsNotDeclared() {
-        io.swagger.v3.oas.models.OpenAPI openAPI = new io.swagger.v3.oas.models.OpenAPI();
-        io.swagger.v3.oas.models.PathItem pathItem = new io.swagger.v3.oas.models.PathItem();
-        io.swagger.v3.oas.models.Operation getOp = new io.swagger.v3.oas.models.Operation();
-        io.swagger.v3.oas.models.parameters.Parameter param = new io.swagger.v3.oas.models.parameters.Parameter()
+        OpenAPI openAPI = new OpenAPI();
+        PathItem pathItem = new PathItem();
+        Operation getOp = new Operation();
+        Parameter param = new Parameter()
                 .name("principal").in("query").schema(new Schema<>().$ref("#/definitions/Principal"));
         getOp.setParameters(List.of(param));
-        io.swagger.v3.oas.models.responses.ApiResponses responses = new io.swagger.v3.oas.models.responses.ApiResponses();
-        responses.addApiResponse("200", new io.swagger.v3.oas.models.responses.ApiResponse().description("ok"));
+        ApiResponses responses = new ApiResponses();
+        responses.addApiResponse("200", new ApiResponse().description("ok"));
         getOp.setResponses(responses);
         pathItem.setGet(getOp);
         Mockito.when(filterArguments.isHttpMethodSupplied(HttpMethod.GET)).thenReturn(true);
@@ -1666,5 +1666,24 @@ class FuzzingDataFactoryTest {
         } finally {
             Files.deleteIfExists(tempContract);
         }
+    }
+
+    @Test
+    void shouldHandleUnresolvedPathItemRefWildcardMediaTypeAndParameterRefs() {
+        OpenAPI openAPI = new OpenAPI();
+        PathItem badRefItem = new PathItem().$ref("#/paths/nonExistent");
+        catsGlobalContext.setOpenAPI(openAPI);
+        Assertions.assertThat(fuzzingDataFactory.fromPathItem("/bad-ref", badRefItem, openAPI)).isEmpty();
+
+        Parameter refParam = new Parameter().$ref("#/components/parameters/MissingParam");
+        PathItem pathWithRefParam = new PathItem().parameters(List.of(refParam));
+        Operation opWithWildcard = new Operation()
+                .requestBody(new RequestBody().content(new Content().addMediaType("*/*", new MediaType().schema(
+                        new Schema<>().anyOf(List.of(new Schema<>().type("string")))))))
+                .responses(new ApiResponses().addApiResponse("200", new ApiResponse()));
+        PathItem wildcardItem = new PathItem().post(opWithWildcard);
+        catsGlobalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
+        Assertions.assertThat(fuzzingDataFactory.mergeParameters(pathWithRefParam, new Operation())).hasSize(1);
+        Assertions.assertThat(fuzzingDataFactory.fromPathItem("/wildcard", wildcardItem, openAPI)).isNotEmpty();
     }
 }

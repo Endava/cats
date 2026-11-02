@@ -5,6 +5,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.RequestTarget;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
@@ -19,6 +20,7 @@ import picocli.CommandLine;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @QuarkusTest
 class SmokeCommandTest {
@@ -126,6 +128,18 @@ class SmokeCommandTest {
                 snapshot("GET", "/pets", 404, 5, "error"),
                 snapshot("GET", "/pets", 200, 4, "success")));
         Assertions.assertThat(upgradedReport.ok2xx()).isEqualTo(1);
+
+        // 5. Unresolved parameters from RuntimeResourcePool rendered in non-JSON output
+        Mockito.when(catsCommand.runtimeResourcePool.unresolvedOperations()).thenReturn(List.of(
+                new RuntimeResourcePool.UnresolvedOperation(
+                        new RuntimeResourcePool.OperationOutcome("/pets/{id}", HttpMethod.GET, 1, 0, Map.of(404, 1)),
+                        List.of(new RuntimeResourcePool.UnresolvedParameter(
+                                RequestTarget.path("id"),
+                                RuntimeResourcePool.UnresolvedReason.NO_VALUE_CAPTURED, null)))));
+        ReflectionTestUtils.setField(smokeCommand.reportingArguments, "jsonOutput", false);
+        smokeCommand.run();
+        Assertions.assertThat(smokeCommand.getLastReport().unresolvedParameters())
+                .containsExactly("GET /pets/{id} (missing: id)");
     }
 
     private static TestResultSnapshot snapshot(String method, String path, int code, long timeMs, String result) {

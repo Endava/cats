@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
+import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -12,7 +13,7 @@ class AddressGeneratorTest {
 
     @Test
     void shouldGenerate() {
-        com.endava.cats.util.CatsRandom.initRandom(0);
+        CatsRandom.initRandom(0);
         AddressGenerator addressGenerator = new AddressGenerator();
         Assertions.assertThat(addressGenerator.generate(new Schema<>()).toString()).hasSizeGreaterThan(5);
     }
@@ -20,7 +21,7 @@ class AddressGeneratorTest {
     @ParameterizedTest
     @CsvSource({"contractAddress", "owner_address", "walletAddress"})
     void shouldGenerateHexAddressForBlockchainProperties(String property) {
-        com.endava.cats.util.CatsRandom.initRandom(0);
+        CatsRandom.initRandom(0);
         AddressGenerator addressGenerator = new AddressGenerator();
         Assertions.assertThat(addressGenerator.appliesTo("", property)).isTrue();
         Assertions.assertThat(addressGenerator.generate(new Schema<>()).toString()).matches("^0x[0-9a-f]{40}$");

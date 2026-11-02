@@ -28,6 +28,7 @@ import jakarta.inject.Singleton;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -203,7 +204,7 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
         try {
             return OffsetDateTime.parse(sentStr).toInstant()
                     .equals(OffsetDateTime.parse(returnedStr).toInstant());
-        } catch (java.time.format.DateTimeParseException _) {
+        } catch (DateTimeParseException _) {
             return false;
         }
     }

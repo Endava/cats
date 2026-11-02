@@ -2,6 +2,7 @@ package com.endava.cats.args;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -96,7 +97,7 @@ class ApiArgumentsTest {
 
         OpenAPI openAPI = new OpenAPI();
         openAPI.setServers(Collections.singletonList(
-                new io.swagger.v3.oas.models.servers.Server().url(openApiServerUrl)
+                new Server().url(openApiServerUrl)
         ));
 
         args.validateValidServer(spec, openAPI);

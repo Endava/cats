@@ -7,6 +7,8 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.dsl.api.Parser;
+import com.endava.cats.exception.CatsExecutionCancelledException;
+import com.endava.cats.exception.CatsExecutionLimitReachedException;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
@@ -263,5 +265,35 @@ class TemplateFuzzCommandTest {
         templateFuzzCommand.setRandom(true);
 
         Assertions.assertThatThrownBy(() -> templateFuzzCommand.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("When running in continuous fuzzing mode, at least one --stopXXX argument must be provided");
+    }
+
+    @Test
+    void shouldHandleLimitReachedCancelledAndCompleteLifecycleExceptions() {
+        templateFuzzCommand.setRandom(false);
+        templateFuzzCommand.data = "{\"field\":\"value\"}";
+        templateFuzzCommand.url = "http://localhost";
+
+        Mockito.doThrow(new CatsExecutionLimitReachedException("max tests"))
+                .when(templateFuzzer).fuzz(Mockito.any());
+        templateFuzzCommand.run();
+        Assertions.assertThat(templateFuzzCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+
+        Mockito.doThrow(Mockito.mock(CatsExecutionCancelledException.class))
+                .when(templateFuzzer).fuzz(Mockito.any());
+        templateFuzzCommand.run();
+        Assertions.assertThat(templateFuzzCommand.getExitCode()).isEqualTo(130);
+
+        TemplateFuzzCommand cmd = new TemplateFuzzCommand();
+        ReportingArguments repArgs = Mockito.mock(ReportingArguments.class);
+        TestCaseListener tcl = Mockito.mock(TestCaseListener.class);
+        ExecutionStatisticsListener stats = Mockito.mock(ExecutionStatisticsListener.class);
+        Mockito.doThrow(new IllegalStateException("afterFuzz boom")).when(tcl).afterFuzz(Mockito.any());
+        Mockito.doThrow(new IllegalStateException("endSession boom")).when(tcl).endSession();
+        ReflectionTestUtils.setField(cmd, "reportingArguments", repArgs);
+        ReflectionTestUtils.setField(cmd, "testCaseListener", tcl);
+        ReflectionTestUtils.setField(cmd, "executionStatisticsListener", stats);
+
+        ReflectionTestUtils.invokeMethod(cmd, "completeLifecycle", "/pets", true);
+        Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
     }
 }

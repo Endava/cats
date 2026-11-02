@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -182,6 +183,96 @@ class WfcFaultClassifierTest {
         Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(exactBoundaryRejected), exactBoundaryRejected))
                 .extracting(FaultCategoryId::getCode)
                 .containsExactly(DefinedFaultCategory.SCHEMA_VALID_INPUT_REJECTED.getCode());
+    }
+
+    @Test
+    void shouldExposeCatsWfcFaultCategoryMetadataAndFallbackClassification() {
+        CatsWfcFaultCategory category = CatsWfcFaultCategory.CATS_UNEXPECTED_BEHAVIOUR;
+        Assertions.assertThat(category.getId()).isEqualTo("CATS_UNEXPECTED_BEHAVIOUR");
+        Assertions.assertThat(category.getCode()).isEqualTo(907);
+        Assertions.assertThat(category.getDescriptiveName()).isEqualTo("Unexpected API Behaviour");
+        Assertions.assertThat(category.getTestCaseLabel()).isEqualTo("unexpectedApiBehaviour");
+        Assertions.assertThat(category.getFullDescription()).contains("oracle expectations");
+
+        Assertions.assertThat(WfcFaultClassifier.classify(null, null)).isEmpty();
+
+        CatsTestCase fallbackError = buildTestCase("POST", "/users", 400, "error",
+                "Custom oracle failure", "CustomFuzzer", "{}");
+        Set<FaultCategoryId> classified = WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(fallbackError), null);
+        Assertions.assertThat(classified)
+                .singleElement()
+                .satisfies(fc -> {
+                    Assertions.assertThat(fc.getCode()).isEqualTo(907);
+                    Assertions.assertThat(fc.getId()).isEqualTo("CATS_UNEXPECTED_BEHAVIOUR");
+                    Assertions.assertThat(fc.getContext()).isEqualTo("Custom oracle failure");
+                });
+    }
+
+    @Test
+    void shouldClassifySecondPhaseAndOracleEdgeCases() {
+        CatsTestCase nonStandardCode = buildTestCase("GET", "/pets", 600, "error", "", "HappyPath", "");
+        CatsTestCaseSummary nonStandardSummary = CatsTestCaseSummary.fromCatsTestCase(nonStandardCode);
+        ReflectionTestUtils.setField(nonStandardSummary, "httpMethod", null);
+        Assertions.assertThat(WfcFaultClassifier.classify(nonStandardSummary, nonStandardCode))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.HTTP_STATUS_NO_NON_STANDARD_CODES.getCode());
+
+        CatsTestCase deleteStillAvailable = buildTestCase("GET", "/pets/1", 200, "error",
+                "Unexpected response code: 200", "CheckDeletedResourcesNotAvailableFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(deleteStillAvailable), deleteStillAvailable))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.HTTP_NONWORKING_DELETE.getCode());
+
+        CatsTestCase repeatedCreatePut = buildTestCase("PUT", "/pets/1", 201, "error",
+                "Unexpected response code: 201", "PutIdempotencyFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(repeatedCreatePut), repeatedCreatePut))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT.getCode());
+
+        CatsTestCase invalidLocation = buildTestCase("GET", "/pets/1", 400, "error",
+                "Location header points to invalid resource", "CreatedResourceLocationFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(invalidLocation), invalidLocation))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.HTTP_INVALID_LOCATION.getCode());
+
+        CatsTestCase bypassAuthModify = buildTestCase("PUT", "/pets/1", 200, "error",
+                "Unexpected response code: 200", "BypassAuthenticationFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(bypassAuthModify), bypassAuthModify))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS.getCode());
+
+        CatsTestCase bypassAuthRead = buildTestCase("GET", "/pets", 200, "error",
+                "Unexpected response code: 200", "BypassAuthenticationFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(bypassAuthRead), bypassAuthRead))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.SECURITY_DECLARED_AUTH_NOT_ENFORCED.getCode());
+
+        CatsTestCase idor = buildTestCase("GET", "/pets/2", 200, "error",
+                "Unexpected behaviour", "InsecureDirectObjectReferencesFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(idor), idor))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION.getCode());
+
+        CatsTestCase positive406 = buildTestCase("GET", "/pets", 406, "error",
+                Reason.UNDOCUMENTED_RESPONSE_CODE.value(), "HappyPathFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(positive406), positive406))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.SCHEMA_STATUS_HAS_406_IF_ACCEPT.getCode());
+
+        CatsTestCase unexpectedBehaviourNegative400 = buildTestCase("POST", "/pets", 400, "error",
+                Reason.UNEXPECTED_BEHAVIOUR.value(), "RemoveFieldsFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(unexpectedBehaviourNegative400), unexpectedBehaviourNegative400))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(CatsWfcFaultCategory.CATS_UNEXPECTED_BEHAVIOUR.getCode());
+
+        CatsTestCase compliant401WithHeader = new CatsTestCase();
+        compliant401WithHeader.setTestId("Test 401");
+        compliant401WithHeader.setResult("success");
+        compliant401WithHeader.setRequest(CatsRequest.builder().httpMethod("GET").payload("").build());
+        compliant401WithHeader.setResponse(CatsResponse.builder().responseCode(401).body("")
+                .headers(List.of(new KeyValuePair<>(null, "v"), new KeyValuePair<>("WWW-Authenticate", "Bearer"))).build());
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(compliant401WithHeader), compliant401WithHeader))
+                .isEmpty();
     }
 
     private static CatsTestCase buildTestCase(String method, String path, int code, String result,

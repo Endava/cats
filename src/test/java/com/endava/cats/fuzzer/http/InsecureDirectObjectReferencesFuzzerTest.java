@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.pool.RuntimeResourcePool;
@@ -25,6 +26,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,7 +111,7 @@ class InsecureDirectObjectReferencesFuzzerTest {
         RuntimeResourcePool pool = Mockito.mock(RuntimeResourcePool.class);
         Mockito.when(pool.previewEnrichedPayload(Mockito.any(), Mockito.anyString()))
                 .thenReturn("{\"orderId\":\"100\"}");
-        Mockito.when(pool.isKnownPoolValue(java.math.BigInteger.valueOf(101))).thenReturn(true);
+        Mockito.when(pool.isKnownPoolValue(BigInteger.valueOf(101))).thenReturn(true);
         InsecureDirectObjectReferencesFuzzer poolAwareFuzzer =
                 new InsecureDirectObjectReferencesFuzzer(simpleExecutor, testCaseListener, null, pool);
 
@@ -452,5 +454,35 @@ class InsecureDirectObjectReferencesFuzzerTest {
 
         // Numeric IDs generate 5 alternatives
         Mockito.verify(serviceCaller, Mockito.times(5)).call(Mockito.any());
+    }
+
+    @Test
+    void shouldSkipRefDataFieldsAndHandleOriginalIdEchoedAndArrayIdMatching() {
+        FilesArguments filesArgs = Mockito.mock(FilesArguments.class);
+        Mockito.when(filesArgs.getRefData("/orders")).thenReturn(Map.of("userId", "pinned"));
+        InsecureDirectObjectReferencesFuzzer refAwareFuzzer =
+                new InsecureDirectObjectReferencesFuzzer(simpleExecutor, testCaseListener, filesArgs, null);
+
+        Map<String, Schema> reqTypes = new HashMap<>();
+        reqTypes.put("userId", new StringSchema());
+        FuzzingData data = FuzzingData.builder()
+                .path("/orders")
+                .reqSchema(new StringSchema())
+                .requestPropertyTypes(reqTypes)
+                .requestContentTypes(List.of("application/json"))
+                .responseCodes(Set.of("200"))
+                .method(HttpMethod.GET)
+                .build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"userId\": \"123\"}");
+        refAwareFuzzer.fuzz(data);
+        Mockito.verifyNoInteractions(serviceCaller);
+
+        // Response echoes original ID inside a JSON array
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(200).body("[{\"userId\":\"123\"}]").build());
+        idorFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                Mockito.any(), Mockito.eq(data), Mockito.eq("Heuristic IDOR check inconclusive"),
+                Mockito.any(Object[].class));
     }
 }

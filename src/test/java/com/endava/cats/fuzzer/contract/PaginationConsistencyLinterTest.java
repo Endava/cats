@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -101,5 +102,35 @@ class PaginationConsistencyLinterTest {
         Assertions.assertThat(linter).hasToString("PaginationConsistencyLinter");
         Assertions.assertThat(linter.description())
                 .isEqualTo("verifies that paginated GET operations across the contract use consistent pagination parameter names and return pagination metadata rather than a bare array");
+    }
+
+    @Test
+    void shouldSkipWhenNoPathsAndAcceptBareArrayWithPaginationHeaders() {
+        linter.process(FuzzingData.builder().build());
+        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.eq("No paths found in OpenAPI contract"));
+
+        Schema<?> bareArray = new Schema<>().type("array").items(new Schema<>().type("string"));
+        ApiResponse arrayWithHeader = new ApiResponse()
+                .headers(Map.of("X-Total-Count", new Header()))
+                .content(new Content().addMediaType("application/json", new MediaType().schema(bareArray)));
+        Operation getWithHeader = new Operation()
+                .parameters(List.of(
+                        new Parameter().name("page").in("query"),
+                        new Parameter().name("X-Trace").in("header")))
+                .responses(new ApiResponses()
+                        .addApiResponse("400", new ApiResponse())
+                        .addApiResponse("200", arrayWithHeader));
+        Operation unpaginatedGet = new Operation()
+                .parameters(List.of(new Parameter().name("filter").in("query")));
+
+        OpenAPI openAPI = new OpenAPI().paths(new Paths()
+                .addPathItem("/items", new PathItem().get(getWithHeader))
+                .addPathItem("/search", new PathItem().get(unpaginatedGet)));
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
+        linter.process(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("All paginated GET operations use consistent parameter conventions and structured responses"));
     }
 }

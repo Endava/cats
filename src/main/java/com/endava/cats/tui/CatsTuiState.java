@@ -6,9 +6,11 @@ import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.model.RunConfigurationSnapshot;
 import com.endava.cats.tui.model.TestResultSnapshot;
 import dev.tamboui.toolkit.event.EventResult;
+import dev.tamboui.tui.event.KeyCode;
 import dev.tamboui.tui.event.KeyEvent;
 import dev.tamboui.widgets.table.TableState;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -20,9 +22,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Render-thread-owned state for a CATS TUI session.
@@ -269,7 +274,7 @@ final class CatsTuiState {
             }
             return EventResult.HANDLED;
         }
-        if (event.code() == dev.tamboui.tui.event.KeyCode.CHAR && !event.hasCtrl() && !event.hasAlt()
+        if (event.code() == KeyCode.CHAR && !event.hasCtrl() && !event.hasAlt()
                 && !Character.isISOControl(event.codePoint()) && searchQuery.codePointCount(0, searchQuery.length()) < 120) {
             searchQuery += event.string();
             refreshFilteredResults();
@@ -280,7 +285,7 @@ final class CatsTuiState {
 
     private EventResult handleIssuesKey(KeyEvent event) {
         List<IssueStatisticsRow> rows = issueStatistics();
-        java.util.OptionalInt moved = navigateAggregateTable(event, issuesTableState, selectedIssueIndex, rows.size());
+        OptionalInt moved = navigateAggregateTable(event, issuesTableState, selectedIssueIndex, rows.size());
         if (moved.isPresent()) {
             selectedIssueIndex = moved.getAsInt();
             return EventResult.HANDLED;
@@ -298,7 +303,7 @@ final class CatsTuiState {
 
     private EventResult handlePathsKey(KeyEvent event) {
         List<PathStatisticsRow> rows = pathStatistics();
-        java.util.OptionalInt moved = navigateAggregateTable(event, pathsTableState, selectedPathIndex, rows.size());
+        OptionalInt moved = navigateAggregateTable(event, pathsTableState, selectedPathIndex, rows.size());
         if (moved.isPresent()) {
             selectedPathIndex = moved.getAsInt();
             return EventResult.HANDLED;
@@ -316,7 +321,7 @@ final class CatsTuiState {
 
     private EventResult handleSlowestKey(KeyEvent event) {
         List<TestResultSnapshot> rows = slowestResults();
-        java.util.OptionalInt moved = navigateAggregateTable(event, slowestTableState, selectedSlowestIndex, rows.size());
+        OptionalInt moved = navigateAggregateTable(event, slowestTableState, selectedSlowestIndex, rows.size());
         if (moved.isPresent()) {
             selectedSlowestIndex = moved.getAsInt();
             return EventResult.HANDLED;
@@ -342,7 +347,7 @@ final class CatsTuiState {
         return EventResult.UNHANDLED;
     }
 
-    private java.util.OptionalInt navigateAggregateTable(KeyEvent event, TableState state, int currentIndex, int rowCount) {
+    private OptionalInt navigateAggregateTable(KeyEvent event, TableState state, int currentIndex, int rowCount) {
         int nextIndex;
         if (event.isUp() || event.isCharIgnoreCase('k')) {
             nextIndex = Math.max(0, currentIndex - 1);
@@ -353,10 +358,10 @@ final class CatsTuiState {
         } else if (event.isPageDown()) {
             nextIndex = Math.clamp(rowCount - 1L, 0, currentIndex + aggregatePageSize());
         } else {
-            return java.util.OptionalInt.empty();
+            return OptionalInt.empty();
         }
         syncSelection(state, nextIndex, rowCount);
-        return java.util.OptionalInt.of(nextIndex);
+        return OptionalInt.of(nextIndex);
     }
 
     private EventResult handleFuzzerKey(KeyEvent event) {
@@ -878,7 +883,7 @@ final class CatsTuiState {
             return true;
         }
         String needle = searchQuery.toLowerCase(Locale.ROOT);
-        return java.util.stream.Stream.of(test.id(), test.fuzzer(), test.contractPath(), test.path(), test.scenario(),
+        return Stream.of(test.id(), test.fuzzer(), test.contractPath(), test.path(), test.scenario(),
                         test.resultReason(), test.result(), test.request().httpMethod(),
                         String.valueOf(test.response().responseCode()))
                 .map(CatsTuiDetailFormatter::safe).map(value -> value.toLowerCase(Locale.ROOT))
@@ -1129,9 +1134,9 @@ final class CatsTuiState {
         try {
             Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
             try (var out = process.getOutputStream()) {
-                out.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                out.write(text.getBytes(StandardCharsets.UTF_8));
             }
-            return process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS) && process.exitValue() == 0;
+            return process.waitFor(2, TimeUnit.SECONDS) && process.exitValue() == 0;
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             return false;

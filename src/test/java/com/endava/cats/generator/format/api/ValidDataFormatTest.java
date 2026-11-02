@@ -4,6 +4,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -36,7 +37,7 @@ class ValidDataFormatTest {
         Assertions.assertThat(validDataFormatList).hasSize(1);
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void shouldUseSubstringMatchingForSchemaPatternAndReturnNullWhenPatternDoesNotMatch() {
         Schema<String> matchingUnanchoredSchema = new Schema<>();
         matchingUnanchoredSchema.setPattern("[a-z]+");

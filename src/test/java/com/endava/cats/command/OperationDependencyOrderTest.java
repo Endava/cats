@@ -6,14 +6,18 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.QueryParameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -119,8 +123,8 @@ class OperationDependencyOrderTest {
                 .addProperty("accessToken", new StringSchema())
                 .addProperty("refreshToken", new StringSchema());
         Operation loginOp = post(new Schema<>().$ref("#/components/schemas/LoginRequest"))
-                .responses(new io.swagger.v3.oas.models.responses.ApiResponses()
-                        .addApiResponse("200", new io.swagger.v3.oas.models.responses.ApiResponse()
+                .responses(new ApiResponses()
+                        .addApiResponse("200", new ApiResponse()
                                 .content(new Content().addMediaType("application/json",
                                         new MediaType().schema(new Schema<>().$ref("#/components/schemas/LoginResponse"))))));
         OpenAPI api = new OpenAPI()
@@ -174,5 +178,34 @@ class OperationDependencyOrderTest {
     private static Operation post(Schema<?> schema) {
         return new Operation().requestBody(new RequestBody().content(
                 new Content().addMediaType("application/json", new MediaType().schema(schema))));
+    }
+
+    @Test
+    void shouldAnalyzePathDependenciesResolveParameterRefsPluralIdsAndMethodsForPath() {
+        Assertions.assertThat(OperationDependencyOrder.analyzePathDependencies(null).orderedPaths()).isEmpty();
+        Assertions.assertThat(OperationDependencyOrder.methodsForPath(new OpenAPI(), "/missing")).isEqualTo("GET");
+
+        Parameter refParam = new Parameter()
+                .$ref("#/components/parameters/CustomerIdsParam");
+        Parameter customerIdsParam = new QueryParameter().name("customerIds");
+        Schema<?> batchReq = new ObjectSchema().addProperty("orderUuids", new ArraySchema().items(new StringSchema()));
+
+        OpenAPI api = new OpenAPI()
+                .components(new Components().addParameters("CustomerIdsParam", customerIdsParam))
+                .paths(new Paths()
+                        .addPathItem("/{orderId}", new PathItem().get(new Operation().addParametersItem(refParam)))
+                        .addPathItem("/batch", new PathItem().post(post(batchReq)))
+                        .addPathItem("/customers", new PathItem().post(new Operation()))
+                        .addPathItem("/orders", new PathItem().post(new Operation())));
+
+        OperationDependencyOrder.PathDependencyAnalysis analysis = OperationDependencyOrder.analyzePathDependencies(api);
+        Assertions.assertThat(analysis.totalPathVars()).isEqualTo(1);
+        Assertions.assertThat(analysis.resolvedPathVars()).isEqualTo(1);
+        Assertions.assertThat(OperationDependencyOrder.producersByConsumer(api, List.copyOf(api.getPaths().entrySet())))
+                .containsEntry("/{orderId}", Set.of("/orders", "/customers"))
+                .containsEntry("/batch", Set.of("/orders"));
+        Assertions.assertThat(analysis.orderedPaths()).containsSubsequence("/customers", "/{orderId}")
+                .containsSubsequence("/orders", "/batch");
+        Assertions.assertThat(OperationDependencyOrder.methodsForPath(api, "/orders")).isEqualTo("POST");
     }
 }

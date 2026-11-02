@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -359,7 +360,7 @@ public class OpenApiReusabilityMetrics {
         }
         try {
             return JsonUtils.getSimpleObjectMapper().convertValue(obj,
-                    new com.fasterxml.jackson.core.type.TypeReference<>() {
+                    new TypeReference<>() {
                     });
         } catch (Exception _) {
             return Collections.emptyMap();

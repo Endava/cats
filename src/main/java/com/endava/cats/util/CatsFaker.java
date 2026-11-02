@@ -4,6 +4,7 @@ import jakarta.inject.Singleton;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -470,11 +471,11 @@ public class CatsFaker {
          *
          * @return random birthday within a realistic range.
          */
-        public java.time.LocalDate birthday() {
+        public LocalDate birthday() {
             int year = 1950 + CatsRandom.instance().nextInt(50);
             int month = 1 + CatsRandom.instance().nextInt(12);
             int day = 1 + CatsRandom.instance().nextInt(28);
-            return java.time.LocalDate.of(year, month, day);
+            return LocalDate.of(year, month, day);
         }
     }
 

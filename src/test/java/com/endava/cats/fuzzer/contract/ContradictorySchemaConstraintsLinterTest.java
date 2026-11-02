@@ -78,4 +78,34 @@ class ContradictorySchemaConstraintsLinterTest {
         Assertions.assertThat(linter.description())
                 .isEqualTo("detects contradictory or invalid schema constraints (min > max bounds, invalid regex patterns, undeclared required fields, and invalid enum defaults/examples)");
     }
+
+    @Test
+    void shouldSkipWhenOpenApiNullAndCheckNegativeLengthsMinPropertiesAndExampleInEnum() {
+        linter.process(FuzzingData.builder().build());
+        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.eq("OpenAPI specification not available"));
+
+        Schema<?> negLengths = new Schema<>().type("string").minLength(-2).maxLength(-1)
+                ._enum(List.of("X", "Y")).example("Z");
+        Schema<?> badPropCount = new Schema<>().type("object").minProperties(5).maxProperties(2);
+        Schema<?> allOfRequired = new Schema<>().type("object")
+                .allOf(List.of(new Schema<>().type("object")
+                        .properties(Map.of("a", new Schema<>().type("string")))
+                        .required(List.of("b"))));
+
+        OpenAPI openAPI = new OpenAPI().components(new Components()
+                .addSchemas("NegLengths", negLengths)
+                .addSchemas("BadPropCount", badPropCount)
+                .addSchemas("AllOfRequired", allOfRequired));
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
+        linter.process(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("Contradictory or broken schema constraints found"),
+                Mockito.argThat((String msg) -> msg.contains("has negative minLength (-2)")
+                        && msg.contains("has negative maxLength (-1)")
+                        && msg.contains("has example value 'Z' not present in enum")
+                        && msg.contains("has minProperties (5) greater than maxProperties (2)")
+                        && !msg.contains("AllOfRequired")));
+    }
 }

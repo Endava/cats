@@ -5,13 +5,16 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class ResponseSchemaValidatorTest {
@@ -257,5 +260,55 @@ class ResponseSchemaValidatorTest {
                 .build();
         ResponseSchemaValidator.ValidationResult puppyResult = validator.validate(validPuppyResponse, data);
         Assertions.assertThat(puppyResult.isValid()).isTrue();
+
+        // Also exercise root-level error formatting and defaultMapping discriminator rewriting
+        Schema<?> rootIntSchema = new Schema<>().type("integer").types(Set.of("integer"));
+        Schema<?> discWithDefaultMapping = new Schema<>().type("object")
+                .discriminator(new Discriminator()
+                        .propertyName("kind")
+                        .mapping(Map.of("cat", "Cat", "ext", "https://external.example/Dog")));
+        OpenAPI rootApi = new OpenAPI();
+        FuzzingData rootIntData = FuzzingData.builder()
+                .openApi(rootApi)
+                .schemaMap(Map.of("Poly", discWithDefaultMapping, "Cat", new Schema<>().type("object")))
+                .responseSchemaDefinitions(Map.of("200", Map.of("application/json", rootIntSchema)))
+                .build();
+        CatsResponse stringInsteadOfInt = CatsResponse.builder()
+                .responseCode(200)
+                .responseContentType("application/json")
+                .body("\"not-an-int\"")
+                .build();
+        ResponseSchemaValidator.ValidationResult rootErr = validator.validate(stringInsteadOfInt, rootIntData);
+        Assertions.assertThat(rootErr.isValid()).isFalse();
+        Assertions.assertThat(rootErr.details()).startsWith("$:");
+
+        // Cover explicit discriminator mapping on parent schema with oneOf children (lines 209-214)
+        Schema<?> parentWithExplicitMap = new Schema<>().type("object")
+                .discriminator(new Discriminator()
+                        .propertyName("kind")
+                        .mapping(Map.of("CUSTOM_DOG", "#/components/schemas/DogChild")))
+                .properties(Map.of("kind", new Schema<>().type("string")));
+        Schema<?> dogChild = new Schema<>().allOf(List.of(
+                new Schema<>().$ref("#/components/schemas/ParentWithMap"),
+                new Schema<>().type("object").properties(Map.of("bark", new Schema<>().type("boolean")))));
+        Schema<?> unionSchema = new Schema<>().oneOf(List.of(
+                new Schema<>().$ref("#/components/schemas/ParentWithMap"),
+                new Schema<>().$ref("#/components/schemas/DogChild")));
+        Map<String, Schema> mapWithNullEntry = new HashMap<>();
+        mapWithNullEntry.put("ParentWithMap", parentWithExplicitMap);
+        mapWithNullEntry.put("DogChild", dogChild);
+        mapWithNullEntry.put("UnionSchema", unionSchema);
+        mapWithNullEntry.put("NullSchema", null);
+        FuzzingData explicitMapData = FuzzingData.builder()
+                .openApi(new OpenAPI())
+                .schemaMap(mapWithNullEntry)
+                .responseSchemaDefinitions(Map.of("200", Map.of("application/json", unionSchema)))
+                .build();
+        CatsResponse dogResp = CatsResponse.builder()
+                .responseCode(200)
+                .responseContentType("application/json")
+                .body("{\"kind\":\"CUSTOM_DOG\",\"bark\":true}")
+                .build();
+        Assertions.assertThat(validator.validate(dogResp, explicitMapData).isValid()).isTrue();
     }
 }
