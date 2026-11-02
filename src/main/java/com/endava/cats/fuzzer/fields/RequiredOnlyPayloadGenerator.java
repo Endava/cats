@@ -166,21 +166,47 @@ public final class RequiredOnlyPayloadGenerator {
         }
         try {
             JsonElement root = JsonUtils.parseAsJsonElement(payload);
-            if (!root.isJsonObject()) {
+            if (!root.isJsonObject() && !isObjectArray(root)) {
                 return List.of();
             }
             Set<String> required = requiredFields == null ? Set.of() : Set.copyOf(requiredFields);
             Set<String> candidates = new LinkedHashSet<>();
 
             addDefaultedVariantIfDistinct(root, payload, requiredOnlyPayload, required, requestPropertyTypes, candidates);
-            addSingleOptionalVariants(root.getAsJsonObject(), payload, requiredOnlyPayload, required, maxSingleOptional, candidates);
-            if (requestPropertyTypes != null && !requestPropertyTypes.isEmpty()) {
+            addSingleOptionalVariants(root, payload, requiredOnlyPayload, required, maxSingleOptional, candidates);
+            if (root.isJsonObject() && requestPropertyTypes != null && !requestPropertyTypes.isEmpty()) {
                 addEnumVariantFallbacks(root.getAsJsonObject(), required, requestPropertyTypes, candidates, maxSingleOptional);
             }
             return new ArrayList<>(candidates);
         } catch (RuntimeException _) {
             return List.of();
         }
+    }
+
+    private static boolean isObjectArray(JsonElement root) {
+        if (!root.isJsonArray() || root.getAsJsonArray().isEmpty()) {
+            return false;
+        }
+        for (JsonElement element : root.getAsJsonArray()) {
+            if (!element.isJsonObject()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Set<String> collectTopLevelKeys(JsonElement root) {
+        Set<String> keys = new LinkedHashSet<>();
+        if (root.isJsonObject()) {
+            keys.addAll(root.getAsJsonObject().keySet());
+        } else if (root.isJsonArray()) {
+            for (JsonElement el : root.getAsJsonArray()) {
+                if (el.isJsonObject()) {
+                    keys.addAll(el.getAsJsonObject().keySet());
+                }
+            }
+        }
+        return keys;
     }
 
     private static void addDefaultedVariantIfDistinct(JsonElement root, String payload, String requiredOnlyPayload,
@@ -203,18 +229,17 @@ public final class RequiredOnlyPayloadGenerator {
         }
     }
 
-    private static void addSingleOptionalVariants(JsonObject rootObj, String payload, String requiredOnlyPayload,
+    private static void addSingleOptionalVariants(JsonElement root, String payload, String requiredOnlyPayload,
                                                   Set<String> required, int maxSingleOptional, Set<String> candidates) {
         int addedSingle = 0;
-        for (Map.Entry<String, JsonElement> entry : rootObj.entrySet()) {
+        for (String topKey : collectTopLevelKeys(root)) {
             if (addedSingle >= maxSingleOptional) {
                 break;
             }
-            String topKey = entry.getKey();
             if (!required.contains(topKey) && !isServerGeneratedField(topKey, Set.of())) {
                 Set<String> singlePlusRequired = new LinkedHashSet<>(required);
                 singlePlusRequired.add(topKey);
-                String candidate = JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(retainRequired(rootObj, singlePlusRequired, ""));
+                String candidate = JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(retainRequired(root, singlePlusRequired, ""));
                 if (!candidate.equals(requiredOnlyPayload) && !candidate.equals(payload) && candidates.add(candidate)) {
                     addedSingle++;
                 }

@@ -336,6 +336,14 @@ class OnlyRequiredFieldsFuzzerTest {
         Assertions.assertThat(RequiredOnlyPayloadGenerator.generateFallbackMinimalPayloads(
                 "{\"a\":1,\"b\":2,\"c\":3,\"d\":4,\"e\":5,\"f\":6}", null, "{}", null, 5))
                 .isNotEmpty();
+        List<String> arrayFallbacks = RequiredOnlyPayloadGenerator.generateFallbackMinimalPayloads(
+                "[{\"req\":\"1\",\"optToken\":\"T1\",\"extra\":\"X\"},{\"req\":\"2\",\"optToken\":\"T2\",\"extra\":\"Y\"}]",
+                List.of("req"),
+                "[{\"req\":\"1\"},{\"req\":\"2\"}]",
+                Map.of(),
+                5);
+        Assertions.assertThat(arrayFallbacks)
+                .contains("[{\"req\":\"1\",\"optToken\":\"T1\"},{\"req\":\"2\",\"optToken\":\"T2\"}]");
     }
 
     private FuzzingData fuzzingData(String payload, Schema<?> schema, Map<String, Schema> schemaMap,
