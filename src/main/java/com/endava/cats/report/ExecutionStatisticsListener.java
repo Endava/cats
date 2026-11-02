@@ -302,7 +302,7 @@ public class ExecutionStatisticsListener {
      * @return {@code true} if there are many authentication errors, {@code false} otherwise.
      */
     public boolean areManyAuthErrors() {
-        return getAll() > 0 && authErrors <= getAll() && authErrors >= this.getAll() / 2;
+        return authErrors > 0 && authErrors <= getAll() && authErrors >= this.getAll() / 2;
     }
 
     /**
@@ -311,7 +311,7 @@ public class ExecutionStatisticsListener {
      * @return {@code true} if there are many I/O errors, {@code false} otherwise.
      */
     public boolean areManyIoErrors() {
-        return getAll() > 0 && ioErrors >= this.getAll() / 2;
+        return ioErrors > 0 && ioErrors >= this.getAll() / 2;
     }
 
     /**
