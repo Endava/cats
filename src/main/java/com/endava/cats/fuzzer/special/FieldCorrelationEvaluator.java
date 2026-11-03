@@ -259,7 +259,9 @@ public final class FieldCorrelationEvaluator {
             return jsonPayload;
         }
         parent.add(parts[parts.length - 1], JsonUtils.GSON_NO_PRETTY_PRINTING.toJsonTree(value));
-        return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(root);
+        return value == null
+                ? JsonUtils.GSON.toJson(root).replaceAll("\\s*\\n\\s*", "")
+                : JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(root);
     }
 
     private static JsonObject navigateToParentObject(JsonObject root, String[] parts) {

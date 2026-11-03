@@ -672,17 +672,28 @@ class FunctionalFlowFuzzerTest {
                   - name: parameterizedTiers
                     POST: /billing-plans
                     forEach:
-                      - tier: GOLD
-                      - tier: SILVER
+                      - { tier: GOLD, len: 16, active: true, tags: ["A", "B"], meta: { env: "prod" }, prefix: "G" }
+                      - { tier: SILVER, len: 18, active: false, tags: ["C"], meta: { env: "qa" }, prefix: }
                     body:
                       name: "${tier}"
+                      active: "${active}"
+                      tags: "${tags}"
+                      meta: "${meta}"
+                      nested:
+                        length: "${len}"
+                        prefix: "${prefix}"
                     expect:
                       status: 201
                       state: "${tier}"
                 """), "advanced-flow", flow);
 
         // 2 calls for repeat=2 + 2 calls for poll (stopped on 2nd attempt) + 2 calls for forEach (2 rows) = 6 total HTTP calls
-        Mockito.verify(serviceCaller, Mockito.times(6)).call(Mockito.any());
+        ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.times(6)).call(captor.capture());
+        Assertions.assertThat(captor.getAllValues().get(4).getPayload())
+                .contains("\"length\":16", "\"active\":true", "\"tags\":[\"A\",\"B\"]", "\"meta\":{\"env\":\"prod\"}", "\"prefix\":\"G\"");
+        Assertions.assertThat(captor.getAllValues().get(5).getPayload())
+                .contains("\"length\":18", "\"active\":false", "\"tags\":[\"C\"]", "\"meta\":{\"env\":\"qa\"}", "\"prefix\":null");
         // 4 reported test cases (1 for repeat, 1 for poll, 2 for forEach rows), 0 errors
         Mockito.verify(listener, Mockito.times(4)).reportResultInfo(
                 Mockito.any(), Mockito.eq(data), Mockito.eq("Response matches all 'verify' parameters"));

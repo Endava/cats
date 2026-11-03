@@ -32,6 +32,7 @@ import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -74,6 +75,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     private final List<FuzzingData> registeredOperations = new ArrayList<>();
     @Getter
     private final Map<String, String> variables = new LinkedHashMap<>();
+    private final Map<String, Object> typedVariables = new LinkedHashMap<>();
     private final Set<String> savedOutputVariableNames = new LinkedHashSet<>();
     private final Map<String, Map<String, Object>> recordedRefDataByPath = new LinkedHashMap<>();
 
@@ -102,6 +104,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
 
     public void executeDocument(FunctionalFlowDocument document, String sourceName, Fuzzer activeFuzzer) {
         variables.clear();
+        typedVariables.clear();
         savedOutputVariableNames.clear();
         recordedRefDataByPath.clear();
         initGlobalVariables(document.variables());
@@ -140,22 +143,44 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         int rowIndex = 1;
         for (Map<String, Object> row : step.forEach()) {
             Map<String, String> previousVars = new LinkedHashMap<>(variables);
-            row.forEach((k, v) -> variables.put(k, DynamicValueResolver.resolve(String.valueOf(v), variables)));
+            Map<String, Object> previousTyped = new LinkedHashMap<>(typedVariables);
+            applyForEachRowVariables(row);
             try {
                 String rowScenario = step.scenarioText() + " [row " + rowIndex++ + ": " + row + "]";
                 executeSingleStepConfiguration(document, step, stepIndex, rowScenario, activeFuzzer);
             } finally {
-                restoreRowVariables(previousVars, row.keySet());
+                restoreRowVariables(previousVars, previousTyped, row.keySet());
             }
         }
     }
 
-    private void restoreRowVariables(Map<String, String> previousVars, Set<String> rowKeys) {
+    private void applyForEachRowVariables(Map<String, Object> row) {
+        row.forEach((k, v) -> {
+            if (v == null) {
+                variables.put(k, "");
+                typedVariables.put(k, null);
+            } else if (v instanceof String str) {
+                String resolved = DynamicValueResolver.resolve(str, variables);
+                variables.put(k, resolved);
+                typedVariables.put(k, resolved);
+            } else {
+                variables.put(k, String.valueOf(v));
+                typedVariables.put(k, v);
+            }
+        });
+    }
+
+    private void restoreRowVariables(Map<String, String> previousVars, Map<String, Object> previousTyped, Set<String> rowKeys) {
         for (String key : rowKeys) {
             if (previousVars.containsKey(key)) {
                 variables.put(key, previousVars.get(key));
             } else {
                 variables.remove(key);
+            }
+            if (previousTyped.containsKey(key)) {
+                typedVariables.put(key, previousTyped.get(key));
+            } else {
+                typedVariables.remove(key);
             }
         }
     }
@@ -758,6 +783,13 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         if (!(rawValue instanceof String strVal)) {
             return rawValue;
         }
+        String trimmed = strVal.trim();
+        if (trimmed.startsWith("${") && trimmed.endsWith("}") && trimmed.indexOf("${", 2) < 0) {
+            String varName = trimmed.substring(2, trimmed.length() - 1).trim();
+            if (typedVariables.containsKey(varName)) {
+                return typedVariables.get(varName);
+            }
+        }
         String resolved = resolveStringExpression(strVal, currentPayload);
         recordVariableConsumptionForRefData(contractPath, fieldPath, strVal, resolved);
         return coerceScalarIfOriginalWasTyped(strVal, resolved);
@@ -845,12 +877,16 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         JsonObject child = root.has(topKey) && root.get(topKey).isJsonObject()
                 ? root.getAsJsonObject(topKey)
                 : new JsonObject();
-        JsonElement additions = JsonUtils.GSON_NO_PRETTY_PRINTING.toJsonTree(mapVal);
-        if (additions.isJsonObject()) {
-            additions.getAsJsonObject().entrySet().forEach(e -> child.add(e.getKey(), e.getValue()));
-        }
+        mapVal.forEach((k, v) -> {
+            String key = String.valueOf(k);
+            if (v == null) {
+                child.add(key, JsonNull.INSTANCE);
+            } else {
+                child.add(key, JsonUtils.GSON_NO_PRETTY_PRINTING.toJsonTree(v));
+            }
+        });
         root.add(topKey, child);
-        return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(root);
+        return JsonUtils.GSON.toJson(root);
     }
 
     private Set<CatsHeader> prepareHeaders(FunctionalFlowStep step, FuzzingData data, String bodyPayload) {
