@@ -131,8 +131,11 @@ public final class FunctionalFlowParser {
             return parseCorrelations(root);
         }
         if (root.isObject()) {
-            JsonNode corrNode = root.get(root.has("correlate") ? "correlate" : "correlations");
-            return parseCorrelations(corrNode);
+            if (root.has("correlate") || root.has("correlations")) {
+                JsonNode corrNode = root.get(root.has("correlate") ? "correlate" : "correlations");
+                return parseCorrelations(corrNode);
+            }
+            return parsePathKeyedCorrelations(root);
         }
         return List.of();
     }
@@ -297,21 +300,63 @@ public final class FunctionalFlowParser {
     }
 
     private static List<FieldCorrelationRule> parseCorrelations(JsonNode correlateNode) {
-        if (correlateNode == null || !correlateNode.isArray()) {
+        if (correlateNode == null) {
+            return List.of();
+        }
+        if (correlateNode.isObject()) {
+            return parsePathKeyedCorrelations(correlateNode);
+        }
+        if (!correlateNode.isArray()) {
             return List.of();
         }
         List<FieldCorrelationRule> rules = new ArrayList<>();
         for (JsonNode ruleNode : correlateNode) {
             if (ruleNode != null && ruleNode.isObject()) {
-                List<String> paths = parseStringList(ruleNode.get("paths"));
-                String when = firstNonBlankText(ruleNode, "when", "if");
-                JsonNode thenNode = ruleNode.has("then") ? ruleNode.get("then") : ruleNode;
-                Map<String, Object> set = parseObjectMap(thenNode.get("set"));
-                List<String> omit = parseStringList(thenNode.get("omit"));
-                rules.add(new FieldCorrelationRule(paths, when, set, omit));
+                List<String> paths = extractExplicitTargetPaths(ruleNode);
+                appendRulesForPaths(paths, ruleNode, rules);
             }
         }
         return Collections.unmodifiableList(rules);
+    }
+
+    private static List<FieldCorrelationRule> parsePathKeyedCorrelations(JsonNode objectNode) {
+        List<FieldCorrelationRule> rules = new ArrayList<>();
+        for (Map.Entry<String, JsonNode> entry : objectNode.properties()) {
+            String key = entry.getKey();
+            List<String> paths = "all".equalsIgnoreCase(key) ? List.of("*") : List.of(key);
+            appendRulesForPaths(paths, entry.getValue(), rules);
+        }
+        return Collections.unmodifiableList(rules);
+    }
+
+    private static void appendRulesForPaths(List<String> paths, JsonNode node, List<FieldCorrelationRule> target) {
+        if (node == null) {
+            return;
+        }
+        if (node.isArray()) {
+            for (JsonNode child : node) {
+                appendRulesForPaths(paths, child, target);
+            }
+            return;
+        }
+        if (!node.isObject()) {
+            return;
+        }
+        if (node.has("rules") && node.get("rules").isArray()) {
+            appendRulesForPaths(paths, node.get("rules"), target);
+            return;
+        }
+        target.add(buildSingleCorrelationRule(paths, node));
+    }
+
+    private static FieldCorrelationRule buildSingleCorrelationRule(List<String> inheritedPaths, JsonNode ruleNode) {
+        List<String> ownPaths = extractExplicitTargetPaths(ruleNode);
+        List<String> effectivePaths = ownPaths.isEmpty() ? inheritedPaths : ownPaths;
+        String when = firstNonBlankText(ruleNode, "when", "if");
+        JsonNode thenNode = ruleNode.has("then") ? ruleNode.get("then") : ruleNode;
+        Map<String, Object> set = parseObjectMap(thenNode.get("set"));
+        List<String> omit = parseStringList(thenNode.get("omit"));
+        return new FieldCorrelationRule(effectivePaths, when, set, omit);
     }
 
     private static List<String> parseStatusCodes(JsonNode statusNode) {

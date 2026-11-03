@@ -162,6 +162,50 @@ class FieldCorrelationEvaluatorTest {
     }
 
     @Test
+    void shouldParseGroupedRulesListAndPathKeyedCorrelationFormats(@TempDir Path tempDir) throws Exception {
+        File groupedFile = tempDir.resolve("grouped-correlations.yml").toFile();
+        Files.writeString(groupedFile.toPath(), """
+                correlations:
+                  - paths:
+                      - "/orders"
+                      - "/orders/batch"
+                    rules:
+                      - when: "format.type == SUPPLIED"
+                        set:
+                          suppliedToken: "TKN111"
+                      - when: "format.type != SUPPLIED"
+                        omit:
+                          - suppliedToken
+                """);
+        List<FieldCorrelationRule> groupedRules = FunctionalFlowParser.parseCorrelationFile(groupedFile);
+        Assertions.assertThat(groupedRules).hasSize(2);
+        Assertions.assertThat(groupedRules.get(0).paths()).containsExactly("/orders", "/orders/batch");
+        Assertions.assertThat(groupedRules.get(0).when()).isEqualTo("format.type == SUPPLIED");
+        Assertions.assertThat(groupedRules.get(0).set()).containsEntry("suppliedToken", "TKN111");
+        Assertions.assertThat(groupedRules.get(1).omit()).containsExactly("suppliedToken");
+
+        File pathKeyedFile = tempDir.resolve("path-keyed-correlations.yml").toFile();
+        Files.writeString(pathKeyedFile.toPath(), """
+                all:
+                  when: "mode == 'TEST'"
+                  set:
+                    dryRunFlag: true
+                /orders:
+                  - when: "format.type == SUPPLIED"
+                    set:
+                      suppliedToken: "TKN222"
+                  - when: "format.type != SUPPLIED"
+                    omit:
+                      - suppliedToken
+                """);
+        List<FieldCorrelationRule> pathKeyedRules = FunctionalFlowParser.parseCorrelationFile(pathKeyedFile);
+        Assertions.assertThat(pathKeyedRules).hasSize(3);
+        Assertions.assertThat(pathKeyedRules.get(0).paths()).containsExactly("*");
+        Assertions.assertThat(pathKeyedRules.get(1).paths()).containsExactly("/orders");
+        Assertions.assertThat(pathKeyedRules.get(2).paths()).containsExactly("/orders");
+    }
+
+    @Test
     void shouldExpandWildcardArrayCorrelationsPerElement(@TempDir Path tempDir) throws Exception {
         String yaml = """
                 correlations:
