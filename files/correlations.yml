@@ -1,22 +1,24 @@
 # Example cross-field correlations file (pass with: --correlations files/correlations.yml)
+# Supports:
+#   1. Grouped `rules:` list under `paths:` (shown below)
+#   2. Path-keyed map (`all:` or `"/billing-plans": [{ when: ..., set: ... }]`)
+#   3. Flat single-rule entries (`- paths: [...]` + `when:` + `set:` / `omit:`)
 correlations:
   - paths:
       - "/billing-plans"
       - "/billing-plans/{planId}"
-    when: "planType == 'RECURRING'"
-    then:
-      set:
-        billingSchedule: "MONTHLY"
-        gracePeriodDays: 7
-      omit:
-        - "oneTimeSetupFee"
-
-  - paths:
       - "/billing-plans*"
-    when: "planType == 'ONE_TIME'"
-    then:
-      set:
-        oneTimeSetupFee: 99
-      omit:
-        - "billingSchedule"
-        - "gracePeriodDays"
+    rules:
+      - when: "planType == RECURRING"
+        set:
+          billingSchedule: "MONTHLY"
+          gracePeriodDays: 7
+        omit:
+          - "oneTimeSetupFee"
+      - when: "planType == ONE_TIME"
+        set:
+          oneTimeSetupFee: 99
+        omit:
+          - "billingSchedule"
+          - "gracePeriodDays"
+

@@ -59,6 +59,8 @@ Always enable stateful resource correlation when fuzzing multi-endpoint CRUD API
 - `--srs` (`--smartResourceSeeding` / `--reuseSuccessfulResources`) — extracts resource IDs and values from `2XX` responses (`POST`, `PUT`, `PATCH`, `GET`) and correlates them into downstream `{path}` / query / body parameters.
 - `--srw` (`--smartResourceWaves`) — executes fuzzers in 4 waves across all paths (**Wave 1: Seed** $\rightarrow$ **Wave 2: Coverage** $\rightarrow$ **Wave 3: Crash** $\rightarrow$ **Wave 4: Full + Second-Phase Consistency**) and defers `HappyPath` `DELETE`s until consumers finish.
 - `--preseedCollectionGets` — runs collection `GET` endpoints before Wave 1 to harvest existing resource IDs.
+- `-R "field=value"` / `--refData refData.yml` — pins existing resource IDs or checksum-validated domain fields (such as Luhn card numbers) so `RuntimeResourcePool` and `MinLengthExactValues` / `MaxLengthExactValues` boundary fuzzers do not overwrite them.
+- `--correlations correlations.yml` — enforces cross-field `when` $\rightarrow$ `set` / `omit` rules across all fuzzers and marks `when`-guarded `set:` targets as conditionally required.
 
 ### Built-In Fuzzer Profiles (`--profile`)
 | Profile | When to Use | Command |

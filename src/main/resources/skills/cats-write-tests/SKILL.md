@@ -144,36 +144,68 @@ cats run -c <spec> -s <server_url> flows.yml
 
 ## 3. Authoring Cross-Field Correlation Rules (`--correlations correlations.yml`)
 
-When an API enforces conditional field dependencies (e.g., when a discriminator or enum field has a specific value, certain sibling fields become required or forbidden), define them in `correlations.yml` so **both** functional flows and all built-in CATS fuzzers satisfy the invariant:
+When an API enforces conditional field dependencies (e.g., when a discriminator or enum field has a specific value, certain sibling fields become required or forbidden), define them in `correlations.yml` so **both** functional flows and all built-in CATS fuzzers satisfy the invariant.
 
+### Supported `correlations.yml` Formats (`then:` is optional)
+
+1. **Grouped `rules:` under `paths:` (Best when multiple rules share paths)**:
 ```yaml
 correlations:
   - paths:
       - "/billing-plans"
       - "/billing-plans/{planId}"
-    when: "planType == 'RECURRING'"
-    then:
-      set:
-        billingSchedule: "MONTHLY"
-        gracePeriodDays: 7
-      omit:
-        - "oneTimeSetupFee"
-
-  - paths:
-      - "/billing-plans"
-    when: "planType == 'ONE_TIME'"
-    then:
-      set:
-        oneTimeSetupFee: 99
-      omit:
-        - "billingSchedule"
-        - "gracePeriodDays"
+      - "/billing-plans/batch*"
+    rules:
+      - when: "planType == RECURRING"
+        set:
+          billingSchedule: "MONTHLY"
+          gracePeriodDays: 7
+        omit:
+          - "oneTimeSetupFee"
+      - when: "planType == ONE_TIME"
+        set:
+          oneTimeSetupFee: 99
+        omit:
+          - "billingSchedule"
+          - "gracePeriodDays"
+      - when: "tiers[*].mode == METERED"
+        set:
+          tiers[*].unitField: "SeatCount"
 ```
 
+2. **Path-Keyed Map (Matches `refData.yml` & `headers.yml`, including `all:`)**:
+```yaml
+all:
+  when: "mode == TEST"
+  set:
+    dryRunFlag: true
+
+/billing-plans:
+  - when: "planType == RECURRING"
+    set:
+      billingSchedule: "MONTHLY"
+  - when: "planType == ONE_TIME"
+    omit:
+      - "billingSchedule"
+```
+
+3. **Flat Single-Rule List (`- paths: [...]` + `when:` + `set:` / `omit:` or `then:`)**:
+   - Ideal when there is only one rule per path group.
+   - Rules also apply automatically to every element of a **root JSON array** request body (e.g. batch endpoints).
+
+### How `when:` Rules Interact with Built-In Fuzzers
+- **Guarded `when:` + `set:` (`when: "format.type == SUPPLIED"` $\rightarrow$ `set: { suppliedToken: ... }`)**:
+  - Marks the `set:` target field (`suppliedToken`) as **conditionally required** on payload variants where `when:` evaluates to `true`.
+  - `OnlyRequiredFields` automatically retains `suppliedToken` on matching variants, and `RemoveFields` / `NullValuesInFields` / `EmptyStringsInFields` expect **`4XX`** when removing/nulling `suppliedToken` on matching variants (while still expecting `2XX` on variants where `when:` is `false`).
+- **Unconditional `set:` (no `when:` clause)**:
+  - Populates a default baseline value without marking the field required.
+
 ### Supported `when:` and `expect.that:` Operators
-- Logical connectives: `&&` (`AND`), `||` (`OR`), `!`
-- Comparison operators: `==`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `matches` (regex), `is null`, `is not null`
-- Prefixes & functions in `expect.that:` (and `${...}` expressions):
+- **Logical connectives**: `&&` or `&` (`AND`), `||` or `|` (`OR`; `&&` binds tighter than `||`)
+- **Comparison operators**: `==`, `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `matches` (regex), `is null` (`== null`), `is not null` (`!= null`, `notNull`)
+- **Right-hand side values**: quoted strings (`'RECURRING'`), unquoted enum/constant literals (`RECURRING`), numbers (`15`), booleans (`true`), dynamic expressions (`'${myVar}'`), or another JSON field path (`format.start < format.length`)
+- **Wildcard array correlation (`[*]`)**: `tiers[*].mode == METERED` paired with `tiers[*].unitField` in `set:` or `omit:` expands and evaluates per array element
+- **Prefixes & functions in `expect.that:` (and `${...}` expressions)**:
   - `request.<fieldPath>` — reads from the sent JSON request body
   - `response.<fieldPath>` — reads from the received JSON response body
   - `status` / `responseTimeMs` — HTTP status code integer and response latency in ms
@@ -202,7 +234,12 @@ Anywhere in `flows.yml`, `correlations.yml`, `refData.yml`, or `headers.yml`, yo
 
 ---
 
-## 5. Reference Data & Headers (`--refData refData.yml`, `--headers headers.yml`)
+## 5. Reference Data & Headers (`--refData refData.yml`, `-R`, `--headers headers.yml`, `-H`)
+
+### When to Use `--refData` (`-R`) vs. `--correlations` vs. `--headers` (`-H`)
+- **`--headers` (`headers.yml`) / `-H`**: For HTTP headers (`-H` for global headers; `headers.yml` when scoping headers by path or HTTP method like `"POST /orders"`).
+- **`--refData` (`refData.yml`) / `-R`**: For **pinned reference or domain-validated values** (such as pre-existing resource IDs or fields with business checksums like Luhn card numbers `payload.number: "4111111111111111"`). Fields in `refData` are **never overwritten by `RuntimeResourcePool`** and are **skipped by `MinLengthExactValues` / `MaxLengthExactValues` / numeric boundary fuzzers** so their domain validity is preserved.
+- **`--correlations` (`correlations.yml`)**: For **conditional cross-field rules** (`when` $\rightarrow$ `set` / `omit`) that keep interdependent fields consistent while still allowing all boundary and field fuzzers to test those fields.
 
 Both `refData.yml` and `headers.yml` support:
 - **`all`** — applied to all paths
