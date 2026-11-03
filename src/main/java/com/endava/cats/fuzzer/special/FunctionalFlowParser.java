@@ -304,6 +304,11 @@ public final class FunctionalFlowParser {
             return List.of();
         }
         if (correlateNode.isObject()) {
+            if (isRuleDefinitionObject(correlateNode)) {
+                List<FieldCorrelationRule> rules = new ArrayList<>();
+                appendRulesForPaths(extractExplicitTargetPaths(correlateNode), correlateNode, rules);
+                return Collections.unmodifiableList(rules);
+            }
             return parsePathKeyedCorrelations(correlateNode);
         }
         if (!correlateNode.isArray()) {
@@ -317,6 +322,12 @@ public final class FunctionalFlowParser {
             }
         }
         return Collections.unmodifiableList(rules);
+    }
+
+    private static boolean isRuleDefinitionObject(JsonNode node) {
+        return node.has("when") || node.has("if") || node.has("then")
+                || node.has("set") || node.has("omit")
+                || node.has("paths") || node.has("path") || node.has("rules");
     }
 
     private static List<FieldCorrelationRule> parsePathKeyedCorrelations(JsonNode objectNode) {
