@@ -6,11 +6,13 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.model.RequestTarget;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.ContentTypeUtils;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -81,6 +83,8 @@ public class ServiceData {
     private final Schema<?> reqSchema;
     @Builder.Default
     private final Map<String, Schema> schemaMap = Map.of();
+    @Builder.Default
+    private final Map<String, Schema> requestPropertyTypes = Map.of();
     /** Variables supplied by a custom fuzzer for resolving dynamic request values. */
     @Builder.Default
     private final Map<String, String> dynamicVariables = Map.of();
@@ -105,6 +109,7 @@ public class ServiceData {
                 .discriminatorFields(extractDiscriminatorFields(data))
                 .reqSchema(data.getReqSchema())
                 .schemaMap(data.getSchemaMap() == null ? Map.of() : data.getSchemaMap())
+                .requestPropertyTypes(data.getRequestPropertyTypes() == null ? Map.of() : data.getRequestPropertyTypes())
                 .httpMethod(data.getMethod())
                 .contentType(data.getFirstRequestContentType())
                 .acceptHeader(resolveAcceptHeader(data))
@@ -138,6 +143,36 @@ public class ServiceData {
         }
         Set<String> allowed = enumValuesByField.get(fieldPath);
         return allowed == null || allowed.isEmpty() || allowed.contains(String.valueOf(candidateValue));
+    }
+
+    public boolean isAllowedFieldValue(String fieldPath, Object candidateValue) {
+        if (!isAllowedEnumValue(fieldPath, candidateValue)) {
+            return false;
+        }
+        if (requestPropertyTypes == null || requestPropertyTypes.isEmpty() || candidateValue == null || fieldPath == null) {
+            return true;
+        }
+        Schema<?> schema = requestPropertyTypes.get(fieldPath);
+        if (schema == null) {
+            return true;
+        }
+        String candidateStr = String.valueOf(candidateValue);
+        if (schema.getMinLength() != null && candidateStr.length() < schema.getMinLength()) {
+            return false;
+        }
+        if (schema.getMaxLength() != null && candidateStr.length() > schema.getMaxLength()) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(schema.getPattern())) {
+            try {
+                if (!candidateStr.matches(schema.getPattern())) {
+                    return false;
+                }
+            } catch (RuntimeException _) {
+                // ignore non-Java regex syntax
+            }
+        }
+        return CatsModelUtils.isValueMatchingFormat(schema, candidateStr);
     }
 
     public boolean isDiscriminatorOrConstantField(String fieldPath, String fieldName) {

@@ -16,6 +16,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -2552,6 +2553,24 @@ class RuntimeResourcePoolTest {
         resourcePool.observe(postData("/users/{userId}/orders", "{}"), request("POST", "/users/u-1/orders", "{}"),
                 response(201, "{\"id\":\"o-1\"}"));
         Assertions.assertThat(resourcePool.hasLiveResourceFor("/users/{id}")).isFalse();
+
+        resourcePool.clear();
+        resourcePool.observe(postData("/users/{userId}/vouchers", "{}"), request("POST", "/users/u-1/vouchers", "{}"),
+                response(201, "{\"voucher\":\"VCH1234567890123\"}"));
+        resourcePool.observe(postData("/users/{userId}/vouchers", "{}"), request("POST", "/users/u-1/vouchers", "{}"),
+                response(201, "{\"voucher\":\"38bb85d3-15fd-4ca3-ab71-b7cb3daabcdc\"}"));
+        Schema<?> suppliedVoucherSchema = new Schema<>().type("string").pattern("[A-Z0-9]+").minLength(14).maxLength(36);
+        ServiceData postWithPattern = ServiceData.builder()
+                .relativePath("/users/{userId}/vouchers/redeem")
+                .contractPath("/users/{userId}/vouchers/redeem")
+                .httpMethod(HttpMethod.POST)
+                .contentType("application/json")
+                .payload("{\"voucher\":\"88845643923457865\"}")
+                .originalPayload("{\"voucher\":\"88845643923457865\"}")
+                .requestPropertyTypes(Map.of("voucher", suppliedVoucherSchema))
+                .build();
+        RuntimeResourcePool.ResolvedRequest patternResolved = resourcePool.enrich(postWithPattern, postWithPattern.getPayload());
+        Assertions.assertThat(patternResolved.payload()).contains("\"voucher\":\"VCH1234567890123\"");
     }
 
     @Test

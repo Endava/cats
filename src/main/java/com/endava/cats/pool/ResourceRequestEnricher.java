@@ -465,7 +465,7 @@ final class ResourceRequestEnricher {
         if (similarity == 0) {
             return currentBest;
         }
-        if (query.data() != null && !query.data().isAllowedEnumValue(query.target().path(), value.value())) {
+        if (query.data() != null && !query.data().isAllowedFieldValue(query.target().path(), value.value())) {
             return currentBest;
         }
         int feedback = feedbackScore(resource, value, query.targetPath(), query.target());
