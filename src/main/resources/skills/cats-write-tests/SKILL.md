@@ -109,6 +109,11 @@ steps:
   - name: "getPlan"
     description: "Fetch the created billing plan and verify cross-step persistence"
     GET: "/billing-plans/${steps.createPlan.response.id}"
+    # Optional initial delay (ms) and polling for async/eventual-consistency transitions
+    delayMs: 100
+    poll:
+      maxAttempts: 5
+      intervalMs: 200
     query:
       includeDetails: true
     expect:
@@ -117,6 +122,26 @@ steps:
         - "$steps.createPlan.status == 201"
         - "response.id == $steps.createPlan.response.id"
         - "response.name == $prev.response.name"
+
+  - name: "createPlansByCurrency"
+    description: "Data-driven step executed once per row in forEach"
+    POST: "/billing-plans"
+    forEach:
+      - { currency: "EUR", minPrice: 10 }
+      - { currency: "USD", minPrice: 12 }
+    body:
+      currency: "${currency}"
+      unitPrice: "${minPrice}"
+    expect:
+      status: [200, 201]
+      currency: "${currency}"
+
+  - name: "exhaustRateLimitOrOneOffQuota"
+    description: "Execute N-1 setup calls and assert expect on the Nth call"
+    POST: "/billing-plans/${id}/activate"
+    repeat: 2
+    expect:
+      status: [400, 409, 422, 429]
 
   - name: "rejectNegativePrice"
     description: "Reject invalid negative unit price on update"

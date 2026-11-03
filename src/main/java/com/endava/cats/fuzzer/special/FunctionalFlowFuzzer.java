@@ -12,6 +12,7 @@ import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRul
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FunctionalFlowExpectation;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FunctionalFlowStep;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FuzzMode;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument.PollConfig;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.StepFuzzConfig;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -127,6 +128,40 @@ public class FunctionalFlowFuzzer implements Fuzzer {
 
     private void executeStepAcrossMatchingOperations(FunctionalFlowDocument document, FunctionalFlowStep step,
                                                      int stepIndex, Fuzzer activeFuzzer) {
+        if (step.forEach() != null && !step.forEach().isEmpty()) {
+            executeForEachRows(document, step, stepIndex, activeFuzzer);
+            return;
+        }
+        executeSingleStepConfiguration(document, step, stepIndex, step.scenarioText(), activeFuzzer);
+    }
+
+    private void executeForEachRows(FunctionalFlowDocument document, FunctionalFlowStep step,
+                                    int stepIndex, Fuzzer activeFuzzer) {
+        int rowIndex = 1;
+        for (Map<String, Object> row : step.forEach()) {
+            Map<String, String> previousVars = new LinkedHashMap<>(variables);
+            row.forEach((k, v) -> variables.put(k, DynamicValueResolver.resolve(String.valueOf(v), variables)));
+            try {
+                String rowScenario = step.scenarioText() + " [row " + rowIndex++ + ": " + row + "]";
+                executeSingleStepConfiguration(document, step, stepIndex, rowScenario, activeFuzzer);
+            } finally {
+                restoreRowVariables(previousVars, row.keySet());
+            }
+        }
+    }
+
+    private void restoreRowVariables(Map<String, String> previousVars, Set<String> rowKeys) {
+        for (String key : rowKeys) {
+            if (previousVars.containsKey(key)) {
+                variables.put(key, previousVars.get(key));
+            } else {
+                variables.remove(key);
+            }
+        }
+    }
+
+    private void executeSingleStepConfiguration(FunctionalFlowDocument document, FunctionalFlowStep step,
+                                                int stepIndex, String scenarioText, Fuzzer activeFuzzer) {
         if (step.fuzz() != null && step.fuzz().isConfigured()) {
             executeFuzzedStep(document, step, stepIndex, activeFuzzer);
             return;
@@ -139,7 +174,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             return;
         }
         executeSingleStepOnOperation(document, step, stepIndex, target, matchingData.get(),
-                step.scenarioText(), activeFuzzer);
+                scenarioText, activeFuzzer);
     }
 
     private void executeSingleStepOnOperation(FunctionalFlowDocument document, FunctionalFlowStep step,
@@ -328,7 +363,8 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                 step.name(), step.description(), step.method(), step.allMethods(),
                 step.rawTarget(), step.targetPaths(), step.path(), step.query(),
                 newHeaders, newBody, step.base(), step.omit(), step.variant(),
-                step.variantMatch(), step.correlate(), step.save(), step.expect(), step.fuzz());
+                step.variantMatch(), step.correlate(), step.save(), step.expect(), step.fuzz(),
+                step.delayMs(), step.repeat(), step.poll(), step.forEach());
     }
 
     private List<FuzzingData> resolveMatchingOperationsForFuzzStep(FunctionalFlowStep step) {
@@ -350,11 +386,51 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             return;
         }
 
+        sleepQuietly(step.delayMs());
+        ExchangeExecutionResult execution = executeServiceCallWithRepeatAndPolling(document, step, target, data, expectedCodeFamily);
+
+        recordStepHistory(step, stepIndex, execution.bodyPayload(), execution.response());
+        if (!execution.response().isBodyTruncated()) {
+            captureSavedVariables(step.save(), execution.response(), execution.bodyPayload(), execution.pathParamsPayload());
+        }
+        evaluateAndReportStepResult(step, data, execution.bodyPayload(), execution.response(), expectedCodeFamily);
+    }
+
+    private record ExchangeExecutionResult(String bodyPayload, String pathParamsPayload, CatsResponse response) {
+    }
+
+    private ExchangeExecutionResult executeServiceCallWithRepeatAndPolling(FunctionalFlowDocument document,
+                                                                           FunctionalFlowStep step,
+                                                                           ResolvedStepTarget target,
+                                                                           FuzzingData data,
+                                                                           ResponseCodeFamily expectedCodeFamily) {
+        int repeats = Math.max(1, step.repeat());
+        for (int i = 1; i < repeats; i++) {
+            invokeStepServiceCall(document, step, target, data);
+        }
+        PollConfig poll = step.poll();
+        if (poll == null || poll.maxAttempts() <= 1) {
+            return invokeStepServiceCall(document, step, target, data);
+        }
+        ExchangeExecutionResult lastResult = invokeStepServiceCall(document, step, target, data);
+        for (int attempt = 2; attempt <= poll.maxAttempts(); attempt++) {
+            if (isPollingExpectationSatisfied(step, lastResult.bodyPayload(), lastResult.response(), expectedCodeFamily)) {
+                return lastResult;
+            }
+            sleepQuietly(poll.intervalMs());
+            lastResult = invokeStepServiceCall(document, step, target, data);
+        }
+        return lastResult;
+    }
+
+    private ExchangeExecutionResult invokeStepServiceCall(FunctionalFlowDocument document,
+                                                          FunctionalFlowStep step,
+                                                          ResolvedStepTarget target,
+                                                          FuzzingData data) {
         PreparedStepPayloads payloads = preparePayloads(document, step, target, data);
         Set<CatsHeader> headers = prepareHeaders(step, data, payloads.bodyPayload());
         List<RequestTarget> mutationTargets = computeMutationTargets(data, payloads.bodyPayload(),
                 payloads.pathParamsPayload(), headers, payloads.changedFields());
-
         CatsResponse response = serviceCaller.call(ServiceData.from(data)
                 .replaceRefData(false)
                 .headers(headers)
@@ -363,12 +439,35 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                 .dynamicVariables(Map.copyOf(variables))
                 .mutationTargets(mutationTargets)
                 .build());
+        return new ExchangeExecutionResult(payloads.bodyPayload(), payloads.pathParamsPayload(), response);
+    }
 
-        recordStepHistory(step, stepIndex, payloads.bodyPayload(), response);
-        if (!response.isBodyTruncated()) {
-            captureSavedVariables(step.save(), response, payloads.bodyPayload(), payloads.pathParamsPayload());
+    private boolean isPollingExpectationSatisfied(FunctionalFlowStep step, String requestPayload,
+                                                  CatsResponse response, ResponseCodeFamily expectedCodeFamily) {
+        if (!expectedCodeFamily.matchesAllowedResponseCodes(response.responseCodeAsString())) {
+            return false;
         }
-        evaluateAndReportStepResult(step, data, payloads.bodyPayload(), response, expectedCodeFamily);
+        FunctionalFlowExpectation expect = step.expect();
+        List<String> missingFields = new ArrayList<>();
+        List<String> failures = new ArrayList<>();
+        verifyExpectedFields(expect.fields(), requestPayload, response, missingFields, failures);
+        verifyExpectedHeaders(expect.headers(), requestPayload, response, failures);
+        verifyBodySubstrings(expect.bodyContains(), expect.bodyNotContains(), response, failures);
+        verifyMaxResponseTime(expect.maxResponseTimeMs(), response, failures);
+        FieldCorrelationEvaluator.evaluateThatExpectations(expect.that(), requestPayload, response, variables)
+                .ifPresent(failures::add);
+        return missingFields.isEmpty() && failures.isEmpty();
+    }
+
+    private static void sleepQuietly(long millis) {
+        if (millis <= 0) {
+            return;
+        }
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private void recordStepHistory(FunctionalFlowStep step, int stepIndex, String requestPayload, CatsResponse response) {

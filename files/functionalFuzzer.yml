@@ -36,6 +36,10 @@ steps:
   - name: "getCreatedGo"
     description: "Retrieve the created journey and verify cross-step persistence"
     GET: "/go/${id}"
+    delayMs: 50
+    poll:
+      maxAttempts: 3
+      intervalMs: 100
     expect:
       status: 200
       that:

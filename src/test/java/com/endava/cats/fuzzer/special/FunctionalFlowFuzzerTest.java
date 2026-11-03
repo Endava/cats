@@ -619,6 +619,77 @@ class FunctionalFlowFuzzerTest {
         }
     }
 
+    @Test
+    void shouldSupportDelayMsPollRepeatAndForEachInFunctionalFlows() {
+        TestCaseListener listener = flowListener();
+        Mockito.when(listener.shouldContinueExecution(Mockito.any(), Mockito.any())).thenReturn(true);
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        FuzzingData data = flowData();
+        flow.fuzz(data);
+
+        int[] callCount = {0};
+        Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(inv -> {
+            callCount[0]++;
+            // Calls 1 & 2: repeat=2 setup + final call (returns 201 on call 1, 429 on call 2)
+            if (callCount[0] == 1) {
+                return CatsResponse.builder().responseCode(201).body("{\"state\":\"OK\"}")
+                        .jsonBody(JsonParser.parseString("{\"state\":\"OK\"}")).build();
+            }
+            if (callCount[0] == 2) {
+                return CatsResponse.builder().responseCode(429).body("{\"state\":\"EXHAUSTED\"}")
+                        .jsonBody(JsonParser.parseString("{\"state\":\"EXHAUSTED\"}")).build();
+            }
+            // Calls 3 & 4: poll attempts (call 3 returns PENDING, call 4 returns COMPLETED)
+            if (callCount[0] == 3) {
+                return CatsResponse.builder().responseCode(201).body("{\"state\":\"PENDING\"}")
+                        .jsonBody(JsonParser.parseString("{\"state\":\"PENDING\"}")).build();
+            }
+            // Calls 5 & 6: forEach 2 rows
+            ServiceData sd = inv.getArgument(0);
+            String tier = sd.getDynamicVariables().getOrDefault("tier", "COMPLETED");
+            String body = "{\"state\":\"%s\"}".formatted(callCount[0] == 4 ? "COMPLETED" : tier);
+            return CatsResponse.builder().responseCode(201).body(body)
+                    .jsonBody(JsonParser.parseString(body)).build();
+        });
+
+        flow.executeDocument(FunctionalFlowParser.parseContent("""
+                steps:
+                  - name: exhaustQuotaWithRepeat
+                    POST: /billing-plans
+                    delayMs: 1
+                    repeat: 2
+                    expect:
+                      status: 429
+                      state: EXHAUSTED
+                  - name: pollUntilCompleted
+                    POST: /billing-plans
+                    poll:
+                      maxAttempts: 3
+                      intervalMs: 1
+                    expect:
+                      status: 201
+                      state: COMPLETED
+                  - name: parameterizedTiers
+                    POST: /billing-plans
+                    forEach:
+                      - tier: GOLD
+                      - tier: SILVER
+                    body:
+                      name: "${tier}"
+                    expect:
+                      status: 201
+                      state: "${tier}"
+                """), "advanced-flow", flow);
+
+        // 2 calls for repeat=2 + 2 calls for poll (stopped on 2nd attempt) + 2 calls for forEach (2 rows) = 6 total HTTP calls
+        Mockito.verify(serviceCaller, Mockito.times(6)).call(Mockito.any());
+        // 4 reported test cases (1 for repeat, 1 for poll, 2 for forEach rows), 0 errors
+        Mockito.verify(listener, Mockito.times(4)).reportResultInfo(
+                Mockito.any(), Mockito.eq(data), Mockito.eq("Response matches all 'verify' parameters"));
+        Mockito.verify(listener, Mockito.never()).reportResultError(
+                Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString());
+    }
+
     private TestCaseListener flowListener() {
         TestCaseListener listener = Mockito.mock(TestCaseListener.class);
         Mockito.doAnswer(invocation -> {

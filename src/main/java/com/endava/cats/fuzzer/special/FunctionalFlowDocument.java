@@ -86,6 +86,11 @@ public record FunctionalFlowDocument(
             Long maxResponseTimeMs) {
     }
 
+    public record PollConfig(
+            int maxAttempts,
+            long intervalMs) {
+    }
+
     public record FunctionalFlowStep(
             String name,
             String description,
@@ -104,7 +109,35 @@ public record FunctionalFlowDocument(
             List<FieldCorrelationRule> correlate,
             Map<String, String> save,
             FunctionalFlowExpectation expect,
-            StepFuzzConfig fuzz) {
+            StepFuzzConfig fuzz,
+            long delayMs,
+            int repeat,
+            PollConfig poll,
+            List<Map<String, Object>> forEach) {
+
+        public FunctionalFlowStep(
+                String name,
+                String description,
+                HttpMethod method,
+                boolean allMethods,
+                String rawTarget,
+                List<String> targetPaths,
+                Map<String, Object> path,
+                Map<String, Object> query,
+                Map<String, Object> headers,
+                Object body,
+                BasePayloadMode base,
+                List<String> omit,
+                String variant,
+                Map<String, String> variantMatch,
+                List<FieldCorrelationRule> correlate,
+                Map<String, String> save,
+                FunctionalFlowExpectation expect,
+                StepFuzzConfig fuzz) {
+            this(name, description, method, allMethods, rawTarget, targetPaths,
+                    path, query, headers, body, base, omit, variant, variantMatch,
+                    correlate, save, expect, fuzz, 0L, 1, null, List.of());
+        }
 
         public String scenarioText() {
             if (StringUtils.isNotBlank(description)) {

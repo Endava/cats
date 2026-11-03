@@ -269,5 +269,34 @@ class FunctionalFlowParserTest {
         FunctionalFlowDocument floatDoc = FunctionalFlowParser.parseContent(floatAndEmptySaveYaml);
         Assertions.assertThat(floatDoc.steps().getFirst().save()).isEmpty();
         Assertions.assertThat(FunctionalFlowParser.isSecurityFlowFile(null)).isFalse();
+
+        String advancedStepYaml = """
+                steps:
+                  - name: asyncAndParameterizedStep
+                    GET: /items
+                    delayMs: 10
+                    repeat: 3
+                    poll:
+                      maxAttempts: 4
+                      intervalMs: 5
+                    forEach:
+                      - tier: GOLD
+                        expectedCode: 200
+                      - tier: SILVER
+                        expectedCode: 200
+                    correlate:
+                      when: "tier == GOLD"
+                      set:
+                        priority: 1
+                """;
+        FunctionalFlowDocument advancedDoc = FunctionalFlowParser.parseContent(advancedStepYaml);
+        FunctionalFlowStep advStep = advancedDoc.steps().getFirst();
+        Assertions.assertThat(advStep.delayMs()).isEqualTo(10L);
+        Assertions.assertThat(advStep.repeat()).isEqualTo(3);
+        Assertions.assertThat(advStep.poll()).isNotNull();
+        Assertions.assertThat(advStep.poll().maxAttempts()).isEqualTo(4);
+        Assertions.assertThat(advStep.poll().intervalMs()).isEqualTo(5L);
+        Assertions.assertThat(advStep.forEach()).hasSize(2);
+        Assertions.assertThat(advStep.correlate()).hasSize(1);
     }
 }

@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRul
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FunctionalFlowExpectation;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FunctionalFlowStep;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FuzzMode;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument.PollConfig;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.StepFuzzConfig;
 import com.endava.cats.http.HttpMethod;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -171,11 +172,48 @@ public final class FunctionalFlowParser {
         Map<String, String> save = parseSaveMap(node.get("save"));
         FunctionalFlowExpectation expect = parseExpectation(node);
         StepFuzzConfig fuzz = parseFuzzConfig(node);
+        long delayMs = parseLongOption(node, 0L, "delayMs", "delay");
+        int repeat = Math.max(1, (int) parseLongOption(node, 1L, "repeat", "times"));
+        PollConfig poll = parsePollConfig(node.get(node.has("poll") ? "poll" : "retry"));
+        List<Map<String, Object>> forEach = parseForEachRows(node.get("forEach"));
         return new FunctionalFlowStep(
                 name, description, methodAndTarget.method(), methodAndTarget.allMethods(),
                 methodAndTarget.rawTarget(), methodAndTarget.targetPaths(),
                 path, query, headers, body, base, omit,
-                variantSpec.name(), variantSpec.match(), correlate, save, expect, fuzz);
+                variantSpec.name(), variantSpec.match(), correlate, save, expect, fuzz,
+                delayMs, repeat, poll, forEach);
+    }
+
+    private static long parseLongOption(JsonNode node, long defaultValue, String... keys) {
+        for (String key : keys) {
+            JsonNode child = node.get(key);
+            if (child != null && child.isNumber()) {
+                return Math.max(0L, child.longValue());
+            }
+        }
+        return defaultValue;
+    }
+
+    private static PollConfig parsePollConfig(JsonNode pollNode) {
+        if (pollNode == null || !pollNode.isObject()) {
+            return null;
+        }
+        int maxAttempts = Math.max(1, (int) parseLongOption(pollNode, 5L, "maxAttempts", "attempts"));
+        long intervalMs = parseLongOption(pollNode, 200L, "intervalMs", "interval");
+        return new PollConfig(maxAttempts, intervalMs);
+    }
+
+    private static List<Map<String, Object>> parseForEachRows(JsonNode forEachNode) {
+        if (forEachNode == null || !forEachNode.isArray()) {
+            return List.of();
+        }
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (JsonNode item : forEachNode) {
+            if (item != null && item.isObject()) {
+                rows.add(parseObjectMap(item));
+            }
+        }
+        return Collections.unmodifiableList(rows);
     }
 
     private static String resolveStepName(String explicitName, String description, int index, MethodAndTarget target) {
