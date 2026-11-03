@@ -174,6 +174,7 @@ class TestReportsGeneratorTest {
         Assertions.assertThat(ctx.getTotalFuzzers()).isEqualTo(10);
         Assertions.assertThat(ctx.getPaths()).isEqualTo(2);
         Assertions.assertThat(ctx.getTotalPaths()).isEqualTo(4);
+        Assertions.assertThat(ctx.getProfile()).isEqualTo("full");
         assertPopulatedSummaryMetrics(ctx);
     }
 

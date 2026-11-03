@@ -67,6 +67,7 @@ public final class SummaryReportContext {
     private final long totalFuzzers;
     private final int paths;
     private final int totalPaths;
+    private final String profile;
     private final List<Map<String, Object>> groupedTestCases;
     private final List<ResponseCodeEntry> responseCodeDistribution;
     private final boolean hasResponseCodes;
@@ -146,7 +147,8 @@ public final class SummaryReportContext {
                     .fuzzers(configuration.fuzzers())
                     .totalFuzzers(configuration.totalFuzzers())
                     .paths(configuration.pathsToRun())
-                    .totalPaths(configuration.totalPaths());
+                    .totalPaths(configuration.totalPaths())
+                    .profile(StringUtils.defaultIfBlank(configuration.profile(), "full"));
         }
         return builder.build();
     }

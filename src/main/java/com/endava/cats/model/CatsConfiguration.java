@@ -9,5 +9,10 @@ import java.util.List;
  */
 public record CatsConfiguration(String version, String contract, String basePath,
                                 List<HttpMethod> httpMethods, int fuzzers, long totalFuzzers, int pathsToRun,
-                                int totalPaths) {
+                                int totalPaths, String profile) {
+    public CatsConfiguration(String version, String contract, String basePath,
+                             List<HttpMethod> httpMethods, int fuzzers, long totalFuzzers, int pathsToRun,
+                             int totalPaths) {
+        this(version, contract, basePath, httpMethods, fuzzers, totalFuzzers, pathsToRun, totalPaths, "full");
+    }
 }
