@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -65,6 +66,46 @@ public final class FieldCorrelationEvaluator {
             }
         }
         return updated;
+    }
+
+    /**
+     * Collects normalized field paths (using {@code #} separator) that are conditionally required by any matching
+     * correlation rule whose {@code when} predicate evaluates to {@code true} on {@code jsonPayload} and whose
+     * {@code then.set} sets those fields.
+     */
+    public static Set<String> collectRequiredFieldsFromCorrelations(String contractPath, String jsonPayload,
+                                                                    List<FieldCorrelationRule> rules) {
+        if (StringUtils.isBlank(jsonPayload) || !JsonUtils.isValidJson(jsonPayload) || rules == null || rules.isEmpty()) {
+            return Set.of();
+        }
+        JsonElement parsedRoot = JsonUtils.parseAsJsonElement(jsonPayload);
+        if (parsedRoot != null && parsedRoot.isJsonArray()) {
+            Set<String> required = new LinkedHashSet<>();
+            for (JsonElement el : parsedRoot.getAsJsonArray()) {
+                if (el.isJsonObject()) {
+                    required.addAll(collectRequiredFieldsFromCorrelations(contractPath, el.toString(), rules));
+                }
+            }
+            return required;
+        }
+        Set<String> required = new LinkedHashSet<>();
+        for (FieldCorrelationRule rule : rules) {
+            if (matchesPathPattern(contractPath, rule.paths())) {
+                for (FieldCorrelationRule expandedRule : expandWildcardArrayRule(jsonPayload, rule)) {
+                    if (StringUtils.isNotBlank(expandedRule.when())
+                            && evaluateBooleanExpression(expandedRule.when(), jsonPayload, null, null, Map.of())
+                            && expandedRule.set() != null) {
+                        for (String rawField : expandedRule.set().keySet()) {
+                            String normalized = normalizeFieldPath(rawField).replaceAll("\\[\\d+]", "");
+                            if (StringUtils.isNotBlank(normalized)) {
+                                required.add(normalized);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return required;
     }
 
     private static String applyRequestCorrelationsToArray(String contractPath, JsonArray arr,
@@ -342,7 +383,7 @@ public final class FieldCorrelationEvaluator {
                 String leftRaw = atom.substring(0, opIndex).trim();
                 String rightRaw = atom.substring(opIndex + op.length()).trim();
                 Object leftVal = resolveOperand(leftRaw, requestJson, responseJson, response, variables);
-                Object rightVal = resolveOperand(rightRaw, requestJson, responseJson, response, variables);
+                Object rightVal = resolveRightOperand(rightRaw, requestJson, responseJson, response, variables);
                 return compareOperands(leftVal, rightVal, op.trim());
             }
         }
@@ -391,6 +432,21 @@ public final class FieldCorrelationEvaluator {
         } catch (NumberFormatException _) {
             return left.compareToIgnoreCase(right);
         }
+    }
+
+    private static Object resolveRightOperand(String rightRaw,
+                                              String requestJson,
+                                              String responseJson,
+                                              CatsResponse response,
+                                              Map<String, String> variables) {
+        Object resolved = resolveOperand(rightRaw, requestJson, responseJson, response, variables);
+        if (JsonUtils.isNotSet(String.valueOf(resolved))
+                && !rightRaw.contains(".")
+                && !rightRaw.contains("#")
+                && !rightRaw.startsWith("$")) {
+            return rightRaw;
+        }
+        return resolved;
     }
 
     private static Object resolveOperand(String token,

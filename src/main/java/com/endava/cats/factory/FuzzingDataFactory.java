@@ -4,6 +4,9 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.fuzzer.special.FieldCorrelationEvaluator;
+import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRule;
+import com.endava.cats.fuzzer.special.FunctionalFlowParser;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
@@ -42,6 +45,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -326,13 +330,15 @@ public class FuzzingDataFactory {
             if (PayloadFormat.from(selectedMediaType.contentType()) == PayloadFormat.TEXT && CatsModelUtils.isStringSchema(mediaType.getSchema())) {
                 requestPropertyTypes.put("$", mediaType.getSchema());
             }
+            List<FieldCorrelationRule> correlationRules = loadConfiguredCorrelationRules();
             fuzzingDataList.addAll(generationResult.generatedPayloads().stream()
                     .map(generatedPayload -> FuzzingData.builder()
                             .method(method).path(path)
                             .contractPath(path)
                             .headers(this.extractHeaders(item, operation))
                             .payload(generatedPayload.payload())
-                            .allRequiredFields(generatedPayload.requiredFields())
+                            .allRequiredFields(mergeCorrelationRequiredFields(
+                                    path, generatedPayload.payload(), generatedPayload.requiredFields(), correlationRules))
                             .responseCodes(operation.getResponses().keySet())
                             .reqSchema(Optional.ofNullable(globalContext.getSchemaFromReference(reqSchemaName)).orElseGet(Schema::new))
                             .pathItem(item).responseContentTypes(responsesContentTypes)
@@ -440,13 +446,15 @@ public class FuzzingDataFactory {
 
         logger.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
 
+        List<FieldCorrelationRule> correlationRules = loadConfiguredCorrelationRules();
         return generationResult.generatedPayloads().stream()
                 .map(generatedPayload -> FuzzingData.builder()
                         .method(method).path(path)
                         .contractPath(path)
                         .headers(this.extractHeaders(item, operation))
                         .payload(generatedPayload.payload())
-                        .allRequiredFields(generatedPayload.requiredFields())
+                        .allRequiredFields(mergeCorrelationRequiredFields(
+                                path, generatedPayload.payload(), generatedPayload.requiredFields(), correlationRules))
                         .responseCodes(operation.getResponses().keySet())
                         .reqSchema(syntheticSchema.getValue())
                         .pathItem(item)
@@ -472,6 +480,33 @@ public class FuzzingDataFactory {
                         .responseHeaders(responseHeaders)
                         .build())
                 .toList();
+    }
+
+    private List<FieldCorrelationRule> loadConfiguredCorrelationRules() {
+        if (filesArguments == null || filesArguments.getCorrelationsFile() == null) {
+            return List.of();
+        }
+        try {
+            return FunctionalFlowParser.parseCorrelationFile(filesArguments.getCorrelationsFile());
+        } catch (Exception e) {
+            logger.debug("Unable to parse correlations file", e);
+            return List.of();
+        }
+    }
+
+    private static List<String> mergeCorrelationRequiredFields(String path, String payload,
+                                                               List<String> baseRequiredFields,
+                                                               List<FieldCorrelationRule> correlationRules) {
+        if (correlationRules == null || correlationRules.isEmpty()) {
+            return baseRequiredFields;
+        }
+        Set<String> extra = FieldCorrelationEvaluator.collectRequiredFieldsFromCorrelations(path, payload, correlationRules);
+        if (extra.isEmpty()) {
+            return baseRequiredFields;
+        }
+        Set<String> merged = new LinkedHashSet<>(Optional.ofNullable(baseRequiredFields).orElse(List.of()));
+        merged.addAll(extra);
+        return new ArrayList<>(merged);
     }
 
     private static Map<String, Object> mergeExtensions(PathItem item, Operation operation) {

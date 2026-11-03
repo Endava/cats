@@ -138,6 +138,27 @@ class FieldCorrelationEvaluatorTest {
         String merged = FieldCorrelationEvaluator.applyRequestCorrelations(
                 "/billing-plans", zwspPayload, rules, Map.of(), Set.of("pricing#unitRate"));
         Assertions.assertThat(merged).contains("amo\u200bunt");
+
+        Set<String> condReq = FieldCorrelationEvaluator.collectRequiredFieldsFromCorrelations(
+                "/billing-plans", missingFieldsPayload, rules);
+        Assertions.assertThat(condReq).contains("pricing#unitRate", "filter#target");
+
+        Set<String> batchCondReq = FieldCorrelationEvaluator.collectRequiredFieldsFromCorrelations(
+                "/billing-plans", "[" + missingFieldsPayload + "]", rules);
+        Assertions.assertThat(batchCondReq).contains("pricing#unitRate", "filter#target");
+
+        List<FieldCorrelationRule> unconditionalRule = List.of(
+                new FieldCorrelationRule(List.of("/tokens"), null, Map.of("suppliedToken", "TKN123"), List.of()));
+        Assertions.assertThat(FieldCorrelationEvaluator.collectRequiredFieldsFromCorrelations(
+                "/tokens", "{\"format\":{\"type\":\"ALPHANUMERIC\"}}", unconditionalRule)).isEmpty();
+
+        List<FieldCorrelationRule> unquotedRhsRule = List.of(
+                new FieldCorrelationRule(List.of("/tokens"), "format.type == SUPPLIED", Map.of("suppliedToken", "TKN123"), List.of()));
+        Assertions.assertThat(FieldCorrelationEvaluator.collectRequiredFieldsFromCorrelations(
+                "/tokens", "{\"format\":{\"type\":\"SUPPLIED\"}}", unquotedRhsRule)).containsExactly("suppliedToken");
+        Assertions.assertThat(FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/tokens", "{\"format\":{\"type\":\"SUPPLIED\"}}", unquotedRhsRule, Map.of()))
+                .contains("\"suppliedToken\":\"TKN123\"");
     }
 
     @Test
