@@ -250,12 +250,14 @@ Anywhere in `flows.yml`, `correlations.yml`, `refData.yml`, or `headers.yml`, yo
 - **`#(uuid)`** — deterministic/seeded RFC 4122 UUID v4
 - **`#(ulid)`** — 26-char lexicographically sortable ULID
 - **`#(email)`** — random valid `@cats.io` email address
-- **`#(alphanumeric(N))`** / **`#(alpha(N))`** / **`#(numeric(N))`** — random string of length `N`
-- **`#(randomInt(min,max))`** — random integer in `[min, max]`
-- **`#(pick(VAL_1,VAL_2,VAL_3))`** — picks one value from the list
+- **`#(alphanumeric(N))`** / **`#(alpha(N))`** / **`#(numeric(N))`** / **`#(hex(N))`** — random string of length `N` (or `#(alpha(min,max))` range; also work without args for default 12-char length)
+- **`#(upper(expr))`** / **`#(lower(expr))`** / **`#(capitalize(expr))`** / **`#(trim(expr))`** / **`#(reverse(expr))`** / **`#(length(expr))`** — composable string helpers (e.g. `#(upper(alphabetic))`, `#(upper(alpha(6)))`, `#(lower(alphanumeric(8)))`)
+- **`#(randomInt(min,max))`** / **`#(bool)`** — random integer in `[min, max)` or random boolean (`true` / `false`)
+- **`#(pick(VAL_1,VAL_2,VAL_3))`** / **`#(oneOf(VAL_1,VAL_2))`** — picks one value from the list (supports nested functions like `#(pick(upper(alpha(4)),numeric(4)))`)
 - **`#(today)`** / **`#(todayPlus(days))`** / **`#(todayMinus(days))`** — ISO-8601 `YYYY-MM-DD` date
 - **`#(now)`** / **`#(nowPlusDays(days))`** / **`#(nowMinusDays(days))`** / **`#(nowPlusHours(hours))`** — ISO-8601 UTC timestamp
-- **`#(sha256(value))`** / **`#(base64(value))`** / **`#(urlEncode(value))`** — encoding helpers
+- **`#(epoch)`** / **`#(epochMillis)`** — current Unix epoch timestamp in seconds or milliseconds
+- **`#(sha256(expr))`** / **`#(md5(expr))`** / **`#(base64(expr))`** / **`#(base64Url(expr))`** / **`#(urlEncode(expr))`** — composable encoding & hashing helpers
 
 ---
 

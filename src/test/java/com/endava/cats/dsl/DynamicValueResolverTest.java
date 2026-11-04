@@ -47,5 +47,9 @@ class DynamicValueResolverTest {
         Assertions.assertThat(DynamicValueResolver.resolve("#(alpha(6))", Map.of())).matches("[A-Za-z]{6}");
         Assertions.assertThat(DynamicValueResolver.resolve("#(alphanumeric)", Map.of())).matches("[A-Za-z0-9]{12}");
         Assertions.assertThat(DynamicValueResolver.resolve("#(ascii)", Map.of())).hasSize(12);
+        Assertions.assertThat(DynamicValueResolver.resolve("#(upper(alphabetic))", Map.of())).matches("[A-Z]{12}");
+        Assertions.assertThat(DynamicValueResolver.resolve("#(lower(alphabetic(6)))", Map.of())).matches("[a-z]{6}");
+        Assertions.assertThat(DynamicValueResolver.resolve("PREFIX-#(upper(alpha(4)))-${suffix}", Map.of("suffix", "99")))
+                .matches("PREFIX-[A-Z]{4}-99");
     }
 }

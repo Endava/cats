@@ -85,6 +85,81 @@ class ShorthandFunctionParserTest {
             String result = parser.parse("Rule-#(alphanumeric(6))-end", Map.of());
             assertThat(result).startsWith("Rule-").endsWith("-end").hasSize(15);
         }
+
+        @Test
+        @DisplayName("Should generate upper, lower, hex, bool, epoch, and epochMillis no-arg functions")
+        void shouldGenerateAdditionalNoArgFunctions() {
+            assertThat(parser.parse("#(upper)", Map.of())).hasSize(12).matches("[A-Z]{12}");
+            assertThat(parser.parse("#(lower)", Map.of())).hasSize(12).matches("[a-z]{12}");
+            assertThat(parser.parse("#(hex)", Map.of())).hasSize(12).matches("[0-9a-f]{12}");
+            assertThat(parser.parse("#(bool)", Map.of())).isIn("true", "false");
+            assertThat(parser.parse("#(boolean)", Map.of())).isIn("true", "false");
+            assertThat(parser.parse("#(epoch)", Map.of())).matches("\\d{10,}");
+            assertThat(parser.parse("#(epochMillis)", Map.of())).matches("\\d{13,}");
+        }
+    }
+
+    @Nested
+    @DisplayName("Composable string and encoding helper functions")
+    class ComposableHelperFunctions {
+
+        @Test
+        @DisplayName("Should compose upper and lower with no-arg and parameterized generators")
+        void shouldComposeUpperAndLower() {
+            assertThat(parser.parse("#(upper(alphabetic))", Map.of())).hasSize(12).matches("[A-Z]{12}");
+            assertThat(parser.parse("#(upper(alphabetic(8)))", Map.of())).hasSize(8).matches("[A-Z]{8}");
+            assertThat(parser.parse("#(upper(alpha(4,8)))", Map.of())).hasSizeBetween(4, 7).matches("[A-Z]+");
+            assertThat(parser.parse("#(lower(alphabetic))", Map.of())).hasSize(12).matches("[a-z]{12}");
+            assertThat(parser.parse("#(lower(alphanumeric(10)))", Map.of())).hasSize(10).matches("[a-z0-9]{10}");
+            assertThat(parser.parse("#(upper(uuid))", Map.of())).matches("[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}");
+            assertThat(parser.parse("#(upper(#(alphabetic(6))))", Map.of())).hasSize(6).matches("[A-Z]{6}");
+        }
+
+        @Test
+        @DisplayName("Should support capitalize, trim, reverse, and length")
+        void shouldSupportStringHelpers() {
+            assertThat(parser.parse("#(capitalize(alphabetic(6)))", Map.of())).hasSize(6).matches("[A-Z][a-z]{5}");
+            assertThat(parser.parse("#(capitalize(hELLO))", Map.of())).isEqualTo("Hello");
+            assertThat(parser.parse("#(trim('  spaced  '))", Map.of())).isEqualTo("spaced");
+            assertThat(parser.parse("#(reverse(abcd))", Map.of())).isEqualTo("dcba");
+            assertThat(parser.parse("#(length(alphabetic(9)))", Map.of())).isEqualTo("9");
+            assertThat(parser.parse("#(len(\"hello\"))", Map.of())).isEqualTo("5");
+        }
+
+        @Test
+        @DisplayName("Should support encoding and hashing helpers")
+        void shouldSupportEncodingAndHashingHelpers() {
+            assertThat(parser.parse("#(base64(cats))", Map.of())).isEqualTo("Y2F0cw==");
+            assertThat(parser.parse("#(base64Url(cats))", Map.of())).isEqualTo("Y2F0cw");
+            assertThat(parser.parse("#(sha256(cats))", Map.of())).hasSize(64).matches("[0-9a-f]{64}");
+            assertThat(parser.parse("#(md5(cats))", Map.of())).hasSize(32).matches("[0-9a-f]{32}");
+            assertThat(parser.parse("#(urlEncode(a b+c@d))", Map.of())).isEqualTo("a+b%2Bc%40d");
+            assertThat(parser.parse("#(upper(sha256(cats)))", Map.of())).hasSize(64).matches("[0-9A-F]{64}");
+        }
+
+        @Test
+        @DisplayName("Should support context lookup and embedded shorthands inside helper functions")
+        void shouldSupportContextAndEmbeddedShorthandsInsideHelpers() {
+            assertThat(parser.parse("#(upper(myVar))", Map.of("myVar", "hello-cats"))).isEqualTo("HELLO-CATS");
+            assertThat(parser.parse("#(upper(pre-#(alpha(4))-post))", Map.of())).matches("PRE-[A-Z]{4}-POST");
+            assertThat(parser.parse("INV-#(upper(alpha(3)))-#(numeric(4))", Map.of())).matches("INV-[A-Z]{3}-\\d{4}");
+        }
+
+        @Test
+        @DisplayName("Should support pick and oneOf with literals and nested functions")
+        void shouldSupportPickAndOneOf() {
+            assertThat(parser.parse("#(pick(USD,EUR,GBP))", Map.of())).isIn("USD", "EUR", "GBP");
+            assertThat(parser.parse("#(oneOf('ALPHA', 'BETA'))", Map.of())).isIn("ALPHA", "BETA");
+            assertThat(parser.parse("#(pick(upper(alpha(4)),upper(alpha(4))))", Map.of())).matches("[A-Z]{4}");
+        }
+
+        @Test
+        @DisplayName("Should generate hex with fixed length and range")
+        void shouldGenerateHex() {
+            assertThat(parser.parse("#(hex(24))", Map.of())).hasSize(24).matches("[0-9a-f]{24}");
+            assertThat(parser.parse("#(hex(4,8))", Map.of())).hasSizeBetween(4, 7).matches("[0-9a-f]+");
+            assertThat(parser.parse("#(upper(hex(16)))", Map.of())).hasSize(16).matches("[0-9A-F]{16}");
+        }
     }
 
     @Nested
@@ -203,6 +278,15 @@ class ShorthandFunctionParserTest {
         void shouldReturnOriginalForNonNumericArgs() {
             String result = parser.parse("#(alphanumeric(abc))", Map.of());
             assertThat(result).isEqualTo("#(alphanumeric(abc))");
+        }
+
+        @Test
+        @DisplayName("Should handle empty args for string and pick functions and equal hex range")
+        void shouldHandleEmptyArgsAndEqualHexRange() {
+            assertThat(parser.parse("#(upper())", Map.of())).isEqualTo("#(upper())");
+            assertThat(parser.parse("#(pick())", Map.of())).isEqualTo("#(pick())");
+            assertThat(parser.parse("#(capitalize(''))", Map.of())).isEmpty();
+            assertThat(parser.parse("#(hex(5,5))", Map.of())).hasSize(5).matches("[0-9a-f]{5}");
         }
 
         @ParameterizedTest
