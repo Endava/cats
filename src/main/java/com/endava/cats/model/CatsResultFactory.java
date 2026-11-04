@@ -296,7 +296,9 @@ public interface CatsResultFactory {
         CROSS_PARENT_SERVER_ERROR("Cross-parent request caused server error", "Requesting a child resource under a different parent resource identifier caused a 5xx server error"),
         CROSS_PARENT_RESOURCE_EXPOSURE("Potential cross-parent resource exposure", "A child resource was returned successfully under a different parent resource identifier, indicating a potential BOLA/IDOR issue"),
         MISSING_ALLOW_HEADER("Missing Allowed header", "The server returned 405 Method Not Allowed without the mandatory Allow response header"),
-        WRONG_ALLOW_HEADER("Wrong Allowed header", "The server returned 405 Method Not Allowed, but the Allow response header listed the rejected HTTP method as allowed");
+        WRONG_ALLOW_HEADER("Wrong Allowed header", "The server returned 405 Method Not Allowed, but the Allow response header listed the rejected HTTP method as allowed"),
+        PATH_TRAVERSAL("Path traversal vulnerability detected", "The response contains local file contents or filesystem exception details triggered by a path traversal payload"),
+        HTTP_METHOD_OVERRIDE_ACCEPTED("HTTP method override accepted", "A POST request carrying an HTTP method-override header executed an undocumented HTTP verb");
 
 
         private final String value;

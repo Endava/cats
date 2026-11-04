@@ -42,9 +42,11 @@ profiles:
       - XxeInjectionInStringFields
       - SstiInjectionInStringFields
       - CommandInjectionInStringFields
+      - PathTraversalInStringFields
       - XssInjectionInStringFields
       - SSRFInUrlFields
       - SortColumnOrmLeakFields
+      - HttpParameterPollutionFields
 
       # Authentication & Authorization
       - BypassAuthentication
@@ -52,6 +54,7 @@ profiles:
 
       # Mass Assignment
       - MassAssignment
+      - ReadOnlyFieldsMassAssignment
       - AdditionalPropertiesMassAssignmentFields
 
       # Security Headers
@@ -80,6 +83,7 @@ profiles:
       - CustomHttpMethods
       - NonRestHttpMethods
       - HttpMethods
+      - HttpMethodOverrideTunneling
 
       # Header Manipulation
       - CRLFHeaders
@@ -179,6 +183,7 @@ profiles:
 
       # API3:2023 - Broken Object Property Level Authorization
       - MassAssignment
+      - ReadOnlyFieldsMassAssignment
       - AdditionalPropertiesMassAssignmentFields
       - SensitiveDataExposure
       - NewFields
@@ -196,6 +201,7 @@ profiles:
 
       # API5:2023 - Broken Function Level Authorization
       - HttpMethods
+      - HttpMethodOverrideTunneling
       - CustomHttpMethods
       - NonRestHttpMethods
 
@@ -289,13 +295,17 @@ profiles:
       # Security Essentials
       - BypassAuthentication
       - MassAssignment
+      - ReadOnlyFieldsMassAssignment
       - SqlInjectionInStringFields
+      - PathTraversalInStringFields
       - XssInjectionInStringFields
       - SSRFInUrlFields
       - InsecureDirectObjectReferences
+      - HttpParameterPollutionFields
 
       # HTTP Protocol
       - HttpMethods
+      - HttpMethodOverrideTunneling
       - DummyContentTypeHeaders
       - UnsupportedContentTypesHeaders
       - CheckSecurityHeaders
@@ -365,13 +375,17 @@ profiles:
       - SqlInjectionInStringFields
       - NoSqlInjectionInStringFields
       - CommandInjectionInStringFields
+      - PathTraversalInStringFields
       - SstiInjectionInStringFields
       - XssInjectionInStringFields
       - SortColumnOrmLeakFields
+      - HttpParameterPollutionFields
       - BypassAuthentication
       - InsecureDirectObjectReferences
       - MassAssignment
+      - ReadOnlyFieldsMassAssignment
       - HttpMethods
+      - HttpMethodOverrideTunneling
       - DummyRequest
       - MalformedJson
       - RandomResources

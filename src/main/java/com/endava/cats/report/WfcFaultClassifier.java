@@ -99,6 +99,8 @@ public final class WfcFaultClassifier {
         map.put(Reason.POTENTIAL_IDOR.value(), DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION);
         map.put(Reason.COMMAND_INJECTION.value(), DefinedFaultCategory.SECURITY_COMMAND_INJECTION);
         map.put(Reason.POSSIBLE_COMMAND_INJECTION.value(), DefinedFaultCategory.SECURITY_COMMAND_INJECTION);
+        map.put(Reason.PATH_TRAVERSAL.value(), DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES);
+        map.put(Reason.HTTP_METHOD_OVERRIDE_ACCEPTED.value(), DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT);
         map.put(Reason.NOSQL_INJECTION.value(), DefinedFaultCategory.SECURITY_NOSQL_INJECTION);
         map.put(Reason.WRITE_ONLY_FIELDS_EXPOSED.value(), DefinedFaultCategory.SECURITY_EXCESSIVE_DATA_EXPOSURE);
         map.put(Reason.SENSITIVE_DATA_EXPOSED.value(), DefinedFaultCategory.SECURITY_EXCESSIVE_DATA_EXPOSURE);
