@@ -1,81 +1,611 @@
-html[data-theme='dark'] .navbar .navbar__logo {
-  content: url(../../static/img/cats_dark.svg)
-}
-/**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
- */
+/* ==========================================================================
+   CATS Documentation — Linear & Apple Notes Design System
+   Applies site-wide across landing page, docs, fuzzer tables, cards & search
+   ========================================================================== */
 
-/* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #3cad6e;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
-  --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --ifm-font-family-base: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --ifm-heading-font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --ifm-font-family-monospace: 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
+
+  --ifm-color-primary: #16a34a;
+  --ifm-color-primary-dark: #15803d;
+  --ifm-color-primary-darker: #166534;
+  --ifm-color-primary-darkest: #14532d;
+  --ifm-color-primary-light: #22c55e;
+  --ifm-color-primary-lighter: #4ade80;
+  --ifm-color-primary-lightest: #86efac;
+
+  --ifm-background-color: #fbfbfd;
+  --ifm-background-surface-color: #ffffff;
+  --ifm-font-color-base: #111318;
+  --ifm-font-color-secondary: #5a606d;
+  --ifm-heading-color: #0b0d11;
+  --ifm-code-font-size: 88%;
+  --ifm-line-height-base: 1.65;
+  --ifm-global-radius: 8px;
+  --ifm-navbar-height: 3.6rem;
+  --ifm-menu-color: #4b5160;
+  --ifm-menu-color-active: #0b0d11;
+  --ifm-menu-color-background-active: rgba(22, 163, 74, 0.08);
+  --ifm-menu-color-background-hover: rgba(17, 19, 24, 0.04);
+  --ifm-toc-border-color: rgba(17, 19, 24, 0.08);
+  --ifm-table-border-color: rgba(17, 19, 24, 0.08);
+  --ifm-hr-border-color: rgba(17, 19, 24, 0.08);
+  --docusaurus-highlighted-code-line-bg: rgba(22, 163, 74, 0.08);
+
+  --cats-surface: #ffffff;
+  --cats-surface-subtle: #f3f4f7;
+  --cats-surface-hover: #f8f9fb;
+  --cats-border: rgba(17, 19, 24, 0.085);
+  --cats-border-strong: rgba(17, 19, 24, 0.15);
+  --cats-text-muted: #5a606d;
+  --cats-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.035), 0 3px 10px rgba(15, 23, 42, 0.025);
+  --cats-shadow-md: 0 12px 32px -8px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #4fddbf;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-primary: #34d399;
+  --ifm-color-primary-dark: #10b981;
+  --ifm-color-primary-darker: #059669;
+  --ifm-color-primary-darkest: #047857;
+  --ifm-color-primary-light: #6ee7b7;
+  --ifm-color-primary-lighter: #a7f3d0;
+  --ifm-color-primary-lightest: #d1fae5;
+
+  --ifm-background-color: #090a0d;
+  --ifm-background-surface-color: #101217;
+  --ifm-font-color-base: #e6e8ee;
+  --ifm-font-color-secondary: #8b92a2;
+  --ifm-heading-color: #f8fafc;
+  --ifm-menu-color: #949ba9;
+  --ifm-menu-color-active: #f8fafc;
+  --ifm-menu-color-background-active: rgba(52, 211, 153, 0.11);
+  --ifm-menu-color-background-hover: rgba(255, 255, 255, 0.04);
+  --ifm-toc-border-color: rgba(255, 255, 255, 0.08);
+  --ifm-table-border-color: rgba(255, 255, 255, 0.08);
+  --ifm-hr-border-color: rgba(255, 255, 255, 0.08);
+  --docusaurus-highlighted-code-line-bg: rgba(52, 211, 153, 0.12);
+
+  --cats-surface: #111319;
+  --cats-surface-subtle: #161921;
+  --cats-surface-hover: #191d26;
+  --cats-border: rgba(255, 255, 255, 0.08);
+  --cats-border-strong: rgba(255, 255, 255, 0.15);
+  --cats-text-muted: #8b92a2;
+  --cats-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --cats-shadow-md: 0 20px 48px -12px rgba(0, 0, 0, 0.7);
 }
 
-.hero__title {
-  font-size: 7vw;
-  letter-spacing: 0;
-  line-height: 138px;
-  text-align: center;
+/* Global typography & smoothing */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-[data-theme='dark'] .Title .important {
-  color: #fff;
-  line-height: 138px;
-  font-size: 7vw;
+body {
+  background-color: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
 }
 
-[data-theme='light'] .Title .important {
-  color: #000;
-  line-height: 138px;
-  font-size: 7vw;
+/* ==========================================================================
+   Navbar & Algolia Search
+   ========================================================================== */
+.navbar {
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  background-color: rgba(251, 251, 253, 0.84);
+  border-bottom: 1px solid var(--cats-border);
+  box-shadow: none;
+  padding: 0 1.25rem;
 }
 
-.hero__subtitle {
-  font-size: 108px;
-  letter-spacing: 0;
-  line-height: 138px;
+[data-theme='dark'] .navbar {
+  background-color: rgba(9, 10, 13, 0.82);
 }
 
-.line {
-  align-items: center;
-  flex: 1;
-  flex-wrap: nowrap;
-  justify-content: flex-start;
-  text-align: center;
+.navbar__inner {
+  max-width: 1380px;
+  margin: 0 auto;
 }
 
 .navbar__logo {
-  height: 3rem;
+  height: 2.15rem;
 }
 
-[data-theme='light'] .navbar__logo {
-  padding-bottom: 10px;
+.navbar__link {
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ifm-font-color-secondary);
+  transition: color 0.15s ease;
 }
 
-[data-theme='dark'] .navbar__logo {
-  padding-bottom: 10px;
+.navbar__link:hover,
+.navbar__link--active {
+  color: var(--ifm-heading-color);
 }
 
+/* Algolia DocSearch button (Linear command bar style) */
+.DocSearch-Button {
+  border: 1px solid var(--cats-border) !important;
+  background: var(--cats-surface) !important;
+  border-radius: 8px !important;
+  height: 34px !important;
+  padding: 0 0.75rem !important;
+  box-shadow: var(--cats-shadow-sm) !important;
+  transition: border-color 0.15s ease !important;
+}
 
+.DocSearch-Button:hover {
+  border-color: var(--cats-border-strong) !important;
+}
 
+.DocSearch-Button-Placeholder {
+  font-size: 0.84rem !important;
+  color: var(--ifm-font-color-secondary) !important;
+}
+
+.DocSearch-Search-Icon {
+  width: 15px !important;
+  height: 15px !important;
+  color: var(--ifm-font-color-secondary) !important;
+}
+
+.DocSearch-Button-Key {
+  background: var(--cats-surface-subtle) !important;
+  border: 1px solid var(--cats-border) !important;
+  box-shadow: none !important;
+  color: var(--ifm-font-color-secondary) !important;
+  border-radius: 4px !important;
+  font-family: var(--ifm-font-family-monospace) !important;
+  font-size: 0.72rem !important;
+}
+
+/* ==========================================================================
+   Left Sidebar Navigation
+   ========================================================================== */
+.theme-doc-sidebar-container {
+  border-right: 1px solid var(--cats-border) !important;
+}
+
+.menu {
+  font-size: 0.86rem;
+  padding: 0.85rem 0.65rem !important;
+}
+
+.menu__list {
+  margin: 0;
+}
+
+.menu__list-item {
+  margin: 2px 0;
+}
+
+.menu__link {
+  border-radius: 6px;
+  padding: 0.36rem 0.65rem;
+  line-height: 1.38;
+  font-weight: 450;
+  letter-spacing: -0.008em;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  font-weight: 580;
+  color: var(--ifm-heading-color);
+  background-color: var(--ifm-menu-color-background-active);
+}
+
+.menu__link--sublist {
+  font-weight: 560;
+  color: var(--ifm-heading-color);
+}
+
+.menu__caret::before,
+.menu__link--sublist-caret::after {
+  background-size: 1.15rem 1.15rem;
+  opacity: 0.55;
+}
+
+/* ==========================================================================
+   Main Doc Layout, Breadcrumbs & Typography
+   ========================================================================== */
+.main-wrapper {
+  background-color: var(--ifm-background-color);
+}
+
+.docMainContainer_gTbr,
+[class*='docItemContainer_'] {
+  padding-top: 0.5rem;
+}
+
+.theme-doc-markdown {
+  max-width: 840px;
+}
+
+/* Breadcrumbs */
+.theme-doc-breadcrumbs {
+  margin-bottom: 1.1rem !important;
+}
+
+.breadcrumbs__link {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--ifm-font-color-secondary);
+  border-radius: 5px;
+  padding: 0.18rem 0.45rem;
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  background-color: var(--cats-surface-subtle);
+  color: var(--ifm-heading-color);
+}
+
+/* Headings */
+.markdown h1:first-child,
+header h1 {
+  font-size: 2.1rem;
+  font-weight: 660;
+  letter-spacing: -0.032em;
+  line-height: 1.18;
+  margin-bottom: 1.15rem;
+  color: var(--ifm-heading-color);
+}
+
+.markdown h2 {
+  font-size: 1.36rem;
+  font-weight: 620;
+  letter-spacing: -0.022em;
+  line-height: 1.28;
+  margin-top: 2.35rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--cats-border);
+  color: var(--ifm-heading-color);
+}
+
+.markdown h3 {
+  font-size: 1.08rem;
+  font-weight: 610;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+  margin-top: 1.65rem;
+  margin-bottom: 0.55rem;
+  color: var(--ifm-heading-color);
+}
+
+.markdown h4 {
+  font-size: 0.96rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 1.3rem;
+  margin-bottom: 0.45rem;
+}
+
+/* Body copy, lists & links */
+.markdown p,
+.markdown li {
+  color: var(--ifm-font-color-base);
+  letter-spacing: -0.006em;
+  line-height: 1.68;
+}
+
+.markdown ul,
+.markdown ol {
+  padding-left: 1.35rem;
+}
+
+.markdown li + li {
+  margin-top: 0.32rem;
+}
+
+.markdown a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  font-weight: 500;
+}
+
+.markdown hr {
+  border-color: var(--cats-border);
+  margin: 2.2rem 0;
+}
+
+/* ==========================================================================
+   Inline Code & Code Blocks
+   ========================================================================== */
+.markdown code {
+  border: 1px solid var(--cats-border);
+  background-color: var(--cats-surface-subtle);
+  border-radius: 5px;
+  padding: 0.12rem 0.36rem;
+  font-size: 0.85em;
+  font-weight: 480;
+}
+
+.theme-code-block {
+  border: 1px solid var(--cats-border) !important;
+  border-radius: 10px !important;
+  box-shadow: var(--cats-shadow-sm) !important;
+  overflow: hidden;
+  margin-bottom: 1.25rem !important;
+}
+
+[data-theme='light'] .theme-code-block {
+  --prism-background-color: #f6f7f9 !important;
+}
+
+[data-theme='dark'] .theme-code-block {
+  --prism-background-color: #0d0f14 !important;
+}
+
+.prism-code {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 0.84rem;
+  line-height: 1.62;
+}
+
+.markdown pre code {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+
+[class*='buttonGroup_'] button {
+  border: 1px solid var(--cats-border) !important;
+  background-color: var(--cats-surface) !important;
+  border-radius: 6px !important;
+  opacity: 0.75;
+}
+
+[class*='buttonGroup_'] button:hover {
+  opacity: 1;
+  border-color: var(--cats-border-strong) !important;
+}
+
+/* ==========================================================================
+   Tables (Fuzzer / Linter Spec Sheets, Format & Command Tables)
+   ========================================================================== */
+.markdown table {
+  display: table;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--cats-border);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.9rem;
+  margin: 1.25rem 0 1.65rem;
+  background-color: var(--cats-surface);
+  box-shadow: var(--cats-shadow-sm);
+}
+
+.markdown table thead tr {
+  background-color: var(--cats-surface-subtle);
+  border-bottom: 1px solid var(--cats-border);
+}
+
+.markdown table th {
+  background-color: var(--cats-surface-subtle);
+  color: var(--ifm-heading-color);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  letter-spacing: -0.008em;
+  padding: 0.7rem 0.95rem;
+  border: none;
+  border-bottom: 1px solid var(--cats-border);
+}
+
+.markdown table th + th,
+.markdown table td + td {
+  border-left: 1px solid var(--cats-border);
+}
+
+.markdown table td {
+  padding: 0.7rem 0.95rem;
+  border: none;
+  border-bottom: 1px solid var(--cats-border);
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.markdown table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown table tr:nth-child(2n) {
+  background-color: transparent;
+}
+
+.markdown table tbody tr:hover {
+  background-color: var(--cats-surface-hover);
+}
+
+/* Keep the left label column on fuzzer spec sheets crisp and non-wrapping where appropriate */
+.markdown table td:first-child {
+  width: 28%;
+}
+
+/* ==========================================================================
+   Admonitions / Callouts (:::tip, :::info, :::caution, :::warning, :::danger)
+   ========================================================================== */
+.theme-admonition {
+  --ifm-alert-background-color: var(--cats-surface-subtle);
+  --ifm-alert-background-color-highlight: rgba(17, 19, 24, 0.05);
+  --ifm-alert-foreground-color: var(--ifm-font-color-base);
+  --ifm-alert-border-color: var(--cats-border-strong);
+  border-radius: 10px !important;
+  border: 1px solid var(--cats-border) !important;
+  border-left-width: 3px !important;
+  background-color: var(--cats-surface) !important;
+  color: var(--ifm-font-color-base) !important;
+  box-shadow: var(--cats-shadow-sm) !important;
+  padding: 0.95rem 1.15rem !important;
+  margin-bottom: 1.35rem !important;
+}
+
+.theme-admonition.alert--success,
+.theme-admonition.alert--secondary {
+  border-left-color: var(--ifm-color-primary) !important;
+}
+
+.theme-admonition.alert--info {
+  border-left-color: #3b82f6 !important;
+}
+
+.theme-admonition.alert--warning {
+  border-left-color: #f59e0b !important;
+}
+
+.theme-admonition.alert--danger {
+  border-left-color: #ef4444 !important;
+}
+
+[class*='admonitionHeading_'] {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.74rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ifm-heading-color) !important;
+  margin-bottom: 0.35rem !important;
+}
+
+[class*='admonitionIcon_'] svg {
+  width: 0.95rem !important;
+  height: 0.95rem !important;
+  fill: currentColor !important;
+}
+
+[class*='admonitionContent_'] p:last-child {
+  margin-bottom: 0;
+}
+
+/* ==========================================================================
+   Category & DocCard Grid (<DocCardList />)
+   ========================================================================== */
+.card,
+[class*='cardContainer_'] {
+  border: 1px solid var(--cats-border) !important;
+  background-color: var(--cats-surface) !important;
+  box-shadow: var(--cats-shadow-sm) !important;
+  border-radius: 10px !important;
+  padding: 1.15rem 1.25rem !important;
+  transition: border-color 0.15s ease, transform 0.15s ease, background-color 0.15s ease !important;
+}
+
+.card:hover,
+[class*='cardContainer_']:hover {
+  border-color: var(--ifm-color-primary) !important;
+  background-color: var(--cats-surface-hover) !important;
+  transform: translateY(-1px);
+}
+
+.card h2,
+[class*='cardTitle_'] {
+  font-size: 0.98rem !important;
+  font-weight: 610 !important;
+  letter-spacing: -0.014em;
+  color: var(--ifm-heading-color) !important;
+  border-bottom: none !important;
+  margin: 0 0 0.3rem !important;
+  padding: 0 !important;
+}
+
+.card p,
+[class*='cardDescription_'] {
+  font-size: 0.84rem !important;
+  color: var(--ifm-font-color-secondary) !important;
+  line-height: 1.5 !important;
+}
+
+/* ==========================================================================
+   Images, Right TOC, Doc Footer & Next/Prev Pagination
+   ========================================================================== */
+.markdown img {
+  border-radius: 10px;
+  border: 1px solid var(--cats-border);
+  box-shadow: var(--cats-shadow-sm);
+  margin: 0.75rem 0;
+}
+
+.table-of-contents {
+  font-size: 0.79rem;
+  padding-left: 0.75rem;
+}
+
+.table-of-contents__left-border {
+  border-left: 1px solid var(--cats-border);
+}
+
+.table-of-contents__link {
+  color: var(--ifm-font-color-secondary);
+  line-height: 1.45;
+  transition: color 0.12s ease;
+}
+
+.table-of-contents__link:hover,
+.table-of-contents__link--active {
+  color: var(--ifm-color-primary);
+  font-weight: 560;
+}
+
+.theme-doc-footer {
+  margin-top: 2.5rem !important;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cats-border);
+}
+
+.theme-edit-this-page {
+  font-size: 0.82rem;
+  color: var(--ifm-font-color-secondary);
+  text-decoration: none !important;
+}
+
+.theme-edit-this-page:hover {
+  color: var(--ifm-color-primary);
+}
+
+.pagination-nav__link {
+  border: 1px solid var(--cats-border);
+  background-color: var(--cats-surface);
+  border-radius: 10px;
+  padding: 0.85rem 1.15rem;
+  box-shadow: var(--cats-shadow-sm);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pagination-nav__link:hover {
+  border-color: var(--ifm-color-primary);
+  transform: translateY(-1px);
+}
+
+.pagination-nav__sublabel {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ifm-font-color-secondary);
+  margin-bottom: 0.15rem;
+}
+
+.pagination-nav__label {
+  font-size: 0.94rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: var(--ifm-heading-color);
+}
+
+/* Footer */
+.footer--dark {
+  --ifm-footer-background-color: #090a0d;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2rem 0;
+  font-size: 0.84rem;
+  color: #8b92a2;
+}

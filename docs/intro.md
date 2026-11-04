@@ -1,49 +1,106 @@
 ---
 sidebar_position: 1
+description: Autonomous REST API fuzzing, OpenAPI contract linting, and stateful functional testing
 ---
 
 # Introduction
 
-CATS is a REST API fuzzer and negative testing tool for OpenAPI endpoints. It helps you run thousands of self-healing API tests within minutes with no coding effort! 
+**CATS** (**C**ontract **A**PI **T**esting and **S**ecurity) is an autonomous REST API fuzzer, negative testing engine, and declarative functional testing tool. Give CATS an OpenAPI specification and a target URL, and it automatically generates, executes, and triages thousands of self-healing boundary, type-coercion, OWASP security, and multi-step workflow tests—without writing a single line of test code.
 
-:::danger Be careful!
-Running CATS against production systems might produce unwanted behaviour like performance issues, consistency issues or crashes.
+:::caution Target Environment
+Run CATS only against local, staging, or dedicated test environments. Because CATS actively mutates payloads, exercises resource lifecycles (`POST`, `PUT`, `PATCH`, `DELETE`), and probes boundary and injection conditions, running it against production systems can modify state or degrade performance.
 :::
 
-## Overview
+---
 
-CATS is:
+## Quickstart
 
-- **🧐 Comprehensive**: tests are generated automatically based on a large number of scenarios and cover **every** request field and header
-- **💡 Intelligent**: tests are generated based on data types and structural constraints; each Fuzzer has specific expectations depending on the scenario under test
-- **⚙️ Highly Configurable**: high amount of customizations: you can filter specific Fuzzers, HTTP response codes, HTTP methods, request paths, provide business context and a lot more
-- **🏥 Self-Healing**: as tests are generated, any OpenAPI spec change is picked up automatically
-- **📖 Simple to Learn**: flat learning curve, with intuitive configuration and syntax
-- **⚡️ Fast**: automatic process for writing, running and reporting
-
-By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**PI **T**esting and **S**ecurity) enables you to generate thousands of API tests within minutes with **no coding effort**.
-All tests are **generated, run and reported automatically** based on a pre-defined set of **140+ Fuzzers**.
-The Fuzzers cover a wide range of boundary testing and negative scenarios from random large Unicode values to well crafted, context dependant values based on the request data types and constraints.
-Even more, you can **leverage** the fact that **CATS** generates request payloads dynamically and **write simple end-to-end functional tests**.
-
-## Fast Track ⏱️
-
-Get started by running CATS in ◼️ `--blackbox` mode.
-
-Make sure you have CATS installed following the instructions on the [installation page](/docs/getting-started/installation).
-
-### What you'll need
-
-- 📝 the OpenAPI spec file for the API you want to test (`openapi.yml`)
-- 🌎 connectivity to the API (you should be able to access (`https://api-url.com`)
-- 🔐 credentials to access the API (`$token`)
-
-You can now run CATS using the following command:
+Make sure CATS is installed ([Installation Guide](/docs/getting-started/installation)):
 
 ```bash
-cats --contract=openapi.yml -H "Authorization=$token" --server=https://api-url.com -b -k
+brew tap endava/tap && brew install cats
 ```
 
-When running in blackbox (`-b`) mode CATS will only report `500` http response codes as 🛑 errors (`-k`). 
+### 1. Analyze Readiness & Smoke-Probe the API
 
-The 📊 report is available at `cats-report/index.html`.
+Inspect the contract's `0–100` Fuzzability Readiness Score and producer-to-consumer resource chains offline, then send a single `HappyPath` request per operation (skipping `DELETE` by default) to confirm connectivity and authentication:
+
+```bash
+cats analyze -c openapi.yml
+cats smoke -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN"
+```
+
+*(Values prefixed with `$$` are resolved from environment variables or `.env` and automatically masked in logs and HTML/JSON reports.)*
+
+### 2. Fuzz the API
+
+Choose the depth that matches your workflow:
+
+```bash
+# Blackbox crash hunting: report only 5XX server errors and omit ignored results
+cats -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN" -b -k
+
+# Curated CI or OWASP Security profile with stateful resource correlation (enabled by default)
+cats -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN" --profile ci
+cats -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN" --profile security
+
+# Full contract-aware suite (all active Field, Header, and HTTP fuzzers)
+cats -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN"
+```
+
+Open `cats-report/index.html` to inspect the interactive HTML report, or pass `--tui` to follow execution live in the terminal.
+
+### 3. Run Stateful Functional Flows
+
+Write multi-step CRUD workflows, cross-field rules, polling checks, and data-driven scenarios in minimal `steps:` YAML—CATS generates the rest of every request from your contract:
+
+```bash
+cats run -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN" flow.yml
+```
+
+### 4. Triage Failures & Verify Fixes
+
+Cluster failing tests by root cause, auto-generate remediation files (`refData.yml`, `correlations.yml`, `reproducers.sh`), and verify fixes live against the server:
+
+```bash
+cats triage -r cats-report -c openapi.yml \
+  --export-refdata refData.yml \
+  --export-correlations correlations.yml \
+  --export-reproducers reproducers.sh
+
+# Replay 1 representative request per root-cause cluster to confirm FIXED vs STILL_FAILING
+cats triage -r cats-report --verify -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN"
+```
+
+---
+
+## What CATS Covers
+
+| Capability | Scope | Where to Learn More |
+|:--|:--|:--|
+| **Field Fuzzers (`117`)** | Numeric/string boundaries, `exclusiveMinimum`/`Maximum`, `multipleOf`, `minItems`/`maxItems`, `minProperties`, `const`/`not`, merged `oneOf` branches, type coercion, SQL/NoSQL/LDAP/Command/SSTI/XXE/XSS/SSRF/Path Traversal injections, `readOnly` & undeclared Mass Assignment, HTTP Parameter Pollution, and Unicode edge cases. | [Field Fuzzers](/docs/fuzzers/field-fuzzers) |
+| **Header Fuzzers (`39`)** | Content negotiation (`Accept`, `Content-Type`), `Content-Length`/`Transfer-Encoding`, CRLF injection, security headers, duplicate/extra headers, and Unicode/control-character header mutations. | [Header Fuzzers](/docs/fuzzers/header-fuzzers) |
+| **HTTP Fuzzers (`35`)** | `HappyPath`, authentication bypass, BOLA/IDOR, HTTP verb tampering & method-override tunneling (`X-HTTP-Method-Override`), `Idempotency-Key` conflict detection, `PUT` idempotency, `ETag` preconditions, cross-parent isolation, and post-delete availability. | [HTTP Fuzzers](/docs/fuzzers/http-fuzzers) |
+| **Stateful Functional Flows** | Declarative `steps:` YAML workflows with schema-backed payload generation, cross-step `$steps` / `save` correlation, `expect.that` assertions, `poll` / `delayMs` async helpers, `repeat`, `forEach` data tables, and `correlate` rules. | [Functional Flow Fuzzer](/docs/fuzzers/special-fuzzers/functional-fuzzer) |
+| **Continuous & Spec-less Fuzzing** | Time- or count-bounded mutation fuzzing with `36` built-in mutators (`cats random`), custom dictionary fuzzing (`SecurityFuzzer`), and template-based fuzzing without an OpenAPI spec (`cats template`). | [Mutators](/docs/getting-started/mutators) · [Template Fuzzer](/docs/fuzzers/special-fuzzers/template-fuzzer) |
+| **Contract Linters (`58`)** | Offline OpenAPI 3.0/3.1 structural, semantic, and REST naming checks: ambiguous `oneOf` variants, default/example schema conformance, contradictory bounds, request/response symmetry, pagination & error consistency, and REST path role analysis. | [Contract Linters](/docs/fuzzers/linters) |
+
+---
+
+## Choosing a Command
+
+| Goal | Command |
+|:--|:--|
+| Score contract readiness & view producer-consumer resource chains | `cats analyze -c openapi.yml --mermaid` |
+| Scaffold starter `headers.yml`, `refData.yml`, and `functionalTests.yml` | `cats init -c openapi.yml` |
+| Install CATS skills for Devin, Claude Code, Codex, OpenCode, or Cursor | `cats init --skills` |
+| Verify server reachability and auth (1 request per endpoint) | `cats smoke -c openapi.yml -s http://localhost:8080` |
+| Run fast PR/CI fuzzing suite | `cats -c openapi.yml -s http://localhost:8080 --profile ci` |
+| Run OWASP API Security Top 10 audit | `cats -c openapi.yml -s http://localhost:8080 --profile security` |
+| Execute stateful YAML functional or security flows | `cats run -c openapi.yml -s http://localhost:8080 flow.yml` |
+| Cluster report failures & verify fixes live | `cats triage -r cats-report --verify -s http://localhost:8080` |
+| Replay a test with its upstream `2XX` producer chain | `cats replay Test42 --stateful` |
+| Export a failing test + producer chain as a runnable `steps:` flow | `cats replay Test42 --export-flow reproducer.yml` |
+| Gate CI against a previous baseline report | `cats compare -b ./baseline-report -t ./cats-report` |
+| Lint OpenAPI contract offline | `cats lint -c openapi.yml --strict` |
+| Explain any fuzzer, linter, profile, mutator, or error reason | `cats explain --type fuzzer ReadOnlyFieldsMassAssignment` |

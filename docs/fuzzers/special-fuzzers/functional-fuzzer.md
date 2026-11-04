@@ -71,6 +71,10 @@ steps:
   - name: "getCreatedGo"
     description: "Retrieve the created journey and verify cross-step persistence"
     GET: "/go/${id}"
+    delayMs: 50
+    poll:
+      maxAttempts: 3
+      intervalMs: 100
     expect:
       status: 200
       that:
@@ -101,10 +105,38 @@ steps:
   - `MERGE` (default): Starts from a full schema-valid happy-path payload and merges `body:` overrides. On `GET` and `DELETE`, optional query parameters not explicitly listed in `query:` (or inline in the URL) are omitted.
   - `ONLY_REQUIRED`: Starts from a payload containing only fields marked `required` in the OpenAPI schema.
   - `EMPTY`: Starts from an empty `{}` payload.
-- **`body`**: Map, list, or scalar overriding the request body. Nested maps merge into existing JSON objects, and dot-notation (`home.country`) or `#`-notation (`home#country`) can target nested fields directly.
+- **`body`**: Map, list, or scalar overriding the request body. Nested maps merge into existing JSON objects, and dot-notation (`home.country`) or `#`-notation (`home#country`) can target nested fields directly. All YAML types (`integer`, `number`, `boolean`, lists, nested maps) and explicit `null` values are preserved.
 - **`path`**, **`query`**, **`headers`**: Maps of path parameters, query parameters, and HTTP headers for the step. OpenAPI-documented headers are generated automatically and only need to be listed in `headers:` when overriding a specific value.
 - **`omit`**: List of field paths to remove from the generated request payload.
 - **`variant`**: Selects a specific `oneOf`/`anyOf` schema branch either by schema name suffix (`variant: "DogRequest"`) or by matching discriminator/property values (`variant: { pet.type: "Dog" }`).
+- **`correlate`**: Optional step-scoped cross-field correlation rule (single object `{ when: "...", set: {...}, omit: [...] }` or list of rules) applied before sending the step's request.
+- **`delayMs`**: Optional initial delay in milliseconds before sending the step's request.
+- **`poll`**: Optional polling configuration (`{ maxAttempts: 5, intervalMs: 200 }`) for eventual-consistency or asynchronous state transitions. CATS retries the step up to `maxAttempts` times, waiting `intervalMs` between attempts, until `status` and `expect` assertions pass, and reports only the final attempt.
+- **`repeat`**: Optional integer count (`repeat: N`, default `1`). Executes `N - 1` setup requests (updating saved variables on each response) and evaluates `expect:` assertions on the `N`th request—useful for rate-limit, quota exhaustion, or replay/conflict checks.
+- **`forEach`**: Optional list of variable maps (`- { currency: "EUR", minPrice: 10 }`) that expands the step into one execution per row, binding each map's keys as `${varName}` while preserving their native YAML types (`integer`, `number`, `boolean`, `null`, lists, or maps).
+
+```yaml
+  - name: "createPlansByCurrency"
+    description: "Data-driven step executed once per row in forEach"
+    POST: "/billing-plans"
+    forEach:
+      - { currency: "EUR", minPrice: 10, promoCode: null }
+      - { currency: "USD", minPrice: 12, promoCode: "WELCOME" }
+    body:
+      currency: "${currency}"
+      unitPrice: "${minPrice}"
+      promoCode: "${promoCode}"
+    expect:
+      status: [200, 201]
+      currency: "${currency}"
+
+  - name: "exhaustOneOffActivation"
+    description: "Execute N-1 setup calls and assert expect on the Nth call"
+    POST: "/billing-plans/${id}/activate"
+    repeat: 2
+    expect:
+      status: [400, 409, 422, 429]
+```
 
 ---
 
@@ -195,33 +227,67 @@ expect:
 
 Many APIs enforce conditional cross-field rules that OpenAPI schemas cannot express on their own—for example, when `planType == 'RECURRING'`, `billingSchedule` must be set and `oneTimeSetupFee` must be omitted.
 
-You can define these rules either inside a functional flow file under `correlate:` (or `correlations:`) or in a standalone YAML file passed via `--correlations` (alias `--correlate`):
+You can define these rules either inside a functional flow file under `correlate:` (or `correlations:`), on an individual step under `correlate:`, or in a standalone YAML file passed via `--correlations` (alias `--correlate`).
 
+### Supported `correlations.yml` Formats (`then:` is optional)
+
+`set:` and `omit:` can be written directly on a rule or nested under `then:`. Three layouts are supported:
+
+1. **Grouped `rules:` under `paths:`** (best when multiple rules share paths):
 ```yaml
 correlations:
   - paths:
       - "/billing-plans"
       - "/billing-plans/{planId}"
-    when: "planType == 'RECURRING'"
-    then:
-      set:
-        billingSchedule: "MONTHLY"
-        gracePeriodDays: 7
-      omit:
-        - "oneTimeSetupFee"
+      - "/billing-plans*"
+    rules:
+      - when: "planType == RECURRING"
+        set:
+          billingSchedule: "MONTHLY"
+          gracePeriodDays: 7
+        omit:
+          - "oneTimeSetupFee"
+      - when: "planType == ONE_TIME"
+        set:
+          oneTimeSetupFee: 99
+        omit:
+          - "billingSchedule"
+          - "gracePeriodDays"
+      - when: "tiers[*].mode == METERED"
+        set:
+          tiers[*].unitField: "SeatCount"
+```
 
+2. **Path-keyed map** (matching `refData.yml` & `headers.yml`, including `all:`):
+```yaml
+all:
+  when: "mode == TEST"
+  set:
+    dryRunFlag: true
+
+/billing-plans:
+  - when: "planType == RECURRING"
+    set:
+      billingSchedule: "MONTHLY"
+  - when: "planType == ONE_TIME"
+    omit:
+      - "billingSchedule"
+```
+
+3. **Flat single-rule list** (`- paths: [...]` + `when:` + `set:` / `omit:` or `then:`):
+```yaml
+correlations:
   - paths:
       - "/orders*"
     when: "items[*].category == 'DIGITAL'"
-    then:
-      set:
-        items[*].shippingRequired: false
+    set:
+      items[*].shippingRequired: false
 ```
 
-- **`paths`**: Exact paths or wildcard prefixes ending with `*` (such as `"/orders*"` or `"*"`).
-- **`when`** (or `if`): Boolean condition evaluated against the outgoing JSON request payload (also supports per-element array wildcards `[*]`, which expand per element).
-- **`then.set`**: Field paths and values (supporting `${variables}`, `#(...)` shorthands, and `T(...)` expressions) to set or insert when the condition holds.
-- **`then.omit`**: Field paths to remove from the payload when the condition holds.
+- **`paths`**: Exact paths or wildcard prefixes ending with `*` (such as `"/orders*"` or `"*"`). Rules also apply automatically to every element of a **root JSON array** request body.
+- **`when`** (or `if`): Boolean condition evaluated against the outgoing JSON request payload (supports quoted or unquoted literals, field-to-field comparisons like `format.start < format.length`, and per-element array wildcards `[*]`).
+- **`set`** (or `then.set`): Field paths and values (supporting `${variables}`, `#(...)` shorthands, and `T(...)` expressions) to set or insert when the condition holds.
+- **`omit`** (or `then.omit`): Field paths to remove from the payload when the condition holds.
 
 Pass `--correlations` to apply these rules across **all** live HTTP commands (`cats`, `cats run`, `cats replay`, `cats template`, `cats random`):
 
@@ -229,7 +295,10 @@ Pass `--correlations` to apply these rules across **all** live HTTP commands (`c
 cats -c openapi.yml -s http://localhost:8080 --correlations correlations.yml
 ```
 
-During fuzzing, CATS automatically protects the field being actively mutated by a fuzzer so correlation rules never overwrite the fuzzer's negative test value (and you can also auto-synthesize `correlations.yml` from `4XX` findings using `cats triage --export-correlations correlations.yml`).
+### How `when:` Rules Interact with Built-In Fuzzers
+- **Conditionally required fields**: A guarded `when:` + `set:` rule marks the `set:` target field as **conditionally required** on payload variants where `when:` evaluates to `true`. `OnlyRequiredFields` retains the field on matching variants, and `RemoveFields`, `NullValuesInFields`, and `EmptyStringsInFields` expect `4XX` when removing or nulling it on matching variants (while still expecting `2XX` on variants where `when:` is `false`).
+- **Mutation protection**: During fuzzing, CATS automatically protects the field being actively mutated by a fuzzer so correlation rules never overwrite the fuzzer's negative test value.
+- **Auto-synthesis**: You can synthesize `correlations.yml` automatically from `4XX` findings using `cats triage -r cats-report -c openapi.yml --export-correlations correlations.yml`.
 
 ---
 

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/"
+                       xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+  <ShortName>CATS</ShortName>
+  <Description>Search CATS</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image width="16" height="16" type="image/x-icon">https://endava.github.io/cats/img/favicon.ico</Image>
+  <Url type="text/html" method="get" template="https://endava.github.io/cats/search?q={searchTerms}"/>
+  <Url type="application/opensearchdescription+xml" rel="self" template="https://endava.github.io/cats/opensearch.xml" />
+  <moz:SearchForm>https://endava.github.io/cats/</moz:SearchForm>
+</OpenSearchDescription>

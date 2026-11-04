@@ -1,6 +1,6 @@
 # HTTP Fuzzers
 
-CATS has currently 33 registered `HTTP` Fuzzers. The names below match
+CATS has currently 35 registered `HTTP` Fuzzers. The names below match
 `cats list --fuzzers`:
 
 - `BypassAuthentication` - remove authentication headers and check access control
@@ -15,7 +15,9 @@ CATS has currently 33 registered `HTTP` Fuzzers. The names below match
 - `EmptyJsonArrayBody` - send an empty JSON array body
 - `EmptyJsonBody` - send an empty JSON object body
 - `HappyPath` - send a request with all fields and headers populated
+- `HttpMethodOverrideTunneling` - sends POST requests with HTTP method-override headers targeting undocumented verbs to detect verb tunneling
 - `HttpMethods` - send undocumented HTTP methods
+- `IdempotencyKeyConflict` - replays the same Idempotency-Key header with a modified request payload to verify the server rejects conflicting replays with 4XX
 - `InsecureDirectObjectReferences` - detect heuristic IDOR signals by replacing ID fields and verifying alternative IDs in successful responses
 - `InsertRandomValuesInBody` - insert invalid data into a valid request body
 - `MalformedJson` - send malformed JSON

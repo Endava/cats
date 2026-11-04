@@ -16,13 +16,13 @@ List the current built-in mutators with:
 cats list --mutators
 ```
 
-The current set of 31 built-in mutators includes:
+The current set of 36 built-in mutators includes:
 
-- `BigListOfNaughtyStringsMutator`, `RandomStringMutator`, `RandomAlphanumericStringMutator`, and `RandomPayloadSizeMutator`
+- `BigListOfNaughtyStringsMutator`, `RandomStringMutator`, `RandomAlphanumericStringMutator`, `FormatPreservingValueMutator`, and `RandomPayloadSizeMutator`
 - `NullStringMutator`, `RandomNumberMutator`, `RandomLargeIntegersMutator`, `RandomLargeDecimalsMutator`, `RandomMinValuesMutator`, `RandomMaxValuesMutator`, and `RandomBoundaryNumbersMutator`
-- `RandomJsonMutator`, `RandomTypeConfusionMutator`, `RandomInjectionAndFormatCrashMutator`, `RandomControlCharsMutator`, `RandomWhitespaceCharsMutator`, `RandomZalgoTextMutator`, `RandomAbugidasMutator`, `RandomSingleCodepointEmojisMutator`, and `RandomMultiCodepointEmojisMutator`
+- `RandomJsonMutator`, `DuplicateJsonFieldKeyMutator`, `RandomContainerWrappingAndGadgetMutator`, `RandomTypeConfusionMutator`, `RandomInjectionAndFormatCrashMutator`, `RandomControlCharsMutator`, `RandomWhitespaceCharsMutator`, `RandomHomoglyphAndInvisibleCharsMutator`, `RandomZalgoTextMutator`, `RandomAbugidasMutator`, `RandomSingleCodepointEmojisMutator`, and `RandomMultiCodepointEmojisMutator`
 - `RandomControlCharsInFieldKeysMutator`, `RandomWhitespacesInFieldKeysMutator`, and `RandomLanguageIdentifiersMutator`
-- `RandomAcceptHeaderMutator`, `RandomContentTypeHeaderMutator`, and `RandomTransferEncodingHeaderMutator`
+- `RandomAcceptHeaderMutator`, `RandomContentTypeHeaderMutator`, `RandomTransferEncodingHeaderMutator`, and `RandomProtocolAndOverrideHeadersMutator`
 - `LowercaseExpandingBytesMutator`, `LowercaseExpandingLengthMutator`, `UppercaseExpandingBytesMutator`, `UppercaseExpandingLengthMutator`, and `RemoveFieldMutator`
 
 ## Custom Mutators

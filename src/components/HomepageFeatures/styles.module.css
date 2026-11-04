@@ -1,20 +1,179 @@
-.features {
-  display: flex;
-  align-items: center;
-  padding: 2rem 0;
+.wrapper {
   width: 100%;
 }
 
-.featureSvg {
-  height: 200px;
-  width: 200px;
+.section {
+  padding: 4.5rem 0;
+  border-bottom: 1px solid var(--cats-border);
 }
 
-[data-theme='light'] .featureSvg {
-  filter: saturate(0%) brightness(70%) contrast(1000%);
+.sectionAlt {
+  padding: 4.5rem 0 5.5rem;
 }
 
-[data-theme='dark'] .featureSvg {
-  filter: brightness(0) invert(1);
+.sectionHeader {
+  max-width: 640px;
+  margin: 0 auto 3rem;
+  text-align: center;
 }
 
+.eyebrow {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ifm-color-primary);
+  margin-bottom: 0.55rem;
+}
+
+.sectionTitle {
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  font-weight: 660;
+  letter-spacing: -0.03em;
+  line-height: 1.18;
+  color: var(--ifm-heading-color);
+  margin: 0 0 0.75rem;
+}
+
+.sectionSubtitle {
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--ifm-font-color-secondary);
+  margin: 0;
+}
+
+.workflowGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  max-width: 1040px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.workflowCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.6rem;
+  border-radius: 12px;
+  border: 1px solid var(--cats-border);
+  background-color: var(--cats-surface);
+  box-shadow: var(--cats-shadow-sm);
+}
+
+.workflowTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.stepNumber {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.18rem 0.52rem;
+  border-radius: 6px;
+  border: 1px solid var(--cats-border);
+  background-color: var(--cats-surface-subtle);
+  color: var(--ifm-color-primary);
+}
+
+.cardLink {
+  font-size: 0.84rem;
+  font-weight: 550;
+  color: var(--ifm-font-color-secondary);
+  text-decoration: none !important;
+  transition: color 0.15s ease;
+}
+
+.cardLink:hover {
+  color: var(--ifm-color-primary);
+}
+
+.cardTitle {
+  font-size: 1.15rem;
+  font-weight: 630;
+  letter-spacing: -0.02em;
+  color: var(--ifm-heading-color);
+  margin: 0 0 0.5rem;
+}
+
+.cardDescription {
+  font-size: 0.93rem;
+  line-height: 1.6;
+  color: var(--ifm-font-color-secondary);
+  margin: 0 0 1.15rem;
+  flex: 1;
+}
+
+.cardCode {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--cats-border);
+  background-color: var(--cats-surface-subtle) !important;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+
+.bentoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.15rem;
+  max-width: 1040px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.bentoCard {
+  display: block;
+  min-width: 0;
+  padding: 1.45rem;
+  border-radius: 10px;
+  border: 1px solid var(--cats-border);
+  background-color: var(--cats-surface);
+  text-decoration: none !important;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.bentoCard:hover {
+  border-color: var(--ifm-color-primary);
+  transform: translateY(-1px);
+}
+
+.bentoTitle {
+  font-size: 1.02rem;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  color: var(--ifm-heading-color);
+  margin: 0 0 0.45rem;
+}
+
+.bentoBody {
+  font-size: 0.89rem;
+  line-height: 1.58;
+  color: var(--ifm-font-color-secondary);
+  margin: 0;
+}
+
+@media screen and (max-width: 996px) {
+  .workflowGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .bentoGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .bentoGrid {
+    grid-template-columns: 1fr;
+  }
+}

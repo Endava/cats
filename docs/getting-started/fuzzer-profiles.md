@@ -31,13 +31,15 @@ The built-in profiles are:
 
 - `health-check` runs `HappyPath` to verify that endpoints are reachable.
 - `coverage` runs a fast positive and combinatorial field-removal blitz (`HappyPath`, `OnlyRequiredFields`, `DummyContentTypeHeaders`, `EmptyJsonBody`, `DefaultValuesInFields`, `ExamplesFields`, `AlternativeDateTimeFormatsFields`, `QueryObjectAsRequestBody`, `RemoveFields`, `NumericValuesInStringFields`) to maximize operation and code coverage.
-- `crash` runs high-impact boundary, type-coercion, injection, control-character, Unicode, and resource fuzzers targeting `5XX` server crashes.
+- `crash` runs high-impact boundary, OpenAPI constraint (`exclusiveMinimum`/`exclusiveMaximum`, `multipleOf`, `minItems`, `minProperties`, `oneOf`, `const`/`not`, simultaneous max boundaries), type-coercion, injection, mass-assignment (`readOnly`), HTTP parameter pollution, verb-override tunneling, control-character, Unicode, and resource fuzzers targeting `5XX` server crashes.
 - `type-coercion` runs type-coercion fuzzers (along with `HappyPath` and `OnlyRequiredFields`) targeting automatic type conversion issues in frameworks and libraries.
-- `security` focuses on OWASP-style injection, authentication, IDOR, sensitive data exposure, resource lifecycle, and security-header checks.
+- `security` focuses on OWASP-style injection (SQLi, NoSQLi, LDAP, XXE, SSTI, Command, Path Traversal, XSS, SSRF, ORM sort-column leak, HTTP Parameter Pollution), authentication, IDOR, mass assignment (including `readOnly` and `additionalProperties`), verb-override tunneling, idempotency conflicts, sensitive data exposure, resource lifecycle, and security-header checks.
 - `quick` is a fast smoke test covering critical positive and negative scenarios.
-- `compliance` focuses on OWASP API Security Top 10 and contract-related checks.
-- `ci` provides a balanced suite for CI/CD pipelines.
+- `compliance` focuses on OWASP API Security Top 10 (2023) and contract-related checks.
+- `ci` provides a balanced suite for CI/CD pipelines covering functional correctness, boundaries, OpenAPI constraints, business logic, and security essentials.
 - `full` runs all fuzzers and is the default.
+
+The active fuzzer profile is also displayed in the generated HTML summary report (`cats-report/index.html`).
 
 Use `--healthCheck` to run the minimal `health-check` profile before the full
 fuzzing run:

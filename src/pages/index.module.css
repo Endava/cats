@@ -1,23 +1,280 @@
-/**
- * CSS files with the .module.css suffix will be treated as CSS modules
- * and scoped locally.
- */
-
-.heroBanner {
-  padding: 4rem 0;
-  text-align: center;
+.hero {
   position: relative;
+  padding: 5.5rem 0 3.5rem;
   overflow: hidden;
+  border-bottom: 1px solid var(--cats-border);
 }
 
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
-  }
+.heroGlow {
+  position: absolute;
+  top: -180px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 960px;
+  height: 440px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(22, 163, 74, 0.11) 0%,
+    rgba(22, 163, 74, 0.03) 45%,
+    transparent 72%
+  );
+  pointer-events: none;
+  z-index: 0;
 }
 
-.buttons {
+[data-theme='dark'] .heroGlow {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(52, 211, 153, 0.14) 0%,
+    rgba(52, 211, 153, 0.04) 48%,
+    transparent 74%
+  );
+}
+
+.heroInner {
+  position: relative;
+  z-index: 1;
+  max-width: 880px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.28rem 0.78rem;
+  border-radius: 999px;
+  border: 1px solid var(--cats-border);
+  background: var(--cats-surface);
+  color: var(--ifm-font-color-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--cats-shadow-sm);
+}
+
+.badgeDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--ifm-color-primary);
+}
+
+.heroTitle {
+  font-size: clamp(2.35rem, 5vw, 3.85rem);
+  font-weight: 680;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  color: var(--ifm-heading-color);
+  margin: 0 auto 1.25rem;
+  max-width: 780px;
+}
+
+.heroTitleAccent {
+  background: linear-gradient(135deg, var(--ifm-color-primary) 0%, var(--ifm-color-primary-dark) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme='dark'] .heroTitleAccent {
+  background: linear-gradient(135deg, #6ee7b7 0%, #34d399 55%, #10b981 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.heroSubtitle {
+  font-size: clamp(1.05rem, 1.8vw, 1.22rem);
+  line-height: 1.62;
+  letter-spacing: -0.012em;
+  color: var(--ifm-font-color-secondary);
+  max-width: 650px;
+  margin: 0 auto 2.1rem;
+}
+
+.actions {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin-bottom: 3rem;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.68rem 1.35rem;
+  border-radius: 8px;
+  background-color: var(--ifm-heading-color);
+  color: var(--ifm-background-color) !important;
+  font-size: 0.94rem;
+  font-weight: 560;
+  letter-spacing: -0.01em;
+  text-decoration: none !important;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  box-shadow: var(--cats-shadow-sm);
+}
+
+.primaryButton:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.buttonArrow {
+  transition: transform 0.15s ease;
+}
+
+.primaryButton:hover .buttonArrow {
+  transform: translateX(2px);
+}
+
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.68rem 1.3rem;
+  border-radius: 8px;
+  border: 1px solid var(--cats-border-strong);
+  background-color: var(--cats-surface);
+  color: var(--ifm-font-color-base) !important;
+  font-size: 0.94rem;
+  font-weight: 520;
+  letter-spacing: -0.01em;
+  text-decoration: none !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.secondaryButton:hover {
+  background-color: var(--cats-surface-subtle);
+  border-color: var(--ifm-color-primary);
+}
+
+.terminalCard {
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid var(--cats-border-strong);
+  background-color: #0d0f14;
+  color: #e5e7eb;
+  box-shadow: var(--cats-shadow-md);
+  overflow: hidden;
+  margin-bottom: 2.75rem;
+}
+
+.terminalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.terminalDots {
+  display: flex;
+  gap: 6px;
+}
+
+.terminalDots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+.terminalTitle {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.76rem;
+  color: #8b92a2;
+}
+
+.terminalTag {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.72rem;
+  color: #6b7280;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.terminalBody {
+  margin: 0;
+  padding: 1.25rem 1.4rem;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.84rem;
+  line-height: 1.65;
+  color: #e5e7eb;
+  overflow-x: auto;
+}
+
+.cmdComment {
+  color: #6b7280;
+}
+
+.cmdPrompt {
+  color: #34d399;
+  user-select: none;
+  margin-right: 0.35rem;
+}
+
+.cmdString {
+  color: #a7f3d0;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--cats-border);
+  border-radius: 10px;
+  background-color: var(--cats-surface);
+  overflow: hidden;
+}
+
+.statCell {
+  padding: 1.15rem 1rem;
+  border-right: 1px solid var(--cats-border);
+}
+
+.statCell:last-child {
+  border-right: none;
+}
+
+.statValue {
+  font-size: 1.55rem;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  color: var(--ifm-heading-color);
+  line-height: 1.2;
+}
+
+.statLabel {
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--ifm-font-color-secondary);
+  letter-spacing: -0.01em;
+}
+
+@media screen and (max-width: 768px) {
+  .hero {
+    padding: 3.5rem 0 2.5rem;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .statCell:nth-child(2) {
+    border-right: none;
+  }
+
+  .statCell:nth-child(1),
+  .statCell:nth-child(2) {
+    border-bottom: 1px solid var(--cats-border);
+  }
 }

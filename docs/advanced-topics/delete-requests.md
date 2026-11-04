@@ -28,6 +28,7 @@ When doing a `DELETE` request, CATS will discover that `{petId}` and `pet_id` ar
 Starting with CATS 14.1.0 and 15.0.0, [Runtime Resource Reuse](./runtime-resource-reuse) (`--reuseSuccessfulResources`, enabled by default) generalizes this behavior:
 - CATS captures resource identifiers from `2XX` `POST`, `PUT`, `PATCH`, and `GET` responses (including `Location` headers and nested collections) in the `RuntimeResourcePool`.
 - During the initial seed wave, `HappyPath` `DELETE` requests are postponed until all paths have been fuzzed, and then executed in reverse path order (child paths before parent paths) so that created resources remain available to `GET`, `PUT`, `PATCH`, and child operations throughout the run.
+- Negative `DELETE` fuzzers execute with invalid/fuzzed identifiers during normal waves without consuming cached valid resource IDs, and when a `DELETE` consumes the last cached ID for a resource that has a recorded `POST` producer, CATS can automatically invoke the producer on demand to refill the pool.
 - Once a `DELETE` succeeds (`2XX`), its identifier is evicted from the pool and [`CheckDeletedResourcesNotAvailableFuzzer`](../fuzzers/http-fuzzers/check-deleted) verifies that a subsequent `GET` to the deleted URL returns `404` or `410`.
 
 If these conventions are followed (which also align to good REST naming practices), it is expected that `DELETE` and `POST` requests will be on-par for most of the resources.

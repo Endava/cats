@@ -1,21 +1,26 @@
 # Field Fuzzers
 
-CATS has currently 104 registered `Field` Fuzzers. The names below match the
+CATS has currently 117 registered `Field` Fuzzers. The names below match the
 current output of `cats list --fuzzers`.
 
 - `AbugidasInStringFields` - iterate through each field and send values containing abugidas chars
 - `AdditionalPropertiesMassAssignmentFields` - iterate through each object without additional properties field and replace it with object containing unexpected extra properties values
+- `AllFieldsAtMaxBoundary` - sets all boundary-constrained fields simultaneously to their maximum valid OpenAPI boundary in a single request
 - `BidirectionalOverrideFields` - iterate through each string field and replace it with bidirectional-override characters values
 - `CommandInjectionInStringFields` - iterate through each string field and send OS command injection payloads to detect command injection vulnerabilities
+- `ConstAndNotSchemaFields` - iterate through each field with const or not schema constraint and send value violating const or matching not schema values
+- `ControlCharsInStringFields` - iterate through each string field and send values containing NUL bytes and control characters
 - `DateRangeInversion` - send requests where the start date field (e.g., startDate, checkIn) is set after the end date field (e.g., endDate, checkOut) to test temporal validation
 - `DecimalFieldsLeftBoundary` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
 - `DecimalFieldsRightBoundary` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
 - `DecimalNumbersInIntegerFields` - iterate through each Integer field and send decimal values
 - `DefaultValuesInFields` - iterate through each field with default values defined and send a happy flow request
 - `DuplicateKeysFields` - duplicates each JSON key to detect first-wins/last-wins parsing ambiguities per RFC 8259
+- `EmojisInStringFields` - iterate through each field and send values containing 4-byte supplementary plane emojis
 - `EmptyStringsInFields` - iterate through each field and send requests with empty String values in the targeted field
 - `EnumCaseVariantFields` - iterate through each enum field and send case-variant values to test case sensitivity of enum handling
 - `ExamplesFields` - send a request for every unique example
+- `ExclusiveBoundaryNumbersInNumericFields` - iterate through each numeric with exclusiveMinimum/exclusiveMaximum field and send exact excluded boundary values
 - `ExtremeNegativeNumbersInDecimalFields` - iterate through each Number field and send requests with the lowest value possible in the targeted field
 - `ExtremeNegativeNumbersInIntegerFields` - iterate through each Integer field and send requests with the lowest value possible in the targeted field
 - `ExtremePositiveNumbersInDecimalFields` - iterate through each Number field and send requests with the highest value possible in the targeted field
@@ -23,6 +28,7 @@ current output of `cats list --fuzzers`.
 - `FullwidthBracketsFields` - insert fullwidth '<' and '>' to test for markup filter bypass
 - `HangulFillerFields` - inject Hangul filler characters to test for hidden-input handling
 - `HomoglyphEnumFields` - iterate through each enum value field and replace it with homoglyph-altered value values
+- `HttpParameterPollutionFields` - duplicates query parameters with conflicting values in the URL to detect HTTP Parameter Pollution
 - `InsertWhitespacesInFieldNamesField` - iterates through each request field name and insert random whitespaces
 - `IntegerFieldsLeftBoundary` - iterate through each Integer field and send requests with outside the range values on the left side in the targeted field
 - `IntegerFieldsRightBoundary` - iterate through each Integer field and send requests with outside the range values on the right side in the targeted field
@@ -43,14 +49,18 @@ current output of `cats list --fuzzers`.
 - `MinimumExactNumbersInNumericFields` - iterate through each number fields that have minimum declared and send requests with values matching the minimum size/value in the targeted field
 - `NewFields` - send a 'happy' flow request and add a new field inside the request called 'catsFuzzyField'
 - `NoSqlInjectionInStringFields` - iterate through each string field and send NoSQL injection payloads to detect NoSQL injection vulnerabilities
+- `NonMultipleOfNumbersInNumericFields` - iterate through each numeric with multipleOf constraint field and send non-multiple numeric values
 - `NullValuesInFields` - iterate through each field and send requests with null values in the targeted field
+- `OneOfMultipleBranchesMergedFields` - merges properties from two distinct oneOf schema branches into a single payload to verify exclusive oneOf validation
 - `OnlyControlCharsInFields` - iterate through each field and send values with control chars only
 - `OnlyWhitespacesInFields` - iterate through each field and send values with unicode separators only
 - `OnlySingleCodePointEmojisInFields` - iterate through each field and send values with single code point emojis only
 - `OnlyMultiCodePointEmojisInFields` - iterate through each field and send values with multi code point emojis only
 - `OverflowArraySizeFields` - iterate through each array field and replace it with overflow array values
 - `OverflowMapSizeFields` - iterate through each dictionary/hashmap field and replace it with overflow dictionary/hashmap values
+- `PathTraversalInStringFields` - iterate through each string field and send path traversal payloads to detect local file inclusion or filesystem path leaks
 - `RandomStringsInBooleanFields` - iterate through each Boolean field and send random strings
+- `ReadOnlyFieldsMassAssignment` - sends schema-declared readOnly fields in write requests to detect readOnly property mass assignment
 - `RemoveFields` - iterate through each request fields and remove certain fields according to the supplied 'fieldsFuzzingStrategy'
 - `ReplaceArraysWithPrimitivesFields` - iterate through each array field and replace it with primitive values
 - `ReplaceArraysWithSimpleObjectsFields` - iterate through each array field and replace it with simple object values
@@ -59,6 +69,7 @@ current output of `cats list --fuzzers`.
 - `ReplacePrimitivesWithArraysFields` - iterate through each primitive field and replace it with array values
 - `ReplacePrimitivesWithObjectsFields` - iterate through each primitive field and replace it with object values
 - `SSRFInUrlFields` - iterate through URL-type fields and send SSRF payloads to detect Server-Side Request Forgery vulnerabilities
+- `SortColumnOrmLeakFields` - iterates through sort/order-by fields and sends invalid or nested ORM property names to verify sort column validation
 - `SqlInjectionInStringFields` - iterate through each string field and send SQL injection payloads to detect SQL injection vulnerabilities
 - `StringFieldsLeftBoundary` - iterate through each String field and send requests with outside the range values on the left side in the targeted field
 - `StringFieldsRightBoundary` - iterate through each String field and send requests with outside the range values on the right side in the targeted field
@@ -71,6 +82,8 @@ current output of `cats list --fuzzers`.
 - `TrailingControlCharsInFields` - iterate through each field and send values trailed with Unicode control chars
 - `TrailingSingleCodePointEmojisInFields` - iterate through each field and send values trailed with single code point emojis
 - `TrailingMultiCodePointEmojisInFields` - iterate through each field and send values trailed with multi code point emojis
+- `UnderflowArraySizeFields` - iterate through each array with minItems constraint field and send underflow array values
+- `UnderflowMapSizeFields` - iterate through each object/map with minProperties constraint field and send underflow object/map values
 - `UppercaseExpandingBytesInStringFields` - iterate to string fields and send values that expand the byte representation when uppercased
 - `UppercaseExpandingLengthInStringFields` - iterate to string fields and send values that expand their length when uppercased
 - `UserDictionaryFields` - iterates through each request fields and sends values from the user supplied dictionary

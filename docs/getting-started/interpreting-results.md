@@ -47,7 +47,9 @@ Understanding the `Result Reason` values:
 - `Response content type not matching the contract` - reported as `warn` if the content type received in response does not match the one defined in the contract for the received http response code
 - `Error details leak` - reported as `error` if the response body contains sensitive information
 - `Not Implemented` - reported as `warn` if response code is `501`
-- `Mass Assignment vulnerability detected` - reported as `error` if the service allows mass assignment
+- `Mass Assignment vulnerability detected` - reported as `error` if the service allows mass assignment (including `ReadOnlyFieldsMassAssignmentFuzzer` when a `readOnly: true` field sent in a write request is accepted and reflected)
+- `Path traversal / file disclosure vulnerability detected` - reported as `error` by `PathTraversalInStringFieldsFuzzer` when a response discloses local file content (such as `/etc/passwd`, `win.ini`, or `/proc/self/environ`) or leaks unmasked filesystem exception paths
+- `HTTP method override accepted` - reported as `error` by `HttpMethodOverrideTunnelingFuzzer` when a `POST` carrying an HTTP method-override header (`X-HTTP-Method-Override`, `X-Method-Override`, `X-HTTP-Method`) executes an undocumented verb such as `DELETE`
 - `Server error with injection payload` - reported as `error` if the service returns a server error for an injection payload
 - `SSRF payload reflected in response` - reported as `error` if the service is vulnerable to SSRF attacks
 - `Cloud metadata service accessed` - reported as `error` if the service leaks cloud metadata
@@ -95,7 +97,7 @@ As the JUNIT format does not have the concept of `warning` the following mapping
 The JUNIT report is written as `junit.xml` in the `cats-report` folder. Individual tests, both as `.html` and `.json` will also be created.
 
 ## WFC_REPORT
-`WFC_REPORT` generates a standardized Web Fuzzing Commons `report.json` file in the report directory with WFC fault classification (`CatsWfcFaultCategory`), suitable for cross-fuzzer benchmarking and WFC-compatible tooling.
+`WFC_REPORT` generates a standardized Web Fuzzing Commons `report.json` file in the report directory, mapping CATS findings to official WFC `DefinedFaultCategory` constants and `CatsWfcFaultCategory` sub-categories, suitable for cross-fuzzer benchmarking and WFC-compatible tooling.
 
 :::tip
 If you want to have history for CATS runs you can use the `--timestampReports` argument. This will create sub-folders for each run within the `cats-reports` folder with the corresponding timestamp.
@@ -119,7 +121,8 @@ cats triage -r cats-report --verify -s http://localhost:8080
 
 ## Execution summary
 
-Recent reports also include the configured quality-gate status, stop-condition
-status, and execution summaries. A run can stop before all generated tests are
-executed because of `--stopAfterTests`, `--stopAfterErrors`, or
-`--stopAfterTimeInSec`; tests already executed remain included in the summary.
+Recent reports also include the active fuzzer profile (`--profile`), configured
+quality-gate status, stop-condition status, and execution summaries. A run can
+stop before all generated tests are executed because of `--stopAfterTests`,
+`--stopAfterErrors`, or `--stopAfterTimeInSec`; tests already executed remain
+included in the summary.

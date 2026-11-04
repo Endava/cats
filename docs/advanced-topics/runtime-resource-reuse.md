@@ -22,11 +22,16 @@ CATS reuses matching identifiers in path parameters, query parameters, request
 headers, and identifier-like request-body fields (for both JSON and
 `application/x-www-form-urlencoded` requests). It matches common names such as
 `id`, `uuid`, `guid`, `token`, `petId`, `pet_id`, qualified nested identifiers,
-and semantically similar resource names, and cross-binds hierarchical path
+and semantically similar resource names, validates candidate pool values against
+the target field's OpenAPI schema `pattern`, `minLength`/`maxLength`, and
+`format` constraints before injecting them, and cross-binds hierarchical path
 parameters between leaf and parent paths. It also records successful request
 baselines (`2XX`) so later mutations start from a proven valid request shape.
-A successful `DELETE` invalidates the matching resource identifier so that it is
-not reused later.
+A successful `DELETE` (or a transition to an inactive/terminal lifecycle status
+such as `CANCELLED`, `CLOSED`, `ARCHIVED`, or `DELETED`) invalidates the
+matching resource identifier so that it is not reused later, and CATS can
+automatically replay a recorded `POST` producer on demand when a downstream step
+needs a fresh identifier.
 
 Explicit user data always takes precedence. Values supplied through `--refData`,
 `--urlParams`, or `--queryParams` are not overwritten, and CATS preserves the

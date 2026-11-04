@@ -22,7 +22,7 @@ or `--name value`.
 - `--maxResponseBytes=BYTES` sets the maximum number of decompressed response-body bytes to capture per HTTP call (`0` disables the limit). Default: `10485760`.
 - `--maxRequestsPerMinute=NUMBER` limits request throughput. Default: `10000`.
 - `--userAgent=VALUE` sets the `User-Agent` header. Default: `cats/VERSION`.
-- `--configFile=FILE` loads command configuration from a file.
+- `--configFile=FILE` loads command configuration from a properties file. If `--configFile` is not supplied, CATS automatically discovers `.cats.properties` in the OpenAPI contract's directory or the current working directory.
 
 ## Authentication and request data
 
@@ -202,7 +202,7 @@ cats random --help
 - `cats replay TEST` supports `--errors`, `--warnings`, `--reportFolder=DIR`, `--output=DIR`, `--server=URL`, `--callTimeout=SECONDS`, `--maxResponseBytes=BYTES`, `--curl` (prints equivalent `curl` commands without sending HTTP calls), `--stateful` (replays upstream `2XX` producer tests first and substitutes fresh resource IDs), `--export-flow=FILE` (exports the selected tests and upstream producer chain as a runnable `steps:` flow YAML file), and `--verbose`.
 - `cats run FILE` supports `--correlations=FILE` (`--correlate=FILE`), `--headers=FILE`, `-H`, `--queryParams=FILE`, `--refData=FILE`, `--createRefData`, `--contentType=TYPE`, `--oneOfSelection`, `--anyOfSelection`, `--discriminatorCasing`, and `--seed`.
 - `cats template URL` supports `--data=JSON_OR_FILE`, `--targetFields=FIELD,...`, `--httpMethod=METHOD`, `--headers`, and `--random`.
-- `cats lint` supports `--skipLinters=NAME,...`, `--strict`, `--enumsNaming`, `--headersNaming`, `--jsonObjectsNaming`, `--jsonPropertiesNaming`, `--operationPrefixMapFile`, `--pathNaming`, `--pathVariablesNaming`, and `--queryParamsNaming`.
+- `cats lint` supports `--linters=NAME,...` (`--linter`), `--skipLinters=NAME,...` (`--skipLinter`, including path-scoped expressions like `/path=Linter1;Linter2` or `/api/me/*=PathPluralsLinter`), `-p, --paths=PATH,...` (supports wildcards), `--skipPaths=PATH,...`, `-t, --tags=TAG,...`, `--skipTags=TAG,...`, `--operationIds=ID,...`, `--skipOperationIds=ID,...`, `-X, --httpMethods=METHOD,...`, `--skipHttpMethods=METHOD,...`, `--skipDeprecatedOperations`, `--skipLintersForExtension=x-ext=val:Linter1,Linter2`, `--strict` (escalates linter warnings to errors), `--enumsNaming`, `--headersNaming`, `--jsonObjectsNaming`, `--jsonPropertiesNaming`, `--operationPrefixMapFile`, `--pathNaming`, `--pathVariablesNaming`, `--queryParamsNaming`, and quality-gate options (`--failOn`, `--qualityGate`, `--baseline`).
 - `cats stats` supports `--detailed` and `--skip=SECTION,...`.
 - `cats validate` supports `--detailed`.
 - `cats generate` supports `--path=PATH`, `--httpMethod=METHOD`, `--limit=NUMBER`, `--selfReferenceDepth=NUMBER`, `--pretty`, and `--[no-]useExamples`.

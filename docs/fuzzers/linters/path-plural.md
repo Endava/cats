@@ -6,9 +6,9 @@ hide_table_of_contents: true
 
 | Item                                                                | Description                                                                                      |
 |:--------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------|
-| **Full Fuzzer Name**                                                | PathPluralsLinterFuzzer                                                                          |
+| **Full Fuzzer Name**                                                | PathPluralsLinter                                                                                |
 | **Log Key**                                                         | **PPL**                                                                                          |
-| **Description**                                                     | This linter will check if path uses plural nouns. For example, favor `/users` instead of `/user` |
+| **Description**                                                     | Classifies path segments by REST role and verifies that collection resource segments use plural nouns (for example `/users` instead of `/user`), while recognizing namespaces, singular singleton sub-resources (such as `/profile`, `/settings`, `/health`), and terminal custom operations. |
 | **Enabled by default?**                                             | No. You need to use the `cats lint ...` sub-command.                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | **Target contract elements** | OpenAPI contract metadata and structures relevant to this rule. |
 | **Expected result** | `success` when no violation is found; `error` when the rule is violated. |
