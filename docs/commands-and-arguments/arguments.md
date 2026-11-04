@@ -98,8 +98,9 @@ for Web Fuzzing Commons configuration.
 - `--[no-]reuseSuccessfulResources` controls whether successful request baselines and correlated resource values from `2XX` responses are reused in later requests. Default: `true` starting with CATS 14.1.0. See [Runtime resource reuse](../advanced-topics/runtime-resource-reuse).
 - `--preseedCollectionGets` runs selected unparameterized collection `GET` operations without required parameters before normal path fuzzing to capture existing resource identifiers. Default: `false`.
 - `--maxPreseedCollectionGets=NUMBER` limits the number of collection `GET` requests sent by `--preseedCollectionGets` (`0` sends none). Default: `20`.
-- `--strictTypes` expects `2XX` for type-coercion scenarios; `--no-strictTypes` permits the normal `4XX` expectation. Default: enabled.
+- `--strictTypes` expects `4XX` for type-coercion scenarios; `--no-strictTypes` permits both `4XX` and `2XX` responses. Default: enabled.
 - `--allowInvalidEnumValues` expects `2XX` when invalid enum values are sent. Default: `false`.
+- `--[no-]allowDifferentCaseEnumValues` controls whether `EnumCaseVariantFieldsFuzzer` expects `2XX` (`true`) or `4XX` (`false`) when sending case-variant enum values. Default: `true`.
 - `--edgeSpacesStrategy=VALIDATE_AND_TRIM|TRIM_AND_VALIDATE` controls expectations for leading or trailing spaces.
 - `--sanitizationStrategy=SANITIZE_AND_VALIDATE|VALIDATE_AND_SANITIZE` controls expectations for Unicode control characters and other symbols.
 - `--http2PriorKnowledge` forces HTTP/2 without falling back to HTTP/1.x.
@@ -118,6 +119,7 @@ for Web Fuzzing Commons configuration.
 - `--ignoreResponseCodes=CODE,...`, `--ignoreResponseSize=SIZE,...`, `--ignoreResponseWords=COUNT,...`, and `--ignoreResponseLines=COUNT,...` treat matching responses as success.
 - `--ignoreResponseRegex=REGEX` treats matching response bodies as success.
 - `--ignoreResponseContentTypeCheck`, `--ignoreResponseBodyCheck`, `--ignoreErrorLeaksCheck`, and `--ignoreResponseCodeUndocumentedCheck` disable the corresponding checks.
+- `--checkFieldInResponse` requires `4XX` error responses to also contain the name of the fuzzed field when response schema validation is active. Default: `false`.
 - `--filterResponseCodes=CODE,...`, `--filterResponseSize=SIZE,...`, `--filterResponseWords=COUNT,...`, `--filterResponseLines=COUNT,...`, and `--filterResponseRegex=REGEX` omit matching results from the report.
 - `--skipReportingForIgnoredCodes` omits results matching ignored response conditions. `--skipReportingForSuccess` and `--skipReportingForWarning` omit successful or warning results. Their short aliases are `--sri`, `--srs`, and `--srw`.
 - Short aliases are available for common response options: `-i`/`--ic` for ignored codes, `-k`/`--sri` for skipped ignored results, `-b` for blackbox, `--fc`, `--fl`, `--fr`, `--fs`, and `--fw` for filters, and `--ib`, `--ie`, `--il`, `--ir`, `--is`, `--it`, `--iu`, and `--iw` for ignore checks. Match options also have `--mc`, `--mi`, `--ml`, `--mr`, `--ms`, and `--mw` aliases.
@@ -180,6 +182,7 @@ cats --help
 cats analyze --help
 cats init --help
 cats smoke --help
+cats triage --help
 cats compare --help
 cats list --help
 cats replay --help
@@ -191,11 +194,12 @@ cats random --help
 ## Command-specific options
 
 - `cats analyze` (alias `blueprint`) requires `-c, --contract=FILE` and supports `--mermaid` and `-j, --json`.
-- `cats init` requires `-c, --contract=FILE` and supports `-o, --output=DIR`, `--force`, and `-j, --json`.
+- `cats init` supports `-c, --contract=FILE` (to scaffold `headers.yml`, `refData.yml`, and `functionalTests.yml`), `--skills [devin,codex,claude,opencode,cursor,all]` (to install the bundled CATS AI coding agent skills), `--global` (install skills into home config directories), `-o, --output=DIR`, `--force`, and `-j, --json`.
 - `cats smoke` (alias `probe`) supports the standard contract, server, authentication, files, filter, and reporting options plus `--includeDelete` and `-j, --json`.
+- `cats triage` (aliases `diagnose`, `doctor`) supports `-r, --report=DIR` (default: `cats-report`), `-c, --contract=FILE`, `-s, --server=URL`, `-H, --header=NAME=VALUE`, `--verify` (replays 1 representative request per root-cause cluster against the server and reports `FIXED` vs `STILL_FAILING`), `--include-warnings`, `--export-refdata=FILE`, `--export-correlations=FILE`, `--export-contract-patch=FILE`, `--export-reproducers=FILE`, and `-j, --json`.
 - `cats compare` (alias `diff`) requires `-b, --baseline=FILE_OR_DIR` and `-t, --target=FILE_OR_DIR`, and supports `--failOnNewErrors` (default: `true`), `--failOnNewWarnings`, and `-j, --json`.
 - `cats list` supports `--fuzzers`, `--linters`, `--profiles`, `--formats`, `--mutators`, `--customMutatorTypes`, `--fieldsFuzzerStrategies`, and `--paths` (with `--executionOrder` or `--dependencyOrder` to show producer-to-consumer execution order). Use `--json` for machine-readable output.
-- `cats replay TEST` supports `--errors`, `--warnings`, `--reportFolder=DIR`, `--output=DIR`, `--server=URL`, `--callTimeout=SECONDS`, `--maxResponseBytes=BYTES`, `--curl` (prints equivalent `curl` commands without sending HTTP calls), and `--verbose`.
+- `cats replay TEST` supports `--errors`, `--warnings`, `--reportFolder=DIR`, `--output=DIR`, `--server=URL`, `--callTimeout=SECONDS`, `--maxResponseBytes=BYTES`, `--curl` (prints equivalent `curl` commands without sending HTTP calls), `--stateful` (replays upstream `2XX` producer tests first and substitutes fresh resource IDs), `--export-flow=FILE` (exports the selected tests and upstream producer chain as a runnable `steps:` flow YAML file), and `--verbose`.
 - `cats run FILE` supports `--correlations=FILE` (`--correlate=FILE`), `--headers=FILE`, `-H`, `--queryParams=FILE`, `--refData=FILE`, `--createRefData`, `--contentType=TYPE`, `--oneOfSelection`, `--anyOfSelection`, `--discriminatorCasing`, and `--seed`.
 - `cats template URL` supports `--data=JSON_OR_FILE`, `--targetFields=FIELD,...`, `--httpMethod=METHOD`, `--headers`, and `--random`.
 - `cats lint` supports `--skipLinters=NAME,...`, `--strict`, `--enumsNaming`, `--headersNaming`, `--jsonObjectsNaming`, `--jsonPropertiesNaming`, `--operationPrefixMapFile`, `--pathNaming`, `--pathVariablesNaming`, and `--queryParamsNaming`.

@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-description: Fuzz with custom dictionaries and discrete configuration
+description: Fuzz specific fields, field types, headers, or bodies with custom payloads using steps and fuzz blocks
 ---
 
 # Security Fuzzer
@@ -8,150 +8,140 @@ description: Fuzz with custom dictionaries and discrete configuration
 | Item | Description |
 |:--|:--|
 | **Full Fuzzer Name** | `SecurityFuzzer` |
-| **Log Key** | N/A; test identifiers and scenarios from the input file identify executions. |
-| **Description** | Runs custom security payloads from a dictionary against explicitly selected request targets. |
-| **Enabled by default?** | No. Enable it with `cats run <security-fuzzer-file>`. |
-| **Target fields** | `targetFields`, `targetFieldTypes`, HTTP headers, or the entire request body as configured in the YAML file. |
-| **Expected result** | The `expectedResponseCode` supplied for each test case; security tests commonly expect `4XX` or a context-specific `2XX`. |
-| **Fuzzing logic** | Creates one test for each selected target and dictionary value while preserving generated values for fields that are not tested. |
-| **Conditions when this fuzzer will be skipped** | When no security fuzzer file is supplied, a path has no matching configuration, or no target is selected. |
-| **HTTP methods that will be skipped** | Methods excluded by the test file or unavailable on the selected OpenAPI path. |
-| **Reporting** | Reports results against each test's configured response-code expectation and optional `verify` assertions. |
+| **Log Key** | N/A; step names and descriptions from the flow file identify executions. |
+| **Description** | Injects custom security payloads (inline lists or external dictionary files) into explicitly targeted fields, field types, HTTP headers, or request bodies using the sequential `steps:` + `fuzz:` syntax. |
+| **Enabled by default?** | No. Enable it with `cats run -c <contract> -s <server> <security-flow.yml>`. |
+| **Target fields** | `fuzz.fields`, `fuzz.fieldTypes` (`string`, `email`, `http_headers`/`headers`, `http_body`/`body`), either one field at a time (`mode: single`) or simultaneously across all matching fields (`mode: cross`). |
+| **Expected result** | The `status` and `expect` assertions configured on each step (typically `4XX` or a sanitized `2XX`, with `bodyNotContains` checks against error/reflection leaks). |
+| **Fuzzing logic** | For each step with a `fuzz:` block, injects the configured `payloads` / `payloadsFile` into the selected targets while preserving schema-valid generated values (and any `body`/`correlate` overrides) for other fields, and can chain with follow-up steps in the same flow. |
+| **Conditions when this fuzzer will be skipped** | When no security flow file is supplied, a path has no matching step, or required `fuzz` / `status` entries are missing. |
+| **HTTP methods that will be skipped** | Methods not targeted by the step or unavailable on the selected OpenAPI path. |
+| **Reporting** | Reports results against each step's configured `status` and `expect` assertions. |
 
-You can use CATS with your own dictionary by fuzzing specific fields with different sets of [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings).
-The behaviour is similar to the `FunctionalFuzzer` using `cats run <file-name>` sub-command. 
-You can use the exact same elements for output variables, test correlation, verify responses and so forth, with the addition that you must also specify a `targetFields` and/or `targetFieldTypes` and a `stringsList` element.
-A typical `SecurityFuzzer` file will look like this:
+You can use CATS with your own inline payloads or custom wordlists of [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings) via `cats run`:
+
+```shell
+cats run -c openapi.yml -s http://localhost:8080 securityFuzzer.yml
+```
+
+---
+
+## Sequential `steps:` + `fuzz:` Syntax
+
+`SecurityFuzzer` uses the same sequential `steps:` flow structure as [`FunctionalFlowFuzzer`](./functional-fuzzer), adding a `fuzz:` block to any step that injects custom security payloads:
+
+```yaml
+steps:
+  - name: "petXssDictionaryCheck"
+    description: "Inject XSS payloads from xss.txt into id and name fields on POST /pet"
+    POST: "/pet"
+    body:
+      category: "dogs"
+    fuzz:
+      fields:
+        - id
+        - name
+      payloadsFile: "files/xss.txt"
+      mode: single
+    expect:
+      status: [200, 400, 422]
+      bodyNotContains:
+        - "<script>"
+        - "SQLException"
+
+  - name: "petCrossFieldInjectionCheck"
+    description: "Inject SQLi and script payloads simultaneously across string and email fields"
+    POST: "/pet"
+    fuzz:
+      fieldTypes:
+        - string
+        - email
+      payloads:
+        - "' OR '1'='1"
+        - "<img src=x onerror=alert(1)>"
+      mode: cross
+    expect:
+      status: [400, 422]
+      bodyNotContains:
+        - "Exception"
+```
+
+### `fuzz:` Block Reference
+
+- **`fields`**: List of specific field paths (using dot-notation `pet.description` or `#`-notation `pet#description`) to fuzz.
+- **`fieldTypes`**: List of OpenAPI data types or formats (`string`, `integer`, `number`, `email`, `uuid`, `date-time`, etc.), or special request targets:
+  - `http_headers` (or `headers`): Fuzzes all HTTP request headers.
+  - `http_body` (or `body`): Replaces the entire HTTP request body with each payload.
+- **`payloads`**: Inline YAML list of payload strings to inject.
+- **`payloadsFile`**: Path (or list of paths) to external wordlist files (one payload per line, ignoring blank lines and `#` comments). Can be combined with inline `payloads`.
+- **`mode`**:
+  - `single` (default): Sends one request per target field and per payload, keeping all other fields valid.
+  - `cross` (aliases `all`, `simultaneous`, `combined`, `multi`): Injects each payload into **all** matching target fields simultaneously in a single request.
+
+### Targeting All Paths, All HTTP Methods, and Multi-Step Second-Order Checks
+
+- **All paths / all methods**: Use `ALL: "/pet"` to target all HTTP methods on `/pet`, `POST: "all"` to target `POST` across all paths, or `ALL: "all"` to target every method on every path. You can also pass a list of paths under `paths: ["/pet", "/users"]` with `method: POST` (or `method: ALL`).
+- **Multi-step second-order checks**: Because `SecurityFuzzer` shares the `steps:` engine with `FunctionalFlowFuzzer`, you can combine a `POST` step containing `fuzz:` and `save:` with a follow-up `GET` step in the same file to detect stored XSS or second-order SQL injection.
+
+---
+
+## Migrating from the Legacy `SecurityFuzzer` Syntax (Deprecated)
+
+:::warning Deprecation Notice
+The legacy path-grouped `SecurityFuzzer` YAML syntax (top-level `/path:` or `all:` keys with `targetFields`, `targetFieldTypes`, `stringsFile`, `expectedResponseCode`, and `httpMethod`) is **deprecated** and **will be removed in CATS `16.x.x`**. Please migrate existing security fuzzer files to the `steps:` + `fuzz:` format.
+:::
+
+### Old path-grouped format (deprecated — to be removed in `16.x.x`)
 
 ```yaml
 /pet:
-    test_1:
-      description: Run XSS scenarios
-      name: "My Pet"
-      expectedResponseCode: 200
-      httpMethod: all
-      targetFields:
-        - pet#id
-        - pet#description
-      stringsFile: xss.txt
+  test_1:
+    description: Run XSS scenarios on specific fields
+    name: "My Pet"
+    expectedResponseCode: 200
+    httpMethod: POST
+    targetFields:
+      - pet#id
+      - pet#description
+    stringsFile: xss.txt
+
+all:
+  test_2:
+    description: Run XSS scenarios on all string fields and headers
+    expectedResponseCode: 400
+    httpMethod: all
+    targetFieldTypes:
+      - string
+      - http_headers
+    stringsFile: xss.txt
 ```
 
-And a typical run:
-
-```shell
-cats run securityFuzzerFile.yml -c contract.yml -s http://localhost:8080
-```
-
-You can also supply `output`, `httpMethod`, `oneOfSelection` and/or `verify` (with the same behaviour as within the `FunctionalFuzzer`) if they are relevant to your case.
-
-The file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you must separate elements through `#` as in the example instead of `.`.
-
-This is what the `SecurityFuzzer` will do after parsing the above `SecurityFuzzer` file:
-- it will add the fixed value "My Pet" to all the request for the field `name` (act as a reference data)
-- for each field specified in the `targetFields` i.e. `pet#id` and `pet#description` it will create a test for each line from the `xss.txt` file
-- if you consider the `xss.txt` sample file included in the `CATS` repo, this means that it will send 21 requests targeting `pet#id` and 21 requests targeting `pet#description` i.e. a total of **42 tests**
-- for each of these 42 tests, the `SecurityFuzzer` will expect a `200` response code (i.e. will report the match as a `success`). If another response code is returned, then `CATS` will report the test as `error`.
-
-:::info
-It was a deliberate choice to not include all fields by default.
-:::
-
-If you want the above logic to apply to all paths, you can use `all` as the path name:
+### Equivalent new `steps:` + `fuzz:` format
 
 ```yaml
-all:
-    test_1:
-      description: Run XSS scenarios
+steps:
+  - name: "xssSpecificFields"
+    description: "Run XSS scenarios on specific fields"
+    POST: "/pet"
+    body:
       name: "My Pet"
-      expectedResponseCode: 200
-      httpMethod: all
-      targetFields:
-        - pet#id
-        - pet#description
-      stringsFile: xss.txt
-```
+    fuzz:
+      fields:
+        - pet.id
+        - pet.description
+      payloadsFile: xss.txt
+      mode: single
+    expect:
+      status: 200
 
-When using this fuzzer you must explicitly specify what is the target of fuzzing. You have multiple options.
-
-## Targeting specific fields
-You can target specific fields using the `targetFields` element:
-
-```yaml
-all:
-    test_1:
-      description: Run XSS scenarios on specific fields
-      name: "My Pet"
-      expectedResponseCode: 200
-      httpMethod: all
-      targetFields:
-        - pet#id
-        - pet#description
-      stringsFile: xss.txt
-```
-
-This will iterate through all fields mentioned in the `targetFields` elements and replace their value with each line from the `xss.txt` file. 
-
-## Targeting specific field types
-You can target specific fields using the `targetFieldTypes` element and specifying the [OpenAPI type](https://swagger.io/docs/specification/data-models/data-types/) you are willing to fuzz.
-
-```yaml
-all:
-    test_1:
-      description: Run XSS scenarios on string fields
-      name: "My Pet"
-      expectedResponseCode: 200
-      httpMethod: all
-      targetFieldTypes:
+  - name: "xssAllStringFieldsAndHeaders"
+    description: "Run XSS scenarios on all string fields and headers"
+    ALL: "all"
+    fuzz:
+      fieldTypes:
         - string
-      stringsFile: xss.txt
-```
-
-This will iterate through all the `string` fields and replace their values with each line from the `xss.txt` file.
-
-## Targeting http headers
-You can target HTTP headers using the `targetFieldTypes` element and specifying the `http_headers` keyword.
-
-```yaml
-all:
-    test_1:
-      description: Run XSS scenarios on http headers
-      name: "My Pet"
-      expectedResponseCode: 200
-      httpMethod: all
-      targetFieldTypes:
         - http_headers
-      stringsFile: xss.txt
+      payloadsFile: xss.txt
+    expect:
+      status: 400
 ```
-
-This will iterate through all http headers and replace their values with each line from the `xss.txt` file.
-
-## Targeting the entire http request body
-You can target the entire http request body (i.e. replace it entirely with another payload) using the `targetFieldTypes` element and specifying the `http_body` keyword:
-
-```yaml
-all:
-    test_1:
-      description: Run XSS scenarios on http body
-      name: "My Pet"
-      expectedResponseCode: 200
-      httpMethod: all
-      targetFieldTypes:
-        - http_body
-      stringsFile: xss.txt
-```
-
-This will cycle the entire http request body and replace it with each line from the `xss.txt` file.
-
-:::tip
-You can split the [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings) into multiple files.
-You can have a `sql_injection.txt`, a `xss.txt`, a `command_injection.txt` and so on. For each of these files, you can create a test entry in the `SecurityFuzzer` file where you target the fields that are relevant.
-The `expectedResponseCode` should be tweaked according to your particular context.
-Your service might sanitize data before validation, so might be perfectly valid to expect a `200` or might validate the fields directly, so might be perfectly valid to expect a `400`.
-A `500` will usually mean something was not handled properly and might signal a possible bug.
-:::
-
-## Working with additionalProperties in SecurityFuzzer
-You can also set `additionalProperties` fields through the `functionalFuzzerFile` using the same syntax as for [Setting additionalProperties in Reference Data](/docs/getting-started/reference-data-file#setting-additionalproperties).
-
-## SecurityFuzzer Reserved keywords
-The following keywords are reserved in `SecurityFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `verify`, `oneOfSelection`, `targetFields`, `targetFieldTypes`, `stringsFile`, `checkBoolean`, `additionalProperties`, `topElement` and `mapValues`.

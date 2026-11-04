@@ -4,41 +4,52 @@ description: How CATS can help to automatically create reference data
 ---
 
 # Creating Ref Data Files Dynamically
-You can leverage the fact that the `FunctionalFuzzer` can run functional flows in order to create dynamic `--refData` files which won't need manual setting the reference data values.
-The `--refData` file must be created with variables `${variable}` instead of fixed values and those variables must be output variables in the `functionalFuzzer.yml` file.
-In order for the `FunctionalFuzzer` to properly replace the variables names with their values you must supply the `--refData` file as an argument when the `FunctionalFuzzer` runs.
+
+You can use a [`FunctionalFlowFuzzer`](../fuzzers/special-fuzzers/functional-fuzzer) (`steps:`) workflow—or `cats triage --export-refdata`—to generate `--refData` files dynamically instead of hardcoding resource identifiers.
+
+## Option 1: Populate a `--refData` template from a functional flow
+
+Create a `refData.yml` template containing `${variable}` placeholders that match variables captured in a `steps:` flow's `save:` block, and pass `--refData=refData.yml` when running `cats run`:
 
 ```bash
-cats run functionalFuzzer.yml -c contract.yml -s http://localhost:8080 --refData=refData.yml
+cats run functionalFlow.yml -c contract.yml -s http://localhost:8080 --refData=refData.yml
 ```
 
-The `functionalFuzzer.yml` file:
+The `functionalFlow.yml` file:
 
 ```yaml
-/pet:
-  test_1:
-    description: Create a Pet
-    httpMethod: POST
-    name: "My Pet"
-    expectedResponseCode: 200
-    output:
-      petId: pet#id
+steps:
+  - name: "createPet"
+    description: "Create a Pet and capture its ID"
+    POST: "/pet"
+    body:
+      name: "My Pet"
+    save:
+      - petId: "pet.id"
+    expect:
+      status: [200, 201]
 ```
 
-The `refData.yml` file:
+The `refData.yml` template:
 
 ```yaml
 /pet-type:
   id: ${petId}
 ```
 
-After CATS runs using the above command, you will get a `refData_replace.yml` file where the `id` will get the value returned into the `petId` variable.
-
-The `refData_replaced.yml`:
+After `cats run` finishes, CATS writes `refData_replaced.yml` with the resolved runtime value:
 
 ```yaml
 /pet-type:
   id: 123
 ```
 
-You can now use the `refData_replaced.yml` as a `--refData` file for running CATS with the rest of the Fuzzers.
+You can also pass `--createRefData` without an input `refData.yml` template (`cats run functionalFlow.yml -c contract.yml -s http://localhost:8080 --createRefData`), and CATS will record every path and field where a saved variable was consumed into `refData_custom.yml`.
+
+## Option 2: Mine `--refData` from an existing report with `cats triage`
+
+If you have already run CATS and want to extract working path parameters and resource IDs observed in `2XX` responses across the report:
+
+```bash
+cats triage -r cats-report --export-refdata refData.yml
+```

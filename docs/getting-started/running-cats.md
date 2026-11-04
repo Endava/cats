@@ -7,7 +7,7 @@ description: How a typical CATS run looks like
 
 ## Pre-flight checks: `analyze`, `init`, and `smoke`
 
-Before running the full fuzzing suite against an API for the first time, you can inspect the contract offline, scaffold starter configuration files, and run a 1-request-per-endpoint live probe:
+Before running the full fuzzing suite against an API for the first time, you can inspect the contract offline, scaffold starter configuration files (or install CATS AI agent skills), and run a 1-request-per-endpoint live probe:
 
 ```bash
 # 1. Inspect the contract's 0-100 Fuzzability Readiness Score, producer-consumer chains, and orphan path params (offline)
@@ -16,8 +16,25 @@ cats analyze -c openapi.yaml
 # 2. (Optional) Scaffold starter headers.yml, refData.yml, and functionalTests.yml
 cats init -c openapi.yaml
 
-# 3. Probe one HappyPath request per operation (excluding DELETE by default) to verify --server and authentication
+# 3. (Optional) Install bundled CATS AI coding agent skills for Devin, Codex, Claude Code, OpenCode, and Cursor
+cats init --skills
+cats init --skills devin,claude,cursor --global
+
+# 4. Probe one HappyPath request per operation (excluding DELETE by default) to verify --server and authentication
 cats smoke -c openapi.yaml -s http://localhost:8080 -H "Authorization=Bearer $$API_TOKEN"
+```
+
+After a fuzzing run finishes, use `cats triage` to cluster failures by root cause, auto-mine `--refData` from `2XX` responses, synthesize `--correlations` rules, and verify fixes live against the server (`--verify`):
+
+```bash
+cats triage -r cats-report -c openapi.yaml \
+  --export-refdata refData.yml \
+  --export-correlations correlations.yml \
+  --export-contract-patch contract-patch.yml \
+  --export-reproducers reproducers.sh
+
+# Verify fixes by replaying 1 representative request per root-cause cluster
+cats triage -r cats-report --verify -s http://localhost:8080
 ```
 
 ## Blackbox Mode

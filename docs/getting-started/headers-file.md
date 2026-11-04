@@ -12,13 +12,15 @@ Sample headers file:
 ```yaml
 all:
     Accept: application/json
-/path/0.1/auth:
+"/path/0.1/*":
+    X-Tenant: acme
+"POST /path/0.1/auth":
     jwt: XXXXXXXXXXXXX
 /path/0.2/cancel:
     jwt: YYYYYYYYYYYYY
 ```
 
-This will add the `Accept` header to all calls and the `jwt` header to the specified paths. 
+This will add the `Accept` header to all calls, `X-Tenant` to all paths starting with `/path/0.1/`, and the `jwt` header to the specified method/paths. Exact `"METHOD /path"` entries take precedence over exact `"/path"`, which take precedence over `"METHOD /prefix*"`, `"/prefix*"`, and `all`. 
 
 :::tip
 Alternatively, you can supply headers using the `-H name=value` argument. Those headers will apply to **all** paths.

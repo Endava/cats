@@ -36,6 +36,20 @@ cats replay Test1 --curl
 cats replay --errors --curl
 ```
 
+## Stateful replay and exporting functional flows
+
+When a test case depends on resource IDs created earlier in the run (via runtime resource correlation), replaying that single test later may fail with `404` if the resource no longer exists.
+
+- Pass `--stateful` to automatically replay the upstream `2XX` producer test(s) from the report folder first, extract fresh resource IDs from the live responses, and substitute them into the replayed request:
+  ```bash
+  cats replay Test42 --stateful
+  ```
+- Pass `--export-flow=FILE` to export the selected test(s) and their upstream producer chain as a standalone, runnable `steps:` functional flow YAML file without executing HTTP calls:
+  ```bash
+  cats replay Test42 --export-flow reproducer-flow.yml
+  cats run reproducer-flow.yml -c openapi.yml -s http://localhost:8080
+  ```
+
 ## Reporting and service overrides
 
 You can enable reporting by supplying an `--output` argument with the location folder that will be used to write the report files. Please note that CATS won't produce a full report, but rather

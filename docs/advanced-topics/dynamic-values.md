@@ -4,77 +4,58 @@ description: How to supply dynamic values in CATS configuration
 ---
 
 # Dynamic Values
-The following configuration files: `SecurityFuzzer` file, `FunctionalFuzzer` file and `--refData` support setting dynamic values.
-For now **the support only exists** for `java.time.*` and `org.apache.commons.lang3.*`, but more types will be added in the future.
 
-Let's suppose you have a date/date-time field, and you want to set it to 10 days from now. You can do this using `T(java.time.OffsetDateTime).now().plusDays(10)`.
-This will return an ISO compliant time in UTC format.
+You can supply dynamic values in [`FunctionalFlowFuzzer`](../fuzzers/special-fuzzers/functional-fuzzer) files, [`SecurityFuzzer`](../fuzzers/special-fuzzers/security-fuzzer) files, `--correlations` files, `--refData` files, and `--headers` files using either **shorthand generators (`#(...)`)** or **SpEL-style expressions (`T(...)`)**.
 
-This is `FunctionalFuzzer` file using the above dynamic value:
-```yaml
-/path:
-    testNumber:
-        description: Short description of the test
-        prop: value
-        prop#subprop: "T(java.time.OffsetDateTime).now().plusDays(10)"
-        prop7:
-          - value1
-          - value2
-          - value3
-        oneOfSelection:
-          element#type: "Value"
-        expectedResponseCode: HTTP_CODE
-        httpMethod: HTTP_NETHOD
-```
+## Shorthand generators (`#(...)`)
 
-You can check the responses using a similar syntax and also take into consideration the response. 
-This will check if the `expiry` field returned within the json response, parsed as date, is after the current date ` T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry))`: 
+Shorthand functions use the `#(...)` syntax and can be used standalone or embedded inside larger strings:
 
 ```yaml
-/path:
-    testNumber:
-        description: Short description of the test
-        prop: value
-        prop#subprop: "T(java.time.OffsetDateTime).now().plusDays(10)"
-        prop7:
-          - value1
-          - value2
-          - value3
-        oneOfSelection:
-          element#type: "Value"
-        expectedResponseCode: HTTP_CODE
-        httpMethod: HTTP_NETHOD
-        verify:
-          checkBoolean: T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry))
-```
-
-:::info
-Notice the keyword `checkBoolean` which will test if the expression is `true`. This is very useful when doing assertions on response data when running functional tests.
-:::
-
-The syntax of dynamically setting dates is similar with [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.0.x/reference/expressions.html) specs. It's not a full implementation though, so it supports only basic operations.
-
-Dynamic expressions can also refer variables or request/response fields internally. In the example above, `expiry` is a field returned in the response.
-If you want to refer a variable created in a previous test, let's call it `petName`, you can do so as: `T(org.apache.commons.lang3.StringUtils).substringAfterLast(${petName},'a')`.
-You can also refer request elements using `${request#field}`.
-
-## Shorthand generators
-
-Functional and security fuzzer files also support shorthand expressions using
-the `#(...)` syntax:
-
-```yaml
-name: "#(alphanumeric(12))"
+name: "Pet-#(alphanumeric(8))"
+code: "#(alphanumeric)"
 email: "#(email)"
 identifier: "#(uuid)"
+sortableId: "#(ulid)"
+country: "#(countryCode)"
 createdOn: "#(today)"
 futureDate: "#(todayPlus(30))"
+expiresAt: "#(nowPlusHours(2))"
+quantity: "#(randomInt(1,10))"
 ```
 
-Available helpers include `uuid`, `ulid`, `email`, `country` (or `countryCode`),
-`now`, `today`, `todayPlus(days)`, `todayMinus(days)`, `nowPlusDays(days)`,
-`nowMinusDays(days)`, `nowPlusHours(hours)`, `nowMinusHours(hours)`,
-`randomInt(max)` (or `randomInt(min,max)`), `alphanumeric(length)`,
-`alphabetic(length)`, `numeric(length)`, and `ascii(length)`. Length ranges can
-be supplied as `function(min,max)`, and `#(...)` tokens can also be embedded
-inside larger strings (such as `prefix-#(alphanumeric(6))`).
+Supported shorthand functions:
+- `#(uuid)` — RFC 4122 UUID (seeded when `--seed` is set)
+- `#(ulid)` — 26-character lexicographically sortable ULID
+- `#(email)` — random valid `@cats.io` email address
+- `#(country)` or `#(countryCode)` — random ISO 3166-1 alpha-2 country code (e.g. `US`, `RO`, `DE`)
+- `#(now)` — current UTC `OffsetDateTime` (`ISO-8601`)
+- `#(nowPlusDays(days))`, `#(nowMinusDays(days))`, `#(nowPlusHours(hours))`, `#(nowMinusHours(hours))` — UTC `OffsetDateTime` offset from now
+- `#(today)` — current UTC `LocalDate` (`YYYY-MM-DD`)
+- `#(todayPlus(days))`, `#(todayMinus(days))` — `LocalDate` offset by `days`
+- `#(randomInt(max))` or `#(randomInt(min,max))` — random integer in `[0, max)` or `[min, max)`
+- `#(alphanumeric)`, `#(alphabetic)` (or `#(alpha)`), `#(numeric)`, `#(ascii)` — random string of default length `12`, or pass `(length)` / `(min,max)` (for example `#(alphanumeric(16))` or `#(numeric(4,8))`)
+
+## SpEL expressions (`T(...)`)
+
+For custom date arithmetic or string manipulation, CATS supports `T(...)` expressions for `java.time.*` and `org.apache.commons.lang3.*`.
+
+For example, to set a field to 10 days from now (`T(java.time.OffsetDateTime).now().plusDays(10)`) and assert in `expect.that:` that a returned `expiry` date is after today:
+
+```yaml
+steps:
+  - name: "createSubscription"
+    description: "Create a subscription expiring in 10 days"
+    POST: "/subscriptions"
+    body:
+      plan: "PRO"
+      billing.expiresAt: "T(java.time.OffsetDateTime).now().plusDays(10)"
+    save:
+      - subName: "name"
+    expect:
+      status: 201
+      that:
+        - "T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))"
+```
+
+Dynamic expressions can also reference variables saved in earlier steps (`${subName}`), request fields (`${request.plan}` / `request.plan`), and response fields.

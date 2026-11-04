@@ -13,7 +13,7 @@ description: Test requests containing only required fields
 | **Enabled by default?** | Yes; it is included in the `quick`, `ci`, `security`, `compliance`, `type-coercion`, `coverage`, `crash`, and `full` profiles. |
 | **Target field types** | Request body fields and optional query parameters removed from the generated request. |
 | **Expected result** | `2XX`. |
-| **Fuzzing logic** | Removes optional fields (and unmarked server-generated metadata when no fields are marked required) and sends the minimal valid request. If the strict required-only request does not return `2XX`, it automatically tries up to 12 minimal fallback payloads containing defaulted or minimal optional fields. |
+| **Fuzzing logic** | Removes optional fields (and unmarked server-generated metadata when no fields are marked required) and sends the minimal valid request. If the strict required-only request does not return `2XX`, it automatically tries up to 12 minimal fallback payloads containing defaulted fields, alternative enum variants, minimal optional fields, and required-only headers. |
 | **Conditions when this fuzzer will be skipped** | None beyond the normal request-generation and HTTP-method eligibility checks. |
 | **HTTP methods that will be skipped** | None. For methods without a body, the minimal request is applied to query parameters. |
 | **Reporting** | Reports a documented `2XX` response as success; unexpected response codes, schema mismatches, and server errors follow normal CATS reporting. |

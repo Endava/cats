@@ -46,6 +46,7 @@ all:
 By default, CATS supports request bodies declared with:
 - `application/json` and `*+json` media types
 - `application/x-www-form-urlencoded`
+- `application/xml`, `text/xml`, and `application/*+xml` (serialized using OpenAPI Schema `xml` metadata including element names, namespaces, prefixes, attributes, and wrapped arrays)
 - `text/plain`
 - `application/x-ndjson` and `application/ndjson`
 

@@ -72,7 +72,7 @@ To disable runtime resource reuse for a run, use:
 cats -c contract.yml -s http://localhost:8080 --no-reuseSuccessfulResources
 ```
 
-The `FunctionalFuzzer` has explicit test-to-test correlation through its
-[`output` variables](../fuzzers/special-fuzzers/functional-fuzzer#correlating-tests).
-Use those variables when a functional flow needs to pass response values to a
+The `FunctionalFlowFuzzer` supports explicit step-to-step correlation through its
+[`save` variables and `$steps` references](../fuzzers/special-fuzzers/functional-fuzzer#saving-variables-save-and-cross-step-references-steps-prev).
+Use those when a functional flow needs to pass specific response values to a
 later request.

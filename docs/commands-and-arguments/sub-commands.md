@@ -33,7 +33,7 @@ All available subcommands are listed below:
 
 - `cats list --formats` will list all supported formats for fields
 
-- `cats replay "test1,test2"` will replay the given tests `test1` and `test2` (use `--curl` to print equivalent `curl` commands without sending HTTP calls)
+- `cats replay "test1,test2"` will replay the given tests `test1` and `test2` (use `--curl` to print equivalent `curl` commands, `--stateful` to replay upstream `2XX` producer steps first and substitute fresh IDs, or `--export-flow FILE` to export the test and its upstream producer chain as a runnable `steps:` flow YAML file)
 
 - `cats template` will fuzz based on a given request template, rather than an OpenAPI contract
 
@@ -51,9 +51,11 @@ All available subcommands are listed below:
 
 - `cats analyze` (alias `blueprint`) inspects an OpenAPI contract offline and prints its resource dependency graph, producer-consumer chains, orphan path parameters, and a `0-100` Fuzzability Readiness Score (use `--mermaid` to include a Mermaid.js flowchart)
 
-- `cats init` inspects an OpenAPI contract and scaffolds starter `headers.yml`, `refData.yml` (pre-populated with unresolved path parameters), and `functionalTests.yml` files
+- `cats init` inspects an OpenAPI contract and scaffolds starter `headers.yml`, `refData.yml` (pre-populated with unresolved path parameters), and `functionalTests.yml` files, or installs bundled AI coding agent skills (`--skills [devin,codex,claude,opencode,cursor,all]` and `--global`)
 
 - `cats smoke` (alias `probe`) runs a fast 1-request-per-operation health, route, and authentication check against a live server using `HappyPathFuzzer` (skips `DELETE` by default unless `--includeDelete` is passed)
+
+- `cats triage` (aliases `diagnose`, `doctor`) clusters failing report tests into deduplicated root causes, verifies fixes live against a server (`--verify`), mines working `--refData` from `2XX` exchanges (`--export-refdata`), synthesizes `--correlations` rules (`--export-correlations`), exports OpenAPI contract patches (`--export-contract-patch`), and writes minimal `curl` reproducer scripts (`--export-reproducers`)
 
 - `cats compare` (alias `diff`) compares two `cats-report` folders or `cats-summary-report.json` files apples-to-apples across their shared `(path, httpMethod, fuzzer)` scope for regressions and fixes
 

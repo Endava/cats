@@ -155,10 +155,36 @@ all:
 ```
 This will try to replace `address#zip` in **all** requests (if the field is present).
 
-## Removing Fields
-There are (rare) cases when some fields may not make sense together. Something like: if you send `firstName` and `lastName`, you are not allowed to also send `name`.
-As OpenAPI does not have the capability to send request fields which are dependent on each other, you can use the `refData` file to instruct CATS to remove fields before sending a request to the service.
-You can achieve this by using the `cats_remove_field` as a value for the fields you want to remove. For the above case the `--refData` field will look as follows:
+## Wildcard Paths and HTTP Method Scoping
+In addition to exact contract paths and `all`, `--refData` (and `--headers`) keys support:
+- **Wildcard path prefixes** ending with `*` (for example `"/customers*"`), which apply to all matching sub-paths.
+- **HTTP method scoping** by prefixing the path or wildcard with the HTTP verb (for example `"POST /customers"` or `"PUT /customers*"`).
+- **Dot-notation** (`address.street`) as well as `#`-notation (`address#street`) for nested properties, and dynamic expressions (`#(...)`, `T(...)`, `$$ENV_VAR`).
+
+Precedence order (most specific to least specific):
+1. Exact `"METHOD /path"`
+2. Exact `"/path"`
+3. Wildcard `"METHOD /prefix*"`
+4. Wildcard `"/prefix*"`
+5. `all`
+
+## Removing Fields (`omit` and `cats_remove_field`)
+There are cases when some fields may not make sense together (for example, if you send `firstName` and `lastName`, you are not allowed to also send `name`).
+You can instruct CATS to remove fields from the generated payload (and skip fuzzing them) using an `omit` list or the `"cats_remove_field"` sentinel value:
+
+```yaml
+all:
+  omit:
+    - "internalTrace"
+
+"POST /customers":
+  address.country: "DE"
+  omit:
+    - "name"
+    - "address.legacyCode"
+```
+
+You can also set a field directly to `"cats_remove_field"`:
 
 ```yaml
 all:
@@ -166,4 +192,4 @@ all:
 ```
 
 ## Reference Data Reserved Keywords
-The following keywords are reserved in a reference data file: `all`, `additionalProperties`, `topElement`, `mapValues` and `cats_remove_field`.
+The following keywords are reserved in a reference data file: `all`, `omit`, `additionalProperties`, `topElement`, `mapValues` and `cats_remove_field`.

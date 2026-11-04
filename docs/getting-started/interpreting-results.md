@@ -101,6 +101,22 @@ The JUNIT report is written as `junit.xml` in the `cats-report` folder. Individu
 If you want to have history for CATS runs you can use the `--timestampReports` argument. This will create sub-folders for each run within the `cats-reports` folder with the corresponding timestamp.
 :::
 
+## Triaging Reports & Verifying Fixes (`cats triage`)
+
+To turn a `cats-report` folder into deduplicated root-cause clusters, remediation artifacts, and live fix verifications, run `cats triage` (aliases `diagnose`, `doctor`):
+
+```bash
+# Cluster errors by root cause and export remediation artifacts
+cats triage -r cats-report -c openapi.yml \
+  --export-refdata refData.yml \
+  --export-correlations correlations.yml \
+  --export-contract-patch contract-patch.yml \
+  --export-reproducers reproducers.sh
+
+# Replay 1 representative request per root-cause cluster against the live server to check FIXED vs STILL_FAILING
+cats triage -r cats-report --verify -s http://localhost:8080
+```
+
 ## Execution summary
 
 Recent reports also include the configured quality-gate status, stop-condition
