@@ -1,5 +1,6 @@
 package com.endava.cats.report;
 
+import com.endava.cats.fuzzer.fields.AllFieldsAtMaxBoundaryFuzzer;
 import com.endava.cats.fuzzer.fields.DefaultValuesInFieldsFuzzer;
 import com.endava.cats.fuzzer.fields.ExamplesFieldsFuzzer;
 import com.endava.cats.fuzzer.fields.IterateThroughEnumValuesFieldsFuzzer;
@@ -57,6 +58,7 @@ public final class WfcFaultClassifier {
             MaxLengthExactValuesInStringFieldsFuzzer.class,
             MinimumExactNumbersInNumericFieldsFuzzer.class,
             MaximumExactNumbersInNumericFieldsFuzzer.class,
+            AllFieldsAtMaxBoundaryFuzzer.class,
             FunctionalFuzzer.class,
             RandomFuzzer.class);
 
