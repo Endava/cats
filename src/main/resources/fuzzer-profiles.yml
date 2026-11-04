@@ -374,13 +374,6 @@ profiles:
       - ZeroDecimalBody
       - MinLengthExactValuesInStringFields
       - MaxLengthExactValuesInStringFields
-      - AllFieldsAtMaxBoundary
-      - ExclusiveBoundaryNumbersInNumericFields
-      - NonMultipleOfNumbersInNumericFields
-      - UnderflowArraySizeFields
-      - UnderflowMapSizeFields
-      - OneOfMultipleBranchesMergedFields
-      - ConstAndNotSchemaFields
       - InvalidValuesInEnumsFields
       - EpochNumberInDateTimeFields
       - NumericValuesInStringFields
@@ -389,17 +382,13 @@ profiles:
       - SqlInjectionInStringFields
       - NoSqlInjectionInStringFields
       - CommandInjectionInStringFields
-      - PathTraversalInStringFields
       - SstiInjectionInStringFields
       - XssInjectionInStringFields
       - SortColumnOrmLeakFields
-      - HttpParameterPollutionFields
       - BypassAuthentication
       - InsecureDirectObjectReferences
       - MassAssignment
-      - ReadOnlyFieldsMassAssignment
       - HttpMethods
-      - HttpMethodOverrideTunneling
       - DummyRequest
       - MalformedJson
       - RandomResources
@@ -413,6 +402,16 @@ profiles:
       - AbugidasInStringFields
       - LowercaseExpandingBytesInStringFields
       - UppercaseExpandingBytesInStringFields
+      - ExclusiveBoundaryNumbersInNumericFields
+      - NonMultipleOfNumbersInNumericFields
+      - UnderflowArraySizeFields
+      - UnderflowMapSizeFields
+      - OneOfMultipleBranchesMergedFields
+      - ConstAndNotSchemaFields
+      - AllFieldsAtMaxBoundary
+      - ReadOnlyFieldsMassAssignment
+      - HttpParameterPollutionFields
+      - HttpMethodOverrideTunneling
 
   # ============================================
   # FULL PROFILE (Default)
