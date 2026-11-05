@@ -297,6 +297,7 @@ profiles:
       - TemporalLogicFields
       - SortColumnOrmLeakFields
       - SearchAndFilterExpressionFields
+      - CursorAndPaginationTokenFields
       - IdempotencyKeyConflict
 
       # Security Essentials
@@ -415,6 +416,7 @@ profiles:
       - HttpParameterPollutionFields
       - HttpMethodOverrideTunneling
       - SearchAndFilterExpressionFields
+      - CursorAndPaginationTokenFields
 
   # ============================================
   # FULL PROFILE (Default)
