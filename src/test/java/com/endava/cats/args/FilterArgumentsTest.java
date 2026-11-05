@@ -93,7 +93,7 @@ class FilterArgumentsTest {
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
                 , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer", "SingleElementArrayToScalarFieldsFuzzer",
                         "DuplicateItemsInUniqueArraysFieldsFuzzer", "FreeFormObjectFieldsFuzzer",
-                        "FreeFormArrayItemsFieldsFuzzer").hasSize(247);
+                        "FreeFormArrayItemsFieldsFuzzer").hasSize(248);
     }
 
     @Test
@@ -163,7 +163,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(259);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(260);
     }
 
     @Test
@@ -442,7 +442,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnFuzzersAsClasses() {
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(162);
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(163);
     }
 
     @Test
@@ -472,13 +472,13 @@ class FilterArgumentsTest {
 
     @Test
     void shouldCountTotalFuzzers() {
-        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(169);
+        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(170);
 
         ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
         ReflectionTestUtils.setField(checkArguments, "includeEmojis", true);
         ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
         try {
-            Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(196);
+            Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(197);
         } finally {
             ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", false);
             ReflectionTestUtils.setField(checkArguments, "includeEmojis", false);
@@ -492,7 +492,7 @@ class FilterArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"ALL,227", "FUZZERS,169", "LINTERS,58"})
+    @CsvSource({"ALL,228", "FUZZERS,170", "LINTERS,58"})
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);

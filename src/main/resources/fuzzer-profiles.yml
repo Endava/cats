@@ -303,6 +303,7 @@ profiles:
       - CursorAndPaginationTokenFields
       - TimezoneAndLocaleCodeFields
       - ConfirmationFieldsMismatch
+      - MutuallyExclusiveFields
       - IdempotencyKeyConflict
 
       # Security Essentials
