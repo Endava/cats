@@ -1360,9 +1360,10 @@ class CatsCommandTest {
 
     @Test
     void shouldRejectMissingOpenApiAndPaths() {
+        OpenAPI apiWithoutPaths = new OpenAPI();
         Assertions.assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(catsMain, "checkOpenAPI", (OpenAPI) null))
                 .isInstanceOf(IllegalArgumentException.class);
-        Assertions.assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(catsMain, "checkOpenAPI", new OpenAPI()))
+        Assertions.assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(catsMain, "checkOpenAPI", apiWithoutPaths))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

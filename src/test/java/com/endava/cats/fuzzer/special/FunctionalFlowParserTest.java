@@ -163,13 +163,18 @@ class FunctionalFlowParserTest {
     }
 
     @Test
-    void shouldHandleExplicitMethodPathAndEdgeCases(@TempDir Path tempDir) throws Exception {
+    void shouldRejectNullMissingAndInvalidInputs(@TempDir Path tempDir) throws Exception {
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(null)).isFalse();
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(tempDir.resolve("missing.yml").toFile())).isFalse();
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowYaml("")).isFalse();
         Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowYaml(":::invalid:::yaml")).isFalse();
         Assertions.assertThat(FunctionalFlowParser.parseCorrelationFile(null)).isEmpty();
+        Assertions.assertThat(FunctionalFlowParser.parseContent("").steps()).isEmpty();
+        Assertions.assertThat(FunctionalFlowParser.isSecurityFlowFile(null)).isFalse();
+    }
 
+    @Test
+    void shouldParseExplicitMethodPathAndSaveVariants() {
         String explicitMethodPathYaml = """
                 - method: POST
                   path: /items
@@ -198,7 +203,10 @@ class FunctionalFlowParserTest {
         Assertions.assertThat(doc.steps().get(1).save())
                 .containsEntry("singleField", "singleField")
                 .containsEntry("secondField", "secondField");
+    }
 
+    @Test
+    void shouldParseArrayCorrelationFileThatIsNotASecurityFlow(@TempDir Path tempDir) throws Exception {
         File corrArrayFile = tempDir.resolve("corr-array.yml").toFile();
         Files.writeString(corrArrayFile.toPath(), """
                 - paths: ["/items"]
@@ -207,7 +215,11 @@ class FunctionalFlowParserTest {
                     code: 1
                 """);
         Assertions.assertThat(FunctionalFlowParser.parseCorrelationFile(corrArrayFile)).hasSize(1);
+        Assertions.assertThat(FunctionalFlowParser.isSecurityFlowFile(corrArrayFile)).isFalse();
+    }
 
+    @Test
+    void shouldParseSecurityFlowStepWithAllMethodsAndFuzzConfiguration(@TempDir Path tempDir) throws Exception {
         File secFlowFile = tempDir.resolve("sec-flow.yml").toFile();
         Files.writeString(secFlowFile.toPath(), """
                 steps:
@@ -225,9 +237,7 @@ class FunctionalFlowParserTest {
                       maxResponseTimeMs: 500
                 """);
         Assertions.assertThat(FunctionalFlowParser.isSecurityFlowFile(secFlowFile)).isTrue();
-        Assertions.assertThat(FunctionalFlowParser.isSecurityFlowFile(corrArrayFile)).isFalse();
-        FunctionalFlowDocument secDoc = FunctionalFlowParser.parse(secFlowFile);
-        FunctionalFlowStep fuzzStep = secDoc.steps().getFirst();
+        FunctionalFlowStep fuzzStep = FunctionalFlowParser.parse(secFlowFile).steps().getFirst();
         Assertions.assertThat(fuzzStep.allMethods()).isTrue();
         Assertions.assertThat(fuzzStep.scenarioText()).isEqualTo("Fuzz step with ALL methods");
         Assertions.assertThat(fuzzStep.path()).containsEntry("id", 42L);
@@ -236,9 +246,16 @@ class FunctionalFlowParserTest {
         Assertions.assertThat(fuzzStep.fuzz().hasPayloadSource()).isTrue();
         Assertions.assertThat(fuzzStep.fuzz().hasTargets()).isTrue();
         Assertions.assertThat(fuzzStep.fuzz().mode()).isEqualTo(FunctionalFlowDocument.FuzzMode.CROSS);
+    }
+
+    @Test
+    void shouldDefaultFuzzModeToSingle() {
         Assertions.assertThat(FunctionalFlowDocument.FuzzMode.fromString("single")).isEqualTo(FunctionalFlowDocument.FuzzMode.SINGLE);
         Assertions.assertThat(FunctionalFlowDocument.FuzzMode.fromString(null)).isEqualTo(FunctionalFlowDocument.FuzzMode.SINGLE);
+    }
 
+    @Test
+    void shouldUseDescriptionAsNameAndIgnoreBlankSaveEntries() {
         String pathsAndDescStep = """
                 steps:
                   - description: Only description provided
@@ -252,9 +269,6 @@ class FunctionalFlowParserTest {
         Assertions.assertThat(pathsDoc.steps().getFirst().name()).isEqualTo("Only description provided");
         Assertions.assertThat(pathsDoc.steps().getFirst().targetPaths()).containsExactly("/a", "/b");
 
-        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(null)).isFalse();
-        Assertions.assertThat(FunctionalFlowParser.parseCorrelationFile(null)).isEmpty();
-        Assertions.assertThat(FunctionalFlowParser.parseContent("").steps()).isEmpty();
         String floatAndEmptySaveYaml = """
                 steps:
                   - POST: /items
@@ -266,10 +280,11 @@ class FunctionalFlowParserTest {
                     expect:
                       status: ""
                 """;
-        FunctionalFlowDocument floatDoc = FunctionalFlowParser.parseContent(floatAndEmptySaveYaml);
-        Assertions.assertThat(floatDoc.steps().getFirst().save()).isEmpty();
-        Assertions.assertThat(FunctionalFlowParser.isSecurityFlowFile(null)).isFalse();
+        Assertions.assertThat(FunctionalFlowParser.parseContent(floatAndEmptySaveYaml).steps().getFirst().save()).isEmpty();
+    }
 
+    @Test
+    void shouldParseAdvancedStepOptions() {
         String advancedStepYaml = """
                 steps:
                   - name: asyncAndParameterizedStep
@@ -289,8 +304,7 @@ class FunctionalFlowParserTest {
                       set:
                         priority: 1
                 """;
-        FunctionalFlowDocument advancedDoc = FunctionalFlowParser.parseContent(advancedStepYaml);
-        FunctionalFlowStep advStep = advancedDoc.steps().getFirst();
+        FunctionalFlowStep advStep = FunctionalFlowParser.parseContent(advancedStepYaml).steps().getFirst();
         Assertions.assertThat(advStep.delayMs()).isEqualTo(10L);
         Assertions.assertThat(advStep.repeat()).isEqualTo(3);
         Assertions.assertThat(advStep.poll()).isNotNull();

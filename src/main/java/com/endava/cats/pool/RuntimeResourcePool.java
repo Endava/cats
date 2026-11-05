@@ -274,17 +274,9 @@ public class RuntimeResourcePool {
         }
         String effectiveRequestPayload = effectiveJsonPayload(request, resolvedRequest);
         exchangeRecorder.recordOperationDiagnostics(data, request, response, resolvedRequest, effectiveRequestPayload,
-                d -> exchangeRecorder.buildDiagnosticTargets(d,
-                        (sd, tf) -> enricher.hasExplicitValue(sd, tf) || enricher.shouldSkipOwnPostIdentifier(sd, tf),
-                        pathParams -> {
-                            boolean isPathParams = Boolean.TRUE.equals(pathParams);
-                            return enricher.reusableTargets(isPathParams ? d.getPathParamsPayload() : d.getPayload(), d, isPathParams);
-                        }));
+                this::diagnosticTargets);
         updateCorrelationFeedback(data, response, resolvedRequest);
-        if (response.getResponseCode() == 409 && data.getHttpMethod() == HttpMethod.POST &&
-                !ResourceValueExtractor.isRequestBodyFuzzed(data)) {
-            baselineStore.evict(data);
-        }
+        evictBaselineOnConflict(data, response);
         if (!ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
             return;
         }
@@ -302,13 +294,10 @@ public class RuntimeResourcePool {
                 ResourceValueExtractor.extractPathValues(templatePath, request.getUrl()));
         int rawPathValueCount = pathValues.size();
         pathValues.keySet().removeIf(name -> isPathParameterFuzzed(data, name));
-        if ((data.getHttpMethod() == HttpMethod.GET || data.getHttpMethod() == HttpMethod.HEAD)
-                && pathValues.size() < rawPathValueCount) {
+        if (isReadWithFuzzedPath(data, pathValues.size() < rawPathValueCount)) {
             return;
         }
-        List<JsonObject> requestObjects = HttpMethod.requiresBody(data.getHttpMethod()) &&
-                !ResourceValueExtractor.isRequestBodyFuzzed(data)
-                ? ResourceValueExtractor.requestObjects(effectiveRequestPayload) : List.of();
+        List<JsonObject> requestObjects = unfuzzedRequestObjects(data, effectiveRequestPayload);
         if (response.isBodyTruncated()) {
             addFromLocation(data, request.getUrl(), response, resolvedRequest, pathValues, requestObjects);
             return;
@@ -318,6 +307,32 @@ public class RuntimeResourcePool {
             return;
         }
         observeResponseObjects(data, request.getUrl(), effectiveRequestPayload, response, resolvedRequest, pathValues, requestObjects);
+    }
+
+    private List<TargetField> diagnosticTargets(ServiceData data) {
+        return exchangeRecorder.buildDiagnosticTargets(data,
+                (sd, tf) -> enricher.hasExplicitValue(sd, tf) || enricher.shouldSkipOwnPostIdentifier(sd, tf),
+                pathParams -> reusableDiagnosticTargets(data, Boolean.TRUE.equals(pathParams)));
+    }
+
+    private List<TargetField> reusableDiagnosticTargets(ServiceData data, boolean pathParams) {
+        return enricher.reusableTargets(pathParams ? data.getPathParamsPayload() : data.getPayload(), data, pathParams);
+    }
+
+    private void evictBaselineOnConflict(ServiceData data, CatsResponse response) {
+        if (response.getResponseCode() == 409 && data.getHttpMethod() == HttpMethod.POST &&
+                !ResourceValueExtractor.isRequestBodyFuzzed(data)) {
+            baselineStore.evict(data);
+        }
+    }
+
+    private static boolean isReadWithFuzzedPath(ServiceData data, boolean pathParameterFuzzed) {
+        return pathParameterFuzzed && (data.getHttpMethod() == HttpMethod.GET || data.getHttpMethod() == HttpMethod.HEAD);
+    }
+
+    private static List<JsonObject> unfuzzedRequestObjects(ServiceData data, String effectiveRequestPayload) {
+        return HttpMethod.requiresBody(data.getHttpMethod()) && !ResourceValueExtractor.isRequestBodyFuzzed(data)
+                ? ResourceValueExtractor.requestObjects(effectiveRequestPayload) : List.of();
     }
 
     private boolean isPathParameterFuzzed(ServiceData data, String name) {

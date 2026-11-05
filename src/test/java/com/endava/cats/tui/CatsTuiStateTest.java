@@ -536,46 +536,19 @@ class CatsTuiStateTest {
     }
 
     @Test
-    void shouldTrackWaveProgressDrillDownFromFuzzerTableAndNavigateNextPreviousInDetailView() {
-        CatsTuiState state = new CatsTuiState();
-        state.accept(new CatsExecutionEvent.ConfigurationLoaded(NOW,
-                new RunConfigurationSnapshot("1", "openapi.yml", "http://localhost", List.of("GET", "POST"),
-                        2, 10, 4, 4)));
-        state.accept(new CatsExecutionEvent.WaveStarted(NOW, 2, 4, "Coverage"));
-        state.accept(new CatsExecutionEvent.FuzzerStarted(NOW, "RemoveFields", "/orders", "POST"));
+    void shouldTrackWaveProgressAndDrillDownFromFuzzerTable() {
+        CatsTuiState state = ordersWaveState();
 
         Assertions.assertThat(state.currentPath()).isEqualTo("/orders");
         Assertions.assertThat(state.pathProgressLabel()).isEqualTo("0 / 4 paths • Wave 2/4 (Coverage)");
         Assertions.assertThat(state.pathProgress()).isEqualTo(0.25);
 
-        TestResultSnapshot first = new TestResultSnapshot("Test 1", "trace-1", "scenario 1", "2XX", "error",
-                "Server crash", "detail 1", "", "RemoveFields", "/orders", "/orders", "/orders",
-                "http://localhost", true,
-                new TestResultSnapshot.RequestSnapshot("POST", "http://localhost/orders", "now", "{\"a\":1}", List.of()),
-                new TestResultSnapshot.ResponseSnapshot(500, "POST", 15, 2, 2, false, 1, 1, "application/json", "{}", List.of()),
-                "cats replay Test1", "curl -X POST http://localhost/orders",
-                List.of("body:a"), List.of("path:orderId <- POST /orders (response.body.$.id)"));
-        TestResultSnapshot second = new TestResultSnapshot("Test 2", "trace-2", "scenario 2", "4XX", "warning",
-                "Undocumented code", "detail 2", "", "RemoveFields", "/orders", "/orders", "/orders",
-                "http://localhost", true,
-                new TestResultSnapshot.RequestSnapshot("POST", "http://localhost/orders", "now", "{\"b\":2}", List.of()),
-                new TestResultSnapshot.ResponseSnapshot(422, "POST", 25, 2, 2, false, 1, 1, "application/json", "{}", List.of()),
-                "cats replay Test2", "curl -X POST http://localhost/orders -d '{}'",
-                List.of(), List.of());
-
-        state.accept(new CatsExecutionEvent.TestCompleted(NOW, first));
-        state.accept(new CatsExecutionEvent.TestCompleted(NOW, second));
+        state.accept(new CatsExecutionEvent.TestCompleted(NOW, removeFieldsServerCrash()));
+        state.accept(new CatsExecutionEvent.TestCompleted(NOW, removeFieldsUndocumentedCode()));
         Assertions.assertThat(state.topFailingPaths()).isEqualTo("/orders (1)");
 
         // Add a second fuzzer and verify j/Down moves selection to the second fuzzer on a tall viewport
-        TestResultSnapshot third = new TestResultSnapshot("Test 3", "trace-3", "scenario 3", "2XX", "success",
-                "OK", "detail 3", "", "HappyPath", "/orders", "/orders", "/orders",
-                "http://localhost", true,
-                new TestResultSnapshot.RequestSnapshot("GET", "http://localhost/orders", "now", "", List.of()),
-                new TestResultSnapshot.ResponseSnapshot(200, "GET", 10, 2, 2, false, 1, 1, "application/json", "{}", List.of()),
-                "cats replay Test3", "curl -X GET http://localhost/orders", List.of(), List.of());
-        state.accept(new CatsExecutionEvent.TestCompleted(NOW, third));
-
+        state.accept(new CatsExecutionEvent.TestCompleted(NOW, happyPathSuccess()));
         state.updateViewport(120, 40);
         state.handleKey(KeyEvent.ofChar('j'));
         state.handleKey(KeyEvent.ofKey(KeyCode.ENTER));
@@ -589,6 +562,13 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.RESULTS);
         Assertions.assertThat(state.resultsContext()).isEqualTo("Fuzzer: RemoveFields");
         Assertions.assertThat(state.filteredResults()).hasSize(2);
+    }
+
+    @Test
+    void shouldNavigateNextPreviousCopyCurlAndToggleHelpInDetailView() {
+        CatsTuiState state = ordersResultsState();
+        state.handleKey(KeyEvent.ofKey(KeyCode.ENTER));
+        Assertions.assertThat(state.resultsContext()).isEqualTo("Fuzzer: RemoveFields");
 
         // Open Detail view on Test 1, check curl/mutation/correlation lines, then press 'n' and 'p'
         state.handleKey(KeyEvent.ofKey(KeyCode.ENTER));
@@ -618,11 +598,34 @@ class CatsTuiStateTest {
         state.handleKey(KeyEvent.ofKey(KeyCode.ESCAPE));
         Assertions.assertThat(state.screen()).isEqualTo(CatsTuiState.Screen.OVERVIEW);
 
-        // Copy curl from RESULTS and SLOWEST screens, and when no test / no curl is available
+        // Copy curl from RESULTS and SLOWEST screens
         state.handleKey(KeyEvent.ofChar('6'));
         state.handleKey(KeyEvent.ofChar('c'));
         Assertions.assertThat(state.copyFeedbackMessage()).isNotBlank();
 
+        // Cover 'k' / UP in RESULTS screen, unhandled keys across screens, and live test arrival while on DETAIL screen
+        state.handleKey(KeyEvent.ofChar('2'));
+        state.handleKey(KeyEvent.ofChar('a'));
+        state.handleKey(KeyEvent.ofChar('j'));
+        state.handleKey(KeyEvent.ofChar('k'));
+        state.handleKey(KeyEvent.ofChar('x'));
+        state.handleKey(KeyEvent.ofKey(KeyCode.ENTER));
+        state.handleKey(KeyEvent.ofChar('x'));
+        state.accept(new CatsExecutionEvent.TestCompleted(NOW, happyPathSuccess()));
+        state.handleKey(KeyEvent.ofChar(']'));
+        state.handleKey(KeyEvent.ofChar('['));
+        state.handleKey(KeyEvent.ofChar('4'));
+        state.handleKey(KeyEvent.ofChar('x'));
+        state.handleKey(KeyEvent.ofChar('5'));
+        state.handleKey(KeyEvent.ofChar('x'));
+        state.handleKey(KeyEvent.ofChar('6'));
+        state.handleKey(KeyEvent.ofChar('x'));
+        state.handleKey(KeyEvent.ofChar('1'));
+        state.handleKey(KeyEvent.ofChar('x'));
+    }
+
+    @Test
+    void shouldReportCopyFeedbackWhenNoTestOrCurlIsAvailable() {
         CatsTuiState emptyState = new CatsTuiState();
         emptyState.handleKey(KeyEvent.ofChar('2'));
         emptyState.handleKey(KeyEvent.ofChar('c'));
@@ -640,26 +643,53 @@ class CatsTuiStateTest {
                 .anyMatch(line -> line.contains("Warning: ignored warning"))
                 .anyMatch(line -> line.contains("Declared Content Length: 100 bytes"));
         Assertions.assertThat(CatsTuiDetailFormatter.format(null, 80)).containsExactly("No test selected");
+    }
 
-        // Cover 'k' / UP in RESULTS screen, unhandled keys across screens, and live test arrival while on DETAIL screen
-        state.handleKey(KeyEvent.ofChar('2'));
-        state.handleKey(KeyEvent.ofChar('a'));
-        state.handleKey(KeyEvent.ofChar('j'));
-        state.handleKey(KeyEvent.ofChar('k'));
-        state.handleKey(KeyEvent.ofChar('x'));
-        state.handleKey(KeyEvent.ofKey(KeyCode.ENTER));
-        state.handleKey(KeyEvent.ofChar('x'));
-        state.accept(new CatsExecutionEvent.TestCompleted(NOW, third));
-        state.handleKey(KeyEvent.ofChar(']'));
-        state.handleKey(KeyEvent.ofChar('['));
-        state.handleKey(KeyEvent.ofChar('4'));
-        state.handleKey(KeyEvent.ofChar('x'));
-        state.handleKey(KeyEvent.ofChar('5'));
-        state.handleKey(KeyEvent.ofChar('x'));
-        state.handleKey(KeyEvent.ofChar('6'));
-        state.handleKey(KeyEvent.ofChar('x'));
-        state.handleKey(KeyEvent.ofChar('1'));
-        state.handleKey(KeyEvent.ofChar('x'));
+    private static CatsTuiState ordersWaveState() {
+        CatsTuiState state = new CatsTuiState();
+        state.accept(new CatsExecutionEvent.ConfigurationLoaded(NOW,
+                new RunConfigurationSnapshot("1", "openapi.yml", "http://localhost", List.of("GET", "POST"),
+                        2, 10, 4, 4)));
+        state.accept(new CatsExecutionEvent.WaveStarted(NOW, 2, 4, "Coverage"));
+        state.accept(new CatsExecutionEvent.FuzzerStarted(NOW, "RemoveFields", "/orders", "POST"));
+        return state;
+    }
+
+    private static CatsTuiState ordersResultsState() {
+        CatsTuiState state = ordersWaveState();
+        List.of(removeFieldsServerCrash(), removeFieldsUndocumentedCode(), happyPathSuccess())
+                .forEach(result -> state.accept(new CatsExecutionEvent.TestCompleted(NOW, result)));
+        state.updateViewport(120, 40);
+        return state;
+    }
+
+    private static TestResultSnapshot removeFieldsServerCrash() {
+        return new TestResultSnapshot("Test 1", "trace-1", "scenario 1", "2XX", "error",
+                "Server crash", "detail 1", "", "RemoveFields", "/orders", "/orders", "/orders",
+                "http://localhost", true,
+                new TestResultSnapshot.RequestSnapshot("POST", "http://localhost/orders", "now", "{\"a\":1}", List.of()),
+                new TestResultSnapshot.ResponseSnapshot(500, "POST", 15, 2, 2, false, 1, 1, "application/json", "{}", List.of()),
+                "cats replay Test1", "curl -X POST http://localhost/orders",
+                List.of("body:a"), List.of("path:orderId <- POST /orders (response.body.$.id)"));
+    }
+
+    private static TestResultSnapshot removeFieldsUndocumentedCode() {
+        return new TestResultSnapshot("Test 2", "trace-2", "scenario 2", "4XX", "warning",
+                "Undocumented code", "detail 2", "", "RemoveFields", "/orders", "/orders", "/orders",
+                "http://localhost", true,
+                new TestResultSnapshot.RequestSnapshot("POST", "http://localhost/orders", "now", "{\"b\":2}", List.of()),
+                new TestResultSnapshot.ResponseSnapshot(422, "POST", 25, 2, 2, false, 1, 1, "application/json", "{}", List.of()),
+                "cats replay Test2", "curl -X POST http://localhost/orders -d '{}'",
+                List.of(), List.of());
+    }
+
+    private static TestResultSnapshot happyPathSuccess() {
+        return new TestResultSnapshot("Test 3", "trace-3", "scenario 3", "2XX", "success",
+                "OK", "detail 3", "", "HappyPath", "/orders", "/orders", "/orders",
+                "http://localhost", true,
+                new TestResultSnapshot.RequestSnapshot("GET", "http://localhost/orders", "now", "", List.of()),
+                new TestResultSnapshot.ResponseSnapshot(200, "GET", 10, 2, 2, false, 1, 1, "application/json", "{}", List.of()),
+                "cats replay Test3", "curl -X GET http://localhost/orders", List.of(), List.of());
     }
 
     private static void navigateAggregate(CatsTuiState state) {

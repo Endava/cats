@@ -15,7 +15,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 @QuarkusTest
 class LiveClusterVerifierTest {
@@ -104,7 +104,7 @@ class LiveClusterVerifierTest {
         Assertions.assertThat(new LiveClusterVerifier(override, Map.of(), _ -> null).resolveTargetUrl(original)).isEqualTo(expected);
     }
 
-    private LiveClusterVerifier verifier(Map<String, String> headers, Function<String, String> environment) {
+    private LiveClusterVerifier verifier(Map<String, String> headers, UnaryOperator<String> environment) {
         return new LiveClusterVerifier("http://127.0.0.1:" + server.getAddress().getPort(), headers, environment);
     }
 

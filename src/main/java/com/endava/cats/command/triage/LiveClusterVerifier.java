@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,9 +60,9 @@ final class LiveClusterVerifier {
     private final OkHttpClient client;
     private final String serverOverride;
     private final Map<String, String> headerOverrides;
-    private final Function<String, String> environment;
+    private final UnaryOperator<String> environment;
 
-    LiveClusterVerifier(String serverOverride, Map<String, String> headerOverrides, Function<String, String> environment) {
+    LiveClusterVerifier(String serverOverride, Map<String, String> headerOverrides, UnaryOperator<String> environment) {
         this.client = new OkHttpClient.Builder()
                 .connectTimeout(Duration.ofSeconds(5))
                 .readTimeout(Duration.ofSeconds(10))

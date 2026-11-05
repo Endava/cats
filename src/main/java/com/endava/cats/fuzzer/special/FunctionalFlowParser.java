@@ -372,8 +372,7 @@ public final class FunctionalFlowParser {
         List<FieldCorrelationRule> rules = new ArrayList<>();
         for (Map.Entry<String, JsonNode> entry : objectNode.properties()) {
             String key = entry.getKey();
-            List<String> paths = "all".equalsIgnoreCase(key) ? List.of("*") : List.of(key);
-            appendRulesForPaths(paths, entry.getValue(), rules);
+            appendRulesForPaths(List.of("all".equalsIgnoreCase(key) ? "*" : key), entry.getValue(), rules);
         }
         return Collections.unmodifiableList(rules);
     }

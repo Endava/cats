@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Evaluates request-side cross-field correlation rules (`correlate:`) and response-side
@@ -80,32 +82,34 @@ public final class FieldCorrelationEvaluator {
         }
         JsonElement parsedRoot = JsonUtils.parseAsJsonElement(jsonPayload);
         if (parsedRoot != null && parsedRoot.isJsonArray()) {
-            Set<String> required = new LinkedHashSet<>();
-            for (JsonElement el : parsedRoot.getAsJsonArray()) {
-                if (el.isJsonObject()) {
-                    required.addAll(collectRequiredFieldsFromCorrelations(contractPath, el.toString(), rules));
-                }
-            }
-            return required;
+            return collectRequiredFieldsFromArrayItems(contractPath, parsedRoot.getAsJsonArray(), rules);
         }
-        Set<String> required = new LinkedHashSet<>();
-        for (FieldCorrelationRule rule : rules) {
-            if (matchesPathPattern(contractPath, rule.paths())) {
-                for (FieldCorrelationRule expandedRule : expandWildcardArrayRule(jsonPayload, rule)) {
-                    if (StringUtils.isNotBlank(expandedRule.when())
-                            && evaluateBooleanExpression(expandedRule.when(), jsonPayload, null, null, Map.of())
-                            && expandedRule.set() != null) {
-                        for (String rawField : expandedRule.set().keySet()) {
-                            String normalized = normalizeFieldPath(rawField).replaceAll("\\[\\d+]", "");
-                            if (StringUtils.isNotBlank(normalized) && !isSelfPresenceGuard(expandedRule.when(), normalized)) {
-                                required.add(normalized);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return required;
+        return rules.stream()
+                .filter(rule -> matchesPathPattern(contractPath, rule.paths()))
+                .flatMap(rule -> expandWildcardArrayRule(jsonPayload, rule).stream())
+                .filter(rule -> isTriggeredSetRule(rule, jsonPayload))
+                .flatMap(FieldCorrelationEvaluator::fieldsRequiredBy)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private static Set<String> collectRequiredFieldsFromArrayItems(String contractPath, JsonArray items,
+                                                                   List<FieldCorrelationRule> rules) {
+        return items.asList().stream()
+                .filter(JsonElement::isJsonObject)
+                .flatMap(item -> collectRequiredFieldsFromCorrelations(contractPath, item.toString(), rules).stream())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private static boolean isTriggeredSetRule(FieldCorrelationRule rule, String jsonPayload) {
+        return StringUtils.isNotBlank(rule.when()) && rule.set() != null
+                && evaluateBooleanExpression(rule.when(), jsonPayload, null, null, Map.of());
+    }
+
+    private static Stream<String> fieldsRequiredBy(FieldCorrelationRule rule) {
+        return rule.set().keySet().stream()
+                .map(rawField -> normalizeFieldPath(rawField).replaceAll("\\[\\d+]", ""))
+                .filter(StringUtils::isNotBlank)
+                .filter(normalized -> !isSelfPresenceGuard(rule.when(), normalized));
     }
 
     private static boolean isSelfPresenceGuard(String whenExpression, String normalizedTargetField) {

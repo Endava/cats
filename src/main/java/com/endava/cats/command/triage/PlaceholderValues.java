@@ -123,7 +123,7 @@ final class PlaceholderValues {
     private static String boundedAlphanumeric(Schema<?> schema) {
         int min = Optional.ofNullable(schema.getMinLength()).orElse(1);
         int max = Optional.ofNullable(schema.getMaxLength()).orElse(Integer.MAX_VALUE);
-        int length = Math.max(min, Math.min(DEFAULT_STRING_LENGTH, max));
+        int length = Math.clamp(DEFAULT_STRING_LENGTH, min, Math.max(min, max));
         return "#(alphanumeric(%d))".formatted(length);
     }
 }

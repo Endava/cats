@@ -152,7 +152,7 @@ class WordUtilsTest {
     }
 
     @Test
-    void shouldCoverNullOrValueOfSingularizePluralKeywordsLeafAndAuditTimestamps() {
+    void shouldCoverNullOrValueOfAndKeywordMatching() {
         Assertions.assertThat(WordUtils.nullOrValueOf(null)).isNull();
         Assertions.assertThat(WordUtils.nullOrValueOf(42)).isEqualTo("42");
         Assertions.assertThat(WordUtils.matchesAsLowerCase("abc", "ABC")).isTrue();
@@ -161,36 +161,40 @@ class WordUtilsTest {
                 .contains("nullpointerexception");
         Assertions.assertThat(WordUtils.getKeywordsMatching("custom_err", Set.of("custom_err")))
                 .containsExactly("custom_err");
+    }
 
-        Assertions.assertThat(WordUtils.singularize(null)).isEmpty();
-        Assertions.assertThat(WordUtils.singularize("")).isEmpty();
-        Assertions.assertThat(WordUtils.singularize("children")).isEqualTo("child");
-        Assertions.assertThat(WordUtils.singularize("parties")).isEqualTo("party");
-        Assertions.assertThat(WordUtils.singularize("boxes")).isEqualTo("box");
-        Assertions.assertThat(WordUtils.singularize("quizzes")).isEqualTo("quiz");
-        Assertions.assertThat(WordUtils.singularize("cats")).isEqualTo("cat");
-        Assertions.assertThat(WordUtils.singularize("status")).isEqualTo("status");
+    @ParameterizedTest
+    @CsvSource(value = {"NULL,''", "'',''", "children,child", "parties,party", "boxes,box", "quizzes,quiz",
+            "cats,cat", "status,status"}, nullValues = "NULL")
+    void shouldSingularize(String word, String expected) {
+        Assertions.assertThat(WordUtils.singularize(word)).isEqualTo(expected);
+    }
 
-        Assertions.assertThat(WordUtils.isPlural(null)).isFalse();
-        Assertions.assertThat(WordUtils.isPlural("")).isFalse();
-        Assertions.assertThat(WordUtils.isPlural("people")).isTrue();
-        Assertions.assertThat(WordUtils.isPlural("cats")).isTrue();
-        Assertions.assertThat(WordUtils.isPlural("cat")).isFalse();
+    @ParameterizedTest
+    @CsvSource(value = {"NULL,false", "'',false", "people,true", "cats,true", "cat,false"}, nullValues = "NULL")
+    void shouldDetectPlural(String word, boolean expected) {
+        Assertions.assertThat(WordUtils.isPlural(word)).isEqualTo(expected);
+    }
 
+    @Test
+    void shouldNormalizeBlankInputsAndLeafNames() {
         Assertions.assertThat(WordUtils.normalizeAlphaNumeric(null)).isEmpty();
         Assertions.assertThat(WordUtils.normalizeAlphaNumeric("")).isEmpty();
         Assertions.assertThat(WordUtils.splitWords(null)).isEmpty();
         Assertions.assertThat(WordUtils.splitWords("   ")).isEmpty();
         Assertions.assertThat(WordUtils.normalizeLeaf(null)).isEmpty();
         Assertions.assertThat(WordUtils.normalizeLeaf("a#b.c_d")).isEqualTo("cd");
+    }
 
-        Assertions.assertThat(WordUtils.isAuditTimestampField(null)).isFalse();
-        Assertions.assertThat(WordUtils.isAuditTimestampField("  ")).isFalse();
-        Assertions.assertThat(WordUtils.isAuditTimestampField("createdAt")).isTrue();
-        Assertions.assertThat(WordUtils.isAuditTimestampField("creation_date")).isTrue();
-        Assertions.assertThat(WordUtils.isAuditTimestampField("singleword")).isFalse();
-        Assertions.assertThat(WordUtils.isAuditTimestampField("random_field")).isFalse();
+    @ParameterizedTest
+    @CsvSource(value = {"NULL,false", "'  ',false", "createdAt,true", "creation_date,true", "singleword,false",
+            "random_field,false"}, nullValues = "NULL")
+    void shouldDetectAuditTimestampFields(String field, boolean expected) {
+        Assertions.assertThat(WordUtils.isAuditTimestampField(field)).isEqualTo(expected);
+    }
 
+    @Test
+    void shouldHandleMiddleQualifierEdgeCasesAndCompoundNounForms() {
         Assertions.assertThat(WordUtils.matchesWithInsertedMiddleQualifier(null, "abc")).isFalse();
         Assertions.assertThat(WordUtils.matchesWithInsertedMiddleQualifier("short", "shorter")).isFalse();
         Assertions.assertThat(WordUtils.nounForms("categoriesofitem")).contains("categoryofitem");

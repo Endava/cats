@@ -1,7 +1,7 @@
 package com.endava.cats.command.triage;
 
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Triage settings supplied on the command line.
@@ -16,5 +16,5 @@ public record TriageOptions(boolean includeWarnings,
                             boolean verify,
                             String serverUrl,
                             Map<String, String> headers,
-                            Function<String, String> environment) {
+                            UnaryOperator<String> environment) {
 }

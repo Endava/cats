@@ -21,9 +21,9 @@ import java.util.stream.Stream;
  */
 final class ReferencedFieldExtractor {
     private static final Pattern DUPLICATE_FIELD = Pattern.compile(
-            "\\bwith\\s+([A-Za-z][A-Za-z0-9_.]*)\\s+['\"][^'\"]*['\"].*\\balready\\s+exists\\b", Pattern.CASE_INSENSITIVE);
+            "\\bwith\\s+([a-z][\\w.]*)\\s+['\"][^'\"]*['\"].*\\balready\\s+exists\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern OPERATOR_REQUIRES_VALUE = Pattern.compile(
-            "\\boperator\\s+[A-Za-z0-9_]+\\s+requires\\s+.*\\bvalue\\b", Pattern.CASE_INSENSITIVE);
+            "\\boperator\\s+\\w+\\s+requires\\s+.*\\bvalue\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern EXPRESSION_REQUIRES_CHILD = Pattern.compile(
             "\\bexpression\\s+(?:must\\s+have|requires)\\s+.*\\bchild(?:ren)?\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern FIELD_COLON_PREFIX = Pattern.compile("^([A-Za-z_][A-Za-z0-9_.\\[\\]]*)\\s*:\\s+\\S");
@@ -32,7 +32,7 @@ final class ReferencedFieldExtractor {
             "\\s*(?::|is\\b|are\\b|must\\b|should\\b|cannot\\b|can't\\b|may\\s+not\\b|not\\b|field\\b|property\\b|parameter\\b)",
             Pattern.CASE_INSENSITIVE);
     private static final Pattern UNQUOTED_SUBJECT = Pattern.compile(
-            "^([A-Za-z][A-Za-z0-9_ ]{1,40}?)\\s+(?:is|are|must|should|cannot|can't|may\\s+not)\\b", Pattern.CASE_INSENSITIVE);
+            "^([a-z][\\w ]{1,40}?)\\s+(?:is|are|must|should|cannot|can't|may\\s+not)\\b", Pattern.CASE_INSENSITIVE);
     private static final Set<String> LEADING_STOP_WORDS = Set.of("the", "a", "an", "field", "property", "parameter", "attribute", "value", "request");
 
     private final RequestSchemaLookup schemaLookup;

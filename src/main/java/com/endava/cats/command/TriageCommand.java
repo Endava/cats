@@ -27,7 +27,7 @@ import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Contract-aware root-cause clustering, live fix verification ({@code --verify}), {@code --refData} mining from
@@ -109,7 +109,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "Output the triage report as JSON.")
     boolean json;
 
-    Function<String, String> environment = System::getenv;
+    UnaryOperator<String> environment = System::getenv;
 
     @Getter
     private int exitCode = CommandLine.ExitCode.OK;

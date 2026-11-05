@@ -19,7 +19,7 @@ public class RandomContainerWrappingAndGadgetMutator implements BodyMutator {
     private static final List<BiFunction<String, Object, Object>> MUTATION_STRATEGIES = List.of(
             (_, current) -> List.of(current),
             (_, current) -> List.of(List.of(current)),
-            (leafKey, current) -> Map.of(leafKey, current),
+            Map::of,
             (_, current) -> Map.of("value", current, "$ref", "#/"),
             (_, _) -> Map.of("@type", "java.lang.AutoCloseable", "@class", "java.lang.AutoCloseable"),
             (_, _) -> Map.of("__proto__", Map.of("admin", true), "constructor", Map.of("prototype", Map.of())));

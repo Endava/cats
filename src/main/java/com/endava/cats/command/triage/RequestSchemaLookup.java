@@ -3,6 +3,7 @@ package com.endava.cats.command.triage;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.OpenApiUtils;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -38,7 +39,7 @@ final class RequestSchemaLookup {
         this.openAPI = openAPI;
         this.components = Optional.ofNullable(openAPI)
                 .map(OpenAPI::getComponents)
-                .map(c -> (Map<String, Schema>) c.getSchemas())
+                .map(Components::getSchemas)
                 .orElse(Map.of());
     }
 
