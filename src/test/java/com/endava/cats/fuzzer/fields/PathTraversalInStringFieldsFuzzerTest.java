@@ -56,6 +56,11 @@ class PathTraversalInStringFieldsFuzzerTest {
             "200, '[fonts]\n[extensions]', true",
             "200, 'PATH=/usr/bin\nHOME=/root\nUSER=root', true",
             "200, 'java.nio.file.NoSuchFileException: /etc/passwd', true",
+            "500, 'FileNotFoundError: [Errno 2] No such file or directory: /etc/passwd', true",
+            "500, 'System.IO.DirectoryNotFoundException: Could not find a part of the path', true",
+            "500, 'Warning: fopen(../../../../etc/passwd): failed to open stream: No such file or directory', true",
+            "500, 'open ../../../../etc/passwd: no such file or directory', true",
+            "500, 'Errno::ENOENT: No such file or directory @ rb_sysopen', true",
             "400, '{\"error\":\"Invalid path\"}', false",
             "200, '{\"status\":\"ok\"}', false"
     })

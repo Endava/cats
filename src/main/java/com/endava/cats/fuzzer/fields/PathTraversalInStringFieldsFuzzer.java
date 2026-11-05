@@ -103,11 +103,39 @@ public class PathTraversalInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         return matches;
     }
 
+    private static final List<String> FILESYSTEM_EXCEPTION_INDICATORS = List.of(
+            // Java
+            "java.io.filenotfoundexception",
+            "java.nio.file.nosuchfileexception",
+            "java.nio.file.accessdeniedexception",
+            // Node.js / POSIX
+            "enoent: no such file or directory",
+            "eacces: permission denied",
+            "eisdir: illegal operation on a directory",
+            // Python
+            "filenotfounderror: [errno 2]",
+            "permissionerror: [errno 13]",
+            "isadirectoryerror: [errno 21]",
+            "notadirectoryerror: [errno 20]",
+            // .NET / C#
+            "system.io.filenotfoundexception",
+            "system.io.directorynotfoundexception",
+            "system.unauthorizedaccessexception",
+            "could not find a part of the path",
+            // Go / Rust / OS-level open errors
+            ": no such file or directory",
+            "oserror: [errno",
+            // PHP
+            "failed to open stream: no such file or directory",
+            "failed to open stream: permission denied",
+            "open_basedir restriction in effect",
+            // Ruby
+            "errno::enoent",
+            "errno::eacces"
+    );
+
     private static boolean hasFilesystemExceptionLeak(String body) {
-        return body.contains("java.io.filenotfoundexception")
-                || body.contains("java.nio.file.nosuchfileexception")
-                || body.contains("java.nio.file.accessdeniedexception")
-                || body.contains("enoent: no such file or directory");
+        return FILESYSTEM_EXCEPTION_INDICATORS.stream().anyMatch(body::contains);
     }
 
     @Override

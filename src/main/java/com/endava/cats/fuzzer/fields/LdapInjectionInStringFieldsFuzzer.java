@@ -138,6 +138,12 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             "ldap_search()",
             "ldap_error()",
 
+            // Node.js / Go LDAP
+            "ldapjs",
+            "invalidfiltererror",
+            "ldap result code",
+            "go-ldap",
+
             // Filter-specific errors (strong indicators)
             "invalid search filter",
             "bad search filter",
@@ -405,7 +411,8 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
                 "error", "exception", "failed", "failure", "invalid",
                 "malformed", "syntax", "parsing", "unable", "cannot",
                 "denied", "rejected", "fault", "warning", "stack trace",
-                "at com.", "at javax.", "at org.", "caused by"
+                "at com.", "at javax.", "at org.", "caused by",
+                "traceback", "at system.", "goroutine ", "panic:"
         };
 
         for (String errorWord : errorContextWords) {

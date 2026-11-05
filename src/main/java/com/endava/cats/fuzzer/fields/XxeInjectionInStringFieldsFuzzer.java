@@ -88,6 +88,14 @@ public class XxeInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             "xerces",
             "libxml",
             "msxml",
+            "system.xml.xmlexception",
+            "lxml.etree",
+            "xmlsyntaxerror",
+            "elementtree.parseerror",
+            "simplexml_load",
+            "domdocument::load",
+            "nokogiri::xml",
+            "xml.syntaxerror",
 
             // File system errors (might indicate attempted file access)
             "file not found",
@@ -117,6 +125,10 @@ public class XxeInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             "path=",                 // environment variables
             "home=",                 // environment variables
             "java_home=",            // environment variables
+            "pythonpath=",           // Python environment
+            "node_env=",             // Node.js environment
+            "gopath=",               // Go environment
+            "dotnet_",               // .NET environment
 
             // Entity expansion success
             "lollollol",            // billion laughs
