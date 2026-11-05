@@ -301,7 +301,8 @@ public interface CatsResultFactory {
         HTTP_METHOD_OVERRIDE_ACCEPTED("HTTP method override accepted", "A POST request carrying an HTTP method-override header executed an undocumented HTTP verb"),
         ARITHMETIC_TOTAL_MISMATCH_ACCEPTED("Inconsistent arithmetic total accepted", "The API accepted and reflected an inconsistent client-supplied total that contradicts its component fields"),
         PATH_BODY_ID_MISMATCH_ACCEPTED("Path and body ID mismatch accepted", "The API accepted a PUT or PATCH request whose body identifier contradicted the URL path identifier and reflected the body identifier in the response"),
-        PATCH_CLOBBERED_OMITTED_FIELDS("PATCH wiped omitted optional fields", "A partial PATCH request that omitted optional fields caused previously populated fields on the resource to be wiped or set to null");
+        PATCH_CLOBBERED_OMITTED_FIELDS("PATCH wiped omitted optional fields", "A partial PATCH request that omitted optional fields caused previously populated fields on the resource to be wiped or set to null"),
+        PAGINATION_LIMIT_IGNORED("Pagination limit ignored", "A GET request specifying a pagination limit of 1 returned more than 1 item in the response collection");
 
 
         private final String value;

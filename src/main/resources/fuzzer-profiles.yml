@@ -202,6 +202,7 @@ profiles:
       - VeryLargeUnicodeStringsInFields
       - OverflowArraySizeFields
       - OverflowMapSizeFields
+      - PaginationLimitHonored
       - VeryLargeStringsInHeaders
       - LargeNumberOfRandomHeaders
       - LargeNumberOfRandomAlphanumericHeaders
@@ -311,6 +312,7 @@ profiles:
       - ArithmeticTotalMismatchFields
       - PathBodyIdMismatch
       - PatchOmittedFieldsClobber
+      - PaginationLimitHonored
       - IdempotencyKeyConflict
 
       # Security Essentials
