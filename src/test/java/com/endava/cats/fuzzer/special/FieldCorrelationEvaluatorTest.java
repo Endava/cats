@@ -159,6 +159,11 @@ class FieldCorrelationEvaluatorTest {
         Assertions.assertThat(FieldCorrelationEvaluator.applyRequestCorrelations(
                 "/tokens", "{\"format\":{\"type\":\"SUPPLIED\"}}", unquotedRhsRule, Map.of()))
                 .contains("\"suppliedToken\":\"TKN123\"");
+
+        List<FieldCorrelationRule> selfPresenceGuardRule = List.of(
+                new FieldCorrelationRule(List.of("/risk-watchlists"), "name is not null", Map.of("name", "Blocked-123"), List.of()));
+        Assertions.assertThat(FieldCorrelationEvaluator.collectRequiredFieldsFromCorrelations(
+                "/risk-watchlists", "{\"name\":\"initial\"}", selfPresenceGuardRule)).isEmpty();
     }
 
     @Test

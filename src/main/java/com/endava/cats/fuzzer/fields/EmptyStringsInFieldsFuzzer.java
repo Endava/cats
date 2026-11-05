@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.fields.base.Expect4XXForRequiredBaseFieldsFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -12,10 +13,11 @@ import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.util.CatsModelUtils;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,6 +27,7 @@ import java.util.List;
 @FieldFuzzer
 public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
     private final FilterArguments filterArguments;
+    private final ProcessingArguments processingArguments;
 
     /**
      * Creates a new EmptyStringsInFieldsFuzzer instance.
@@ -35,8 +38,23 @@ public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFu
      * @param fa filter arguments
      */
     public EmptyStringsInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp, FilterArguments fa) {
+        this(sc, lr, cp, fa, null);
+    }
+
+    /**
+     * Creates a new EmptyStringsInFieldsFuzzer instance with processing arguments.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param cp files arguments
+     * @param fa filter arguments
+     * @param pa processing arguments
+     */
+    @Inject
+    public EmptyStringsInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp, FilterArguments fa, ProcessingArguments pa) {
         super(sc, lr, cp);
         this.filterArguments = fa;
+        this.processingArguments = pa;
     }
 
     @Override
@@ -46,7 +64,7 @@ public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFu
 
     @Override
     protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        return Collections.singletonList(FuzzingStrategy.replace().withData(""));
+        return List.of(FuzzingStrategy.replace().withData(""));
     }
 
     @Override
@@ -60,12 +78,26 @@ public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFu
             return ResponseCodeFamilyPredefined.FOURXX_TWOXX;
         }
         Schema<?> fieldSchema = data.getRequestPropertyTypes() != null ? data.getRequestPropertyTypes().get(fuzzedField) : null;
-        if (fieldSchema != null && fieldSchema.getEnum() != null && !fieldSchema.getEnum().isEmpty() && !fieldSchema.getEnum().contains("")) {
+        if (CatsModelUtils.isBooleanSchema(fieldSchema) && isLenientTypes()) {
+            return ResponseCodeFamilyPredefined.FOURXX_TWOXX;
+        }
+        if (isNonEmptyEnumWithoutEmptyString(fieldSchema)) {
             return fieldSchema.getDefault() != null && !fuzzingConstraints.hasMinLengthOrMandatoryFieldsFuzzed()
                     ? ResponseCodeFamilyPredefined.TWOXX
                     : ResponseCodeFamilyPredefined.FOURXX;
         }
         return super.getExpectedResponseCodeBasedOnConstraints(data, fuzzedField, isFuzzedValueMatchingPattern, fuzzingConstraints);
+    }
+
+    private boolean isLenientTypes() {
+        return processingArguments != null && !processingArguments.isStrictTypes();
+    }
+
+    private static boolean isNonEmptyEnumWithoutEmptyString(Schema<?> fieldSchema) {
+        return fieldSchema != null
+                && fieldSchema.getEnum() != null
+                && !fieldSchema.getEnum().isEmpty()
+                && !fieldSchema.getEnum().contains("");
     }
 
     @Override

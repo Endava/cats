@@ -31,7 +31,6 @@ import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

@@ -97,7 +97,7 @@ public final class FieldCorrelationEvaluator {
                             && expandedRule.set() != null) {
                         for (String rawField : expandedRule.set().keySet()) {
                             String normalized = normalizeFieldPath(rawField).replaceAll("\\[\\d+]", "");
-                            if (StringUtils.isNotBlank(normalized)) {
+                            if (StringUtils.isNotBlank(normalized) && !isSelfPresenceGuard(expandedRule.when(), normalized)) {
                                 required.add(normalized);
                             }
                         }
@@ -106,6 +106,16 @@ public final class FieldCorrelationEvaluator {
             }
         }
         return required;
+    }
+
+    private static boolean isSelfPresenceGuard(String whenExpression, String normalizedTargetField) {
+        String trimmed = whenExpression.trim();
+        if (!trimmed.toLowerCase(Locale.ROOT).matches(".+\\s+(?:is\\s+not\\s+null|!=\\s*null|notnull)$")) {
+            return false;
+        }
+        String lhs = trimmed.replaceFirst("(?i)\\s+(?:is\\s+not\\s+null|!=\\s*null|notNull)$", "").trim();
+        String normalizedLhs = normalizeFieldPath(lhs).replaceAll("\\[\\d+]", "");
+        return normalizedLhs.equals(normalizedTargetField);
     }
 
     private static String applyRequestCorrelationsToArray(String contractPath, JsonArray arr,

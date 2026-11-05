@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
@@ -13,10 +14,13 @@ import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.BooleanSchema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -32,6 +36,7 @@ class EmptyStringsInFieldsFuzzerTest {
     private TestCaseListener testCaseListener;
     private FilterArguments filterArguments;
     private FilesArguments filesArguments;
+    private ProcessingArguments processingArguments;
 
     private EmptyStringsInFieldsFuzzer emptyStringsInFieldsFuzzer;
 
@@ -40,8 +45,10 @@ class EmptyStringsInFieldsFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = Mockito.mock(FilesArguments.class);
         filterArguments = Mockito.mock(FilterArguments.class);
+        processingArguments = Mockito.mock(ProcessingArguments.class);
+        Mockito.when(processingArguments.isStrictTypes()).thenReturn(true);
 
-        emptyStringsInFieldsFuzzer = new EmptyStringsInFieldsFuzzer(serviceCaller, testCaseListener, filesArguments, filterArguments);
+        emptyStringsInFieldsFuzzer = new EmptyStringsInFieldsFuzzer(serviceCaller, testCaseListener, filesArguments, filterArguments, processingArguments);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
     }
 
@@ -184,5 +191,34 @@ class EmptyStringsInFieldsFuzzerTest {
         Mockito.verify(testCaseListener).reportResult(
                 Mockito.any(), Mockito.eq(data), Mockito.any(),
                 Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,FOURXX", "false,FOURXX_TWOXX"})
+    void shouldConsiderStrictTypesForRequiredBooleanField(boolean strictTypes, ResponseCodeFamilyPredefined expectedCode) {
+        Mockito.when(processingArguments.isStrictTypes()).thenReturn(strictTypes);
+        Mockito.when(filesArguments.getRefData("/risk-rules")).thenReturn(Map.of());
+        Mockito.when(filterArguments.getSkipFields()).thenReturn(List.of());
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(201).body("{}").build());
+
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.POST)
+                .path("/risk-rules")
+                .headers(Set.of())
+                .payload("{\"active\":true}")
+                .allFields(Set.of("active"))
+                .allRequiredFields(List.of("active"))
+                .reqSchema(new BooleanSchema())
+                .requestPropertyTypes(Map.of("active", new BooleanSchema()))
+                .requestContentTypes(List.of("application/json"))
+                .queryParams(Set.of())
+                .responseCodes(Set.of("201", "422"))
+                .build();
+
+        emptyStringsInFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener).reportResult(
+                Mockito.any(), Mockito.eq(data), Mockito.any(),
+                Mockito.eq(expectedCode), Mockito.anyBoolean(), Mockito.anyBoolean());
     }
 }
