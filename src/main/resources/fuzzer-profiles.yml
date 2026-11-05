@@ -46,6 +46,7 @@ profiles:
       - XssInjectionInStringFields
       - SSRFInUrlFields
       - SortColumnOrmLeakFields
+      - SearchAndFilterExpressionFields
       - HttpParameterPollutionFields
 
       # Authentication & Authorization
@@ -295,6 +296,7 @@ profiles:
       - DateRangeInversion
       - TemporalLogicFields
       - SortColumnOrmLeakFields
+      - SearchAndFilterExpressionFields
       - IdempotencyKeyConflict
 
       # Security Essentials
@@ -412,6 +414,7 @@ profiles:
       - ReadOnlyFieldsMassAssignment
       - HttpParameterPollutionFields
       - HttpMethodOverrideTunneling
+      - SearchAndFilterExpressionFields
 
   # ============================================
   # FULL PROFILE (Default)
