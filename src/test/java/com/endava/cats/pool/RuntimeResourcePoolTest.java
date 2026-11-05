@@ -2687,6 +2687,26 @@ class RuntimeResourcePoolTest {
         Assertions.assertThat(resourcePool.enrich(deleteAfterFuzzedPost, deleteAfterFuzzedPost.getPayload()).payload())
                 .isEqualTo("{\"merchantId\":\"fuzzed-owner\",\"voucher\":\"VCH-FROM-FUZZED-PATH\"}");
 
+        ServiceData fuzzedOwnerItemGet = ServiceData.builder()
+                .relativePath("/merchants/{merchantId}/vouchers/{voucher}")
+                .contractPath("/merchants/{merchantId}/vouchers/{voucher}")
+                .httpMethod(HttpMethod.GET)
+                .mutationTargets(Set.of(RequestTarget.path("merchantId")))
+                .payload("{\"merchantId\":\"m-fuzzed\",\"voucher\":\"990327185245716670762\"}")
+                .build();
+        resourcePool.observe(fuzzedOwnerItemGet,
+                request("GET", "http://localhost:8080/merchants/m-fuzzed/vouchers/990327185245716670762", "{}"),
+                response(200, "{}"));
+        ServiceData putVoucherState = ServiceData.builder()
+                .relativePath("/merchants/{merchantId}/vouchers/{voucher}/states")
+                .contractPath("/merchants/{merchantId}/vouchers/{voucher}/states")
+                .httpMethod(HttpMethod.PUT)
+                .pathParamsPayload("{\"merchantId\":\"placeholder\",\"voucher\":\"11223344556677\"}")
+                .payload("{\"state\":\"ACTIVE\"}")
+                .build();
+        Assertions.assertThat(resourcePool.enrich(putVoucherState, putVoucherState.getPayload()).pathParamsPayload())
+                .isEqualTo("{\"merchantId\":\"fuzzed-owner\",\"voucher\":\"VCH-FROM-FUZZED-PATH\"}");
+
         resourcePool.observe(postData("/clinics/{id}/inventory", "{}"),
                 request("POST", "/clinics/3/inventory", "{}"),
                 response(200, "{\"id\":\"prod-900\"}"));

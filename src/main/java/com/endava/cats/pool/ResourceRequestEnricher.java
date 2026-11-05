@@ -696,13 +696,23 @@ final class ResourceRequestEnricher {
         int compatibilityQuality = ResourceSemanticNaming.compatibilityQuality(candidate.storedValue(), target);
         if (compatibilityQuality > 1 && target != null && target.shape().isNumericString() &&
                 (candidate.resource().sourceMethod() != HttpMethod.POST || storedValuePriority(candidate.storedValue()) < 2) &&
-                hasActiveNonNumericPostResponseForResource(matchCtx.targetResourceForms())) {
+                hasActiveNonNumericPostResponseForResource(targetResourceFormsForParameter(target, matchCtx))) {
             compatibilityQuality = 1;
         }
         int semanticConfidence = ResourceSemanticNaming.semanticConfidence(candidate, similarity, matchCtx);
         int bindingQuality = boundResource != null && candidate.resource().sequence() == boundResource.sequence() ? 1 : 0;
         return feedbackQuality * 10_000 + compatibilityQuality * 1_000 + semanticConfidence * 100 +
                 bindingQuality * 10 + (candidate.resource().fuzzed() ? 0 : 1);
+    }
+
+    private static Set<String> targetResourceFormsForParameter(TargetField target,
+                                                               ResourceSemanticNaming.TargetMatchContext matchCtx) {
+        if (target == null || target.location() != RequestTarget.Location.PATH) {
+            return matchCtx.targetResourceForms();
+        }
+        Set<String> forms = new LinkedHashSet<>(matchCtx.targetResourceForms());
+        forms.addAll(WordUtils.nounForms(ResourceSemanticNaming.normalize(target.name())));
+        return forms;
     }
 
     private boolean hasActiveNonNumericPostResponseForResource(Set<String> targetResourceForms) {
