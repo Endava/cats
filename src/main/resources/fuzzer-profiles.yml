@@ -99,6 +99,7 @@ profiles:
       - CrossParentResourceIsolation
       - CreatedResourceLocation
       - UpdateReadConsistency
+      - PatchOmittedFieldsClobber
       - ConditionalEtag
       - PutIdempotency
       - IdempotencyKeyConflict
@@ -309,6 +310,7 @@ profiles:
       - MutuallyExclusiveFields
       - ArithmeticTotalMismatchFields
       - PathBodyIdMismatch
+      - PatchOmittedFieldsClobber
       - IdempotencyKeyConflict
 
       # Security Essentials
