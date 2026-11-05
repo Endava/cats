@@ -20,6 +20,7 @@ profiles:
       - NumericStringsInNumericFields
       - NumericValuesInStringFields
       - ScientificNotationStringsInDecimalFields
+      - SpecialFloatTokensInNumericFields
       - SingleElementArrayToScalarFields
       - WhitespacePaddedNumericFields
       - AlternativeDateTimeFormatsFields
@@ -260,6 +261,7 @@ profiles:
       - StringsInNumericFields
       - RandomStringsInBooleanFields
       - DecimalNumbersInIntegerFields
+      - SpecialFloatTokensInNumericFields
       - ReplaceObjectsWithPrimitivesFields
       - ReplacePrimitivesWithObjectsFields
       - ReplaceArraysWithPrimitivesFields
@@ -419,6 +421,7 @@ profiles:
       - SearchAndFilterExpressionFields
       - CursorAndPaginationTokenFields
       - TimezoneAndLocaleCodeFields
+      - SpecialFloatTokensInNumericFields
 
   # ============================================
   # FULL PROFILE (Default)
