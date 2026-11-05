@@ -103,6 +103,7 @@ profiles:
       - IdempotencyKeyConflict
       - RandomResources
       - InvalidReferencesFields
+      - ConfirmationFieldsMismatch
 
   # ============================================
   # HEALTH-CHECK PROFILE
@@ -301,6 +302,7 @@ profiles:
       - SearchAndFilterExpressionFields
       - CursorAndPaginationTokenFields
       - TimezoneAndLocaleCodeFields
+      - ConfirmationFieldsMismatch
       - IdempotencyKeyConflict
 
       # Security Essentials
