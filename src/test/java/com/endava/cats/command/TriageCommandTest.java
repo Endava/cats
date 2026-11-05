@@ -1,13 +1,14 @@
 package com.endava.cats.command;
 
+import com.endava.cats.command.triage.RootCauseCluster;
+import com.endava.cats.command.triage.SynthesizedCorrelationRule;
+import com.endava.cats.command.triage.TriageReport;
 import com.endava.cats.fuzzer.special.FunctionalFlowParser;
-import com.endava.cats.model.CatsTestCase;
 import com.sun.net.httpserver.HttpServer;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
 import java.net.InetAddress;
@@ -150,11 +151,11 @@ class TriageCommandTest {
         triageCommand.run();
 
         Assertions.assertThat(triageCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
-        TriageCommand.TriageReport report = triageCommand.getLastReport();
+        TriageReport report = triageCommand.getLastReport();
         Assertions.assertThat(report).isNotNull();
         Assertions.assertThat(report.totalTestsScanned()).isEqualTo(5);
         Assertions.assertThat(report.totalErrors()).isEqualTo(4);
-        Assertions.assertThat(report.clusters()).extracting(TriageCommand.RootCauseCluster::category)
+        Assertions.assertThat(report.clusters()).extracting(RootCauseCluster::category)
                 .containsExactly(
                         "SERVER_CRASH_5XX",
                         "CROSS_FIELD_CONSTRAINT_4XX",
@@ -172,7 +173,8 @@ class TriageCommandTest {
                     Assertions.assertThat(rule.set()).containsKey("billingSchedule");
                 });
         Assertions.assertThat(Files.readString(exportedRefData))
-                .contains("\"/customer-groups/{groupId}\":", "groupId: \"grp_1\"");
+                .contains("No 2XX path parameters or resource IDs mined")
+                .doesNotContain("grp_1");
         Assertions.assertThat(Files.readString(exportedPatch))
                 .contains("/customer-groups/{groupId}:", "delete:", "'204':");
         Assertions.assertThat(Files.readString(exportedSh))
@@ -407,15 +409,15 @@ class TriageCommandTest {
         cmd.run();
 
         Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
-        Assertions.assertThat(cmd.getLastReport().clusters()).extracting(TriageCommand.RootCauseCluster::category)
+        Assertions.assertThat(cmd.getLastReport().clusters()).extracting(RootCauseCluster::category)
                 .contains("HEADER_CORRELATION_COLLISION", "CROSS_FIELD_CONSTRAINT_4XX",
                         "AUTH_CONFIGURATION_GAP", "UNRESOLVED_PATH_PARAM_404",
                         "UNRESOLVED_BODY_REFERENCE_404", "VALIDATION_BYPASS_2XX", "CONTRACT_MISMATCH");
-        TriageCommand.RootCauseCluster enumCluster = cmd.getLastReport().clusters().stream()
+        RootCauseCluster enumCluster = cmd.getLastReport().clusters().stream()
                 .filter(c -> "VALIDATION_BYPASS_2XX".equals(c.category()) && c.fuzzers().contains("InvalidValuesInEnumsFields"))
                 .findFirst().orElseThrow();
         Assertions.assertThat(enumCluster.remediation()).contains("--allowInvalidEnumValues");
-        TriageCommand.RootCauseCluster nonEnumCluster = cmd.getLastReport().clusters().stream()
+        RootCauseCluster nonEnumCluster = cmd.getLastReport().clusters().stream()
                 .filter(c -> "VALIDATION_BYPASS_2XX".equals(c.category()) && c.fuzzers().contains("NonEnumeratedFieldsFuzzer"))
                 .findFirst().orElseThrow();
         Assertions.assertThat(nonEnumCluster.remediation()).doesNotContain("--allowInvalidEnumValues");
@@ -426,8 +428,8 @@ class TriageCommandTest {
         Assertions.assertThat(cmd.getLastReport().synthesizedCorrelationsYaml())
                 .contains("when: \"delivery.mode == 'DIGITAL'\"", "omit:", "- \"shippingAddress\"");
         Assertions.assertThat(cmd.getLastReport().minedRefDataYaml())
-                .contains("id: 9001", "activeId: true")
-                .doesNotContain("999999");
+                .contains("\"/orders/{orderId}\":", "orderId: 9001")
+                .doesNotContain("activeId", "\"/orders/{id}\"", "9999");
     }
 
     @Test
@@ -561,7 +563,7 @@ class TriageCommandTest {
                   "request": {
                     "httpMethod": "POST",
                     "url": "http://localhost:8080/pets",
-                    "payload": "{\\"wrapper\\":{\\"targetField\\":\\"x\\",\\"channelType\\":\\"WEB\\"}}",
+                    "payload": "{\\"wrapper\\":{\\"targetField\\":\\"\\",\\"channelType\\":\\"WEB\\"}}",
                     "sendBody": true
                   },
                   "response": {"responseCode": 422, "jsonBody": {"message": "target field must not be blank"}}
@@ -650,31 +652,147 @@ class TriageCommandTest {
         extraCmd.contractPath = driftSpec.toString();
         extraCmd.run();
         Assertions.assertThat(extraCmd.getLastReport().synthesizedCorrelationsYaml()).contains("omit:");
+    }
 
-        // Cover helper methods in TriageCommand: resolveReplayUrlWithServerOverride, buildCurlForTest, extractUnquotedFieldFromMessage, isClusterVerifiedFixed
-        Class<?> accumClass = Class.forName("com.endava.cats.command.TriageCommand$ClusterAccumulator");
-        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
-                accumClass, "resolveTargetUrl", "http://localhost:8080/v1/orders", ""))
-                .isEqualTo("http://localhost:8080/v1/orders");
-        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
-                accumClass, "resolveTargetUrl", "not-a-url", "https://staging.example.com/api/"))
-                .isEqualTo("not-a-url");
-        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
-                accumClass, "resolveTargetUrl", "http://localhost:8080/orders", "https://staging.example.com/api/"))
-                .isEqualTo("https://staging.example.com/api/orders");
+    @Test
+    void shouldSynthesizeCorrelationsWithErrorCodePrefixesMutationTargetsAndMentionedDiscriminators(@TempDir Path tempDir) throws Exception {
+        // 1. Error-code prefix ("XEL-4220: Operator is required for CONDITION") + removed field in mutationTargets
+        Files.writeString(tempDir.resolve("Test1.json"), """
+                {
+                  "testId": "Test 1",
+                  "result": "error",
+                  "resultReason": "Unexpected response code: 422",
+                  "expectedResult": "Should return 2XX as required fields were not removed",
+                  "fuzzer": "RemoveFields",
+                  "contractPath": "/risk-rules",
+                  "path": "/risk-rules",
+                  "request": {
+                    "httpMethod": "POST",
+                    "url": "http://localhost:8098/risk-rules",
+                    "payload": "{\\"ruleType\\":\\"STATIC\\",\\"expression\\":{\\"type\\":\\"CONDITION\\",\\"field\\":\\"country\\"}}",
+                    "sendBody": true
+                  },
+                  "response": {
+                    "responseCode": 422,
+                    "jsonBody": {"httpCode": 422, "errorCode": "XEL-4220", "message": "Operator is required for CONDITION"}
+                  },
+                  "requestProvenance": {
+                    "mutationTargets": [{"location": "BODY", "name": "expression#operator"}],
+                    "runtimeCorrelations": []
+                  }
+                }
+                """, StandardCharsets.UTF_8);
 
-        CatsTestCase noReqTc = new CatsTestCase();
-        noReqTc.setRequest(null);
-        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
-                TriageCommand.class, "buildCurlReproducer", noReqTc)).isEmpty();
+        // 2. Duplicate field value error ("XEL-4220: Watchlist with name 'B' and type COUNTRY already exists")
+        Files.writeString(tempDir.resolve("Test2.json"), """
+                {
+                  "testId": "Test 2",
+                  "result": "error",
+                  "resultReason": "Unexpected response code: 422",
+                  "expectedResult": "Should return [2XX]",
+                  "fuzzer": "MinLengthExactValuesInStringFields",
+                  "contractPath": "/risk-watchlists",
+                  "path": "/risk-watchlists",
+                  "request": {
+                    "httpMethod": "POST",
+                    "url": "http://localhost:8098/risk-watchlists",
+                    "payload": "{\\"name\\":\\"B\\",\\"type\\":\\"COUNTRY\\"}",
+                    "sendBody": true
+                  },
+                  "response": {
+                    "responseCode": 422,
+                    "jsonBody": {"httpCode": 422, "errorCode": "XEL-4220", "message": "Watchlist with name 'B' and type COUNTRY already exists"}
+                  }
+                }
+                """, StandardCharsets.UTF_8);
 
-        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
-                TriageCommand.class, "extractUnquotedRequiredFieldPrefix", "12 is required")).isNull();
-        Assertions.assertThat((String) ReflectionTestUtils.invokeMethod(
-                TriageCommand.class, "extractUnquotedRequiredFieldPrefix", "a$b is required")).isNull();
-        Assertions.assertThat((Boolean) ReflectionTestUtils.invokeMethod(
-                accumClass, "isVerifiedFixed", "SERVER_CRASH_5XX", "Should return 2XX", 200)).isTrue();
-        Assertions.assertThat((Boolean) ReflectionTestUtils.invokeMethod(
-                accumClass, "isVerifiedFixed", "CROSS_FIELD_CONSTRAINT_4XX", "Should return 4XX", 400)).isTrue();
+        // 3. Operator value compatibility ("XEL-4220: Operator GT requires a numeric value") + case-variant enum
+        Files.writeString(tempDir.resolve("Test3.json"), """
+                {
+                  "testId": "Test 3",
+                  "result": "error",
+                  "resultReason": "Unexpected response code: 422",
+                  "expectedResult": "Should return [2XX]",
+                  "fuzzer": "EnumCaseVariantFields",
+                  "contractPath": "/risk-rules",
+                  "path": "/risk-rules",
+                  "request": {
+                    "httpMethod": "POST",
+                    "url": "http://localhost:8098/risk-rules",
+                    "payload": "{\\"ruleType\\":\\"STATIC\\",\\"expression\\":{\\"type\\":\\"CONDITION\\",\\"field\\":\\"country\\",\\"operator\\":\\"gt\\",\\"value\\":[\\"KP\\"]}}",
+                    "sendBody": true
+                  },
+                  "response": {
+                    "responseCode": 422,
+                    "jsonBody": {"httpCode": 422, "errorCode": "XEL-4220", "message": "Operator GT requires a numeric value"}
+                  }
+                }
+                """, StandardCharsets.UTF_8);
+
+        // 4. Composite NOT child requirement ("XEL-4220: NOT expression must have exactly one child, found 2")
+        Files.writeString(tempDir.resolve("Test4.json"), """
+                {
+                  "testId": "Test 4",
+                  "result": "error",
+                  "resultReason": "Unexpected response code: 422",
+                  "expectedResult": "Should return [2XX]",
+                  "fuzzer": "EnumCaseVariantFields",
+                  "contractPath": "/risk-rules",
+                  "path": "/risk-rules",
+                  "request": {
+                    "httpMethod": "POST",
+                    "url": "http://localhost:8098/risk-rules",
+                    "payload": "{\\"ruleType\\":\\"STATIC\\",\\"expression\\":{\\"type\\":\\"noT\\",\\"children\\":[{},{}]}}",
+                    "sendBody": true
+                  },
+                  "response": {
+                    "responseCode": 422,
+                    "jsonBody": {"httpCode": 422, "errorCode": "XEL-4220", "message": "NOT expression must have exactly one child, found 2"}
+                  }
+                }
+                """, StandardCharsets.UTF_8);
+
+        // 5. Negative fuzzer expecting 4XX should NOT synthesize correlation rules when --include-warnings is enabled
+        Files.writeString(tempDir.resolve("Test5.json"), """
+                {
+                  "testId": "Test 5",
+                  "result": "warn",
+                  "resultReason": "Response content type not matching the contract",
+                  "expectedResult": "Should return [4XX]",
+                  "fuzzer": "InvalidValuesInEnumsFields",
+                  "contractPath": "/risk-watchlists",
+                  "path": "/risk-watchlists",
+                  "request": {
+                    "httpMethod": "GET",
+                    "url": "http://localhost:8098/risk-watchlists?sort_direction=HYI",
+                    "payload": "{\\"sort_direction\\":\\"HYI\\"}",
+                    "sendBody": false
+                  },
+                  "response": {
+                    "responseCode": 422,
+                    "jsonBody": {"httpCode": 422, "errorCode": "XEL-4220", "message": "Invalid sort direction 'HYI'. Valid values: [DESC, ASC]"}
+                  }
+                }
+                """, StandardCharsets.UTF_8);
+
+        TriageCommand cmd = new TriageCommand();
+        cmd.reportFolder = tempDir.toString();
+        cmd.includeWarnings = true;
+        cmd.json = true;
+        cmd.run();
+
+        Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+        TriageReport report = cmd.getLastReport();
+        Assertions.assertThat(report.synthesizedCorrelations())
+                .extracting(
+                        SynthesizedCorrelationRule::path,
+                        SynthesizedCorrelationRule::whenField,
+                        SynthesizedCorrelationRule::whenValue,
+                        SynthesizedCorrelationRule::targetField)
+                .containsExactly(
+                        Assertions.tuple("/risk-rules", "expression.type", "CONDITION", "expression.operator"),
+                        Assertions.tuple("/risk-watchlists", "name", null, "name"),
+                        Assertions.tuple("/risk-rules", "expression.operator", "GT", "expression.value"),
+                        Assertions.tuple("/risk-rules", "expression.type", "NOT", "expression.children"));
     }
 }

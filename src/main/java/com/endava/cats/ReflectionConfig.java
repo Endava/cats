@@ -7,7 +7,9 @@ import com.endava.cats.command.InfoCommand;
 import com.endava.cats.command.InitCommand;
 import com.endava.cats.command.SmokeCommand;
 import com.endava.cats.command.StatsCommand;
-import com.endava.cats.command.TriageCommand;
+import com.endava.cats.command.triage.RootCauseCluster;
+import com.endava.cats.command.triage.SynthesizedCorrelationRule;
+import com.endava.cats.command.triage.TriageReport;
 import com.endava.cats.command.model.FuzzerListEntry;
 import com.endava.cats.command.model.MutatorEntry;
 import com.endava.cats.command.model.PathDetailsEntry;
@@ -275,8 +277,8 @@ import java.util.UUID;
         ProblemDetails.class, RESTReport.class,
         Report.class, TestCase.class,
         Warning.class,
-        TriageCommand.TriageReport.class, TriageCommand.RootCauseCluster.class,
-        TriageCommand.SynthesizedCorrelationRule.class,
+        TriageReport.class, RootCauseCluster.class,
+        SynthesizedCorrelationRule.class,
         AnalyzeCommand.BlueprintReport.class, AnalyzeCommand.ScoreBreakdown.class,
         AnalyzeCommand.ProducerConsumerChain.class,
         SmokeCommand.SmokeReport.class, SmokeCommand.OperationProbe.class,

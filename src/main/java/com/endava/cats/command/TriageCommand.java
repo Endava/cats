@@ -1,69 +1,33 @@
 package com.endava.cats.command;
 
 import com.endava.cats.command.model.ConfigOptions;
-import com.endava.cats.dsl.DynamicValueResolver;
-import com.endava.cats.fuzzer.fields.EnumCaseVariantFieldsFuzzer;
-import com.endava.cats.fuzzer.fields.EnumNumericOrdinalFieldsFuzzer;
-import com.endava.cats.fuzzer.fields.HomoglyphEnumFieldsFuzzer;
-import com.endava.cats.fuzzer.fields.InvalidValuesInEnumsFieldsFuzzer;
-import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
-import com.endava.cats.fuzzer.http.BypassAuthenticationFuzzer;
-import com.endava.cats.fuzzer.http.HappyPathFuzzer;
-import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.model.CatsRequest;
-import com.endava.cats.model.CatsTestCase;
-import com.endava.cats.model.RequestTarget;
-import com.endava.cats.model.ResourceCorrelation;
-import com.endava.cats.report.ErrorSimilarityDetector;
+import com.endava.cats.command.triage.ReproducerScriptRenderer;
+import com.endava.cats.command.triage.RootCauseCluster;
+import com.endava.cats.command.triage.TriageEngine;
+import com.endava.cats.command.triage.TriageOptions;
+import com.endava.cats.command.triage.TriageReport;
 import com.endava.cats.util.AnsiUtils;
-import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
-import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
-import com.endava.cats.util.WordUtils;
 import com.google.common.base.Splitter;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
 import lombok.Getter;
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
+import java.util.function.Function;
 
 /**
  * Contract-aware root-cause clustering, live fix verification ({@code --verify}), {@code --refData} mining from
@@ -79,37 +43,22 @@ import java.util.stream.Stream;
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
         exitCodeList = {"@|bold  0|@:Report triaged (and all verified 5XX crashes fixed when --verify is enabled)",
                 "@|bold 2|@:Usage error: user input for the command was incorrect",
-                "@|bold 1|@:Execution error or unfixed 5XX crashes detected during --verify"},
+                "@|bold 1|@:Execution error, or a 5XX crash cluster that is not FIXED (still failing or inconclusive) during --verify"},
         footerHeading = "%n@|bold,underline Examples:|@%n",
         footer = {"  Triage the default cats-report folder and cluster all errors by root cause:",
                 "    cats triage",
                 "", "  Replay 1 representative test per cluster against a live server to verify fixes:",
                 "    cats triage -r cats-report --verify -s http://localhost:8080",
                 "", "  Mine a ready-to-use --refData file from 2XX exchanges and synthesize --correlations rules:",
-                "    cats triage -r cats-report --export-refdata refData.yml --export-correlations correlations.yml",
+                "    cats triage -r cats-report -c openapi.yml --export-refdata refData.yml --export-correlations correlations.yml",
                 "", "  Generate an OpenAPI contract patch for undocumented status codes observed during the run:",
                 "    cats triage -r cats-report -c openapi.yml --export-contract-patch contract-patch.yml"},
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 @Unremovable
 public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
-    private static final Pattern TEST_FILE_PATTERN = Pattern.compile("Test(\\d+)\\.json$");
-    private static final Pattern QUOTED_FIELD_PATTERN = Pattern.compile("['\"]([A-Za-z0-9_.#$-]+)['\"]");
-    private static final int UNQUOTED_FIELD_MIN_LENGTH = 2;
-    private static final int UNQUOTED_FIELD_MAX_LENGTH = 41;
-    private static final List<Pattern> REQUIRED_FIELD_PHRASE_PATTERNS = List.of(
-            Pattern.compile("\\s+must\\s+not\\s+be\\s+(?:null|blank|empty)\\b", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\s+must\\s+be\\s+null\\b", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\s+is\\s+required\\b", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\s+cannot\\s+be\\s+(?:null|empty)\\b", Pattern.CASE_INSENSITIVE));
-    private static final Pattern ENUM_LIKE_CONSTANT_PATTERN = Pattern.compile("^[A-Z][A-Z0-9_]{1,31}$");
-    private static final Set<String> DISCRIMINATOR_KEY_SUFFIXES = Set.of(
-            "type", "kind", "mode", "category", "channel", "method", "operator", "status", "action", "role", "state");
-    private static final List<Class<?>> ENUM_FUZZERS = List.of(
-            InvalidValuesInEnumsFieldsFuzzer.class,
-            EnumCaseVariantFieldsFuzzer.class,
-            HomoglyphEnumFieldsFuzzer.class,
-            EnumNumericOrdinalFieldsFuzzer.class);
+    private static final String SEPARATOR = "-".repeat(80);
+    private static final String BANNER = "=".repeat(80);
 
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
 
@@ -121,7 +70,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     String reportFolder = "cats-report";
 
     @CommandLine.Option(names = {"-c", "--contract"},
-            description = "Optional OpenAPI contract used to detect undocumented status codes and response drift.")
+            description = "Optional OpenAPI contract used to detect undocumented status codes, validate synthesized field names and type placeholder values.")
     String contractPath;
 
     @CommandLine.Option(names = {"-s", "--server"},
@@ -133,7 +82,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     Map<String, String> customHeaders = new LinkedHashMap<>();
 
     @CommandLine.Option(names = {"--verify"},
-            description = "Replay 1 representative request per root-cause cluster against the server and report FIXED vs STILL_FAILING.")
+            description = "Replay 1 representative request per root-cause cluster against the server and report FIXED, STILL_FAILING or INCONCLUSIVE.")
     boolean verify;
 
     @CommandLine.Option(names = {"--include-warnings"},
@@ -160,6 +109,8 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "Output the triage report as JSON.")
     boolean json;
 
+    Function<String, String> environment = System::getenv;
+
     @Getter
     private int exitCode = CommandLine.ExitCode.OK;
 
@@ -173,27 +124,18 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             if (!Files.isDirectory(folder)) {
                 throw new IllegalArgumentException("Report directory does not exist: " + folder);
             }
-            List<IndexedTestCase> testCases = loadTestCases(folder);
-            OpenAPI openAPI = loadOpenApiIfSupplied();
-            lastReport = buildTriageReport(folder.toString(), testCases, openAPI);
-            if (StringUtils.isNotBlank(exportCorrelationsFile)) {
-                Files.writeString(Paths.get(exportCorrelationsFile), lastReport.synthesizedCorrelationsYaml(), StandardCharsets.UTF_8);
-            }
-            if (StringUtils.isNotBlank(exportRefDataFile)) {
-                Files.writeString(Paths.get(exportRefDataFile), lastReport.minedRefDataYaml(), StandardCharsets.UTF_8);
-            }
-            if (StringUtils.isNotBlank(exportContractPatchFile)) {
-                Files.writeString(Paths.get(exportContractPatchFile), lastReport.contractPatchYaml(), StandardCharsets.UTF_8);
-            }
-            if (StringUtils.isNotBlank(exportReproducersFile)) {
-                Files.writeString(Paths.get(exportReproducersFile), buildReproducersScript(lastReport), StandardCharsets.UTF_8);
-            }
+            lastReport = new TriageEngine(triageOptions()).triage(folder, loadOpenApiIfSupplied());
+            writeExports(lastReport);
             renderReport(lastReport);
-            exitCode = computeExitCode(lastReport);
+            exitCode = verify && TriageEngine.hasUnfixedServerCrash(lastReport) ? CommandLine.ExitCode.SOFTWARE : CommandLine.ExitCode.OK;
         } catch (IOException | RuntimeException e) {
             logger.error("Failed to triage CATS report: {}", e.getMessage());
             exitCode = CommandLine.ExitCode.SOFTWARE;
         }
+    }
+
+    private TriageOptions triageOptions() {
+        return new TriageOptions(includeWarnings, verify, serverUrl, customHeaders, environment);
     }
 
     private OpenAPI loadOpenApiIfSupplied() {
@@ -208,859 +150,17 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
     }
 
-    private int computeExitCode(TriageReport report) {
-        if (!verify) {
-            return CommandLine.ExitCode.OK;
-        }
-        boolean anyUnfixedCrash = report.clusters().stream()
-                .anyMatch(c -> "SERVER_CRASH_5XX".equals(c.category()) && !"FIXED".equals(c.verificationStatus()));
-        return anyUnfixedCrash ? CommandLine.ExitCode.SOFTWARE : CommandLine.ExitCode.OK;
+    private void writeExports(TriageReport report) throws IOException {
+        writeIfRequested(exportCorrelationsFile, report.synthesizedCorrelationsYaml());
+        writeIfRequested(exportRefDataFile, report.minedRefDataYaml());
+        writeIfRequested(exportContractPatchFile, report.contractPatchYaml());
+        writeIfRequested(exportReproducersFile, ReproducerScriptRenderer.render(report));
     }
 
-    List<IndexedTestCase> loadTestCases(Path folder) throws IOException {
-        List<Path> files;
-        try (Stream<Path> stream = Files.list(folder)) {
-            files = stream
-                    .filter(p -> TEST_FILE_PATTERN.matcher(p.getFileName().toString()).find())
-                    .sorted(Comparator.comparingInt(TriageCommand::extractTestNumber))
-                    .toList();
+    private static void writeIfRequested(String file, String content) throws IOException {
+        if (StringUtils.isNotBlank(file)) {
+            Files.writeString(Paths.get(file), content, StandardCharsets.UTF_8);
         }
-        List<IndexedTestCase> result = new ArrayList<>(files.size());
-        for (Path file : files) {
-            CatsTestCase.readTestCaseFile(file)
-                    .filter(tc -> tc.getRequest() != null && tc.getResponse() != null)
-                    .ifPresent(tc -> result.add(new IndexedTestCase(extractTestNumber(file), tc)));
-        }
-        return result;
-    }
-
-    private static int extractTestNumber(Path path) {
-        Matcher m = TEST_FILE_PATTERN.matcher(path.getFileName().toString());
-        return m.find() ? Integer.parseInt(m.group(1)) : Integer.MAX_VALUE;
-    }
-
-    TriageReport buildTriageReport(String folderPath, List<IndexedTestCase> allTests, OpenAPI openAPI) {
-        Set<String> pathsWithSuccessfulPost = new LinkedHashSet<>();
-        Map<String, Integer> firstDeleteTestByPath = new LinkedHashMap<>();
-        Map<String, Map<String, Object>> minedRefData = new LinkedHashMap<>();
-        Map<String, Map<String, Set<Integer>>> undocumentedCodesByPathAndMethod = new TreeMap<>();
-        int errorCount = 0;
-        int warningCount = 0;
-
-        for (IndexedTestCase indexed : allTests) {
-            CatsTestCase tc = indexed.testCase();
-            recordPrepassObservations(indexed, pathsWithSuccessfulPost, firstDeleteTestByPath,
-                    minedRefData, undocumentedCodesByPathAndMethod, openAPI);
-            if ("error".equalsIgnoreCase(tc.getResult())) {
-                errorCount++;
-            } else if (isWarningResult(tc.getResult())) {
-                warningCount++;
-            }
-        }
-
-        List<ClusterAccumulator> accumulators = new ArrayList<>();
-        List<SynthesizedCorrelationRule> correlationRules = new ArrayList<>();
-        Set<String> seenRuleKeys = new LinkedHashSet<>();
-
-        for (IndexedTestCase indexed : allTests) {
-            CatsTestCase tc = indexed.testCase();
-            if (shouldIncludeInClustering(tc.getResult())) {
-                maybeSynthesizeCorrelationRule(tc, correlationRules, seenRuleKeys);
-            }
-        }
-        Set<String> pathsWithSynthesizedCorrelations = new LinkedHashSet<>();
-        correlationRules.forEach(r -> pathsWithSynthesizedCorrelations.add(r.path()));
-
-        for (IndexedTestCase indexed : allTests) {
-            CatsTestCase tc = indexed.testCase();
-            if (shouldIncludeInClustering(tc.getResult())) {
-                ClusterClassification classification = classify(indexed, pathsWithSuccessfulPost,
-                        firstDeleteTestByPath, minedRefData, pathsWithSynthesizedCorrelations,
-                        undocumentedCodesByPathAndMethod, openAPI);
-                ClusterAccumulator matching = findMatchingAccumulator(accumulators, classification);
-                if (matching == null) {
-                    matching = new ClusterAccumulator(classification, buildCurlReproducer(tc), tc);
-                    accumulators.add(matching);
-                }
-                matching.add(tc.getTestId(), tc.getFuzzer());
-            }
-        }
-
-        OkHttpClient verifyClient = buildVerifyClient();
-        List<RootCauseCluster> clusters = accumulators.stream()
-                .map(acc -> acc.toCluster(verifyClient, serverUrl, customHeaders))
-                .sorted(Comparator.comparingInt(RootCauseCluster::severityRank)
-                        .thenComparing(Comparator.comparingInt(RootCauseCluster::occurrences).reversed()))
-                .toList();
-
-        int triagedCount = errorCount + (includeWarnings ? warningCount : 0);
-        double noiseReductionPct = computeNoiseReduction(triagedCount, clusters.size());
-
-        return new TriageReport(
-                folderPath,
-                allTests.size(),
-                errorCount,
-                warningCount,
-                clusters.size(),
-                Math.round(noiseReductionPct * 10.0) / 10.0,
-                clusters,
-                correlationRules,
-                renderCorrelationsYaml(correlationRules),
-                renderRefDataYaml(minedRefData),
-                renderContractPatchYaml(undocumentedCodesByPathAndMethod));
-    }
-
-    private static void recordPrepassObservations(IndexedTestCase indexed,
-                                                  Set<String> pathsWithSuccessfulPost,
-                                                  Map<String, Integer> firstDeleteTestByPath,
-                                                  Map<String, Map<String, Object>> minedRefData,
-                                                  Map<String, Map<String, Set<Integer>>> undocumentedCodesByPathAndMethod,
-                                                  OpenAPI openAPI) {
-        CatsTestCase tc = indexed.testCase();
-        int code = tc.getResponse().getResponseCode();
-        String method = Objects.requireNonNullElse(tc.getRequest().getHttpMethod(), "").toUpperCase(Locale.ROOT);
-        String path = Objects.requireNonNullElse(tc.getContractPath(), Objects.requireNonNullElse(tc.getPath(), ""));
-        if (ResponseCodeFamily.is2xxCode(code)) {
-            if ("POST".equals(method)) {
-                pathsWithSuccessfulPost.add(path);
-            } else if ("DELETE".equals(method)) {
-                firstDeleteTestByPath.putIfAbsent(path, indexed.number());
-            }
-            mineSuccessfulExchangeForRefData(tc, path, minedRefData);
-        }
-        recordContractDriftIfUndocumented(tc, path, method, code, openAPI, undocumentedCodesByPathAndMethod);
-    }
-
-    private static boolean isWarningResult(String result) {
-        return "warn".equalsIgnoreCase(result) || "warning".equalsIgnoreCase(result);
-    }
-
-    private boolean shouldIncludeInClustering(String result) {
-        return "error".equalsIgnoreCase(result) || (includeWarnings && isWarningResult(result));
-    }
-
-    private OkHttpClient buildVerifyClient() {
-        if (!verify) {
-            return null;
-        }
-        return new OkHttpClient.Builder()
-                .connectTimeout(Duration.ofSeconds(5))
-                .readTimeout(Duration.ofSeconds(10))
-                .followRedirects(false)
-                .build();
-    }
-
-    private static double computeNoiseReduction(int triagedCount, int clusterCount) {
-        if (triagedCount == 0 || clusterCount == 0) {
-            return 0.0;
-        }
-        return Math.max(0.0, 100.0 * (triagedCount - clusterCount) / triagedCount);
-    }
-
-    private static ClusterAccumulator findMatchingAccumulator(List<ClusterAccumulator> accumulators,
-                                                              ClusterClassification candidate) {
-        for (ClusterAccumulator existing : accumulators) {
-            ClusterClassification c = existing.classification;
-            if (c. clusterKey().equals(candidate.clusterKey())) {
-                return existing;
-            }
-            if (c.category().equals(candidate.category())
-                    && c.operation().equals(candidate.operation())
-                    && c.statusCode() == candidate.statusCode()
-                    && ErrorSimilarityDetector.areErrorsSimilar(c.diagnosis(), candidate.diagnosis())) {
-                return existing;
-            }
-        }
-        return null;
-    }
-
-    private static void mineSuccessfulExchangeForRefData(CatsTestCase tc, String contractPath,
-                                                         Map<String, Map<String, Object>> minedRefData) {
-        if (StringUtils.isBlank(contractPath)) {
-            return;
-        }
-        String url = Objects.requireNonNullElse(tc.getRequest().getUrl(), tc.getFullRequestPath());
-        if (StringUtils.isNotBlank(url) && contractPath.contains("{")) {
-            Map<String, String> extractedParams = extractConcretePathParams(contractPath, url);
-            if (!extractedParams.isEmpty()) {
-                Map<String, Object> pathMap = minedRefData.computeIfAbsent(contractPath, _ -> new LinkedHashMap<>());
-                extractedParams.forEach(pathMap::putIfAbsent);
-            }
-        }
-        mineResponseBodyIds(parseResponseJson(tc), contractPath, minedRefData);
-    }
-
-    private static void mineResponseBodyIds(JsonElement respJson, String contractPath,
-                                            Map<String, Map<String, Object>> minedRefData) {
-        if (respJson == null || !respJson.isJsonObject()) {
-            return;
-        }
-        for (Map.Entry<String, JsonElement> entry : respJson.getAsJsonObject().entrySet()) {
-            String k = entry.getKey();
-            if (entry.getValue() != null && entry.getValue().isJsonPrimitive() && isIdKey(k)) {
-                Object val = primitiveToJavaObject(entry.getValue());
-                String itemPath = contractPath.endsWith("}") ? contractPath : contractPath + "/{" + k + "}";
-                minedRefData.computeIfAbsent(itemPath, _ -> new LinkedHashMap<>()).putIfAbsent(k, val);
-            }
-        }
-    }
-
-    private static Map<String, String> extractConcretePathParams(String contractPath, String fullUrl) {
-        Map<String, String> params = new LinkedHashMap<>();
-        try {
-            String urlPath = URI.create(fullUrl).getPath();
-            if (urlPath == null) {
-                return params;
-            }
-            List<String> contractSegs = Splitter.on('/').splitToList(contractPath);
-            List<String> actualSegs = Splitter.on('/').splitToList(urlPath);
-            if (contractSegs.size() <= actualSegs.size()) {
-                int offset = actualSegs.size() - contractSegs.size();
-                for (int i = 0; i < contractSegs.size(); i++) {
-                    String cSeg = contractSegs.get(i);
-                    if (cSeg.startsWith("{") && cSeg.endsWith("}")) {
-                        String paramName = cSeg.substring(1, cSeg.length() - 1);
-                        String val = actualSegs.get(i + offset);
-                        if (StringUtils.isNotBlank(val)) {
-                            params.put(paramName, val);
-                        }
-                    }
-                }
-            }
-        } catch (RuntimeException _) {
-            // ignore malformed URL
-        }
-        return params;
-    }
-
-    private static boolean isIdKey(String key) {
-        String lower = key.toLowerCase(Locale.ROOT);
-        return "id".equals(lower) || "uuid".equals(lower) || "guid".equals(lower) || lower.endsWith("id");
-    }
-
-    private static Object primitiveToJavaObject(JsonElement el) {
-        if (el.getAsJsonPrimitive().isNumber()) {
-            return el.getAsJsonPrimitive().getAsNumber();
-        }
-        if (el.getAsJsonPrimitive().isBoolean()) {
-            return el.getAsJsonPrimitive().getAsBoolean();
-        }
-        return el.getAsString();
-    }
-
-    private static void recordContractDriftIfUndocumented(CatsTestCase tc, String path, String method, int code,
-                                                          OpenAPI openAPI,
-                                                          Map<String, Map<String, Set<Integer>>> driftMap) {
-        if (StringUtils.isBlank(path) || StringUtils.isBlank(method) || code < 200 || code >= 500) {
-            return;
-        }
-        boolean undocumented = (openAPI != null && openAPI.getPaths() != null)
-                ? isUndocumentedInOpenApi(openAPI, path, method, code)
-                : isReportedAsUndocumented(tc);
-        if (undocumented) {
-            driftMap.computeIfAbsent(path, _ -> new TreeMap<>())
-                    .computeIfAbsent(method.toLowerCase(Locale.ROOT), _ -> new TreeSet<>())
-                    .add(code);
-        }
-    }
-
-    private static boolean isUndocumentedInOpenApi(OpenAPI openAPI, String path, String method, int code) {
-        PathItem pathItem = openAPI.getPaths().get(path);
-        if (pathItem == null) {
-            return false;
-        }
-        Operation op = HttpMethod.fromString(method).map(hm -> HttpMethod.getOperation(hm, pathItem)).orElse(null);
-        if (op == null || op.getResponses() == null) {
-            return false;
-        }
-        String codeStr = String.valueOf(code);
-        String familyStr = (code / 100) + "XX";
-        return op.getResponses().keySet().stream()
-                .noneMatch(k -> k.equalsIgnoreCase(codeStr)
-                        || k.equalsIgnoreCase(familyStr)
-                        || "default".equalsIgnoreCase(k));
-    }
-
-    private static boolean isReportedAsUndocumented(CatsTestCase tc) {
-        return (tc.getResultReason() != null && tc.getResultReason().toLowerCase(Locale.ROOT).contains("undocumented"))
-                || (tc.getResultDetails() != null && tc.getResultDetails().toLowerCase(Locale.ROOT).contains("undocumented"));
-    }
-
-    private ClusterClassification classify(IndexedTestCase indexed,
-                                           Set<String> pathsWithSuccessfulPost,
-                                           Map<String, Integer> firstDeleteTestByPath,
-                                           Map<String, Map<String, Object>> minedRefData,
-                                           Set<String> pathsWithSynthesizedCorrelations,
-                                           Map<String, Map<String, Set<Integer>>> undocumentedCodesByPathAndMethod,
-                                           OpenAPI openAPI) {
-        CatsTestCase tc = indexed.testCase();
-        int code = tc.getResponse().getResponseCode();
-        String method = Objects.requireNonNullElse(tc.getRequest().getHttpMethod(), "").toUpperCase(Locale.ROOT);
-        String path = Objects.requireNonNullElse(tc.getContractPath(), Objects.requireNonNullElse(tc.getPath(), ""));
-        String errorSig = extractErrorSignature(tc);
-        String clusterNormKey = extractNormalizedErrorKey(tc);
-        List<ResourceCorrelation> correlations = tc.getRequestProvenance() != null
-                ? tc.getRequestProvenance().getRuntimeCorrelations()
-                : List.of();
-
-        ClusterClassification headerCollision = classifyHeaderCollision(correlations, method, path, code);
-        if (headerCollision != null) {
-            return headerCollision;
-        }
-
-        if (ResponseCodeFamily.is5xxCode(code)) {
-            String key = "SERVER_CRASH_5XX|" + method + "|" + path + "|" + clusterNormKey;
-            return new ClusterClassification(
-                    key,
-                    "SERVER_CRASH_5XX",
-                    0,
-                    method + " " + path,
-                    code,
-                    "Unhandled " + code + " server error (" + errorSig + ")",
-                    "Inspect server stacktrace for " + method + " " + path + " and verify your fix with `cats triage --verify`.");
-        }
-
-        if ((code == 401 || code == 403) && !ConsoleUtils.matchesFuzzer(tc.getFuzzer(), BypassAuthenticationFuzzer.class)) {
-            String key = "AUTH_CONFIGURATION_GAP|" + method + "|" + path + "|" + code;
-            return new ClusterClassification(
-                    key,
-                    "AUTH_CONFIGURATION_GAP",
-                    2,
-                    method + " " + path,
-                    code,
-                    "Endpoint rejected credentials with HTTP " + code + " (" + errorSig + ")",
-                    "Pass valid credentials via -H 'Authorization=Bearer ...' or --authConfig auth.yml.");
-        }
-
-        if (code == 404) {
-            return classifyNotFound404(indexed, method, path, errorSig, correlations,
-                    new NotFoundContext(pathsWithSuccessfulPost, firstDeleteTestByPath, minedRefData, openAPI));
-        }
-
-        if (isSeedValidationRejection(tc, code, path, pathsWithSynthesizedCorrelations)) {
-            String key = "CROSS_FIELD_CONSTRAINT_4XX|" + method + "|" + path + "|" + clusterNormKey;
-            String remediation = pathsWithSynthesizedCorrelations.contains(path)
-                    ? "Add the synthesized --correlations rule (`--export-correlations correlations.yml`) for " + path + "."
-                    : "Provide valid domain field values via --refData or --correlations for " + path + ".";
-            return new ClusterClassification(
-                    key,
-                    "CROSS_FIELD_CONSTRAINT_4XX",
-                    1,
-                    method + " " + path,
-                    code,
-                    "Domain / cross-field validation rejected request (" + errorSig + ")",
-                    remediation);
-        }
-
-        if (ResponseCodeFamily.is2xxCode(code)
-                && tc.getExpectedResult() != null
-                && tc.getExpectedResult().contains("4XX")
-                && !tc.getExpectedResult().contains("2XX")) {
-            String key = "VALIDATION_BYPASS_2XX|" + method + "|" + path + "|" + tc.getFuzzer();
-            String remediation = isEnumFuzzer(tc.getFuzzer())
-                    ? "Validate enum values in " + method + " " + path + " and reject invalid values with 400/422 (or pass --allowInvalidEnumValues if intentional)."
-                    : "Enforce input validation in " + method + " " + path + " so invalid input from " + tc.getFuzzer() + " is rejected with 4XX.";
-            return new ClusterClassification(
-                    key,
-                    "VALIDATION_BYPASS_2XX",
-                    2,
-                    method + " " + path,
-                    code,
-                    "Fuzzer [" + tc.getFuzzer() + "] expected 4XX rejection, but server accepted input with HTTP " + code,
-                    remediation);
-        }
-
-        boolean isUndocumented = undocumentedCodesByPathAndMethod.getOrDefault(path, Map.of())
-                .getOrDefault(method.toLowerCase(Locale.ROOT), Set.of())
-                .contains(code);
-        String reason = StringUtils.defaultIfBlank(tc.getResultReason(), "Unexpected response " + code);
-        String key = "CONTRACT_MISMATCH|" + method + "|" + path + "|" + code + "|" + reason;
-        String remediation = isUndocumented
-                ? "Run `cats triage --export-contract-patch contract-patch.yml` to add HTTP " + code + " to the OpenAPI specification for " + method + " " + path + "."
-                : "Fuzzer [" + tc.getFuzzer() + "] (" + StringUtils.defaultIfBlank(tc.getExpectedResult(), "expected different status")
-                        + ") received HTTP " + code + " on " + method + " " + path + "; align service status code or fuzzer expectations.";
-        return new ClusterClassification(
-                key,
-                "CONTRACT_MISMATCH",
-                3,
-                method + " " + path,
-                code,
-                reason + " (HTTP " + code + "; " + errorSig + ")",
-                remediation);
-    }
-
-    private static ClusterClassification classifyHeaderCollision(List<ResourceCorrelation> correlations,
-                                                                 String method, String path, int code) {
-        for (ResourceCorrelation corr : correlations) {
-            if (corr.getTarget().location() == RequestTarget.Location.HEADER) {
-                String headerName = corr.getTarget().name();
-                String key = "HEADER_CORRELATION_COLLISION|" + method + "|" + path + "|" + headerName;
-                return new ClusterClassification(
-                        key,
-                        "HEADER_CORRELATION_COLLISION",
-                        1,
-                        method + " " + path,
-                        code,
-                        "Header [" + headerName + "] was overwritten by runtime correlation from [" + corr.getSourceLocation() + "]",
-                        "Exclude per-request header '" + headerName + "' from resource pool correlation or pin it via -H / headers.yml.");
-            }
-        }
-        return null;
-    }
-
-    private record NotFoundContext(Set<String> pathsWithSuccessfulPost,
-                                   Map<String, Integer> firstDeleteTestByPath,
-                                   Map<String, Map<String, Object>> minedRefData,
-                                   OpenAPI openAPI) {
-    }
-
-    private static ClusterClassification classifyNotFound404(IndexedTestCase indexed, String method, String path,
-                                                             String errorSig, List<ResourceCorrelation> correlations,
-                                                             NotFoundContext context) {
-        ClusterClassification suspiciousCorrelation = classifySuspiciousCorrelation404(correlations, method, path);
-        if (suspiciousCorrelation != null) {
-            return suspiciousCorrelation;
-        }
-        ClusterClassification depletedPool = classifyResourcePoolDepleted404(indexed, method, path, context.firstDeleteTestByPath());
-        if (depletedPool != null) {
-            return depletedPool;
-        }
-        ClusterClassification unresolvedBody = classifyUnresolvedBodyReference404(indexed.testCase(), method, path, errorSig);
-        if (unresolvedBody != null) {
-            return unresolvedBody;
-        }
-        return classifyUnresolvedPathParam404(method, path, errorSig, context);
-    }
-
-    private static ClusterClassification classifySuspiciousCorrelation404(List<ResourceCorrelation> correlations,
-                                                                          String method, String path) {
-        for (ResourceCorrelation corr : correlations) {
-            if (corr.getTarget().location() == RequestTarget.Location.PATH
-                    && corr.getSourceLocation() != null && corr.getSourceLocation().endsWith(".name")) {
-                String key = "SUSPICIOUS_CORRELATION_404|" + method + "|" + path + "|" + corr.getSourceLocation();
-                return new ClusterClassification(
-                        key,
-                        "SUSPICIOUS_CORRELATION_404",
-                        2,
-                        method + " " + path,
-                        404,
-                        "Path parameter [" + corr.getTarget().name() + "] was correlated from non-ID field ["
-                                + corr.getSourceLocation() + " = " + corr.getValue() + "]",
-                        "Ensure collection responses expose a primary resource identifier or map '" + corr.getTarget().name() + "' via --refData.");
-            }
-        }
-        return null;
-    }
-
-    private static ClusterClassification classifyResourcePoolDepleted404(IndexedTestCase indexed, String method, String path,
-                                                                         Map<String, Integer> firstDeleteTestByPath) {
-        String parentDeletePath = findPrecedingDeletePath(path, indexed.number(), firstDeleteTestByPath);
-        if (parentDeletePath != null) {
-            String key = "RESOURCE_POOL_DEPLETED_404|" + method + "|" + path + "|after:" + parentDeletePath;
-            return new ClusterClassification(
-                    key,
-                    "RESOURCE_POOL_DEPLETED_404",
-                    2,
-                    method + " " + path,
-                    404,
-                    "Resource pool depleted after earlier DELETE on [" + parentDeletePath + "] (starting at Test "
-                            + firstDeleteTestByPath.get(parentDeletePath) + ")",
-                    "Run non-DELETE operations across child paths before parent DELETEs or pass --export-refdata refData.yml.");
-        }
-        return null;
-    }
-
-    private static ClusterClassification classifyUnresolvedBodyReference404(CatsTestCase tc, String method, String path,
-                                                                            String errorSig) {
-        String payload = tc.getRequest() != null ? tc.getRequest().getPayload() : null;
-        if (StringUtils.isNotBlank(payload) && payload.trim().startsWith("[")
-                && OpenApiUtils.getPathVariables(path).isEmpty()) {
-            String key = "UNRESOLVED_BODY_REFERENCE_404|" + method + "|" + path;
-            return new ClusterClassification(
-                    key,
-                    "UNRESOLVED_BODY_REFERENCE_404",
-                    2,
-                    method + " " + path,
-                    404,
-                    "Request body array on " + path + " references a resource that does not exist (" + errorSig + ")",
-                    "Supply existing resource identifiers in the request body via --refData or skip " + path + " via --skipPaths.");
-        }
-        return null;
-    }
-
-    private static ClusterClassification classifyUnresolvedPathParam404(String method, String path, String errorSig,
-                                                                        NotFoundContext context) {
-        OpenAPI openAPI = context.openAPI();
-        String collectionPath = parentCollectionPath(path);
-        boolean producerExistsInSpec = openAPI == null || openAPI.getPaths() == null
-                || (openAPI.getPaths().get(collectionPath) != null && openAPI.getPaths().get(collectionPath).getPost() != null);
-        boolean producerSucceeded = context.pathsWithSuccessfulPost().contains(collectionPath);
-        String key = "UNRESOLVED_PATH_PARAM_404|" + method + "|" + path;
-        String diagnosis = producerSucceeded || !producerExistsInSpec
-                ? "Path parameter on " + path + " was not enriched with an active resource ID (" + errorSig + ")"
-                : "No successful 2XX POST producer recorded for [" + collectionPath + "]";
-        String remediation = unresolvedPathParamRemediation(path, collectionPath, producerExistsInSpec, context.minedRefData());
-        return new ClusterClassification(
-                key,
-                "UNRESOLVED_PATH_PARAM_404",
-                2,
-                method + " " + path,
-                404,
-                diagnosis,
-                remediation);
-    }
-
-    private static String unresolvedPathParamRemediation(String path, String collectionPath, boolean producerExistsInSpec,
-                                                         Map<String, Map<String, Object>> minedRefData) {
-        if (minedRefData.containsKey(path)) {
-            return "Run `cats triage --export-refdata refData.yml` to pin the working IDs mined from the report: " + minedRefData.get(path);
-        }
-        if (producerExistsInSpec && !collectionPath.equals(path)) {
-            return "Seed a valid resource via POST " + collectionPath + " or pass --urlParams <param>:<value>.";
-        }
-        return "Pass a valid path parameter via --urlParams <param>:<value> or --refData.";
-    }
-
-    private static boolean isEnumFuzzer(String fuzzer) {
-        return ENUM_FUZZERS.stream().anyMatch(c -> ConsoleUtils.matchesFuzzer(fuzzer, c));
-    }
-
-    private static boolean isSeedValidationRejection(CatsTestCase tc, int code, String path,
-                                                     Set<String> pathsWithSynthesizedCorrelations) {
-        if (code != 400 && code != 422) {
-            return false;
-        }
-        return ConsoleUtils.matchesFuzzer(tc.getFuzzer(), HappyPathFuzzer.class)
-                || ConsoleUtils.matchesFuzzer(tc.getFuzzer(), OnlyRequiredFieldsFuzzer.class)
-                || (pathsWithSynthesizedCorrelations.contains(path)
-                        && tc.getExpectedResult() != null
-                        && tc.getExpectedResult().contains("2XX"));
-    }
-
-    private static String findPrecedingDeletePath(String path, int testNumber, Map<String, Integer> firstDeleteTestByPath) {
-        for (Map.Entry<String, Integer> entry : firstDeleteTestByPath.entrySet()) {
-            if (entry.getValue() < testNumber && (path.equals(entry.getKey()) || path.startsWith(entry.getKey() + "/"))) {
-                return entry.getKey();
-            }
-        }
-        return null;
-    }
-
-    private static String parentCollectionPath(String path) {
-        int braceIdx = path.indexOf("/{");
-        return braceIdx > 0 ? path.substring(0, braceIdx) : path;
-    }
-
-    private static JsonElement parseResponseJson(CatsTestCase tc) {
-        if (tc.getResponse().getJsonBody() != null) {
-            return tc.getResponse().getJsonBody();
-        }
-        String raw = tc.getResponse().getBody();
-        if (StringUtils.isNotBlank(raw) && JsonUtils.isValidJson(raw)) {
-            return JsonUtils.parseAsJsonElement(raw);
-        }
-        return null;
-    }
-
-    private static String extractErrorSignature(CatsTestCase tc) {
-        String rawBody = tc.getResponse().getBody();
-        if (StringUtils.isBlank(rawBody) && tc.getResponse().getJsonBody() != null) {
-            rawBody = tc.getResponse().getJsonBody().toString();
-        }
-        String fallback = StringUtils.isNotBlank(tc.getResultReason())
-                ? tc.getResultReason()
-                : "HTTP " + tc.getResponse().getResponseCode();
-        String summary = ErrorSimilarityDetector.extractRootCauseSummary(rawBody, fallback);
-        return summary.length() > 90 ? summary.substring(0, 90) + "..." : summary;
-    }
-
-    private static String extractNormalizedErrorKey(CatsTestCase tc) {
-        String rawBody = tc.getResponse().getBody();
-        if (StringUtils.isBlank(rawBody) && tc.getResponse().getJsonBody() != null) {
-            rawBody = tc.getResponse().getJsonBody().toString();
-        }
-        return ErrorSimilarityDetector.extractNormalizedClusterKey(rawBody, tc.getResultReason());
-    }
-
-    private static void maybeSynthesizeCorrelationRule(CatsTestCase tc,
-                                                       List<SynthesizedCorrelationRule> rules,
-                                                       Set<String> seenRuleKeys) {
-        int code = tc.getResponse().getResponseCode();
-        if (code != 400 && code != 422) {
-            return;
-        }
-        String payload = tc.getRequest().getPayload();
-        if (StringUtils.isBlank(payload) || !JsonUtils.isValidJson(payload)) {
-            return;
-        }
-        JsonElement reqEl = JsonUtils.parseAsJsonElement(payload);
-        if (reqEl.isJsonArray() && !reqEl.getAsJsonArray().isEmpty() && reqEl.getAsJsonArray().get(0).isJsonObject()) {
-            reqEl = reqEl.getAsJsonArray().get(0);
-        }
-        if (!reqEl.isJsonObject()) {
-            return;
-        }
-        JsonObject root = reqEl.getAsJsonObject();
-        String errSig = extractErrorSignature(tc);
-        String referencedField = extractReferencedField(errSig, root);
-        if (referencedField == null) {
-            return;
-        }
-        KeyValuePair<String, String> discriminator = findDiscriminatorCandidate(root, "", referencedField, 0);
-        if (discriminator == null) {
-            return;
-        }
-        String discriminatorKey = discriminator.getKey();
-        String discriminatorVal = discriminator.getValue();
-        String path = Objects.requireNonNullElse(tc.getContractPath(), Objects.requireNonNullElse(tc.getPath(), ""));
-        String lowerSig = errSig.toLowerCase(Locale.ROOT);
-        String action = (lowerSig.contains("must be null") || lowerSig.contains("not allowed")
-                || lowerSig.contains("forbidden") || lowerSig.contains("unsupported"))
-                ? "REMOVE"
-                : "REQUIRE";
-        String dedupKey = path + "|" + discriminatorKey + "=" + discriminatorVal + "|" + action + "|" + referencedField;
-        if (seenRuleKeys.add(dedupKey)) {
-            rules.add(new SynthesizedCorrelationRule(path, discriminatorKey, discriminatorVal, action, referencedField, errSig));
-        }
-    }
-
-    private static String extractReferencedField(String errSig, JsonObject root) {
-        Matcher quoted = QUOTED_FIELD_PATTERN.matcher(errSig);
-        if (quoted.find()) {
-            return quoted.group(1);
-        }
-        String unquotedField = extractUnquotedRequiredFieldPrefix(errSig.trim());
-        if (unquotedField != null) {
-            String rawWords = unquotedField.trim();
-            String matchedExisting = findMatchingFieldInObject(root, "", WordUtils.normalizeAlphaNumeric(rawWords), 0);
-            if (matchedExisting != null) {
-                return matchedExisting;
-            }
-            return toCamelCaseFieldName(rawWords);
-        }
-        return null;
-    }
-
-    /**
-     * Returns the shortest leading field name (2 to 41 chars: an ASCII letter followed by letters, digits,
-     * underscores or spaces) that is directly followed by whitespace and a "required" phrase, or null.
-     */
-    private static String extractUnquotedRequiredFieldPrefix(String message) {
-        int maxLength = Math.min(UNQUOTED_FIELD_MAX_LENGTH, message.length());
-        if (maxLength < UNQUOTED_FIELD_MIN_LENGTH || !isAsciiLetter(message.charAt(0))) {
-            return null;
-        }
-        for (int length = UNQUOTED_FIELD_MIN_LENGTH; length <= maxLength; length++) {
-            if (!isUnquotedFieldChar(message.charAt(length - 1))) {
-                return null;
-            }
-            if (isFollowedByRequiredPhrase(message, length)) {
-                return message.substring(0, length);
-            }
-        }
-        return null;
-    }
-
-    private static boolean isFollowedByRequiredPhrase(String message, int start) {
-        return REQUIRED_FIELD_PHRASE_PATTERNS.stream()
-                .anyMatch(pattern -> pattern.matcher(message).region(start, message.length()).lookingAt());
-    }
-
-    private static boolean isAsciiLetter(char c) {
-        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
-    }
-
-    private static boolean isUnquotedFieldChar(char c) {
-        return isAsciiLetter(c) || (c >= '0' && c <= '9') || c == '_' || c == ' ';
-    }
-
-    private static String findMatchingFieldInObject(JsonObject obj, String prefix, String targetNorm, int depth) {
-        if (obj == null || depth > 3 || targetNorm.isEmpty()) {
-            return null;
-        }
-        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-            String fullPath = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
-            if (WordUtils.normalizeAlphaNumeric(entry.getKey()).equals(targetNorm)) {
-                return fullPath;
-            }
-            if (entry.getValue() != null && entry.getValue().isJsonObject()) {
-                String nested = findMatchingFieldInObject(entry.getValue().getAsJsonObject(), fullPath, targetNorm, depth + 1);
-                if (nested != null) {
-                    return nested;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static String toCamelCaseFieldName(String rawWords) {
-        String[] parts = rawWords.trim().split("\\s+", -1);
-        if (parts.length == 1) {
-            return parts[0];
-        }
-        StringBuilder sb = new StringBuilder(parts[0].toLowerCase(Locale.ROOT));
-        for (int i = 1; i < parts.length; i++) {
-            if (!parts[i].isEmpty()) {
-                sb.append(Character.toUpperCase(parts[i].charAt(0)))
-                        .append(parts[i].substring(1).toLowerCase(Locale.ROOT));
-            }
-        }
-        return sb.toString();
-    }
-
-    private static KeyValuePair<String, String> findDiscriminatorCandidate(JsonObject obj, String prefix,
-                                                                           String referencedField, int depth) {
-        if (obj == null || depth > 3) {
-            return null;
-        }
-        KeyValuePair<String, String> direct = findDirectDiscriminatorCandidate(obj, prefix, referencedField);
-        if (direct != null) {
-            return direct;
-        }
-        return findNestedDiscriminatorCandidate(obj, prefix, referencedField, depth);
-    }
-
-    private static KeyValuePair<String, String> findDirectDiscriminatorCandidate(JsonObject obj, String prefix,
-                                                                                 String referencedField) {
-        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-            String k = entry.getKey();
-            String fullPath = prefix.isEmpty() ? k : prefix + "." + k;
-            JsonElement val = entry.getValue();
-            if (!fullPath.equals(referencedField) && !k.equals(referencedField)
-                    && val != null && val.isJsonPrimitive()
-                    && isDiscriminatorCandidate(k, val.getAsString())) {
-                return new KeyValuePair<>(fullPath, val.getAsString());
-            }
-        }
-        return null;
-    }
-
-    private static KeyValuePair<String, String> findNestedDiscriminatorCandidate(JsonObject obj, String prefix,
-                                                                                 String referencedField, int depth) {
-        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-            String fullPath = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
-            if (entry.getValue() != null && entry.getValue().isJsonObject()) {
-                KeyValuePair<String, String> nested = findDiscriminatorCandidate(
-                        entry.getValue().getAsJsonObject(), fullPath, referencedField, depth + 1);
-                if (nested != null) {
-                    return nested;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static boolean isDiscriminatorCandidate(String fieldName, String fieldValue) {
-        if (StringUtils.isBlank(fieldName) || StringUtils.isBlank(fieldValue)) {
-            return false;
-        }
-        String lowerName = fieldName.toLowerCase(Locale.ROOT);
-        if (DISCRIMINATOR_KEY_SUFFIXES.stream().anyMatch(lowerName::endsWith)) {
-            return true;
-        }
-        return ENUM_LIKE_CONSTANT_PATTERN.matcher(fieldValue).matches();
-    }
-
-    private static String renderCorrelationsYaml(List<SynthesizedCorrelationRule> rules) {
-        if (rules.isEmpty()) {
-            return "# No cross-field correlation rules needed\ncorrelations: []\n";
-        }
-        StringBuilder sb = new StringBuilder("# Auto-synthesized by `cats triage`\ncorrelations:\n");
-        for (SynthesizedCorrelationRule r : rules) {
-            sb.append("  - paths:\n");
-            sb.append("      - \"").append(r.path()).append("\"\n");
-            sb.append("    when: \"").append(r.whenField()).append(" == '").append(r.whenValue()).append("'\"\n");
-            sb.append("    then:\n");
-            if ("REMOVE".equals(r.action())) {
-                sb.append("      omit:\n");
-                sb.append("        - \"").append(r.targetField()).append("\"\n");
-            } else {
-                sb.append("      set:\n");
-                sb.append("        ").append(r.targetField()).append(": \"#(alphanumeric(12))\"\n");
-            }
-        }
-        return sb.toString();
-    }
-
-    private static String renderRefDataYaml(Map<String, Map<String, Object>> minedRefData) {
-        if (minedRefData.isEmpty()) {
-            return "# No 2XX path parameters or resource IDs mined from report\n";
-        }
-        StringBuilder sb = new StringBuilder("# Auto-mined from 2XX exchanges by `cats triage`\n");
-        minedRefData.forEach((path, fields) -> {
-            if (!fields.isEmpty()) {
-                sb.append("\"").append(path).append("\":\n");
-                fields.forEach((k, v) -> {
-                    if (v instanceof Number || v instanceof Boolean) {
-                        sb.append("  ").append(k).append(": ").append(v).append("\n");
-                    } else {
-                        sb.append("  ").append(k).append(": \"").append(String.valueOf(v).replace("\"", "\\\"")).append("\"\n");
-                    }
-                });
-            }
-        });
-        return sb.toString();
-    }
-
-    private static String renderContractPatchYaml(Map<String, Map<String, Set<Integer>>> driftMap) {
-        if (driftMap.isEmpty()) {
-            return "# No undocumented status codes detected\npaths: {}\n";
-        }
-        StringBuilder sb = new StringBuilder("# OpenAPI contract patch generated by `cats triage`\npaths:\n");
-        driftMap.forEach((path, byMethod) -> {
-            sb.append("  ").append(path).append(":\n");
-            byMethod.forEach((method, codes) -> {
-                sb.append("    ").append(method).append(":\n");
-                sb.append("      responses:\n");
-                for (int code : codes) {
-                    sb.append("        '").append(code).append("':\n");
-                    sb.append("          description: \"").append(defaultStatusDescription(code)).append("\"\n");
-                }
-            });
-        });
-        return sb.toString();
-    }
-
-    private static String defaultStatusDescription(int code) {
-        return switch (code) {
-            case 200 -> "OK";
-            case 201 -> "Created";
-            case 202 -> "Accepted";
-            case 204 -> "No Content";
-            case 400 -> "Bad Request";
-            case 401 -> "Unauthorized";
-            case 403 -> "Forbidden";
-            case 404 -> "Not Found";
-            case 409 -> "Conflict";
-            case 415 -> "Unsupported Media Type";
-            case 422 -> "Unprocessable Entity";
-            default -> "HTTP " + code;
-        };
-    }
-
-    private static String buildCurlReproducer(CatsTestCase tc) {
-        if (tc.getRequest() == null) {
-            return "";
-        }
-        if (StringUtils.isBlank(tc.getRequest().getUrl()) && StringUtils.isNotBlank(tc.getFullRequestPath())) {
-            tc.getRequest().setUrl(tc.getFullRequestPath());
-        }
-        return tc.getRequest().toCurlCommand();
-    }
-
-    private static String buildReproducersScript(TriageReport report) {
-        StringBuilder sb = new StringBuilder("#!/usr/bin/env bash\nset -euo pipefail\n\n");
-        sb.append("# Minimal Root-Cause Reproducers generated by `cats triage`\n");
-        sb.append("# Clusters: ").append(report.totalClusters()).append(" (from ").append(report.totalErrors()).append(" failing tests)\n\n");
-        int idx = 1;
-        for (RootCauseCluster c : report.clusters()) {
-            sb.append("# ").append(idx++).append(". [").append(c.category()).append("] ")
-                    .append(c.operation()).append(" -> HTTP ").append(c.statusCode())
-                    .append(" (").append(c.occurrences()).append(" tests: ").append(String.join(", ", c.sampleTestIds())).append(")\n");
-            sb.append("# Diagnosis: ").append(c.diagnosis()).append("\n");
-            sb.append(c.curlReproducer()).append("\n\n");
-        }
-        return sb.toString();
     }
 
     private void renderReport(TriageReport report) {
@@ -1068,234 +168,69 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             logger.noFormat(JsonUtils.GSON.toJson(report));
             return;
         }
-        logger.noFormat(AnsiUtils.bold("================================================================================"));
+        renderSummary(report);
+        List<RootCauseCluster> clusters = report.clusters();
+        for (int i = 0; i < clusters.size(); i++) {
+            renderCluster(i + 1, clusters.get(i));
+        }
+        renderCorrelations(report);
+        logger.noFormat(AnsiUtils.bold(BANNER));
+    }
+
+    private void renderSummary(TriageReport report) {
+        logger.noFormat(AnsiUtils.bold(BANNER));
         logger.noFormat(AnsiUtils.bold("  CATS Intelligent Report Triage & Root-Cause Diagnosis"));
-        logger.noFormat(AnsiUtils.bold("================================================================================"));
+        logger.noFormat(AnsiUtils.bold(BANNER));
         logger.noFormat("  Report Folder      : " + report.reportFolder());
-        logger.noFormat("  Tests Scanned      : " + report.totalTestsScanned()
-                + "  (Errors: " + report.totalErrors() + ", Warnings: " + report.totalWarnings() + ")");
-        logger.noFormat("  Root-Cause Clusters: " + report.totalClusters()
-                + "  (Signal-to-Noise Reduction: " + report.noiseReductionPercent() + "%)");
-        logger.noFormat("--------------------------------------------------------------------------------");
-
-        int idx = 1;
-        for (RootCauseCluster c : report.clusters()) {
-            String badge = switch (c.severityRank()) {
-                case 0 -> AnsiUtils.red("[" + c.category() + "]");
-                case 1 -> AnsiUtils.yellow("[" + c.category() + "]");
-                default -> AnsiUtils.blue("[" + c.category() + "]");
-            };
-            String verifyBadge = c.verificationStatus() == null ? ""
-                    : ("FIXED".equals(c.verificationStatus())
-                            ? " " + AnsiUtils.green("[VERIFIED FIXED -> HTTP " + c.verifiedStatusCode() + "]")
-                            : " " + AnsiUtils.red("[STILL FAILING -> HTTP " + c.verifiedStatusCode() + "]"));
-            logger.noFormat(String.format("  %2d. %s %s -> HTTP %d (%d tests)%s",
-                    idx++, badge, AnsiUtils.bold(c.operation()), c.statusCode(), c.occurrences(), verifyBadge));
-            logger.noFormat("     Diagnosis   : " + c.diagnosis());
-            logger.noFormat("     Remediation : " + c.remediation());
-            logger.noFormat("     Fuzzers     : " + String.join(", ", c.fuzzers()));
-            logger.noFormat("     Sample Tests: " + String.join(", ", c.sampleTestIds()));
-            logger.noFormat("     Reproducer  : " + c.curlReproducer());
-            logger.noFormat("");
-        }
-
-        if (!report.synthesizedCorrelations().isEmpty()) {
-            logger.noFormat(AnsiUtils.bold("  Synthesized --correlations YAML Rules (pass --export-correlations <file>):"));
-            logger.noFormat("--------------------------------------------------------------------------------");
-            for (String line : Splitter.on('\n').split(report.synthesizedCorrelationsYaml())) {
-                logger.noFormat("  " + line);
-            }
-        }
-        logger.noFormat(AnsiUtils.bold("================================================================================"));
+        logger.noFormat("  Tests Scanned      : %d  (Errors: %d, Warnings: %d)"
+                .formatted(report.totalTestsScanned(), report.totalErrors(), report.totalWarnings()));
+        logger.noFormat("  Root-Cause Clusters: %d  (Signal-to-Noise Reduction: %s%%)"
+                .formatted(report.totalClusters(), report.noiseReductionPercent()));
+        logger.noFormat(SEPARATOR);
     }
 
-    record IndexedTestCase(int number, CatsTestCase testCase) {
+    private void renderCluster(int index, RootCauseCluster cluster) {
+        logger.noFormat("  %2d. %s %s -> HTTP %d (%d tests)%s".formatted(index, categoryBadge(cluster),
+                AnsiUtils.bold(cluster.operation()), cluster.statusCode(), cluster.occurrences(), verificationBadge(cluster)));
+        logger.noFormat("     Diagnosis   : " + cluster.diagnosis());
+        logger.noFormat("     Remediation : " + cluster.remediation());
+        logger.noFormat("     Fuzzers     : " + String.join(", ", cluster.fuzzers()));
+        logger.noFormat("     Sample Tests: " + String.join(", ", cluster.sampleTestIds()));
+        logger.noFormat("     Reproducer  : " + cluster.curlReproducer());
+        if (StringUtils.isNotBlank(cluster.verificationNote())) {
+            logger.noFormat("     Verification: " + cluster.verificationNote());
+        }
+        logger.noFormat("");
     }
 
-    record ClusterClassification(String clusterKey,
-                                 String category,
-                                 int severityRank,
-                                 String operation,
-                                 int statusCode,
-                                 String diagnosis,
-                                 String remediation) {
+    private static String categoryBadge(RootCauseCluster cluster) {
+        String badge = "[" + cluster.category() + "]";
+        return switch (cluster.severityRank()) {
+            case 0 -> AnsiUtils.red(badge);
+            case 1 -> AnsiUtils.yellow(badge);
+            default -> AnsiUtils.blue(badge);
+        };
     }
 
-    private static final class ClusterAccumulator {
-        private final ClusterClassification classification;
-        private final String curlReproducer;
-        private final CatsTestCase representativeTestCase;
-        private int count;
-        private final Set<String> fuzzers = new LinkedHashSet<>();
-        private final List<String> sampleTestIds = new ArrayList<>();
-
-        ClusterAccumulator(ClusterClassification classification, String curlReproducer, CatsTestCase representativeTestCase) {
-            this.classification = classification;
-            this.curlReproducer = curlReproducer;
-            this.representativeTestCase = representativeTestCase;
+    private static String verificationBadge(RootCauseCluster cluster) {
+        if (cluster.verificationStatus() == null) {
+            return "";
         }
-
-        void add(String testId, String fuzzer) {
-            count++;
-            if (StringUtils.isNotBlank(fuzzer) && fuzzers.size() < 6) {
-                fuzzers.add(fuzzer);
-            }
-            if (StringUtils.isNotBlank(testId) && sampleTestIds.size() < 5) {
-                sampleTestIds.add(testId);
-            }
-        }
-
-        RootCauseCluster toCluster(OkHttpClient verifyClient, String serverOverride, Map<String, String> headerOverrides) {
-            String verificationStatus = null;
-            Integer verifiedCode = null;
-            if (verifyClient != null && representativeTestCase != null && representativeTestCase.getRequest() != null) {
-                int replayedCode = executeLiveVerification(verifyClient, representativeTestCase.getRequest(), serverOverride, headerOverrides);
-                verifiedCode = replayedCode;
-                verificationStatus = isVerifiedFixed(classification.category(), representativeTestCase.getExpectedResult(), replayedCode)
-                        ? "FIXED"
-                        : "STILL_FAILING";
-            }
-            return new RootCauseCluster(
-                    classification.category(),
-                    classification.severityRank(),
-                    classification.operation(),
-                    classification.statusCode(),
-                    count,
-                    classification.diagnosis(),
-                    classification.remediation(),
-                    List.copyOf(fuzzers),
-                    List.copyOf(sampleTestIds),
-                    curlReproducer,
-                    verificationStatus,
-                    verifiedCode);
-        }
-
-        private static boolean isVerifiedFixed(String category, String expectedResult, int replayedCode) {
-            if ("SERVER_CRASH_5XX".equals(category)) {
-                return replayedCode >= 200 && replayedCode < 500;
-            }
-            if (expectedResult != null && expectedResult.contains("4XX") && !expectedResult.contains("2XX")) {
-                return ResponseCodeFamily.is4xxCode(replayedCode);
-            }
-            return ResponseCodeFamily.is2xxCode(replayedCode);
-        }
-
-        private static int executeLiveVerification(OkHttpClient client, CatsRequest catsRequest,
-                                                   String serverOverride, Map<String, String> headerOverrides) {
-            try {
-                String targetUrl = DynamicValueResolver.resolve(resolveTargetUrl(catsRequest.getUrl(), serverOverride), Map.of());
-                String method = StringUtils.defaultIfBlank(catsRequest.getHttpMethod(), "GET").toUpperCase(Locale.ROOT);
-                Headers.Builder headersBuilder = new Headers.Builder();
-                String contentType = populateVerificationHeaders(catsRequest, headerOverrides, headersBuilder);
-                RequestBody body = buildVerificationBody(catsRequest, method, contentType);
-                Request request = new Request.Builder()
-                        .url(targetUrl)
-                        .headers(headersBuilder.build())
-                        .method(method, body)
-                        .build();
-                try (Response response = client.newCall(request).execute()) {
-                    return response.code();
-                }
-            } catch (IOException | RuntimeException _) {
-                return 0;
-            }
-        }
-
-        private static String populateVerificationHeaders(CatsRequest catsRequest,
-                                                          Map<String, String> headerOverrides,
-                                                          Headers.Builder headersBuilder) {
-            String contentType = "application/json";
-            if (catsRequest.getHeaders() != null) {
-                for (KeyValuePair<String, Object> h : catsRequest.getHeaders()) {
-                    if (StringUtils.isNotBlank(h.getKey()) && h.getValue() != null) {
-                        String resolvedHeaderVal = DynamicValueResolver.resolve(String.valueOf(h.getValue()), Map.of());
-                        headersBuilder.add(h.getKey(), resolvedHeaderVal);
-                        if ("content-type".equalsIgnoreCase(h.getKey())) {
-                            contentType = resolvedHeaderVal;
-                        }
-                    }
-                }
-            }
-            if (headerOverrides != null) {
-                headerOverrides.forEach(headersBuilder::set);
-            }
-            return contentType;
-        }
-
-        private static RequestBody buildVerificationBody(CatsRequest catsRequest, String method, String contentType) {
-            if (!HttpMethod.requiresBody(method) && !catsRequest.isSendBody()) {
-                return null;
-            }
-            String payload = Objects.requireNonNullElse(catsRequest.getPayload(), "");
-            MediaType mediaType = parseMediaTypeOrDefault(contentType);
-            return RequestBody.create(payload.getBytes(StandardCharsets.UTF_8), mediaType);
-        }
-
-        private static MediaType parseMediaTypeOrDefault(String contentType) {
-            try {
-                MediaType parsed = MediaType.parse(contentType);
-                return parsed != null ? parsed : MediaType.parse("application/json");
-            } catch (RuntimeException _) {
-                return MediaType.parse("application/json");
-            }
-        }
-
-        private static String resolveTargetUrl(String originalUrl, String serverOverride) {
-            if (StringUtils.isBlank(serverOverride) || StringUtils.isBlank(originalUrl)) {
-                return originalUrl;
-            }
-            HttpUrl orig = HttpUrl.parse(originalUrl);
-            HttpUrl override = HttpUrl.parse(serverOverride);
-            if (orig == null || override == null) {
-                return originalUrl;
-            }
-            String overrideBasePath = override.encodedPath();
-            String origPath = orig.encodedPath();
-            String mergedPath = (!"/".equals(overrideBasePath) && !origPath.startsWith(overrideBasePath))
-                    ? (overrideBasePath.endsWith("/") ? overrideBasePath.substring(0, overrideBasePath.length() - 1) : overrideBasePath) + origPath
-                    : origPath;
-            return orig.newBuilder()
-                    .scheme(override.scheme())
-                    .host(override.host())
-                    .port(override.port())
-                    .encodedPath(mergedPath)
-                    .build()
-                    .toString();
-        }
+        String text = " [%s -> HTTP %s]".formatted(cluster.verificationStatus().replace('_', ' '),
+                cluster.verifiedStatusCode() == null ? "n/a" : cluster.verifiedStatusCode());
+        return switch (cluster.verificationStatus()) {
+            case "FIXED" -> AnsiUtils.green(text);
+            case "STILL_FAILING" -> AnsiUtils.red(text);
+            default -> AnsiUtils.yellow(text);
+        };
     }
 
-    public record RootCauseCluster(String category,
-                                   int severityRank,
-                                   String operation,
-                                   int statusCode,
-                                   int occurrences,
-                                   String diagnosis,
-                                   String remediation,
-                                   List<String> fuzzers,
-                                   List<String> sampleTestIds,
-                                   String curlReproducer,
-                                   String verificationStatus,
-                                   Integer verifiedStatusCode) {
-    }
-
-    public record SynthesizedCorrelationRule(String path,
-                                             String whenField,
-                                             String whenValue,
-                                             String action,
-                                             String targetField,
-                                             String sourceError) {
-    }
-
-    public record TriageReport(String reportFolder,
-                               int totalTestsScanned,
-                               int totalErrors,
-                               int totalWarnings,
-                               int totalClusters,
-                               double noiseReductionPercent,
-                               List<RootCauseCluster> clusters,
-                               List<SynthesizedCorrelationRule> synthesizedCorrelations,
-                               String synthesizedCorrelationsYaml,
-                               String minedRefDataYaml,
-                               String contractPatchYaml) {
+    private void renderCorrelations(TriageReport report) {
+        if (report.synthesizedCorrelations().isEmpty()) {
+            return;
+        }
+        logger.noFormat(AnsiUtils.bold("  Synthesized --correlations YAML Rules (pass --export-correlations <file>):"));
+        logger.noFormat(SEPARATOR);
+        Splitter.on('\n').split(report.synthesizedCorrelationsYaml()).forEach(line -> logger.noFormat("  " + line));
     }
 }

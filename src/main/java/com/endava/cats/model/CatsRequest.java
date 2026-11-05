@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * Model class used to stored request details.
@@ -21,6 +22,8 @@ import java.util.Optional;
 @Setter
 @Builder
 public class CatsRequest {
+    private static final Pattern MASKED_PLACEHOLDER = Pattern.compile("\\$\\$(\\w+)");
+
     List<KeyValuePair<String, Object>> headers;
     String payload;
     String httpMethod;
@@ -68,7 +71,12 @@ public class CatsRequest {
         return cmd.toString();
     }
 
+    /**
+     * Single-quotes {@code value} for POSIX shells while expanding masked {@code $$VAR} report placeholders as
+     * {@code "${VAR}"}, so reproducers read secrets from the environment instead of sending the literal placeholder.
+     */
     private static String shellQuote(String value) {
-        return "'" + value.replace("'", "'\\''") + "'";
+        String escaped = value.replace("'", "'\\''");
+        return "'" + MASKED_PLACEHOLDER.matcher(escaped).replaceAll("'\"\\${$1}\"'") + "'";
     }
 }
