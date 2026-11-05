@@ -26,11 +26,13 @@ Before writing a functional flow, inspect the contract's operations and generate
 # List all paths and HTTP methods as JSON
 cats list --paths -c <spec> -j
 
-# Generate a schema-valid request payload for a specific path and method
-cats generate -c <spec> -p /orders -X POST --pretty
+# Generate a schema-valid request payload for a specific path and method (-p is required).
+# Use -L 2 (the fuzzing default; generate defaults to 4) and the same --seed as your fuzzing run
+# to see the generated payload that correlation `when:` rules are evaluated against.
+cats generate -c <spec> -p /orders -X POST -L 2 --seed 42 --pretty
 
-# Generate a payload for a named component schema
-cats generate -c <spec> -s OrderCreateRequest --pretty
+# oneOf/anyOf bodies produce several payloads; cap them with -l
+cats generate -c <spec> -p /orders -X POST -l 5 --pretty
 ```
 
 To scaffold starter `headers.yml`, `refData.yml`, and a starter functional flow file from the contract:
@@ -49,7 +51,7 @@ A functional flow YAML file executes an ordered sequence of HTTP steps (`steps:`
 2. **Never write `matchesSchema: true`** — response schema validation is enabled by default (`matchesSchema: true` is implicit). Only set `matchesSchema: false` when intentionally asserting an error response that deviates from the documented schema.
 3. **Write expected field values directly under `expect:`** (no `fields:` wrapper needed), and use top-level `status: 204` on steps that only assert the HTTP status code.
 4. **Use shorthand `save: [field1, field2]`** when the variable name matches the response JSON field name, or `save: { alias: fieldPath }` (or `$steps.<stepName>.response.<field>`) when renaming.
-5. **Only override fields in `body:` and `query:` that matter to the scenario** — with `base: merge` (default), CATS populates all other required schema fields automatically and omits unrequested optional query parameters on `GET`/`DELETE`.
+5. **Only override fields in `body:` and `query:` that matter to the scenario** — with `base: merge` (default), CATS populates all other required schema fields automatically and omits unrequested optional query parameters on `GET`/`DELETE`. Use `base: onlyRequired` to start a body from required fields only, or `base: empty` to start from `{}`.
 6. **Never assert `response.<requiredField> != null` in `expect.that:`** when the field is already required by the OpenAPI response schema or captured in `save:`.
 7. **Always omit recursive self-referencing array/object properties on leaf nodes** — if `cats generate` shows a recursive schema (such as an AST/expression node with `children: [$ref: '#/components/schemas/Expression']`), add `omit: ["expression.children"]` in `correlate:` or on the step so leaf conditions do not carry auto-generated child trees.
 8. **Use captured resource IDs (not display names) for cross-resource references** — when one resource references another (e.g., a rule referencing a watchlist via `IN_WATCHLIST`), pass the captured identifier (`${watchlistId}` or `${steps.createWatchlist.response.watchlistId}`) unless the OpenAPI field description explicitly requires a display name.
@@ -78,7 +80,8 @@ steps:
   - name: "createPlan"
     description: "Create a metered billing plan and verify its response contract"
     POST: "/billing-plans"
-    # Optional oneOf/anyOf variant selection (by schema name or field match)
+    # Optional oneOf/anyOf variant selection: a schema-name suffix (`variant: MeteredPlan`) or a
+    # field match (any listed field equal, case-sensitive). Falls back silently to the first variant.
     variant:
       planType: "METERED"
     # Override only the fields relevant to this test scenario
@@ -160,16 +163,23 @@ steps:
     status: [200, 204]
 ```
 
+*(Alternative step syntax: `method: POST` + `path: "/billing-plans"`, or `ALL: "/path"` for every documented method. `path:` may also be a map of path-parameter values. `expect.headers:` asserts response headers.)*
+
 ### Running a Functional Flow
 ```bash
 cats run -c <spec> -s <server_url> flows.yml
 ```
+- `cats run` **ignores `--correlations`** for flow steps. Put cross-field rules in the flow's top-level `correlate:` block or a step-level `correlate:` block. Step `body:` / `omit:` / `path:` / `query:` values always win over `correlate:` rules.
+- `cats run` does **not** read `--refData` as input. It treats the file as a `${var}` template and writes `<name>_replaced.yml` with values captured by `save:`. `-R` is not available.
+- Supported auth/config flags: `-H`, `--headers`, `--queryParams`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`.
 
 ---
 
 ## 3. Authoring Cross-Field Correlation Rules (`--correlations correlations.yml`)
 
-When an API enforces conditional field dependencies (e.g., when a discriminator or enum field has a specific value, certain sibling fields become required or forbidden), define them in `correlations.yml` so **both** functional flows and all built-in CATS fuzzers satisfy the invariant.
+When an API enforces conditional field dependencies (e.g., when a discriminator or enum field has a specific value, certain sibling fields become required or forbidden), define them in `correlations.yml` so all built-in CATS fuzzers satisfy the invariant.
+
+**Scope:** `--correlations` applies to the root `cats` command and `cats template`. `cats run` flows ignore it; use the same rule syntax inside the flow's `correlate:` block.
 
 ### Supported `correlations.yml` Formats (`then:` is optional)
 
@@ -181,35 +191,36 @@ correlations:
       - "/billing-plans/{planId}"
       - "/billing-plans/batch*"
     rules:
-      - when: "planType == RECURRING"
+      - when: "planType == 'RECURRING'"
         set:
           billingSchedule: "MONTHLY"
           gracePeriodDays: 7
         omit:
           - "oneTimeSetupFee"
-      - when: "planType == ONE_TIME"
+      - when: "planType == 'ONE_TIME'"
         set:
           oneTimeSetupFee: 99
         omit:
           - "billingSchedule"
           - "gracePeriodDays"
-      - when: "tiers[*].mode == METERED"
+      - when: "tiers[*].mode == 'METERED'"
         set:
           tiers[*].unitField: "SeatCount"
 ```
+*(Mutually exclusive branches like `RECURRING` / `ONE_TIME` keep payloads consistent at runtime, but only the branch matching the generated payload marks its `set:` fields required. See Critical Rule 1.)*
 
-2. **Path-Keyed Map (Matches `refData.yml` & `headers.yml`, including `all:`)**:
+2. **Path-Keyed Map (`all:`, exact contract paths, or `prefix*`; unlike `refData.yml` / `headers.yml` there is NO HTTP method scoping, so a `"POST /billing-plans":` key silently never matches)**:
 ```yaml
 all:
-  when: "mode == TEST"
+  when: "mode == 'TEST'"
   set:
     dryRunFlag: true
 
 /billing-plans:
-  - when: "planType == RECURRING"
+  - when: "planType == 'RECURRING'"
     set:
       billingSchedule: "MONTHLY"
-  - when: "planType == ONE_TIME"
+  - when: "planType == 'ONE_TIME'"
     omit:
       - "billingSchedule"
 ```
@@ -218,18 +229,52 @@ all:
    - Ideal when there is only one rule per path group.
    - Rules also apply automatically to every element of a **root JSON array** request body (e.g. batch endpoints).
 
-### How `when:` Rules Interact with Built-In Fuzzers
-- **Guarded `when:` + `set:` (`when: "format.type == SUPPLIED"` $\rightarrow$ `set: { suppliedToken: ... }`)**:
-  - Marks the `set:` target field (`suppliedToken`) as **conditionally required** on payload variants where `when:` evaluates to `true`.
-  - `OnlyRequiredFields` automatically retains `suppliedToken` on matching variants, and `RemoveFields` / `NullValuesInFields` / `EmptyStringsInFields` expect **`4XX`** when removing/nulling `suppliedToken` on matching variants (while still expecting `2XX` on variants where `when:` is `false`).
-- **Unconditional `set:` (no `when:` clause)**:
-  - Populates a default baseline value without marking the field required.
-
+### How `when:` Rules Interact with Built-In Fuzzers (Critical Rules)
+1. **`when:` is evaluated twice, on two different payloads**:
+   - **(a) Required-field analysis**, once per operation, on the **raw generated payload**: before `--refData`, runtime resource reuse, or any other correlation rule is applied. If `when:` is `true` there, every `set:` key becomes required: `OnlyRequiredFields` keeps it, and `RemoveFields` / `NullValuesInFields` / `EmptyStringsInFields` expect **`4XX`** for it.
+   - **(b) Runtime**, on every request, on the already-mutated payload (after `--refData` and resource reuse), to apply `set:` / `omit:`.
+   - Consequence: if the trigger value is not what the generator picked (inspect it with `cats generate -c <spec> -p <path> -X POST -L 2 --seed <n>`), the `set:` is still applied at runtime, but nothing is marked required. Pinning the trigger with `--refData` does **not** change this.
+   - **Pattern to force a branch and mark its dependents required:** guard on the trigger's presence and set the trigger in the same rule:
+     ```yaml
+     - paths: ["/billing-plans"]
+       when: "planType is not null"
+       set:
+         planType: "RECURRING"
+         billingSchedule: "MONTHLY"
+     ```
+   - **Never add `& <targetField> is null` to `when:`**: the target is already populated in the generated payload, so the rule is `false` during analysis and the target stays optional.
+2. **Which `when:` clauses mark fields required**:
+   - `when: "X is not null"` with `set: { X: ... }` never marks `X` required (self-presence guard), so it is safe for value generators such as unique names.
+   - Any other `when:` that is `true` marks **every** `set:` key required on **every HTTP method** of the matched paths, including `GET` query params (CATS builds a synthetic JSON payload from query/path params). `when: "ruleType is not null & name is not null"` therefore marks `name` required on `POST`. Only use it if `name` really is required.
+   - A rule without `when:` never marks anything required, but it **inserts** the `set:` fields into every matching request, including `GET` query strings. Scope `paths:` tightly.
+3. **Fields under active mutation are protected from correlations** (use `--refData` for boundary-fuzzer targets):
+   - When a fuzzer mutates a field (`mutationTargets`), correlations do not overwrite or re-insert it. So correlations cannot stop `MinLengthExactValuesInStringFields`, `MaxLengthExactValuesInStringFields`, or `AllFieldsAtMaxBoundary` from sending a 1-char or max-length string into that field.
+   - Pin closed-domain / unique / checksum fields in **`refData.yml`** instead (see Section 5 for the key-notation rules that make boundary fuzzers skip them).
+   - Correlations run **last**: on fields that are not being mutated, `set:` overwrites `--refData` values and runtime-correlated IDs.
+4. **Evaluation semantics**:
+   - `==` / `!=` / `<` / `>` compare numerically when both sides are numbers, otherwise **case-insensitively**. `contains` and `matches` are **case-sensitive**.
+   - **`!=` is `true` when the field is absent** (e.g. on `GET` query payloads or after `RemoveFields`). Prefer `==` triggers.
+   - **Always quote string literals** (`'RECURRING'`). An unquoted right-hand token that matches a field name is read as that field. An unquoted token containing `.` or `#` (e.g. `a@b.com`, `1.2.3`) never matches.
+   - `|` and `&` split expressions even as single characters outside quotes, so quote regexes: `code matches '^(A|B)$'`.
+5. **Typed `set:` values**: `#(...)` and `${...}` always produce **JSON strings** in `correlations.yml` (and `refData.yml`). For numeric/boolean fields write YAML literals (`unitPrice: 15`, `active: true`). Lists and objects are inserted as-is.
+6. **Silent no-ops**:
+   - A nested `set:` (`billing.schedule`) whose parent object is missing from the payload (e.g. removed by `OnlyRequiredFields`) does nothing. Only top-level fields and existing parents are created.
+   - Only the first `[*]` array in a rule is expanded. If that array is missing or empty, the whole rule is skipped, including its non-wildcard keys.
+7. **Case-variant enums & AST/Operator correlations**:
+   - Because `==` is case-insensitive, `when: "expression.operator == 'GT'"` still fires when `EnumCaseVariantFields` sends `gt` or `GTe`. `EnumCaseVariantFields` expects `2XX` by default; pass `--no-allowDifferentCaseEnumValues` if the API is case-sensitive.
+   - For recursive AST/expression schemas (`Expression` with `type`, `field`, `operator`, `value`, `children`), cover every operator/type invariant in `correlations.yml`:
+     - `when: "expression.type == 'CONDITION'"` $\rightarrow$ `set:` valid `field`, `operator`, `value` and `omit: ["expression.children"]`.
+     - Numeric operators (`GT`, `GTE`, `LT`, `LTE`) $\rightarrow$ `set:` a numeric `field` (e.g. `"amount"`) and numeric `value` (e.g. `100`).
+     - Reference operators (`IN_WATCHLIST`, `NOT_IN_WATCHLIST`) $\rightarrow$ `set:` a string ID `value`.
+     - Scalar operators (`EQ`, `NEQ`) $\rightarrow$ `set:` a scalar `value`.
+     - Composite `when: "expression.type == 'NOT'"` $\rightarrow$ `set:` `expression.children` to a 1-element list containing a valid `CONDITION` object, and `omit: ["expression.field", "expression.operator", "expression.value"]`.
+     - Composite `when: "expression.type == 'AND' || expression.type == 'OR'"` $\rightarrow$ `set:` `expression.children` to a 2-element list of valid `CONDITION` objects, and `omit: ["expression.field", "expression.operator", "expression.value"]`.
 ### Supported `when:` and `expect.that:` Operators
-- **Logical connectives**: `&&` or `&` (`AND`), `||` or `|` (`OR`; `&&` binds tighter than `||`)
+- **Logical connectives**: `&&` or `&` (`AND`), `||` or `|` (`OR`; `&&` binds tighter than `||`). No parentheses grouping.
 - **Comparison operators**: `==`, `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`, `matches` (regex), `is null` (`== null`), `is not null` (`!= null`, `notNull`)
-- **Right-hand side values**: quoted strings (`'RECURRING'`), unquoted enum/constant literals (`RECURRING`), numbers (`15`), booleans (`true`), dynamic expressions (`'${myVar}'`), or another JSON field path (`format.start < format.length`)
-- **Wildcard array correlation (`[*]`)**: `tiers[*].mode == METERED` paired with `tiers[*].unitField` in `set:` or `omit:` expands and evaluates per array element
+- **Right-hand side values**: quoted strings (`'RECURRING'`, recommended), unquoted simple constants (`RECURRING`, only when no field has that name), numbers (`15`), booleans (`true`), dynamic expressions (`'${myVar}'`), or another JSON field path (`format.start < format.length`)
+- `when:` also accepts the alias `if:`; `paths:` accepts `path:`; both `correlations:` and `correlate:` are accepted as the root key.
+- **Wildcard array correlation (`[*]`)**: `tiers[*].mode == 'METERED'` paired with `tiers[*].unitField` in `set:` or `omit:` expands and evaluates per array element
 - **Prefixes & functions in `expect.that:` (and `${...}` expressions)**:
   - `request.<fieldPath>` — reads from the sent JSON request body
   - `response.<fieldPath>` — reads from the received JSON response body
@@ -244,9 +289,12 @@ all:
 
 ## 4. Built-In Dynamic Shorthand Functions (`#(...)` & `$$ENV`)
 
-Anywhere in `flows.yml`, `correlations.yml`, `refData.yml`, or `headers.yml`, you can use:
-- **`${varName}`** — value extracted by a prior step (`save:`) or defined in `variables:` / `--authConfig`
-- **`$$ENV_VAR`** — environment variable read from the process environment (or `--envFile`) and automatically masked in reports
+Anywhere in `flows.yml`, `correlations.yml`, `refData.yml`, or `headers.yml`, you can use the placeholders below.
+
+Types: in flow `body:` / `query:` / `path:` values, a value that is entirely `#(...)` is converted to a number/boolean when it looks like one. In `correlations.yml`, `refData.yml` and flow `correlate:` blocks, results are always **JSON strings**, so use YAML literals for numeric/boolean fields.
+
+- **`${varName}`** — value extracted by a prior step (`save:`) or defined in `variables:`
+- **`$$ENV_VAR`** — environment variable read from the process environment (or `--envFile` / `./.env`) and masked in reports. It resolves **only when it is the entire value** (`"$$API_AUTH"`, not `"Bearer $$API_TOKEN"`). Single-quote it in shells, because bash expands `$$` inside double quotes.
 - **`#(uuid)`** — deterministic/seeded RFC 4122 UUID v4
 - **`#(ulid)`** — 26-char lexicographically sortable ULID
 - **`#(email)`** — random valid `@cats.io` email address
@@ -264,16 +312,25 @@ Anywhere in `flows.yml`, `correlations.yml`, `refData.yml`, or `headers.yml`, yo
 ## 5. Reference Data & Headers (`--refData refData.yml`, `-R`, `--headers headers.yml`, `-H`)
 
 ### When to Use `--refData` (`-R`) vs. `--correlations` vs. `--headers` (`-H`)
-- **`--headers` (`headers.yml`) / `-H`**: For HTTP headers (`-H` for global headers; `headers.yml` when scoping headers by path or HTTP method like `"POST /orders"`).
-- **`--refData` (`refData.yml`) / `-R`**: For **pinned reference or domain-validated values** (such as pre-existing resource IDs or fields with business checksums like Luhn card numbers `payload.number: "4111111111111111"`). Fields in `refData` are **never overwritten by `RuntimeResourcePool`** and are **skipped by `MinLengthExactValues` / `MaxLengthExactValues` / numeric boundary fuzzers** so their domain validity is preserved.
+- **`--headers` (`headers.yml`) / `-H`**: For HTTP headers (`-H` for global headers; `headers.yml` when scoping headers by path or HTTP method like `"POST /orders"`). Only `all` and path keys (not method-scoped keys) protect a header from runtime header correlation.
+- **`--refData` (`refData.yml`) / `-R`**: For **pinned reference or domain-validated values** (such as pre-existing resource IDs or fields with business checksums like Luhn card numbers `payload#number: "4111111111111111"`). Pinned fields are not overwritten by runtime resource reuse, and are skipped by `MinLengthExactValues` / `MaxLengthExactValues` / `AllFieldsAtMaxBoundary` / numeric boundary fuzzers, **as long as the key-notation rules below are followed**.
 - **`--correlations` (`correlations.yml`)**: For **conditional cross-field rules** (`when` $\rightarrow$ `set` / `omit`) that keep interdependent fields consistent while still allowing all boundary and field fuzzers to test those fields.
 
 Both `refData.yml` and `headers.yml` support:
 - **`all`** — applied to all paths
-- **Wildcard path prefixes (`"/orders*"`)** — applied to all matching sub-paths
-- **HTTP method scoping (`"POST /orders"`, `"PUT /orders*"`)** — applied only to the specified HTTP method
-- **Dot-notation or `#`-notation for nested fields (`shippingAddress.country` or `shippingAddress#country`)**
+- **Exact contract path templates (`"/customers/{customerId}/orders"`) and wildcard prefixes (`"/orders*"`)**
+- **HTTP method scoping (`"POST /orders"`, `"PUT /orders*"`)** — applied only to the specified HTTP method. Precedence: exact method+path > exact path > method+wildcard > wildcard > `all`.
+- **Nested fields**: `#`-notation (`shippingAddress#country`) or dot-notation (`shippingAddress.country`)
 - **Dynamic expressions (`#(...)`, `T(...)`, `$$ENV_VAR`)** and **`omit: [...]`** to remove fields from payloads and skip fuzzing them
+
+**refData key rules (pinning vs. value replacement):**
+- Every notation and scope **replaces the value** in requests, but protection is narrower:
+  - **Boundary fuzzers** only skip a field pinned under a path-only, wildcard, or `all` key **in `#` notation**. With dot notation (`shippingAddress.country`) they still run against `shippingAddress#country`; the pinned value is sent instead and the test is wasted.
+  - **Runtime resource reuse** only respects path-only, wildcard, or `all` keys (either notation).
+  - Method-scoped keys (`"POST /orders"`) replace values but protect from neither.
+- Pinning a path parameter disables runtime resource reuse for it, so every non-`DELETE` test hits the same ID.
+- `#(...)` values are sent as JSON strings; use YAML literals for numeric/boolean fields.
+- `cats run` (functional flows) does not apply `--refData` to requests.
 
 ```yaml
 all:
@@ -284,11 +341,16 @@ all:
 "/customers*":
   region: "EU"
 
-"POST /customers/{customerId}/orders":
+# Pins: path-only key + `#` notation so boundary fuzzers and resource reuse skip them
+"/customers/{customerId}/orders":
   customerId: "cust_1001"
-  shippingAddress.country: "DE"
+  shippingAddress#country: "DE"
+  quantity: 2
+
+# Method-scoped key: value replacement only
+"POST /customers/{customerId}/orders":
   requestId: "#(uuid)"
   omit:
     - "legacyField"
-    - "shippingAddress.zip"
+    - "shippingAddress#zip"
 ```

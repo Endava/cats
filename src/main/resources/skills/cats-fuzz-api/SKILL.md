@@ -28,25 +28,33 @@ cats smoke -c <spec> -s <server_url> -j
 *(Add `--includeDelete` only if you want `DELETE` endpoints probed during the smoke check.)*
 
 Inspect `verdict` in the JSON output:
-- **`READY`** — At least one operation returned `2XX` and no `5XX` crashes occurred. Proceed to Step 2.
+- **`READY`** — At least one operation returned `2XX` and no `5XX` crashes occurred. Proceed to Step 2, but still inspect `notFound404` and `validation4xx`: `READY` does not mean every operation succeeded.
+- **`NO_OPERATIONS_EXECUTED`** — Nothing was probed. Check `-p` / `-X` / tag filters and that the contract has operations.
 - **`UNREACHABLE_SERVER`** — All requests failed with I/O errors. Verify the server process and port.
-- **`AUTH_FAILURE_ALL_ENDPOINTS`** — Every endpoint returned `401`/`403`. Supply credentials via `-H`, `--headers`, or `--authConfig` and re-run `cats smoke`.
+- **`AUTH_FAILURE_ALL_ENDPOINTS`** — Every endpoint returned `401`/`403`. Supply credentials (Step 2) and re-run `cats smoke`.
 - **`NEEDS_SEED_OR_AUTH_CONFIG`** — Endpoints returned `404`/`4XX`. Check `unresolvedParameters` in the smoke JSON output and seed them via `cats init -c <spec>`, `--urlParams`, or `--refData`.
 - **`SERVER_CRASHES_DETECTED`** — Even happy-path requests triggered `5XX` responses. Inspect `operations` in the smoke output immediately.
 
 ---
 
-## Step 2: Configure Authentication (`-H`, `--headers`, `--authConfig`)
+## Step 2: Configure Authentication (`-H`, `--headers`, `--wfcAuth`, `--basicAuth`)
 
-- **Inline header**: `-H "Authorization=Bearer $$API_TOKEN"` (values starting with `$$` are resolved from environment variables and masked in reports).
+**`$$VAR` environment placeholders resolve only when they are the ENTIRE value.** `"Bearer $$API_TOKEN"` is sent literally. Put the full header value in the env var, and always single-quote `$$` in shells (bash expands `$$` inside double quotes to its process ID):
+```bash
+export API_AUTH='Bearer eyJ...'
+```
+- **Inline header**: `-H 'Authorization=$$API_AUTH'` (resolved from the environment or `--envFile` / auto-detected `./.env`, and masked in reports).
 - **Headers YAML file (`--headers headers.yml`)**:
   ```yaml
   all:
-    Authorization: "Bearer $$API_TOKEN"
+    Authorization: "$$API_AUTH"
   "/admin/users":
     X-Admin-Role: "SUPERUSER"
   ```
-- **Declarative Auth (`--authConfig auth.yml`)** — supports `bearer`, `basic`, `apiKey`, `cookie`, `oauth2` (`client_credentials` / `password`), and `loginEndpoint` (auto-logs in and extracts a token/cookie before fuzzing).
+  Pin headers under `all` or a path key: method-scoped keys (`"POST /orders"`) are not protected from runtime header correlation.
+- **Login / token flows (`--wfcAuth auth.yml [--wfcAuthName <name>]`)** — Web Fuzzing Commons auth file: `auth: [{name, fixedHeaders: [{name, value}]}]` or `auth: [{name, loginEndpointAuth: {endpoint | externalEndpointURL, verb, payloadRaw | payloadUserPwd, token: {extractFrom, extractSelector, sendIn, sendName}, expectCookies}}]`. Without `--wfcAuthName`, CATS starts with the first entry and switches on `401`/`403`.
+- **Basic auth**: `--basicAuth user:pass`.
+- **Refreshing tokens**: `--authRefreshScript ./get-token.sh [--authRefreshInterval 300]` replaces header values set to `auth_script`.
 
 ---
 
@@ -54,36 +62,44 @@ Inspect `verdict` in the JSON output:
 
 *(Note: Use the root `cats` command for built-in fuzzers and profiles. The `cats run <file.yml>` subcommand is only for executing custom YAML functional or security flow files.)*
 
-### Recommended Stateful Flags
-Always enable stateful resource correlation when fuzzing multi-endpoint CRUD APIs:
-- `--srs` (`--smartResourceSeeding` / `--reuseSuccessfulResources`) — extracts resource IDs and values from `2XX` responses (`POST`, `PUT`, `PATCH`, `GET`) and correlates them into downstream `{path}` / query / body parameters.
-- `--srw` (`--smartResourceWaves`) — executes fuzzers in 4 waves across all paths (**Wave 1: Seed** $\rightarrow$ **Wave 2: Coverage** $\rightarrow$ **Wave 3: Crash** $\rightarrow$ **Wave 4: Full + Second-Phase Consistency**) and defers `HappyPath` `DELETE`s until consumers finish.
-- `--preseedCollectionGets` — runs collection `GET` endpoints before Wave 1 to harvest existing resource IDs.
-- `-R "field=value"` / `--refData refData.yml` — pins existing resource IDs or checksum-validated domain fields (such as Luhn card numbers) so `RuntimeResourcePool` and `MinLengthExactValues` / `MaxLengthExactValues` boundary fuzzers do not overwrite them.
-- `--correlations correlations.yml` — enforces cross-field `when` $\rightarrow$ `set` / `omit` rules across all fuzzers and marks `when`-guarded `set:` targets as conditionally required.
+### Stateful Behavior (On by Default)
+- **Runtime resource reuse is ON by default** (`--reuseSuccessfulResources`; disable with `--no-reuseSuccessfulResources`): IDs and values from `2XX` responses are correlated into downstream `{path}` / query / body parameters.
+- **Breadth-first waves are ON by default**: seed, coverage and crash waves run across all paths before the full suite, and `HappyPath` `DELETE`s are deferred until consumers finish. No flag is needed.
+- `--preseedCollectionGets` — runs collection `GET` endpoints first to harvest existing resource IDs (bounded by `--maxPreseedCollectionGets`).
+- `-R "field=value"` / `--refData refData.yml` — pins existing resource IDs or domain-validated values (see `/cats-write-tests` Section 5 for key-notation rules).
+- `--correlations correlations.yml` — applies cross-field `when` $\rightarrow$ `set` / `omit` rules to every built-in fuzzer request (see `/cats-write-tests` Section 3).
+
+**Never pass `--srs` / `--srw`** (`--skipReportingForSuccess` / `--skipReportingForWarning`) or `-b -k` when you plan to triage. They drop the `2XX` and warning tests from `cats-report`, which breaks `cats triage --export-refdata`, `cats replay --stateful`, and `--include-warnings`.
+
+### Expectation Flags (Match the API's Intended Leniency)
+- `--no-strictTypes` — type-coercion fuzzers accept `2XX` or `4XX` instead of requiring `4XX`.
+- `--no-allowDifferentCaseEnumValues` — `EnumCaseVariantFields` expects `4XX` (the default expects `2XX`, i.e. case-insensitive enums).
+- `--allowInvalidEnumValues` — `InvalidValuesInEnumsFields` expects `2XX`.
 
 ### Built-In Fuzzer Profiles (`--profile`)
 | Profile | When to Use | Command |
 | :--- | :--- | :--- |
-| **`quick`** | Fast smoke + core boundary/required-field checks (~15 fuzzers) | `cats -c <spec> -s <url> --srs --srw --profile quick` |
-| **`ci`** | Balanced functional, boundary, type-coercion & security suite (~45 fuzzers) | `cats -c <spec> -s <url> --srs --srw --profile ci` |
-| **`security`** | OWASP API Top 10 (SQLi, NoSQLi, XSS, Command/LDAP/XXE/SSTI injection, SSRF, IDOR, Mass Assignment, Auth Bypass, Security Headers) | `cats -c <spec> -s <url> --srs --srw --profile security` |
-| **`coverage`** | Fast positive + combinatorial field-removal blitz to maximize `2XX` operation & code coverage | `cats -c <spec> -s <url> --srs --srw --profile coverage` |
-| **`crash`** | High-yield boundary, type-coercion, control-char & injection fuzzers targeting `5XX` server faults | `cats -c <spec> -s <url> --srs --srw --profile crash` |
+| **`quick`** | Fast smoke + core boundary/required-field checks (24 fuzzers) | `cats -c <spec> -s <url> --profile quick` |
+| **`ci`** | Balanced functional, boundary, type-coercion & security suite (74 fuzzers) | `cats -c <spec> -s <url> --profile ci` |
+| **`security`** | OWASP API Top 10 (SQLi, NoSQLi, XSS, Command/LDAP/XXE/SSTI injection, SSRF, IDOR, Mass Assignment, Auth Bypass, Security Headers) (54 fuzzers) | `cats -c <spec> -s <url> --profile security` |
+| **`coverage`** | Fast positive + field-removal fuzzers to maximize `2XX` operation & code coverage (10 fuzzers) | `cats -c <spec> -s <url> --profile coverage` |
+| **`crash`** | High-yield boundary, type-coercion, control-char & injection fuzzers targeting `5XX` server faults (64 fuzzers) | `cats -c <spec> -s <url> --profile crash` |
+
+Other profiles: `compliance`, `type-coercion`, `health-check`, `full` (default). Inspect any profile with `cats explain -t PROFILE <name>`.
 
 ### Scoped / Targeted Fuzzing
 ```bash
 # Fuzz specific paths and HTTP methods
-cats -c <spec> -s <url> --srs -p "/orders,/orders/{orderId}" -X POST,PUT
+cats -c <spec> -s <url> -p "/orders,/orders/{orderId}" -X POST,PUT
 
 # Run specific fuzzers (discover names with `cats list -f`)
-cats -c <spec> -s <url> --srs -f "HappyPath,RemoveFields,MassAssignment,SqlInjectionInStringFields"
+cats -c <spec> -s <url> -f "HappyPath,RemoveFields,MassAssignment,SqlInjectionInStringFields"
 
 # Bound execution time or error count
-cats -c <spec> -s <url> --srs --srw --stopAfterTimeInSec 120 --stopAfterErrors 50
+cats -c <spec> -s <url> --stopAfterTimeInSec 120 --stopAfterErrors 50
 
-# Blackbox mode: only report 5XX server crashes as errors (ignore 2XX/4XX contract mismatches)
-cats -c <spec> -s <url> --srs --srw -b -k
+# Blackbox mode: only report 5XX server crashes as errors (-k also drops ignored tests from the report; skip it if you plan to triage)
+cats -c <spec> -s <url> -b -k
 ```
 
 ---
@@ -99,14 +115,15 @@ cats random -c <spec> -s <url> -p /orders -X POST --stopAfterTimeInSec 60 --seed
 
 ## Step 5: Fuzzing Without an OpenAPI Spec (`cats template`)
 
-When no OpenAPI contract exists, fuzz any HTTP endpoint directly from a request template:
+When no OpenAPI contract exists, fuzz any HTTP endpoint directly from a request template. The full endpoint URL is a required **positional** argument (include query params for non-body requests):
 ```bash
-cats template -s http://localhost:8080/api/login \
+cats template \
   -X POST \
   -H "Content-Type=application/json" \
   -d '{"username":"admin","password":"secret"}' \
   -t "username,password" \
-  --stopAfterTimeInSec 30
+  --stopAfterTimeInSec 30 \
+  http://localhost:8080/api/login
 ```
 
 ---

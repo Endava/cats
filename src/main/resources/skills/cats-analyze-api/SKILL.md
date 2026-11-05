@@ -1,6 +1,6 @@
 ---
 name: cats-analyze-api
-description: "Validate, lint, and analyze OpenAPI/Swagger specifications with CATS without needing a running server. Computes the 0-100 Fuzzability Score, Producer-to-Consumer dependency DAG, orphan path parameters, reusability metrics, and 31 contract linting checks."
+description: "Validate, lint, and analyze OpenAPI/Swagger specifications with CATS without needing a running server. Computes the 0-100 Fuzzability Score, Producer-to-Consumer dependency chains, orphan path parameters, reusability metrics, and 58 contract linting checks."
 argument-hint: "-c <openapi.yml>"
 allowed-tools:
   - read
@@ -37,16 +37,18 @@ Run `cats analyze` to inspect how well the contract supports automated stateful 
 cats analyze -c <spec> -j
 ```
 
-Key fields in the JSON output (`BlueprintReport`):
+Key fields in the JSON output:
 - **`fuzzabilityScore` (0–100)** & **`grade` (`A`–`F`)**: Overall readiness for automated fuzzing.
-- **`breakdown`**:
-  - `schemaConstraintCoverage` — percentage of properties with explicit constraints (`minLength`, `maxLength`, `minimum`, `maximum`, `pattern`, `format`, `enum`).
-  - `exampleCoverage` — percentage of operations/schemas providing concrete examples.
-  - `producerConsumerCoverage` — percentage of parameterized paths (`/items/{id}`) backed by a matching `POST` producer.
-  - `errorCodeDocumentation` — percentage of operations documenting `4XX`/`5XX` responses.
-  - `discriminatorCompleteness` — completeness of `oneOf`/`anyOf` discriminator mappings.
-- **`chains` (`ProducerConsumerChain[]`)**: Ordered list of `producer` (`POST /resources`) $\rightarrow$ `consumers` (`GET /resources/{id}`, `PUT /resources/{id}`, `DELETE /resources/{id}`) linked by `sharedIdentifier`. Use these chains when designing functional flows.
-- **`orphanPathParameters`**: Path variables that have no `POST` producer in the contract and therefore require `--refData` or `--urlParams`.
+- **`scoreBreakdown`**: `totalScore`, `grade`, and the component scores:
+  - `correlationScore` — how well parameterized paths (`/items/{id}`) are backed by a matching `POST` producer.
+  - `constraintScore` — coverage of explicit constraints (`minLength`, `maxLength`, `minimum`, `maximum`, `pattern`, `format`, `enum`).
+  - `exampleScore` — coverage of concrete `example:` values.
+  - `responseSchemaScore` — coverage of documented response schemas.
+  - `errorDocsScore` — coverage of documented `4XX`/`5XX` responses.
+- **`producerConsumerChains`**: List of `{ "producer": "POST /resources  (produces {id})", "consumers": ["GET/PUT/DELETE /resources/{id}"] }` strings. Use these chains when designing functional flows.
+- **`orphanPathParameters`**: Path variables (e.g. `"{hook_id} in PUT /hooks/{hook_id}"`) that have no `POST` producer in the contract and therefore require `--refData` or `--urlParams`.
+- **`recommendations`**: Ready-to-apply suggestions (e.g. `--urlParams` values to supply, missing `example:` values).
+- **`executionOrder`**: The dependency-aware order in which CATS will execute operations.
 - **`mermaidDiagram`**: Ready-to-render Mermaid flowchart of operation dependencies (or pass `--mermaid` for console output).
 
 ---
@@ -61,7 +63,7 @@ Reports total paths, operations, schemas, headers, parameters, response codes, c
 
 ---
 
-## 4. Audit Best Practices with 31 Contract Linters (`cats lint`)
+## 4. Audit Best Practices with 58 Contract Linters (`cats lint`)
 
 Run all contract linters (no network calls made):
 ```bash
