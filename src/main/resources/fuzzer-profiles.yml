@@ -104,6 +104,7 @@ profiles:
       - RandomResources
       - InvalidReferencesFields
       - ConfirmationFieldsMismatch
+      - ArithmeticTotalMismatchFields
 
   # ============================================
   # HEALTH-CHECK PROFILE
@@ -304,6 +305,7 @@ profiles:
       - TimezoneAndLocaleCodeFields
       - ConfirmationFieldsMismatch
       - MutuallyExclusiveFields
+      - ArithmeticTotalMismatchFields
       - IdempotencyKeyConflict
 
       # Security Essentials
