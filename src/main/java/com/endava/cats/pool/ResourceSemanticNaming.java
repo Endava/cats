@@ -15,9 +15,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -386,6 +389,22 @@ final class ResourceSemanticNaming {
             }
         }
         return Set.of();
+    }
+
+    static Set<String> pathParameterResourceForms(List<String> pathSegments, String paramName) {
+        Set<String> forms = new LinkedHashSet<>(WordUtils.nounForms(stripIdentifierSuffix(normalize(paramName))));
+        precedingStaticSegment(pathSegments, paramName)
+                .ifPresent(segment -> forms.addAll(WordUtils.nounForms(normalize(segment))));
+        return Collections.unmodifiableSet(forms);
+    }
+
+    private static Optional<String> precedingStaticSegment(List<String> pathSegments, String paramName) {
+        String template = "{" + paramName + "}";
+        return IntStream.range(1, pathSegments.size())
+                .filter(i -> pathSegments.get(i).equalsIgnoreCase(template))
+                .mapToObj(i -> pathSegments.get(i - 1))
+                .filter(Predicate.not(ResourceSemanticNaming::isTemplateSegment))
+                .findFirst();
     }
 
     static Set<String> targetAliases(String targetPath, TargetField target) {

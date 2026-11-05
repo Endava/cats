@@ -711,7 +711,7 @@ final class ResourceRequestEnricher {
             return matchCtx.targetResourceForms();
         }
         Set<String> forms = new LinkedHashSet<>(matchCtx.targetResourceForms());
-        forms.addAll(WordUtils.nounForms(ResourceSemanticNaming.normalize(target.name())));
+        forms.addAll(ResourceSemanticNaming.pathParameterResourceForms(matchCtx.targetPathSegments(), target.name()));
         return forms;
     }
 

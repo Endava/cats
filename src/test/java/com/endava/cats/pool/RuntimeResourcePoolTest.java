@@ -27,6 +27,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1848,6 +1849,75 @@ class RuntimeResourcePoolTest {
 
         Assertions.assertThat(result.payload()).contains("generated").doesNotContain("customer-42");
         Assertions.assertThat(result.correlations()).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"merchantId,voucherId", "voucherId,merchantId"})
+    void shouldKeepParentResourceWhenDeletingByMultipleIdentifierQueryParametersInAnyOrder(String first, String second) {
+        enableResourceReuse();
+        resourcePool.observe(postData("/merchants", "{}"), request("POST", "/merchants", "{}"),
+                response(201, "{\"merchantId\":\"M1\"}"));
+        resourcePool.observe(postData("/vouchers", "{}"), request("POST", "/vouchers", "{}"),
+                response(201, "{\"voucherId\":\"V1\",\"merchantId\":\"M1\"}"));
+        ServiceData delete = ServiceData.builder().relativePath("/vouchers").contractPath("/vouchers").payload("{}")
+                .queryParams(new LinkedHashSet<>(List.of(first, second))).httpMethod(HttpMethod.DELETE).build();
+
+        resourcePool.observe(delete, request("DELETE", "/vouchers?merchantId=M1&voucherId=V1", "{}"), response(204, ""));
+
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/merchants/{merchantId}")).isTrue();
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/vouchers/{voucherId}")).isFalse();
+    }
+
+    @Test
+    void shouldEvictLeafResourceWithoutParentValuesButKeepParentOnNestedPathDelete() {
+        enableResourceReuse();
+        resourcePool.observe(postData("/merchants", "{}"), request("POST", "/merchants", "{}"),
+                response(201, "{\"merchantId\":\"M1\"}"));
+        resourcePool.observe(postData("/vouchers", "{}"), request("POST", "/vouchers", "{}"),
+                response(201, "{\"voucher\":\"V1\"}"));
+        ServiceData delete = ServiceData.builder().relativePath("/merchants/{merchantId}/vouchers/{voucher}")
+                .contractPath("/merchants/{merchantId}/vouchers/{voucher}").payload("{}").httpMethod(HttpMethod.DELETE).build();
+
+        resourcePool.observe(delete, request("DELETE", "/merchants/M1/vouchers/V1", "{}"), response(204, ""));
+
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/merchants/{merchantId}")).isTrue();
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/vouchers/{voucher}")).isFalse();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"merchantId", "voucher"})
+    void shouldNotCaptureResourcesFromGetWithAnyFuzzedPathParameter(String fuzzedParameter) {
+        enableResourceReuse();
+        ServiceData fuzzedGet = ServiceData.builder().relativePath("/merchants/{merchantId}/vouchers/{voucher}")
+                .contractPath("/merchants/{merchantId}/vouchers/{voucher}").httpMethod(HttpMethod.GET)
+                .mutationTargets(Set.of(RequestTarget.path(fuzzedParameter)))
+                .payload("{\"merchantId\":\"m-1\",\"voucher\":\"VCH-1\"}").queryParams(Set.of()).build();
+
+        resourcePool.observe(fuzzedGet, request("GET", "/merchants/m-1/vouchers/VCH-1", "{}"),
+                response(200, "{\"merchantId\":\"m-1\",\"voucher\":\"VCH-ECHO\"}"));
+
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/merchants/{merchantId}")).isFalse();
+        Assertions.assertThat(resourcePool.hasLiveResourceFor("/merchants/{merchantId}/vouchers/{voucher}")).isFalse();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"voucher", "voucherId"})
+    void shouldPreferPostStringIdentifierOverGetDigitStringForSubResourcePathParameter(String parameter) {
+        enableResourceReuse();
+        resourcePool.observe(postData("/merchants/{merchantId}/vouchers", "{}"),
+                request("POST", "/merchants/m-1/vouchers", "{}"),
+                response(201, "{\"%s\":\"VCH-ALPHA-999\"}".formatted(parameter)));
+        resourcePool.observe(getData("/merchants/{merchantId}/vouchers", "{}"),
+                request("GET", "/merchants/m-1/vouchers", "{}"),
+                response(200, "[{\"%s\":\"9999888877776666\"}]".formatted(parameter)));
+        String statesPath = "/merchants/{merchantId}/vouchers/{%s}/states".formatted(parameter);
+        ServiceData putState = ServiceData.builder().relativePath(statesPath).contractPath(statesPath)
+                .httpMethod(HttpMethod.PUT).contentType("application/json")
+                .pathParamsPayload("{\"merchantId\":\"m-1\",\"%s\":\"11223344556677\"}".formatted(parameter))
+                .payload("{\"state\":\"ACTIVE\"}").build();
+
+        Assertions.assertThat(resourcePool.enrich(putState, putState.getPayload()).pathParamsPayload())
+                .contains("\"%s\":\"VCH-ALPHA-999\"".formatted(parameter));
     }
 
     @Test

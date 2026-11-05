@@ -743,7 +743,7 @@ public class RuntimeResourcePool {
                 .filter(e -> !data.isFuzzedField(e.getKey(), RequestTarget.Location.PATH))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, _) -> a, LinkedHashMap::new));
         Map<String, StoredValue> matchCriteria = unfuzzedDeletedValues.isEmpty() ? deletedValues : unfuzzedDeletedValues;
-        String leafKey = matchCriteria.keySet().stream().reduce((_, second) -> second).orElse(null);
+        String leafKey = pathLeafKey(data.getRelativePath(), matchCriteria);
         for (int i = 0; i < resources.size(); i++) {
             ResourceInstance resource = resources.get(i);
             if (matchesDeletedResource(data.getRelativePath(), resource, matchCriteria, leafKey)) {
@@ -753,28 +753,28 @@ public class RuntimeResourcePool {
         }
     }
 
+    private static String pathLeafKey(String relativePath, Map<String, StoredValue> matchCriteria) {
+        return OpenApiUtils.getPathVariables(relativePath).stream()
+                .reduce((_, last) -> last)
+                .filter(matchCriteria::containsKey)
+                .orElse(null);
+    }
+
     private static boolean matchesDeletedResource(String relativePath, ResourceInstance resource,
                                                   Map<String, StoredValue> matchCriteria, String leafKey) {
-        if (leafKey == null) {
-            return false;
-        }
-        for (Map.Entry<String, StoredValue> deleted : matchCriteria.entrySet()) {
-            Set<String> deletedAliases = ResourceSemanticNaming.deletedAliases(
-                    relativePath, deleted.getKey(), deleted.getValue());
-            List<StoredValue> aliasMatches = resource.values().values().stream()
-                    .filter(stored -> stored.aliases().stream().anyMatch(deletedAliases::contains))
-                    .toList();
-            boolean valueMatches = aliasMatches.stream()
-                    .anyMatch(stored -> ResourceSemanticNaming.sameValue(stored.value(), deleted.getValue().value()));
-            if (deleted.getKey().equals(leafKey)) {
-                if (!valueMatches) {
-                    return false;
-                }
-            } else if (!aliasMatches.isEmpty() && !valueMatches) {
-                return false;
-            }
-        }
-        return true;
+        return matchCriteria.entrySet().stream()
+                .allMatch(deleted -> matchesDeletedValue(relativePath, resource, deleted, leafKey));
+    }
+
+    private static boolean matchesDeletedValue(String relativePath, ResourceInstance resource,
+                                               Map.Entry<String, StoredValue> deleted, String leafKey) {
+        Set<String> deletedAliases = ResourceSemanticNaming.deletedAliases(relativePath, deleted.getKey(), deleted.getValue());
+        List<StoredValue> aliasMatches = resource.values().values().stream()
+                .filter(stored -> stored.aliases().stream().anyMatch(deletedAliases::contains))
+                .toList();
+        boolean optionalAncestor = leafKey != null && !leafKey.equals(deleted.getKey());
+        return (optionalAncestor && aliasMatches.isEmpty()) || aliasMatches.stream()
+                .anyMatch(stored -> ResourceSemanticNaming.sameValue(stored.value(), deleted.getValue().value()));
     }
 
     /**
