@@ -299,7 +299,8 @@ public interface CatsResultFactory {
         WRONG_ALLOW_HEADER("Wrong Allowed header", "The server returned 405 Method Not Allowed, but the Allow response header listed the rejected HTTP method as allowed"),
         PATH_TRAVERSAL("Path traversal vulnerability detected", "The response contains local file contents or filesystem exception details triggered by a path traversal payload"),
         HTTP_METHOD_OVERRIDE_ACCEPTED("HTTP method override accepted", "A POST request carrying an HTTP method-override header executed an undocumented HTTP verb"),
-        ARITHMETIC_TOTAL_MISMATCH_ACCEPTED("Inconsistent arithmetic total accepted", "The API accepted and reflected an inconsistent client-supplied total that contradicts its component fields");
+        ARITHMETIC_TOTAL_MISMATCH_ACCEPTED("Inconsistent arithmetic total accepted", "The API accepted and reflected an inconsistent client-supplied total that contradicts its component fields"),
+        PATH_BODY_ID_MISMATCH_ACCEPTED("Path and body ID mismatch accepted", "The API accepted a PUT or PATCH request whose body identifier contradicted the URL path identifier and reflected the body identifier in the response");
 
 
         private final String value;

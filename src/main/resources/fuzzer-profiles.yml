@@ -53,6 +53,7 @@ profiles:
       # Authentication & Authorization
       - BypassAuthentication
       - InsecureDirectObjectReferences
+      - PathBodyIdMismatch
 
       # Mass Assignment
       - MassAssignment
@@ -176,6 +177,7 @@ profiles:
 
       # API1:2023 - Broken Object Level Authorization
       - InsecureDirectObjectReferences
+      - PathBodyIdMismatch
       - CrossParentResourceIsolation
       - RandomResources
       - InvalidReferencesFields
@@ -306,6 +308,7 @@ profiles:
       - ConfirmationFieldsMismatch
       - MutuallyExclusiveFields
       - ArithmeticTotalMismatchFields
+      - PathBodyIdMismatch
       - IdempotencyKeyConflict
 
       # Security Essentials
@@ -427,6 +430,7 @@ profiles:
       - CursorAndPaginationTokenFields
       - TimezoneAndLocaleCodeFields
       - SpecialFloatTokensInNumericFields
+      - PathBodyIdMismatch
 
   # ============================================
   # FULL PROFILE (Default)
