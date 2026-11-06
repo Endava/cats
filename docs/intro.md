@@ -26,26 +26,27 @@ brew tap endava/tap && brew install cats
 Inspect the contract's `0–100` Fuzzability Readiness Score and producer-to-consumer resource chains offline, then send a single `HappyPath` request per operation (skipping `DELETE` by default) to confirm connectivity and authentication:
 
 ```bash
+export API_AUTH='Bearer eyJ...'
 cats analyze -c openapi.yml
-cats smoke -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN"
+cats smoke -c openapi.yml -s https://api.example.com -H 'Authorization=$$API_AUTH'
 ```
 
-*(Values prefixed with `$$` are resolved from environment variables or `.env` and automatically masked in logs and HTML/JSON reports.)*
+*(Header values set to `$$VAR` are resolved from environment variables or `.env` and automatically masked in logs and HTML/JSON reports. Single-quote `$$` in shells so bash does not expand it.)*
 
 ### 2. Fuzz the API
 
 Choose the depth that matches your workflow:
 
 ```bash
-# Blackbox crash hunting: report only 5XX server errors and omit ignored results
-cats -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN" -b -k
-
-# Curated CI or OWASP Security profile with stateful resource correlation (enabled by default)
-cats -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN" --profile ci
-cats -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN" --profile security
+# Curated CI or OWASP Security profile with stateful resource correlation and breadth-first waves (enabled by default)
+cats -c openapi.yml -s https://api.example.com -H 'Authorization=$$API_AUTH' --profile ci
+cats -c openapi.yml -s https://api.example.com -H 'Authorization=$$API_AUTH' --profile security
 
 # Full contract-aware suite (all active Field, Header, and HTTP fuzzers)
-cats -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN"
+cats -c openapi.yml -s https://api.example.com -H 'Authorization=$$API_AUTH'
+
+# Blackbox crash hunting: report only 5XX server errors
+cats -c openapi.yml -s https://api.example.com -H 'Authorization=$$API_AUTH' -b
 ```
 
 Open `cats-report/index.html` to inspect the interactive HTML report, or pass `--tui` to follow execution live in the terminal.
@@ -55,7 +56,7 @@ Open `cats-report/index.html` to inspect the interactive HTML report, or pass `-
 Write multi-step CRUD workflows, cross-field rules, polling checks, and data-driven scenarios in minimal `steps:` YAML—CATS generates the rest of every request from your contract:
 
 ```bash
-cats run -c openapi.yml -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN" flow.yml
+cats run -c openapi.yml -s https://api.example.com -H 'Authorization=$$API_AUTH' flow.yml
 ```
 
 ### 4. Triage Failures & Verify Fixes
@@ -69,7 +70,7 @@ cats triage -r cats-report -c openapi.yml \
   --export-reproducers reproducers.sh
 
 # Replay 1 representative request per root-cause cluster to confirm FIXED vs STILL_FAILING
-cats triage -r cats-report --verify -s https://api.example.com -H "Authorization=Bearer $$API_TOKEN"
+cats triage -r cats-report --verify -s https://api.example.com -H 'Authorization=$$API_AUTH'
 ```
 
 ---
@@ -78,9 +79,9 @@ cats triage -r cats-report --verify -s https://api.example.com -H "Authorization
 
 | Capability | Scope | Where to Learn More |
 |:--|:--|:--|
-| **Field Fuzzers (`117`)** | Numeric/string boundaries, `exclusiveMinimum`/`Maximum`, `multipleOf`, `minItems`/`maxItems`, `minProperties`, `const`/`not`, merged `oneOf` branches, type coercion, SQL/NoSQL/LDAP/Command/SSTI/XXE/XSS/SSRF/Path Traversal injections, `readOnly` & undeclared Mass Assignment, HTTP Parameter Pollution, and Unicode edge cases. | [Field Fuzzers](/docs/fuzzers/field-fuzzers) |
+| **Field Fuzzers (`125`)** | Numeric/string boundaries, `exclusiveMinimum`/`Maximum`, `multipleOf`, `minItems`/`maxItems`, `minProperties`, `const`/`not`, merged `oneOf` branches, type coercion (`NaN`/`Infinity`), cross-field business logic (confirmation fields, mutually exclusive fields, arithmetic totals, path-vs-body IDs), search/filter & cursor tokens, timezone/locale/ISO codes, SQL/NoSQL/LDAP/Command/SSTI/XXE/XSS/SSRF/Path Traversal injections, `readOnly` & undeclared Mass Assignment, HTTP Parameter Pollution, and Unicode edge cases. | [Field Fuzzers](/docs/fuzzers/field-fuzzers) |
 | **Header Fuzzers (`39`)** | Content negotiation (`Accept`, `Content-Type`), `Content-Length`/`Transfer-Encoding`, CRLF injection, security headers, duplicate/extra headers, and Unicode/control-character header mutations. | [Header Fuzzers](/docs/fuzzers/header-fuzzers) |
-| **HTTP Fuzzers (`35`)** | `HappyPath`, authentication bypass, BOLA/IDOR, HTTP verb tampering & method-override tunneling (`X-HTTP-Method-Override`), `Idempotency-Key` conflict detection, `PUT` idempotency, `ETag` preconditions, cross-parent isolation, and post-delete availability. | [HTTP Fuzzers](/docs/fuzzers/http-fuzzers) |
+| **HTTP Fuzzers (`37`)** | `HappyPath`, authentication bypass, BOLA/IDOR, HTTP verb tampering & method-override tunneling (`X-HTTP-Method-Override`), `Idempotency-Key` conflict detection, `PUT` idempotency, partial `PATCH` omitted-field preservation, `GET` pagination limit enforcement, `ETag` preconditions, cross-parent isolation, and post-delete availability. | [HTTP Fuzzers](/docs/fuzzers/http-fuzzers) |
 | **Stateful Functional Flows** | Declarative `steps:` YAML workflows with schema-backed payload generation, cross-step `$steps` / `save` correlation, `expect.that` assertions, `poll` / `delayMs` async helpers, `repeat`, `forEach` data tables, and `correlate` rules. | [Functional Flow Fuzzer](/docs/fuzzers/special-fuzzers/functional-fuzzer) |
 | **Continuous & Spec-less Fuzzing** | Time- or count-bounded mutation fuzzing with `36` built-in mutators (`cats random`), custom dictionary fuzzing (`SecurityFuzzer`), and template-based fuzzing without an OpenAPI spec (`cats template`). | [Mutators](/docs/getting-started/mutators) · [Template Fuzzer](/docs/fuzzers/special-fuzzers/template-fuzzer) |
 | **Contract Linters (`58`)** | Offline OpenAPI 3.0/3.1 structural, semantic, and REST naming checks: ambiguous `oneOf` variants, default/example schema conformance, contradictory bounds, request/response symmetry, pagination & error consistency, and REST path role analysis. | [Contract Linters](/docs/fuzzers/linters) |

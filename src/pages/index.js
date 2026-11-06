@@ -7,7 +7,7 @@ import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import styles from './index.module.css';
 
 const STATS = [
-  { value: '190+', label: 'Field, Header & HTTP Fuzzers' },
+  { value: '200+', label: 'Field, Header & HTTP Fuzzers' },
   { value: '85+', label: 'Semantic Format Generators' },
   { value: '36', label: 'Continuous Random Mutators' },
   { value: 'Zero', label: 'Lines of Test Code Required' },
@@ -65,7 +65,7 @@ function HomepageHero() {
                 {'\n'}
                 <span className={styles.cmdPrompt}>$</span> cats analyze -c openapi.yml
                 {'\n'}
-                <span className={styles.cmdPrompt}>$</span> cats smoke -c openapi.yml -s http://localhost:8080 -H <span className={styles.cmdString}>"Authorization=Bearer $$API_TOKEN"</span>
+                <span className={styles.cmdPrompt}>$</span> cats smoke -c openapi.yml -s http://localhost:8080 -H <span className={styles.cmdString}>'Authorization=$$API_AUTH'</span>
                 {'\n\n'}
                 <span className={styles.cmdComment}># 3. Run stateful wave fuzzing and cluster root causes</span>
                 {'\n'}

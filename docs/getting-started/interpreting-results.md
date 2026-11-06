@@ -48,8 +48,12 @@ Understanding the `Result Reason` values:
 - `Error details leak` - reported as `error` if the response body contains sensitive information
 - `Not Implemented` - reported as `warn` if response code is `501`
 - `Mass Assignment vulnerability detected` - reported as `error` if the service allows mass assignment (including `ReadOnlyFieldsMassAssignmentFuzzer` when a `readOnly: true` field sent in a write request is accepted and reflected)
-- `Path traversal / file disclosure vulnerability detected` - reported as `error` by `PathTraversalInStringFieldsFuzzer` when a response discloses local file content (such as `/etc/passwd`, `win.ini`, or `/proc/self/environ`) or leaks unmasked filesystem exception paths
+- `Path traversal vulnerability detected` - reported as `error` by `PathTraversalInStringFieldsFuzzer` when a response discloses local file content (such as `/etc/passwd`, `win.ini`, or `/proc/self/environ`) or leaks unmasked filesystem exception paths
 - `HTTP method override accepted` - reported as `error` by `HttpMethodOverrideTunnelingFuzzer` when a `POST` carrying an HTTP method-override header (`X-HTTP-Method-Override`, `X-Method-Override`, `X-HTTP-Method`) executes an undocumented verb such as `DELETE`
+- `Inconsistent arithmetic total accepted` - reported as `error` by `ArithmeticTotalMismatchFieldsFuzzer` when a write request with a contradicting total (such as `unitPrice * quantity != totalAmount`) is accepted with `2XX` and reflects the tampered total
+- `Path and body ID mismatch accepted` - reported as `error` by `PathBodyIdMismatchFuzzer` when a write request whose top-level body identifier contradicts the URL `{path}` identifier is accepted with `2XX` and reflects the mismatched body identifier
+- `PATCH wiped omitted optional fields` - reported as `warn` by `PatchOmittedFieldsClobberFuzzer` when a partial `PATCH` omitting a previously populated optional field causes that field to become `null`, blank, or missing on a subsequent `GET`
+- `Pagination limit ignored` - reported as `warn` by `PaginationLimitHonoredFuzzer` when a `GET` collection request specifying `limit=1` (or `size=1` / `pageSize=1` / `per_page=1`) returns more than `1` item
 - `Server error with injection payload` - reported as `error` if the service returns a server error for an injection payload
 - `SSRF payload reflected in response` - reported as `error` if the service is vulnerable to SSRF attacks
 - `Cloud metadata service accessed` - reported as `error` if the service leaks cloud metadata
@@ -115,9 +119,16 @@ cats triage -r cats-report -c openapi.yml \
   --export-contract-patch contract-patch.yml \
   --export-reproducers reproducers.sh
 
-# Replay 1 representative request per root-cause cluster against the live server to check FIXED vs STILL_FAILING
+# Replay 1 representative request per root-cause cluster against the live server to check FIXED vs STILL_FAILING vs INCONCLUSIVE
+export Authorization='Bearer eyJ...'
 cats triage -r cats-report --verify -s http://localhost:8080
 ```
+
+`cats triage` classifies failures into prioritized root-cause categories (`SERVER_CRASH_5XX`, `FIELD_DOMAIN_CONSTRAINT_4XX`, `CROSS_FIELD_CONSTRAINT_4XX`, `HEADER_CORRELATION_COLLISION`, `AUTH_CONFIGURATION_GAP`, `VALIDATION_BYPASS_2XX`, `UNRESOLVED_PATH_PARAM_404`, `UNRESOLVED_BODY_REFERENCE_404`, `ROUTE_NOT_FOUND_404`, `SUSPICIOUS_CORRELATION_404`, `RESOURCE_POOL_DEPLETED_404`, and `CONTRACT_MISMATCH`).
+
+:::tip Keep `2XX` and Warning Tests When Triaging
+Do not pass `--srs` (`--skipReportingForSuccess`), `--srw` (`--skipReportingForWarning`), or `-k` (`--skipReportingForIgnoredCodes`) on runs you plan to triage or replay with `cats replay --stateful`—those flags omit the `2XX` producer exchanges and warnings that `--export-refdata`, `--include-warnings`, and `--stateful` replay rely on.
+:::
 
 ## Execution summary
 

@@ -16,7 +16,7 @@ const WORKFLOW_STEPS = [
     step: '02',
     title: 'Fuzz in Stateful Execution Waves',
     description:
-      'Execute 190+ fuzzers across 4 breadth-first waves (seed, coverage, crash, consistency) while automatically learning resource IDs and ETags from 2XX responses and feeding them into downstream requests.',
+      'Execute 200+ fuzzers across 4 breadth-first waves (seed, coverage, crash, consistency) while automatically learning resource IDs and ETags from 2XX responses and feeding them into downstream requests.',
     code: 'cats -c openapi.yml -s http://localhost:8080 --profile ci\ncats -c openapi.yml -s http://localhost:8080 --profile security',
     link: '/docs/getting-started/fuzzer-profiles',
     linkLabel: 'Fuzzer Profiles →',

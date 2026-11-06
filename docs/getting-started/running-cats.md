@@ -21,7 +21,8 @@ cats init --skills
 cats init --skills devin,claude,cursor --global
 
 # 4. Probe one HappyPath request per operation (excluding DELETE by default) to verify --server and authentication
-cats smoke -c openapi.yaml -s http://localhost:8080 -H "Authorization=Bearer $$API_TOKEN"
+export API_AUTH='Bearer eyJ...'
+cats smoke -c openapi.yaml -s http://localhost:8080 -H 'Authorization=$$API_AUTH'
 ```
 
 After a fuzzing run finishes, use `cats triage` to cluster failures by root cause, auto-mine `--refData` from `2XX` responses, synthesize `--correlations` rules, and verify fixes live against the server (`--verify`):

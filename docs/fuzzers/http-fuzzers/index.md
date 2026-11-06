@@ -1,6 +1,6 @@
 # HTTP Fuzzers
 
-CATS has currently 35 registered `HTTP` Fuzzers. The names below match
+CATS has currently 37 registered `HTTP` Fuzzers. The names below match
 `cats list --fuzzers`:
 
 - `BypassAuthentication` - remove authentication headers and check access control
@@ -25,6 +25,8 @@ CATS has currently 35 registered `HTTP` Fuzzers. The names below match
 - `NullBody` - send a null body
 - `NullUnicodeBody` - send a `\\u0000` body
 - `NullUnicodeSymbolBody` - send a Unicode null-symbol body
+- `PaginationLimitHonored` - sends `limit=1` (or `size=1` / `pageSize=1` / `per_page=1`) on GET collection endpoints and warns if the returned array contains more than 1 item
+- `PatchOmittedFieldsClobber` - send a partial PATCH omitting a populated optional field on an owned resource and warn if the omitted field is wiped on a subsequent GET
 - `PutIdempotency` - repeat a successful PUT twice on a resource created in the current run and compare resulting GET state
 - `RandomDummyInvalidJsonBody` - send dummy invalid JSON
 - `RandomNegativeDecimalBody` - send a random negative decimal body

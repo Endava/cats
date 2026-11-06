@@ -26,6 +26,12 @@ cats run -c openapi.yml -s http://localhost:8080 functionalFlow.yml
 
 Because CATS automatically generates schema-valid request payloads and OpenAPI-documented headers from your contract, each step only needs to specify the fields relevant to your business scenario.
 
+:::info `cats run` Scope & Flags
+- `cats run` ignores external `--correlations` files for flow steps—declare flow-level or step-level cross-field rules inside the flow's own `correlate:` block. Step `body:`, `omit:`, `path:`, and `query:` values always take precedence over `correlate:` rules.
+- `cats run` does not apply `--refData` as request input; instead, when `--refData=template.yml` is passed, it treats the file as a `${var}` template and writes `template_replaced.yml` with values captured by `save:`.
+- Supported auth/config flags on `cats run`: `-H`, `--headers`, `--queryParams`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`.
+:::
+
 ---
 
 ## Sequential `steps:` Syntax
@@ -258,18 +264,18 @@ correlations:
           tiers[*].unitField: "SeatCount"
 ```
 
-2. **Path-keyed map** (matching `refData.yml` & `headers.yml`, including `all:`):
+2. **Path-keyed map** (`all:`, exact contract paths, or `prefix*` — note that unlike `refData.yml` and `headers.yml`, `correlations.yml` path keys do not use HTTP method prefixes):
 ```yaml
 all:
-  when: "mode == TEST"
+  when: "mode == 'TEST'"
   set:
     dryRunFlag: true
 
 /billing-plans:
-  - when: "planType == RECURRING"
+  - when: "planType == 'RECURRING'"
     set:
       billingSchedule: "MONTHLY"
-  - when: "planType == ONE_TIME"
+  - when: "planType == 'ONE_TIME'"
     omit:
       - "billingSchedule"
 ```
@@ -284,21 +290,26 @@ correlations:
       items[*].shippingRequired: false
 ```
 
-- **`paths`**: Exact paths or wildcard prefixes ending with `*` (such as `"/orders*"` or `"*"`). Rules also apply automatically to every element of a **root JSON array** request body.
-- **`when`** (or `if`): Boolean condition evaluated against the outgoing JSON request payload (supports quoted or unquoted literals, field-to-field comparisons like `format.start < format.length`, and per-element array wildcards `[*]`).
-- **`set`** (or `then.set`): Field paths and values (supporting `${variables}`, `#(...)` shorthands, and `T(...)` expressions) to set or insert when the condition holds.
+- **`paths`** (or `path`): Exact paths or wildcard prefixes ending with `*` (such as `"/orders*"` or `"*"`). Rules also apply automatically to every element of a **root JSON array** request body.
+- **`when`** (or `if`): Boolean condition evaluated against the outgoing JSON request payload (supports quoted string literals `'RECURRING'`, numbers, booleans, field-to-field comparisons like `format.start < format.length`, and per-element array wildcards `[*]`). Always quote string literals (`'RECURRING'`) so tokens containing `.` or `#` or matching a field name are not misinterpreted.
+- **`set`** (or `then.set`): Field paths and values (supporting `${variables}`, `#(...)` shorthands, and `T(...)` expressions) to set or insert when the condition holds. Note that `#(...)` and `${...}` in `correlations.yml` produce JSON strings; use YAML literals (`unitPrice: 15`, `active: true`) for numeric or boolean fields.
 - **`omit`** (or `then.omit`): Field paths to remove from the payload when the condition holds.
 
-Pass `--correlations` to apply these rules across **all** live HTTP commands (`cats`, `cats run`, `cats replay`, `cats template`, `cats random`):
+Pass `--correlations` to apply these rules to the root `cats` command and `cats template` (for `cats run` flows, place the rules in the flow's `correlate:` block):
 
 ```shell
 cats -c openapi.yml -s http://localhost:8080 --correlations correlations.yml
 ```
 
 ### How `when:` Rules Interact with Built-In Fuzzers
-- **Conditionally required fields**: A guarded `when:` + `set:` rule marks the `set:` target field as **conditionally required** on payload variants where `when:` evaluates to `true`. `OnlyRequiredFields` retains the field on matching variants, and `RemoveFields`, `NullValuesInFields`, and `EmptyStringsInFields` expect `4XX` when removing or nulling it on matching variants (while still expecting `2XX` on variants where `when:` is `false`).
-- **Mutation protection**: During fuzzing, CATS automatically protects the field being actively mutated by a fuzzer so correlation rules never overwrite the fuzzer's negative test value.
-- **Auto-synthesis**: You can synthesize `correlations.yml` automatically from `4XX` findings using `cats triage -r cats-report -c openapi.yml --export-correlations correlations.yml`.
+- **Two-stage evaluation (`when:`)**:
+  1. **Required-field analysis** runs once per operation on the **raw generated payload** (inspectable via `cats generate -c openapi.yml -p /billing-plans -X POST -L 2 --seed 42 --pretty`). If `when:` evaluates to `true` on that baseline payload, every `set:` target field is marked **conditionally required** (`OnlyRequiredFields` keeps it, and `RemoveFields`, `NullValuesInFields`, and `EmptyStringsInFields` expect `4XX` when removing or nulling it).
+  2. **Runtime application** runs on every outgoing request payload (after `--refData` and runtime resource reuse) to apply `set:` and `omit:`.
+- **Forcing a branch & self-presence guards**:
+  - To force a specific discriminator/enum branch and mark its dependent fields as required regardless of which enum value the generator picked first, guard on the trigger's presence (`when: "planType is not null"`) and set both the trigger and its dependent field in `set:`.
+  - A self-presence guard (`when: "name is not null"` with `set: { name: "Plan-#(alphanumeric(6))" }`) never marks `name` itself as required, making it safe for unique value generators.
+- **Mutation protection**: During fuzzing, CATS automatically protects the field being actively mutated by a fuzzer (`mutationTargets`) so correlation rules never overwrite the fuzzer's negative test value. To stop boundary fuzzers (`MinLengthExactValues`, `MaxLengthExactValues`, `AllFieldsAtMaxBoundary`) from mutating a closed-domain or checksum field, pin that field in `--refData` instead.
+- **Auto-synthesis**: You can synthesize `correlations.yml` automatically from `400`/`409`/`422` findings using `cats triage -r cats-report -c openapi.yml --export-correlations correlations.yml`.
 
 ---
 

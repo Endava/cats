@@ -63,7 +63,7 @@ String and encoding helpers accept a literal, a context variable name, an embedd
 - `#(urlEncode(expr))` — UTF-8 URL encoding
 
 ### Environment Variables (`$$ENV_VAR`)
-- `$$ENV_VAR` — reads `ENV_VAR` from the process environment (or `--envFile` / `.env`) and automatically masks its value in console output and HTML/JSON reports
+- `$$ENV_VAR` — reads `ENV_VAR` from the process environment (or `--envFile` / `./.env`) and automatically masks its value in console output and HTML/JSON reports. Note that `$$ENV_VAR` resolves only when it is the **entire** value (for example `"$$API_AUTH"` with `export API_AUTH='Bearer eyJ...'`, not `"Bearer $$API_TOKEN"`). Always single-quote `$$ENV_VAR` in shell commands (`-H 'Authorization=$$API_AUTH'`) so bash does not expand `$$` to its process ID.
 
 ## SpEL expressions (`T(...)`)
 

@@ -26,8 +26,8 @@ This will add the `Accept` header to all calls, `X-Tenant` to all paths starting
 Alternatively, you can supply headers using the `-H name=value` argument. Those headers will apply to **all** paths.
 :::
 
-You can use environment (system) variables in a headers file using: `$$VARIABLE_NAME`.
+You can use environment (system) variables in a headers file or inline `-H` flag using `$$VARIABLE_NAME`.
 
-:::caution
-Notice double `$$` when supplying environment variables.
+:::caution Environment Variable Placeholders (`$$VAR`)
+`$$VARIABLE_NAME` resolves only when it is the **entire** header value (for example `Authorization: "$$API_AUTH"` after `export API_AUTH='Bearer eyJ...'`, rather than `"Bearer $$API_TOKEN"`). When passing `-H 'Authorization=$$API_AUTH'` on the command line, always use single quotes so the shell does not expand `$$` to its own process ID. Also note that `all` and path-only keys protect headers from runtime header correlation, whereas method-scoped keys (`"POST /path"`) only replace the header value for that method.
 :::

@@ -1,15 +1,18 @@
 # Field Fuzzers
 
-CATS has currently 117 registered `Field` Fuzzers. The names below match the
+CATS has currently 125 registered `Field` Fuzzers. The names below match the
 current output of `cats list --fuzzers`.
 
 - `AbugidasInStringFields` - iterate through each field and send values containing abugidas chars
 - `AdditionalPropertiesMassAssignmentFields` - iterate through each object without additional properties field and replace it with object containing unexpected extra properties values
 - `AllFieldsAtMaxBoundary` - sets all boundary-constrained fields simultaneously to their maximum valid OpenAPI boundary in a single request
+- `ArithmeticTotalMismatchFields` - sends a total field that contradicts its sibling component fields (e.g., unitPrice * quantity != totalAmount) to verify server-side total calculation
 - `BidirectionalOverrideFields` - iterate through each string field and replace it with bidirectional-override characters values
 - `CommandInjectionInStringFields` - iterate through each string field and send OS command injection payloads to detect command injection vulnerabilities
+- `ConfirmationFieldsMismatch` - sends mismatched values in sibling confirmation fields (e.g., password and confirmPassword, email and confirmEmail) to verify cross-field equality validation
 - `ConstAndNotSchemaFields` - iterate through each field with const or not schema constraint and send value violating const or matching not schema values
 - `ControlCharsInStringFields` - iterate through each string field and send values containing NUL bytes and control characters
+- `CursorAndPaginationTokenFields` - iterates through cursor and pagination token fields and sends Base64 payloads with unexpected inner structures to verify cursor decoder robustness
 - `DateRangeInversion` - send requests where the start date field (e.g., startDate, checkIn) is set after the end date field (e.g., endDate, checkOut) to test temporal validation
 - `DecimalFieldsLeftBoundary` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
 - `DecimalFieldsRightBoundary` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
@@ -47,6 +50,7 @@ current output of `cats list --fuzzers`.
 - `MinGreaterThanMaxFields` - sends a request where the lower-bound field (e.g., minAmount) is set greater than the upper-bound field (e.g., maxAmount)
 - `MinLengthExactValuesInStringFields` - iterate through each string fields that have minLength declared and send requests with values matching the minLength size/value in the targeted field
 - `MinimumExactNumbersInNumericFields` - iterate through each number fields that have minimum declared and send requests with values matching the minimum size/value in the targeted field
+- `MutuallyExclusiveFields` - populates mutually exclusive sibling fields (e.g., discountAmount and discountPercentage, creditAmount and debitAmount) simultaneously to verify mutual-exclusion validation
 - `NewFields` - send a 'happy' flow request and add a new field inside the request called 'catsFuzzyField'
 - `NoSqlInjectionInStringFields` - iterate through each string field and send NoSQL injection payloads to detect NoSQL injection vulnerabilities
 - `NonMultipleOfNumbersInNumericFields` - iterate through each numeric with multipleOf constraint field and send non-multiple numeric values
@@ -58,6 +62,7 @@ current output of `cats list --fuzzers`.
 - `OnlyMultiCodePointEmojisInFields` - iterate through each field and send values with multi code point emojis only
 - `OverflowArraySizeFields` - iterate through each array field and replace it with overflow array values
 - `OverflowMapSizeFields` - iterate through each dictionary/hashmap field and replace it with overflow dictionary/hashmap values
+- `PathBodyIdMismatch` - sends a body identifier that contradicts the URL path parameter on write requests to detect split-brain updates and BOLA
 - `PathTraversalInStringFields` - iterate through each string field and send path traversal payloads to detect local file inclusion or filesystem path leaks
 - `RandomStringsInBooleanFields` - iterate through each Boolean field and send random strings
 - `ReadOnlyFieldsMassAssignment` - sends schema-declared readOnly fields in write requests to detect readOnly property mass assignment
@@ -69,6 +74,7 @@ current output of `cats list --fuzzers`.
 - `ReplacePrimitivesWithArraysFields` - iterate through each primitive field and replace it with array values
 - `ReplacePrimitivesWithObjectsFields` - iterate through each primitive field and replace it with object values
 - `SSRFInUrlFields` - iterate through URL-type fields and send SSRF payloads to detect Server-Side Request Forgery vulnerabilities
+- `SearchAndFilterExpressionFields` - iterates through search, query, and filter fields and sends malformed regex, Lucene, and wildcard escape expressions to verify parser error handling
 - `SortColumnOrmLeakFields` - iterates through sort/order-by fields and sends invalid or nested ORM property names to verify sort column validation
 - `SqlInjectionInStringFields` - iterate through each string field and send SQL injection payloads to detect SQL injection vulnerabilities
 - `StringFieldsLeftBoundary` - iterate through each String field and send requests with outside the range values on the left side in the targeted field
@@ -78,6 +84,7 @@ current output of `cats list --fuzzers`.
 - `StringsInNumericFields` - iterate through each Integer and Number field and send requests having the `fuzz` string value in the targeted field
 - `SwapDiscriminatorValuesFields` - iterate through each discriminator field and replace it with swapped values values
 - `TemporalLogicFields` - sends semantically invalid date values (e.g., startDate after endDate, expired tokens, future birth dates) to verify if the backend enforces logical date constraints
+- `TimezoneAndLocaleCodeFields` - iterate through each timezone, locale, currency, and country code field and send invalid IANA, BCP-47, and ISO code values
 - `TrailingWhitespacesInFields` - iterate through each field and send values trailed with Unicode whitespaces
 - `TrailingControlCharsInFields` - iterate through each field and send values trailed with Unicode control chars
 - `TrailingSingleCodePointEmojisInFields` - iterate through each field and send values trailed with single code point emojis
@@ -117,6 +124,7 @@ use `--no-strictTypes` when the service intentionally accepts the coercion.
 - `ScientificNotationStringsInDecimalFields` - send scientific-notation numbers as strings
 - `SingleElementArrayToScalarFields` - send primitive values wrapped in a single-element array
 - `SmallNegativeAndInt32BoundaryFields` - iterate through integer and numeric fields and send `0`, `-1`, and `Integer.MAX_VALUE` boundary values
+- `SpecialFloatTokensInNumericFields` - iterate through each number field and send IEEE-754 special float token values (`NaN`, `Infinity`, `-Infinity`)
 - `WhitespacePaddedNumericFields` - send numeric values padded with whitespace
 
 ## Additional field fuzzers

@@ -168,6 +168,13 @@ Precedence order (most specific to least specific):
 4. Wildcard `"/prefix*"`
 5. `all`
 
+### Pinning vs. Value Replacement Rules
+Every key scope and field notation replaces values in outgoing requests, but protection against fuzzers and runtime correlation follows specific rules:
+- **Skipping boundary fuzzers** (`MinLengthExactValuesInStringFields`, `MaxLengthExactValuesInStringFields`, `AllFieldsAtMaxBoundary`, and numeric boundary fuzzers): Pin the field under a **path-only, wildcard, or `all` key** using **`#` notation** (`shippingAddress#country: "DE"`).
+- **Protecting from runtime resource reuse**: Path-only, wildcard, and `all` keys (using either `#` or `.` notation) prevent `RuntimeResourcePool` from overwriting the pinned value.
+- **Method-scoped keys** (`"POST /customers"`): Replace the field value in requests for that HTTP method without disabling boundary fuzzers or runtime resource correlation on other methods.
+- **Typed literals**: `#(...)` and `${...}` expressions in `refData.yml` resolve to JSON strings; use YAML numeric/boolean literals (`quantity: 2`, `active: true`) for non-string fields.
+
 ## Removing Fields (`omit` and `cats_remove_field`)
 There are cases when some fields may not make sense together (for example, if you send `firstName` and `lastName`, you are not allowed to also send `name`).
 You can instruct CATS to remove fields from the generated payload (and skip fuzzing them) using an `omit` list or the `"cats_remove_field"` sentinel value:
