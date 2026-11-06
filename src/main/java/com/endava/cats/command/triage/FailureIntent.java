@@ -1,7 +1,5 @@
 package com.endava.cats.command.triage;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -12,18 +10,18 @@ import java.util.regex.Pattern;
  * ({@code "'HYI' is not a valid sort direction"}) yield no intent.
  */
 enum FailureIntent {
-    UNIQUE(ImmutableList.of(
+    UNIQUE(List.of(
             Pattern.compile("\\balready\\s+(?:exists|in\\s+use|taken|registered)\\b"),
             Pattern.compile("\\bduplicate\\b"),
             Pattern.compile("\\b(?:must\\s+be|not)\\s+unique\\b"))),
-    REMOVE(ImmutableList.of(
+    REMOVE(List.of(
             Pattern.compile("\\bmust\\s+be\\s+(?:null|empty|absent|omitted)\\b"),
             Pattern.compile("\\b(?:must|should)\\s+not\\s+be\\s+(?:present|provided|set|specified|sent|supplied)\\b"),
             Pattern.compile("\\bcannot\\s+be\\s+(?:set|provided|specified|supplied)\\b"),
             Pattern.compile("\\bnot\\s+(?:allowed|permitted)\\b"),
             Pattern.compile("\\bforbidden\\b"),
             Pattern.compile("\\b(?:unrecognized|unknown|unexpected)\\s+(?:field|property|attribute)\\b"))),
-    REQUIRE(ImmutableList.of(
+    REQUIRE(List.of(
             Pattern.compile("\\b(?:is|are)\\s+(?:required|mandatory|missing)\\b"),
             Pattern.compile("\\b(?:must|should)\\s+not\\s+be\\s+(?:null|blank|empty)\\b"),
             Pattern.compile("\\bcannot\\s+be\\s+(?:null|blank|empty)\\b"),
@@ -35,9 +33,9 @@ enum FailureIntent {
     private static final Pattern NULL_NOT_ALLOWED = Pattern.compile("\\b(?:null|empty|blank)\\s+(?:values?\\s+)?(?:is\\s+|are\\s+)?not\\s+(?:allowed|permitted)\\b");
     private static final List<FailureIntent> PRECEDENCE = List.of(UNIQUE, REMOVE, REQUIRE);
 
-    private final ImmutableList<Pattern> phrases;
+    private final List<Pattern> phrases;
 
-    FailureIntent(ImmutableList<Pattern> phrases) {
+    FailureIntent(List<Pattern> phrases) {
         this.phrases = phrases;
     }
 
