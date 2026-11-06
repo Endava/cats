@@ -10,7 +10,8 @@ import java.util.regex.Pattern;
  */
 final class FieldNames {
     private static final Pattern INDEX = Pattern.compile("\\[\\d+]");
-    private static final Pattern VALID_PATH = Pattern.compile("[A-Za-z_$][\\w$-]*(?:\\[\\*])?(?:\\.[A-Za-z_$][\\w$-]*(?:\\[\\*])?)*");
+    // Segments cannot consume '.', so possessive repetition preserves syntax without recursive backtracking.
+    private static final Pattern VALID_PATH = Pattern.compile("[A-Za-z_$][\\w$-]*(?:\\[\\*])?(?:\\.[A-Za-z_$][\\w$-]*(?:\\[\\*])?)*+");
     private static final Pattern SIMPLE_YAML_KEY = Pattern.compile("[A-Za-z_$][\\w$.-]*");
 
     private FieldNames() {

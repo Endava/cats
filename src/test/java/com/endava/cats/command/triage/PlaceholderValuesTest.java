@@ -64,7 +64,7 @@ class PlaceholderValuesTest {
     void shouldFallBackToMessageThenCurrentValue(String message, String json, String expected) {
         Object value = new PlaceholderValues(RequestSchemaLookup.none()).forRequirement(testCase, "value", message,
                 Optional.of(JsonUtils.parseAsJsonElement(json)));
-        assertThat(value.toString()).isEqualTo(expected);
+        assertThat(value).hasToString(expected);
     }
 
     @Test
