@@ -16,12 +16,60 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 @QuarkusTest
 class WfcFaultClassifierTest {
+    private static final Set<Reason> NON_FAULT_OUTCOME_REASONS = EnumSet.of(
+            Reason.ALL_GOOD, Reason.NOT_FOUND, Reason.RESPONSE_BODY_TRUNCATED,
+            Reason.UNEXPECTED_EXCEPTION, Reason.RESPONSE_MATCHES_ARGUMENTS);
+
+    private static final Set<Reason> TRANSPORT_FAILURE_REASONS = EnumSet.of(
+            Reason.EMPTY_REPLY_FROM_SERVER, Reason.CONNECTION_REFUSED, Reason.READ_TIMEOUT, Reason.WRITE_TIMEOUT,
+            Reason.CONNECTION_TIMEOUT, Reason.HTTP_PROTOCOL_EXCEPTION, Reason.CONNECTION_RESET);
+
+    private static final Set<Reason> SERVER_ERROR_REASONS = EnumSet.of(
+            Reason.SERVER_ERROR, Reason.PUT_RETRY_SERVER_ERROR, Reason.PUT_RETRY_BROKE_READ,
+            Reason.STALE_IF_MATCH_SERVER_ERROR, Reason.CONDITIONAL_GET_SERVER_ERROR, Reason.CROSS_PARENT_SERVER_ERROR);
+
+    @ParameterizedTest
+    @MethodSource("reasonsRequiringFaultCategory")
+    void shouldMapEveryReasonToSpecificFaultCategory(Reason reason) {
+        CatsTestCase testCase = buildTestCase("GET", "/pets", 200, "warning", reason.value(), "AnyOracleFuzzer", "{}");
+
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(testCase), testCase))
+                .as("Reason.%s must be mapped in WfcFaultClassifier to a DefinedFaultCategory or a CatsWfcFaultCategory (9xx), "
+                        + "or be added to one of the exemption sets in WfcFaultClassifierTest", reason.name())
+                .extracting(FaultCategoryId::getCode)
+                .isNotEmpty()
+                .doesNotContain(CatsWfcFaultCategory.CATS_UNEXPECTED_BEHAVIOUR.getCode());
+    }
+
+    private static Stream<Reason> reasonsRequiringFaultCategory() {
+        return Arrays.stream(Reason.values())
+                .filter(Predicate.not(NON_FAULT_OUTCOME_REASONS::contains))
+                .filter(Predicate.not(TRANSPORT_FAILURE_REASONS::contains))
+                .filter(Predicate.not(SERVER_ERROR_REASONS::contains));
+    }
+
+    @ParameterizedTest
+    @MethodSource("serverErrorReasons")
+    void shouldClassifyServerErrorReasonsThroughHttpStatus500(Reason reason) {
+        CatsTestCase testCase = buildTestCase("PUT", "/pets/1", 500, "error", reason.value(), "AnyOracleFuzzer", "{}");
+
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(testCase), testCase))
+                .extracting(FaultCategoryId::getCode)
+                .contains(DefinedFaultCategory.HTTP_STATUS_500.getCode());
+    }
+
+    private static Stream<Reason> serverErrorReasons() {
+        return SERVER_ERROR_REASONS.stream();
+    }
 
     @Test
     void shouldClassify500And5xxAnd501StatusFaults() {
@@ -297,6 +345,39 @@ class WfcFaultClassifierTest {
                 .headers(List.of(new KeyValuePair<>(null, "v"), new KeyValuePair<>("WWW-Authenticate", "Bearer"))).build());
         Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(compliant401WithHeader), compliant401WithHeader))
                 .isEmpty();
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideOracleReasonMappings")
+    void shouldMapOracleReasonsToWfcAndCatsCategories(String method, String result, String reason, String fuzzer,
+                                                      int expectedFaultCode) {
+        CatsTestCase testCase = buildTestCase(method, "/pets/1", 200, result, reason, fuzzer, "{}");
+
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(testCase), testCase))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(expectedFaultCode);
+    }
+
+    private static Stream<Arguments> provideOracleReasonMappings() {
+        return Stream.of(
+                Arguments.of("PATCH", "warning", Reason.PATCH_CLOBBERED_OMITTED_FIELDS.value(), "PatchOmittedFieldsClobberFuzzer", DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH.getCode()),
+                Arguments.of("POST", "error", Reason.LDAP_INJECTION.value(), "LdapInjectionInStringFieldsFuzzer", DefinedFaultCategory.SECURITY_LDAP_INJECTION.getCode()),
+                Arguments.of("POST", "error", Reason.POSSIBLE_LDAP_INJECTION.value(), "LdapInjectionInStringFieldsFuzzer", DefinedFaultCategory.SECURITY_LDAP_INJECTION.getCode()),
+                Arguments.of("POST", "error", Reason.LDAP_DATA_EXTRACTION.value(), "LdapInjectionInStringFieldsFuzzer", DefinedFaultCategory.SECURITY_LDAP_INJECTION.getCode()),
+                Arguments.of("POST", "error", Reason.LDAP_AUTHENTICATION_BYPASS.value(), "LdapInjectionInStringFieldsFuzzer", DefinedFaultCategory.SECURITY_LDAP_INJECTION.getCode()),
+                Arguments.of("GET", "warning", Reason.PAGINATION_LIMIT_IGNORED.value(), "PaginationLimitHonoredFuzzer", CatsWfcFaultCategory.CATS_PAGINATION_LIMIT_IGNORED.getCode()),
+                Arguments.of("GET", "warning", Reason.CONDITIONAL_GET_IGNORED.value(), "ConditionalEtagFuzzer", CatsWfcFaultCategory.CATS_CONDITIONAL_GET_IGNORED.getCode()),
+                Arguments.of("POST", "error", Reason.ARITHMETIC_TOTAL_MISMATCH_ACCEPTED.value(), "ArithmeticTotalMismatchFieldsFuzzer", CatsWfcFaultCategory.CATS_ARITHMETIC_TOTAL_MISMATCH_ACCEPTED.getCode()),
+                Arguments.of("PUT", "error", Reason.PATH_BODY_ID_MISMATCH_ACCEPTED.value(), "PathBodyIdMismatchFuzzer", CatsWfcFaultCategory.CATS_PATH_BODY_ID_MISMATCH_ACCEPTED.getCode())
+        );
+    }
+
+    @Test
+    void shouldKeepCatsFaultCategoryCodesUniqueWithinWfcReservedRange() {
+        Assertions.assertThat(CatsWfcFaultCategory.values())
+                .extracting(CatsWfcFaultCategory::getCode)
+                .doesNotHaveDuplicates()
+                .allSatisfy(code -> Assertions.assertThat(code).isBetween(900, 999));
     }
 
     private static CatsTestCase buildTestCase(String method, String path, int code, String result,

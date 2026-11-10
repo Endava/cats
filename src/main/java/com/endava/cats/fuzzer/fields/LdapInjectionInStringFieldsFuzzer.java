@@ -5,6 +5,7 @@ import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import jakarta.inject.Singleton;
@@ -274,7 +275,7 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         for (String keyword : LDAP_ERROR_KEYWORDS) {
             if (responseLower.contains(keyword) && appearsInErrorContext(responseBody, keyword)) {
                 return InjectionDetectionResult.vulnerable(
-                        "LDAP injection vulnerability detected",
+                        Reason.LDAP_INJECTION.value(),
                         "Response contains LDAP error message: '" + keyword + "'"
                 );
             }
@@ -289,21 +290,21 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
 
         if (score >= 6) {
             return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP injection detected",
+                    Reason.POSSIBLE_LDAP_INJECTION.value(),
                     "Evidence score=" + score + " (" + contributing + ") suggesting LDAP data leakage or filter injection"
             );
         }
 
         if (hasLdifStructure(responseBody) && !isLikelyTokenResponse(responseLower)) {
             return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP data extraction detected",
+                    Reason.LDAP_DATA_EXTRACTION.value(),
                     "Response contains LDIF-like structure suggesting directory data dump"
             );
         }
 
         if (responseBody.length() > 50000 && containsMultipleUserIndicators(responseLower)) {
             return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP injection detected",
+                    Reason.POSSIBLE_LDAP_INJECTION.value(),
                     "Response is unusually large and contains multiple user-like structures, " +
                             "suggesting injection may have bypassed filters and returned all directory entries"
             );
@@ -314,7 +315,7 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
 
         if (explicitIndicators >= 6) {
             return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP injection detected",
+                    Reason.POSSIBLE_LDAP_INJECTION.value(),
                     "Response contains multiple LDAP directory attributes (" + explicitIndicators + " indicators: " +
                             foundIndicators + "), suggesting filter injection may have returned unauthorized directory data"
             );
@@ -322,7 +323,7 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
 
         if (score > 0 && detectAuthenticationBypass(responseLower)) {
             return InjectionDetectionResult.vulnerable(
-                    "Potential LDAP authentication bypass detected",
+                    Reason.LDAP_AUTHENTICATION_BYPASS.value(),
                     "Response suggests authentication-related success combined with LDAP evidence"
             );
         }

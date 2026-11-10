@@ -76,6 +76,12 @@ public final class WfcFaultClassifier {
             Reason.DNS_RESOLUTION_SSRF.value(),
             Reason.HTTP_CLIENT_SSRF.value());
 
+    private static final Set<String> LDAP_REASONS = Set.of(
+            Reason.LDAP_INJECTION.value(),
+            Reason.POSSIBLE_LDAP_INJECTION.value(),
+            Reason.LDAP_DATA_EXTRACTION.value(),
+            Reason.LDAP_AUTHENTICATION_BYPASS.value());
+
     private static final Map<String, FaultCategory> EXACT_REASON_MAP = buildExactReasonMap();
 
     private WfcFaultClassifier() {
@@ -95,6 +101,11 @@ public final class WfcFaultClassifier {
         map.put(Reason.REJECTED_UPDATE_PARTIALLY_APPLIED.value(), DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION);
         map.put(Reason.REPEATED_CREATE_PUT.value(), DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT);
         map.put(Reason.FILTER_PARAMETER_IGNORED.value(), CatsWfcFaultCategory.CATS_FILTER_PARAMETER_IGNORED);
+        map.put(Reason.PATCH_CLOBBERED_OMITTED_FIELDS.value(), DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH);
+        map.put(Reason.PAGINATION_LIMIT_IGNORED.value(), CatsWfcFaultCategory.CATS_PAGINATION_LIMIT_IGNORED);
+        map.put(Reason.CONDITIONAL_GET_IGNORED.value(), CatsWfcFaultCategory.CATS_CONDITIONAL_GET_IGNORED);
+        map.put(Reason.ARITHMETIC_TOTAL_MISMATCH_ACCEPTED.value(), CatsWfcFaultCategory.CATS_ARITHMETIC_TOTAL_MISMATCH_ACCEPTED);
+        map.put(Reason.PATH_BODY_ID_MISMATCH_ACCEPTED.value(), CatsWfcFaultCategory.CATS_PATH_BODY_ID_MISMATCH_ACCEPTED);
         map.put(Reason.SQL_INJECTION.value(), DefinedFaultCategory.SECURITY_SQL_INJECTION);
         map.put(Reason.XSS_INJECTION.value(), DefinedFaultCategory.SECURITY_XSS_INJECTION);
         map.put(Reason.MASS_ASSIGNMENT_DETECTED.value(), DefinedFaultCategory.SECURITY_MASS_ASSIGNMENT);
@@ -108,6 +119,7 @@ public final class WfcFaultClassifier {
         map.put(Reason.PATH_TRAVERSAL.value(), DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES);
         map.put(Reason.HTTP_METHOD_OVERRIDE_ACCEPTED.value(), DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT);
         map.put(Reason.NOSQL_INJECTION.value(), DefinedFaultCategory.SECURITY_NOSQL_INJECTION);
+        LDAP_REASONS.forEach(reason -> map.put(reason, DefinedFaultCategory.SECURITY_LDAP_INJECTION));
         map.put(Reason.WRITE_ONLY_FIELDS_EXPOSED.value(), DefinedFaultCategory.SECURITY_EXCESSIVE_DATA_EXPOSURE);
         map.put(Reason.SENSITIVE_DATA_EXPOSED.value(), DefinedFaultCategory.SECURITY_EXCESSIVE_DATA_EXPOSURE);
         map.put(Reason.MISSING_SECURITY_HEADERS.value(), DefinedFaultCategory.SECURITY_MISSING_HEADERS);
