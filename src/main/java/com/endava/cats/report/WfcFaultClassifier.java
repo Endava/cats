@@ -16,6 +16,7 @@ import com.endava.cats.fuzzer.http.CustomHttpMethodsFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.fuzzer.http.HttpMethodsFuzzer;
 import com.endava.cats.fuzzer.http.InsecureDirectObjectReferencesFuzzer;
+import com.endava.cats.fuzzer.http.MisleadingCreatePutFuzzer;
 import com.endava.cats.fuzzer.http.NonRestHttpMethodsFuzzer;
 import com.endava.cats.fuzzer.http.PutIdempotencyFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
@@ -100,6 +101,8 @@ public final class WfcFaultClassifier {
         map.put(Reason.OPTIONS_ALLOW_MISMATCH.value(), DefinedFaultCategory.SCHEMA_INVALID_ALLOW);
         map.put(Reason.REJECTED_UPDATE_PARTIALLY_APPLIED.value(), DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION);
         map.put(Reason.REPEATED_CREATE_PUT.value(), DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT);
+        map.put(Reason.MISLEADING_CREATE_PUT.value(), DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT);
+        map.put(Reason.PARTIAL_UPDATE_PUT.value(), DefinedFaultCategory.HTTP_PARTIAL_UPDATE_PUT);
         map.put(Reason.FILTER_PARAMETER_IGNORED.value(), CatsWfcFaultCategory.CATS_FILTER_PARAMETER_IGNORED);
         map.put(Reason.PATCH_CLOBBERED_OMITTED_FIELDS.value(), DefinedFaultCategory.HTTP_INVALID_MERGE_PATCH);
         map.put(Reason.PAGINATION_LIMIT_IGNORED.value(), CatsWfcFaultCategory.CATS_PAGINATION_LIMIT_IGNORED);
@@ -236,6 +239,8 @@ public final class WfcFaultClassifier {
             faults.add(faultId(DefinedFaultCategory.HTTP_NONWORKING_DELETE, null));
         } else if (ConsoleUtils.matchesFuzzer(fuzzer, PutIdempotencyFuzzer.class) && code == ResponseCodeFamily.STATUS_CREATED) {
             faults.add(faultId(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT, fuzzer));
+        } else if (ConsoleUtils.matchesFuzzer(fuzzer, MisleadingCreatePutFuzzer.class) && code == ResponseCodeFamily.STATUS_CREATED) {
+            faults.add(faultId(DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT, fuzzer));
         } else if (ConsoleUtils.matchesFuzzer(fuzzer, CreatedResourceLocationFuzzer.class)
                 && !ResponseCodeFamily.isNotFoundOrGone(code) && !ResponseCodeFamily.is5xxCode(code)) {
             faults.add(faultId(DefinedFaultCategory.HTTP_INVALID_LOCATION, summary.getResultReason()));

@@ -16,6 +16,7 @@ import com.endava.cats.command.model.PathDetailsEntry;
 import com.endava.cats.command.model.PathListEntry;
 import com.endava.cats.command.model.ValidContractEntry;
 import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorConfig;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
@@ -31,6 +32,7 @@ import com.endava.cats.model.RunOutcome;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.report.BaselineComparisonEngine;
+import com.endava.cats.report.CatsWfcFaultCategory;
 import com.endava.cats.report.SummaryReportContext;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.KeyValuePair;
@@ -336,6 +338,7 @@ import java.util.UUID;
         ProcessingError.class, SummaryReportContext.class, SummaryReportContext.StopLimit.class,
         SummaryReportContext.ProcessingErrorEntry.class, SummaryReportContext.ResponseCodeEntry.class,
         SummaryReportContext.FailingPathEntry.class, PathListEntry.class, PathListEntry.PathDetails.class,
+        com.endava.cats.http.HttpMethod.class, CustomMutatorConfig.Type.class, CatsWfcFaultCategory.class,
         InfoCommand.CatsInfo.class, StatsCommand.Stats.class, PathDetailsEntry.class, PathDetailsEntry.OperationDetails.class,
         ValidContractEntry.class, MutatorEntry.class, JavaTimeModule.class
 })

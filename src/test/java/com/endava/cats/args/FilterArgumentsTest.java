@@ -163,7 +163,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(267);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(269);
     }
 
     @Test
@@ -258,7 +258,8 @@ class FilterArgumentsTest {
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).extracting(Object::toString)
                 .containsExactlyInAnyOrder("CheckDeletedResourcesNotAvailableFuzzer", "CheckReadsStillWorkFuzzer",
                         "CrossParentResourceIsolationFuzzer", "CreatedResourceLocationFuzzer", "UpdateReadConsistencyFuzzer",
-                        "ConditionalEtagFuzzer", "PutIdempotencyFuzzer", "PatchOmittedFieldsClobberFuzzer",
+                        "ConditionalEtagFuzzer", "PutIdempotencyFuzzer", "MisleadingCreatePutFuzzer",
+                        "PartialUpdatePutFuzzer", "PatchOmittedFieldsClobberFuzzer",
                         "RejectedUpdateSideEffectsFuzzer", "FilterParameterHonoredFuzzer");
     }
 
@@ -294,7 +295,7 @@ class FilterArgumentsTest {
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isEmpty();
 
         checkArguments.setCheckHttp(true);
-        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(10);
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(12);
     }
 
     @Test
@@ -306,7 +307,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnEmptySecondPhaseWhenSpecialFuzzer() {
-        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(10);
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(12);
         filterArguments.customFilter("FunctionalFuzzer");
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isEmpty();
     }
@@ -473,13 +474,13 @@ class FilterArgumentsTest {
 
     @Test
     void shouldCountTotalFuzzers() {
-        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(177);
+        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(179);
 
         ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
         ReflectionTestUtils.setField(checkArguments, "includeEmojis", true);
         ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
         try {
-            Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(204);
+            Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(206);
         } finally {
             ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", false);
             ReflectionTestUtils.setField(checkArguments, "includeEmojis", false);
@@ -493,7 +494,7 @@ class FilterArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"ALL,235", "FUZZERS,177", "LINTERS,58"})
+    @CsvSource({"ALL,237", "FUZZERS,179", "LINTERS,58"})
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);

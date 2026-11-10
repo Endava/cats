@@ -283,6 +283,18 @@ class WfcFaultClassifierTest {
                 .extracting(FaultCategoryId::getCode)
                 .containsExactly(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT.getCode());
 
+        CatsTestCase misleadingCreatePut = buildTestCase("PUT", "/pets/1", 201, "error",
+                Reason.MISLEADING_CREATE_PUT.value(), "MisleadingCreatePutFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(misleadingCreatePut), misleadingCreatePut))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT.getCode());
+
+        CatsTestCase partialUpdatePut = buildTestCase("GET", "/pets/1", 200, "warning",
+                Reason.PARTIAL_UPDATE_PUT.value(), "PartialUpdatePutFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(partialUpdatePut), partialUpdatePut))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.HTTP_PARTIAL_UPDATE_PUT.getCode());
+
         CatsTestCase rejectedUpdate = buildTestCase("GET", "/pets/1", 200, "error",
                 Reason.REJECTED_UPDATE_PARTIALLY_APPLIED.value(), "RejectedUpdateSideEffectsFuzzer", "{}");
         Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(rejectedUpdate), rejectedUpdate))

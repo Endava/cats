@@ -101,8 +101,10 @@ profiles:
       - CreatedResourceLocation
       - UpdateReadConsistency
       - PatchOmittedFieldsClobber
+      - PartialUpdatePut
       - ConditionalEtag
       - PutIdempotency
+      - MisleadingCreatePut
       - RejectedUpdateSideEffects
       - IdempotencyKeyConflict
       - RandomResources
@@ -317,6 +319,8 @@ profiles:
       - ArithmeticTotalMismatchFields
       - PathBodyIdMismatch
       - PatchOmittedFieldsClobber
+      - PartialUpdatePut
+      - MisleadingCreatePut
       - PaginationLimitHonored
       - FilterParameterHonored
       - RejectedUpdateSideEffects

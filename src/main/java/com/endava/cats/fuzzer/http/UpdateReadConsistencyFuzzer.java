@@ -143,7 +143,7 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
     }
 
     /** Resolves direct and composed (allOf/oneOf/anyOf) request schemas before choosing comparable fields. */
-    private Map<String, Schema> requestProperties(FuzzingData data) {
+    static Map<String, Schema> requestProperties(FuzzingData data) {
         Map<String, Schema> properties = new LinkedHashMap<>();
         Set<Schema<?>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         collectProperties(data.getReqSchema(), Optional.ofNullable(data.getSchemaMap()).orElse(Map.of()), 0, visited, properties);
@@ -157,8 +157,8 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
         return properties;
     }
 
-    private void collectProperties(Schema<?> schema, Map<String, Schema> schemaMap, int depth,
-                                   Set<Schema<?>> visited, Map<String, Schema> properties) {
+    static void collectProperties(Schema<?> schema, Map<String, Schema> schemaMap, int depth,
+                                  Set<Schema<?>> visited, Map<String, Schema> properties) {
         Schema<?> resolved = CatsModelUtils.resolveSchema(schema, schemaMap);
         if (resolved == null || depth > MAX_SCHEMA_DEPTH || !visited.add(resolved)) {
             return;
@@ -180,7 +180,7 @@ public class UpdateReadConsistencyFuzzer implements Fuzzer {
         }
     }
 
-    private boolean samePrimitiveValue(JsonPrimitive sent, JsonPrimitive returned, Schema<?> propertySchema) {
+    static boolean samePrimitiveValue(JsonPrimitive sent, JsonPrimitive returned, Schema<?> propertySchema) {
         if (sent.equals(returned)) {
             return true;
         }

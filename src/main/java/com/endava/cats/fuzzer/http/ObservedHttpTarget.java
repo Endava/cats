@@ -102,17 +102,22 @@ final class ObservedHttpTarget {
                 return fromLocation;
             }
         }
-        if ((exchange.status() != 200 && exchange.status() != 201) || !JsonUtils.isValidJson(exchange.responseBody())) {
+        if ((exchange.status() != 200 && exchange.status() != 201) || StringUtils.isBlank(exchange.responseBody())) {
             return Optional.empty();
         }
         Optional<String> collectionPath = relativeRequestPath(arguments, exchange.url())
                 .map(path -> path.endsWith("/") && path.length() > 1 ? path.substring(0, path.length() - 1) : path)
                 .filter(path -> matchesTemplate(collectionTemplate, path));
-        return collectionPath.flatMap(s -> extractCreatedId(exchange.responseBody(), collectionTemplate, parameterName)
+        return collectionPath.flatMap(s -> extractCreatedId(exchange, collectionTemplate, parameterName)
                 .map(id -> s + "/" + id));
     }
 
-    private static Optional<String> extractCreatedId(String responseBody, String collectionTemplate, String parameterName) {
+    private static Optional<String> extractCreatedId(RuntimeResourcePool.SuccessfulExchange exchange,
+                                                     String collectionTemplate, String parameterName) {
+        String responseBody = exchange.responseBody();
+        if (!JsonUtils.isValidJson(responseBody)) {
+            return extractScalarCreatedId(exchange.status(), responseBody);
+        }
         try {
             JsonElement element = JsonUtils.parseAsJsonElement(responseBody);
             if (!element.isJsonObject()) {
@@ -133,6 +138,14 @@ final class ObservedHttpTarget {
         } catch (RuntimeException _) {
             return Optional.empty();
         }
+    }
+
+    private static Optional<String> extractScalarCreatedId(int status, String responseBody) {
+        if (status != 201 || responseBody == null) {
+            return Optional.empty();
+        }
+        String trimmed = StringUtils.unwrap(responseBody.trim(), '"');
+        return trimmed.matches("[A-Za-z0-9_-]{1,64}") ? Optional.of(trimmed) : Optional.empty();
     }
 
     private static Set<String> candidateIdNames(String collectionTemplate, String parameterName) {
@@ -165,6 +178,26 @@ final class ObservedHttpTarget {
                 .filter(write -> JsonUtils.isValidJson(write.requestBody()))
                 .map(write -> ownedPath(pool, arguments, path, write.url())
                         .map(owned -> new OwnedWrite(owned, write.requestBody())))
+                .flatMap(Optional::stream)
+                .findFirst();
+    }
+
+    /**
+     * Finds a successful {@code PUT} to a resource proven to exist in this run: either a {@code PUT} that returned
+     * {@code 201 Created} on the path itself, or a {@code PUT} to a resource created by {@code POST}.
+     */
+    static Optional<OwnedWrite> latestPutTarget(RuntimeResourcePool pool, ApiArguments arguments, String path) {
+        return latestOwnedWrite(pool, arguments, path, HttpMethod.PUT, exchange -> exchange.status() == 201)
+                .or(() -> latestCreatedPut(pool, arguments, path))
+                .or(() -> latestOwnedWrite(pool, arguments, path, HttpMethod.PUT));
+    }
+
+    private static Optional<OwnedWrite> latestCreatedPut(RuntimeResourcePool pool, ApiArguments arguments, String path) {
+        return pool.successfulExchanges(path, HttpMethod.PUT).reversed().stream()
+                .filter(write -> write.status() == 201 && JsonUtils.isValidJson(write.requestBody()))
+                .map(write -> relativeRequestPath(arguments, write.url())
+                        .filter(relative -> matchesTemplate(path, relative))
+                        .map(relative -> new OwnedWrite(relative, write.requestBody())))
                 .flatMap(Optional::stream)
                 .findFirst();
     }
