@@ -905,6 +905,24 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldMergeMethodScopedAndExtensionSkippedFuzzersPerOperation() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+        Mockito.when(filterArguments.getFuzzersToSkipForOperationExtensions(Mockito.any())).thenReturn(List.of("Jumbo"));
+        Mockito.when(filterArguments.getFuzzersToSkipForOperation(HttpMethod.GET, "/pets"))
+                .thenReturn(List.of("ControlChars", "Jumbo"));
+
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
+
+        FuzzingData get = dataList.stream().filter(data -> data.getMethod() == HttpMethod.GET).findFirst().orElseThrow();
+        FuzzingData post = dataList.stream().filter(data -> data.getMethod() == HttpMethod.POST).findFirst().orElseThrow();
+        Assertions.assertThat(get.getSkippedFuzzersForPath()).containsExactly("Jumbo", "ControlChars");
+        Assertions.assertThat(get.shouldSkipFuzzerForPath("LeadingControlCharsInFieldsTrimValidateFuzzer")).isTrue();
+        Assertions.assertThat(post.getSkippedFuzzersForPath()).containsExactly("Jumbo");
+        Assertions.assertThat(post.shouldSkipFuzzerForPath("LeadingControlCharsInFieldsTrimValidateFuzzer")).isFalse();
+    }
+
+    @Test
     void shouldAvoidCyclicDependenciesOnAdditionalProperties() throws Exception {
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");

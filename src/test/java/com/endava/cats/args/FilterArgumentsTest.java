@@ -509,6 +509,52 @@ class FilterArgumentsTest {
                 .noneMatch(fuzzer -> fuzzer.toString().contains("HappyPath"));
     }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "GET=ControlChars|GET|/pets|ControlChars",
+            "GET=ControlChars|DELETE|/pets|''",
+            "get=ControlChars;Emojis|GET|/orders|ControlChars;Emojis",
+            "DELETE /users/*=ControlChars|DELETE|/users/{id}|ControlChars",
+            "DELETE /users/*=ControlChars|DELETE|/orders/{id}|''",
+            "DELETE /users/*=ControlChars|GET|/users/{id}|''",
+            "PATCH /users/{id}=ControlChars|PATCH|/users/{id}|ControlChars",
+            "/users/*=ControlChars|GET|/users/{id}|''",
+            "ControlChars|GET|/users/{id}|''"
+    })
+    void shouldReturnFuzzersToSkipForMethodScopedEntries(String entry, HttpMethod method, String path, String expected) {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzers", List.of(entry));
+
+        List<String> skipped = filterArguments.getFuzzersToSkipForOperation(method, path);
+
+        Assertions.assertThat(skipped)
+                .containsExactlyElementsOf(expected.isEmpty() ? List.of() : List.of(expected.split(";")));
+    }
+
+    @Test
+    void shouldParseMethodScopedSkipFuzzersThroughPicocliAlongsideGlobalAndPathEntries() {
+        ReflectionTestUtils.setField(filterArguments, "skipPathFuzzers", new HashMap<>());
+        new CommandLine(filterArguments).parseArgs(
+                "--skipFuzzers", "GET=HappyPath,DELETE=HappyPath;Jumbo,RandomResources,/users/*=VeryLarge");
+
+        Assertions.assertThat(filterArguments.getSkipFuzzers()).containsExactly("RandomResources");
+        Assertions.assertThat(filterArguments.getFuzzersToSkipForOperation(HttpMethod.GET, "/users/{id}"))
+                .containsExactly("HappyPath");
+        Assertions.assertThat(filterArguments.getFuzzersToSkipForOperation(HttpMethod.DELETE, "/users/{id}"))
+                .containsExactly("HappyPath", "Jumbo");
+        Assertions.assertThat(filterArguments.getFuzzersToSkipForOperation(HttpMethod.POST, "/users/{id}")).isEmpty();
+    }
+
+    @Test
+    void shouldNotSkipFuzzersForWholePathWhenEntryIsMethodScoped() {
+        ReflectionTestUtils.setField(filterArguments, "skipPathFuzzers", new HashMap<>());
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzers", List.of("GET=HappyPath", "GET /users/*=HappyPath"));
+
+        List<Fuzzer> filtered = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(
+                Set.of(HttpMethod.GET, HttpMethod.POST), "/users/{id}");
+
+        Assertions.assertThat(filtered).anyMatch(HappyPathFuzzer.class::isInstance);
+    }
+
     @Test
     void shouldParseSkipFuzzersForExtension() {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension",

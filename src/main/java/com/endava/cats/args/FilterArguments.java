@@ -44,6 +44,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -113,7 +114,9 @@ public class FilterArguments {
     private List<String> skipPaths;
 
     @CommandLine.Option(names = {"--skipFuzzers", "--skipFuzzer"},
-            description = "A comma separated list of fuzzers to ignore. They can be full or partial Fuzzer names. All available can be listed using: @|bold cats list -f|@", split = ",")
+            description = "A comma separated list of fuzzers to ignore. They can be full or partial Fuzzer names. All available can be listed using: @|bold cats list -f|@. " +
+                    "Fuzzers can also be skipped only for some operations using @|bold <scope>=Fuzzer1;Fuzzer2|@, where scope is a path (@|bold /users/*|@), " +
+                    "an HTTP method (@|bold GET|@) or both (@|bold \"DELETE /users/*\"|@). Example: @|bold --skipFuzzers GET=ControlChars,DELETE=ControlChars|@", split = ",")
     @Setter
     private List<String> skipFuzzers;
 
@@ -324,12 +327,64 @@ public class FilterArguments {
                 .filter(string -> string.contains("="))
                 .map(String::trim)
                 .map(string -> string.split("=", 2))
+                .filter(stringArray -> MethodScopedSkip.parseMethod(stringArray[0]).isEmpty())
                 .collect(Collectors.toMap(stringArray -> stringArray[0].trim(),
-                        stringArray -> Stream.of(stringArray[1].split("[,;:]", -1))
-                                .map(String::trim)
-                                .filter(s -> !s.isEmpty())
-                                .toList(),
+                        stringArray -> parseScopedFuzzers(stringArray[1]),
                         (first, second) -> Stream.concat(first.stream(), second.stream()).distinct().toList()));
+    }
+
+    private static List<String> parseScopedFuzzers(String fuzzers) {
+        return Stream.of(fuzzers.split("[,;:]", -1))
+                .map(String::trim)
+                .filter(Predicate.not(String::isEmpty))
+                .toList();
+    }
+
+    /**
+     * Returns the fuzzers to skip for a single operation based on the method-scoped {@code --skipFuzzers} entries,
+     * such as {@code GET=Fuzzer1;Fuzzer2} or {@code DELETE /users/*=Fuzzer1}.
+     *
+     * @param method the HTTP method of the operation
+     * @param path   the contract path of the operation
+     * @return the fuzzers to skip for the given operation, or an empty list if none
+     */
+    public List<String> getFuzzersToSkipForOperation(HttpMethod method, String path) {
+        return Optional.ofNullable(this.skipFuzzers).orElse(Collections.emptyList()).stream()
+                .map(MethodScopedSkip::parse)
+                .flatMap(Optional::stream)
+                .filter(skip -> skip.appliesTo(method, path))
+                .flatMap(skip -> skip.fuzzers().stream())
+                .distinct()
+                .toList();
+    }
+
+    /**
+     * A {@code --skipFuzzers} entry scoped to an HTTP method and, optionally, to a path.
+     *
+     * @param method      the HTTP method the skip applies to
+     * @param pathPattern the path (exact or with {@code *} wildcards) the skip applies to, or blank for all paths
+     * @param fuzzers     the fuzzers to skip
+     */
+    private record MethodScopedSkip(HttpMethod method, String pathPattern, List<String> fuzzers) {
+
+        static Optional<MethodScopedSkip> parse(String entry) {
+            String[] keyAndFuzzers = entry.trim().split("=", 2);
+            if (keyAndFuzzers.length < 2) {
+                return Optional.empty();
+            }
+            String[] methodAndPath = keyAndFuzzers[0].trim().split("\\s+", 2);
+            String pathPattern = methodAndPath.length == 2 ? methodAndPath[1].trim() : "";
+            return parseMethod(keyAndFuzzers[0])
+                    .map(method -> new MethodScopedSkip(method, pathPattern, parseScopedFuzzers(keyAndFuzzers[1])));
+        }
+
+        static Optional<HttpMethod> parseMethod(String key) {
+            return HttpMethod.fromString(key.trim().split("\\s+", 2)[0]);
+        }
+
+        boolean appliesTo(HttpMethod operationMethod, String path) {
+            return method == operationMethod && (pathPattern.isBlank() || matchesPathKey(pathPattern, path));
+        }
     }
 
     /**
@@ -519,12 +574,15 @@ public class FilterArguments {
         }
         List<String> matched = new ArrayList<>();
         for (Map.Entry<String, List<String>> entry : currentSkipPathFuzzers.entrySet()) {
-            String key = entry.getKey();
-            if (key.equals(path) || (key.contains("*") && matchesWildcardPath(path, key))) {
+            if (matchesPathKey(entry.getKey(), path)) {
                 matched.addAll(entry.getValue());
             }
         }
         return matched;
+    }
+
+    private static boolean matchesPathKey(String key, String path) {
+        return path != null && (key.equals(path) || (key.contains("*") && matchesWildcardPath(path, key)));
     }
 
     private static boolean matchesWildcardPath(String path, String wildcardPattern) {

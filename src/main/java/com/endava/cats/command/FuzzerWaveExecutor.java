@@ -757,8 +757,8 @@ final class FuzzerWaveExecutor {
     private void runSingleFuzzer(Fuzzer fuzzer, FuzzingData data, Consumer<FuzzingData> action) {
         CatsExecutionCancelledException.check();
         if (data.shouldSkipFuzzerForPath(fuzzer.toString())) {
-            logger.skip("Skipping Fuzzer {} for path {} due to OpenAPI extension configuration",
-                    AnsiUtils.yellow(fuzzer.toString()), data.getPath());
+            logger.skip("Skipping Fuzzer {} for {} {} due to --skipFuzzers or OpenAPI extension configuration",
+                    AnsiUtils.yellow(fuzzer.toString()), data.getMethod(), data.getPath());
             return;
         }
 

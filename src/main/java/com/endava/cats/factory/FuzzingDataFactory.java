@@ -54,6 +54,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.endava.cats.openapi.OpenAPIModelGeneratorV2.SYNTH_SCHEMA_NAME;
 
@@ -360,7 +361,7 @@ public class FuzzingDataFactory {
                             .includeFieldFormats(filterArguments.getFieldFormats())
                             .skipFieldFormats(filterArguments.getSkipFieldFormats())
                             .skippedFieldsForAllFuzzers(filterArguments.getSkipFieldsToBeSkippedForAllFuzzers())
-                            .skippedFuzzersForPath(filterArguments.getFuzzersToSkipForOperationExtensions(mergeExtensions(item, operation)))
+                            .skippedFuzzersForPath(fuzzersToSkipForOperation(item, operation, method, path))
                             .responseHeaders(responseHeaders)
                             .pathParamsPayload(pathParamsExample)
                             .queryParams(queryParams)
@@ -476,7 +477,7 @@ public class FuzzingDataFactory {
                         .includeFieldFormats(filterArguments.getFieldFormats())
                         .skipFieldFormats(filterArguments.getSkipFieldFormats())
                         .skippedFieldsForAllFuzzers(filterArguments.getSkipFieldsToBeSkippedForAllFuzzers())
-                        .skippedFuzzersForPath(filterArguments.getFuzzersToSkipForOperationExtensions(mergeExtensions(item, operation)))
+                        .skippedFuzzersForPath(fuzzersToSkipForOperation(item, operation, method, path))
                         .responseHeaders(responseHeaders)
                         .build())
                 .toList();
@@ -507,6 +508,14 @@ public class FuzzingDataFactory {
         Set<String> merged = new LinkedHashSet<>(Optional.ofNullable(baseRequiredFields).orElse(List.of()));
         merged.addAll(extra);
         return new ArrayList<>(merged);
+    }
+
+    private List<String> fuzzersToSkipForOperation(PathItem item, Operation operation, HttpMethod method, String path) {
+        return Stream.concat(
+                        filterArguments.getFuzzersToSkipForOperationExtensions(mergeExtensions(item, operation)).stream(),
+                        filterArguments.getFuzzersToSkipForOperation(method, path).stream())
+                .distinct()
+                .toList();
     }
 
     private static Map<String, Object> mergeExtensions(PathItem item, Operation operation) {
