@@ -80,6 +80,11 @@ For each cluster, open one `sampleTestIds` file and read `fuzzer`, `scenario` (n
    5. Otherwise → missing server-side validation (real bug).
 6. **`CONTRACT_MISMATCH`**: merge `contract-patch.yml` only when the `remediation` says the code is **undocumented** and the behavior is intended. A remediation of "align service status code or fuzzer expectations" is never fixed by the patch; apply steps 4/5.
 7. **`NOT_MATCHING_RESPONSE_SCHEMA`** (reported as warnings; needs `--include-warnings` and a run without `--srw`) on `oneOf`/`anyOf` responses → try re-running with `--resolveXxxOfCombinationForResponses`. If the warning persists, fix the discriminator mapping or the response schema in the contract.
+8. **HTTP-semantics and behavior oracles** (cluster as `CONTRACT_MISMATCH` keyed by the reason; most are warnings, so use `--include-warnings`). These are server behavior bugs: never fix them with `contract-patch.yml`, `--refData` or `--correlations`.
+   - `Repeated PUT returned 201 Created` (`PutIdempotency`, error) → the PUT handler reports "created" for an existing resource. Return `200`/`204` on update (RFC 9110 §9.3.4).
+   - `Rejected update partially applied` (`RejectedUpdateSideEffects`; error for PATCH, warning for PUT) → the request was rejected with `4XX`, yet the canary value `cats-atomic-patch`/`cats-atomic-put` it carried was persisted. Validate the whole body before saving, or wrap the update in one transaction.
+   - `Filter parameter ignored` (`FilterParameterHonored`) → items not matching `?field=value` were returned. Check that the filter is applied in the query. Treat it as a data-exposure issue when the parameter scopes ownership (`ownerId`, `tenantId`).
+   - `OPTIONS Allow header not matching contract` (`OptionsAllowConformance`) → the message lists undocumented and missing methods. Undocumented verbs may be unintended endpoints, so disable them or document them. Missing verbs usually mean a framework-generated `OPTIONS` that doesn't know the routes. `HEAD`/`OPTIONS` are ignored.
 
 ---
 

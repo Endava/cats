@@ -91,6 +91,10 @@ public final class WfcFaultClassifier {
         map.put(Reason.NOT_IMPLEMENTED.description(), DefinedFaultCategory.SCHEMA_STATUS_NO_501_IF_IMPLEMENTED);
         map.put(Reason.MISSING_ALLOW_HEADER.value(), DefinedFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW);
         map.put(Reason.WRONG_ALLOW_HEADER.value(), DefinedFaultCategory.SCHEMA_INVALID_ALLOW);
+        map.put(Reason.OPTIONS_ALLOW_MISMATCH.value(), DefinedFaultCategory.SCHEMA_INVALID_ALLOW);
+        map.put(Reason.REJECTED_UPDATE_PARTIALLY_APPLIED.value(), DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION);
+        map.put(Reason.REPEATED_CREATE_PUT.value(), DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT);
+        map.put(Reason.FILTER_PARAMETER_IGNORED.value(), CatsWfcFaultCategory.CATS_FILTER_PARAMETER_IGNORED);
         map.put(Reason.SQL_INJECTION.value(), DefinedFaultCategory.SECURITY_SQL_INJECTION);
         map.put(Reason.XSS_INJECTION.value(), DefinedFaultCategory.SECURITY_XSS_INJECTION);
         map.put(Reason.MASS_ASSIGNMENT_DETECTED.value(), DefinedFaultCategory.SECURITY_MASS_ASSIGNMENT);
@@ -219,7 +223,7 @@ public final class WfcFaultClassifier {
         if (ConsoleUtils.matchesFuzzer(fuzzer, CheckDeletedResourcesNotAvailableFuzzer.class) && !ResponseCodeFamily.is5xxCode(code)) {
             faults.add(faultId(DefinedFaultCategory.HTTP_NONWORKING_DELETE, null));
         } else if (ConsoleUtils.matchesFuzzer(fuzzer, PutIdempotencyFuzzer.class) && code == ResponseCodeFamily.STATUS_CREATED) {
-            faults.add(faultId(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT, null));
+            faults.add(faultId(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT, fuzzer));
         } else if (ConsoleUtils.matchesFuzzer(fuzzer, CreatedResourceLocationFuzzer.class)
                 && !ResponseCodeFamily.isNotFoundOrGone(code) && !ResponseCodeFamily.is5xxCode(code)) {
             faults.add(faultId(DefinedFaultCategory.HTTP_INVALID_LOCATION, summary.getResultReason()));

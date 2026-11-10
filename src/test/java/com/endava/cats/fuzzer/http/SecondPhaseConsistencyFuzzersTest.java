@@ -8,6 +8,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.KeyValuePair;
@@ -282,6 +283,30 @@ class SecondPhaseConsistencyFuzzersTest {
         new PutIdempotencyFuzzer(pool, arguments, filters, executor, listener).fuzz(data);
         Mockito.verify(listener).reportResultWarn(Mockito.any(), Mockito.eq(data),
                 Mockito.eq("PUT is not idempotent"), Mockito.anyString());
+    }
+
+    @Test
+    void putIdempotencyReportsRepeatedCreateWhenRepeatedPutReturns201() {
+        FuzzingData data = writeData(HttpMethod.PUT);
+        Mockito.when(pool.successfulExchanges(data.getPath(), HttpMethod.PUT)).thenReturn(List.of(put()));
+        Mockito.when(pool.successfulExchanges("/items", HttpMethod.POST)).thenReturn(List.of(post()));
+        List<SimpleExecutorContext> sent = new ArrayList<>();
+        Mockito.doAnswer(call -> {
+            SimpleExecutorContext step = call.getArgument(0);
+            sent.add(step);
+            int code = step.getHttpMethod() == HttpMethod.PUT ? 201 : 200;
+            step.getResponseProcessor().accept(CatsResponse.builder().responseCode(code).body("{\"name\":\"same\"}").build(), data);
+            return null;
+        }).when(executor).execute(Mockito.any());
+
+        new PutIdempotencyFuzzer(pool, arguments, filters, executor, listener).fuzz(data);
+
+        Assertions.assertThat(sent).extracting(SimpleExecutorContext::getHttpMethod)
+                .containsExactly(HttpMethod.PUT, HttpMethod.GET, HttpMethod.PUT, HttpMethod.GET);
+        Mockito.verify(listener, Mockito.times(2)).reportResultError(Mockito.any(), Mockito.eq(data),
+                Mockito.eq(Reason.REPEATED_CREATE_PUT.value()), Mockito.anyString());
+        Mockito.verify(listener, Mockito.never()).reportResultInfo(Mockito.any(), Mockito.any(),
+                Mockito.eq("Repeated PUT returned {}"), Mockito.any());
     }
 
     @Test

@@ -109,11 +109,18 @@ public class PutIdempotencyFuzzer implements Fuzzer {
     private void reportPutResponse(CatsResponse response, FuzzingData data, boolean succeeded) {
         if (ResponseCodeFamily.is5xxCode(response.getResponseCode())) {
             listener.reportResultError(logger, data, Reason.PUT_RETRY_SERVER_ERROR.value(), "Repeating a successful PUT returned {}", response.responseCodeAsString());
-        } else if (!succeeded) {
-            listener.reportResultWarn(logger, data, Reason.PUT_RETRY_REJECTED.value(), "Repeating a successful PUT returned {}", response.responseCodeAsString());
-        } else {
-            listener.reportResultInfo(logger, data, "Repeated PUT returned {}", response.responseCodeAsString());
+            return;
         }
+        if (!succeeded) {
+            listener.reportResultWarn(logger, data, Reason.PUT_RETRY_REJECTED.value(), "Repeating a successful PUT returned {}", response.responseCodeAsString());
+            return;
+        }
+        if (response.getResponseCode() == ResponseCodeFamily.STATUS_CREATED) {
+            listener.reportResultError(logger, data, Reason.REPEATED_CREATE_PUT.value(),
+                    "Repeating a successful PUT on an existing resource returned 201 Created instead of 200 OK or 204 No Content");
+            return;
+        }
+        listener.reportResultInfo(logger, data, "Repeated PUT returned {}", response.responseCodeAsString());
     }
 
     /** Returns a comparable state snapshot, if the GET response contains a complete JSON object. */

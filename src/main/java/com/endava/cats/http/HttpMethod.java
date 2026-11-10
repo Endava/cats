@@ -52,6 +52,11 @@ public enum HttpMethod {
     HEAD,
 
     /**
+     * HTTP OPTIONS method.
+     */
+    OPTIONS,
+
+    /**
      * HTTP CONNECT method.
      */
     CONNECT,
@@ -197,6 +202,8 @@ public enum HttpMethod {
             DIFF, VERIFY, PUBLISH, UNPUBLISH, BATCH, VIEW,
             PURGE, DEBUG, SUBSCRIBE, UNSUBSCRIBE, MERGE, INDEX);
 
+    private static final List<HttpMethod> DISCOVERY_METHODS = List.of(OPTIONS);
+
     /**
      * Holds a mapping between OpenAPI paths and HTTP methods.
      */
@@ -212,6 +219,7 @@ public enum HttpMethod {
         OPERATIONS.put(DELETE, PathItem::getDelete);
         OPERATIONS.put(PATCH, PathItem::getPatch);
         OPERATIONS.put(HEAD, PathItem::getHead);
+        OPERATIONS.put(OPTIONS, PathItem::getOptions);
 
         RECOMMENDED_CODES.put(HttpMethod.POST, Arrays.asList("400", "500", TWOXX));
         RECOMMENDED_CODES.put(HttpMethod.PUT, Arrays.asList("400", "404", "500", TWOXX));
@@ -247,6 +255,15 @@ public enum HttpMethod {
      */
     public static List<HttpMethod> restMethods() {
         return REST_METHODS;
+    }
+
+    /**
+     * Gets a list of HTTP methods used to discover resource capabilities rather than to operate on resources.
+     *
+     * @return A list of discovery HTTP methods.
+     */
+    public static List<HttpMethod> discoveryMethods() {
+        return DISCOVERY_METHODS;
     }
 
     /**

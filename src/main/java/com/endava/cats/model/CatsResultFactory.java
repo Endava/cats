@@ -302,7 +302,11 @@ public interface CatsResultFactory {
         ARITHMETIC_TOTAL_MISMATCH_ACCEPTED("Inconsistent arithmetic total accepted", "The API accepted and reflected an inconsistent client-supplied total that contradicts its component fields"),
         PATH_BODY_ID_MISMATCH_ACCEPTED("Path and body ID mismatch accepted", "The API accepted a PUT or PATCH request whose body identifier contradicted the URL path identifier and reflected the body identifier in the response"),
         PATCH_CLOBBERED_OMITTED_FIELDS("PATCH wiped omitted optional fields", "A partial PATCH request that omitted optional fields caused previously populated fields on the resource to be wiped or set to null"),
-        PAGINATION_LIMIT_IGNORED("Pagination limit ignored", "A GET request specifying a pagination limit of 1 returned more than 1 item in the response collection");
+        PAGINATION_LIMIT_IGNORED("Pagination limit ignored", "A GET request specifying a pagination limit of 1 returned more than 1 item in the response collection"),
+        REPEATED_CREATE_PUT("Repeated PUT returned 201 Created", "Repeating a successful PUT on a resource that already exists returned 201 Created; RFC 9110 section 9.3.4 requires 200 OK or 204 No Content when an existing representation is modified"),
+        OPTIONS_ALLOW_MISMATCH("OPTIONS Allow header not matching contract", "The Allow header returned for an OPTIONS request lists HTTP methods not documented in the contract for that path, or omits documented ones"),
+        REJECTED_UPDATE_PARTIALLY_APPLIED("Rejected update partially applied", "A PUT or PATCH rejected with a 4xx response still persisted a valid change carried in the same request; RFC 5789 requires PATCH changes to be applied atomically or not at all"),
+        FILTER_PARAMETER_IGNORED("Filter parameter ignored", "A GET collection request filtering by a query parameter returned items whose matching field holds a different value");
 
 
         private final String value;

@@ -13,7 +13,12 @@ public enum CatsWfcFaultCategory implements FaultCategory {
             907,
             "Unexpected API Behaviour",
             "unexpectedApiBehaviour",
-            "The API returned an unexpected or undocumented response that did not match the fuzzer's oracle expectations.");
+            "The API returned an unexpected or undocumented response that did not match the fuzzer's oracle expectations."),
+    CATS_FILTER_PARAMETER_IGNORED(
+            908,
+            "Collection Filter Parameter Ignored",
+            "filterParameterIgnored",
+            "A GET collection request filtered by an exact-match query parameter returned items whose matching field holds a different value, so the filtered result is not a subset matching the filter.");
 
     private final int code;
     private final String descriptiveName;

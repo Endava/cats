@@ -49,11 +49,21 @@ class HttpMethodTest {
     }
 
     @Test
+    void shouldReturnDiscoveryMethodsAndResolveOptionsOperation() {
+        Operation options = new Operation();
+        assertThat(HttpMethod.discoveryMethods()).containsExactly(HttpMethod.OPTIONS);
+        assertThat(HttpMethod.restMethods()).doesNotContain(HttpMethod.OPTIONS);
+        assertThat(HttpMethod.getOperation(HttpMethod.OPTIONS, new PathItem().options(options))).isSameAs(options);
+        assertThat(HttpMethod.requiresBody(HttpMethod.OPTIONS)).isFalse();
+    }
+
+    @Test
     void listsShouldCoverAllValuesWithoutOverlapIssues() {
         Set<HttpMethod> union = EnumSet.noneOf(HttpMethod.class);
         union.addAll(HttpMethod.restMethods());
         union.addAll(HttpMethod.nonRestMethods());
         union.addAll(HttpMethod.hypotheticalMethods());
+        union.addAll(HttpMethod.discoveryMethods());
         // Some enum constants (e.g. PROPPATCH, REPORT) appear in non-rest list and also in requiresBody logic
         assertThat(union).contains(HttpMethod.values());
     }

@@ -87,6 +87,7 @@ profiles:
       - NonRestHttpMethods
       - HttpMethods
       - HttpMethodOverrideTunneling
+      - OptionsAllowConformance
 
       # Header Manipulation
       - CRLFHeaders
@@ -102,6 +103,7 @@ profiles:
       - PatchOmittedFieldsClobber
       - ConditionalEtag
       - PutIdempotency
+      - RejectedUpdateSideEffects
       - IdempotencyKeyConflict
       - RandomResources
       - InvalidReferencesFields
@@ -183,6 +185,7 @@ profiles:
       - RandomResources
       - InvalidReferencesFields
       - CheckDeletedResourcesNotAvailable
+      - FilterParameterHonored
 
       # API2:2023 - Broken Authentication
       - BypassAuthentication
@@ -194,6 +197,7 @@ profiles:
       - AdditionalPropertiesMassAssignmentFields
       - SensitiveDataExposure
       - NewFields
+      - RejectedUpdateSideEffects
 
       # API4:2023 - Unrestricted Resource Consumption
       - VeryLargeStringsInFields
@@ -227,7 +231,8 @@ profiles:
       - UnsupportedContentTypesHeaders
 
       # API9:2023 - Improper Inventory Management
-      # (Documentation quality - covered by linters)
+      # (Documentation quality - also covered by linters)
+      - OptionsAllowConformance
 
       # API10:2023 - Unsafe Consumption of APIs
       - SqlInjectionInStringFields
@@ -313,6 +318,8 @@ profiles:
       - PathBodyIdMismatch
       - PatchOmittedFieldsClobber
       - PaginationLimitHonored
+      - FilterParameterHonored
+      - RejectedUpdateSideEffects
       - IdempotencyKeyConflict
 
       # Security Essentials
@@ -329,6 +336,7 @@ profiles:
       # HTTP Protocol
       - HttpMethods
       - HttpMethodOverrideTunneling
+      - OptionsAllowConformance
       - DummyContentTypeHeaders
       - UnsupportedContentTypesHeaders
       - CheckSecurityHeaders

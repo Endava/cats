@@ -93,7 +93,7 @@ class FilterArgumentsTest {
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
                 , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer", "SingleElementArrayToScalarFieldsFuzzer",
                         "DuplicateItemsInUniqueArraysFieldsFuzzer", "FreeFormObjectFieldsFuzzer",
-                        "FreeFormArrayItemsFieldsFuzzer").hasSize(251);
+                        "FreeFormArrayItemsFieldsFuzzer").hasSize(252);
     }
 
     @Test
@@ -163,7 +163,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(264);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(267);
     }
 
     @Test
@@ -258,7 +258,8 @@ class FilterArgumentsTest {
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).extracting(Object::toString)
                 .containsExactlyInAnyOrder("CheckDeletedResourcesNotAvailableFuzzer", "CheckReadsStillWorkFuzzer",
                         "CrossParentResourceIsolationFuzzer", "CreatedResourceLocationFuzzer", "UpdateReadConsistencyFuzzer",
-                        "ConditionalEtagFuzzer", "PutIdempotencyFuzzer", "PatchOmittedFieldsClobberFuzzer");
+                        "ConditionalEtagFuzzer", "PutIdempotencyFuzzer", "PatchOmittedFieldsClobberFuzzer",
+                        "RejectedUpdateSideEffectsFuzzer", "FilterParameterHonoredFuzzer");
     }
 
     @ParameterizedTest
@@ -293,7 +294,7 @@ class FilterArgumentsTest {
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isEmpty();
 
         checkArguments.setCheckHttp(true);
-        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(8);
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(10);
     }
 
     @Test
@@ -305,7 +306,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnEmptySecondPhaseWhenSpecialFuzzer() {
-        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(8);
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(10);
         filterArguments.customFilter("FunctionalFuzzer");
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isEmpty();
     }
@@ -442,7 +443,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnFuzzersAsClasses() {
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(166);
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(167);
     }
 
     @Test
@@ -472,13 +473,13 @@ class FilterArgumentsTest {
 
     @Test
     void shouldCountTotalFuzzers() {
-        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(174);
+        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(177);
 
         ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
         ReflectionTestUtils.setField(checkArguments, "includeEmojis", true);
         ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
         try {
-            Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(201);
+            Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(204);
         } finally {
             ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", false);
             ReflectionTestUtils.setField(checkArguments, "includeEmojis", false);
@@ -492,7 +493,7 @@ class FilterArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"ALL,232", "FUZZERS,174", "LINTERS,58"})
+    @CsvSource({"ALL,235", "FUZZERS,177", "LINTERS,58"})
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);

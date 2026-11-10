@@ -19,7 +19,6 @@ import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.WordUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
@@ -27,7 +26,6 @@ import jakarta.inject.Singleton;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -41,9 +39,6 @@ import java.util.Set;
 public class PaginationLimitHonoredFuzzer implements Fuzzer {
     private static final Set<String> LIMIT_PARAM_NAMES = Set.of(
             "limit", "size", "pagesize", "perpage", "maxresults", "top"
-    );
-    private static final Set<String> ENVELOPE_ARRAY_KEYS = Set.of(
-            "items", "data", "content", "results", "records", "elements", "values", "entries"
     );
 
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(PaginationLimitHonoredFuzzer.class);
@@ -119,28 +114,7 @@ public class PaginationLimitHonoredFuzzer implements Fuzzer {
     }
 
     static Optional<Integer> extractCollectionSize(JsonElement root) {
-        if (root == null || root.isJsonNull()) {
-            return Optional.empty();
-        }
-        if (root.isJsonArray()) {
-            return Optional.of(root.getAsJsonArray().size());
-        }
-        if (!root.isJsonObject()) {
-            return Optional.empty();
-        }
-        JsonObject obj = root.getAsJsonObject();
-        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
-            if (entry.getValue() != null && entry.getValue().isJsonArray()
-                    && ENVELOPE_ARRAY_KEYS.contains(WordUtils.normalizeAlphaNumeric(entry.getKey()))) {
-                return Optional.of(entry.getValue().getAsJsonArray().size());
-            }
-        }
-        List<JsonArray> allArrays = obj.entrySet().stream()
-                .map(Map.Entry::getValue)
-                .filter(v -> v != null && v.isJsonArray())
-                .map(JsonElement::getAsJsonArray)
-                .toList();
-        return allArrays.size() == 1 ? Optional.of(allArrays.getFirst().size()) : Optional.empty();
+        return ResponseCollections.items(root).map(JsonArray::size);
     }
 
     static Optional<String> findEligibleLimitParam(FuzzingData data) {

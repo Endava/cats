@@ -229,6 +229,30 @@ class WfcFaultClassifierTest {
                 .extracting(FaultCategoryId::getCode)
                 .contains(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT.getCode());
 
+        CatsTestCase repeatedCreateReason = buildTestCase("PUT", "/pets/1", 201, "error",
+                Reason.REPEATED_CREATE_PUT.value(), "PutIdempotencyFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(repeatedCreateReason), repeatedCreateReason))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT.getCode());
+
+        CatsTestCase rejectedUpdate = buildTestCase("GET", "/pets/1", 200, "error",
+                Reason.REJECTED_UPDATE_PARTIALLY_APPLIED.value(), "RejectedUpdateSideEffectsFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(rejectedUpdate), rejectedUpdate))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION.getCode());
+
+        CatsTestCase optionsAllow = buildTestCase("OPTIONS", "/pets", 200, "warning",
+                Reason.OPTIONS_ALLOW_MISMATCH.value(), "OptionsAllowConformanceFuzzer", "");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(optionsAllow), optionsAllow))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(DefinedFaultCategory.SCHEMA_INVALID_ALLOW.getCode());
+
+        CatsTestCase filterIgnored = buildTestCase("GET", "/pets", 200, "warning",
+                Reason.FILTER_PARAMETER_IGNORED.value(), "FilterParameterHonoredFuzzer", "[]");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(filterIgnored), filterIgnored))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactly(CatsWfcFaultCategory.CATS_FILTER_PARAMETER_IGNORED.getCode());
+
         CatsTestCase invalidLocation = buildTestCase("GET", "/pets/1", 400, "error",
                 "Location header points to invalid resource", "CreatedResourceLocationFuzzer", "{}");
         Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(invalidLocation), invalidLocation))
