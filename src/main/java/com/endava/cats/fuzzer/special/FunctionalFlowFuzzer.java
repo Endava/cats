@@ -619,17 +619,10 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         if (candidates.size() <= 1) {
             return candidates.stream().findFirst();
         }
-        Optional<FuzzingData> byVariantName = findCandidateByVariantName(candidates, step.variant());
-        if (byVariantName.isPresent()) {
-            return byVariantName;
-        }
-        Map<String, String> matchMap = buildVariantMatchMap(step);
-        for (FuzzingData candidate : candidates) {
-            if (matchesDiscriminatorFields(candidate.getPayload(), matchMap)) {
-                return Optional.of(candidate);
-            }
-        }
-        return Optional.of(candidates.getFirst());
+        return findCandidateByVariantName(candidates, step.variant())
+                .or(() -> findCandidateMatchingAllVariantFields(candidates, step.variantMatch()))
+                .or(() -> findCandidateMatchingAnyBodyField(candidates, step.body()))
+                .or(() -> Optional.of(candidates.getFirst()));
     }
 
     private static Optional<FuzzingData> findCandidateByVariantName(List<FuzzingData> candidates, String variant) {
@@ -641,29 +634,44 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                 .findFirst();
     }
 
-    private static Map<String, String> buildVariantMatchMap(FunctionalFlowStep step) {
-        Map<String, String> matchMap = new LinkedHashMap<>(step.variantMatch());
-        if (step.body() instanceof Map<?, ?> bodyMap) {
-            bodyMap.forEach((k, v) -> {
-                if (k != null && v != null && !(v instanceof Map<?, ?>) && !(v instanceof List<?>)) {
-                    matchMap.putIfAbsent(String.valueOf(k), String.valueOf(v));
-                }
-            });
+    private static Optional<FuzzingData> findCandidateMatchingAllVariantFields(List<FuzzingData> candidates,
+                                                                               Map<String, String> variantFields) {
+        if (variantFields.isEmpty()) {
+            return Optional.empty();
         }
-        return matchMap;
+        return findCandidateByPayload(candidates,
+                payload -> variantFields.entrySet().stream().allMatch(field -> hasFieldValue(payload, field)));
     }
 
-    private static boolean matchesDiscriminatorFields(String candidatePayload, Map<String, String> matchMap) {
-        if (matchMap.isEmpty() || !JsonUtils.isValidJson(candidatePayload)) {
-            return false;
+    private static Optional<FuzzingData> findCandidateMatchingAnyBodyField(List<FuzzingData> candidates, Object body) {
+        Map<String, String> bodyFields = scalarTopLevelFields(body);
+        return findCandidateByPayload(candidates,
+                payload -> bodyFields.entrySet().stream().anyMatch(field -> hasFieldValue(payload, field)));
+    }
+
+    private static Optional<FuzzingData> findCandidateByPayload(List<FuzzingData> candidates, Predicate<String> payloadMatcher) {
+        return candidates.stream()
+                .filter(candidate -> JsonUtils.isValidJson(candidate.getPayload()))
+                .filter(candidate -> payloadMatcher.test(candidate.getPayload()))
+                .findFirst();
+    }
+
+    private static Map<String, String> scalarTopLevelFields(Object body) {
+        if (!(body instanceof Map<?, ?> bodyMap)) {
+            return Map.of();
         }
-        for (Map.Entry<String, String> entry : matchMap.entrySet()) {
-            Object val = JsonUtils.getVariableFromJson(candidatePayload, FieldCorrelationEvaluator.normalizeFieldPath(entry.getKey()));
-            if (Objects.equals(String.valueOf(val), entry.getValue())) {
-                return true;
+        Map<String, String> fields = new LinkedHashMap<>();
+        bodyMap.forEach((key, value) -> {
+            if (key != null && value != null && !(value instanceof Map<?, ?>) && !(value instanceof List<?>)) {
+                fields.put(String.valueOf(key), String.valueOf(value));
             }
-        }
-        return false;
+        });
+        return fields;
+    }
+
+    private static boolean hasFieldValue(String payload, Map.Entry<String, String> field) {
+        Object value = JsonUtils.getVariableFromJson(payload, FieldCorrelationEvaluator.normalizeFieldPath(field.getKey()));
+        return Objects.equals(String.valueOf(value), field.getValue());
     }
 
     private PreparedStepPayloads preparePayloads(FunctionalFlowDocument document, FunctionalFlowStep step,

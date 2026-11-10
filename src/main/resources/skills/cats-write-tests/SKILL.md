@@ -81,7 +81,8 @@ steps:
     description: "Create a metered billing plan and verify its response contract"
     POST: "/billing-plans"
     # Optional oneOf/anyOf variant selection: a schema-name suffix (`variant: MeteredPlan`) or a
-    # field match (any listed field equal, case-sensitive). Falls back silently to the first variant.
+    # field match (all listed fields equal, case-sensitive; dot-paths like `payload.type` allowed).
+    # Without a match, CATS tries top-level scalar `body:` fields, then falls back silently to the first variant.
     variant:
       planType: "METERED"
     # Override only the fields relevant to this test scenario

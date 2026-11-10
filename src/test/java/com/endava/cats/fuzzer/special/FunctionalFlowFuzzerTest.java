@@ -228,6 +228,47 @@ class FunctionalFlowFuzzerTest {
     }
 
     @Test
+    void shouldPreferExplicitVariantFieldsOverBodyFieldsWhenSelectingVariant(@TempDir Path tempDir) throws Exception {
+        String yaml = """
+                steps:
+                  - name: Create email subscription
+                    POST: /subscriptions
+                    variant:
+                      channel.type: "EMAIL"
+                    body:
+                      deliveryMode: "INSTANT"
+                    status: 201
+                """;
+        File flowFile = tempDir.resolve("flow-variant.yml").toFile();
+        Files.writeString(flowFile.toPath(), yaml);
+        filesArguments.setFunctionalFlowFile(flowFile);
+
+        FuzzingData smsVariant = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/subscriptions").contractPath("/subscriptions")
+                .reqSchemaName("SubscriptionIn").payload("{\"deliveryMode\":\"INSTANT\",\"channel\":{\"type\":\"SMS\"}}")
+                .reqSchema(new ObjectSchema()).schemaMap(Map.of()).headers(Set.of())
+                .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
+        FuzzingData emailVariant = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/subscriptions").contractPath("/subscriptions")
+                .reqSchemaName("SubscriptionIn").payload("{\"deliveryMode\":\"DIGEST\",\"channel\":{\"type\":\"EMAIL\"}}")
+                .reqSchema(new ObjectSchema()).schemaMap(Map.of()).headers(Set.of())
+                .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
+
+        fuzzer.fuzz(smsVariant);
+        fuzzer.fuzz(emailVariant);
+
+        ArgumentCaptor<ServiceData> callCaptor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.when(serviceCaller.call(callCaptor.capture())).thenReturn(
+                CatsResponse.builder().responseCode(201).body("{}").jsonBody(JsonParser.parseString("{}")).headers(List.of()).build());
+
+        fuzzer.executeFlows();
+
+        Assertions.assertThat(callCaptor.getValue().getPayload())
+                .contains("\"type\":\"EMAIL\"")
+                .contains("\"deliveryMode\":\"INSTANT\"");
+    }
+
+    @Test
     void shouldHandleStringAndListBodiesNestedMapsInlineQueryParamsAndSelectors(@TempDir Path tempDir) throws Exception {
         String flowYaml = """
                 steps:
