@@ -217,4 +217,17 @@ class CatsModelUtilsTest {
                 .extracting(Schema::get$ref)
                 .containsExactly("#/components/schemas/Dog", "#/components/schemas/Cat");
     }
+
+    @Test
+    void shouldIgnoreOriginalSchemaSnapshotsWhenFindingAllOfChildren() {
+        Schema<?> dogSchema = new Schema<>().allOf(List.of(new Schema<>().$ref("#/components/schemas/Pet")));
+        Map<String, Schema> schemaMap = Map.of(
+                "Pet", new Schema<>().type("object"),
+                "Dog", dogSchema,
+                "Dog" + CatsModelUtils.ORIGINAL_SCHEMA_SUFFIX, dogSchema,
+                "petOriginal", dogSchema);
+
+        Assertions.assertThat(CatsModelUtils.findDirectAllOfChildrenByParent(schemaMap))
+                .containsExactly(Map.entry("Pet", Set.of("Dog")));
+    }
 }

@@ -50,6 +50,7 @@ import java.util.regex.Pattern;
 public abstract class CatsModelUtils {
     public static final String X_CATS_FIELD_NAME = "x-cats-field-name";
     public static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
+    public static final String ORIGINAL_SCHEMA_SUFFIX = "Original";
     private static final Pattern GENERATED_PREFIX = Pattern.compile("generated_.*");
     private static final Pattern SYNTHETIC_GET_SCHEMA = Pattern.compile("^" + SYNTH_SCHEMA_NAME + ".*");
     private static final Pattern GENERATED_BODY_OBJECTS_1 = Pattern.compile("body_\\d*");
@@ -629,7 +630,7 @@ public abstract class CatsModelUtils {
                 return;
             }
             String childSimple = getSimpleRef(name);
-            if (!isNotGeneratedPattern(childSimple)) {
+            if (!isNotGeneratedPattern(childSimple) || isOriginalSchemaSnapshot(childSimple)) {
                 return;
             }
             for (String parentSimple : findAllOfParents(schema)) {
@@ -639,6 +640,14 @@ public abstract class CatsModelUtils {
             }
         });
         return directChildrenByParent;
+    }
+
+    /**
+     * Checks whether the given schema name is a snapshot of a composed schema stored by CATS during payload generation
+     * (i.e. {@code <name>Original}), rather than a schema defined in the contract.
+     */
+    private static boolean isOriginalSchemaSnapshot(String schemaName) {
+        return schemaName.length() > ORIGINAL_SCHEMA_SUFFIX.length() && schemaName.endsWith(ORIGINAL_SCHEMA_SUFFIX);
     }
 
     @SuppressWarnings("rawtypes")

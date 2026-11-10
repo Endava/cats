@@ -49,7 +49,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class CatsGlobalContext {
     public static final String HTTP_METHOD = "httpMethod";
     public static final String CONTRACT_PATH = "contractPath";
-    public static final String ORIGINAL = "Original";
+    public static final String ORIGINAL = CatsModelUtils.ORIGINAL_SCHEMA_SUFFIX;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsGlobalContext.class);
     private final Map<String, Schema> schemaMap = new HashMap<>();
     private final Map<String, Example> exampleMap = new HashMap<>();

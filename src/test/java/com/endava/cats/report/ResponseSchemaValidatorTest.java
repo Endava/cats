@@ -2,6 +2,7 @@ package com.endava.cats.report;
 
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -310,5 +311,83 @@ class ResponseSchemaValidatorTest {
                 .body("{\"kind\":\"CUSTOM_DOG\",\"bark\":true}")
                 .build();
         Assertions.assertThat(validator.validate(dogResp, explicitMapData).isValid()).isTrue();
+    }
+
+    @Test
+    void shouldPruneSpringDocBaseSchemaWhenGeneratorStoredOriginalSchemaSnapshots() {
+        String openApiJson = """
+                {
+                  "openapi": "3.1.0",
+                  "info": { "title": "Notifications API", "version": "1.0.0" },
+                  "paths": {
+                    "/notifications/{notificationId}": {
+                      "get": {
+                        "responses": {
+                          "200": {
+                            "description": "OK",
+                            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationOut" } } }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "components": {
+                    "schemas": {
+                      "NotificationOut": {
+                        "type": "object",
+                        "required": ["notificationId", "channel"],
+                        "properties": {
+                          "notificationId": { "type": "string" },
+                          "channel": {
+                            "oneOf": [
+                              { "$ref": "#/components/schemas/Channel" },
+                              { "$ref": "#/components/schemas/SmsChannel" },
+                              { "$ref": "#/components/schemas/EmailChannel" }
+                            ]
+                          }
+                        }
+                      },
+                      "Channel": {
+                        "discriminator": { "propertyName": "type" },
+                        "properties": { "type": { "type": "string" } },
+                        "required": ["type"]
+                      },
+                      "EmailChannel": {
+                        "allOf": [
+                          { "$ref": "#/components/schemas/Channel" },
+                          { "type": "object", "properties": { "emailAddress": { "type": "string" } } }
+                        ],
+                        "required": ["emailAddress"]
+                      },
+                      "SmsChannel": {
+                        "allOf": [
+                          { "$ref": "#/components/schemas/Channel" },
+                          { "type": "object", "properties": { "phoneNumber": { "type": "string" } } }
+                        ]
+                      }
+                    }
+                  }
+                }
+                """;
+        OpenAPI openAPI = new OpenAPIV3Parser().readContents(openApiJson, null, null).getOpenAPI();
+        Map<String, Schema> schemas = new HashMap<>(OpenApiUtils.getSchemas(openAPI, List.of("application/json")));
+        schemas.put("EmailChannel" + CatsModelUtils.ORIGINAL_SCHEMA_SUFFIX, schemas.get("EmailChannel"));
+        Schema<?> responseSchema = openAPI.getPaths().get("/notifications/{notificationId}").getGet()
+                .getResponses().get("200").getContent().get("application/json").getSchema();
+        FuzzingData data = FuzzingData.builder()
+                .openApi(openAPI)
+                .schemaMap(schemas)
+                .responseSchemaDefinitions(Map.of("200", Map.of("application/json", responseSchema)))
+                .build();
+        CatsResponse emailResponse = CatsResponse.builder()
+                .responseCode(200)
+                .responseContentType("application/json")
+                .body("{\"notificationId\":\"ntf_1\",\"channel\":{\"type\":\"EMAIL_CHANNEL\",\"emailAddress\":\"jane@example.com\"}}")
+                .build();
+
+        ResponseSchemaValidator.ValidationResult result = new ResponseSchemaValidator().validate(emailResponse, data);
+
+        Assertions.assertThat(result.isValid()).isTrue();
+        Assertions.assertThat(result.errors()).isEmpty();
     }
 }
