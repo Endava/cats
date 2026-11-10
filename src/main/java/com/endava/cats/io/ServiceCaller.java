@@ -16,6 +16,7 @@ import com.endava.cats.fuzzer.special.FieldCorrelationEvaluator;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRule;
 import com.endava.cats.fuzzer.special.FunctionalFlowParser;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.io.util.HttpContent;
 import com.endava.cats.model.CatsRequest;
@@ -296,6 +297,9 @@ public class ServiceCaller {
             }
             sessionHealthMonitor.recordOutcome(data.getRelativePath(), data.getHttpMethod(), response.getResponseCode(),
                     hasIntactCredentials(data));
+            if (shouldRetryWithoutAuthentication(data, catsRequest, response)) {
+                response = retryWithoutAuthentication(catsRequest, data, response);
+            }
 
             this.recordResponse(response);
             this.observeRuntimeResources(data, catsRequest, response, resolvedRequest);
@@ -332,6 +336,48 @@ public class ServiceCaller {
         return data.isAddUserHeaders() &&
                 data.getSkippedHeaders().stream().noneMatch(this::isAuthenticationHeader) &&
                 data.getAllMutationTargets().stream().noneMatch(this::isCredentialOrMethodMutation);
+    }
+
+    private boolean shouldRetryWithoutAuthentication(ServiceData data, CatsRequest catsRequest, CatsResponse response) {
+        if (!hasRequestAuthenticationHeaders(catsRequest)) {
+            return false;
+        }
+        if (data.getHttpMethod() == HttpMethod.OPTIONS) {
+            return (response.getResponseCode() == 401 || response.getResponseCode() == 403)
+                    && response.getHeader("Allow") == null;
+        }
+        return !data.hasDeclaredMutation() && response.getResponseCode() == 401
+                && wfcAuthProvider != null && wfcAuthProvider.isEnabled()
+                && !wfcAuthProvider.hasAnyRequestSucceeded();
+    }
+
+    private boolean hasRequestAuthenticationHeaders(CatsRequest catsRequest) {
+        return catsRequest.getHeaders() != null
+                && catsRequest.getHeaders().stream().anyMatch(header -> this.isAuthenticationHeader(header.getKey()));
+    }
+
+    private CatsResponse retryWithoutAuthentication(CatsRequest catsRequest, ServiceData data,
+                                                    CatsResponse initialResponse) throws IOException {
+        List<KeyValuePair<String, Object>> unauthenticatedHeaders = catsRequest.getHeaders().stream()
+                .filter(header -> !this.isAuthenticationHeader(header.getKey()))
+                .toList();
+        CatsRequest retryRequest = CatsRequest.builder()
+                .headers(unauthenticatedHeaders).payload(catsRequest.getPayload())
+                .httpMethod(catsRequest.getHttpMethod()).sendBody(catsRequest.isSendBody())
+                .preserveContentType(catsRequest.isPreserveContentType())
+                .build();
+        retryRequest.setUrl(catsRequest.getUrl());
+        CatsResponse retryResponse = this.callService(retryRequest, data.getResponseValidationFields());
+        boolean recovered = ResponseCodeFamily.is2xxCode(retryResponse.getResponseCode())
+                || (data.getHttpMethod() == HttpMethod.OPTIONS && retryResponse.getHeader("Allow") != null);
+        if (!recovered) {
+            return initialResponse;
+        }
+        if (HttpMethod.requiresBody(data.getHttpMethod()) && wfcAuthProvider != null) {
+            wfcAuthProvider.recordUnauthenticatedBootstrapSuccess();
+        }
+        this.recordRequest(retryRequest);
+        return retryResponse;
     }
 
     private boolean isCredentialOrMethodMutation(RequestTarget target) {

@@ -521,6 +521,35 @@ class WfcAuthProviderTest {
         Assertions.assertThat(provider.getActiveEntryName("/orders", "GET")).isEqualTo("user1");
     }
 
+    @Test
+    void shouldTrackInitialRejectionAndUnauthenticatedBootstrapProgress() throws IOException {
+        Mockito.when(authArguments.isWfcAuthSupplied()).thenReturn(false);
+        provider.recordOutcome("/orders", "GET", 401);
+        provider.recordUnauthenticatedBootstrapSuccess();
+        Assertions.assertThat(provider.hasAnyRequestSucceeded()).isFalse();
+        Assertions.assertThat(provider.shouldRetryUnresolvedSeeds()).isFalse();
+
+        enable(config("""
+                auth:
+                  - name: admin
+                    fixedHeaders:
+                      - name: Authorization
+                        value: Basic admin
+                """), null);
+        Assertions.assertThat(provider.hasAnyRequestSucceeded()).isFalse();
+        Assertions.assertThat(provider.shouldRetryUnresolvedSeeds()).isFalse();
+
+        provider.recordOutcome("/orders", "GET", 401);
+        Assertions.assertThat(provider.shouldRetryUnresolvedSeeds()).isFalse();
+
+        provider.recordUnauthenticatedBootstrapSuccess();
+        Assertions.assertThat(provider.shouldRetryUnresolvedSeeds()).isTrue();
+
+        provider.recordOutcome("/orders", "GET", 200);
+        Assertions.assertThat(provider.hasAnyRequestSucceeded()).isTrue();
+        Assertions.assertThat(provider.shouldRetryUnresolvedSeeds()).isTrue();
+    }
+
     private File multiUserConfig() throws IOException {
         return config("""
                 auth:

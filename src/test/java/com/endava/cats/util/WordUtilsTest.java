@@ -159,6 +159,9 @@ class WordUtilsTest {
         Assertions.assertThat(WordUtils.getKeywordsMatching(null, Set.of())).isEmpty();
         Assertions.assertThat(WordUtils.getKeywordsMatching("nullpointerexception in log", Set.of()))
                 .contains("nullpointerexception");
+        Assertions.assertThat(WordUtils.getKeywordsMatching(
+                "{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Forbidden notice for hispanic user\"}", Set.of()))
+                .isEmpty();
         Assertions.assertThat(WordUtils.getKeywordsMatching("custom_err", Set.of("custom_err")))
                 .containsExactly("custom_err");
     }

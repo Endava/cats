@@ -1456,4 +1456,11 @@ class CatsCommandTest {
         }
     }
 
+    @Test
+    void shouldRetrySeedWaveAfterAuthBootstrap() {
+        FuzzerWaveExecutor executor = (FuzzerWaveExecutor) ReflectionTestUtils.getField(catsMain, "waveExecutor");
+        Assertions.assertThatCode(() -> ReflectionTestUtils.invokeMethod(executor, "retrySeedWaveAfterAuthBootstrap", List.of()))
+                .doesNotThrowAnyException();
+    }
+
 }

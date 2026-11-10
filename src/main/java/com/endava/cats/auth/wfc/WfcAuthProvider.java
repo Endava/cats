@@ -71,6 +71,9 @@ public class WfcAuthProvider {
     private final Map<String, EntryHealth> healthByName = new HashMap<>();
     private int lastSuccessfulIndex;
     private boolean anyLoginSucceeded;
+    private boolean anyRequestSucceeded;
+    private boolean anyRequestRejectedBeforeSuccess;
+    private boolean unauthenticatedBootstrapSucceeded;
 
     /**
      * Session health of a credential entry. {@code REAUTH} forces one new login; {@code DEAD} entries are never
@@ -233,12 +236,13 @@ public class WfcAuthProvider {
      * @param statusCode HTTP response code
      */
     public synchronized void recordOutcome(String path, String method, int statusCode) {
-        if (!isEnabled() || StringUtils.isNotBlank(authArguments.getWfcAuthName())) {
+        if (!isEnabled()) {
             return;
         }
         String opKey = operationKey(path, method);
         selectedAuth(opKey);
-        if (authEntries.size() <= 1) {
+        recordInitialAuthProgress(statusCode);
+        if (StringUtils.isNotBlank(authArguments.getWfcAuthName()) || authEntries.size() <= 1) {
             return;
         }
         int currentIdx = activeIndexByOperation.getOrDefault(opKey, lastSuccessfulIndex);
@@ -252,6 +256,43 @@ public class WfcAuthProvider {
                 activeIndexByOperation.put(opKey, nextIdx);
             }
         }
+    }
+
+    private void recordInitialAuthProgress(int statusCode) {
+        if (ResponseCodeFamily.is2xxCode(statusCode)) {
+            anyRequestSucceeded = true;
+        } else if (!anyRequestSucceeded && (statusCode == 401 || statusCode == 403)) {
+            anyRequestRejectedBeforeSuccess = true;
+        }
+    }
+
+    /**
+     * Checks whether any authenticated request has succeeded with a 2XX status code in the current session.
+     *
+     * @return true after the first 2XX authenticated response
+     */
+    public synchronized boolean hasAnyRequestSucceeded() {
+        return anyRequestSucceeded;
+    }
+
+    /**
+     * Records that a state-changing request succeeded without authentication while WFC credentials were still rejected.
+     */
+    public synchronized void recordUnauthenticatedBootstrapSuccess() {
+        if (isEnabled() && !anyRequestSucceeded) {
+            unauthenticatedBootstrapSucceeded = true;
+        }
+    }
+
+    /**
+     * Checks whether earlier unresolved seed operations should be retried because initial authenticated requests were
+     * rejected before a later operation either bootstrapped state or succeeded with WFC credentials.
+     *
+     * @return true when unresolved seed operations should be retried
+     */
+    public synchronized boolean shouldRetryUnresolvedSeeds() {
+        return isEnabled() && anyRequestRejectedBeforeSuccess
+                && (anyRequestSucceeded || unauthenticatedBootstrapSucceeded);
     }
 
     /**
@@ -441,6 +482,9 @@ public class WfcAuthProvider {
             healthByName.clear();
             lastSuccessfulIndex = 0;
             anyLoginSucceeded = false;
+            anyRequestSucceeded = false;
+            anyRequestRejectedBeforeSuccess = false;
+            unauthenticatedBootstrapSucceeded = false;
         }
         if (StringUtils.isBlank(currentAuthName) && authEntries.size() > 1 && StringUtils.isNotBlank(opKey) && !":".equals(opKey)) {
             int idx = activeIndexByOperation.getOrDefault(opKey, lastSuccessfulIndex);

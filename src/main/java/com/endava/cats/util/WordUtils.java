@@ -60,15 +60,10 @@ public abstract class WordUtils {
             "createdat", "updatedat", "modifiedat", "deletedat", "lastmodified", "lastmodifiedat",
             "lastupdated", "lastupdatedat", "updatedon", "modifiedon");
     private static final Set<String> ERROR_KEYWORDS = Set.of(
-            "StackTrace", "BadRequest", "InternalServerError", "Unauthorized",
-            "Forbidden", "ServiceUnavailable", "SocketTimeout", "PermissionDenied", "InvalidToken",
-            "ReadTimeout", "WriteTimeout", "ConnectTimeout", "RequestTimeout", "ResponseTimeout",
-            "MethodNotAllowed", "ResourceNotFound", "RateLimitExceeded", "ClientError", "ServerError",
-            "AuthenticationFailed", "AuthenticationError", "AuthorizationError", "ConnectionTimeout",
-            "SSLHandshakeError", "ConnectionRefused", "MalformedRequest", "MissingParameter",
-            "InvalidResponse", "TransactionFailed", "InvalidHeader", "InvalidGrant",
-            "APIKeyError", "DatabaseError", "QueryTimeout", "DataLossError", "RequestEntityTooLarge",
-            "TooManyRequests", "UnsupportedMediaType", "UnprocessableEntity", "DataIntegrityViolation",
+            "StackTrace", "SocketTimeout", "ReadTimeout", "WriteTimeout", "ConnectTimeout",
+            "ConnectionTimeout", "SSLHandshakeError", "ConnectionRefused",
+            "DatabaseError", "QueryTimeout", "DataLossError", "DataIntegrityViolation",
+            "Traceback (most recent call last)",
 
             // JavaScript/Node.js
             "ReferenceError", "SyntaxError", "TypeError", "RangeError", "EvalError", "UncaughtException",
@@ -91,10 +86,10 @@ public abstract class WordUtils {
             "ConnectionError", "AssertionError", "BrokenPipeError", "PermissionError",
 
             // Go (Golang)
-            "panic", "runtime error", "json: cannot unmarshal", "unexpected end of JSON",
+            "panic:", "runtime error", "json: cannot unmarshal", "unexpected end of JSON",
             "InvalidArgumentError", "NilPointerDereference", "ChannelClosedError", "DivideByZeroError",
             "fatal error: stack overflow", "index out of range",
-            "invalid memory address or nil pointer dereference", "deadlock",
+            "invalid memory address or nil pointer dereference",
 
             // Ruby
             "NoMethodError", "ArgumentError", "LoadError",
@@ -102,9 +97,9 @@ public abstract class WordUtils {
             "Timeout::Error", "EncodingError", "SystemExit",
 
             // PHP
-            "FatalError", "ParseError", "Notice", "DivisionByZeroError",
+            "FatalError", "ParseError", "DivisionByZeroError",
             "MemoryLimitExceeded", "PDOException", "ErrorException",
-            "InvalidArgument", "OutOfMemoryError", "UnexpectedValueException",
+            "OutOfMemoryError", "UnexpectedValueException",
 
             // C++
             "SegmentationFault", "std::exception", "std::runtime_error", "std::invalid_argument",
@@ -125,7 +120,7 @@ public abstract class WordUtils {
             "KotlinNullPointerException", "KotlinIllegalArgumentException",
 
             // Swift
-            "IndexOutOfRange", "UnexpectedNil", "TypeMismatch", "OutOfBounds",
+            "IndexOutOfRange", "UnexpectedNil",
             "UnwrapError", "Segfault", "DivideByZero", "DecodingError", "KeyDecodingError"
     ).stream().map(String::toLowerCase).collect(Collectors.toSet());
 

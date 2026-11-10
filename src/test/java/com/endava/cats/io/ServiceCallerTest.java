@@ -1674,4 +1674,48 @@ class ServiceCallerTest {
         Assertions.assertThat(serviceCaller.constructUrl(nullOnlyObjQuery, nullOnlyObjQuery.getPayload())).doesNotContain("emptyObj");
     }
 
+    @Test
+    void shouldRetryWithoutAuthHeadersWhenPreAuthSeedOrOptionsIsRejected() {
+        ReflectionTestUtils.setField(authArguments, "basicAuth", null);
+        ReflectionTestUtils.setField(authArguments, "wfcAuthFile", new File("src/test/resources/wfc-static-auth.yml"));
+        wireMockServer.stubFor(WireMock.post(WireMock.urlEqualTo("/bootstrap"))
+                .withHeader("X-Session-Token", WireMock.equalTo("static-secret"))
+                .willReturn(WireMock.unauthorized()));
+        wireMockServer.stubFor(WireMock.post(WireMock.urlEqualTo("/bootstrap"))
+                .withHeader("X-Session-Token", WireMock.absent())
+                .willReturn(WireMock.okJson("{\"seeded\":true}")));
+        wireMockServer.stubFor(WireMock.options(WireMock.urlEqualTo("/bootstrap"))
+                .withHeader("X-Session-Token", WireMock.equalTo("static-secret"))
+                .willReturn(WireMock.unauthorized()));
+        wireMockServer.stubFor(WireMock.options(WireMock.urlEqualTo("/bootstrap"))
+                .withHeader("X-Session-Token", WireMock.absent())
+                .willReturn(WireMock.ok().withHeader("Allow", "POST, OPTIONS")));
+
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse postResponse = serviceCaller.call(ServiceData.builder()
+                .relativePath("/bootstrap")
+                .contractPath("/bootstrap")
+                .payload("{}")
+                .httpMethod(HttpMethod.POST)
+                .headers(Set.of())
+                .contentType("application/json")
+                .build());
+        Assertions.assertThat(postResponse.getResponseCode()).isEqualTo(200);
+        Assertions.assertThat(wfcAuthProvider.shouldRetryUnresolvedSeeds()).isTrue();
+
+        CatsResponse optionsResponse = serviceCaller.call(ServiceData.builder()
+                .relativePath("/bootstrap")
+                .contractPath("/bootstrap")
+                .payload("")
+                .httpMethod(HttpMethod.OPTIONS)
+                .mutationTarget(RequestTarget.httpMethod())
+                .headers(Set.of())
+                .contentType("application/json")
+                .build());
+        Assertions.assertThat(optionsResponse.getResponseCode()).isEqualTo(200);
+        Assertions.assertThat(optionsResponse.getHeader("Allow").getValue()).isEqualTo("POST, OPTIONS");
+    }
+
 }

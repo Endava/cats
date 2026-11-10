@@ -267,10 +267,25 @@ final class FuzzerWaveExecutor {
                 runSeedFuzzersForPath(path.filteredFuzzingData(), path.fuzzersToRun());
             }
         }
+        if (command.wfcAuthProvider != null && command.wfcAuthProvider.shouldRetryUnresolvedSeeds()) {
+            retrySeedWaveAfterAuthBootstrap(preparedPaths);
+        }
+    }
+
+    private void retrySeedWaveAfterAuthBootstrap(List<PreparedPath> preparedPaths) {
+        long resourcesBeforeRetry = observedResourceCount();
+        retryUnresolvedSeedOperations(preparedPaths);
+        if (observedResourceCount() > resourcesBeforeRetry) {
+            retryUnresolvedSeedOperations(preparedPaths);
+        }
+    }
+
+    private long observedResourceCount() {
+        return command.runtimeResourcePool != null ? command.runtimeResourcePool.observedResourceCount() : 0;
     }
 
     private void runCoverageWave(List<PreparedPath> preparedPaths, Set<String> coverageWaveFuzzers) {
-        long resourcesBeforeCoverageWave = command.runtimeResourcePool != null ? command.runtimeResourcePool.observedResourceCount() : 0;
+        long resourcesBeforeCoverageWave = observedResourceCount();
         command.executionEventPublisher.publish(new CatsExecutionEvent.WaveStarted(Instant.now(), 2, 4, "Coverage"));
         producersRefilledInWave.clear();
         for (String coverageFuzzerName : coverageWaveFuzzers) {
@@ -278,7 +293,7 @@ final class FuzzerWaveExecutor {
             runWave(preparedPaths, fuzzer -> isInWave(fuzzer, singleWave), _ -> {
             });
         }
-        if (command.runtimeResourcePool != null && command.runtimeResourcePool.observedResourceCount() > resourcesBeforeCoverageWave) {
+        if (observedResourceCount() > resourcesBeforeCoverageWave) {
             retryUnresolvedSeedOperations(preparedPaths);
         }
     }

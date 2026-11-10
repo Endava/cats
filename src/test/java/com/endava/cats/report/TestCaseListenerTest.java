@@ -1229,11 +1229,11 @@ class TestCaseListenerTest {
 
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
-            testCaseListener.addResponse(CatsResponse.builder().body("PermissionDenied").responseTimeInMs(100).build());
+            testCaseListener.addResponse(CatsResponse.builder().body("NullPointerException").responseTimeInMs(100).build());
             spyListener.reportInfo(logger, "Response code expected", "200");
         }, FuzzingData.builder().build());
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
-        Mockito.verify(spyListener, Mockito.times(1)).reportError(logger, "The following keywords were detected in the response which might suggest an error details leak: [permissiondenied]");
+        Mockito.verify(spyListener, Mockito.times(1)).reportError(logger, "The following keywords were detected in the response which might suggest an error details leak: [nullpointerexception]");
     }
 
     @Test
