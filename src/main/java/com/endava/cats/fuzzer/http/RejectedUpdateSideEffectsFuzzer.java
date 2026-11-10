@@ -19,8 +19,10 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.WordUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
@@ -29,6 +31,7 @@ import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
@@ -47,6 +50,8 @@ public class RejectedUpdateSideEffectsFuzzer implements Fuzzer {
     private static final String CANARY_PREFIX = "cats-atomic-";
     private static final String NOT_A_NUMBER = "cats-not-a-number";
     private static final String NOT_A_BOOLEAN = "cats-not-a-boolean";
+    private static final String NOT_A_STRING = "cats-not-a-string";
+    private static final Set<String> IDENTIFIER_WORDS = Set.of("id", "uuid", "guid");
 
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(RejectedUpdateSideEffectsFuzzer.class);
     private final RuntimeResourcePool pool;
@@ -55,12 +60,12 @@ public class RejectedUpdateSideEffectsFuzzer implements Fuzzer {
     private final SimpleExecutor executor;
     private final TestCaseListener listener;
 
-    record ProbeFields(String canaryField, String canaryValue, String invalidField, String invalidValue) {
+    record ProbeFields(String canaryField, String canaryValue, String invalidField, JsonElement invalidValue) {
         String applyTo(JsonObject body) {
             JsonObject probe = body.deepCopy();
             probe.addProperty(canaryField, canaryValue);
             probe.remove(invalidField);
-            probe.addProperty(invalidField, invalidValue);
+            probe.add(invalidField, invalidValue.deepCopy());
             return probe.toString();
         }
 
@@ -121,9 +126,16 @@ public class RejectedUpdateSideEffectsFuzzer implements Fuzzer {
     private static Optional<ProbeFields> probeFields(FuzzingData data, JsonObject body) {
         String canary = CANARY_PREFIX + data.getMethod().name().toLowerCase(Locale.ROOT);
         Optional<String> canaryField = firstField(body, field -> isCanaryCandidate(data, field, body.get(field), canary));
-        Optional<String> invalidField = firstField(body, field -> isTypedField(data, field));
-        return canaryField.flatMap(canaryName -> invalidField.map(invalidName ->
+        return canaryField.flatMap(canaryName -> invalidField(data, body, canaryName).map(invalidName ->
                 new ProbeFields(canaryName, canary, invalidName, invalidValue(propertySchema(data, invalidName)))));
+    }
+
+    /**
+     * Prefers numeric and boolean fields, whose type violations are rejected most reliably, then other string fields.
+     */
+    private static Optional<String> invalidField(FuzzingData data, JsonObject body, String canaryField) {
+        return firstField(body, field -> isTypedField(data, field))
+                .or(() -> firstField(body, field -> !field.equals(canaryField) && isViolatableString(data, field)));
     }
 
     private static Optional<String> firstField(JsonObject body, Predicate<String> filter) {
@@ -139,8 +151,18 @@ public class RejectedUpdateSideEffectsFuzzer implements Fuzzer {
 
     private static boolean isTypedField(FuzzingData data, String field) {
         Schema<?> schema = propertySchema(data, field);
-        return isWritable(schema) && !CatsModelUtils.isEnumSchema(schema) && (CatsModelUtils.isIntegerSchema(schema)
-                || CatsModelUtils.isNumberSchema(schema) || CatsModelUtils.isBooleanSchema(schema));
+        return isWritable(schema) && !isIdentifier(field) && !CatsModelUtils.isEnumSchema(schema)
+                && (CatsModelUtils.isIntegerSchema(schema) || CatsModelUtils.isNumberSchema(schema) || CatsModelUtils.isBooleanSchema(schema));
+    }
+
+    private static boolean isViolatableString(FuzzingData data, String field) {
+        Schema<?> schema = propertySchema(data, field);
+        return isWritable(schema) && !isIdentifier(field) && CatsModelUtils.isStringSchema(schema);
+    }
+
+    private static boolean isIdentifier(String field) {
+        List<String> words = WordUtils.splitWords(field);
+        return !words.isEmpty() && IDENTIFIER_WORDS.contains(words.getLast().toLowerCase(Locale.ROOT));
     }
 
     private static boolean isWritable(Schema<?> schema) {
@@ -157,8 +179,13 @@ public class RejectedUpdateSideEffectsFuzzer implements Fuzzer {
                 && (schema.getMaxLength() == null || schema.getMaxLength() >= value.length());
     }
 
-    private static String invalidValue(Schema<?> schema) {
-        return CatsModelUtils.isBooleanSchema(schema) ? NOT_A_BOOLEAN : NOT_A_NUMBER;
+    private static JsonElement invalidValue(Schema<?> schema) {
+        if (CatsModelUtils.isStringSchema(schema)) {
+            JsonObject notAString = new JsonObject();
+            notAString.addProperty("cats", NOT_A_STRING);
+            return notAString;
+        }
+        return new JsonPrimitive(CatsModelUtils.isBooleanSchema(schema) ? NOT_A_BOOLEAN : NOT_A_NUMBER);
     }
 
     private static Schema<?> propertySchema(FuzzingData data, String field) {

@@ -55,6 +55,7 @@ class FilterParameterHonoredFuzzerTest {
         SimpleExecutorContext context = captureContext();
         Assertions.assertThat(context.getPayload()).contains("\"status\":\"ACTIVE\"").contains("\"limit\":10");
         Assertions.assertThat(context.getMutationTargets()).containsExactly(RequestTarget.query("status"));
+        Assertions.assertThat(context.isReplaceRefData()).as("baseline replay must not overwrite the filter value").isFalse();
         context.getResponseProcessor().accept(response(200,
                 "{\"items\":[{\"status\":\"ACTIVE\"},{\"status\":\"CLOSED\"},{\"status\":\"DRAFT\"},{\"status\":\"CLOSED\"}]}"), data);
 

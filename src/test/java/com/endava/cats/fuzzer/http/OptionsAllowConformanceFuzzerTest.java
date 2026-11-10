@@ -10,8 +10,10 @@ import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,9 +47,16 @@ class OptionsAllowConformanceFuzzerTest {
 
         SimpleExecutorContext context = captureContext();
         Assertions.assertThat(context.getHttpMethod()).isEqualTo(HttpMethod.OPTIONS);
-        Assertions.assertThat(context.getPayload()).isEmpty();
+        Assertions.assertThat(context.getPayload()).isEqualTo("{\"id\":\"1\"}");
         Assertions.assertThat(context.getSkippedHeaders()).contains("Origin", "Access-Control-Request-Method");
         Assertions.assertThat(context.getMutationTargets()).containsExactly(RequestTarget.httpMethod());
+    }
+
+    @Test
+    void shouldResolvePathVariablesFromPathParamsWhenFirstOperationHasBody() {
+        fuzzer.fuzz(data(HttpMethod.POST));
+
+        Assertions.assertThat(captureContext().getPayload()).isEmpty();
     }
 
     @Test
@@ -105,9 +114,44 @@ class OptionsAllowConformanceFuzzerTest {
 
     @Test
     void shouldListDocumentedMethodsIncludingOptions() {
-        PathItem item = new PathItem().get(new Operation()).delete(new Operation()).options(new Operation());
+        FuzzingData data = data(HttpMethod.GET).toBuilder()
+                .pathItem(new PathItem().get(new Operation()).delete(new Operation()).options(new Operation())).build();
 
-        Assertions.assertThat(OptionsAllowConformanceFuzzer.documentedMethods(item)).containsExactly("DELETE", "GET", "OPTIONS");
+        Assertions.assertThat(OptionsAllowConformanceFuzzer.requiredMethods(data)).containsExactly("DELETE", "GET", "OPTIONS");
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+            "/movies/stats|GET, PUT, DELETE, PATCH|[]|[]",
+            "/movies/stats|GET|[]|[]",
+            "/employees/|GET, POST, PUT|[]|[]",
+            "/zip/|GET|[]|[]",
+            "/zip|POST|[]|[]",
+            "/zip/|POST|[]|[GET]",
+            "/movies/{id}|GET, PUT, DELETE, PATCH, POST|[POST]|[]",
+            "/movies/{id}|GET|[]|[DELETE, PATCH, PUT]"}, delimiter = '|')
+    void shouldPermitButNotRequireMethodsOfOverlappingContractPaths(String path, String allow, String undocumented, String missing) {
+        Paths paths = new Paths();
+        paths.addPathItem("/movies", new PathItem().get(new Operation()).post(new Operation()));
+        paths.addPathItem("/movies/{id}", new PathItem().get(new Operation()).put(new Operation()).delete(new Operation()).patch(new Operation()));
+        paths.addPathItem("/movies/stats", new PathItem().get(new Operation()));
+        paths.addPathItem("/employees", new PathItem().get(new Operation()).post(new Operation()).put(new Operation()));
+        paths.addPathItem("/employees/", new PathItem().get(new Operation()));
+        paths.addPathItem("/zip", new PathItem().post(new Operation()));
+        paths.addPathItem("/zip/", new PathItem().get(new Operation()));
+        FuzzingData data = data(HttpMethod.GET).toBuilder().path(path).pathItem(paths.get(path)).openApi(new OpenAPI().paths(paths)).build();
+        fuzzer.fuzz(data);
+
+        captureContext().getResponseProcessor().accept(response(200, allow), data);
+
+        if (undocumented.equals("[]") && missing.equals("[]")) {
+            Mockito.verify(listener).reportResultInfo(Mockito.any(), Mockito.eq(data), Mockito.anyString());
+        } else {
+            ArgumentCaptor<Object> sets = ArgumentCaptor.forClass(Object.class);
+            Mockito.verify(listener).reportResultWarn(Mockito.any(), Mockito.eq(data), Mockito.eq(Reason.OPTIONS_ALLOW_MISMATCH.value()),
+                    Mockito.anyString(), sets.capture(), sets.capture());
+            Assertions.assertThat(sets.getAllValues()).extracting(Object::toString).containsExactly(undocumented, missing);
+        }
     }
 
     @Test
@@ -131,6 +175,6 @@ class OptionsAllowConformanceFuzzerTest {
     private static FuzzingData data(HttpMethod method) {
         return FuzzingData.builder().method(method).path("/items").contractPath("/items")
                 .pathItem(new PathItem().get(new Operation()).post(new Operation()))
-                .headers(Set.of()).payload("{}").build();
+                .headers(Set.of()).payload("{\"id\":\"1\"}").build();
     }
 }

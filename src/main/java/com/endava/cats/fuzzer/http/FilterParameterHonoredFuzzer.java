@@ -85,6 +85,7 @@ public class FilterParameterHonoredFuzzer implements Fuzzer {
                 .fuzzer(this).fuzzingData(data).logger(logger)
                 .payload(CatsUtil.justReplaceField(data.getPayload(), filter.param(), toJavaValue(filter.value())).json())
                 .mutationTarget(RequestTarget.query(filter.param()))
+                .replaceRefData(false)
                 .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                 .scenario("Send GET filtered by [%s=%s] and verify every returned item matches the filter"
                         .formatted(filter.param(), filter.displayValue()))

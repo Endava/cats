@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @QuarkusTest
 class RejectedUpdateSideEffectsFuzzerTest {
@@ -171,6 +172,31 @@ class RejectedUpdateSideEffectsFuzzerTest {
 
         Assertions.assertThat(RejectedUpdateSideEffectsFuzzer.buildProbe(data,
                 new ObservedHttpTarget.OwnedWrite("/items/1", "{\"" + field + "\":\"x\",\"quantity\":3}"))).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"id,false", "petTypeId,false", "owner_id,false", "uuid,false", "valid,true", "paid,true", "quantity,true"})
+    void shouldNotUseIdentifiersAsTypeViolationField(String typedField, boolean probed) {
+        FuzzingData data = data(HttpMethod.PUT).toBuilder()
+                .requestPropertyTypes(Map.of("name", new StringSchema(), typedField, new IntegerSchema())).build();
+
+        var probe = RejectedUpdateSideEffectsFuzzer.buildProbe(data,
+                new ObservedHttpTarget.OwnedWrite("/items/1", "{\"name\":\"x\",\"" + typedField + "\":1}"));
+
+        Assertions.assertThat(probe.map(p -> p.fields().invalidField())).isEqualTo(probed ? Optional.of(typedField) : Optional.empty());
+    }
+
+    @Test
+    void shouldUseObjectViolationInAnotherStringFieldWhenNoTypedFieldExists() {
+        FuzzingData data = data(HttpMethod.PUT).toBuilder()
+                .requestPropertyTypes(Map.of("address", new StringSchema(), "city", new StringSchema(), "id", new IntegerSchema())).build();
+
+        var probe = RejectedUpdateSideEffectsFuzzer.buildProbe(data,
+                new ObservedHttpTarget.OwnedWrite("/owners/1", "{\"address\":\"a\",\"city\":\"c\",\"id\":1}")).orElseThrow();
+
+        Assertions.assertThat(probe.fields().canaryField()).isEqualTo("address");
+        Assertions.assertThat(probe.fields().invalidField()).isEqualTo("city");
+        Assertions.assertThat(probe.payload()).isEqualTo("{\"address\":\"cats-atomic-put\",\"id\":1,\"city\":{\"cats\":\"cats-not-a-string\"}}");
     }
 
     @Test

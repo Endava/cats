@@ -16,17 +16,20 @@ import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import jakarta.inject.Singleton;
 
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Sends one {@code OPTIONS} request per path and verifies that the returned {@code Allow} header lists exactly the
@@ -74,13 +77,20 @@ public class OptionsAllowConformanceFuzzer implements Fuzzer {
         }
         simpleExecutor.execute(SimpleExecutorContext.builder()
                 .fuzzer(this).fuzzingData(data).logger(logger)
-                .httpMethod(HttpMethod.OPTIONS).payload("")
+                .httpMethod(HttpMethod.OPTIONS).payload(pathResolvingPayload(data))
                 .skippedHeaders(CORS_PREFLIGHT_HEADERS)
                 .mutationTarget(RequestTarget.httpMethod())
                 .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                 .scenario("Send an OPTIONS request and verify the Allow header lists exactly the HTTP methods documented for the path")
                 .responseProcessor(this::checkResponse)
                 .build());
+    }
+
+    /**
+     * Non-body operations carry their path variables in the payload; body operations carry them in the path params payload.
+     */
+    private static String pathResolvingPayload(FuzzingData data) {
+        return HttpMethod.requiresBody(data.getMethod()) ? "" : data.getPayload();
     }
 
     private void checkResponse(CatsResponse response, FuzzingData data) {
@@ -95,7 +105,7 @@ public class OptionsAllowConformanceFuzzer implements Fuzzer {
                     response.responseCodeAsString());
             return;
         }
-        reportComparison(data, compare(allowed.get(), documentedMethods(data.getPathItem())));
+        reportComparison(data, compare(allowed.get(), requiredMethods(data), permittedMethods(data)));
     }
 
     private void reportComparison(FuzzingData data, AllowComparison comparison) {
@@ -119,15 +129,46 @@ public class OptionsAllowConformanceFuzzer implements Fuzzer {
                 .collect(Collectors.toCollection(TreeSet::new)));
     }
 
-    static Set<String> documentedMethods(PathItem pathItem) {
-        return HttpMethod.OPERATIONS.entrySet().stream()
-                .filter(entry -> entry.getValue().apply(pathItem) != null)
-                .map(entry -> entry.getKey().name())
+    /**
+     * Methods the Allow header must list: the ones documented on the exact contract path.
+     */
+    static Set<String> requiredMethods(FuzzingData data) {
+        return declaredMethods(data.getPathItem()).collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    /**
+     * Methods the Allow header may list. Some servers compute Allow from every route matching the URL, so sibling
+     * templates that also match the path (e.g. {@code /items/{id}} for {@code /items/stats}, or {@code /items} for
+     * {@code /items/}) contribute their methods. Other servers only use the most specific route, which is why these
+     * sibling methods are never required.
+     */
+    static Set<String> permittedMethods(FuzzingData data) {
+        return Stream.concat(Stream.of(data.getPathItem()), overlappingPathItems(data))
+                .flatMap(OptionsAllowConformanceFuzzer::declaredMethods)
                 .collect(Collectors.toCollection(TreeSet::new));
     }
 
-    static AllowComparison compare(Set<String> allowed, Set<String> documented) {
-        return new AllowComparison(difference(allowed, documented), difference(documented, allowed));
+    private static Stream<PathItem> overlappingPathItems(FuzzingData data) {
+        OpenAPI openApi = data.getOpenApi();
+        Map<String, PathItem> paths = openApi == null || openApi.getPaths() == null ? Map.of() : openApi.getPaths();
+        String path = withoutTrailingSlash(data.getPath());
+        return paths.entrySet().stream()
+                .filter(entry -> ObservedHttpTarget.matchesTemplate(withoutTrailingSlash(entry.getKey()), path))
+                .map(Map.Entry::getValue);
+    }
+
+    private static Stream<String> declaredMethods(PathItem pathItem) {
+        return HttpMethod.OPERATIONS.entrySet().stream()
+                .filter(entry -> entry.getValue().apply(pathItem) != null)
+                .map(entry -> entry.getKey().name());
+    }
+
+    private static String withoutTrailingSlash(String path) {
+        return path.length() > 1 && path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
+    }
+
+    static AllowComparison compare(Set<String> allowed, Set<String> required, Set<String> permitted) {
+        return new AllowComparison(difference(allowed, permitted), difference(required, allowed));
     }
 
     private static Set<String> difference(Set<String> source, Set<String> excluded) {
