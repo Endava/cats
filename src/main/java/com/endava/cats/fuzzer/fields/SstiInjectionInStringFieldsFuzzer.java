@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -11,6 +12,9 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Fuzzer that sends SSTI injection payloads in string fields.
@@ -107,8 +111,17 @@ public class SstiInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             "template not found"
     );
 
-    public SstiInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, SecurityFuzzerArguments securityFuzzerArguments) {
-        super(simpleExecutor, testCaseListener, securityFuzzerArguments);
+    /**
+     * Matches the keywords only when they are not part of a longer word, so that e.g. {@code erb} does not match
+     * {@code EnhancerBySpringCGLIB} in a stack trace. Digits, underscores and punctuation still delimit a keyword
+     * ({@code jinja2.exceptions}, {@code Twig_Error_Syntax}).
+     */
+    private static final Pattern SSTI_ERROR_PATTERN = Pattern.compile(SSTI_ERROR_KEYWORDS.stream()
+            .map(Pattern::quote)
+            .collect(Collectors.joining("|", "(?<![a-z])(?:", ")(?![a-z])")));
+
+    public SstiInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, SecurityFuzzerArguments securityFuzzerArguments, InjectionEvidenceVerifier evidenceVerifier) {
+        super(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
     }
 
     @Override
@@ -136,13 +149,12 @@ public class SstiInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         String responseBody = response.getBody().toLowerCase(Locale.ROOT);
         String originalBody = response.getBody();
 
-        for (String keyword : SSTI_ERROR_KEYWORDS) {
-            if (responseBody.contains(keyword)) {
-                return InjectionDetectionResult.vulnerable(
-                        "SSTI injection error detected",
-                        "Response contains template engine error keyword: '" + keyword + "'"
-                );
-            }
+        Matcher keyword = SSTI_ERROR_PATTERN.matcher(responseBody);
+        if (keyword.find()) {
+            return InjectionDetectionResult.weakEvidence(
+                    "SSTI injection error detected",
+                    "Response contains template engine error keyword: '" + keyword.group() + "'"
+            );
         }
 
         boolean hasMainResult = originalBody.contains(CALC_RESULT);
@@ -152,7 +164,7 @@ public class SstiInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             String detectedResult = hasMainResult ? CALC_RESULT : ALT_CALC_RESULT;
 
             if (looksLikeEvaluatedExpression(originalBody, detectedResult)) {
-                return InjectionDetectionResult.vulnerable(
+                return InjectionDetectionResult.strongEvidence(
                         "Potential SSTI vulnerability detected",
                         "Response contains '" + detectedResult + "' which appears to be the evaluated result of the injected calculation. " +
                                 "The number appears in a context suggesting template evaluation rather than normal data."
@@ -161,7 +173,7 @@ public class SstiInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         }
 
         if (hasReflectedPayloadWithTemplateIndicators(originalBody)) {
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.weakEvidence(
                     "Potential SSTI reflection detected",
                     "Payload was reflected in response with template-related context, suggesting possible template processing"
             );
@@ -204,14 +216,6 @@ public class SstiInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         boolean hasCalcExpr = bodyLower.contains(CALC_EXPR.toLowerCase(Locale.ROOT)) ||
                 bodyLower.contains(ALT_CALC_EXPR.toLowerCase(Locale.ROOT));
 
-        if (hasCalcExpr) {
-            for (String keyword : SSTI_ERROR_KEYWORDS) {
-                if (bodyLower.contains(keyword)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return hasCalcExpr && SSTI_ERROR_PATTERN.matcher(bodyLower).find();
     }
 }

@@ -2,10 +2,12 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
@@ -20,12 +22,15 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @QuarkusTest
 class PathTraversalInStringFieldsFuzzerTest {
     private ServiceCaller serviceCaller;
+    private RuntimeResourcePool runtimeResourcePool;
+    private InjectionEvidenceVerifier evidenceVerifier;
     @InjectSpy
     TestCaseListener testCaseListener;
     private SecurityFuzzerArguments securityFuzzerArguments;
@@ -34,10 +39,17 @@ class PathTraversalInStringFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
+        runtimeResourcePool = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(runtimeResourcePool.successfulExchanges(Mockito.any(), Mockito.any())).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange("/files", HttpMethod.POST, "http://localhost/files", "{}",
+                        200, "{\"status\":\"ok\"}", null, null)));
+        evidenceVerifier = new InjectionEvidenceVerifier(runtimeResourcePool);
         securityFuzzerArguments = new SecurityFuzzerArguments();
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
-        SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        fuzzer = new PathTraversalInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+        SimpleExecutor simpleExecutor = Mockito.spy(new SimpleExecutor(testCaseListener, serviceCaller));
+        Mockito.doReturn(CatsResponse.builder().responseCode(200).body("{\"status\":\"ok\"}").build())
+                .when(simpleExecutor).replayOriginal(Mockito.any());
+        fuzzer = new PathTraversalInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
     }
 
     @Test

@@ -58,6 +58,7 @@ public class CatsTestCase {
     private String resultReason;
     private String resultDetails;
     private String resultIgnoreDetails;
+    private FindingConfidence confidence;
     private CatsRequest request = CatsRequest.empty();
     private CatsResponse response = CatsResponse.empty();
     private String path = "####";
@@ -129,6 +130,15 @@ public class CatsTestCase {
      */
     public boolean hasResultSwitched() {
         return resultIgnoreDetails != null;
+    }
+
+    /**
+     * Checks whether a confidence level was assigned to the finding reported by this test case.
+     *
+     * @return true when the test case carries a confidence level
+     */
+    public boolean hasConfidence() {
+        return confidence != null;
     }
 
     /**

@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -11,6 +12,7 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Fuzzer that sends XXE injection payloads in string fields.
@@ -135,8 +137,12 @@ public class XxeInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             "aaaaaa"                // repeated entity expansion
     );
 
-    public XxeInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, SecurityFuzzerArguments securityFuzzerArguments) {
-        super(simpleExecutor, testCaseListener, securityFuzzerArguments);
+    private static final Set<String> STRONG_SUCCESS_MARKERS = Set.of(
+            "xxe_test_success_8051", "xxe_marker_6497", "xxe_test_success",
+            "root:x:0:0:", "[fonts]", "[extensions]", "[mci extensions]");
+
+    public XxeInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, SecurityFuzzerArguments securityFuzzerArguments, InjectionEvidenceVerifier evidenceVerifier) {
+        super(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
     }
 
     @Override
@@ -172,16 +178,13 @@ public class XxeInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
 
         for (String marker : XXE_SUCCESS_MARKERS) {
             if (responseLower.contains(marker)) {
-                return InjectionDetectionResult.vulnerable(
-                        "XXE vulnerability detected",
-                        "Response contains evidence of successful entity expansion: '" + marker + "'"
-                );
+                return expandedEntityEvidence(marker);
             }
         }
 
         for (String keyword : XXE_ERROR_KEYWORDS) {
             if (responseLower.contains(keyword)) {
-                return InjectionDetectionResult.vulnerable(
+                return InjectionDetectionResult.weakEvidence(
                         "Potential XXE vulnerability detected",
                         "Response contains XML parsing error: '" + keyword + "'. " +
                                 "This indicates the backend processes XML, which may be exploitable."
@@ -190,13 +193,21 @@ public class XxeInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
         }
 
         if (responseBody.length() > 100000 && containsRepeatedPatterns(responseBody)) {
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.weakEvidence(
                     "Potential XXE DoS vulnerability detected",
                     "Response is unusually large with repeated patterns, suggesting entity expansion attack succeeded"
             );
         }
 
         return InjectionDetectionResult.notVulnerable();
+    }
+
+    private static InjectionDetectionResult expandedEntityEvidence(String marker) {
+        String title = "XXE vulnerability detected";
+        String message = "Response contains evidence of successful entity expansion: '" + marker + "'";
+        return STRONG_SUCCESS_MARKERS.contains(marker)
+                ? InjectionDetectionResult.strongEvidence(title, message)
+                : InjectionDetectionResult.weakEvidence(title, message);
     }
 
     /**

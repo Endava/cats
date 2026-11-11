@@ -64,19 +64,7 @@ public class SimpleExecutor {
                 return;
             }
 
-            CatsResponse response = serviceCaller.call(
-                    ServiceData.from(context.getFuzzingData())
-                            .relativePath(context.getPath())
-                            .headers(context.getHeaders())
-                            .payload(context.getPayload())
-                            .httpMethod(context.getHttpMethod())
-                            .replaceRefData(context.isReplaceRefData())
-                            .skippedHeaders(context.getSkippedHeaders())
-                            .addUserHeaders(context.isAddUserHeaders())
-                            .replaceUrlParams(context.isReplaceUrlParams())
-                            .validJson(context.isValidJson())
-                            .mutationTargets(context.getMutationTargets())
-                            .build());
+            CatsResponse response = serviceCaller.call(toServiceData(context));
 
             if (context.getResponseProcessor() != null) {
                 context.getResponseProcessor().accept(response, context.getFuzzingData());
@@ -84,6 +72,45 @@ public class SimpleExecutor {
                 reportDefaultResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode(), context.isMatchResponseResult(), context.isMatchResponseContentType());
             }
         }, context.getFuzzingData());
+    }
+
+    /**
+     * Re-sends the request described by the given context from within the currently running test case,
+     * without creating a new test case and without replacing the exchange already recorded for it.
+     * This is meant to confirm that a finding reproduces.
+     *
+     * @param context the executor context describing the request to replay
+     * @return the response received for the replayed request
+     */
+    public CatsResponse replay(SimpleExecutorContext context) {
+        return testCaseListener.callPreservingCurrentExchange(() -> serviceCaller.call(toServiceData(context)));
+    }
+
+    /**
+     * Sends the unfuzzed request of the given operation from within the currently running test case,
+     * without creating a new test case and without replacing the exchange already recorded for it.
+     * This is meant to obtain a fresh baseline response to compare a finding against.
+     *
+     * @param data the fuzzing data of the operation
+     * @return the response received for the unfuzzed request
+     */
+    public CatsResponse replayOriginal(FuzzingData data) {
+        return testCaseListener.callPreservingCurrentExchange(() -> serviceCaller.call(ServiceData.from(data).build()));
+    }
+
+    private static ServiceData toServiceData(SimpleExecutorContext context) {
+        return ServiceData.from(context.getFuzzingData())
+                .relativePath(context.getPath())
+                .headers(context.getHeaders())
+                .payload(context.getPayload())
+                .httpMethod(context.getHttpMethod())
+                .replaceRefData(context.isReplaceRefData())
+                .skippedHeaders(context.getSkippedHeaders())
+                .addUserHeaders(context.isAddUserHeaders())
+                .replaceUrlParams(context.isReplaceUrlParams())
+                .validJson(context.isValidJson())
+                .mutationTargets(context.getMutationTargets())
+                .build();
     }
 
     public void reportDefaultResult(PrettyLogger logger, FuzzingData data, CatsResponse response,

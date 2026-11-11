@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -24,6 +25,8 @@ import java.util.Locale;
 @Singleton
 @FieldFuzzer
 public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzzer {
+    private static final String UNION_SELECT_OUTPUT = "UNION SELECT output";
+    private static final String SQL_INJECTION_DETECTED = "SQL injection vulnerability detected";
 
     private static final List<String> TOP_SQL_INJECTION_PAYLOADS = List.of(
             "' OR '1'='1",
@@ -78,10 +81,12 @@ public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
      * @param simpleExecutor          the executor used to run the fuzz logic
      * @param testCaseListener        the test case listener for reporting results
      * @param securityFuzzerArguments the security fuzzer arguments
+     * @param evidenceVerifier        verifies candidate findings against a baseline response and a replay
      */
     public SqlInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener,
-                                            SecurityFuzzerArguments securityFuzzerArguments) {
-        super(simpleExecutor, testCaseListener, securityFuzzerArguments);
+                                            SecurityFuzzerArguments securityFuzzerArguments,
+                                            InjectionEvidenceVerifier evidenceVerifier) {
+        super(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
     }
 
     @Override
@@ -124,7 +129,7 @@ public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
         List<String> indicators = new ArrayList<>();
 
         if (hasUnionSelectWithData(responseBody)) {
-            indicators.add("UNION SELECT output");
+            indicators.add(UNION_SELECT_OUTPUT);
         }
 
         if (containsSchemaDetails(responseBody)) {
@@ -137,10 +142,11 @@ public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
 
         if (indicators.size() >= 2) {
             String evidenceSummary = String.join(", ", indicators);
-            return InjectionDetectionResult.vulnerable(
-                    "SQL injection vulnerability detected",
-                    "Response shows multiple independent SQL indicators (%s). Response code: %d"
-                            .formatted(evidenceSummary, responseCode));
+            String message = "Response shows multiple independent SQL indicators (%s). Response code: %d"
+                    .formatted(evidenceSummary, responseCode);
+            return indicators.contains(UNION_SELECT_OUTPUT)
+                    ? InjectionDetectionResult.strongEvidence(SQL_INJECTION_DETECTED, message)
+                    : InjectionDetectionResult.weakEvidence(SQL_INJECTION_DETECTED, message);
         }
 
         return InjectionDetectionResult.notVulnerable();

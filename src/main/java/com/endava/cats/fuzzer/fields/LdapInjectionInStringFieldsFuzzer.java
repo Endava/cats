@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
@@ -236,8 +237,8 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
     private static final Pattern DN_KEY_LINE = Pattern.compile("(?m)^(dn|cn|uid|ou|dc)\\s*:\\s*.+$", Pattern.CASE_INSENSITIVE);
     private static final Pattern JWT_LIKE = Pattern.compile("\\bey[a-z0-9_-]{10,}\\.[a-z0-9_-]+\\.[a-z0-9_-]+\\b", Pattern.CASE_INSENSITIVE);
 
-    public LdapInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, SecurityFuzzerArguments securityFuzzerArguments) {
-        super(simpleExecutor, testCaseListener, securityFuzzerArguments);
+    public LdapInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, SecurityFuzzerArguments securityFuzzerArguments, InjectionEvidenceVerifier evidenceVerifier) {
+        super(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
     }
 
     @Override
@@ -274,7 +275,7 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
 
         for (String keyword : LDAP_ERROR_KEYWORDS) {
             if (responseLower.contains(keyword) && appearsInErrorContext(responseBody, keyword)) {
-                return InjectionDetectionResult.vulnerable(
+                return InjectionDetectionResult.weakEvidence(
                         Reason.LDAP_INJECTION.value(),
                         "Response contains LDAP error message: '" + keyword + "'"
                 );
@@ -289,21 +290,21 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         int score = ldapEvidenceScore(responseBody, responseLower, contributing);
 
         if (score >= 6) {
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.weakEvidence(
                     Reason.POSSIBLE_LDAP_INJECTION.value(),
                     "Evidence score=" + score + " (" + contributing + ") suggesting LDAP data leakage or filter injection"
             );
         }
 
         if (hasLdifStructure(responseBody) && !isLikelyTokenResponse(responseLower)) {
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.strongEvidence(
                     Reason.LDAP_DATA_EXTRACTION.value(),
                     "Response contains LDIF-like structure suggesting directory data dump"
             );
         }
 
         if (responseBody.length() > 50000 && containsMultipleUserIndicators(responseLower)) {
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.weakEvidence(
                     Reason.POSSIBLE_LDAP_INJECTION.value(),
                     "Response is unusually large and contains multiple user-like structures, " +
                             "suggesting injection may have bypassed filters and returned all directory entries"
@@ -314,7 +315,7 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         int explicitIndicators = countExplicitLdapSuccessIndicators(responseLower, foundIndicators);
 
         if (explicitIndicators >= 6) {
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.weakEvidence(
                     Reason.POSSIBLE_LDAP_INJECTION.value(),
                     "Response contains multiple LDAP directory attributes (" + explicitIndicators + " indicators: " +
                             foundIndicators + "), suggesting filter injection may have returned unauthorized directory data"
@@ -322,7 +323,7 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         }
 
         if (score > 0 && detectAuthenticationBypass(responseLower)) {
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.weakEvidence(
                     Reason.LDAP_AUTHENTICATION_BYPASS.value(),
                     "Response suggests authentication-related success combined with LDAP evidence"
             );

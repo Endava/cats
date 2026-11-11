@@ -18,6 +18,7 @@ import org.mockito.Mockito;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 @QuarkusTest
 class SimpleExecutorTest {
@@ -62,5 +63,57 @@ class SimpleExecutorTest {
         Assertions.assertThat(serviceData.getValue().getOriginalPayload()).contains("original");
         Assertions.assertThat(serviceData.getValue().getAllMutationTargets()).containsExactly(
                 RequestTarget.body("customerId"), RequestTarget.header("X-Test"));
+    }
+
+    @Test
+    void shouldReplayRequestWithinCurrentTestCaseWithoutReplacingItsExchange() {
+        TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
+        ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
+        FuzzingData fuzzingData = Mockito.mock(FuzzingData.class);
+        Mockito.when(fuzzingData.getPath()).thenReturn("/customers");
+        Mockito.when(fuzzingData.getHeaders()).thenReturn(Set.of());
+        Mockito.when(fuzzingData.getQueryParams()).thenReturn(Set.of());
+        Mockito.when(fuzzingData.getQueryParameterSerializations()).thenReturn(Map.of());
+        Mockito.when(fuzzingData.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(fuzzingData.getFirstRequestContentType()).thenReturn("application/json");
+        Mockito.when(testCaseListener.callPreservingCurrentExchange(Mockito.any()))
+                .thenAnswer(invocation -> invocation.getArgument(0, Supplier.class).get());
+        CatsResponse replayed = CatsResponse.builder().responseCode(201).body("{}").build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(replayed);
+
+        CatsResponse response = new SimpleExecutor(testCaseListener, serviceCaller).replay(SimpleExecutorContext.builder()
+                .fuzzingData(fuzzingData)
+                .payload("{\"name\":\"' OR '1'='1\"}")
+                .mutationTarget(RequestTarget.body("name"))
+                .build());
+
+        Assertions.assertThat(response).isSameAs(replayed);
+        ArgumentCaptor<ServiceData> serviceData = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller).call(serviceData.capture());
+        Assertions.assertThat(serviceData.getValue().getPayload()).contains("' OR '1'='1");
+        Mockito.verify(testCaseListener).callPreservingCurrentExchange(Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.never()).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void shouldReplayTheUnfuzzedRequestWithinCurrentTestCase() {
+        TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
+        ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
+        FuzzingData fuzzingData = Mockito.mock(FuzzingData.class);
+        Mockito.when(fuzzingData.getPath()).thenReturn("/customers");
+        Mockito.when(fuzzingData.getPayload()).thenReturn("{\"name\":\"original\"}");
+        Mockito.when(fuzzingData.getHeaders()).thenReturn(Set.of());
+        Mockito.when(fuzzingData.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(testCaseListener.callPreservingCurrentExchange(Mockito.any()))
+                .thenAnswer(invocation -> invocation.getArgument(0, Supplier.class).get());
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.empty());
+
+        new SimpleExecutor(testCaseListener, serviceCaller).replayOriginal(fuzzingData);
+
+        ArgumentCaptor<ServiceData> serviceData = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller).call(serviceData.capture());
+        Assertions.assertThat(serviceData.getValue().getPayload()).isEqualTo("{\"name\":\"original\"}");
+        Assertions.assertThat(serviceData.getValue().getMutationTargets()).isEmpty();
+        Mockito.verify(testCaseListener).callPreservingCurrentExchange(Mockito.any());
     }
 }

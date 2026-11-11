@@ -21,9 +21,11 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.model.RequestTarget;
+import com.endava.cats.model.SecurityFinding;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.tui.model.TestResultSnapshot;
@@ -65,6 +67,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -425,6 +428,38 @@ public class TestCaseListener {
      */
     public void addRequest(CatsRequest request) {
         currentTestCase().setRequest(request);
+    }
+
+    /**
+     * Records how reliably the finding reported by the current test case is attributed to the fuzzed input.
+     *
+     * @param confidence the confidence level of the finding
+     */
+    public void addConfidence(FindingConfidence confidence) {
+        currentTestCase().setConfidence(confidence);
+    }
+
+    /**
+     * Runs an additional service call (e.g. a confirmation replay) without replacing the request, response
+     * and detected error leaks already recorded for the current test case.
+     *
+     * @param call the additional call to execute
+     * @return the response of the additional call
+     */
+    public CatsResponse callPreservingCurrentExchange(Supplier<CatsResponse> call) {
+        CatsTestCase testCase = currentTestCase();
+        CatsRequest request = testCase.getRequest();
+        CatsResponse response = testCase.getResponse();
+        String fullRequestPath = testCase.getFullRequestPath();
+        List<String> errorLeaks = testCase.getErrorLeaks();
+        try {
+            return call.get();
+        } finally {
+            testCase.setRequest(request);
+            testCase.setResponse(response);
+            testCase.setFullRequestPath(fullRequestPath);
+            testCase.setErrorLeaks(errorLeaks);
+        }
     }
 
     /**
@@ -960,8 +995,33 @@ public class TestCaseListener {
      * @param params  additional parameters to be formatted into the message
      */
     public void reportResultError(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
-        this.reportError(logger, message, params);
         setResultReason(reason);
+        this.reportError(logger, message, params);
+    }
+
+    /**
+     * Reports a security finding according to its confidence: {@code CONFIRMED} and {@code FIRM} findings are errors,
+     * {@code TENTATIVE} findings are warnings, unless the response is a 5XX, which is always an error. For a
+     * {@code TENTATIVE} finding on a 5XX response that leaks error details, the leak is reported instead, as it is
+     * the more reliable finding.
+     *
+     * @param logger   the logger used to log result-related information
+     * @param data     the fuzzing data associated with the test
+     * @param response the response in which the finding was detected
+     * @param finding  the finding to report
+     */
+    public void reportSecurityFinding(PrettyLogger logger, FuzzingData data, CatsResponse response, SecurityFinding finding) {
+        boolean serverError = ResponseCodeFamily.is5xxCode(response.getResponseCode());
+        if (!finding.confidence().isReliable() && serverError && hasKeywordLeaks(currentTestCase())) {
+            this.reportError(logger, CatsResultFactory.createErrorLeaksDetectedInResponse(currentTestCase().getErrorLeaks()));
+            return;
+        }
+        addConfidence(finding.confidence());
+        if (finding.confidence().isReliable() || serverError) {
+            this.reportResultError(logger, data, finding.reason(), finding.messageWithConfidence());
+        } else {
+            this.reportResultWarn(logger, data, finding.reason(), finding.messageWithConfidence());
+        }
     }
 
     private void reportSkipped(PrettyLogger logger, Object... params) {

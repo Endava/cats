@@ -1,10 +1,13 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
@@ -22,6 +25,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -30,6 +34,8 @@ import java.util.stream.Stream;
 class SSRFInUrlFieldsFuzzerTest {
 
     private ServiceCaller serviceCaller;
+    private RuntimeResourcePool runtimeResourcePool;
+    private InjectionEvidenceVerifier evidenceVerifier;
     @InjectSpy
     TestCaseListener testCaseListener;
     private SimpleExecutor simpleExecutor;
@@ -38,9 +44,16 @@ class SSRFInUrlFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
+        runtimeResourcePool = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(runtimeResourcePool.successfulExchanges(Mockito.any(), Mockito.any())).thenReturn(List.of(
+                new RuntimeResourcePool.SuccessfulExchange("/hooks", HttpMethod.POST, "http://localhost/hooks", "{}",
+                        200, "{\"status\":\"ok\"}", null, null)));
+        evidenceVerifier = new InjectionEvidenceVerifier(runtimeResourcePool);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
-        simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        ssrfFuzzer = new SSRFInUrlFieldsFuzzer(simpleExecutor, testCaseListener);
+        simpleExecutor = Mockito.spy(new SimpleExecutor(testCaseListener, serviceCaller));
+        Mockito.doReturn(CatsResponse.builder().responseCode(200).body("{\"status\":\"ok\"}").build())
+                .when(simpleExecutor).replayOriginal(Mockito.any());
+        ssrfFuzzer = new SSRFInUrlFieldsFuzzer(simpleExecutor, testCaseListener, evidenceVerifier);
     }
 
     @Test
@@ -271,7 +284,7 @@ class SSRFInUrlFieldsFuzzerTest {
     }
 
     @Test
-    void shouldDetectPayloadReflection() {
+    void shouldReportPlainPayloadReflectionAsTentativeWarning() {
         Map<String, Schema> reqTypes = new HashMap<>();
         StringSchema urlSchema = new StringSchema();
         urlSchema.setFormat("uri");
@@ -294,9 +307,52 @@ class SSRFInUrlFieldsFuzzerTest {
 
         ssrfFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultWarn(
+                Mockito.any(), Mockito.any(), Mockito.eq("SSRF payload reflected in response"),
+                Mockito.contains("Confidence: TENTATIVE"), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.never()).reportResultError(
                 Mockito.any(), Mockito.any(), Mockito.eq("SSRF payload reflected in response"),
                 Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldNotTreatCloudMetadataKeywordsInsideEchoedPayloadAsEvidence() {
+        FuzzingData data = urlFieldData();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(invocation -> {
+            ServiceData serviceData = invocation.getArgument(0);
+            return CatsResponse.builder().responseCode(201).body(serviceData.getPayload()).build();
+        });
+
+        ssrfFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.never()).reportResultError(
+                Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldReportConfirmedSsrfWhenStrongEvidenceIsNewAndReproduces() {
+        FuzzingData data = urlFieldData();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(200).body("{\"preview\":\"ami-id: ami-0abc\"}").build());
+
+        ssrfFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                Mockito.any(), Mockito.any(), Mockito.eq("Cloud metadata service accessed"),
+                Mockito.contains("Confidence: CONFIRMED"), Mockito.any());
+    }
+
+    private static FuzzingData urlFieldData() {
+        StringSchema urlSchema = new StringSchema();
+        urlSchema.setFormat("uri");
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("callback"));
+        Mockito.when(data.getPayload()).thenReturn("{\"callback\": \"https://example.com\"}");
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("callback", urlSchema));
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(data.getHeaders()).thenReturn(Set.of());
+        Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+        return data;
     }
 
     @Test

@@ -100,6 +100,11 @@
                 <div>{{{resultDetailsForHtml}}}</div>
             </div>
 
+            {{#hasConfidence}}
+            <div class="t1-lbl">Confidence</div>
+            <div class="t1-val span-3"><strong>{{confidence}}</strong></div>
+            {{/hasConfidence}}
+
             {{#hasResultSwitched}}
             <div class="t1-lbl result-warn">Warning</div>
             <div class="t1-val span-3 result-warn">{{resultIgnoreDetails}}</div>

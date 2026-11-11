@@ -26,6 +26,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.google.common.net.HttpHeaders;
@@ -139,7 +140,9 @@ public final class WfcFaultClassifier {
 
     /**
      * Classifies a {@link CatsTestCaseSummary} (optionally enriched with its full {@link CatsTestCase} details)
-     * into zero or more WFC {@link FaultCategoryId} entries.
+     * into zero or more WFC {@link FaultCategoryId} entries. Findings with {@link FindingConfidence#TENTATIVE}
+     * confidence are not mapped through their reason, keeping fault counts comparable with tools that only
+     * report verified findings.
      */
     public static Set<FaultCategoryId> classify(CatsTestCaseSummary summary, CatsTestCase fullTestCase) {
         if (summary == null) {
@@ -156,7 +159,9 @@ public final class WfcFaultClassifier {
 
         classifyStatusCodeFaults(summary, code, faults);
         classifySecondPhaseAndSecurityFuzzers(summary, code, method, faults);
-        classifyReasonBasedFaults(summary, code, faults);
+        if (summary.getConfidence() != FindingConfidence.TENTATIVE) {
+            classifyReasonBasedFaults(summary, code, faults);
+        }
 
         if (faults.isEmpty() && summary.getError() && !summary.is9xxResponse()) {
             faults.add(faultId(CatsWfcFaultCategory.CATS_UNEXPECTED_BEHAVIOUR, summary.getResultReason()));
@@ -267,7 +272,6 @@ public final class WfcFaultClassifier {
             return;
         }
         if (reason.startsWith(Reason.UNEXPECTED_RESPONSE_CODE.value())
-                || reason.startsWith(Reason.UNDOCUMENTED_RESPONSE_CODE.value())
                 || reason.startsWith(Reason.UNEXPECTED_BEHAVIOUR.value())) {
             classifyUnexpectedStatusCodeOracle(summary, code, faults);
         }

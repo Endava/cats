@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -79,10 +80,12 @@ public class NoSqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuz
      * @param simpleExecutor          the executor used to run the fuzz logic
      * @param testCaseListener        the test case listener for reporting results
      * @param securityFuzzerArguments the security fuzzer arguments
+     * @param evidenceVerifier        verifies candidate findings against a baseline response and a replay
      */
     public NoSqlInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener,
-                                              SecurityFuzzerArguments securityFuzzerArguments) {
-        super(simpleExecutor, testCaseListener, securityFuzzerArguments);
+                                              SecurityFuzzerArguments securityFuzzerArguments,
+                                              InjectionEvidenceVerifier evidenceVerifier) {
+        super(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
     }
 
     @Override
@@ -126,7 +129,7 @@ public class NoSqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuz
 
         if (indicators.size() >= 2) {
             String evidenceSummary = String.join(", ", indicators);
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.weakEvidence(
                     "NoSQL injection vulnerability detected",
                     "Response shows multiple NoSQL indicators (%s). Response code: %d"
                             .formatted(evidenceSummary, responseCode));

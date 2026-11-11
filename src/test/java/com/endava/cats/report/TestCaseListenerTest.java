@@ -25,10 +25,12 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.model.RunOutcome;
+import com.endava.cats.model.SecurityFinding;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.google.gson.JsonArray;
@@ -592,6 +594,78 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
+        MDC.remove(TestCaseListener.ID);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,Unexpected response code: 400", "false,Error details leak"})
+    void shouldSetResultReasonBasedOnErrorLeaksWhenReportingResultError(boolean notIgnoredResponse, String expectedReason) {
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(notIgnoredResponse);
+        prepareTestCaseListenerSimpleSetup(CatsResponse.builder().responseCode(400).body("nullpointerexception").build(), () -> {
+            ReflectionTestUtils.invokeMethod(testCaseListener, "extractErrorLeaks");
+            testCaseListener.reportResultError(logger, FuzzingData.builder().build(), "Unexpected response code: 400", "Error");
+        });
+
+        CatsTestCaseSummary summary = testCaseListener.testCaseSummaryDetails.getLast();
+        Assertions.assertThat(summary.getError()).isTrue();
+        Assertions.assertThat(summary.getResultReason()).isEqualTo(expectedReason);
+        MDC.remove(TestCaseListener.ID);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"200, CONFIRMED, error", "200, FIRM, error", "200, TENTATIVE, warn", "500, TENTATIVE, error"})
+    void shouldReportSecurityFindingBasedOnConfidence(int responseCode, FindingConfidence confidence, String expectedResult) {
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        CatsResponse response = CatsResponse.builder().responseCode(responseCode).body("{}").build();
+        prepareTestCaseListenerSimpleSetup(response, () -> testCaseListener.reportSecurityFinding(logger,
+                FuzzingData.builder().build(), response, new SecurityFinding("SQL injection vulnerability detected", "Evidence.", confidence)));
+
+        CatsTestCaseSummary summary = testCaseListener.testCaseSummaryDetails.getLast();
+        Assertions.assertThat(summary.getResult()).isEqualTo(expectedResult);
+        Assertions.assertThat(summary.getConfidence()).isEqualTo(confidence);
+        Assertions.assertThat(summary.getResultReason()).isEqualTo("SQL injection vulnerability detected");
+        Assertions.assertThat(summary.getResultDetails()).isEqualTo("Evidence. Confidence: %s (%s).".formatted(confidence, confidence.description()));
+        MDC.remove(TestCaseListener.ID);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"TENTATIVE, Error details leak, ", "FIRM, XSS payload reflected in response, FIRM"})
+    void shouldPreferErrorLeakOverTentativeFindingOnServerError(FindingConfidence confidence, String expectedReason,
+                                                                FindingConfidence expectedConfidence) {
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        CatsResponse response = CatsResponse.builder().responseCode(500).body("java.lang.NullPointerException at Foo").build();
+        prepareTestCaseListenerSimpleSetup(response, () -> {
+            ReflectionTestUtils.invokeMethod(testCaseListener, "extractErrorLeaks");
+            testCaseListener.reportSecurityFinding(logger, FuzzingData.builder().build(), response,
+                    new SecurityFinding("XSS payload reflected in response", "Reflected.", confidence));
+        });
+
+        CatsTestCaseSummary summary = testCaseListener.testCaseSummaryDetails.getLast();
+        Assertions.assertThat(summary.getResult()).isEqualTo("error");
+        Assertions.assertThat(summary.getResultReason()).isEqualTo(expectedReason);
+        Assertions.assertThat(summary.getConfidence()).isEqualTo(expectedConfidence);
+        MDC.remove(TestCaseListener.ID);
+    }
+
+    @Test
+    void shouldPreserveRecordedExchangeAndErrorLeaksWhenCallingOutsideOfTheTestCase() {
+        CatsResponse original = CatsResponse.builder().responseCode(200).body("original").build();
+        prepareTestCaseListenerSimpleSetup(original, () -> {
+            CatsResponse replayed = testCaseListener.callPreservingCurrentExchange(() -> {
+                testCaseListener.addRequest(CatsRequest.builder().httpMethod("PUT").build());
+                CatsResponse replayResponse = CatsResponse.builder().responseCode(500).body("nullpointerexception").build();
+                testCaseListener.addResponse(replayResponse);
+                return replayResponse;
+            });
+            Assertions.assertThat(replayed.getResponseCode()).isEqualTo(500);
+            testCaseListener.reportResultError(logger, FuzzingData.builder().build(), "Reason", "Error");
+        });
+
+        CatsTestCaseSummary summary = testCaseListener.testCaseSummaryDetails.getLast();
+        Assertions.assertThat(summary.getHttpResponseCode()).isEqualTo(200);
+        Assertions.assertThat(summary.getHttpMethod()).isEqualTo("method");
+        Assertions.assertThat(summary.getResult()).isEqualTo("success");
+        Assertions.assertThat(summary.getResultReason()).isEqualTo("Reason");
         MDC.remove(TestCaseListener.ID);
     }
 

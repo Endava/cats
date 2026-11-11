@@ -26,6 +26,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private String httpMethod;
     private boolean switchedResult;
     private int httpResponseCode;
+    private FindingConfidence confidence;
 
     /**
      * Creates a CatsTestCaseSummary object from a CatsTestCase.
@@ -47,6 +48,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.httpMethod = testCase.getRequest().getHttpMethod().toLowerCase(Locale.ROOT);
         summary.switchedResult = testCase.getResultIgnoreDetails() != null;
         summary.httpResponseCode = testCase.getResponse().getResponseCode();
+        summary.confidence = testCase.getConfidence();
         String response = Optional.ofNullable(testCase.getResponse().getBody()).orElse("[Empty response body]");
         summary.responseBody = response.substring(0, Math.min(response.length(), 1000));
 

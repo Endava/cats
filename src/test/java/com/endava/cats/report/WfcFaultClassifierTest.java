@@ -5,6 +5,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.util.KeyValuePair;
 import com.webfuzzing.commons.faults.DefinedFaultCategory;
 import com.webfuzzing.commons.report.FaultCategoryId;
@@ -13,6 +14,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -27,7 +29,7 @@ import java.util.stream.Stream;
 class WfcFaultClassifierTest {
     private static final Set<Reason> NON_FAULT_OUTCOME_REASONS = EnumSet.of(
             Reason.ALL_GOOD, Reason.NOT_FOUND, Reason.RESPONSE_BODY_TRUNCATED,
-            Reason.UNEXPECTED_EXCEPTION, Reason.RESPONSE_MATCHES_ARGUMENTS);
+            Reason.UNEXPECTED_EXCEPTION, Reason.RESPONSE_MATCHES_ARGUMENTS, Reason.UNDOCUMENTED_RESPONSE_CODE);
 
     private static final Set<Reason> TRANSPORT_FAILURE_REASONS = EnumSet.of(
             Reason.EMPTY_REPLY_FROM_SERVER, Reason.CONNECTION_REFUSED, Reason.READ_TIMEOUT, Reason.WRITE_TIMEOUT,
@@ -338,7 +340,7 @@ class WfcFaultClassifierTest {
                 .contains(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION.getCode());
 
         CatsTestCase positive406 = buildTestCase("GET", "/pets", 406, "error",
-                Reason.UNDOCUMENTED_RESPONSE_CODE.value(), "HappyPathFuzzer", "{}");
+                Reason.UNEXPECTED_BEHAVIOUR.value(), "HappyPathFuzzer", "{}");
         Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(positive406), positive406))
                 .extracting(FaultCategoryId::getCode)
                 .containsExactly(DefinedFaultCategory.SCHEMA_STATUS_HAS_406_IF_ACCEPT.getCode());
@@ -382,6 +384,46 @@ class WfcFaultClassifierTest {
                 Arguments.of("POST", "error", Reason.ARITHMETIC_TOTAL_MISMATCH_ACCEPTED.value(), "ArithmeticTotalMismatchFieldsFuzzer", CatsWfcFaultCategory.CATS_ARITHMETIC_TOTAL_MISMATCH_ACCEPTED.getCode()),
                 Arguments.of("PUT", "error", Reason.PATH_BODY_ID_MISMATCH_ACCEPTED.value(), "PathBodyIdMismatchFuzzer", CatsWfcFaultCategory.CATS_PATH_BODY_ID_MISMATCH_ACCEPTED.getCode())
         );
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "POST, 200, AlternativeDateTimeFormatsFieldsFuzzer",
+            "POST, 201, LeadingWhitespacesInFieldsTrimValidateFuzzer",
+            "GET, 200, AcceptLanguageHeadersFuzzer",
+            "POST, 400, RemoveFieldsFuzzer",
+            "GET, 406, HappyPathFuzzer",
+            "POST, 400, HappyPathFuzzer"
+    })
+    void shouldNotClassifyExpectedButUndocumentedResponseCodeAsStatusCodeOracleFault(String method, int code, String fuzzer) {
+        CatsTestCase testCase = buildTestCase(method, "/pets", code, "warning",
+                "%s: %d".formatted(Reason.UNDOCUMENTED_RESPONSE_CODE.value(), code), fuzzer, "{}");
+
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(testCase), testCase))
+                .extracting(FaultCategoryId::getCode)
+                .doesNotContain(DefinedFaultCategory.SCHEMA_VALIDATION_BYPASS.getCode(),
+                        DefinedFaultCategory.SCHEMA_VALID_INPUT_REJECTED.getCode(),
+                        DefinedFaultCategory.SCHEMA_STATUS_HAS_406_IF_ACCEPT.getCode());
+    }
+
+    @ParameterizedTest
+    @CsvSource(nullValues = "null", value = {
+            "200, warning, TENTATIVE, ''",
+            "200, error, FIRM, 300",
+            "200, error, CONFIRMED, 300",
+            "200, error, null, 300",
+            "500, error, TENTATIVE, 100"
+    })
+    void shouldNotMapTentativeSecurityFindingsThroughTheirReason(int code, String result, FindingConfidence confidence,
+                                                                 String expectedCodes) {
+        CatsTestCase testCase = buildTestCase("POST", "/pets", code, result, Reason.SQL_INJECTION.value(),
+                "SqlInjectionInStringFieldsFuzzer", "{}");
+        testCase.setConfidence(confidence);
+
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(testCase), testCase))
+                .extracting(FaultCategoryId::getCode)
+                .containsExactlyInAnyOrderElementsOf(expectedCodes.isEmpty() ? List.of()
+                        : List.of(Integer.parseInt(expectedCodes)));
     }
 
     @Test

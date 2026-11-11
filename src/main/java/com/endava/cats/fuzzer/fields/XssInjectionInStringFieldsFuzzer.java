@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -85,10 +86,12 @@ public class XssInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
      * @param simpleExecutor          the executor used to run the fuzz logic
      * @param testCaseListener        the test case listener for reporting results
      * @param securityFuzzerArguments the security fuzzer arguments
+     * @param evidenceVerifier        verifies candidate findings against a baseline response and a replay
      */
     public XssInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener,
-                                            SecurityFuzzerArguments securityFuzzerArguments) {
-        super(simpleExecutor, testCaseListener, securityFuzzerArguments);
+                                            SecurityFuzzerArguments securityFuzzerArguments,
+                                            InjectionEvidenceVerifier evidenceVerifier) {
+        super(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
     }
 
     @Override
@@ -112,6 +115,11 @@ public class XssInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
     }
 
     @Override
+    protected boolean isReflectionTheEvidence() {
+        return true;
+    }
+
+    @Override
     protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data) {
         String responseBody = response.getBody() != null ? response.getBody().toLowerCase(Locale.ROOT) : "";
         int responseCode = response.getResponseCode();
@@ -129,7 +137,7 @@ public class XssInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             responseBody.contains("onmouseover=") ||
             responseBody.contains("onfocus=")) {
             
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.weakEvidence(
                     "XSS payload reflected in response",
                     "Dangerous XSS payload was reflected in the response (response code: %d). While APIs should return raw data, accepting and storing such input without validation can lead to abuse and XSS vulnerabilities in downstream consumers (emails, PDFs, admin UIs, logs). Implement input validation to reject dangerous characters for constrained fields."
                             .formatted(responseCode));

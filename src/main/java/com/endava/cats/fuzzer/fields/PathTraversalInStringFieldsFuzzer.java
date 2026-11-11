@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
@@ -21,6 +22,7 @@ import java.util.Locale;
 @Singleton
 @FieldFuzzer
 public class PathTraversalInStringFieldsFuzzer extends BaseSecurityInjectionFuzzer {
+    private static final String FILESYSTEM_EXCEPTION_LEAK = "filesystem exception leak";
 
     static final List<String> TOP_PATH_TRAVERSAL_PAYLOADS = List.of(
             "../../../../etc/passwd",
@@ -54,8 +56,9 @@ public class PathTraversalInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             "/etc/passwd");
 
     public PathTraversalInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener,
-                                             SecurityFuzzerArguments securityFuzzerArguments) {
-        super(simpleExecutor, testCaseListener, securityFuzzerArguments);
+                                             SecurityFuzzerArguments securityFuzzerArguments,
+                                             InjectionEvidenceVerifier evidenceVerifier) {
+        super(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
     }
 
     @Override
@@ -80,10 +83,11 @@ public class PathTraversalInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
         if (indicators.isEmpty()) {
             return InjectionDetectionResult.notVulnerable();
         }
-        return InjectionDetectionResult.vulnerable(
-                CatsResultFactory.Reason.PATH_TRAVERSAL.value(),
-                "Response contains path traversal disclosure indicators (%s) with status %d"
-                        .formatted(String.join(", ", indicators), response.getResponseCode()));
+        String message = "Response contains path traversal disclosure indicators (%s) with status %d"
+                .formatted(String.join(", ", indicators), response.getResponseCode());
+        return indicators.equals(List.of(FILESYSTEM_EXCEPTION_LEAK))
+                ? InjectionDetectionResult.weakEvidence(CatsResultFactory.Reason.PATH_TRAVERSAL.value(), message)
+                : InjectionDetectionResult.strongEvidence(CatsResultFactory.Reason.PATH_TRAVERSAL.value(), message);
     }
 
     private static List<String> collectEvidence(String body) {
@@ -98,7 +102,7 @@ public class PathTraversalInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
             matches.add("/proc/self/environ content");
         }
         if (hasFilesystemExceptionLeak(body)) {
-            matches.add("filesystem exception leak");
+            matches.add(FILESYSTEM_EXCEPTION_LEAK);
         }
         return matches;
     }

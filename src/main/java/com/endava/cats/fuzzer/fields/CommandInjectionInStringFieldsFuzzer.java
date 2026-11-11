@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -89,10 +90,12 @@ public class CommandInjectionInStringFieldsFuzzer extends BaseSecurityInjectionF
      * @param simpleExecutor          the executor used to run the fuzz logic
      * @param testCaseListener        the test case listener for reporting results
      * @param securityFuzzerArguments the security fuzzer arguments
+     * @param evidenceVerifier        verifies candidate findings against a baseline response and a replay
      */
     public CommandInjectionInStringFieldsFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener,
-                                                SecurityFuzzerArguments securityFuzzerArguments) {
-        super(simpleExecutor, testCaseListener, securityFuzzerArguments);
+                                                SecurityFuzzerArguments securityFuzzerArguments,
+                                                InjectionEvidenceVerifier evidenceVerifier) {
+        super(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
     }
 
     @Override
@@ -149,14 +152,14 @@ public class CommandInjectionInStringFieldsFuzzer extends BaseSecurityInjectionF
         }
 
         if (executionEvidenceCount >= 2) {
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.strongEvidence(
                     "Command injection vulnerability detected",
                     "Response contains multiple indicators of command execution: %s. Response code: %d. This strongly suggests the command was executed on the server."
                             .formatted(evidenceFound.toString().replaceAll(", $", ""), responseCode));
         }
 
         if (executionEvidenceCount == 1) {
-            return InjectionDetectionResult.vulnerable(
+            return InjectionDetectionResult.weakEvidence(
                     "Possible command injection vulnerability",
                     "Response contains indicators of command execution: %s. Response code: %d. Manual verification recommended."
                             .formatted(evidenceFound.toString().replaceAll(", $", ""), responseCode));

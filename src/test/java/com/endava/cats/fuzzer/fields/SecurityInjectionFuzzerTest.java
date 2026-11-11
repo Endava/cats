@@ -2,11 +2,15 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
+import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
@@ -33,8 +37,14 @@ import java.util.stream.Stream;
 
 @QuarkusTest
 class SecurityInjectionFuzzerTest {
+    private static final RuntimeResourcePool.SuccessfulExchange CLEAN_BASELINE = new RuntimeResourcePool.SuccessfulExchange(
+            "/test", HttpMethod.POST, "http://localhost/test", "{}", 200, "{\"status\": \"ok\"}", null, null);
+    private static final CatsResponse CLEAN_RESPONSE = CatsResponse.builder().responseCode(200).body("{\"status\": \"ok\"}").build();
+    private static final CatsResponse FAILED_RESPONSE = CatsResponse.builder().responseCode(404).body("{}").build();
 
     private ServiceCaller serviceCaller;
+    private RuntimeResourcePool runtimeResourcePool;
+    private InjectionEvidenceVerifier evidenceVerifier;
     @InjectSpy
     TestCaseListener testCaseListener;
     private SimpleExecutor simpleExecutor;
@@ -43,8 +53,12 @@ class SecurityInjectionFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
+        runtimeResourcePool = Mockito.mock(RuntimeResourcePool.class);
+        Mockito.when(runtimeResourcePool.successfulExchanges(Mockito.any(), Mockito.any())).thenReturn(List.of(CLEAN_BASELINE));
+        evidenceVerifier = new InjectionEvidenceVerifier(runtimeResourcePool);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
-        simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
+        simpleExecutor = Mockito.spy(new SimpleExecutor(testCaseListener, serviceCaller));
+        Mockito.doReturn(CLEAN_RESPONSE).when(simpleExecutor).replayOriginal(Mockito.any());
         securityFuzzerArguments = new SecurityFuzzerArguments();
     }
 
@@ -55,7 +69,7 @@ class SecurityInjectionFuzzerTest {
 
         @BeforeEach
         void setup() {
-            sqlInjectionFuzzer = new SqlInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+            sqlInjectionFuzzer = new SqlInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
         }
 
         @Test
@@ -232,7 +246,7 @@ class SecurityInjectionFuzzerTest {
 
         @BeforeEach
         void setup() {
-            noSqlFuzzer = new NoSqlInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+            noSqlFuzzer = new NoSqlInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
         }
 
         @Test
@@ -373,7 +387,7 @@ class SecurityInjectionFuzzerTest {
 
         @BeforeEach
         void setup() {
-            commandFuzzer = new CommandInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+            commandFuzzer = new CommandInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
         }
 
         @Test
@@ -459,7 +473,7 @@ class SecurityInjectionFuzzerTest {
 
         @BeforeEach
         void setup() {
-            xssFuzzer = new XssInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+            xssFuzzer = new XssInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
         }
 
         @Test
@@ -582,7 +596,7 @@ class SecurityInjectionFuzzerTest {
 
         @BeforeEach
         void setup() {
-            ldapFuzzer = new LdapInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+            ldapFuzzer = new LdapInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
         }
 
         @Test
@@ -822,7 +836,7 @@ class SecurityInjectionFuzzerTest {
 
         @BeforeEach
         void setup() {
-            xxeFuzzer = new XxeInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+            xxeFuzzer = new XxeInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
         }
 
         @Test
@@ -1092,7 +1106,7 @@ class SecurityInjectionFuzzerTest {
 
         @BeforeEach
         void setup() {
-            sstiFuzzer = new SstiInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments);
+            sstiFuzzer = new SstiInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
         }
 
         @Test
@@ -1204,6 +1218,12 @@ class SecurityInjectionFuzzerTest {
                     Arguments.of("Groovy error", 200,
                             "groovy.text.TemplateExecutionException",
                             "SSTI injection error", true),
+                    Arguments.of("Engine keyword inside a CGLIB proxy class name", 200,
+                            "at org.example.ProductsDao$$EnhancerBySpringCGLIB$$796c62a7.find(<generated>)",
+                            "accepted", false),
+                    Arguments.of("Engine keyword inside an ordinary word", 200,
+                            "{\"message\":\"verbose superb herbal output\"}",
+                            "accepted", false),
                     Arguments.of("ERB error", 200,
                             "ERB template compilation error",
                             "SSTI injection error", true),
@@ -1345,6 +1365,122 @@ class SecurityInjectionFuzzerTest {
                 Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
                         Mockito.any(), Mockito.any(), Mockito.contains(expectedMessageFragment), Mockito.any());
             }
+        }
+    }
+
+    @Nested
+    @QuarkusTest
+    class EvidenceVerificationTest {
+        private static final String COMMAND_OUTPUT = "root:x:0:0:root:/root:/bin/bash uid=0(root) gid=0(root)";
+        private static final String NOSQL_EVIDENCE = "{\"$where\": \"function() { return this.password; }\", \"_id\": \"507f1f77bcf86cd799439011\"}";
+
+        @Test
+        void shouldNotReportNoSqlInjectionWhenTheOperatorEvidenceIsOnlyTheEchoedPayload() {
+            Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(invocation -> {
+                ServiceData serviceData = invocation.getArgument(0);
+                String body = "{\"error\":\"invalid\",\"input\":%s,\"_id\":\"507f1f77bcf86cd799439011\"}"
+                        .formatted(serviceData.getPayload());
+                return CatsResponse.builder().responseCode(400).body(body).build();
+            });
+
+            noSqlFuzzer().fuzz(stringFieldData("username"));
+
+            Mockito.verify(testCaseListener, Mockito.never()).reportSecurityFinding(
+                    Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        }
+
+        @Test
+        void shouldDiscardFindingWhenTheFreshBaselineResponseAlreadyContainsTheEvidence() {
+            CatsResponse evidence = CatsResponse.builder().responseCode(200).body(COMMAND_OUTPUT).build();
+            Mockito.doReturn(evidence).when(simpleExecutor).replayOriginal(Mockito.any());
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(evidence);
+
+            commandFuzzer().fuzz(stringFieldData("command"));
+
+            Mockito.verify(testCaseListener, Mockito.never()).reportSecurityFinding(
+                    Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(serviceCaller, Mockito.times(10)).call(Mockito.any());
+        }
+
+        @Test
+        void shouldDiscardFindingWhenTheRecordedBaselineContainsTheEvidenceAndTheFreshBaselineFails() {
+            Mockito.doReturn(FAILED_RESPONSE).when(simpleExecutor).replayOriginal(Mockito.any());
+            Mockito.when(runtimeResourcePool.successfulExchanges(Mockito.any(), Mockito.any())).thenReturn(List.of(
+                    new RuntimeResourcePool.SuccessfulExchange("/test", HttpMethod.POST, "http://localhost/test", "{}",
+                            200, COMMAND_OUTPUT, null, null)));
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(200).body(COMMAND_OUTPUT).build());
+
+            commandFuzzer().fuzz(stringFieldData("command"));
+
+            Mockito.verify(testCaseListener, Mockito.never()).reportSecurityFinding(
+                    Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(serviceCaller, Mockito.times(10)).call(Mockito.any());
+        }
+
+        @Test
+        void shouldReportConfirmedErrorWhenStrongEvidenceIsNewAndReproduces() {
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(200).body(COMMAND_OUTPUT).build());
+
+            commandFuzzer().fuzz(stringFieldData("command"));
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).addConfidence(FindingConfidence.CONFIRMED);
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.eq("Command injection vulnerability detected"),
+                    Mockito.contains("Confidence: CONFIRMED"), Mockito.any());
+            Mockito.verify(serviceCaller, Mockito.times(20)).call(Mockito.any());
+        }
+
+        @Test
+        void shouldReportTentativeWarningWhenEvidenceDoesNotReproduceOnReplay() {
+            CatsResponse clean = CatsResponse.builder().responseCode(200).body("{\"status\": \"ok\"}").build();
+            Mockito.when(serviceCaller.call(Mockito.any()))
+                    .thenReturn(CatsResponse.builder().responseCode(200).body(COMMAND_OUTPUT).build(), clean);
+
+            commandFuzzer().fuzz(stringFieldData("command"));
+
+            Mockito.verify(testCaseListener).addConfidence(FindingConfidence.TENTATIVE);
+            Mockito.verify(testCaseListener).reportResultWarn(
+                    Mockito.any(), Mockito.any(), Mockito.eq("Command injection vulnerability detected"),
+                    Mockito.contains("Confidence: TENTATIVE"), Mockito.any());
+            Mockito.verify(testCaseListener, Mockito.never()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.eq("Command injection vulnerability detected"),
+                    Mockito.anyString(), Mockito.any());
+        }
+
+        @ParameterizedTest
+        @CsvSource({"200, false", "500, true"})
+        void shouldReportWeakEvidenceWithoutBaselineAsTentativeUnlessServerError(int responseCode, boolean expectError) {
+            Mockito.doReturn(FAILED_RESPONSE).when(simpleExecutor).replayOriginal(Mockito.any());
+            Mockito.when(runtimeResourcePool.successfulExchanges(Mockito.any(), Mockito.any())).thenReturn(List.of());
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder().responseCode(responseCode).body(NOSQL_EVIDENCE).build());
+
+            noSqlFuzzer().fuzz(stringFieldData("username"));
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).addConfidence(FindingConfidence.TENTATIVE);
+            Mockito.verify(testCaseListener, expectError ? Mockito.atLeastOnce() : Mockito.never()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.eq("NoSQL injection vulnerability detected"),
+                    Mockito.anyString(), Mockito.any());
+            Mockito.verify(serviceCaller, Mockito.times(10)).call(Mockito.any());
+        }
+
+        private NoSqlInjectionInStringFieldsFuzzer noSqlFuzzer() {
+            return new NoSqlInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
+        }
+
+        private CommandInjectionInStringFieldsFuzzer commandFuzzer() {
+            return new CommandInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier);
+        }
+
+        private static FuzzingData stringFieldData(String field) {
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of(field));
+            Mockito.when(data.getPayload()).thenReturn("{\"%s\": \"test\"}".formatted(field));
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of(field, new StringSchema()));
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+            return data;
         }
     }
 }
