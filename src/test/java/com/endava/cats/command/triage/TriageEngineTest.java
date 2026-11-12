@@ -104,6 +104,18 @@ class TriageEngineTest {
     }
 
     @Test
+    void shouldTriageReportsContainingLinterResultsWithoutAnHttpMethod(@TempDir Path dir) throws IOException {
+        Files.writeString(dir.resolve("Test1.json"), """
+                {"testId": "Test 1", "result": "error", "fuzzer": "UnusedComponentsLinter", "contractPath": "/pets",
+                 "request": {"httpMethod": "N/A", "url": "####", "payload": "{}"},
+                 "response": {"responseCode": 999, "jsonBody": "{}"}}
+                """);
+
+        Assertions.assertThat(triage(dir).clusters()).singleElement()
+                .satisfies(cluster -> Assertions.assertThat(cluster.curlReproducer()).isEmpty());
+    }
+
+    @Test
     void shouldReportUnfixedCrashesOnlyWhenNotFixed() {
         RootCauseCluster inconclusive = cluster("SERVER_CRASH_5XX", "INCONCLUSIVE");
         RootCauseCluster fixed = cluster("SERVER_CRASH_5XX", "FIXED");

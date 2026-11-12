@@ -265,7 +265,7 @@ public class CatsTestCase {
      * @return curl equivalent of running the test case
      */
     public String getCurl() {
-        if (request == null || request.getHttpMethod() == null || "####".equals(request.getHttpMethod())) {
+        if (request == null || HttpMethod.fromString(request.getHttpMethod()).isEmpty()) {
             return "";
         }
 

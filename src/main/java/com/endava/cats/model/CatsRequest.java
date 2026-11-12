@@ -51,14 +51,15 @@ public class CatsRequest {
     }
 
     /**
-     * Formats this request as a shell-escaped single-line {@code curl} command.
+     * Formats this request as a shell-escaped single-line {@code curl} command. Placeholder requests that were never
+     * sent over HTTP (e.g. contract linter results, whose method is {@code N/A} or {@code ####}) yield an empty string.
      */
     public String toCurlCommand() {
-        if (httpMethod == null || "####".equals(httpMethod)) {
-            return "";
-        }
-        String method = Optional.ofNullable(httpMethod).orElse("GET");
-        StringBuilder cmd = new StringBuilder("curl -i -X ").append(method);
+        return HttpMethod.fromString(httpMethod).map(this::toCurlCommand).orElse("");
+    }
+
+    private String toCurlCommand(HttpMethod method) {
+        StringBuilder cmd = new StringBuilder("curl -i -X ").append(httpMethod);
         for (KeyValuePair<String, Object> header : Optional.ofNullable(headers).orElse(Collections.emptyList())) {
             if (StringUtils.isNotBlank(header.getKey())) {
                 cmd.append(" -H ").append(shellQuote(header.getKey() + ": " + header.getValue()));
