@@ -4,8 +4,10 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.CommandCanary;
 import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import jakarta.inject.Singleton;
@@ -33,8 +35,8 @@ public class CommandInjectionInStringFieldsFuzzer extends BaseSecurityInjectionF
             "`uname -a`",
             "| dir",
             "; sleep 5",
-            "$(echo vulnerable)",
-            "\n/bin/ls -la",
+            CommandCanary.primaryShellArithmetic(),
+            CommandCanary.primaryExprSemicolon(),
             "| type C:\\Windows\\System32\\drivers\\etc\\hosts"
     );
 
@@ -74,6 +76,12 @@ public class CommandInjectionInStringFieldsFuzzer extends BaseSecurityInjectionF
             "& sleep 5",
             "$(sleep 5)",
             "`sleep 5`",
+            CommandCanary.primaryShellArithmetic(),
+            CommandCanary.primaryExprSemicolon(),
+            CommandCanary.primaryExprPipe(),
+            CommandCanary.primaryExprBackticks(),
+            CommandCanary.primarySingleQuotedEcho(),
+            CommandCanary.primaryWindowsSetArithmetic(),
             "; echo vulnerable",
             "| echo vulnerable",
             "$(echo vulnerable)",
@@ -111,6 +119,26 @@ public class CommandInjectionInStringFieldsFuzzer extends BaseSecurityInjectionF
     @Override
     protected List<String> getAllInjectionPayloads() {
         return ALL_COMMAND_INJECTION_PAYLOADS;
+    }
+
+    @Override
+    protected String getConfirmableFindingReason() {
+        return Reason.COMMAND_INJECTION.value();
+    }
+
+    @Override
+    protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data, String payload) {
+        if (CommandCanary.isPrimaryCanaryPayload(payload) && CommandCanary.containsPrimaryProduct(response)) {
+            String confirmationPayload = CommandCanary.toConfirmationPayload(payload);
+            CanaryReplay canaryReplay = new CanaryReplay(confirmationPayload,
+                    replay -> CommandCanary.matchesConfirmation(replay, confirmationPayload));
+            return InjectionDetectionResult.computedCanaryEvidence(
+                    Reason.COMMAND_INJECTION.value(),
+                    "Response contains computed arithmetic product [%s] from injected command expression (absent from payload text). Response code: %d."
+                            .formatted(CommandCanary.PRIMARY_PRODUCT, response.getResponseCode()),
+                    canaryReplay);
+        }
+        return detectInjectionEvidence(response, data);
     }
 
     @Override

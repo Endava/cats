@@ -4,8 +4,10 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.BooleanInjectionPair;
 import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import jakarta.inject.Singleton;
@@ -26,7 +28,21 @@ import java.util.Locale;
 @FieldFuzzer
 public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzzer {
     private static final String UNION_SELECT_OUTPUT = "UNION SELECT output";
-    private static final String SQL_INJECTION_DETECTED = "SQL injection vulnerability detected";
+    private static final String SQL_INJECTION_DETECTED = Reason.SQL_INJECTION.value();
+
+    private static final List<BooleanInjectionPair> TOP_SQL_BOOLEAN_PAIRS = List.of(
+            BooleanInjectionPair.andSuffix("SQL single-quote AND", "' AND '1'='1", "' AND '1'='2"),
+            BooleanInjectionPair.orSuffix("SQL single-quote OR", "' OR '1'='2", "' OR '1'='1")
+    );
+
+    private static final List<BooleanInjectionPair> ALL_SQL_BOOLEAN_PAIRS = List.of(
+            BooleanInjectionPair.andSuffix("SQL single-quote AND", "' AND '1'='1", "' AND '1'='2"),
+            BooleanInjectionPair.orSuffix("SQL single-quote OR", "' OR '1'='2", "' OR '1'='1"),
+            BooleanInjectionPair.andSuffix("SQL commented AND", "' AND 1=1 -- ", "' AND 1=2 -- "),
+            BooleanInjectionPair.orSuffix("SQL commented OR", "' OR 1=2 -- ", "' OR 1=1 -- "),
+            BooleanInjectionPair.andSuffix("SQL double-quote AND", "\" AND \"1\"=\"1", "\" AND \"1\"=\"2"),
+            BooleanInjectionPair.andSuffix("SQL parenthesized AND", "') AND ('1'='1", "') AND ('1'='2")
+    );
 
     private static final List<String> TOP_SQL_INJECTION_PAYLOADS = List.of(
             "' OR '1'='1",
@@ -70,6 +86,7 @@ public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             "' ORDER BY 10--",
             "'; WAITFOR DELAY '0:0:5'--",
             "'; SELECT SLEEP(5)--",
+            "'; SELECT pg_sleep(5)--",
             "' AND SLEEP(5)--",
             "1' AND SLEEP(5)#"
     );
@@ -102,6 +119,21 @@ public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
     @Override
     protected List<String> getAllInjectionPayloads() {
         return ALL_SQL_INJECTION_PAYLOADS;
+    }
+
+    @Override
+    protected String getConfirmableFindingReason() {
+        return SQL_INJECTION_DETECTED;
+    }
+
+    @Override
+    protected List<BooleanInjectionPair> getTopBooleanInjectionPairs() {
+        return TOP_SQL_BOOLEAN_PAIRS;
+    }
+
+    @Override
+    protected List<BooleanInjectionPair> getAllBooleanInjectionPairs() {
+        return ALL_SQL_BOOLEAN_PAIRS;
     }
 
     @Override

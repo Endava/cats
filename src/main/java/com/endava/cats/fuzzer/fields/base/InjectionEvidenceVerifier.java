@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.model.FuzzingData;
@@ -10,6 +11,7 @@ import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -44,13 +46,47 @@ public class InjectionEvidenceVerifier {
      * @return the confidence of the finding, or empty when the evidence is already present in the baseline response
      */
     public Optional<FindingConfidence> verify(Check check) {
+        return verifyCustomReplay(check, () -> check.detector().test(check.probes().fuzzed().get()));
+    }
+
+    /**
+     * Verifies a candidate finding whose replay check uses an independent confirmation probe (e.g. a second
+     * arithmetic canary pair) while still verifying baseline novelty via {@code check.detector()}.
+     *
+     * @param check       the candidate finding and baseline check
+     * @param replayCheck executes the confirmation replay and returns true when the finding reproduces
+     * @return the confidence of the finding, or empty when the evidence is already present in the baseline response
+     */
+    public Optional<FindingConfidence> verifyCustomReplay(Check check, BooleanSupplier replayCheck) {
         BaselineVerdict baseline = baselineVerdict(check);
         if (baseline == BaselineVerdict.PRESENT) {
             return Optional.empty();
         }
         FindingConfidence highest = highestConfidence(check.strongEvidence(), baseline);
-        boolean confirmedByReplay = highest.isReliable() && check.detector().test(check.probes().fuzzed().get());
+        boolean confirmedByReplay = highest.isReliable() && replayCheck.getAsBoolean();
         return Optional.of(confirmedByReplay ? highest : FindingConfidence.TENTATIVE);
+    }
+
+    /**
+     * Resolves the effective unfuzzed payload for {@code data}, applying any recorded baseline or runtime resource
+     * enrichment so differential payloads append to the same field values sent by {@code replayOriginal}.
+     *
+     * @param data the fuzzing data of the operation
+     * @return the effective baseline payload string
+     */
+    public String effectiveBaselinePayload(FuzzingData data) {
+        if (data == null || data.getHeaders() == null) {
+            return data == null ? null : data.getPayload();
+        }
+        try {
+            ServiceData preview = ServiceData.from(data).build();
+            String base = Optional.ofNullable(runtimeResourcePool.applySuccessfulRequestBaseline(preview))
+                    .orElse(data.getPayload());
+            return Optional.ofNullable(runtimeResourcePool.previewEnrichedPayload(preview, base))
+                    .orElse(base);
+        } catch (RuntimeException _) {
+            return data.getPayload();
+        }
     }
 
     static FindingConfidence highestConfidence(boolean strongEvidence, BaselineVerdict baseline) {

@@ -4,8 +4,10 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.BooleanInjectionPair;
 import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import jakarta.inject.Singleton;
@@ -26,6 +28,19 @@ import java.util.Locale;
 @FieldFuzzer
 public class NoSqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzzer {
 
+    private static final List<BooleanInjectionPair> TOP_NOSQL_BOOLEAN_PAIRS = List.of(
+            BooleanInjectionPair.andSuffix("NoSQL JS AND", "' && '1'=='1", "' && '1'=='2"),
+            BooleanInjectionPair.orSuffix("NoSQL JS OR", "' || '1'=='2", "' || '1'=='1")
+    );
+
+    private static final List<BooleanInjectionPair> ALL_NOSQL_BOOLEAN_PAIRS = List.of(
+            BooleanInjectionPair.andSuffix("NoSQL JS AND", "' && '1'=='1", "' && '1'=='2"),
+            BooleanInjectionPair.orSuffix("NoSQL JS OR", "' || '1'=='2", "' || '1'=='1"),
+            BooleanInjectionPair.andSuffix("NoSQL double-quote JS AND", "\" && \"1\"==\"1", "\" && \"1\"==\"2"),
+            BooleanInjectionPair.andSuffix("NoSQL $where return AND", "'; return 1==1; //", "'; return 1==2; //"),
+            BooleanInjectionPair.replaceBroadening("NoSQL operator $eq/$ne", "{\"$eq\": \"__cats_0__\"}", "{\"$ne\": \"__cats_0__\"}")
+    );
+
     private static final List<String> TOP_NOSQL_INJECTION_PAYLOADS = List.of(
             "' || '1'=='1",
             "{\"$gt\": \"\"}",
@@ -33,7 +48,7 @@ public class NoSqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuz
             "{\"$where\": \"1==1\"}",
             "{\"$regex\": \".*\"}",
             "[$ne]=1",
-            "{ $where: function() { return true; } }",
+            "'; sleep(5000); var foo='",
             "'; db.users.drop(); var foo='",
             "{\"$or\": [{}, {\"foo\": \"bar\"}]}",
             "admin' && this.password.match(/.*/)//+%00"
@@ -61,6 +76,7 @@ public class NoSqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuz
             "{ $gt: '' }",
             "{ $ne: 1 }",
             "'; sleep(5000); var foo='",
+            "{\"$where\": \"sleep(5000)\"}",
             "'; while(true){}; var foo='",
             "{\"$or\": [{}, {\"foo\": \"bar\"}]}",
             "{\"$and\": [{}, {\"foo\": \"bar\"}]}",
@@ -101,6 +117,21 @@ public class NoSqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuz
     @Override
     protected List<String> getAllInjectionPayloads() {
         return ALL_NOSQL_INJECTION_PAYLOADS;
+    }
+
+    @Override
+    protected String getConfirmableFindingReason() {
+        return Reason.NOSQL_INJECTION.value();
+    }
+
+    @Override
+    protected List<BooleanInjectionPair> getTopBooleanInjectionPairs() {
+        return TOP_NOSQL_BOOLEAN_PAIRS;
+    }
+
+    @Override
+    protected List<BooleanInjectionPair> getAllBooleanInjectionPairs() {
+        return ALL_NOSQL_BOOLEAN_PAIRS;
     }
 
     @Override

@@ -105,6 +105,33 @@ class InjectionEvidenceVerifierTest {
         Assertions.assertThat(verifier.verify(check(true, EVIDENCE, fresh))).contains(FindingConfidence.CONFIRMED);
     }
 
+    @Test
+    void shouldVerifyCustomReplayAndDowngradeWhenCustomReplayFails() {
+        CatsResponse fresh = CatsResponse.builder().responseCode(200).body("{\"status\":\"ok\"}").build();
+        InjectionEvidenceVerifier.Check candidate = check(true, "{}", fresh);
+
+        Assertions.assertThat(verifier.verifyCustomReplay(candidate, () -> true)).contains(FindingConfidence.CONFIRMED);
+        Assertions.assertThat(verifier.verifyCustomReplay(candidate, () -> false)).contains(FindingConfidence.TENTATIVE);
+    }
+
+    @Test
+    void shouldResolveEffectiveBaselinePayloadFromPoolOrFallbackToFuzzingDataPayload() {
+        FuzzingData withoutHeaders = FuzzingData.builder().path("/files").method(HttpMethod.POST).payload("{\"name\":\"raw\"}").build();
+        Assertions.assertThat(verifier.effectiveBaselinePayload(withoutHeaders)).isEqualTo("{\"name\":\"raw\"}");
+
+        FuzzingData withHeaders = FuzzingData.builder()
+                .path("/files")
+                .method(HttpMethod.POST)
+                .headers(java.util.Set.of())
+                .requestContentTypes(List.of("application/json"))
+                .payload("{\"name\":\"raw\"}")
+                .build();
+        Mockito.when(runtimeResourcePool.applySuccessfulRequestBaseline(Mockito.any())).thenReturn("{\"name\":\"seeded\"}");
+        Mockito.when(runtimeResourcePool.previewEnrichedPayload(Mockito.any(), Mockito.eq("{\"name\":\"seeded\"}")))
+                .thenReturn("{\"name\":\"enriched\"}");
+        Assertions.assertThat(verifier.effectiveBaselinePayload(withHeaders)).isEqualTo("{\"name\":\"enriched\"}");
+    }
+
     private InjectionEvidenceVerifier.Check check(boolean strong, String replayBody) {
         return check(strong, replayBody, CatsResponse.builder().responseCode(404).body("{}").build());
     }

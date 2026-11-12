@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.fields.base.CommandCanary;
 import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -128,7 +129,7 @@ class SecurityInjectionFuzzerTest {
 
             sqlInjectionFuzzer.fuzz(data);
 
-            Mockito.verify(serviceCaller, Mockito.times(10)).call(Mockito.any());
+            Mockito.verify(serviceCaller, Mockito.times(12)).call(Mockito.any());
         }
 
         @Test
@@ -148,7 +149,7 @@ class SecurityInjectionFuzzerTest {
 
             sqlInjectionFuzzer.fuzz(data);
 
-            Mockito.verify(serviceCaller, Mockito.times(10)).call(Mockito.argThat(request ->
+            Mockito.verify(serviceCaller, Mockito.times(12)).call(Mockito.argThat(request ->
                     request.getMutationTargets().contains(RequestTarget.requestBody())));
         }
 
@@ -170,7 +171,7 @@ class SecurityInjectionFuzzerTest {
 
             sqlInjectionFuzzer.fuzz(data);
 
-            Mockito.verify(serviceCaller, Mockito.times(30)).call(Mockito.any());
+            Mockito.verify(serviceCaller, Mockito.times(37)).call(Mockito.any());
         }
 
         static Stream<Arguments> sqlInjectionScenarios() {
@@ -636,7 +637,7 @@ class SecurityInjectionFuzzerTest {
 
             ldapFuzzer.fuzz(data);
 
-            int expectedCalls = ldapFuzzer.getAllInjectionPayloads().size();
+            int expectedCalls = ldapFuzzer.getAllInjectionPayloads().size() + 3;
             Mockito.verify(serviceCaller, Mockito.times(expectedCalls)).call(Mockito.any());
         }
 
@@ -1461,7 +1462,7 @@ class SecurityInjectionFuzzerTest {
             Mockito.verify(testCaseListener, expectError ? Mockito.atLeastOnce() : Mockito.never()).reportResultError(
                     Mockito.any(), Mockito.any(), Mockito.eq("NoSQL injection vulnerability detected"),
                     Mockito.anyString(), Mockito.any());
-            Mockito.verify(serviceCaller, Mockito.times(10)).call(Mockito.any());
+            Mockito.verify(serviceCaller, Mockito.times(12)).call(Mockito.any());
         }
 
         private NoSqlInjectionInStringFieldsFuzzer noSqlFuzzer() {
@@ -1478,6 +1479,131 @@ class SecurityInjectionFuzzerTest {
             Mockito.when(data.getPayload()).thenReturn("{\"%s\": \"test\"}".formatted(field));
             Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of(field, new StringSchema()));
             Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+            return data;
+        }
+    }
+
+    @Nested
+    @QuarkusTest
+    class NonTextOraclesTest {
+
+        @Test
+        void shouldConfirmTimeBasedSqlInjectionWhenSleepCorrelatesAndBaselineIsFast() {
+            Mockito.doReturn(CatsResponse.builder().responseCode(200).responseTimeInMs(25L).body("{}").build())
+                    .when(simpleExecutor).replayOriginal(Mockito.any());
+            Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(invocation -> {
+                ServiceData req = invocation.getArgument(0);
+                String payload = req.getPayload();
+                long elapsed = payload.contains("SLEEP(5)") ? 5_030L
+                        : payload.contains("SLEEP(1)") ? 1_025L
+                        : 25L;
+                return CatsResponse.builder().responseCode(200).responseTimeInMs(elapsed).body("{\"ok\":true}").build();
+            });
+
+            new SqlInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier)
+                    .fuzz(fieldData("username", "alice"));
+
+            Mockito.verify(testCaseListener).addConfidence(FindingConfidence.CONFIRMED);
+            Mockito.verify(testCaseListener).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.eq("SQL injection vulnerability detected"),
+                    Mockito.contains("Time-based blind SQL injection confirmed"), Mockito.any());
+        }
+
+        @Test
+        void shouldSkipTimeBasedConfirmationWhenOperationBaselineIsSlow() {
+            Mockito.doReturn(CatsResponse.builder().responseCode(200).responseTimeInMs(2_500L).body("{}").build())
+                    .when(simpleExecutor).replayOriginal(Mockito.any());
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder().responseCode(200).responseTimeInMs(5_200L).body("{\"ok\":true}").build());
+
+            new CommandInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier)
+                    .fuzz(fieldData("cmd", "ping"));
+
+            Mockito.verify(testCaseListener, Mockito.never()).reportSecurityFinding(
+                    Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        }
+
+        @Test
+        void shouldConfirmComputedCommandCanaryOnlyWhenSecondaryPrimePairAlsoEvaluates() {
+            Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(invocation -> {
+                ServiceData req = invocation.getArgument(0);
+                String payload = req.getPayload();
+                if (payload.contains("37199") && payload.contains("43963")) {
+                    return CatsResponse.builder().responseCode(200).body("{\"out\":\"" + CommandCanary.PRIMARY_PRODUCT + "\"}").build();
+                }
+                if (payload.contains("39119") && payload.contains("46337")) {
+                    return CatsResponse.builder().responseCode(200).body("{\"out\":\"" + CommandCanary.CONFIRM_PRODUCT + "\"}").build();
+                }
+                return CLEAN_RESPONSE;
+            });
+
+            new CommandInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier)
+                    .fuzz(fieldData("host", "localhost"));
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).addConfidence(FindingConfidence.CONFIRMED);
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.eq("Command injection vulnerability detected"),
+                    Mockito.contains(CommandCanary.PRIMARY_PRODUCT), Mockito.any());
+        }
+
+        @Test
+        void shouldDowngradeComputedCommandCanaryToTentativeWhenSecondaryPairDoesNotEvaluate() {
+            Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(invocation -> {
+                ServiceData req = invocation.getArgument(0);
+                String payload = req.getPayload();
+                if (payload.contains("37199") && payload.contains("43963")) {
+                    return CatsResponse.builder().responseCode(200).body("{\"out\":\"" + CommandCanary.PRIMARY_PRODUCT + "\"}").build();
+                }
+                return CatsResponse.builder().responseCode(200).body("{\"out\":\"" + CommandCanary.PRIMARY_PRODUCT + "\"}").build();
+            });
+
+            new CommandInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier)
+                    .fuzz(fieldData("host", "localhost"));
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).addConfidence(FindingConfidence.TENTATIVE);
+            Mockito.verify(testCaseListener, Mockito.never()).addConfidence(FindingConfidence.CONFIRMED);
+        }
+
+        @Test
+        void shouldConfirmBooleanDifferentialForSqlNoSqlAndLdapWithoutMatchingResponseText() {
+            CatsResponse baselineMatch = CatsResponse.builder().responseCode(200).body("{\"items\":[{\"id\":1}]}").build();
+            CatsResponse emptyResult = CatsResponse.builder().responseCode(200).body("{\"items\":[]}").build();
+            Mockito.doReturn(baselineMatch).when(simpleExecutor).replayOriginal(Mockito.any());
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenAnswer(invocation -> {
+                String payload = ((ServiceData) invocation.getArgument(0)).getPayload();
+                if (payload.contains("'1'='2") || payload.contains("'1'=='2") || payload.contains("(!(objectClass=*)")) {
+                    return emptyResult;
+                }
+                return baselineMatch;
+            });
+
+            new SqlInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier)
+                    .fuzz(fieldData("username", "alice"));
+            new NoSqlInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier)
+                    .fuzz(fieldData("username", "alice"));
+            new LdapInjectionInStringFieldsFuzzer(simpleExecutor, testCaseListener, securityFuzzerArguments, evidenceVerifier)
+                    .fuzz(fieldData("username", "alice"));
+
+            Mockito.verify(testCaseListener).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.eq("SQL injection vulnerability detected"),
+                    Mockito.contains("Boolean-based blind SQL injection confirmed"), Mockito.any());
+            Mockito.verify(testCaseListener).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.eq("NoSQL injection vulnerability detected"),
+                    Mockito.contains("Boolean-based blind NoSQL injection confirmed"), Mockito.any());
+            Mockito.verify(testCaseListener).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.eq("LDAP injection vulnerability detected"),
+                    Mockito.contains("Boolean-based blind LDAP injection confirmed"), Mockito.any());
+        }
+
+        private static FuzzingData fieldData(String field, String value) {
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of(field));
+            Mockito.when(data.getPayload()).thenReturn("{\"%s\": \"%s\"}".formatted(field, value));
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of(field, new StringSchema()));
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.GET);
             Mockito.when(data.getHeaders()).thenReturn(Set.of());
             Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
             return data;

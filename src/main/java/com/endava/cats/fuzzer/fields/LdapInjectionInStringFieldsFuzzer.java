@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.fuzzer.fields.base.BooleanInjectionPair;
 import com.endava.cats.fuzzer.fields.base.InjectionEvidenceVerifier;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory.Reason;
@@ -32,6 +33,17 @@ import java.util.regex.Pattern;
 public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzzer {
     private static final List<String> FIELDS = List.of("user", "name", "login", "username", "email", "mail", "dn", "cn", "uid", "filter",
             "search", "query", "account", "member", "group", "ou", "organization", "dept", "department");
+
+    private static final List<BooleanInjectionPair> TOP_LDAP_BOOLEAN_PAIRS = List.of(
+            BooleanInjectionPair.andSuffix("LDAP filter AND", ")(objectClass=*", ")(!(objectClass=*)"),
+            BooleanInjectionPair.replaceBroadening("LDAP wildcard filter", "*)(!(objectClass=*)", "*)(objectClass=*")
+    );
+
+    private static final List<BooleanInjectionPair> ALL_LDAP_BOOLEAN_PAIRS = List.of(
+            BooleanInjectionPair.andSuffix("LDAP filter AND", ")(objectClass=*", ")(!(objectClass=*)"),
+            BooleanInjectionPair.replaceBroadening("LDAP wildcard filter", "*)(!(objectClass=*)", "*)(objectClass=*"),
+            BooleanInjectionPair.andSuffix("LDAP nested filter AND", "))(objectClass=*", "))(!(objectClass=*)")
+    );
 
     private static final List<String> TOP_PAYLOADS = List.of(
             "*)(&",
@@ -254,6 +266,21 @@ public class LdapInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzz
     @Override
     protected List<String> getAllInjectionPayloads() {
         return ALL_PAYLOADS;
+    }
+
+    @Override
+    protected String getConfirmableFindingReason() {
+        return Reason.LDAP_INJECTION.value();
+    }
+
+    @Override
+    protected List<BooleanInjectionPair> getTopBooleanInjectionPairs() {
+        return TOP_LDAP_BOOLEAN_PAIRS;
+    }
+
+    @Override
+    protected List<BooleanInjectionPair> getAllBooleanInjectionPairs() {
+        return ALL_LDAP_BOOLEAN_PAIRS;
     }
 
     @Override
