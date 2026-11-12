@@ -225,6 +225,7 @@
                     <div class="cluster-title" onclick="toggleCluster(this)">
                         <div class="cluster-title-main">
                             <span class="cluster-id-label">Cluster #{{clusterId}}</span>
+                            <span class="cluster-badge badge-neutral" title="Stable error template id">T-{{templateId}}</span>
                             <span class="cluster-badge {{statusBadgeClass}}">HTTP {{httpStatusCode}}</span>
                             <span class="cluster-badge badge-count">{{testCount}} test(s)</span>
                             <span class="cluster-badge badge-neutral">{{pathCount}} path(s)</span>
@@ -233,6 +234,9 @@
                         <div class="cluster-root-cause-summary">{{rootCauseSummary}}</div>
                     </div>
                     <div class="cluster-content">
+                        <div class="cluster-meta-row">
+                            <strong>Error Template:</strong> <code class="cluster-template">{{errorTemplate}}</code>
+                        </div>
                         <div class="cluster-meta-row">
                             <strong>Triggered by Fuzzers:</strong> <span class="cluster-fuzzers-list">{{fuzzers}}</span>
                         </div>

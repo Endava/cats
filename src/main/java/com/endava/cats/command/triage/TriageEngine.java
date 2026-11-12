@@ -2,6 +2,11 @@ package com.endava.cats.command.triage;
 
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.model.RequestVocabulary;
+import com.endava.cats.report.ErrorSample;
+import com.endava.cats.report.ErrorSignatureMasker;
+import com.endava.cats.report.ErrorTemplate;
+import com.endava.cats.report.ErrorTemplateMiner;
 import io.swagger.v3.oas.models.OpenAPI;
 
 import java.io.IOException;
@@ -19,6 +24,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -89,9 +95,17 @@ public final class TriageEngine {
 
     private static List<ClusterClassifier.Candidate> analyze(List<TriageTestCase> failing, RequestSchemaLookup schemaLookup) {
         FailureAnalyzer analyzer = new FailureAnalyzer(schemaLookup);
-        return failing.stream()
-                .map(test -> new ClusterClassifier.Candidate(test, ErrorMessage.of(test), analyzer.analyze(test)))
+        List<ErrorTemplate> templates = ErrorTemplateMiner.mine(failing.stream().map(TriageEngine::errorSample).toList());
+        return IntStream.range(0, failing.size())
+                .mapToObj(index -> new ClusterClassifier.Candidate(failing.get(index), ErrorMessage.of(failing.get(index)),
+                        analyzer.analyze(failing.get(index)), templates.get(index)))
                 .toList();
+    }
+
+    private static ErrorSample errorSample(TriageTestCase test) {
+        RequestVocabulary vocabulary = RequestVocabulary.from(test.payload(), test.url(), test.path());
+        return new ErrorSample("", test.statusCode(),
+                ErrorSignatureMasker.signatureOf(test.rawResponseBody(), test.testCase().getResultReason(), vocabulary));
     }
 
     private static List<ClusterAccumulator> accumulate(List<ClusterClassifier.Candidate> candidates, ClusterClassifier classifier) {
@@ -104,7 +118,7 @@ public final class TriageEngine {
         accumulators.stream()
                 .filter(accumulator -> accumulator.accepts(classification))
                 .findFirst()
-                .orElseGet(() -> register(accumulators, new ClusterAccumulator(classification, candidate.testCase())))
+                .orElseGet(() -> register(accumulators, new ClusterAccumulator(classification, candidate.testCase(), candidate.template())))
                 .add(candidate.testCase());
     }
 

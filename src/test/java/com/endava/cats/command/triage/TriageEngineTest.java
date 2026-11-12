@@ -88,6 +88,22 @@ class TriageEngineTest {
     }
 
     @Test
+    void shouldClusterCrashesByErrorTemplateMaskingEchoedPathValues(@TempDir Path dir) throws IOException {
+        write(dir, 1, test("HappyPath", "Should return [2XX]", "GET", "/accounts/0xa14f5", 500, "",
+                "{\\\"message\\\":\\\"For input string: \\\\\\\"a14f5\\\\\\\" under radix 16\\\"}", null).replace("\"/accounts/0xa14f5\"", "\"/accounts/{id}\""));
+        write(dir, 2, test("HappyPath", "Should return [2XX]", "GET", "/accounts/0xbb77", 500, "",
+                "{\\\"message\\\":\\\"For input string: \\\\\\\"bb77\\\\\\\" under radix 16\\\"}", null).replace("\"/accounts/0xbb77\"", "\"/accounts/{id}\""));
+        write(dir, 3, test("HappyPath", "Should return [2XX]", "GET", "/accounts/{id}", 500, "",
+                "{\\\"message\\\":\\\"Cannot invoke \\\\\\\"String.length()\\\\\\\" because \\\\\\\"val\\\\\\\" is null\\\"}", null));
+
+        TriageReport report = triage(dir);
+
+        Assertions.assertThat(report.clusters()).extracting(RootCauseCluster::occurrences).containsExactly(2, 1);
+        Assertions.assertThat(report.clusters().getFirst().errorTemplate()).isEqualTo("For input string: \"<INPUT>\" under radix NUM");
+        Assertions.assertThat(report.clusters()).extracting(RootCauseCluster::errorTemplateId).doesNotHaveDuplicates().allMatch(id -> id.length() == 8);
+    }
+
+    @Test
     void shouldReportUnfixedCrashesOnlyWhenNotFixed() {
         RootCauseCluster inconclusive = cluster("SERVER_CRASH_5XX", "INCONCLUSIVE");
         RootCauseCluster fixed = cluster("SERVER_CRASH_5XX", "FIXED");
@@ -97,7 +113,7 @@ class TriageEngineTest {
     }
 
     private static RootCauseCluster cluster(String category, String status) {
-        return new RootCauseCluster(category, 0, "GET /x", 500, 1, "d", "r", List.of(), List.of(), "", status, 200, null);
+        return new RootCauseCluster(category, 0, "GET /x", 500, 1, "d", "t", "template", "r", List.of(), List.of(), "", status, 200, null);
     }
 
     private static TriageReport report(List<RootCauseCluster> clusters) {

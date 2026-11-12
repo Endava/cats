@@ -21,7 +21,7 @@ class ReproducerScriptRendererTest {
                 .build()
                 .toCurlCommand();
         RootCauseCluster cluster = new RootCauseCluster("SERVER_CRASH_5XX", 0, "POST /orders", 500, 2,
-                "NPE\nrm -rf ~", "r", List.of("HappyPath"), List.of("Test 1", "Test 2"), curl, null, null, null);
+                "NPE\nrm -rf ~", "t", "template", "r", List.of("HappyPath"), List.of("Test 1", "Test 2"), curl, null, null, null);
         TriageReport report = new TriageReport("cats-report", 2, 2, 0, 1, 50, List.of(cluster), List.of(), "", "", "");
 
         String script = ReproducerScriptRenderer.render(report);

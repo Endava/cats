@@ -1,7 +1,7 @@
 package com.endava.cats.command.triage;
 
 import com.endava.cats.model.CatsRequest;
-import com.endava.cats.report.ErrorSimilarityDetector;
+import com.endava.cats.report.ErrorTemplate;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -12,6 +12,10 @@ import java.util.Set;
 /**
  * Collects the tests of one root-cause cluster. The representative (used for the reproducer and {@code --verify}) is
  * the lowest-numbered test, because tests are accumulated in ascending test-number order.
+ * <p>
+ * A classification joins the cluster when it has the same cluster key. Each category chooses its key suffix (the mined
+ * error template for crashes and cross-field rejections, the field, fuzzer, header or status code otherwise), and key
+ * equality is transitive, so the result does not depend on test order.
  */
 final class ClusterAccumulator {
     private static final int MAX_FUZZERS = 6;
@@ -19,13 +23,15 @@ final class ClusterAccumulator {
 
     private final ClusterClassification classification;
     private final TriageTestCase representative;
+    private final ErrorTemplate template;
     private final Set<String> fuzzers = new LinkedHashSet<>();
     private final List<String> sampleTestIds = new ArrayList<>();
     private int occurrences;
 
-    ClusterAccumulator(ClusterClassification classification, TriageTestCase representative) {
+    ClusterAccumulator(ClusterClassification classification, TriageTestCase representative, ErrorTemplate template) {
         this.classification = classification;
         this.representative = representative;
+        this.template = template;
     }
 
     ClusterClassification classification() {
@@ -37,11 +43,7 @@ final class ClusterAccumulator {
     }
 
     boolean accepts(ClusterClassification candidate) {
-        return classification.clusterKey().equals(candidate.clusterKey())
-                || (classification.category().equals(candidate.category())
-                && classification.operation().equals(candidate.operation())
-                && classification.statusCode() == candidate.statusCode()
-                && ErrorSimilarityDetector.areErrorsSimilar(classification.diagnosis(), candidate.diagnosis()));
+        return classification.clusterKey().equals(candidate.clusterKey());
     }
 
     void add(TriageTestCase testCase) {
@@ -57,7 +59,8 @@ final class ClusterAccumulator {
 
     RootCauseCluster toCluster(LiveClusterVerifier.Verification verification) {
         return new RootCauseCluster(classification.category(), classification.severityRank(), classification.operation(),
-                classification.statusCode(), occurrences, classification.diagnosis(), classification.remediation(),
+                classification.statusCode(), occurrences, classification.diagnosis(), template.id(), template.text(),
+                classification.remediation(),
                 List.copyOf(fuzzers), List.copyOf(sampleTestIds), curlReproducer(),
                 verification.status(), verification.statusCode(), verification.note());
     }

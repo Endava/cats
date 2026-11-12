@@ -4,7 +4,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -17,20 +16,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ErrorSimilarityDetectorTest {
 
     @ParameterizedTest
-    @CsvSource({
-            "'Error: File not found at /path/to/file', 'Error: File not found at /another/path/to/file', true",
-            "'Error: File not found at /path/to/file', 'Error: Unable to connect to database', false"
-    })
-    void testAreErrorsSimilar(String error1, String error2, boolean expectedSimilarity) {
-        assertThat(ErrorSimilarityDetector.areErrorsSimilar(error1, error2)).isEqualTo(expectedSimilarity);
-    }
-
-    @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {" ", "   "})
-    void testAreErrorsSimilar_withBlankOrNullErrors(String error1) {
-        String error2 = "Error: File not found at /path/to/file";
-        assertThat(ErrorSimilarityDetector.areErrorsSimilar(error1, error2)).isFalse();
+    @ValueSource(strings = {" ", "   ", "[Empty response body]"})
+    void shouldTreatBlankBodiesAsEmpty(String body) {
+        assertThat(ErrorSimilarityDetector.isBlankOrEmptyPlaceholder(body)).isTrue();
     }
 
     @ParameterizedTest
@@ -69,25 +58,12 @@ class ErrorSimilarityDetectorTest {
         assertThat(ErrorSimilarityDetector.extractRootCauseSummary(emptyJsonObj, "fb")).isEqualTo("{\"unrelated\":123}");
 
         assertThat(ErrorSimilarityDetector.extractRootCauseSummary("", "Fallback Reason")).isEqualTo("Fallback Reason");
-        assertThat(ErrorSimilarityDetector.extractNormalizedClusterKey("", "Fallback Reason")).startsWith("EMPTY|");
-        assertThat(ErrorSimilarityDetector.extractNormalizedClusterKey(rfc7807, "fb")).contains("bad request|");
 
-        assertThat(ErrorSimilarityDetector.areErrorsSimilar("identical", "identical")).isTrue();
-        assertThat(ErrorSimilarityDetector.areErrorsSimilar(
-                "{\"error\":\"TypeA\",\"message\":\"failed\"}",
-                "{\"error\":\"TypeB\",\"message\":\"failed\"}")).isFalse();
-        assertThat(ErrorSimilarityDetector.wordTokenJaccard("123 !@#", "456 $%^")).isEqualTo(1.0);
-        assertThat(ErrorSimilarityDetector.wordTokenJaccard("123 !@#", "valid tokens here")).isZero();
-
-        // Cover extractCause on blank, non-object JSON array, http:// errorType, and signatureText without detail
+        // Cover extractCause on blank, non-object JSON array and http:// errorType
         assertThat(ErrorSimilarityDetector.extractCause("")).isEqualTo(new ErrorSimilarityDetector.ExtractedCause("", "", ""));
         assertThat(ErrorSimilarityDetector.extractRootCauseSummary("[1, 2]", "fb")).isEqualTo("[1, 2]");
         assertThat(ErrorSimilarityDetector.extractRootCauseSummary("{\"type\":\"https://errors.example/bad\",\"title\":\"Custom Title\"}", "fb"))
                 .isEqualTo("Custom Title");
-        assertThat(ErrorSimilarityDetector.areErrorsSimilar(
-                "{\"type\":\"https://errors.example/bad\",\"title\":\"Custom Title\"}",
-                "{\"type\":\"https://errors.example/bad\",\"title\":\"Custom Title\",\"extra\":1}")).isTrue();
-        assertThat(ErrorSimilarityDetector.extractNormalizedClusterKey("", null)).isEqualTo("EMPTY|");
         assertThat(ErrorSimilarityDetector.extractRootCauseSummary("", null)).isEqualTo("[Empty response body]");
     }
 }

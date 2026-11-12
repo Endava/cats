@@ -59,6 +59,14 @@ cats triage -r cats-report -c <spec> -j \
 
 Clusters are sorted by severity, occurrences, category and operation, so results do not depend on test numbering.
 
+Every cluster carries `errorTemplate` and `errorTemplateId`: the error message of its representative test, mined with Drain (He et al., ICWS 2017), with variable parts masked:
+- `<INPUT>`: a value the request sent (body, query or path parameter), even when the server echoes only a fragment of it.
+- `<FIELD>`: a field name the request sent.
+- `NUM`, `UUID`, `TIMESTAMP`, `PATH`, `URL`, `'STR'`, `[LIST]`: generic variable parts.
+- `<*>`: a token that differs between otherwise identical messages.
+
+`SERVER_CRASH_5XX` and `CROSS_FIELD_CONSTRAINT_4XX` clusters are keyed by the template, so two crashes with different templates are different root causes (e.g. `Cannot invoke "String.length()"…` vs `Cannot invoke "BigInteger.bitLength()"…`). The `errorTemplateId` (8 hex characters) is the same for the same status code and template text, so you can match clusters across runs. The same `errorTemplateId`/`errorTemplate` pair is stored on every error and warning test in `cats-summary-report.json` and shown as `T-<id>` in the HTML report clusters.
+
 ### Per-Cluster Decision Tree
 For each cluster, open one `sampleTestIds` file and read `fuzzer`, `scenario` (note `is required [TRUE|FALSE]`), `expectedResult`, and the response body. Then:
 1. **`5XX`** → backend bug. Do not hide it with `--refData` / `--correlations`, unless `HappyPath` itself crashes because the seed data is invalid.

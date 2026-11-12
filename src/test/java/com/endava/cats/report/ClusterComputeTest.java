@@ -229,18 +229,51 @@ class ClusterComputeTest {
         String longError1 = "Error: " + "A".repeat(300) + " occurred at line 123";
         String longError2 = "Error: " + "A".repeat(300) + " occurred at line 456";
         String longError3 = "Error: " + "B".repeat(300) + " occurred at line 789";
+        String otherError = "Error: " + "B".repeat(300) + " failed after retrying twice";
 
         List<CatsTestCaseSummary> testCases = List.of(
                 createTestCaseSummary(500, "Server Error", "error", longError1),
                 createTestCaseSummary(500, "Server Error", "error", longError2),
-                createTestCaseSummary(500, "Server Error", "error", longError3)
+                createTestCaseSummary(500, "Server Error", "error", longError3),
+                createTestCaseSummary(500, "Server Error", "error", otherError)
         );
 
         List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
 
         assertThat(clusters).hasSize(1);
         List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
-        assertThat(clusterList).hasSizeGreaterThanOrEqualTo(2);
+        // A single long token is a variable part of an otherwise identical message, so the first three share a template
+        assertThat(clusterList).hasSize(2);
+        assertThat(clusterList.getFirst()).containsEntry("testCount", 3)
+                .containsEntry("errorTemplate", "Error: <*> occurred at line NUM");
+    }
+
+    @Test
+    void shouldAssignStableTemplatesThatMaskEchoedRequestFields() {
+        List<CatsTestCaseSummary> testCases = List.of(
+                createTestCaseSummary(400, "Bad Request", "error", "{\"detail\":\"name: must not be blank\"}", "{\"name\":\"\"}"),
+                createTestCaseSummary(400, "Bad Request", "error", "{\"detail\":\"email: must not be blank\"}", "{\"email\":\"\"}"),
+                createTestCaseSummary(200, "OK", "success", "{}", "{}"));
+
+        ClusterCompute.assignErrorTemplates(testCases);
+
+        assertThat(testCases.subList(0, 2)).extracting(CatsTestCaseSummary::getErrorTemplate)
+                .containsOnly("<FIELD>: must not be blank");
+        assertThat(testCases.getFirst().getErrorTemplateId()).isEqualTo(testCases.get(1).getErrorTemplateId());
+        assertThat(testCases.getLast().getErrorTemplateId()).isNull();
+        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) ClusterCompute.createClusters(testCases).getFirst().get("clusters");
+        assertThat(clusterList).singleElement()
+                .satisfies(cluster -> assertThat(cluster).containsEntry("templateId", testCases.getFirst().getErrorTemplateId()));
+    }
+
+    @Test
+    void shouldKeepTemplatesAlreadyReadFromAReport() {
+        CatsTestCaseSummary summary = createTestCaseSummary(500, "Server Error", "error", "boom");
+        summary.assignErrorTemplate("cafebabe", "persisted");
+
+        ClusterCompute.assignErrorTemplates(List.of(summary));
+
+        assertThat(summary.getErrorTemplateId()).isEqualTo("cafebabe");
     }
 
     @Test
@@ -355,8 +388,13 @@ class ClusterComputeTest {
     }
 
     private static CatsTestCaseSummary createTestCaseSummary(int httpResponseCode, String resultReason, String result, String responseBody) {
+        return createTestCaseSummary(httpResponseCode, resultReason, result, responseBody, null);
+    }
+
+    private static CatsTestCaseSummary createTestCaseSummary(int httpResponseCode, String resultReason, String result, String responseBody,
+                                                             String requestPayload) {
         CatsTestCase testCase = new CatsTestCase();
-        testCase.setRequest(CatsRequest.builder().httpMethod("POST").build());
+        testCase.setRequest(CatsRequest.builder().httpMethod("POST").payload(requestPayload).build());
         testCase.setFuzzer("TestFuzzer");
         testCase.setResponse(CatsResponse.builder().responseCode(httpResponseCode).body(responseBody).build());
         testCase.setResult(result);

@@ -4,7 +4,6 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsTestCaseSummary;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -12,13 +11,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
- * Utility class for clustering failing/warning test cases by root-cause error signature.
+ * Utility class for clustering failing/warning test cases by mined error template (see {@link ErrorTemplateMiner}).
  */
 public class ClusterCompute {
     private static final List<String> CLUSTER_PALETTE = List.of(
@@ -39,8 +39,30 @@ public class ClusterCompute {
             return List.of();
         }
         List<CatsTestCaseSummary> reportableCases = filterReportableTestCases(testCases);
+        assignErrorTemplates(reportableCases);
         Map<String, List<CatsTestCaseSummary>> groupedByReason = groupTestCasesByReason(reportableCases);
         return createClusterResultList(groupedByReason);
+    }
+
+    /**
+     * Mines and assigns an error template to every error and warning test case, partitioned by result reason. Does
+     * nothing when all of them already carry a template, e.g. summaries read back from {@code cats-summary-report.json}.
+     *
+     * @param testCases the test case summaries of a run
+     */
+    public static void assignErrorTemplates(List<CatsTestCaseSummary> testCases) {
+        List<CatsTestCaseSummary> reportableCases = filterReportableTestCases(Optional.ofNullable(testCases).orElse(List.of()));
+        if (reportableCases.stream().map(CatsTestCaseSummary::getErrorTemplateId).allMatch(Objects::nonNull)) {
+            return;
+        }
+        List<ErrorTemplate> templates = ErrorTemplateMiner.mine(reportableCases.stream().map(ClusterCompute::errorSample).toList());
+        IntStream.range(0, reportableCases.size())
+                .forEach(index -> reportableCases.get(index).assignErrorTemplate(templates.get(index).id(), templates.get(index).text()));
+    }
+
+    private static ErrorSample errorSample(CatsTestCaseSummary testCase) {
+        return new ErrorSample(testCase.getResultReason(), testCase.getHttpResponseCode(),
+                ErrorSignatureMasker.signatureOf(testCase.getResponseBody(), null, testCase.getRequestVocabulary()));
     }
 
     private static List<CatsTestCaseSummary> filterReportableTestCases(List<CatsTestCaseSummary> testCases) {
@@ -95,81 +117,49 @@ public class ClusterCompute {
 
     private static List<Map<String, Object>> createClustersForTestCases(
             List<CatsTestCaseSummary> testCasesForReason) {
-        Map<Integer, List<CatsTestCaseSummary>> byStatusCode = testCasesForReason.stream()
-                .collect(Collectors.groupingBy(
-                        CatsTestCaseSummary::getHttpResponseCode,
-                        LinkedHashMap::new,
-                        Collectors.toList()));
-
-        List<List<CatsTestCaseSummary>> allClusters = new ArrayList<>();
-        for (List<CatsTestCaseSummary> statusGroup : byStatusCode.values()) {
-            List<CatsTestCaseSummary> emptyResponseCases = new ArrayList<>();
-            List<CatsTestCaseSummary> nonEmptyResponseCases = new ArrayList<>();
-            separateResponseCases(statusGroup, emptyResponseCases, nonEmptyResponseCases);
-
-            allClusters.addAll(clusterBySimilarity(nonEmptyResponseCases, ErrorSimilarityDetector::areErrorsSimilar));
-            if (!emptyResponseCases.isEmpty()) {
-                allClusters.add(emptyResponseCases);
-            }
-        }
-
-        allClusters.sort(Comparator.<List<CatsTestCaseSummary>>comparingInt(List::size).reversed());
-        return createClusterMaps(allClusters);
+        Map<String, List<CatsTestCaseSummary>> byTemplate = testCasesForReason.stream()
+                .collect(Collectors.groupingBy(CatsTestCaseSummary::getErrorTemplateId, LinkedHashMap::new, Collectors.toList()));
+        List<List<CatsTestCaseSummary>> clusters = byTemplate.values().stream()
+                .sorted(Comparator.<List<CatsTestCaseSummary>>comparingInt(List::size).reversed())
+                .toList();
+        return IntStream.range(0, clusters.size())
+                .mapToObj(index -> createClusterMap(index + 1, clusters.get(index)))
+                .toList();
     }
 
-    private static void separateResponseCases(
-            List<CatsTestCaseSummary> testCases,
-            List<CatsTestCaseSummary> emptyResponseCases,
-            List<CatsTestCaseSummary> nonEmptyResponseCases) {
-        for (CatsTestCaseSummary tc : testCases) {
-            if (ErrorSimilarityDetector.isBlankOrEmptyPlaceholder(tc.getResponseBody())) {
-                emptyResponseCases.add(tc);
-            } else {
-                nonEmptyResponseCases.add(tc);
-            }
-        }
+    private static Map<String, Object> createClusterMap(int clusterId, List<CatsTestCaseSummary> cluster) {
+        Map<String, Object> clusterMap = new HashMap<>(rootCauseEntries(cluster.getFirst()));
+        clusterMap.putAll(compositionEntries(cluster));
+        clusterMap.put("clusterId", clusterId);
+        clusterMap.put("severity", cluster.stream().anyMatch(CatsTestCaseSummary::getError) ? "error" : "warning");
+        clusterMap.put("borderColor", CLUSTER_PALETTE.get((clusterId - 1) % CLUSTER_PALETTE.size()));
+        return clusterMap;
     }
 
-    private static List<Map<String, Object>> createClusterMaps(
-            List<List<CatsTestCaseSummary>> similarityClusters) {
-        List<Map<String, Object>> clusterList = new ArrayList<>();
-        int clusterCounter = 1;
+    private static Map<String, Object> rootCauseEntries(CatsTestCaseSummary representative) {
+        int statusCode = representative.getHttpResponseCode();
+        return Map.of(
+                "templateId", representative.getErrorTemplateId(),
+                "errorTemplate", representative.getErrorTemplate(),
+                "rootCauseSummary", ErrorSimilarityDetector.extractRootCauseSummary(representative.getResponseBody(), representative.getResultDetails()),
+                "errorMessage", Optional.ofNullable(representative.getResponseBody()).orElse(ErrorTemplate.EMPTY_BODY),
+                "httpStatusCode", statusCode,
+                "statusBadgeClass", statusBadgeClass(statusCode),
+                "is5xx", ResponseCodeFamily.is5xxCode(statusCode));
+    }
 
-        for (List<CatsTestCaseSummary> cluster : similarityClusters) {
-            int currentId = clusterCounter++;
-            CatsTestCaseSummary first = cluster.getFirst();
-            Map<String, Object> clusterMap = new HashMap<>();
-            clusterMap.put("clusterId", currentId);
-
-            String representativeError = Optional.ofNullable(first.getResponseBody()).orElse("[Empty response body]");
-            String rootCauseSummary = ErrorSimilarityDetector.extractRootCauseSummary(
-                    first.getResponseBody(), first.getResultDetails());
-            int statusCode = first.getHttpResponseCode();
-            boolean hasError = cluster.stream().anyMatch(CatsTestCaseSummary::getError);
-            boolean is5xx = ResponseCodeFamily.is5xxCode(statusCode);
-
-            Set<String> distinctFuzzers = cluster.stream()
-                    .map(CatsTestCaseSummary::getFuzzer)
-                    .filter(StringUtils::isNotBlank)
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-            List<Map<String, Object>> paths = createPathList(cluster);
-
-            clusterMap.put("rootCauseSummary", rootCauseSummary);
-            clusterMap.put("errorMessage", representativeError);
-            clusterMap.put("httpStatusCode", statusCode);
-            clusterMap.put("statusBadgeClass", statusBadgeClass(statusCode));
-            clusterMap.put("severity", hasError ? "error" : "warning");
-            clusterMap.put("is5xx", is5xx);
-            clusterMap.put("testCount", cluster.size());
-            clusterMap.put("pathCount", paths.size());
-            clusterMap.put("fuzzerCount", distinctFuzzers.size());
-            clusterMap.put("fuzzers", distinctFuzzers.isEmpty() ? "N/A" : String.join(", ", distinctFuzzers));
-            clusterMap.put("borderColor", CLUSTER_PALETTE.get((currentId - 1) % CLUSTER_PALETTE.size()));
-            clusterMap.put("paths", paths);
-            clusterList.add(clusterMap);
-        }
-
-        return clusterList;
+    private static Map<String, Object> compositionEntries(List<CatsTestCaseSummary> cluster) {
+        Set<String> distinctFuzzers = cluster.stream()
+                .map(CatsTestCaseSummary::getFuzzer)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        List<Map<String, Object>> paths = createPathList(cluster);
+        return Map.of(
+                "testCount", cluster.size(),
+                "pathCount", paths.size(),
+                "fuzzerCount", distinctFuzzers.size(),
+                "fuzzers", distinctFuzzers.isEmpty() ? "N/A" : String.join(", ", distinctFuzzers),
+                "paths", paths);
     }
 
     private static String statusBadgeClass(int code) {
@@ -215,50 +205,5 @@ public class ClusterCompute {
                     return pathMap;
                 })
                 .toList();
-    }
-
-    private static List<List<CatsTestCaseSummary>> clusterBySimilarity(
-            List<CatsTestCaseSummary> testCases,
-            BiPredicate<String, String> similarityChecker) {
-        if (testCases.isEmpty()) {
-            return new ArrayList<>();
-        }
-        if (testCases.size() == 1) {
-            return new ArrayList<>(List.of(new ArrayList<>(testCases)));
-        }
-
-        // Pass 1: Group by canonical normalized root-cause key in O(N)
-        Map<String, List<CatsTestCaseSummary>> patternBuckets = new LinkedHashMap<>();
-        for (CatsTestCaseSummary tc : testCases) {
-            if (ErrorSimilarityDetector.isBlankOrEmptyPlaceholder(tc.getResponseBody())) {
-                continue;
-            }
-            String key = ErrorSimilarityDetector.extractNormalizedClusterKey(
-                    tc.getResponseBody(), tc.getResultDetails());
-            patternBuckets.computeIfAbsent(key, _ -> new ArrayList<>()).add(tc);
-        }
-
-        if (patternBuckets.size() <= 1) {
-            return new ArrayList<>(patternBuckets.values());
-        }
-
-        // Pass 2: Merge buckets whose representative error messages are similar across buckets
-        List<List<CatsTestCaseSummary>> mergedClusters = new ArrayList<>();
-        for (List<CatsTestCaseSummary> bucket : patternBuckets.values()) {
-            CatsTestCaseSummary bucketRep = bucket.getFirst();
-            boolean merged = false;
-            for (List<CatsTestCaseSummary> existingCluster : mergedClusters) {
-                CatsTestCaseSummary existingRep = existingCluster.getFirst();
-                if (similarityChecker.test(existingRep.getResponseBody(), bucketRep.getResponseBody())) {
-                    existingCluster.addAll(bucket);
-                    merged = true;
-                    break;
-                }
-            }
-            if (!merged) {
-                mergedClusters.add(new ArrayList<>(bucket));
-            }
-        }
-        return mergedClusters;
     }
 }

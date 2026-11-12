@@ -4,6 +4,7 @@ import java.util.List;
 
 /**
  * A deduplicated root cause grouping all failing tests that share the same category, operation and error signature.
+ * {@code errorTemplateId} and {@code errorTemplate} are the mined error template of the representative test.
  * {@code verificationStatus} is {@code FIXED}, {@code STILL_FAILING} or {@code INCONCLUSIVE} when {@code --verify}
  * is enabled, with {@code verificationNote} explaining inconclusive outcomes.
  */
@@ -13,6 +14,8 @@ public record RootCauseCluster(String category,
                                int statusCode,
                                int occurrences,
                                String diagnosis,
+                               String errorTemplateId,
+                               String errorTemplate,
                                String remediation,
                                List<String> fuzzers,
                                List<String> sampleTestIds,

@@ -193,6 +193,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
         logger.noFormat("  %2d. %s %s -> HTTP %d (%d tests)%s".formatted(index, categoryBadge(cluster),
                 AnsiUtils.bold(cluster.operation()), cluster.statusCode(), cluster.occurrences(), verificationBadge(cluster)));
         logger.noFormat("     Diagnosis   : " + cluster.diagnosis());
+        logger.noFormat("     Template    : T-%s %s".formatted(cluster.errorTemplateId(), cluster.errorTemplate()));
         logger.noFormat("     Remediation : " + cluster.remediation());
         logger.noFormat("     Fuzzers     : " + String.join(", ", cluster.fuzzers()));
         logger.noFormat("     Sample Tests: " + String.join(", ", cluster.sampleTestIds()));

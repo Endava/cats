@@ -27,6 +27,9 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private boolean switchedResult;
     private int httpResponseCode;
     private FindingConfidence confidence;
+    private String errorTemplateId;
+    private String errorTemplate;
+    private transient RequestVocabulary requestVocabulary;
 
     /**
      * Creates a CatsTestCaseSummary object from a CatsTestCase.
@@ -51,8 +54,31 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.confidence = testCase.getConfidence();
         String response = Optional.ofNullable(testCase.getResponse().getBody()).orElse("[Empty response body]");
         summary.responseBody = response.substring(0, Math.min(response.length(), 1000));
+        summary.requestVocabulary = summary.getError() || summary.getWarning()
+                ? RequestVocabulary.from(testCase.getRequest().getPayload(), testCase.getRequest().getUrl(), testCase.getContractPath())
+                : RequestVocabulary.EMPTY;
 
         return summary;
+    }
+
+    /**
+     * Records the error template mined for this (failing or warning) test case.
+     *
+     * @param templateId the stable template identifier
+     * @param template   the human-readable template text
+     */
+    public void assignErrorTemplate(String templateId, String template) {
+        this.errorTemplateId = templateId;
+        this.errorTemplate = template;
+    }
+
+    /**
+     * Returns the vocabulary of the request sent by this test case, or an empty one for summaries read from a report file.
+     *
+     * @return the request vocabulary
+     */
+    public RequestVocabulary getRequestVocabulary() {
+        return Optional.ofNullable(requestVocabulary).orElse(RequestVocabulary.EMPTY);
     }
 
     @Override

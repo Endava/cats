@@ -6,7 +6,7 @@ import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
-import com.endava.cats.report.ErrorSimilarityDetector;
+import com.endava.cats.report.ErrorTemplate;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -28,9 +28,9 @@ final class ClusterClassifier {
     }
 
     /**
-     * A failing test together with its (optional) failure analysis and extracted error message.
+     * A failing test together with its (optional) failure analysis, extracted error message and mined error template.
      */
-    record Candidate(TriageTestCase testCase, ErrorMessage message, Optional<FailureAnalysis> analysis) {
+    record Candidate(TriageTestCase testCase, ErrorMessage message, Optional<FailureAnalysis> analysis, ErrorTemplate template) {
     }
 
     ClusterClassification classify(Candidate candidate) {
@@ -53,7 +53,7 @@ final class ClusterClassifier {
         if (!ResponseCodeFamily.is5xxCode(testCase.statusCode())) {
             return Optional.empty();
         }
-        return Optional.of(ClusterClassification.of("SERVER_CRASH_5XX", 0, testCase, clusterKey(testCase),
+        return Optional.of(ClusterClassification.of("SERVER_CRASH_5XX", 0, testCase, candidate.template().id(),
                 new ClusterClassification.Explanation(
                         "Unhandled %d server error (%s)".formatted(testCase.statusCode(), candidate.message().signature()),
                         "Inspect the server stacktrace for %s, then verify the fix with `cats triage --verify` or `cats replay %s --stateful`."
@@ -118,7 +118,7 @@ final class ClusterClassifier {
         if (!validationRejection || !seedRejection) {
             return Optional.empty();
         }
-        return Optional.of(ClusterClassification.of("CROSS_FIELD_CONSTRAINT_4XX", 1, testCase, clusterKey(testCase),
+        return Optional.of(ClusterClassification.of("CROSS_FIELD_CONSTRAINT_4XX", 1, testCase, candidate.template().id(),
                 Remediations.crossField(testCase, candidate.message(), context)));
     }
 
@@ -147,11 +147,6 @@ final class ClusterClassifier {
 
     private static boolean isSeedFuzzer(TriageTestCase testCase) {
         return testCase.isFuzzer(HappyPathFuzzer.class) || testCase.isFuzzer(OnlyRequiredFieldsFuzzer.class);
-    }
-
-    private static String clusterKey(TriageTestCase testCase) {
-        return ErrorSimilarityDetector.extractNormalizedClusterKey(
-                testCase.rawResponseBody(), testCase.testCase().getResultReason());
     }
 
     static String testId(TriageTestCase testCase) {
