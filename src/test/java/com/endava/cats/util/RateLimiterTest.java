@@ -2,6 +2,13 @@ package com.endava.cats.util;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -9,90 +16,100 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @QuarkusTest
 class RateLimiterTest {
 
+    private static final long ONE_SECOND_NANOS = TimeUnit.SECONDS.toNanos(1);
+    private static final long HUNDRED_MS_NANOS = TimeUnit.MILLISECONDS.toNanos(100);
+
     @Test
     void shouldCreateRateLimiterWithValidRate() {
-        RateLimiter rateLimiter = new RateLimiter(60);
+        RateLimiter rateLimiter = new RateLimiter(60_000);
+        rateLimiter.acquire();
+        rateLimiter.acquire();
 
         assertThat(rateLimiter).isNotNull();
     }
 
-    @Test
-    void shouldThrowExceptionForZeroRate() {
-        assertThatThrownBy(() -> new RateLimiter(0))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("maxRequestsPerMinute must be > 0");
-    }
-
-    @Test
-    void shouldThrowExceptionForNegativeRate() {
-        assertThatThrownBy(() -> new RateLimiter(-1))
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1, -100})
+    void shouldThrowExceptionForNonPositiveRate(int invalidRate) {
+        assertThatThrownBy(() -> new RateLimiter(invalidRate))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("maxRequestsPerMinute must be > 0");
     }
 
     @Test
     void shouldAcquirePermitImmediatelyForFirstRequest() {
-        RateLimiter rateLimiter = new RateLimiter(60);
-        long start = System.nanoTime();
+        FakeTime fakeTime = new FakeTime();
+        RateLimiter rateLimiter = new RateLimiter(60, fakeTime::now, fakeTime::park);
 
         rateLimiter.acquire();
 
-        long elapsed = System.nanoTime() - start;
-        assertThat(elapsed).isLessThan(100_000_000L);
+        assertThat(fakeTime.parkedDurations).isEmpty();
     }
 
     @Test
-    void shouldDelaySecondRequest() {
-        RateLimiter rateLimiter = new RateLimiter(600);
+    void shouldNotBankPermitsBetweenConstructionAndFirstAcquire() {
+        FakeTime fakeTime = new FakeTime();
+        RateLimiter rateLimiter = new RateLimiter(60, fakeTime::now, fakeTime::park);
 
+        fakeTime.advance(TimeUnit.SECONDS.toNanos(5));
         rateLimiter.acquire();
-        long start = System.nanoTime();
         rateLimiter.acquire();
-        long elapsed = System.nanoTime() - start;
 
-        assertThat(elapsed).isGreaterThan(50_000_000L);
+        assertThat(fakeTime.parkedDurations).containsExactly(ONE_SECOND_NANOS);
     }
 
     @Test
-    void shouldRespectRateLimit() {
-        RateLimiter rateLimiter = new RateLimiter(600);
-        long start = System.currentTimeMillis();
+    void shouldNotBankUnusedPermitsAcrossSlowPhaseBeforeBurst() {
+        FakeTime fakeTime = new FakeTime();
+        RateLimiter rateLimiter = new RateLimiter(60, fakeTime::now, fakeTime::park);
 
         for (int i = 0; i < 3; i++) {
             rateLimiter.acquire();
+            fakeTime.advance(TimeUnit.SECONDS.toNanos(2));
         }
 
-        long elapsed = System.currentTimeMillis() - start;
-        assertThat(elapsed).isGreaterThanOrEqualTo(200L);
+        assertThat(fakeTime.parkedDurations).isEmpty();
+
+        rateLimiter.acquire();
+        for (int i = 0; i < 5; i++) {
+            rateLimiter.acquire();
+        }
+
+        assertThat(fakeTime.parkedDurations)
+                .hasSize(5)
+                .containsOnly(ONE_SECOND_NANOS);
     }
 
     @Test
-    void shouldHandleHighRate() {
-        RateLimiter rateLimiter = new RateLimiter(6000);
+    void shouldDelaySecondRequestByRemainingInterval() {
+        FakeTime fakeTime = new FakeTime();
+        RateLimiter rateLimiter = new RateLimiter(60, fakeTime::now, fakeTime::park);
 
-        long start = System.nanoTime();
         rateLimiter.acquire();
+        fakeTime.advance(TimeUnit.MILLISECONDS.toNanos(400));
         rateLimiter.acquire();
-        long elapsed = System.nanoTime() - start;
 
-        assertThat(elapsed).isLessThan(50_000_000L);
+        assertThat(fakeTime.parkedDurations)
+                .containsExactly(TimeUnit.MILLISECONDS.toNanos(600));
     }
 
     @Test
-    void shouldHandleLowRate() {
-        RateLimiter rateLimiter = new RateLimiter(60);
+    void shouldMaintainConsistentRateAcrossBackToBackCalls() {
+        FakeTime fakeTime = new FakeTime();
+        RateLimiter rateLimiter = new RateLimiter(600, fakeTime::now, fakeTime::park);
 
-        rateLimiter.acquire();
-        long start = System.nanoTime();
-        rateLimiter.acquire();
-        long elapsed = System.nanoTime() - start;
+        for (int i = 0; i < 4; i++) {
+            rateLimiter.acquire();
+        }
 
-        assertThat(elapsed).isGreaterThan(900_000_000L);
+        assertThat(fakeTime.parkedDurations)
+                .containsExactly(HUNDRED_MS_NANOS, HUNDRED_MS_NANOS, HUNDRED_MS_NANOS);
     }
 
     @Test
     void shouldBeThreadSafe() throws InterruptedException {
-        RateLimiter rateLimiter = new RateLimiter(600);
+        AtomicLong clock = new AtomicLong(0L);
+        RateLimiter rateLimiter = new RateLimiter(600, clock::get, clock::addAndGet);
         Thread[] threads = new Thread[3];
 
         for (int i = 0; i < threads.length; i++) {
@@ -105,18 +122,24 @@ class RateLimiterTest {
         }
 
         assertThat(threads).allMatch(t -> !t.isAlive());
+        assertThat(clock.get()).isEqualTo(2 * HUNDRED_MS_NANOS);
     }
 
-    @Test
-    void shouldMaintainConsistentRate() {
-        RateLimiter rateLimiter = new RateLimiter(600);
-        long start = System.currentTimeMillis();
+    private static final class FakeTime {
+        private long currentNanos = 1_000_000_000L;
+        private final List<Long> parkedDurations = new ArrayList<>();
 
-        for (int i = 0; i < 3; i++) {
-            rateLimiter.acquire();
+        long now() {
+            return currentNanos;
         }
 
-        long elapsed = System.currentTimeMillis() - start;
-        assertThat(elapsed).isBetween(180L, 350L);
+        void advance(long deltaNanos) {
+            currentNanos += deltaNanos;
+        }
+
+        void park(long waitNanos) {
+            parkedDurations.add(waitNanos);
+            currentNanos += waitNanos;
+        }
     }
 }
