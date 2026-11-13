@@ -434,6 +434,50 @@ class WfcFaultClassifierTest {
                 .allSatisfy(code -> Assertions.assertThat(code).isBetween(900, 999));
     }
 
+    @ParameterizedTest
+    @MethodSource("provideAuthSchemaFaultCases")
+    void shouldClassifyPassiveAuthSchemaFaults(int statusCode, OperationAuthContract contract,
+                                               Integer expectedFaultCode, String expectedContext) {
+        CatsTestCase tc = new CatsTestCase();
+        tc.setTestId("Test Auth");
+        tc.setResult("success");
+        tc.setResultReason(Reason.ALL_GOOD.value());
+        tc.setFuzzer("HappyPath");
+        tc.setContractPath("/items");
+        tc.setRequest(CatsRequest.builder().httpMethod("GET").payload("").build());
+        tc.setResponse(CatsResponse.builder().responseCode(statusCode).body("")
+                .headers(List.of(new KeyValuePair<>("WWW-Authenticate", "Bearer"))).build());
+
+        Set<FaultCategoryId> faults = WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(tc), tc, contract);
+
+        if (expectedFaultCode == null) {
+            Assertions.assertThat(faults).isEmpty();
+        } else {
+            Assertions.assertThat(faults)
+                    .singleElement()
+                    .satisfies(fc -> {
+                        Assertions.assertThat(fc.getCode()).isEqualTo(expectedFaultCode);
+                        Assertions.assertThat(fc.getContext()).isEqualTo(expectedContext);
+                    });
+        }
+    }
+
+    private static Stream<Arguments> provideAuthSchemaFaultCases() {
+        return Stream.of(
+                Arguments.of(401, new OperationAuthContract(false, false, false),
+                        DefinedFaultCategory.SCHEMA_STATUS_NO_401_IF_NO_AUTH.getCode(), null),
+                Arguments.of(401, new OperationAuthContract(true, true, false),
+                        DefinedFaultCategory.SCHEMA_STATUS_NO_401_IF_NO_AUTH.getCode(), "security: []"),
+                Arguments.of(403, new OperationAuthContract(true, false, false),
+                        DefinedFaultCategory.SCHEMA_STATUS_NO_403_IF_NO_401.getCode(), null),
+                Arguments.of(401, new OperationAuthContract(true, false, true), null, null),
+                Arguments.of(403, new OperationAuthContract(true, false, true), null, null),
+                Arguments.of(401, OperationAuthContract.UNKNOWN, null, null),
+                Arguments.of(403, OperationAuthContract.UNKNOWN, null, null),
+                Arguments.of(401, null, null, null)
+        );
+    }
+
     private static CatsTestCase buildTestCase(String method, String path, int code, String result,
                                               String reason, String fuzzer, String respBody) {
         CatsTestCase tc = new CatsTestCase();

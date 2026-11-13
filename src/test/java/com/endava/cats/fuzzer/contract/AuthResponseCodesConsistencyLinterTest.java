@@ -4,12 +4,14 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -117,6 +119,7 @@ class AuthResponseCodesConsistencyLinterTest {
                 .security(List.of(new SecurityRequirement(), new SecurityRequirement().addList("apiKey")))
                 .responses(new ApiResponses()
                         .addApiResponse("200", new ApiResponse())
+                        .addApiResponse("401", new ApiResponse())
                         .addApiResponse("403", new ApiResponse()));
         FuzzingData opLevelData = FuzzingData.builder()
                 .path("/items")
@@ -127,5 +130,69 @@ class AuthResponseCodesConsistencyLinterTest {
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(
                 Mockito.any(), Mockito.eq(opLevelData),
                 Mockito.eq("Authentication response codes (401/403) are consistent with the operation's security requirements"));
+    }
+
+    @Test
+    void shouldReportWarnWhenOperationDocuments403Without401() {
+        OpenAPI openAPI = new OpenAPI()
+                .components(new Components().addSecuritySchemes("bearerAuth", new SecurityScheme().type(SecurityScheme.Type.HTTP)))
+                .security(List.of(new SecurityRequirement().addList("bearerAuth")));
+        FuzzingData data = FuzzingData.builder()
+                .openApi(openAPI)
+                .path("/admin")
+                .method(HttpMethod.GET)
+                .pathItem(new PathItem().get(new Operation()))
+                .responseCodes(Set.of("200", "403"))
+                .build();
+
+        linter.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultWarn(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("Operation documents 403 but not 401"),
+                Mockito.contains("without documenting 401 (or 4XX)")
+        );
+    }
+
+    @Test
+    void shouldReportInfoWhenExplicitlyPublicOperationDocuments403Without401() {
+        OpenAPI openAPI = new OpenAPI()
+                .components(new Components().addSecuritySchemes("bearerAuth", new SecurityScheme().type(SecurityScheme.Type.HTTP)))
+                .security(List.of(new SecurityRequirement().addList("bearerAuth")));
+        Operation publicOp = new Operation().security(Collections.emptyList());
+        FuzzingData data = FuzzingData.builder()
+                .openApi(openAPI)
+                .path("/public-ip-restricted")
+                .method(HttpMethod.GET)
+                .pathItem(new PathItem().get(publicOp))
+                .responseCodes(Set.of("200", "403"))
+                .build();
+
+        linter.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("Authentication response codes (401/403) are consistent with the operation's security requirements")
+        );
+    }
+
+    @Test
+    void shouldReportWarnWhen401DocumentedWithoutSecuritySchemes() {
+        OpenAPI openAPI = new OpenAPI();
+        FuzzingData data = FuzzingData.builder()
+                .openApi(openAPI)
+                .path("/orders")
+                .method(HttpMethod.GET)
+                .pathItem(new PathItem().get(new Operation()))
+                .responseCodes(Set.of("200", "401"))
+                .build();
+
+        linter.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultWarn(
+                Mockito.any(), Mockito.eq(data),
+                Mockito.eq("401 documented but the spec defines no security schemes"),
+                Mockito.contains("defines no security schemes in components.securitySchemes")
+        );
     }
 }

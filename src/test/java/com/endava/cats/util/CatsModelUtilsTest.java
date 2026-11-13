@@ -1,11 +1,16 @@
 package com.endava.cats.util;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.media.DateTimeSchema;
 import io.swagger.v3.oas.models.media.JsonSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -229,5 +234,33 @@ class CatsModelUtilsTest {
 
         Assertions.assertThat(CatsModelUtils.findDirectAllOfChildrenByParent(schemaMap))
                 .containsExactly(Map.entry("Pet", Set.of("Dog")));
+    }
+
+    @Test
+    void shouldEvaluateSecurityRequirementAndResponseCodeHelpers() {
+        Assertions.assertThat(CatsModelUtils.hasNonEmptySecurityRequirement(null)).isFalse();
+        Assertions.assertThat(CatsModelUtils.hasNonEmptySecurityRequirement(List.of(new SecurityRequirement()))).isFalse();
+        Assertions.assertThat(CatsModelUtils.hasNonEmptySecurityRequirement(
+                List.of(new SecurityRequirement(), new SecurityRequirement().addList("bearerAuth")))).isTrue();
+
+        Assertions.assertThat(CatsModelUtils.hasSecuritySchemes(null)).isFalse();
+        Assertions.assertThat(CatsModelUtils.hasSecuritySchemes(new OpenAPI())).isFalse();
+        Assertions.assertThat(CatsModelUtils.hasSecuritySchemes(new OpenAPI().components(new Components()))).isFalse();
+        Assertions.assertThat(CatsModelUtils.hasSecuritySchemes(new OpenAPI().components(
+                new Components().addSecuritySchemes("bearerAuth", new SecurityScheme())))).isTrue();
+
+        Assertions.assertThat(CatsModelUtils.isExplicitlyPublic(null)).isFalse();
+        Assertions.assertThat(CatsModelUtils.isExplicitlyPublic(new Operation())).isFalse();
+        Assertions.assertThat(CatsModelUtils.isExplicitlyPublic(new Operation().security(List.of()))).isTrue();
+        Assertions.assertThat(CatsModelUtils.isExplicitlyPublic(
+                new Operation().security(List.of(new SecurityRequirement())))).isTrue();
+        Assertions.assertThat(CatsModelUtils.isExplicitlyPublic(
+                new Operation().security(List.of(new SecurityRequirement().addList("bearerAuth"))))).isFalse();
+
+        Assertions.assertThat(CatsModelUtils.declares401(null)).isFalse();
+        Assertions.assertThat(CatsModelUtils.declares401(Set.of("200", "403", "default"))).isFalse();
+        Assertions.assertThat(CatsModelUtils.declares401(Set.of("200", "401"))).isTrue();
+        Assertions.assertThat(CatsModelUtils.declares401(Set.of("200", "4XX"))).isTrue();
+        Assertions.assertThat(CatsModelUtils.declares401(Set.of("200", "4xx"))).isTrue();
     }
 }

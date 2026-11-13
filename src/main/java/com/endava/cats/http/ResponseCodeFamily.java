@@ -41,6 +41,7 @@ public interface ResponseCodeFamily {
     int STATUS_NOT_MODIFIED = 304;
     int STATUS_BAD_REQUEST = 400;
     int STATUS_UNAUTHORIZED = 401;
+    int STATUS_FORBIDDEN = 403;
     int STATUS_NOT_FOUND = 404;
     int STATUS_METHOD_NOT_ALLOWED = 405;
     int STATUS_NOT_ACCEPTABLE = 406;

@@ -49,6 +49,7 @@ import java.util.Set;
 public final class WfcFaultClassifier {
     private static final String EMPTY_JSON_OBJECT = "{}";
     private static final String HTTP_STATUS_CONTEXT_PREFIX = "HTTP ";
+    private static final String EXPLICIT_PUBLIC_SECURITY_CONTEXT = "security: []";
 
     private static final List<Class<?>> POSITIVE_VALID_INPUT_FUZZER_CLASSES = List.of(
             HappyPathFuzzer.class,
@@ -145,16 +146,27 @@ public final class WfcFaultClassifier {
      * report verified findings.
      */
     public static Set<FaultCategoryId> classify(CatsTestCaseSummary summary, CatsTestCase fullTestCase) {
+        return classify(summary, fullTestCase, OperationAuthContract.UNKNOWN);
+    }
+
+    /**
+     * Classifies a {@link CatsTestCaseSummary} with its {@link OperationAuthContract} into zero or more WFC
+     * {@link FaultCategoryId} entries, including passive schema-dependent auth faults (WFC 202 and 203).
+     */
+    public static Set<FaultCategoryId> classify(CatsTestCaseSummary summary, CatsTestCase fullTestCase,
+                                                OperationAuthContract authContract) {
         if (summary == null) {
             return Set.of();
         }
         Set<FaultCategoryId> faults = new LinkedHashSet<>();
         int code = summary.getHttpResponseCode();
         String method = optionalUpper(summary.getHttpMethod());
+        OperationAuthContract effectiveContract = authContract != null ? authContract : OperationAuthContract.UNKNOWN;
 
         classifyPassiveProtocolFaults(summary, fullTestCase, code, method, faults);
+        classifyAuthSchemaFaults(code, effectiveContract, faults);
         if (!summary.getError() && !summary.getWarning()) {
-            return faults;
+            return Set.copyOf(faults);
         }
 
         classifyStatusCodeFaults(summary, code, faults);
@@ -167,6 +179,18 @@ public final class WfcFaultClassifier {
             faults.add(faultId(CatsWfcFaultCategory.CATS_UNEXPECTED_BEHAVIOUR, summary.getResultReason()));
         }
         return Set.copyOf(faults);
+    }
+
+    private static void classifyAuthSchemaFaults(int code, OperationAuthContract contract, Set<FaultCategoryId> faults) {
+        if (code == ResponseCodeFamily.STATUS_UNAUTHORIZED) {
+            if (!contract.specHasSecuritySchemes()) {
+                faults.add(faultId(DefinedFaultCategory.SCHEMA_STATUS_NO_401_IF_NO_AUTH, null));
+            } else if (contract.explicitlyPublic()) {
+                faults.add(faultId(DefinedFaultCategory.SCHEMA_STATUS_NO_401_IF_NO_AUTH, EXPLICIT_PUBLIC_SECURITY_CONTEXT));
+            }
+        } else if (code == ResponseCodeFamily.STATUS_FORBIDDEN && !contract.declares401()) {
+            faults.add(faultId(DefinedFaultCategory.SCHEMA_STATUS_NO_403_IF_NO_401, null));
+        }
     }
 
     private static void classifyStatusCodeFaults(CatsTestCaseSummary summary, int code, Set<FaultCategoryId> faults) {

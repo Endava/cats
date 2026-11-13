@@ -5,6 +5,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.BinarySchema;
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.media.UUIDSchema;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -703,5 +705,51 @@ public abstract class CatsModelUtils {
                         || !allOfParentRefs.contains(getSimpleRef(subSchema.get$ref())))
                 .toList();
         return filtered.isEmpty() ? schemas : filtered;
+    }
+
+    /**
+     * Checks whether at least one {@link SecurityRequirement} in {@code requirements} is non-empty.
+     *
+     * @param requirements the security requirement list (may be {@code null})
+     * @return {@code true} when at least one requirement declares a scheme name
+     */
+    public static boolean hasNonEmptySecurityRequirement(List<SecurityRequirement> requirements) {
+        return requirements != null && requirements.stream().anyMatch(req -> req != null && !req.isEmpty());
+    }
+
+    /**
+     * Checks whether {@code openAPI} defines at least one security scheme in {@code components.securitySchemes}.
+     *
+     * @param openAPI the OpenAPI model (may be {@code null})
+     * @return {@code true} when {@code components.securitySchemes} is non-empty
+     */
+    public static boolean hasSecuritySchemes(OpenAPI openAPI) {
+        return openAPI != null
+                && openAPI.getComponents() != null
+                && !CatsUtil.isEmpty(openAPI.getComponents().getSecuritySchemes());
+    }
+
+    /**
+     * Checks whether {@code operation} explicitly opts out of authentication via {@code security: []}
+     * (operation-level {@code security} is present and every requirement entry is empty).
+     *
+     * @param operation the OpenAPI operation (may be {@code null})
+     * @return {@code true} when the operation explicitly declares empty security requirements
+     */
+    public static boolean isExplicitlyPublic(Operation operation) {
+        return operation != null
+                && operation.getSecurity() != null
+                && !hasNonEmptySecurityRequirement(operation.getSecurity());
+    }
+
+    /**
+     * Checks whether the declared response code keys include {@code 401} or the {@code 4XX} range.
+     *
+     * @param responseCodes the declared response status keys (may be {@code null})
+     * @return {@code true} when {@code 401} or {@code 4XX} is declared
+     */
+    public static boolean declares401(Set<String> responseCodes) {
+        return responseCodes != null && responseCodes.stream()
+                .anyMatch(code -> "401".equals(code) || "4XX".equalsIgnoreCase(code));
     }
 }

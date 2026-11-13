@@ -66,6 +66,7 @@ public final class WfcReportBuilder {
                 .toList();
 
         Set<String> endpointIds = collectDocumentedEndpointIds(openAPI);
+        Map<String, OperationAuthContract> authContracts = OperationAuthContractIndex.from(openAPI);
         Set<String> testFilePaths = new LinkedHashSet<>();
         List<TestCase> wfcTestCases = new ArrayList<>(sortedSummaries.size());
         List<CoveredEndpoint> coveredEndpoints = new ArrayList<>(sortedSummaries.size());
@@ -92,7 +93,8 @@ public final class WfcReportBuilder {
             wfcTestCases.add(buildWfcTestCase(summary, testKey, relativeJsonFile, fileMeta.lineCount()));
             coveredEndpoints.add(buildCoveredEndpoint(operationId, testKey, statusCode));
 
-            Set<FaultCategoryId> classifiedFaults = WfcFaultClassifier.classify(summary, fileMeta.parsedTestCase());
+            OperationAuthContract authContract = authContracts.getOrDefault(operationId, OperationAuthContract.UNKNOWN);
+            Set<FaultCategoryId> classifiedFaults = WfcFaultClassifier.classify(summary, fileMeta.parsedTestCase(), authContract);
             if (!classifiedFaults.isEmpty()) {
                 FoundFault foundFault = new FoundFault();
                 foundFault.setOperationId(operationId);
