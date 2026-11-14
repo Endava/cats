@@ -4,8 +4,11 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.ErrorSignature;
 import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.OpenAPIV3Parser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -267,6 +270,16 @@ class ClusterComputeTest {
     }
 
     @Test
+    void shouldPreferTheSignatureOfTheFullResponseBody() {
+        CatsTestCaseSummary summary = createTestCaseSummary(500, "Server Error", "error", "Traceback (most recent call last):");
+        summary.attachErrorSignature(new ErrorSignature("", List.of("KeyError:", "'owner'"), "owner_id@/app/app.py:50"));
+
+        ClusterCompute.assignErrorTemplates(List.of(summary));
+
+        assertThat(summary.getErrorTemplate()).isEqualTo("KeyError: 'owner' @ owner_id@/app/app.py:50");
+    }
+
+    @Test
     void shouldKeepTemplatesAlreadyReadFromAReport() {
         CatsTestCaseSummary summary = createTestCaseSummary(500, "Server Error", "error", "boom");
         summary.assignErrorTemplate("cafebabe", "persisted");
@@ -385,6 +398,61 @@ class ClusterComputeTest {
         assertThat(clusters500.get(2)).containsEntry("testCount", 1).containsEntry("httpStatusCode", 500);
         assertThat(String.valueOf(clusters500.get(2).get("rootCauseSummary")))
                 .contains("DataIntegrityViolationException");
+    }
+
+    @Test
+    void shouldReadErrorBodiesByTheFieldRolesTheContractDeclares() {
+        String contract = """
+                openapi: 3.0.3
+                info: {title: orders, version: "1"}
+                paths:
+                  /orders:
+                    post:
+                      responses:
+                        '4XX':
+                          description: client error
+                          content:
+                            application/json:
+                              schema:
+                                type: object
+                                properties:
+                                  what: {type: string}
+                                  trackingRef: {type: string, format: uuid}
+                                  correlationId: {type: string}
+                """;
+        OpenAPI openAPI = new OpenAPIV3Parser().readContents(contract, null, null).getOpenAPI();
+        List<CatsTestCaseSummary> testCases = List.of(
+                createTestCaseSummaryAt("/orders", "{\"what\":\"Name too long\",\"trackingRef\":\"TR-A7F3\",\"correlationId\":\"c-91x\"}"),
+                createTestCaseSummaryAt("/orders", "{\"what\":\"Name too long\",\"trackingRef\":\"TR-B0C4\",\"correlationId\":\"c-77q\"}"));
+
+        ClusterCompute.assignErrorTemplates(testCases, openAPI);
+
+        assertThat(testCases.getFirst().getErrorTemplate()).isEqualTo("Name too long");
+        assertThat(testCases.getFirst().getErrorTemplateId()).isEqualTo(testCases.getLast().getErrorTemplateId());
+    }
+
+    @Test
+    void shouldReadErrorBodiesByFieldNameWithoutContract() {
+        List<CatsTestCaseSummary> testCases = List.of(
+                createTestCaseSummaryAt("/orders", "{\"what\":\"Name too long\",\"trackingRef\":\"TR-A7F3\",\"correlationId\":\"c-91x\"}"),
+                createTestCaseSummaryAt("/orders", "{\"what\":\"Name too long\",\"trackingRef\":\"TR-B0C4\",\"correlationId\":\"c-77q\"}"));
+
+        ClusterCompute.assignErrorTemplates(testCases);
+
+        assertThat(testCases.getFirst().getErrorTemplateId()).isNotEqualTo(testCases.getLast().getErrorTemplateId());
+    }
+
+    private static CatsTestCaseSummary createTestCaseSummaryAt(String contractPath, String responseBody) {
+        CatsTestCase testCase = new CatsTestCase();
+        testCase.setRequest(CatsRequest.builder().httpMethod("POST").build());
+        testCase.setFuzzer("TestFuzzer");
+        testCase.setResponse(CatsResponse.builder().responseCode(400).body(responseBody).build());
+        testCase.setResult("error");
+        testCase.setPath(contractPath);
+        testCase.setContractPath(contractPath);
+        testCase.setResultReason("Bad Request");
+        testCase.setTestId(CatsRandom.instance().nextInt(2000) + "");
+        return CatsTestCaseSummary.fromCatsTestCase(testCase);
     }
 
     private static CatsTestCaseSummary createTestCaseSummary(int httpResponseCode, String resultReason, String result, String responseBody) {

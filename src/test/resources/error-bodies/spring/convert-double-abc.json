@@ -1,0 +1,1 @@
+{"timestamp":"2026-11-13T15:37:07.004+0000","status":400,"error":"Bad Request","message":"Failed to convert value of type 'java.lang.String' to required type 'java.lang.Double'; nested exception is java.lang.NumberFormatException: For input string: \"abc\"","path":"/api/bessj/2/abc"}

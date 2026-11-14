@@ -1,0 +1,1 @@
+{"age":["must be greater than or equal to 0"],"email":["is invalid"],"name":["is too long (maximum is 10 characters)"]}

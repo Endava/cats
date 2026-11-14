@@ -60,10 +60,18 @@ cats triage -r cats-report -c <spec> -j \
 Clusters are sorted by severity, occurrences, category and operation, so results do not depend on test numbering.
 
 Every cluster carries `errorTemplate` and `errorTemplateId`: the error message of its representative test, mined with Drain (He et al., ICWS 2017), with variable parts masked:
-- `<INPUT>`: a value the request sent (body, query or path parameter), even when the server echoes only a fragment of it.
+- `<INPUT>`: a value the request sent (body, query, form or path parameter), even when the server echoes only a fragment of it.
 - `<FIELD>`: a field name the request sent.
-- `NUM`, `UUID`, `TIMESTAMP`, `PATH`, `URL`, `'STR'`, `[LIST]`: generic variable parts.
+- `NUM`, `UUID`, `TIMESTAMP`, `PATH`, `URL`, `'STR'` / `"STR"`, `[LIST]`: generic variable parts. Quoted code identifiers are kept, because they name the crash site: `(reading 'id')`, `KeyError: 'name'`, `Cannot invoke "String.length()"`.
 - `<*>`: a token that differs between otherwise identical messages.
+- `… @ function@file:line`: the first application stack frame, recognized for the JVM, Node.js, .NET, Python, Go, Ruby and PHP. Two templates with different frames are different crash sites.
+- `a; b; c`: validation errors that list several messages (NestJS, FastAPI, ASP.NET, Django REST, Rails, Laravel, Spring) are masked one by one, de-duplicated, sorted and capped at 5, so the same rule gives the same template whatever the order or number of invalid fields.
+
+- `CODE: …`: the error type (the template text starts with it). A code read from a code or type field is kept verbatim when it is a single token of letters and digits (`USR-001`, `err-01`, `E_42`, `ERR:12`), so two codes are two templates; UUIDs, hashes, timestamps and runs of 6 or more digits (`ORD-83749213`) are still masked.
+
+Custom JSON error envelopes are read by field role, from the end of the field name in camelCase, snake_case or kebab-case: `*code`, `*type`, `*kind` give the error type; `*message`, `*msg`, `*description`, `*detail(s)`, `*reason`, `*text` give the messages, and all of them are used when they differ. A single nested `error`, `fault` or `failure` object is unwrapped. When the OpenAPI contract declares the error body of the operation and status (exact code, `4XX`/`5XX` or `default`) and the body matches it, the declared property names give the roles and declared `uuid`/`date-time` properties and names such as `requestId`, `traceId` or `timestamp` are ignored.
+
+HTML error pages (Tomcat, Whitelabel, Werkzeug, Express, Django) are reduced to their title and visible text.
 
 `SERVER_CRASH_5XX` and `CROSS_FIELD_CONSTRAINT_4XX` clusters are keyed by the template, so two crashes with different templates are different root causes (e.g. `Cannot invoke "String.length()"…` vs `Cannot invoke "BigInteger.bitLength()"…`). The `errorTemplateId` (8 hex characters) is the same for the same status code and template text, so you can match clusters across runs. The same `errorTemplateId`/`errorTemplate` pair is stored on every error and warning test in `cats-summary-report.json` and shown as `T-<id>` in the HTML report clusters.
 

@@ -1,0 +1,1 @@
+{"error":"Bad Request","status":400,"messages":["thumbnailUrl - must not be blank","albumId - must not be null","url - must not be blank","title - must not be blank"],"timestamp":"2026-11-10T19:03:06.837623Z"}

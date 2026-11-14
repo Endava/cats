@@ -1,0 +1,1887 @@
+# Error-body fixtures of design card 10: real error responses of 13 stacks plus RFC 9457 problem details.
+# express-conduit holds 500 bodies of the RealWorld node-express implementation captured by the live check.
+# Captured from small reference apps (cats_research benchmarks/error-bodies: apps/, capture.py, assemble.py), from
+# rest-ncs and features-service (WFD 4.3.0) and from the card-11 exports. Local paths were rewritten to /app-style
+# container paths and Django's environment dump was cut. Entries with derived: true reorder the messages of the
+# captured body by hand, as validators that report violations in hash order do.
+# custom-envelopes holds hand-written bodies (all derived: true) of custom JSON error envelopes: code-like error types,
+# several message fields, nested error objects, parallel code/message arrays and unusual field names.
+#
+#   group       same group => same errorTemplateId when a stack's fixtures are mined together; different => different
+#   expect      the extracted error type, the masked message tokens (joined by spaces) and the crash-site frame
+- file: aspnet/validation-one-field.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", "email": "bob@example.com", "age": -1}'
+  group: one-field
+  expect:
+    errorType: One or more validation errors occurred.
+    tokens: 'Age: The field Age must be between NUM and NUM.'
+    stackFrame: ''
+- file: aspnet/validation-three-fields.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  expect:
+    errorType: One or more validation errors occurred.
+    tokens: 'Age: The field Age must be between NUM and NUM.; Email: The Email field is not a valid e-mail address.; Name: The field Name must be a string or array type with a maximum length of ''NUM''.'
+    stackFrame: ''
+- file: aspnet/validation-three-fields-reordered.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  derived: true
+  expect:
+    errorType: One or more validation errors occurred.
+    tokens: 'Age: The field Age must be between NUM and NUM.; Email: The Email field is not a valid e-mail address.; Name: The field Name must be a string or array type with a maximum length of ''NUM''.'
+    stackFrame: ''
+- file: aspnet/validation-three-fields-other-values.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"age": -7, "email": "nope", "name": "anotherlongname1"}'
+  group: three-fields
+  expect:
+    errorType: One or more validation errors occurred.
+    tokens: 'Age: The field Age must be between NUM and NUM.; Email: The Email field is not a valid e-mail address.; Name: The field Name must be a string or array type with a maximum length of ''NUM''.'
+    stackFrame: ''
+- file: aspnet/validation-missing.json
+  status: 400
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: One or more validation errors occurred.
+    tokens: 'Age: The Age field is required.; Email: The Email field is required.; Name: The Name field is required.'
+    stackFrame: ''
+- file: aspnet/json-parse.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: json-syntax
+  expect:
+    errorType: One or more validation errors occurred.
+    tokens: '$: Expected start of a property name or value, but instead reached end of data. Path: $ | LineNumber: NUM | BytePositionInLine: NUM.; dto: The dto field is required.'
+    stackFrame: ''
+- file: aspnet/crash-echo-abc.txt
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: parse-count
+  expect:
+    errorType: ''
+    tokens: 'System.FormatException: The input string ''<INPUT>'' was not in a correct format.'
+    stackFrame: Orders.ParseCount@/src/Program.cs:26
+- file: aspnet/crash-echo-xyz.txt
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: parse-count
+  expect:
+    errorType: ''
+    tokens: 'System.FormatException: The input string ''<INPUT>'' was not in a correct format.'
+    stackFrame: Orders.ParseCount@/src/Program.cs:26
+- file: aspnet/crash-id.txt
+  status: 500
+  request:
+    url: /crash/id
+  group: owner-id
+  expect:
+    errorType: ''
+    tokens: 'System.NullReferenceException: Object reference not set to an instance of an object.'
+    stackFrame: Orders.OwnerId@/src/Program.cs:24
+- file: aspnet/crash-name.txt
+  status: 500
+  request:
+    url: /crash/name
+  group: customer-name
+  expect:
+    errorType: ''
+    tokens: 'System.NullReferenceException: Object reference not set to an instance of an object.'
+    stackFrame: Orders.CustomerName@/src/Program.cs:25
+- file: aspnet/not-found-item.json
+  status: 404
+  request:
+    url: /items/42
+  group: item-not-found
+  expect:
+    errorType: Not Found
+    tokens: ''
+    stackFrame: ''
+- file: aspnet/not-found-route.txt
+  status: 404
+  request:
+    url: /no/such/route
+  group: route-not-found
+  expect:
+    errorType: ''
+    tokens: ''
+    stackFrame: ''
+- file: drf/validation-one-field.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", "email": "bob@example.com", "age": -1}'
+  group: one-field
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Ensure this value is greater than or equal to NUM.'
+    stackFrame: ''
+- file: drf/validation-three-fields.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Ensure this field has no more than NUM characters.; <FIELD>: Ensure this value is greater than or equal to NUM.; <FIELD>: Enter a valid <FIELD> address.'
+    stackFrame: ''
+- file: drf/validation-three-fields-reordered.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  derived: true
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Ensure this field has no more than NUM characters.; <FIELD>: Ensure this value is greater than or equal to NUM.; <FIELD>: Enter a valid <FIELD> address.'
+    stackFrame: ''
+- file: drf/validation-three-fields-other-values.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"age": -7, "email": "nope", "name": "anotherlongname1"}'
+  group: three-fields
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Ensure this field has no more than NUM characters.; <FIELD>: Ensure this value is greater than or equal to NUM.; <FIELD>: Enter a valid <FIELD> address.'
+    stackFrame: ''
+- file: drf/validation-missing.json
+  status: 400
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: ''
+    tokens: 'age: This field is required.; email: This field is required.; name: This field is required.'
+    stackFrame: ''
+- file: drf/json-parse.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: json-syntax
+  expect:
+    errorType: ''
+    tokens: 'JSON parse error - Expecting property name enclosed in double quotes: line NUM column NUM (char NUM)'
+    stackFrame: ''
+- file: drf/crash-echo-abc.txt
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: parse-count
+  expect:
+    errorType: ''
+    tokens: 'ValueError at PATH invalid literal for int() with base NUM: ''<INPUT>'''
+    stackFrame: parse_count@/app/app.py:41
+- file: drf/crash-echo-xyz.txt
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: parse-count
+  expect:
+    errorType: ''
+    tokens: 'ValueError at PATH invalid literal for int() with base NUM: ''<INPUT>'''
+    stackFrame: parse_count@/app/app.py:41
+- file: drf/crash-id.txt
+  status: 500
+  request:
+    url: /crash/id
+  group: owner-id
+  expect:
+    errorType: ''
+    tokens: KeyError at PATH 'owner'
+    stackFrame: owner_id@/app/app.py:50
+- file: drf/crash-name.txt
+  status: 500
+  request:
+    url: /crash/name
+  group: customer-name
+  expect:
+    errorType: ''
+    tokens: AttributeError at PATH 'NoneType' object has no attribute 'customer'
+    stackFrame: customer_name@/app/app.py:59
+- file: drf/not-found-item.json
+  status: 404
+  request:
+    url: /items/42
+  group: item-not-found
+  expect:
+    errorType: ''
+    tokens: Not found.
+    stackFrame: ''
+- file: drf/not-found-route.html
+  status: 404
+  request:
+    url: /no/such/route
+  group: route-not-found
+  expect:
+    errorType: Page not found at /no/such/route
+    tokens: 'Page not found (NUM) Request Method: GET Request URL: URL Using the URLconf defined in __main__, Django tried these URL patterns, in this order: users items/<item_id> parse crashPATH crashPATH The current path, noPATH, didn’t match any of
+      these. You’re seeing'
+    stackFrame: ''
+- file: express/validation-one-field.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", "email": "bob@example.com", "age": -1}'
+  group: invalid-value
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Invalid value'
+    stackFrame: ''
+- file: express/validation-three-fields.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: invalid-value
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Invalid value'
+    stackFrame: ''
+- file: express/validation-three-fields-reordered.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: invalid-value
+  derived: true
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Invalid value'
+    stackFrame: ''
+- file: express/validation-three-fields-other-values.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"age": -7, "email": "nope", "name": "anotherlongname1"}'
+  group: invalid-value
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Invalid value'
+    stackFrame: ''
+- file: express/validation-missing.json
+  status: 400
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: ''
+    tokens: 'age: Invalid value; email: Invalid value; name: Invalid value'
+    stackFrame: ''
+- file: express/json-parse.html
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: json-syntax
+  expect:
+    errorType: Error
+    tokens: 'SyntaxError: Expected double-quoted property name in JSON at position NUM (line NUM column NUM)'
+    stackFrame: parse@/app/node_modules/body-parser/lib/types/json.js:92
+- file: express/crash-echo-abc.html
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: parse-filter
+  expect:
+    errorType: Error
+    tokens: 'SyntaxError: Unexpected token ''STR'', "<INPUT>" is not valid JSON'
+    stackFrame: parseFilter@/app/app.js:23
+- file: express/crash-echo-xyz.html
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: parse-filter
+  expect:
+    errorType: Error
+    tokens: 'SyntaxError: Unexpected token ''STR'', "<INPUT>" is not valid JSON'
+    stackFrame: parseFilter@/app/app.js:23
+- file: express/crash-id.html
+  status: 500
+  request:
+    url: /crash/id
+  group: owner-id
+  expect:
+    errorType: Error
+    tokens: 'TypeError: Cannot read properties of undefined (reading ''id'')'
+    stackFrame: ownerId@/app/app.js:26
+- file: express/crash-name.html
+  status: 500
+  request:
+    url: /crash/name
+  group: customer-name
+  expect:
+    errorType: Error
+    tokens: 'TypeError: Cannot read properties of undefined (reading ''name'')'
+    stackFrame: customerName@/app/app.js:27
+- file: express/not-found-item.json
+  status: 404
+  request:
+    url: /items/42
+  group: item-not-found
+  expect:
+    errorType: ''
+    tokens: Item NUM not found
+    stackFrame: ''
+- file: express/not-found-route.html
+  status: 404
+  request:
+    url: /no/such/route
+  group: route-not-found
+  expect:
+    errorType: Error
+    tokens: Cannot GET PATH
+    stackFrame: ''
+- file: fastapi/validation-one-field.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "bob", "email": "bob@example.com", "age": -1}'
+  group: one-field
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Input should be greater than or equal to NUM'
+    stackFrame: ''
+- file: fastapi/validation-three-fields.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Input should be greater than or equal to NUM; <FIELD>: String should have at most NUM characters; <FIELD>: value is not a valid <FIELD> address: An <FIELD> address must have an @-sign.'
+    stackFrame: ''
+- file: fastapi/validation-three-fields-reordered.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  derived: true
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Input should be greater than or equal to NUM; <FIELD>: String should have at most NUM characters; <FIELD>: value is not a valid <FIELD> address: An <FIELD> address must have an @-sign.'
+    stackFrame: ''
+- file: fastapi/validation-three-fields-other-values.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"age": -7, "email": "nope", "name": "anotherlongname1"}'
+  group: three-fields
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: Input should be greater than or equal to NUM; <FIELD>: String should have at most NUM characters; <FIELD>: value is not a valid <FIELD> address: An <FIELD> address must have an @-sign.'
+    stackFrame: ''
+- file: fastapi/validation-missing.json
+  status: 422
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: ''
+    tokens: 'body.age: Field required; body.email: Field required; body.name: Field required'
+    stackFrame: ''
+- file: fastapi/json-parse.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: json-syntax
+  expect:
+    errorType: ''
+    tokens: 'body.NUM: JSON decode error'
+    stackFrame: ''
+- file: fastapi/crash-echo-abc.txt
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: parse-count
+  expect:
+    errorType: ''
+    tokens: 'ValueError: invalid literal for int() with base NUM: ''<INPUT>'''
+    stackFrame: parse_count@/app/app.py:22
+- file: fastapi/crash-echo-xyz.txt
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: parse-count
+  expect:
+    errorType: ''
+    tokens: 'ValueError: invalid literal for int() with base NUM: ''<INPUT>'''
+    stackFrame: parse_count@/app/app.py:22
+- file: fastapi/crash-id.txt
+  status: 500
+  request:
+    url: /crash/id
+  group: owner-id
+  expect:
+    errorType: ''
+    tokens: 'KeyError: ''owner'''
+    stackFrame: owner_id@/app/app.py:29
+- file: fastapi/crash-name.txt
+  status: 500
+  request:
+    url: /crash/name
+  group: customer-name
+  expect:
+    errorType: ''
+    tokens: 'AttributeError: ''NoneType'' object has no attribute ''customer'''
+    stackFrame: customer_name@/app/app.py:32
+- file: fastapi/not-found-item.json
+  status: 404
+  request:
+    url: /items/42
+  group: item-not-found
+  expect:
+    errorType: ''
+    tokens: Item not found
+    stackFrame: ''
+- file: fastapi/not-found-route.json
+  status: 404
+  request:
+    url: /no/such/route
+  group: route-not-found
+  expect:
+    errorType: ''
+    tokens: Not Found
+    stackFrame: ''
+- file: fastify/validation-one-field.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", "email": "bob@example.com", "age": -1}'
+  group: age-minimum
+  expect:
+    errorType: FST_ERR_VALIDATION
+    tokens: bodyPATH must be >= NUM
+    stackFrame: ''
+- file: fastify/validation-three-fields.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: name-max-length
+  expect:
+    errorType: FST_ERR_VALIDATION
+    tokens: bodyPATH must NOT have more than NUM characters
+    stackFrame: ''
+- file: fastify/validation-three-fields-other-values.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"age": -7, "email": "nope", "name": "anotherlongname1"}'
+  group: name-max-length
+  expect:
+    errorType: FST_ERR_VALIDATION
+    tokens: bodyPATH must NOT have more than NUM characters
+    stackFrame: ''
+- file: fastify/validation-missing.json
+  status: 400
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: FST_ERR_VALIDATION
+    tokens: body must have required property 'name'
+    stackFrame: ''
+- file: fastify/json-parse.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: json-syntax
+  expect:
+    errorType: Bad Request
+    tokens: Expected double-quoted property name in JSON at position NUM (line NUM column NUM)
+    stackFrame: ''
+- file: fastify/crash-echo-abc.json
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: parse-filter
+  expect:
+    errorType: Internal Server Error
+    tokens: Unexpected token 'STR', "<INPUT>" is not valid JSON
+    stackFrame: ''
+- file: fastify/crash-echo-xyz.json
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: parse-filter
+  expect:
+    errorType: Internal Server Error
+    tokens: Unexpected token 'STR', "<INPUT>" is not valid JSON
+    stackFrame: ''
+- file: fastify/crash-id.json
+  status: 500
+  request:
+    url: /crash/id
+  group: owner-id
+  expect:
+    errorType: Internal Server Error
+    tokens: Cannot read properties of undefined (reading 'id')
+    stackFrame: ''
+- file: fastify/crash-name.json
+  status: 500
+  request:
+    url: /crash/name
+  group: customer-name
+  expect:
+    errorType: Internal Server Error
+    tokens: Cannot read properties of undefined (reading 'name')
+    stackFrame: ''
+- file: fastify/not-found-item.json
+  status: 404
+  request:
+    url: /items/42
+  group: item-not-found
+  expect:
+    errorType: Not Found
+    tokens: Item NUM not found
+    stackFrame: ''
+- file: fastify/not-found-route.json
+  status: 404
+  request:
+    url: /no/such/route
+  group: route-not-found
+  expect:
+    errorType: Not Found
+    tokens: Route GET:PATH not found
+    stackFrame: ''
+- file: flask/validation-missing.html
+  status: 400
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: 400 Bad Request
+    tokens: 'Bad Request Missing required fields: name, email, age'
+    stackFrame: ''
+- file: flask/json-parse.html
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: missing-fields
+  expect:
+    errorType: 400 Bad Request
+    tokens: 'Bad Request Missing required fields: name, email, age'
+    stackFrame: ''
+- file: flask/crash-echo-abc.html
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: internal-error
+  expect:
+    errorType: 500 Internal Server Error
+    tokens: Internal Server Error The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+    stackFrame: ''
+- file: flask/crash-echo-xyz.html
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: internal-error
+  expect:
+    errorType: 500 Internal Server Error
+    tokens: Internal Server Error The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+    stackFrame: ''
+- file: flask/crash-id.html
+  status: 500
+  request:
+    url: /crash/id
+  group: internal-error
+  expect:
+    errorType: 500 Internal Server Error
+    tokens: Internal Server Error The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+    stackFrame: ''
+- file: flask/crash-name.html
+  status: 500
+  request:
+    url: /crash/name
+  group: internal-error
+  expect:
+    errorType: 500 Internal Server Error
+    tokens: Internal Server Error The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+    stackFrame: ''
+- file: flask/not-found-item.html
+  status: 404
+  request:
+    url: /items/42
+  group: not-found
+  expect:
+    errorType: 404 Not Found
+    tokens: Not Found The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+    stackFrame: ''
+- file: flask/not-found-route.html
+  status: 404
+  request:
+    url: /no/such/route
+  group: not-found
+  expect:
+    errorType: 404 Not Found
+    tokens: Not Found The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+    stackFrame: ''
+- file: flask-debug/validation-missing.html
+  status: 400
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: 400 Bad Request
+    tokens: 'Bad Request Missing required fields: name, email, age'
+    stackFrame: ''
+- file: flask-debug/json-parse.html
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: missing-fields
+  expect:
+    errorType: 400 Bad Request
+    tokens: 'Bad Request Missing required fields: name, email, age'
+    stackFrame: ''
+- file: flask-debug/crash-echo-abc.html
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: parse-count
+  expect:
+    errorType: 'ValueError: invalid literal for int() with base 10: ''abc'' // Werkzeug Debugger'
+    tokens: ValueError
+    stackFrame: parse_count@/app/app.py:19
+- file: flask-debug/crash-echo-xyz.html
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: parse-count
+  expect:
+    errorType: 'ValueError: invalid literal for int() with base 10: ''xyz1'' // Werkzeug Debugger'
+    tokens: ValueError
+    stackFrame: parse_count@/app/app.py:19
+- file: flask-debug/crash-id.html
+  status: 500
+  request:
+    url: /crash/id
+  group: owner-id
+  expect:
+    errorType: 'KeyError: ''owner'' // Werkzeug Debugger'
+    tokens: KeyError
+    stackFrame: crash_id@/app/app.py:27
+- file: flask-debug/crash-name.html
+  status: 500
+  request:
+    url: /crash/name
+  group: customer-name
+  expect:
+    errorType: 'AttributeError: ''NoneType'' object has no attribute ''customer'' // Werkzeug Debugger'
+    tokens: AttributeError
+    stackFrame: customer_name@/app/app.py:30
+- file: flask-debug/not-found-item.html
+  status: 404
+  request:
+    url: /items/42
+  group: not-found
+  expect:
+    errorType: 404 Not Found
+    tokens: Not Found The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+    stackFrame: ''
+- file: flask-debug/not-found-route.html
+  status: 404
+  request:
+    url: /no/such/route
+  group: not-found
+  expect:
+    errorType: 404 Not Found
+    tokens: Not Found The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+    stackFrame: ''
+- file: gin/validation-one-field.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", "email": "bob@example.com", "age": -1}'
+  group: one-field
+  expect:
+    errorType: 'Key: ''User.Age'' Error:Field validation for ''Age'' failed on the ''min'' tag'
+    tokens: ''
+    stackFrame: ''
+- file: gin/validation-three-fields.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  expect:
+    errorType: 'Key: ''User.Name'' Error:Field validation for ''Name'' failed on the ''max'' tag
+
+      Key: ''User.Email'' Error:Field validation for ''Email'' failed on the ''email'' tag
+
+      Key: ''User.Age'' Error:Field validation for ''Age'' failed on the ''min'' tag'
+    tokens: ''
+    stackFrame: ''
+- file: gin/validation-three-fields-other-values.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"age": -7, "email": "nope", "name": "anotherlongname1"}'
+  group: three-fields
+  expect:
+    errorType: 'Key: ''User.Name'' Error:Field validation for ''Name'' failed on the ''max'' tag
+
+      Key: ''User.Email'' Error:Field validation for ''Email'' failed on the ''email'' tag
+
+      Key: ''User.Age'' Error:Field validation for ''Age'' failed on the ''min'' tag'
+    tokens: ''
+    stackFrame: ''
+- file: gin/validation-missing.json
+  status: 400
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: 'Key: ''User.Name'' Error:Field validation for ''Name'' failed on the ''required'' tag
+
+      Key: ''User.Email'' Error:Field validation for ''Email'' failed on the ''required'' tag
+
+      Key: ''User.Age'' Error:Field validation for ''Age'' failed on the ''required'' tag'
+    tokens: ''
+    stackFrame: ''
+- file: gin/json-parse.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: json-syntax
+  expect:
+    errorType: unexpected EOF
+    tokens: ''
+    stackFrame: ''
+- file: gin/crash-echo-abc.json
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: parse-count
+  expect:
+    errorType: 'strconv.Atoi: parsing "abc": invalid syntax'
+    tokens: ''
+    stackFrame: ''
+- file: gin/crash-echo-xyz.json
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: parse-count
+  expect:
+    errorType: 'strconv.Atoi: parsing "xyz1": invalid syntax'
+    tokens: ''
+    stackFrame: ''
+- file: gin/crash-id.txt
+  status: 500
+  request:
+    url: /crash/id
+  group: owner-id
+  expect:
+    errorType: ''
+    tokens: 'panic: runtime error: invalid memory address or nil pointer dereference'
+    stackFrame: main.ownerID@/app/main.go:23
+- file: gin/crash-name.txt
+  status: 500
+  request:
+    url: /crash/name
+  group: nil-map
+  expect:
+    errorType: ''
+    tokens: 'panic: assignment to entry in nil map'
+    stackFrame: main.main.func6@/app/main.go:60
+- file: gin/not-found-item.json
+  status: 404
+  request:
+    url: /items/42
+  group: item-not-found
+  expect:
+    errorType: item 42 not found
+    tokens: ''
+    stackFrame: ''
+- file: gin/not-found-route.txt
+  status: 404
+  request:
+    url: /no/such/route
+  group: route-not-found
+  expect:
+    errorType: ''
+    tokens: NUM page not found
+    stackFrame: ''
+- file: laravel/validation-one-field.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "bob", "email": "bob@example.com", "age": -1}'
+  group: one-field
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: The <FIELD> field must be at least NUM.'
+    stackFrame: ''
+- file: laravel/validation-three-fields.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: The <FIELD> field must be a valid <FIELD> address.; <FIELD>: The <FIELD> field must be at least NUM.; <FIELD>: The <FIELD> field must not be greater than NUM characters.'
+    stackFrame: ''
+- file: laravel/validation-three-fields-reordered.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  derived: true
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: The <FIELD> field must be a valid <FIELD> address.; <FIELD>: The <FIELD> field must be at least NUM.; <FIELD>: The <FIELD> field must not be greater than NUM characters.'
+    stackFrame: ''
+- file: laravel/validation-three-fields-other-values.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"age": -7, "email": "nope", "name": "anotherlongname1"}'
+  group: three-fields
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: The <FIELD> field must be a valid <FIELD> address.; <FIELD>: The <FIELD> field must be at least NUM.; <FIELD>: The <FIELD> field must not be greater than NUM characters.'
+    stackFrame: ''
+- file: laravel/validation-missing.json
+  status: 422
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: ''
+    tokens: 'age: The age field is required.; email: The email field is required.; name: The name field is required.'
+    stackFrame: ''
+- file: laravel/json-parse.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: missing-fields
+  expect:
+    errorType: ''
+    tokens: 'age: The age field is required.; email: The email field is required.; name: The name field is required.'
+    stackFrame: ''
+- file: laravel/crash-echo-abc.json
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: parse-count
+  expect:
+    errorType: InvalidArgumentException
+    tokens: Invalid count "<INPUT>"
+    stackFrame: parseCount@/app/routes/web.php:16
+- file: laravel/crash-echo-xyz.json
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: parse-count
+  expect:
+    errorType: InvalidArgumentException
+    tokens: Invalid count "<INPUT>"
+    stackFrame: parseCount@/app/routes/web.php:16
+- file: laravel/crash-id.json
+  status: 500
+  request:
+    url: /crash/id
+  group: owner-id
+  expect:
+    errorType: ErrorException
+    tokens: Undefined array key "owner"
+    stackFrame: Illuminate\Foundation\Bootstrap\HandleExceptions::{closure}@/app/routes/web.php:7
+- file: laravel/crash-name.json
+  status: 500
+  request:
+    url: /crash/name
+  group: customer-name
+  expect:
+    errorType: ErrorException
+    tokens: Attempt to read property "customer" on null
+    stackFrame: Illuminate\Foundation\Bootstrap\HandleExceptions::{closure}@/app/routes/web.php:8
+- file: laravel/not-found-item.json
+  status: 404
+  request:
+    url: /items/42
+  group: item-not-found
+  expect:
+    errorType: Symfony\Component\HttpKernel\Exception\NotFoundHttpException
+    tokens: Item NUM not found
+    stackFrame: abort@/app/routes/web.php:15
+- file: laravel/not-found-route.json
+  status: 404
+  request:
+    url: /no/such/route
+  group: route-not-found
+  expect:
+    errorType: Symfony\Component\HttpKernel\Exception\NotFoundHttpException
+    tokens: The route noPATH could not be found.
+    stackFrame: Illuminate\Foundation\Application::handleRequest@/app/public/index.php:20
+- file: nestjs/validation-one-field.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", "email": "bob@example.com", "age": -1}'
+  group: one-field
+  expect:
+    errorType: Bad Request
+    tokens: <FIELD> must not be less than NUM
+    stackFrame: ''
+- file: nestjs/validation-three-fields.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  expect:
+    errorType: Bad Request
+    tokens: <FIELD> must be an <FIELD>; <FIELD> must be shorter than or equal to NUM characters; <FIELD> must not be less than NUM
+    stackFrame: ''
+- file: nestjs/validation-three-fields-reordered.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  derived: true
+  expect:
+    errorType: Bad Request
+    tokens: <FIELD> must be an <FIELD>; <FIELD> must be shorter than or equal to NUM characters; <FIELD> must not be less than NUM
+    stackFrame: ''
+- file: nestjs/validation-three-fields-other-values.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"age": -7, "email": "nope", "name": "anotherlongname1"}'
+  group: three-fields
+  expect:
+    errorType: Bad Request
+    tokens: <FIELD> must be an <FIELD>; <FIELD> must be shorter than or equal to NUM characters; <FIELD> must not be less than NUM
+    stackFrame: ''
+- file: nestjs/validation-missing.json
+  status: 400
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: Bad Request
+    tokens: age must be an integer number; age must not be less than NUM; email must be an email; name must be a string; name must be shorter than or equal to NUM characters
+    stackFrame: ''
+- file: nestjs/json-parse.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: json-syntax
+  expect:
+    errorType: Bad Request
+    tokens: Expected double-quoted property name in JSON at position NUM (line NUM column NUM)
+    stackFrame: ''
+- file: nestjs/crash-echo-abc.json
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: internal-error
+  expect:
+    errorType: ''
+    tokens: Internal server error
+    stackFrame: ''
+- file: nestjs/crash-echo-xyz.json
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: internal-error
+  expect:
+    errorType: ''
+    tokens: Internal server error
+    stackFrame: ''
+- file: nestjs/crash-id.json
+  status: 500
+  request:
+    url: /crash/id
+  group: internal-error
+  expect:
+    errorType: ''
+    tokens: Internal server error
+    stackFrame: ''
+- file: nestjs/crash-name.json
+  status: 500
+  request:
+    url: /crash/name
+  group: internal-error
+  expect:
+    errorType: ''
+    tokens: Internal server error
+    stackFrame: ''
+- file: nestjs/not-found-item.json
+  status: 404
+  request:
+    url: /items/42
+  group: item-not-found
+  expect:
+    errorType: Not Found
+    tokens: Item NUM not found
+    stackFrame: ''
+- file: nestjs/not-found-route.json
+  status: 404
+  request:
+    url: /no/such/route
+  group: route-not-found
+  expect:
+    errorType: Not Found
+    tokens: Cannot GET PATH
+    stackFrame: ''
+- file: rails/validation-one-field.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "bob", "email": "bob@example.com", "age": -1}'
+  group: one-field
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: must be greater than or equal to NUM'
+    stackFrame: ''
+- file: rails/validation-three-fields.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: is invalid; <FIELD>: is too long (maximum is NUM characters); <FIELD>: must be greater than or equal to NUM'
+    stackFrame: ''
+- file: rails/validation-three-fields-reordered.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"name": "averyveryverylongname", "email": "not-an-email", "age": -5}'
+  group: three-fields
+  derived: true
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: is invalid; <FIELD>: is too long (maximum is NUM characters); <FIELD>: must be greater than or equal to NUM'
+    stackFrame: ''
+- file: rails/validation-three-fields-other-values.json
+  status: 422
+  request:
+    url: /users
+    payload: '{"age": -7, "email": "nope", "name": "anotherlongname1"}'
+  group: three-fields
+  expect:
+    errorType: ''
+    tokens: '<FIELD>: is invalid; <FIELD>: is too long (maximum is NUM characters); <FIELD>: must be greater than or equal to NUM'
+    stackFrame: ''
+- file: rails/validation-missing.json
+  status: 422
+  request:
+    url: /users
+    payload: '{}'
+  group: missing-fields
+  expect:
+    errorType: ''
+    tokens: 'age: can''t be blank; age: is not a number; email: can''t be blank; email: is invalid; name: can''t be blank'
+    stackFrame: ''
+- file: rails/json-parse.json
+  status: 400
+  request:
+    url: /users
+    payload: '{"name": "bob", '
+  group: json-syntax
+  expect:
+    errorType: ActionDispatch::Http::Parameters::ParseError
+    tokens: Error occurred while parsing request parameters
+    stackFrame: create@app/controllers/users_controller.rb:3
+- file: rails/crash-echo-abc.json
+  status: 500
+  request:
+    url: /parse?q=abc
+  group: parse-count
+  expect:
+    errorType: ArgumentError
+    tokens: 'invalid value for Integer(): "<INPUT>"'
+    stackFrame: parse_count@app/controllers/users_controller.rb:26
+- file: rails/crash-echo-xyz.json
+  status: 500
+  request:
+    url: /parse?q=xyz1
+  group: parse-count
+  expect:
+    errorType: ArgumentError
+    tokens: 'invalid value for Integer(): "<INPUT>"'
+    stackFrame: parse_count@app/controllers/users_controller.rb:26
+- file: rails/crash-id.json
+  status: 500
+  request:
+    url: /crash/id
+  group: owner-id
+  expect:
+    errorType: KeyError
+    tokens: 'key not found: :owner'
+    stackFrame: fetch@app/controllers/users_controller.rb:27
+- file: rails/crash-name.json
+  status: 500
+  request:
+    url: /crash/name
+  group: customer-name
+  expect:
+    errorType: NoMethodError
+    tokens: undefined method `customer' for nil
+    stackFrame: customer_name@app/controllers/users_controller.rb:28
+- file: rails/not-found-item.json
+  status: 404
+  request:
+    url: /items/42
+  group: item-not-found
+  expect:
+    errorType: Item 42 not found
+    tokens: ''
+    stackFrame: ''
+- file: rails/not-found-route.json
+  status: 404
+  request:
+    url: /no/such/route
+  group: route-not-found
+  expect:
+    errorType: ActionController::RoutingError
+    tokens: No route matches [LIST] "PATH"
+    stackFrame: call@actionpack (7.2.4) lib/action_dispatch/middleware/debug_exceptions.rb:35
+- file: spring/convert-integer-abc.json
+  status: 400
+  request:
+    url: /api/triangle/abc/2/3
+    contractPath: /api/triangle/{a}/{b}/{c}
+  group: convert-to-integer
+  expect:
+    errorType: Bad Request
+    tokens: 'Failed to convert value of type ''java.lang.String'' to required type ''java.lang.Integer''; nested exception is java.lang.NumberFormatException: For input string: "<INPUT>"'
+    stackFrame: ''
+- file: spring/convert-integer-xyz.json
+  status: 400
+  request:
+    url: /api/triangle/xyz/2/3
+    contractPath: /api/triangle/{a}/{b}/{c}
+  group: convert-to-integer
+  expect:
+    errorType: Bad Request
+    tokens: 'Failed to convert value of type ''java.lang.String'' to required type ''java.lang.Integer''; nested exception is java.lang.NumberFormatException: For input string: "<INPUT>"'
+    stackFrame: ''
+- file: spring/convert-double-abc.json
+  status: 400
+  request:
+    url: /api/bessj/2/abc
+    contractPath: /api/bessj/{n}/{x}
+  group: convert-to-double
+  expect:
+    errorType: Bad Request
+    tokens: 'Failed to convert value of type ''java.lang.String'' to required type ''java.lang.Double''; nested exception is java.lang.NumberFormatException: For input string: "<INPUT>"'
+    stackFrame: ''
+- file: spring/method-not-allowed.json
+  status: 405
+  request:
+    url: /api/triangle/1/2/3
+    contractPath: /api/triangle/{a}/{b}/{c}
+  group: method-not-supported
+  expect:
+    errorType: Method Not Allowed
+    tokens: Request method 'STR' not supported
+    stackFrame: ''
+- file: spring/not-found-route.json
+  status: 404
+  request:
+    url: /no/such/route
+  group: route-not-found
+  expect:
+    errorType: Not Found
+    tokens: No message available
+    stackFrame: ''
+- file: spring/whitelabel-not-found.html
+  status: 404
+  request:
+    url: /no/such/route
+  group: whitelabel-not-found
+  expect:
+    errorType: Whitelabel Error Page
+    tokens: This application has no explicit mapping for PATH, so you are seeing this as a fallback. Fri Nov NUM NUM:NUM:NUM GMT NUM There was an unexpected error (type=Not Found, status=NUM). No message available
+    stackFrame: ''
+- file: spring/tomcat-product-not-found-a.html
+  status: 500
+  request:
+    url: /products/NOPE/features/NOPE2
+    payload: description=x
+    contractPath: /products/{productName}/features/{featureName}
+  group: product-not-found
+  expect:
+    errorType: Apache Tomcat/8.5.11 - Error report
+    tokens: 'HTTP Status NUM - org.javiermf.features.exceptions.ObjectNotFoundException: Object with id <INPUT> has not been found'
+    stackFrame: org.javiermf.features.daos.ProductsDAO.findByName@ProductsDAO.java:41
+- file: spring/tomcat-product-not-found-b.html
+  status: 500
+  request:
+    url: /products/MISSING/features/F1
+    payload: description=x
+    contractPath: /products/{productName}/features/{featureName}
+  group: product-not-found
+  expect:
+    errorType: Apache Tomcat/8.5.11 - Error report
+    tokens: 'HTTP Status NUM - org.javiermf.features.exceptions.ObjectNotFoundException: Object with id <INPUT> has not been found'
+    stackFrame: org.javiermf.features.daos.ProductsDAO.findByName@ProductsDAO.java:41
+- file: spring/tomcat-product-not-found-delete.html
+  status: 500
+  request:
+    url: /products/NOPE
+    contractPath: /products/{productName}
+  group: product-not-found
+  expect:
+    errorType: Apache Tomcat/8.5.11 - Error report
+    tokens: 'HTTP Status NUM - org.javiermf.features.exceptions.ObjectNotFoundException: Object with id <INPUT> has not been found'
+    stackFrame: org.javiermf.features.daos.ProductsDAO.findByName@ProductsDAO.java:41
+- file: spring/tomcat-method-not-allowed.html
+  status: 405
+  request:
+    url: /products
+    contractPath: /products
+  group: tomcat-method-not-allowed
+  expect:
+    errorType: Apache Tomcat/8.5.11 - Error report
+    tokens: HTTP Status NUM - Method Not Allowed type Status report message Method Not Allowed description The specified HTTP method is not allowed for the requested resource. Apache TomcatPATH
+    stackFrame: ''
+- file: spring/blog-photos-a.json
+  status: 400
+  request:
+    url: /api/photos
+    payload: '{}'
+  group: photos-validation
+  expect:
+    errorType: Bad Request
+    tokens: albumId - must not be null; thumbnailUrl - must not be blank; title - must not be blank; url - must not be blank
+    stackFrame: ''
+- file: spring/blog-photos-b.json
+  status: 400
+  request:
+    url: /api/photos
+    payload: '{}'
+  group: photos-validation
+  expect:
+    errorType: Bad Request
+    tokens: albumId - must not be null; thumbnailUrl - must not be blank; title - must not be blank; url - must not be blank
+    stackFrame: ''
+- file: spring/npe-bitlength-a.json
+  status: 500
+  request:
+    url: /deploy
+    payload: '{}'
+  group: npe-bitlength
+  expect:
+    errorType: Internal Server Error
+    tokens: Cannot invoke "java.math.BigInteger.bitLength()" because "value" is null
+    stackFrame: ''
+- file: spring/npe-bitlength-b.json
+  status: 500
+  request:
+    url: /deploy
+    payload: '{"tokenName":"CCZWHPDYNLHHDFJFIFU"}'
+  group: npe-bitlength
+  expect:
+    errorType: Internal Server Error
+    tokens: Cannot invoke "java.math.BigInteger.bitLength()" because "value" is null
+    stackFrame: ''
+- file: spring/npe-length.json
+  status: 500
+  request:
+    url: /0x5b1869d9a4c187f2eaa108f3062412ecf0526b24/approve
+    payload: '{}'
+  group: npe-length
+  expect:
+    errorType: Internal Server Error
+    tokens: Cannot invoke "String.length()" because "val" is null
+    stackFrame: ''
+- file: spring/npe-getbytes.json
+  status: 500
+  request:
+    url: /0x5b1869d9a4c187f2eaa108f3062412ecf0526b24/approveAndCall
+    payload: '{"spender":"NWPZUMAZAVBZUSKNWLUNC","value":2,"extraData":"HX"}'
+  group: npe-getbytes
+  expect:
+    errorType: Internal Server Error
+    tokens: Cannot invoke "String.getBytes()" because "extraData" is null
+    stackFrame: ''
+- file: problem-details/petclinic-no-resource-a.json
+  status: 500
+  request:
+    url: /petclinic/api/oops
+    payload: ''
+  group: no-resource
+  expect:
+    errorType: NoResourceFoundException
+    tokens: No static resource apiPATH
+    stackFrame: ''
+- file: problem-details/petclinic-no-resource-b.json
+  status: 500
+  request:
+    url: /petclinic/api/owners/1/?/
+    payload: '{"firstName":"George","lastName":"Franklin","telephone":"6085551023","address":"110 W. Liberty St.","city":"Madison"}'
+  group: no-resource
+  expect:
+    errorType: NoResourceFoundException
+    tokens: No static resource apiPATH
+    stackFrame: ''
+- file: problem-details/petclinic-data-integrity.json
+  status: 404
+  request:
+    url: /petclinic/api/visits
+    payload: '{"description":"spayed","petId":7}'
+  group: data-integrity
+  expect:
+    errorType: DataIntegrityViolationException
+    tokens: 'could not execute statement [NULL not allowed for column "VISIT_DATE"; SQL statement: insert into visits (visit_date,description,pet_id,id) values (?,?,?,default) [LIST]] [LIST]; SQL [LIST]; constraint [LIST]'
+    stackFrame: ''
+- file: problem-details/rfc9457-out-of-credit.json
+  status: 403
+  request:
+    url: /purchase
+    payload: '{"item": 123456, "quantity": 2}'
+  group: out-of-credit
+  expect:
+    errorType: You do not have enough credit.
+    tokens: Your current balance is NUM, but that costs NUM.
+    stackFrame: ''
+- file: problem-details/rfc9457-validation.json
+  status: 422
+  request:
+    url: /details
+    payload: '{"age": 42.3, "profile": {"color": "yellow"}}'
+  group: validation-error
+  expect:
+    errorType: Your request is not valid.
+    tokens: '<FIELD>: must be ''green'', ''red'' or ''blue''; <FIELD>: must be a positive integer'
+    stackFrame: ''
+- file: problem-details/rfc9457-validation-reordered.json
+  status: 422
+  request:
+    url: /details
+    payload: '{"age": 42.3, "profile": {"color": "yellow"}}'
+  group: validation-error
+  derived: true
+  expect:
+    errorType: Your request is not valid.
+    tokens: '<FIELD>: must be ''green'', ''red'' or ''blue''; <FIELD>: must be a positive integer'
+    stackFrame: ''
+- file: express-conduit/destructure-title-a.json
+  status: 500
+  request:
+    url: /api/articles
+    payload: '{"article":{"tagList":["FZUDJRAJNMFZRXTTPVBHO","MTUMBOSD"],"description":"Chuck Norris solved the Travelling Salesman problem in O(1) time.","title":"Recalled to Life","body":"Chuck Norris can unit test an entire application with a single
+      assert."}}'
+    contractPath: /articles
+  group: destructure-title
+  expect:
+    errorType: ''
+    tokens: Cannot destructure property 'title' of 'article' as it is undefined.
+    stackFrame: ''
+- file: express-conduit/destructure-title-b.json
+  status: 500
+  request:
+    url: /api/articles
+    payload: '{"article":{"tagList":["FZUDJRAJNMFZRXTTPVBHO","MTUMBOSD"],"description":"Chuck Norris solved the Travelling Salesman problem in O(1) time.","title":"Recalled to Life","body":"Chuck Norris can unit test an entire application with a single
+      assert."}}'
+    contractPath: /articles
+  group: destructure-title
+  expect:
+    errorType: ''
+    tokens: Cannot destructure property 'title' of 'article' as it is undefined.
+    stackFrame: ''
+- file: express-conduit/destructure-email.json
+  status: 500
+  request:
+    url: /api/user
+    payload: '{"user":{"bio":"CJJCOVOHXWCATSCRUSZXSJYOTQ","image":"HABBXYLHS","password":"catsISc00l?!useIt#","email":"semele.white@cats.io","username":"cats290192683"}}'
+    contractPath: /user
+  group: destructure-email
+  expect:
+    errorType: ''
+    tokens: Cannot destructure property 'email' of 'userPayload' as it is undefined.
+    stackFrame: ''
+- file: express-conduit/reading-email.json
+  status: 500
+  request:
+    url: /api/users/login
+    payload: '{"user":{"email":"semele.white@cats.io","password":"catsISc00l?!useIt#"}}'
+    contractPath: /users/login
+  group: reading-email
+  expect:
+    errorType: ''
+    tokens: Cannot read properties of undefined (reading 'email')
+    stackFrame: ''
+- file: express-conduit/reading-title.json
+  status: 500
+  request:
+    url: /api/articles/Recalled-to-Life-1
+    payload: '{"article":{"tagList":["LZHGMTTCEPMAIVKICYCNMNMPL","JBEYXFKPXXRTU"],"description":"Chuck Norris'' programs occupy 150% of CPU, even when they are not executing.","title":"The Daffodil Sky","body":"Chuck Norris can''t test for equality because
+      he has no equal."}}'
+    contractPath: /articles/{slug}
+  group: reading-title
+  expect:
+    errorType: ''
+    tokens: Cannot read properties of undefined (reading 'title')
+    stackFrame: ''
+- file: express-conduit/email-trim.json
+  status: 500
+  request:
+    url: /api/users
+    payload: '{"user":{"email":2,"password":"catsISc00l?!useIt#","username":"cats290192683"}}'
+    contractPath: /users
+  group: email-trim
+  expect:
+    errorType: ''
+    tokens: input.email?.trim is not a function
+    stackFrame: ''
+- file: express-conduit/username-trim.json
+  status: 500
+  request:
+    url: /api/users
+    payload: '{"user":{"email":"achilles.orchid@cats.io","password":"catsISc00l?!useIt#","username":2}}'
+    contractPath: /users
+  group: username-trim
+  expect:
+    errorType: ''
+    tokens: input.username?.trim is not a function
+    stackFrame: ''
+- file: express-conduit/prisma-find-many.json
+  status: 500
+  request:
+    url: /api/articles?offset=-1
+    payload: '{"offset":-1}'
+    contractPath: /articles
+  group: prisma-find-many
+  expect:
+    errorType: ''
+    tokens: 'Invalid `import_prisma_client.default.article.findMany()` invocation in PATH:NUM:NUM NUM AND: andQueries NUM } NUM }); → NUM const articles = await import_prisma_client.default.article.findMany( Error in query graph construction: AssertionError("STR")'
+    stackFrame: ''
+- file: custom-envelopes/code-usr-001-user-42.json
+  status: 400
+  request:
+    url: /users
+  group: usr-001
+  derived: true
+  expect:
+    errorType: "USR-001"
+    tokens: "User NUM not found"
+    stackFrame: ''
+- file: custom-envelopes/code-usr-001-user-77.json
+  status: 400
+  request:
+    url: /users
+  group: usr-001
+  derived: true
+  expect:
+    errorType: "USR-001"
+    tokens: "User NUM not found"
+    stackFrame: ''
+- file: custom-envelopes/code-usr-002.json
+  status: 400
+  request:
+    url: /users
+  group: usr-002
+  derived: true
+  expect:
+    errorType: "USR-002"
+    tokens: "User NUM not found"
+    stackFrame: ''
+- file: custom-envelopes/code-lowercase-err-01.json
+  status: 400
+  request:
+    url: /users
+  group: err-01
+  derived: true
+  expect:
+    errorType: "err-01"
+    tokens: "Disk quota exceeded"
+    stackFrame: ''
+- file: custom-envelopes/code-lowercase-err-02.json
+  status: 400
+  request:
+    url: /users
+  group: err-02
+  derived: true
+  expect:
+    errorType: "err-02"
+    tokens: "Disk quota exceeded"
+    stackFrame: ''
+- file: custom-envelopes/code-colon-err-12.json
+  status: 429
+  request:
+    url: /users
+  group: err-12
+  derived: true
+  expect:
+    errorType: "ERR:12"
+    tokens: "Rate limit hit"
+    stackFrame: ''
+- file: custom-envelopes/code-per-instance-a.json
+  status: 404
+  request:
+    url: /users
+  group: order-instance
+  derived: true
+  expect:
+    errorType: "ORD-83749213"
+    tokens: "Order not found"
+    stackFrame: ''
+- file: custom-envelopes/code-per-instance-b.json
+  status: 404
+  request:
+    url: /users
+  group: order-instance
+  derived: true
+  expect:
+    errorType: "ORD-12345678"
+    tokens: "Order not found"
+    stackFrame: ''
+- file: custom-envelopes/code-dotted-expired.json
+  status: 401
+  request:
+    url: /users
+  group: auth-expired
+  derived: true
+  expect:
+    errorType: "auth.token.expired"
+    tokens: "Token problem"
+    stackFrame: ''
+- file: custom-envelopes/code-dotted-invalid.json
+  status: 401
+  request:
+    url: /users
+  group: auth-invalid
+  derived: true
+  expect:
+    errorType: "auth.token.invalid"
+    tokens: "Token problem"
+    stackFrame: ''
+- file: custom-envelopes/detail-name-too-long.json
+  status: 400
+  request:
+    url: /users
+  group: e100-name
+  derived: true
+  expect:
+    errorType: "E100"
+    tokens: "Validation failed; name is too long"
+    stackFrame: ''
+- file: custom-envelopes/detail-name-too-long-again.json
+  status: 400
+  request:
+    url: /users
+  group: e100-name
+  derived: true
+  expect:
+    errorType: "E100"
+    tokens: "Validation failed; name is too long"
+    stackFrame: ''
+- file: custom-envelopes/detail-email-invalid.json
+  status: 400
+  request:
+    url: /users
+  group: e100-email
+  derived: true
+  expect:
+    errorType: "E100"
+    tokens: "Validation failed; email is invalid"
+    stackFrame: ''
+- file: custom-envelopes/detail-object-name.json
+  status: 400
+  request:
+    url: /users
+  group: e100-object-name
+  derived: true
+  expect:
+    errorType: "E100"
+    tokens: "Validation failed; name: too long"
+    stackFrame: ''
+- file: custom-envelopes/detail-object-email.json
+  status: 400
+  request:
+    url: /users
+  group: e100-object-email
+  derived: true
+  expect:
+    errorType: "E100"
+    tokens: "Validation failed; email: invalid"
+    stackFrame: ''
+- file: custom-envelopes/detail-array.json
+  status: 400
+  request:
+    url: /users
+  group: e100-array
+  derived: true
+  expect:
+    errorType: "E100"
+    tokens: "Validation failed; email is invalid; name is too long"
+    stackFrame: ''
+- file: custom-envelopes/detail-array-reordered.json
+  status: 400
+  request:
+    url: /users
+  group: e100-array
+  derived: true
+  expect:
+    errorType: "E100"
+    tokens: "Validation failed; email is invalid; name is too long"
+    stackFrame: ''
+- file: custom-envelopes/fields-disk-full-volume-3.json
+  status: 507
+  request:
+    url: /users
+  group: disk-full
+  derived: true
+  expect:
+    errorType: "E7"
+    tokens: "Disk full; volume NUM has no space"
+    stackFrame: ''
+- file: custom-envelopes/fields-disk-full-volume-9.json
+  status: 507
+  request:
+    url: /users
+  group: disk-full
+  derived: true
+  expect:
+    errorType: "E7"
+    tokens: "Disk full; volume NUM has no space"
+    stackFrame: ''
+- file: custom-envelopes/fields-inode-table-full.json
+  status: 507
+  request:
+    url: /users
+  group: inode-full
+  derived: true
+  expect:
+    errorType: "E7"
+    tokens: "Disk full; inode table is full"
+    stackFrame: ''
+- file: custom-envelopes/array-code-description.json
+  status: 400
+  request:
+    url: /users
+  group: codes-e1-e2
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "E1: name too long; E2: email invalid"
+    stackFrame: ''
+- file: custom-envelopes/array-code-description-reordered.json
+  status: 400
+  request:
+    url: /users
+  group: codes-e1-e2
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "E1: name too long; E2: email invalid"
+    stackFrame: ''
+- file: custom-envelopes/array-code-description-other.json
+  status: 400
+  request:
+    url: /users
+  group: codes-e1-e3
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "E1: name too long; E3: phone is required for company accounts"
+    stackFrame: ''
+- file: custom-envelopes/parallel-arrays.json
+  status: 400
+  request:
+    url: /users
+  group: parallel-e5-e6
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "E5: street too long; E6: zip invalid"
+    stackFrame: ''
+- file: custom-envelopes/parallel-arrays-reordered.json
+  status: 400
+  request:
+    url: /users
+  group: parallel-e5-e6
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "E5: street too long; E6: zip invalid"
+    stackFrame: ''
+- file: custom-envelopes/parallel-arrays-other.json
+  status: 400
+  request:
+    url: /users
+  group: parallel-e5-e7
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "E5: street too long; E7: country is required for company accounts"
+    stackFrame: ''
+- file: custom-envelopes/envelope-e9-tenant-7.json
+  status: 429
+  request:
+    url: /users
+  group: e9-quota
+  derived: true
+  expect:
+    errorType: "E9"
+    tokens: "Quota exceeded for tenant NUM"
+    stackFrame: ''
+- file: custom-envelopes/envelope-e9-tenant-12.json
+  status: 429
+  request:
+    url: /users
+  group: e9-quota
+  derived: true
+  expect:
+    errorType: "E9"
+    tokens: "Quota exceeded for tenant NUM"
+    stackFrame: ''
+- file: custom-envelopes/envelope-e9-with-flag.json
+  status: 429
+  request:
+    url: /users
+  group: e9-quota
+  derived: true
+  expect:
+    errorType: "E9"
+    tokens: "Quota exceeded for tenant NUM"
+    stackFrame: ''
+- file: custom-envelopes/envelope-e9-disk.json
+  status: 429
+  request:
+    url: /users
+  group: e9-disk
+  derived: true
+  expect:
+    errorType: "E9"
+    tokens: "Disk quota exceeded"
+    stackFrame: ''
+- file: custom-envelopes/envelope-e10-quota.json
+  status: 429
+  request:
+    url: /users
+  group: e10-quota
+  derived: true
+  expect:
+    errorType: "E10"
+    tokens: "Quota exceeded for tenant NUM"
+    stackFrame: ''
+- file: custom-envelopes/creative-failure-auth-17-user-42.json
+  status: 401
+  request:
+    url: /users
+  group: auth-17
+  derived: true
+  expect:
+    errorType: "AUTH-17"
+    tokens: "Token expired for user NUM"
+    stackFrame: ''
+- file: custom-envelopes/creative-failure-auth-17-user-77.json
+  status: 401
+  request:
+    url: /users
+  group: auth-17
+  derived: true
+  expect:
+    errorType: "AUTH-17"
+    tokens: "Token expired for user NUM"
+    stackFrame: ''
+- file: custom-envelopes/creative-failure-auth-18.json
+  status: 401
+  request:
+    url: /users
+  group: auth-18
+  derived: true
+  expect:
+    errorType: "AUTH-18"
+    tokens: "Token revoked for user NUM"
+    stackFrame: ''
+- file: custom-envelopes/creative-norwegian-name.json
+  status: 400
+  request:
+    url: /users
+  group: no-name
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "Navn er for langt; Ugyldig verdi"
+    stackFrame: ''
+- file: custom-envelopes/creative-norwegian-name-again.json
+  status: 400
+  request:
+    url: /users
+  group: no-name
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "Navn er for langt; Ugyldig verdi"
+    stackFrame: ''
+- file: custom-envelopes/creative-norwegian-email.json
+  status: 400
+  request:
+    url: /users
+  group: no-email
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "E-post er ugyldig; Ugyldig verdi"
+    stackFrame: ''
+- file: custom-envelopes/creative-problems-name.json
+  status: 400
+  request:
+    url: /users
+  group: problems-name
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "problems[].what: name; problems[].why: too long"
+    stackFrame: ''
+- file: custom-envelopes/creative-problems-email.json
+  status: 400
+  request:
+    url: /users
+  group: problems-email
+  derived: true
+  expect:
+    errorType: ""
+    tokens: "problems[].what: email; problems[].why: invalid"
+    stackFrame: ''

@@ -1,0 +1,1 @@
+{"type":"https://example.net/validation-error","title":"Your request is not valid.","errors":[{"detail":"must be 'green', 'red' or 'blue'","pointer":"#/profile/color"},{"detail":"must be a positive integer","pointer":"#/age"}]}

@@ -2,6 +2,16 @@ package com.endava.cats.report;
 
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.ErrorSignature;
+import com.endava.cats.report.error.contract.ErrorResponseContract;
+import com.endava.cats.report.error.contract.ErrorResponseContracts;
+import com.endava.cats.report.error.extract.EmptyBody;
+import com.endava.cats.report.error.extract.ErrorBodyExtraction;
+import com.endava.cats.report.error.mask.ErrorSignatureMasker;
+import com.endava.cats.report.error.template.ErrorSample;
+import com.endava.cats.report.error.template.ErrorTemplate;
+import com.endava.cats.report.error.template.ErrorTemplateMiner;
+import io.swagger.v3.oas.models.OpenAPI;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Comparator;
@@ -51,18 +61,35 @@ public class ClusterCompute {
      * @param testCases the test case summaries of a run
      */
     public static void assignErrorTemplates(List<CatsTestCaseSummary> testCases) {
+        assignErrorTemplates(testCases, null);
+    }
+
+    /**
+     * Mines and assigns an error template to every error and warning test case, reading the error bodies by the field
+     * roles the contract declares for them. Does nothing when all of them already carry a template.
+     *
+     * @param testCases the test case summaries of a run
+     * @param openAPI   the contract of the run, or {@code null} to read the error bodies by field name only
+     */
+    public static void assignErrorTemplates(List<CatsTestCaseSummary> testCases, OpenAPI openAPI) {
         List<CatsTestCaseSummary> reportableCases = filterReportableTestCases(Optional.ofNullable(testCases).orElse(List.of()));
         if (reportableCases.stream().map(CatsTestCaseSummary::getErrorTemplateId).allMatch(Objects::nonNull)) {
             return;
         }
-        List<ErrorTemplate> templates = ErrorTemplateMiner.mine(reportableCases.stream().map(ClusterCompute::errorSample).toList());
+        List<ErrorTemplate> templates = ErrorTemplateMiner.mine(reportableCases.stream().map(testCase -> errorSample(testCase, openAPI)).toList());
         IntStream.range(0, reportableCases.size())
                 .forEach(index -> reportableCases.get(index).assignErrorTemplate(templates.get(index).id(), templates.get(index).text()));
     }
 
-    private static ErrorSample errorSample(CatsTestCaseSummary testCase) {
-        return new ErrorSample(testCase.getResultReason(), testCase.getHttpResponseCode(),
-                ErrorSignatureMasker.signatureOf(testCase.getResponseBody(), null, testCase.getRequestVocabulary()));
+    private static ErrorSample errorSample(CatsTestCaseSummary testCase, OpenAPI openAPI) {
+        return new ErrorSample(testCase.getResultReason(), testCase.getHttpResponseCode(), testCase.getErrorSignature()
+                .orElseGet(() -> signatureOf(testCase, openAPI)));
+    }
+
+    private static ErrorSignature signatureOf(CatsTestCaseSummary testCase, OpenAPI openAPI) {
+        ErrorResponseContract declaredBody = ErrorResponseContracts.lookup(openAPI, testCase.getHttpMethod(), testCase.getPath(),
+                testCase.getHttpResponseCode());
+        return ErrorSignatureMasker.signatureOf(testCase.getResponseBody(), null, testCase.getRequestVocabulary(), declaredBody);
     }
 
     private static List<CatsTestCaseSummary> filterReportableTestCases(List<CatsTestCaseSummary> testCases) {
@@ -141,8 +168,8 @@ public class ClusterCompute {
         return Map.of(
                 "templateId", representative.getErrorTemplateId(),
                 "errorTemplate", representative.getErrorTemplate(),
-                "rootCauseSummary", ErrorSimilarityDetector.extractRootCauseSummary(representative.getResponseBody(), representative.getResultDetails()),
-                "errorMessage", Optional.ofNullable(representative.getResponseBody()).orElse(ErrorTemplate.EMPTY_BODY),
+                "rootCauseSummary", ErrorBodyExtraction.rootCauseSummary(representative.getResponseBody(), representative.getResultDetails()),
+                "errorMessage", Optional.ofNullable(representative.getResponseBody()).orElse(EmptyBody.PLACEHOLDER),
                 "httpStatusCode", statusCode,
                 "statusBadgeClass", statusBadgeClass(statusCode),
                 "is5xx", ResponseCodeFamily.is5xxCode(statusCode));

@@ -437,6 +437,44 @@ class TestCaseListenerTest {
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Warn 1 happened");
     }
 
+    @Test
+    void shouldMineTheErrorSignatureWithTheFieldRolesTheContractDeclares() {
+        String contract = """
+                openapi: 3.0.3
+                info: {title: orders, version: "1"}
+                paths:
+                  /orders:
+                    post:
+                      responses:
+                        default:
+                          description: failure
+                          content:
+                            application/json:
+                              schema:
+                                type: object
+                                properties:
+                                  what: {type: string}
+                                  trackingRef: {type: string, format: uuid}
+                """;
+        Object previousSpec = ReflectionTestUtils.getField(catsGlobalContext, "openAPI");
+        ReflectionTestUtils.setField(catsGlobalContext, "openAPI", new io.swagger.v3.parser.OpenAPIV3Parser().readContents(contract, null, null).getOpenAPI());
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        try {
+            testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+                testCaseListener.addRequest(CatsRequest.builder().httpMethod("POST").build());
+                testCaseListener.addResponse(CatsResponse.builder().responseCode(400).body("{\"what\":\"Name too long\",\"trackingRef\":\"TR-A7F3\"}").build());
+                testCaseListener.addContractPath("/orders");
+                testCaseListener.reportError(logger, "Something happened: {}", "bad stuff!");
+            }, FuzzingData.builder().build());
+        } finally {
+            ReflectionTestUtils.setField(catsGlobalContext, "openAPI", previousSpec);
+            MDC.remove(TestCaseListener.ID);
+        }
+
+        CatsTestCaseSummary summary = testCaseListener.testCaseSummaryDetails.getLast();
+        Assertions.assertThat(summary.getErrorSignature()).get().satisfies(signature -> Assertions.assertThat(signature.tokens()).containsExactly("Name", "too", "long"));
+    }
+
     @ParameterizedTest
     @CsvSource({"401,1", "403,1", "200,0"})
     void shouldIncreaseTheNumberOfAuthErrors(int respCode, int times) {

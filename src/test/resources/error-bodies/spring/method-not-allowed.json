@@ -1,0 +1,1 @@
+{"timestamp":"2026-11-13T15:37:07.215+0000","status":405,"error":"Method Not Allowed","message":"Request method 'DELETE' not supported","path":"/api/triangle/1/2/3"}

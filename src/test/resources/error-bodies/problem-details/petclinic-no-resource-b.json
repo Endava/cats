@@ -1,0 +1,1 @@
+{"type":"http://localhost:8080/petclinic/api/owners/1/","title":"NoResourceFoundException","status":500,"detail":"No static resource api/owners/1.","instance":"/petclinic/api/owners/1/","timestamp":"2026-11-10T18:57:04.828000288Z"}

@@ -1,0 +1,1 @@
+{"errors":[{"type":"field","msg":"Invalid value","path":"name","location":"body"},{"type":"field","msg":"Invalid value","path":"name","location":"body"},{"type":"field","msg":"Invalid value","path":"email","location":"body"},{"type":"field","msg":"Invalid value","path":"age","location":"body"}]}

@@ -33,7 +33,7 @@ import com.endava.cats.model.RunOutcome;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.report.BaselineComparisonEngine;
-import com.endava.cats.report.CatsWfcFaultCategory;
+import com.endava.cats.report.wfc.CatsWfcFaultCategory;
 import com.endava.cats.report.SummaryReportContext;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.KeyValuePair;

@@ -1,0 +1,1 @@
+{"detail":[{"type":"missing","loc":["body","name"],"msg":"Field required","input":{}},{"type":"missing","loc":["body","email"],"msg":"Field required","input":{}},{"type":"missing","loc":["body","age"],"msg":"Field required","input":{}}]}

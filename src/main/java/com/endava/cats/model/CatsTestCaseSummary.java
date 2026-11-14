@@ -30,6 +30,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private String errorTemplateId;
     private String errorTemplate;
     private transient RequestVocabulary requestVocabulary;
+    private transient ErrorSignature errorSignature;
 
     /**
      * Creates a CatsTestCaseSummary object from a CatsTestCase.
@@ -70,6 +71,25 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     public void assignErrorTemplate(String templateId, String template) {
         this.errorTemplateId = templateId;
         this.errorTemplate = template;
+    }
+
+    /**
+     * Records the error signature computed from the full response body, which {@link #getResponseBody()} only keeps
+     * the first 1000 characters of.
+     *
+     * @param signature the error signature of the full response
+     */
+    public void attachErrorSignature(ErrorSignature signature) {
+        this.errorSignature = signature;
+    }
+
+    /**
+     * Returns the error signature of the full response body, or empty for summaries read from a report file.
+     *
+     * @return the error signature
+     */
+    public Optional<ErrorSignature> getErrorSignature() {
+        return Optional.ofNullable(errorSignature);
     }
 
     /**

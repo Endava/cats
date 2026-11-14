@@ -1,0 +1,1 @@
+{"statusCode":400,"code":"FST_ERR_VALIDATION","error":"Bad Request","message":"body/name must NOT have more than 10 characters"}

@@ -1,0 +1,27 @@
+panic: assignment to entry in nil map
+
+goroutine 81 [running]:
+runtime/debug.Stack()
+	/usr/local/go/src/runtime/debug/stack.go:26 +0x64
+main.main.func1.1()
+	/app/main.go:33 +0x38
+panic({0x101171a18?, 0x10122aa70?})
+	/usr/local/go/src/runtime/panic.go:859 +0x120
+main.main.func6(0x66175dba618b?)
+	/app/main.go:60 +0x34
+github.com/gin-gonic/gin.(*Context).Next(...)
+	/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+main.main.func1(0x66175dbbc100)
+	/app/main.go:36 +0x60
+github.com/gin-gonic/gin.(*Context).Next(...)
+	/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/context.go:185
+github.com/gin-gonic/gin.(*Engine).handleHTTPRequest(0x66175d607a00, 0x66175dbbc100)
+	/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:633 +0x6ac
+github.com/gin-gonic/gin.(*Engine).ServeHTTP(0x66175d607a00, {0x1011c9330, 0x66175dbb0870}, 0x66175d9b9400)
+	/go/pkg/mod/github.com/gin-gonic/gin@v1.10.0/gin.go:589 +0x150
+net/http.serverHandler.ServeHTTP({0x66175dbb8880?}, {0x1011c9330?, 0x66175dbb0870?}, 0x1?)
+	/usr/local/go/src/net/http/server.go:3436 +0xb0
+net/http.(*conn).serve(0x66175db93170, {0x1011c9bf0, 0x66175d97fe30})
+	/usr/local/go/src/net/http/server.go:2157 +0x5a0
+created by net/http.(*Server).Serve in goroutine 1
+	/usr/local/go/src/net/http/server.go:3604 +0x3e8

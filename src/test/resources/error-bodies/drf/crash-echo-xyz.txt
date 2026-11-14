@@ -1,0 +1,56 @@
+ValueError at /parse
+invalid literal for int() with base 10: 'xyz1'
+
+Request Method: GET
+Request URL: http://localhost:8080/parse?q=xyz1
+Django Version: 5.1.5
+Python Executable: /usr/local/bin/python
+Python Version: 3.15.2
+Python Path: ['/app', '/usr/local/lib/python315.zip', '/usr/local/lib/python3.15', '/usr/local/lib/python3.15/lib-dynload', '/usr/local/lib/python3.12/site-packages']
+Server time: Fri, 13 Nov 2026 09:30:50 -0600
+Installed Applications:
+['django.contrib.contenttypes', 'django.contrib.auth', 'rest_framework']
+Installed Middleware:
+['django.middleware.common.CommonMiddleware']
+
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/rest_framework/views.py", line 509, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/rest_framework/views.py", line 469, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/rest_framework/views.py", line 480, in raise_uncaught_exception
+    raise exc
+    ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/rest_framework/views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/rest_framework/decorators.py", line 50, in handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 46, in parse
+    return Response({"count": parse_count(request.query_params.get("q"))})
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 41, in parse_count
+    return int(raw)
+           ^^^^^^^^
+
+Exception Type: ValueError at /parse
+Exception Value: invalid literal for int() with base 10: 'xyz1'
+Raised during: __main__.parse
+Request information:
+[removed from the fixture]

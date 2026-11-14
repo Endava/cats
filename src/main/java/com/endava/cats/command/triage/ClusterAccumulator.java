@@ -1,7 +1,7 @@
 package com.endava.cats.command.triage;
 
 import com.endava.cats.model.CatsRequest;
-import com.endava.cats.report.ErrorTemplate;
+import com.endava.cats.report.error.template.ErrorTemplate;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;

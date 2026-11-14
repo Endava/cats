@@ -1,0 +1,1 @@
+{"timestamp":"2026-11-10T18:58:23.645+0000","status":500,"error":"Internal Server Error","message":"Cannot invoke \"String.getBytes()\" because \"extraData\" is null","path":"/0x5b1869d9a4c187f2eaa108f3062412ecf0526b24/approveAndCall"}

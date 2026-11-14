@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"One or more validation errors occurred.","status":400,"errors":{"Age":["The Age field is required."],"Name":["The Name field is required."],"Email":["The Email field is required."]},"traceId":"00-42d2d2c1aefbfe5f7535a8617ec80b71-780d1c5e361a75a3-00"}

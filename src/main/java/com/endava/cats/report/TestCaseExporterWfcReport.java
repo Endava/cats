@@ -8,6 +8,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.report.wfc.WfcReportBuilder;
 import com.github.mustachejava.Mustache;
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;

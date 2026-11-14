@@ -6,9 +6,9 @@ import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
-import com.endava.cats.execution.ExecutionSummaryProvider;
-import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.exception.CatsExecutionCancelledException;
+import com.endava.cats.execution.ExecutionStopController;
+import com.endava.cats.execution.ExecutionSummaryProvider;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -20,12 +20,16 @@ import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.ErrorSignature;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.model.RequestTarget;
+import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.model.SecurityFinding;
+import com.endava.cats.report.error.contract.ErrorResponseContract;
+import com.endava.cats.report.error.contract.ErrorResponseContracts;
+import com.endava.cats.report.error.mask.ErrorSignatureMasker;
 import com.endava.cats.tui.event.CatsExecutionEvent;
 import com.endava.cats.tui.event.CatsExecutionEventPublisher;
 import com.endava.cats.tui.model.TestResultSnapshot;
@@ -55,8 +59,8 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -529,7 +533,17 @@ public class TestCaseListener {
     }
 
     private void keepSummary(CatsTestCase testCase) {
-        testCaseSummaryDetails.add(CatsTestCaseSummary.fromCatsTestCase(testCase));
+        CatsTestCaseSummary summary = CatsTestCaseSummary.fromCatsTestCase(testCase);
+        if (summary.getError() || summary.getWarning()) {
+            summary.attachErrorSignature(errorSignatureOf(testCase, summary));
+        }
+        testCaseSummaryDetails.add(summary);
+    }
+
+    private ErrorSignature errorSignatureOf(CatsTestCase testCase, CatsTestCaseSummary summary) {
+        ErrorResponseContract declaredBody = ErrorResponseContracts.lookup(globalContext.getOpenAPI(), summary.getHttpMethod(),
+                summary.getPath(), summary.getHttpResponseCode());
+        return ErrorSignatureMasker.signatureOf(testCase.getResponse().getBody(), null, summary.getRequestVocabulary(), declaredBody);
     }
 
     private void keepExecutionDetails(CatsTestCase testCase) {

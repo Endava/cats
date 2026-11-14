@@ -1,6 +1,6 @@
 package com.endava.cats.command.triage;
 
-import com.endava.cats.report.ErrorSimilarityDetector;
+import com.endava.cats.report.error.extract.ErrorBodyExtraction;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Locale;
@@ -25,7 +25,7 @@ record ErrorMessage(String signature, String clean, boolean html) {
     static ErrorMessage of(TriageTestCase testCase) {
         String rawBody = testCase.rawResponseBody();
         String fallback = StringUtils.defaultIfBlank(testCase.testCase().getResultReason(), "HTTP " + testCase.statusCode());
-        String summary = ErrorSimilarityDetector.extractRootCauseSummary(rawBody, fallback);
+        String summary = ErrorBodyExtraction.rootCauseSummary(rawBody, fallback);
         return new ErrorMessage(StringUtils.abbreviate(summary, "...", SIGNATURE_LENGTH + 3),
                 stripQualifiers(summary.trim()), looksLikeHtml(rawBody));
     }

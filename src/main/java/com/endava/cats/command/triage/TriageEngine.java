@@ -3,10 +3,10 @@ package com.endava.cats.command.triage;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.RequestVocabulary;
-import com.endava.cats.report.ErrorSample;
-import com.endava.cats.report.ErrorSignatureMasker;
-import com.endava.cats.report.ErrorTemplate;
-import com.endava.cats.report.ErrorTemplateMiner;
+import com.endava.cats.report.error.template.ErrorSample;
+import com.endava.cats.report.error.mask.ErrorSignatureMasker;
+import com.endava.cats.report.error.template.ErrorTemplate;
+import com.endava.cats.report.error.template.ErrorTemplateMiner;
 import io.swagger.v3.oas.models.OpenAPI;
 
 import java.io.IOException;

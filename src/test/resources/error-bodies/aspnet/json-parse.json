@@ -1,0 +1,1 @@
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"One or more validation errors occurred.","status":400,"errors":{"$":["Expected start of a property name or value, but instead reached end of data. Path: $ | LineNumber: 0 | BytePositionInLine: 16."],"dto":["The dto field is required."]},"traceId":"00-05f013820b03ae3ad66c75247c865226-2c2b8650cff6e067-00"}

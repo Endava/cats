@@ -19,6 +19,14 @@ class RequestVocabularyTest {
         Assertions.assertThat(vocabulary.values()).containsExactlyInAnyOrder("John Doe", "Paris", "premium", "sold out");
     }
 
+    @Test
+    void shouldCollectFieldNamesAndValuesFromFormPayloads() {
+        RequestVocabulary vocabulary = RequestVocabulary.from("motherTongue=%27+OR+%271%27%3D%271&language=uk-UA&x=", null, null);
+
+        Assertions.assertThat(vocabulary.fieldNames()).containsExactlyInAnyOrder("motherTongue", "language", "x");
+        Assertions.assertThat(vocabulary.values()).containsExactlyInAnyOrder("' OR '1'='1", "uk-UA");
+    }
+
     @ParameterizedTest
     @CsvSource({
             "http://localhost:8080/api/v1/pets/0xa14f5/toys, /pets/{id}/toys, 0xa14f5",

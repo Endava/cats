@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -17,8 +18,9 @@ import java.util.stream.Stream;
  * The field names and free-text values sent in a request. Error template mining uses it to mask request data
  * echoed back in error responses, which generic log parsers can only guess at.
  *
- * @param fieldNames JSON keys (at any depth) and query parameter names
- * @param values     primitive JSON and query parameter values that are long enough to identify reflected input
+ * @param fieldNames JSON keys (at any depth), query parameter and form field names
+ * @param values     primitive JSON, query parameter, form field and path parameter values that are long enough to
+ *                   identify reflected input
  */
 public record RequestVocabulary(Set<String> fieldNames, Set<String> values) {
     public static final RequestVocabulary EMPTY = new RequestVocabulary(Set.of(), Set.of());
@@ -27,11 +29,12 @@ public record RequestVocabulary(Set<String> fieldNames, Set<String> values) {
     private static final int MIN_VALUE_LENGTH = 3;
     private static final int MAX_VALUE_LENGTH = 200;
     private static final Set<String> NON_IDENTIFYING_VALUES = Set.of("true", "false", "null");
+    private static final Pattern FORM_BODY = Pattern.compile("[\\w.\\[\\]%-]+=[^&\\s]*(?:&[\\w.\\[\\]%-]+=[^&\\s]*)*");
 
     /**
-     * Builds the vocabulary of a request from its JSON payload, its query string and its path parameter values.
+     * Builds the vocabulary of a request from its JSON or form payload, its query string and its path parameter values.
      *
-     * @param payload      the request payload; non-JSON payloads contribute nothing
+     * @param payload      the request payload; payloads that are neither JSON nor form-urlencoded contribute nothing
      * @param url          the request URL
      * @param contractPath the contract path (e.g. {@code /pets/{id}}) used to locate path parameter values in the URL,
      *                     or {@code null} to ignore path parameters
@@ -39,9 +42,10 @@ public record RequestVocabulary(Set<String> fieldNames, Set<String> values) {
      */
     public static RequestVocabulary from(String payload, String url, String contractPath) {
         JsonElement root = parseJson(payload);
-        Set<String> names = Stream.concat(names(root, 0), queryParts(url, 0)).filter(StringUtils::isNotBlank)
-                .limit(MAX_ENTRIES).collect(Collectors.toUnmodifiableSet());
-        Set<String> values = Stream.of(values(root, 0), queryParts(url, 1), pathParameterValues(url, contractPath))
+        String form = formPayload(payload, root);
+        Set<String> names = Stream.of(names(root, 0), queryParts(url, 0), formParts(form, 0)).flatMap(Function.identity())
+                .filter(StringUtils::isNotBlank).limit(MAX_ENTRIES).collect(Collectors.toUnmodifiableSet());
+        Set<String> values = Stream.of(values(root, 0), queryParts(url, 1), formParts(form, 1), pathParameterValues(url, contractPath))
                 .flatMap(Function.identity())
                 .filter(RequestVocabulary::isIdentifyingValue)
                 .limit(MAX_ENTRIES).collect(Collectors.toUnmodifiableSet());
@@ -103,8 +107,19 @@ public record RequestVocabulary(Set<String> fieldNames, Set<String> values) {
         return element.isJsonArray() ? element.getAsJsonArray().asList().stream() : Stream.empty();
     }
 
+    /**
+     * Returns the payload when it is an {@code application/x-www-form-urlencoded} body ({@code a=1&b=x%20y}), whose
+     * fields servers echo back just like query parameters.
+     */
+    private static String formPayload(String payload, JsonElement root) {
+        return root == null && payload != null && FORM_BODY.matcher(payload.strip()).matches() ? payload.strip() : "";
+    }
+
     private static Stream<String> queryParts(String url, int partIndex) {
-        String query = StringUtils.substringAfter(StringUtils.defaultString(url), "?");
+        return formParts(StringUtils.substringAfter(StringUtils.defaultString(url), "?"), partIndex);
+    }
+
+    private static Stream<String> formParts(String query, int partIndex) {
         return Arrays.stream(StringUtils.split(query, '&'))
                 .map(pair -> StringUtils.split(pair, "=", 2))
                 .filter(parts -> parts.length > partIndex)

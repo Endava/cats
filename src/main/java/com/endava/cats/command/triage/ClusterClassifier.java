@@ -6,7 +6,7 @@ import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
-import com.endava.cats.report.ErrorTemplate;
+import com.endava.cats.report.error.template.ErrorTemplate;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
