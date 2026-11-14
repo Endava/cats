@@ -300,6 +300,12 @@ public abstract class TestCaseExporter {
             logger.complete(AnsiUtils.blue("Not reported due to reporting options: {}."),
                     executionSummary.skippedFromReporting());
         }
+        if (StringUtils.isNotBlank(executionSummary.throttlingSummary())) {
+            logger.complete(AnsiUtils.yellow("{}."), executionSummary.throttlingSummary());
+        }
+        if (StringUtils.isNotBlank(executionSummary.rateLimitedOperationsHint())) {
+            logger.complete(AnsiUtils.yellow("{}"), executionSummary.rateLimitedOperationsHint());
+        }
 
         // Print quality gate result
         String qualityGateStatus = executionSummary.qualityGatePassed()
@@ -390,6 +396,12 @@ public abstract class TestCaseExporter {
                 .stopAfterTests(stopArguments.getStopAfterMutations())
                 .stopAfterErrors(stopArguments.getStopAfterErrors())
                 .stopAfterTimeInSec(stopArguments.getStopAfterTimeInSec())
+                .throttledRequests(executionSummary.throttledRequests())
+                .throttledRequestsRetried(executionSummary.throttledRequestsRetried())
+                .throttledOperations(executionSummary.throttledOperations())
+                .effectiveRequestsPerMinute(executionSummary.effectiveRequestsPerMinute())
+                .throttlingSummary(executionSummary.throttlingSummary())
+                .rateLimitedOperations(executionSummary.rateLimitedOperations())
                 .processingErrors(processingErrors)
                 .build();
     }

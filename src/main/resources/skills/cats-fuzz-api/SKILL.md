@@ -101,6 +101,12 @@ cats -c <spec> -s <url> --skipFuzzers "RandomResources,/health*=Jumbo,GET=Contro
 # Bound execution time or error count
 cats -c <spec> -s <url> --stopAfterTimeInSec 120 --stopAfterErrors 50
 
+# Rate-limited APIs (staging gateways, SaaS sandboxes):
+# CATS automatically retries HTTP 429 (and 503 with Retry-After) up to --maxRateLimitRetries (default 3),
+# honouring Retry-After (seconds or HTTP-date, capped at --maxRetryAfterInSec, default 30) and AIMD pacing.
+# Set --maxRequestsPerMinute to stay under known gateway quotas, or --maxRateLimitRetries 0 to disable retries:
+cats -c <spec> -s <url> --maxRequestsPerMinute 300 --maxRateLimitRetries 3 --maxRetryAfterInSec 30
+
 # Blackbox mode: only report 5XX server crashes as errors (-k also drops ignored tests from the report; skip it if you plan to triage)
 cats -c <spec> -s <url> -b -k
 ```

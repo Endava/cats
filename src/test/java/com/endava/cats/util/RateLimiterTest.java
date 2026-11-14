@@ -125,6 +125,74 @@ class RateLimiterTest {
         assertThat(clock.get()).isEqualTo(2 * HUNDRED_MS_NANOS);
     }
 
+    @Test
+    void shouldStartAimdDecreaseFromObservedIntervalAndDoubleWhenRetryAfterAbsent() {
+        FakeTime fakeTime = new FakeTime();
+        RateLimiter rateLimiter = new RateLimiter(10_000, fakeTime::now, fakeTime::park);
+
+        for (int i = 0; i < 4; i++) {
+            rateLimiter.acquire();
+            fakeTime.advance(HUNDRED_MS_NANOS);
+        }
+
+        boolean changed = rateLimiter.onThrottle(false);
+
+        assertThat(changed).isTrue();
+        assertThat(rateLimiter.getEffectiveIntervalNanos()).isEqualTo(2 * HUNDRED_MS_NANOS);
+        assertThat(rateLimiter.getEffectiveRequestsPerMinute()).isEqualTo(300);
+
+        fakeTime.parkedDurations.clear();
+        rateLimiter.acquire();
+        assertThat(fakeTime.parkedDurations).containsExactly(HUNDRED_MS_NANOS);
+    }
+
+    @Test
+    void shouldAdoptObservedIntervalOn429WithRetryAfterAndDoubleIfAlreadyAtObservedRate() {
+        FakeTime fakeTime = new FakeTime();
+        RateLimiter defaultLimiter = new RateLimiter(10_000, fakeTime::now, fakeTime::park);
+
+        for (int i = 0; i < 3; i++) {
+            defaultLimiter.acquire();
+            fakeTime.advance(HUNDRED_MS_NANOS);
+        }
+
+        assertThat(defaultLimiter.onThrottle(true)).isTrue();
+        assertThat(defaultLimiter.getEffectiveIntervalNanos()).isEqualTo(HUNDRED_MS_NANOS);
+        assertThat(defaultLimiter.getEffectiveRequestsPerMinute()).isEqualTo(600);
+
+        assertThat(defaultLimiter.onThrottle(true)).isTrue();
+        assertThat(defaultLimiter.getEffectiveIntervalNanos()).isEqualTo(2 * HUNDRED_MS_NANOS);
+        assertThat(defaultLimiter.getEffectiveRequestsPerMinute()).isEqualTo(300);
+    }
+
+    @Test
+    void shouldRecoverAdditivelyEveryTwentyConsecutiveNon429Responses() {
+        FakeTime fakeTime = new FakeTime();
+        RateLimiter rateLimiter = new RateLimiter(600, fakeTime::now, fakeTime::park);
+
+        rateLimiter.acquire();
+        rateLimiter.acquire();
+        rateLimiter.onThrottle(false);
+
+        assertThat(rateLimiter.getEffectiveIntervalNanos()).isEqualTo(2 * HUNDRED_MS_NANOS);
+
+        for (int i = 1; i < RateLimiter.RECOVERY_THRESHOLD; i++) {
+            assertThat(rateLimiter.onSuccess()).isFalse();
+        }
+        assertThat(rateLimiter.onSuccess()).isTrue();
+        assertThat(rateLimiter.getEffectiveIntervalNanos()).isEqualTo(TimeUnit.MILLISECONDS.toNanos(190));
+
+        for (int i = 0; i < 10; i++) {
+            rateLimiter.onSuccess();
+        }
+        rateLimiter.onThrottle(false);
+        for (int i = 1; i < RateLimiter.RECOVERY_THRESHOLD; i++) {
+            assertThat(rateLimiter.onSuccess()).isFalse();
+        }
+        assertThat(rateLimiter.onSuccess()).isTrue();
+        assertThat(rateLimiter.getEffectiveIntervalNanos()).isLessThan(TimeUnit.MILLISECONDS.toNanos(380));
+    }
+
     private static final class FakeTime {
         private long currentNanos = 1_000_000_000L;
         private final List<Long> parkedDurations = new ArrayList<>();

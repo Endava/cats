@@ -66,6 +66,21 @@ public class ExecutionStopController {
         active = false;
     }
 
+    /**
+     * Checks whether waiting for {@code waitMillis} would exceed the configured {@code --stopAfterTimeInSec} deadline.
+     *
+     * @param waitMillis proposed wait duration in milliseconds
+     * @param nowMillis  current epoch time in milliseconds
+     * @return {@code true} when a time limit is active and {@code nowMillis + waitMillis > deadlineMillis}
+     */
+    public synchronized boolean wouldExceedTimeLimit(long waitMillis, long nowMillis) {
+        if (!active || stopArguments == null || stopArguments.getStopAfterTimeInSec() <= 0) {
+            return false;
+        }
+        long deadlineMillis = startedAtMillis + stopArguments.getStopAfterTimeInSec() * 1_000L;
+        return nowMillis + waitMillis > deadlineMillis;
+    }
+
     private void checkLimits() {
         if (!active) {
             return;

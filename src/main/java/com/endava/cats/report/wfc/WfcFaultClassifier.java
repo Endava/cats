@@ -166,7 +166,8 @@ public final class WfcFaultClassifier {
 
         classifyPassiveProtocolFaults(summary, fullTestCase, code, method, faults);
         classifyAuthSchemaFaults(code, effectiveContract, faults);
-        if (!summary.getError() && !summary.getWarning()) {
+        if ((!summary.getError() && !summary.getWarning())
+                || Reason.RATE_LIMITED.value().equals(summary.getResultReason())) {
             return Set.copyOf(faults);
         }
 

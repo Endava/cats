@@ -731,6 +731,9 @@ class FunctionalFlowFuzzerTest {
         // 2 calls for repeat=2 + 2 calls for poll (stopped on 2nd attempt) + 2 calls for forEach (2 rows) = 6 total HTTP calls
         ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
         Mockito.verify(serviceCaller, Mockito.times(6)).call(captor.capture());
+        Assertions.assertThat(captor.getAllValues().get(0).isExpectsRateLimit()).isTrue();
+        Assertions.assertThat(captor.getAllValues().get(1).isExpectsRateLimit()).isTrue();
+        Assertions.assertThat(captor.getAllValues().get(2).isExpectsRateLimit()).isFalse();
         Assertions.assertThat(captor.getAllValues().get(4).getPayload())
                 .contains("\"length\":16", "\"active\":true", "\"tags\":[\"A\",\"B\"]", "\"meta\":{\"env\":\"prod\"}", "\"prefix\":\"G\"");
         Assertions.assertThat(captor.getAllValues().get(5).getPayload())

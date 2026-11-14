@@ -1,6 +1,7 @@
 package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.ann.Exclude;
 import com.endava.cats.util.KeyValuePair;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,6 +31,8 @@ public class CatsRequest {
     String url;
     boolean sendBody;
     boolean preserveContentType;
+    @Exclude
+    boolean expectsRateLimit;
 
     @Builder.Default
     String timestamp = DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneId.of("UTC")));

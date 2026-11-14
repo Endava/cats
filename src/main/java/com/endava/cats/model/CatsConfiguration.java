@@ -9,7 +9,15 @@ import java.util.List;
  */
 public record CatsConfiguration(String version, String contract, String basePath,
                                 List<HttpMethod> httpMethods, int fuzzers, long totalFuzzers, int pathsToRun,
-                                int totalPaths, String profile) {
+                                int totalPaths, String profile,
+                                int maxRequestsPerMinute, int maxRateLimitRetries, int maxRetryAfterInSec) {
+    public CatsConfiguration(String version, String contract, String basePath,
+                             List<HttpMethod> httpMethods, int fuzzers, long totalFuzzers, int pathsToRun,
+                             int totalPaths, String profile) {
+        this(version, contract, basePath, httpMethods, fuzzers, totalFuzzers, pathsToRun, totalPaths, profile,
+                10000, 3, 30);
+    }
+
     public CatsConfiguration(String version, String contract, String basePath,
                              List<HttpMethod> httpMethods, int fuzzers, long totalFuzzers, int pathsToRun,
                              int totalPaths) {

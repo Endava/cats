@@ -75,6 +75,9 @@ final class CatsTuiState {
     private long errors;
     private long skippedFromReporting;
     private long requestsAttempted;
+    private long throttledRequests;
+    private long lastThrottleWaitMs;
+    private int effectiveRpm;
     private long discardedResults;
     private long timedResults;
     private long totalResponseTime;
@@ -121,6 +124,9 @@ final class CatsTuiState {
             }
             case CatsExecutionEvent.ConfigurationLoaded loaded -> {
                 configuration = loaded.configuration();
+                if (effectiveRpm == 0 && configuration != null) {
+                    effectiveRpm = configuration.maxRequestsPerMinute();
+                }
                 status = "Fuzzing";
             }
             case CatsExecutionEvent.PathStarted path -> {
@@ -143,9 +149,17 @@ final class CatsTuiState {
                 // The next fuzzer event replaces the current label.
             }
             case CatsExecutionEvent.RequestAttempted _ -> requestsAttempted++;
+            case CatsExecutionEvent.Throttled throttled -> {
+                throttledRequests++;
+                lastThrottleWaitMs = throttled.waitMs();
+                effectiveRpm = throttled.effectiveRpm();
+            }
             case CatsExecutionEvent.TestCompleted(_, var test) -> register(test);
             case CatsExecutionEvent.SessionEnded(var occurredAt, var runSummary) -> {
                 summary = runSummary;
+                if (runSummary.effectiveRequestsPerMinute() > 0) {
+                    effectiveRpm = runSummary.effectiveRequestsPerMinute();
+                }
                 finishedAt = occurredAt;
                 running = false;
                 RunOutcome outcome = runSummary.outcome();
@@ -1017,6 +1031,21 @@ final class CatsTuiState {
 
     long requestsAttempted() {
         return summary == null ? requestsAttempted : summary.requestsAttempted();
+    }
+
+    long throttledRequests() {
+        return summary == null ? throttledRequests : Math.max(throttledRequests, summary.throttledRequests());
+    }
+
+    long lastThrottleWaitMs() {
+        return lastThrottleWaitMs;
+    }
+
+    int effectiveRpm() {
+        if (effectiveRpm > 0) {
+            return effectiveRpm;
+        }
+        return configuration == null ? 0 : configuration.maxRequestsPerMinute();
     }
 
     long reportedResults() {

@@ -486,7 +486,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     private void initGlobalData(OpenAPI openAPI) {
         CatsConfiguration catsConfiguration = new CatsConfiguration(appVersion, apiArguments.getContract(), apiArguments.getServer(), filterArguments.getHttpMethods(),
                 filterArguments.getFirstPhaseFuzzersForPath().size() + filterArguments.getSecondPhaseFuzzers().size(), filterArguments.getTotalFuzzersOrLinters(),
-                filterArguments.getPathsToRun(openAPI).size(), openAPI.getPaths().size(), filterArguments.getProfile());
+                filterArguments.getPathsToRun(openAPI).size(), openAPI.getPaths().size(), filterArguments.getProfile(),
+                apiArguments.getMaxRequestsPerMinute(), apiArguments.getMaxRateLimitRetries(), apiArguments.getMaxRetryAfterInSec());
 
         Set<String> refs = Collections.emptySet();
         if (filterArguments.isLinting()) {
@@ -570,6 +571,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         logger.config("OpenAPI specs: {}", AnsiUtils.blue(apiArguments.getContract()));
         logger.config("API base url: {}", AnsiUtils.blue(apiArguments.getServer()));
         logger.config("Call timeout: {} seconds", AnsiUtils.blue(apiArguments.getCallTimeout()));
+        logger.config("Max requests per minute: {}, max rate-limit retries: {}, max Retry-After: {} seconds",
+                AnsiUtils.blue(apiArguments.getMaxRequestsPerMinute()),
+                AnsiUtils.blue(apiArguments.getMaxRateLimitRetries()),
+                AnsiUtils.blue(apiArguments.getMaxRetryAfterInSec()));
         logger.config("Maximum captured response body: {} bytes", AnsiUtils.blue(apiArguments.getMaxResponseBytes()));
         logger.config("Reporting path: {}", AnsiUtils.blue(reportingArguments.getOutputReportFolder()));
         logger.config("--insecure: {}", AnsiUtils.blue(authArguments.isInsecure()));

@@ -46,6 +46,39 @@ public class CatsResponse {
     private final String body;
     @Exclude
     private final String responseValidationField;
+    @Exclude
+    private final boolean rateLimited;
+    @Exclude
+    private final int rateLimitRetries;
+
+    /**
+     * Returns a copy of this response marked as having exhausted rate-limit retries.
+     *
+     * @param retries number of rate-limit retries performed
+     * @return a new {@link CatsResponse} flagged as rate-limited
+     */
+    public CatsResponse withRateLimited(int retries) {
+        return CatsResponse.builder()
+                .responseCode(this.responseCode)
+                .httpMethod(this.httpMethod)
+                .responseTimeInMs(this.responseTimeInMs)
+                .numberOfWordsInResponse(this.numberOfWordsInResponse)
+                .numberOfLinesInResponse(this.numberOfLinesInResponse)
+                .contentLengthInBytes(this.contentLengthInBytes)
+                .capturedBodyBytes(this.capturedBodyBytes)
+                .declaredContentLength(this.declaredContentLength)
+                .responseBodyLimit(this.responseBodyLimit)
+                .bodyTruncated(this.bodyTruncated)
+                .jsonBody(this.jsonBody)
+                .headers(this.headers)
+                .responseContentType(this.responseContentType)
+                .path(this.path)
+                .body(this.body)
+                .responseValidationField(this.responseValidationField)
+                .rateLimited(true)
+                .rateLimitRetries(retries)
+                .build();
+    }
 
     /**
      * Creates a CatsResponse instance with the specified parameters.

@@ -96,7 +96,8 @@ public class HeadersIteratorExecutor {
     private void reportResult(HeadersIteratorExecutorContext context, ResponseCodeFamily expectedResponseCode, CatsResponse response) {
         if (expectedResponseCode != null) {
             testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, expectedResponseCode, context.isMatchResponseSchema(), context.isShouldMatchContentType());
-        } else if (!testCaseListener.reportTruncatedResponse(context.getLogger(), context.getFuzzingData(), response)) {
+        } else if (!testCaseListener.reportRateLimitedResponse(context.getLogger(), context.getFuzzingData(), response)
+                && !testCaseListener.reportTruncatedResponse(context.getLogger(), context.getFuzzingData(), response)) {
             if (matchArguments.isMatchResponse(response) || !matchArguments.isAnyMatchArgumentSupplied()) {
                 testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), CatsResultFactory.Reason.RESPONSE_MATCHES_ARGUMENTS.value(), "Response matches" + matchArguments.getMatchString());
             } else {

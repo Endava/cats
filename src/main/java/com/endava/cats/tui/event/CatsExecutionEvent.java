@@ -71,6 +71,13 @@ public sealed interface CatsExecutionEvent {
     }
 
     /**
+     * Signals that an HTTP request was throttled (HTTP 429 or 503 with Retry-After) and exposes the wait duration
+     * and updated effective request rate.
+     */
+    record Throttled(Instant occurredAt, long waitMs, int effectiveRpm) implements CatsExecutionEvent {
+    }
+
+    /**
      * Signals that a single test case has completed.
      */
     record TestCompleted(Instant occurredAt, TestResultSnapshot test) implements CatsExecutionEvent {

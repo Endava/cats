@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.RunOutcome;
 import com.endava.cats.util.AnsiUtils;
@@ -9,7 +10,10 @@ import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
@@ -72,6 +76,31 @@ public class ExecutionStatisticsListener {
     @Getter
     private int ioErrors;
 
+    /**
+     * Count of logical requests that encountered HTTP 429 or 503+Retry-After throttling.
+     */
+    @Getter
+    private long throttledRequests;
+
+    /**
+     * Count of throttled requests that recovered after retrying.
+     */
+    @Getter
+    private long throttledRequestsRetried;
+
+    private final Set<String> throttledOperations = new LinkedHashSet<>();
+
+    @Getter
+    private int effectiveRequestsPerMinute;
+
+    private int lowestEffectiveRequestsPerMinute;
+
+    @Getter
+    private int configuredRequestsPerMinute;
+
+    private final Map<String, Integer> operationTotalResponses = new LinkedHashMap<>();
+    private final Map<String, Integer> operation429Responses = new LinkedHashMap<>();
+
     @Getter
     private RunOutcome runOutcome = RunOutcome.completed();
 
@@ -84,10 +113,18 @@ public class ExecutionStatisticsListener {
         success.clear();
         skippedFromReporting.clear();
         responseCodes.clear();
+        throttledOperations.clear();
+        operationTotalResponses.clear();
+        operation429Responses.clear();
         processedTests = 0;
         requestsAttempted = 0;
         authErrors = 0;
         ioErrors = 0;
+        throttledRequests = 0;
+        throttledRequestsRetried = 0;
+        effectiveRequestsPerMinute = 0;
+        lowestEffectiveRequestsPerMinute = 0;
+        configuredRequestsPerMinute = 0;
         runOutcome = RunOutcome.completed();
     }
 
@@ -145,9 +182,70 @@ public class ExecutionStatisticsListener {
     }
 
     private ExecutionSummary snapshotWithQualityGate(boolean qualityGatePassed, String qualityGateDescription) {
+        int reportedEffectiveRpm = resolveReportedEffectiveRpm();
         return new ExecutionSummary(requestsAttempted, getAll(), getSuccess(), getWarns(), getErrors(),
                 getSkippedFromReporting(), authErrors, ioErrors, getResponseCodeDistribution(),
-                getTopFailingPaths(10), qualityGatePassed, qualityGateDescription, runOutcome);
+                getTopFailingPaths(10), qualityGatePassed, qualityGateDescription, runOutcome,
+                throttledRequests, throttledRequestsRetried, throttledOperations.size(),
+                reportedEffectiveRpm, configuredRequestsPerMinute, getRateLimitedOperations());
+    }
+
+    private int resolveReportedEffectiveRpm() {
+        if (effectiveRequestsPerMinute > 0 && configuredRequestsPerMinute > 0
+                && effectiveRequestsPerMinute < configuredRequestsPerMinute) {
+            return effectiveRequestsPerMinute;
+        }
+        if (lowestEffectiveRequestsPerMinute > 0 && lowestEffectiveRequestsPerMinute < configuredRequestsPerMinute) {
+            return lowestEffectiveRequestsPerMinute;
+        }
+        return effectiveRequestsPerMinute;
+    }
+
+    public void recordThrottledRequest(String operation, int effectiveRpm, int configuredRpm) {
+        this.throttledRequests++;
+        if (operation != null && !operation.isBlank()) {
+            this.throttledOperations.add(operation);
+        }
+        recordEffectiveRate(effectiveRpm, configuredRpm);
+    }
+
+    public void recordThrottledRequestRetried() {
+        this.throttledRequestsRetried++;
+    }
+
+    public void recordEffectiveRate(int effectiveRpm, int configuredRpm) {
+        if (configuredRpm > 0) {
+            this.configuredRequestsPerMinute = configuredRpm;
+        }
+        if (effectiveRpm > 0) {
+            this.effectiveRequestsPerMinute = effectiveRpm;
+            if (this.lowestEffectiveRequestsPerMinute == 0 || effectiveRpm < this.lowestEffectiveRequestsPerMinute) {
+                this.lowestEffectiveRequestsPerMinute = effectiveRpm;
+            }
+        }
+    }
+
+    public void recordOperationResponse(String operation, int responseCode, boolean expectsRateLimit) {
+        if (operation == null || operation.isBlank() || expectsRateLimit) {
+            return;
+        }
+        this.operationTotalResponses.merge(operation, 1, Integer::sum);
+        if (responseCode == ResponseCodeFamily.STATUS_TOO_MANY_REQUESTS) {
+            this.operation429Responses.merge(operation, 1, Integer::sum);
+        }
+    }
+
+    public int getThrottledOperationsCount() {
+        return this.throttledOperations.size();
+    }
+
+    public List<String> getRateLimitedOperations() {
+        return operationTotalResponses.entrySet().stream()
+                .filter(entry -> entry.getValue() > 0
+                        && operation429Responses.getOrDefault(entry.getKey(), 0) * 2 > entry.getValue())
+                .map(Map.Entry::getKey)
+                .sorted()
+                .toList();
     }
 
     /**

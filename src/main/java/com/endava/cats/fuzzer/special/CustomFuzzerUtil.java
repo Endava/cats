@@ -155,9 +155,12 @@ public class CustomFuzzerUtil {
             }
 
             String pathParamsPayloadWithCustomValues = this.getPathParamsPayloadWithCustomValues(data.getPathParamsPayload(), currentPathValues);
+            boolean expectsRateLimit = expectedResponseCodeFamily.allowedResponseCodes()
+                    .contains(String.valueOf(ResponseCodeFamily.STATUS_TOO_MANY_REQUESTS));
             CatsResponse response = serviceCaller.call(ServiceData.from(data).replaceRefData(false)
                     .headers(headers).payload(payloadWithCustomValuesReplaced).pathParamsPayload(pathParamsPayloadWithCustomValues)
                     .dynamicVariables(Map.copyOf(this.variables))
+                    .expectsRateLimit(expectsRateLimit)
                     .mutationTargets(getMutationTargets(data, currentPathValues, payloadWithCustomValuesReplaced,
                             pathParamsPayloadWithCustomValues, headers, isHeadersFuzzing, arrayOfHeaders, i)).build());
 

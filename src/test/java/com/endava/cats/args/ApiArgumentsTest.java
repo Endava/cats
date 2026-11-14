@@ -73,6 +73,16 @@ class ApiArgumentsTest {
         ReflectionTestUtils.setField(apiArguments, "maxResponseBytes", -1L);
         Assertions.assertThatThrownBy(() -> apiArguments.validateResponseLimits(spec))
                 .isInstanceOf(CommandLine.ParameterException.class).hasMessageContaining("maxResponseBytes");
+
+        ReflectionTestUtils.setField(apiArguments, "maxResponseBytes", 1024L);
+        apiArguments.setMaxRateLimitRetries(-1);
+        Assertions.assertThatThrownBy(() -> apiArguments.validateResponseLimits(spec))
+                .isInstanceOf(CommandLine.ParameterException.class).hasMessageContaining("maxRateLimitRetries");
+
+        apiArguments.setMaxRateLimitRetries(0);
+        apiArguments.setMaxRetryAfterInSec(-1);
+        Assertions.assertThatThrownBy(() -> apiArguments.validateResponseLimits(spec))
+                .isInstanceOf(CommandLine.ParameterException.class).hasMessageContaining("maxRetryAfterInSec");
     }
 
     @Test

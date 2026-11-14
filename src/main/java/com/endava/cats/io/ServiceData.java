@@ -88,6 +88,9 @@ public class ServiceData {
     /** Variables supplied by a custom fuzzer for resolving dynamic request values. */
     @Builder.Default
     private final Map<String, String> dynamicVariables = Map.of();
+    /** Set when the test explicitly expects an HTTP 429 response and must not retry on rate limiting. */
+    @Builder.Default
+    private final boolean expectsRateLimit = false;
 
     /**
      * Creates a service-call builder populated with the operation metadata shared by all executors.

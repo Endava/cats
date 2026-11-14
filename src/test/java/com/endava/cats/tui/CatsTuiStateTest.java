@@ -31,6 +31,7 @@ class CatsTuiStateTest {
         state.accept(new CatsExecutionEvent.FuzzerStarted(NOW, "MissingFields", "/pets", "POST"));
         state.accept(new CatsExecutionEvent.TestCompleted(NOW, test("success")));
         state.accept(new CatsExecutionEvent.TestCompleted(NOW, test("warning")));
+        state.accept(new CatsExecutionEvent.Throttled(NOW, 1000L, 300));
         state.accept(new CatsExecutionEvent.PathCompleted(NOW, "/pets"));
 
         Assertions.assertThat(state.pathProgress()).isEqualTo(0.5);
@@ -40,6 +41,9 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.reportedResults()).isEqualTo(2);
         Assertions.assertThat(state.success()).isEqualTo(1);
         Assertions.assertThat(state.warnings()).isEqualTo(1);
+        Assertions.assertThat(state.throttledRequests()).isEqualTo(1);
+        Assertions.assertThat(state.lastThrottleWaitMs()).isEqualTo(1000L);
+        Assertions.assertThat(state.effectiveRpm()).isEqualTo(300);
 
         state.accept(new CatsExecutionEvent.SessionEnded(NOW.plusSeconds(5),
                 new ExecutionSummary(20, 18, 10, 3, 5, 2, 0, 0, Map.of(200, 10),

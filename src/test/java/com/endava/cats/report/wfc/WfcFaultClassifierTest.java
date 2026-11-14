@@ -33,7 +33,7 @@ class WfcFaultClassifierTest {
 
     private static final Set<Reason> TRANSPORT_FAILURE_REASONS = EnumSet.of(
             Reason.EMPTY_REPLY_FROM_SERVER, Reason.CONNECTION_REFUSED, Reason.READ_TIMEOUT, Reason.WRITE_TIMEOUT,
-            Reason.CONNECTION_TIMEOUT, Reason.HTTP_PROTOCOL_EXCEPTION, Reason.CONNECTION_RESET);
+            Reason.CONNECTION_TIMEOUT, Reason.HTTP_PROTOCOL_EXCEPTION, Reason.CONNECTION_RESET, Reason.RATE_LIMITED);
 
     private static final Set<Reason> SERVER_ERROR_REASONS = EnumSet.of(
             Reason.SERVER_ERROR, Reason.PUT_RETRY_SERVER_ERROR, Reason.PUT_RETRY_BROKE_READ,
@@ -244,7 +244,17 @@ class WfcFaultClassifierTest {
         Assertions.assertThat(category.getTestCaseLabel()).isEqualTo("unexpectedApiBehaviour");
         Assertions.assertThat(category.getFullDescription()).contains("oracle expectations");
 
-        Assertions.assertThat(WfcFaultClassifier.classify(null, null)).isEmpty();
+        Assertions.assertThat(WfcFaultClassifier.classify( null, null)).isEmpty();
+
+        CatsTestCase rateLimitedWarn = buildTestCase("POST", "/users", 429, "warning",
+                Reason.RATE_LIMITED.value(), "HappyPathFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(rateLimitedWarn), rateLimitedWarn))
+                .isEmpty();
+
+        CatsTestCase rateLimitedError = buildTestCase("GET", "/users/1", 429, "error",
+                Reason.RATE_LIMITED.value(), "CheckDeletedResourcesNotAvailableFuzzer", "{}");
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(rateLimitedError), rateLimitedError))
+                .isEmpty();
 
         CatsTestCase fallbackError = buildTestCase("POST", "/users", 400, "error",
                 "Custom oracle failure", "CustomFuzzer", "{}");

@@ -327,9 +327,11 @@ final class CatsTuiView {
         return richLines(
                 labelled("OpenAPI specs: ", display(state.configuration().contract())),
                 labelled("API base url: ", display(state.configuration().basePath())),
-                labelled("Configured: ", "%d/%d paths • %d/%d fuzzers • HTTP methods in scope: %s".formatted(
+                labelled("Configured: ", "%d/%d paths • %d/%d fuzzers • HTTP methods in scope: %s • Rate: %d rpm (retries: %d, max wait: %ds)".formatted(
                         state.configuration().configuredPaths(), state.configuration().totalPaths(),
-                        state.configuration().configuredFuzzers(), state.configuration().totalFuzzers(), methods)),
+                        state.configuration().configuredFuzzers(), state.configuration().totalFuzzers(), methods,
+                        state.effectiveRpm(), state.configuration().maxRateLimitRetries(),
+                        state.configuration().maxRetryAfterInSec())),
                 labelled("Path / Fuzzer: ", "%s • %s".formatted(state.currentPath(), state.currentFuzzer())),
                 labelledPairs("Response time: ", "average %dms • worst case %dms".formatted(
                                 state.averageResponseTime(), state.maximumResponseTime()),
@@ -342,7 +344,9 @@ final class CatsTuiView {
                 Span.styled("Success: %d".formatted(state.success()), SUCCESS_STYLE), Span.raw("    "),
                 Span.styled("Warnings: %d".formatted(state.warnings()), WARNING_STYLE), Span.raw("    "),
                 Span.styled("Errors: %d".formatted(state.errors()), ERROR_STYLE), Span.raw("    "),
-                Span.styled("Not reported: %d".formatted(state.skippedFromReporting()), SKIPPED_STYLE));
+                Span.styled("Not reported: %d".formatted(state.skippedFromReporting()), SKIPPED_STYLE), Span.raw("    "),
+                Span.styled("Throttled: %d".formatted(state.throttledRequests()),
+                        state.throttledRequests() == 0 ? VALUE_STYLE : WARNING_STYLE));
     }
 
     private static Element comprehensiveSummary(CatsTuiState state) {
@@ -362,7 +366,12 @@ final class CatsTuiView {
                 Line.from(Span.styled("Authentication errors: ", LABEL_STYLE),
                         Span.styled(String.valueOf(state.authenticationErrors()), countStyle(state.authenticationErrors())),
                         Span.raw("    "), Span.styled("I/O errors: ", LABEL_STYLE),
-                        Span.styled(String.valueOf(state.ioErrors()), countStyle(state.ioErrors()))),
+                        Span.styled(String.valueOf(state.ioErrors()), countStyle(state.ioErrors())),
+                        Span.raw("    "), Span.styled("Throttled: ", LABEL_STYLE),
+                        Span.styled(String.valueOf(state.throttledRequests()),
+                                state.throttledRequests() == 0 ? SUCCESS_STYLE : WARNING_STYLE),
+                        Span.raw("    "), Span.styled("Rate: ", LABEL_STYLE),
+                        Span.styled(state.effectiveRpm() + " rpm", VALUE_STYLE)),
                 labelled("HTTP Response Codes: ", state.responseCodeSummary()),
                 labelled("Top Failing Paths: ", state.topFailingPaths()),
                 labelledPairs("Test details retained: ", String.valueOf(state.retainedResults()),

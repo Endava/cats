@@ -333,7 +333,7 @@ import java.util.UUID;
         UntypedProperty.class,
         GenericRef.class, RefFormat.class, RefType.class,
         FuzzerListEntry.class, FuzzerListEntry.FuzzerDetails.class, TimeExecutionDetails.class, TimeExecution.class,
-        CatsTestReport.class, CatsResultFactory.class, CatsResultFactory.CatsResult.class, CatsTestCase.class,
+        CatsTestReport.class, CatsResultFactory.class, CatsResultFactory.CatsResult.class, CatsResultFactory.Reason.class, CatsTestCase.class,
         KeyValuePair.class, CatsResponse.class, CatsRequest.class, ResourceCorrelation.class, RequestProvenance.class,
         RequestTarget.class, RequestTarget.Location.class, FindingConfidence.class, ExecutionSummary.class, RunOutcome.class, RunOutcome.Status.class,
         ProcessingError.class, SummaryReportContext.class, SummaryReportContext.StopLimit.class,

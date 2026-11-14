@@ -105,6 +105,12 @@
                     <span>Authentication errors / I/O errors</span>
                     <strong>{{authErrors}} Auth · {{ioErrors}} I/O</strong>
                 </div>
+                {{#hasThrottledRequests}}
+                <div class="report-detail-row">
+                    <span>Rate limiting{{#hasRateLimitedOperations}} <small class="row-sub-note">({{rateLimitedOperationsHint}})</small>{{/hasRateLimitedOperations}}</span>
+                    <strong>{{throttlingSummary}}</strong>
+                </div>
+                {{/hasThrottledRequests}}
             </div>
         </div>
 

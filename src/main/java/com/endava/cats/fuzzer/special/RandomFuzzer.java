@@ -224,7 +224,8 @@ public class RandomFuzzer implements Fuzzer {
     }
 
     void processResponse(CatsResponse catsResponse, FuzzingData fuzzingData) {
-        if (testCaseListener.reportTruncatedResponse(logger, fuzzingData, catsResponse)) {
+        if (testCaseListener.reportRateLimitedResponse(logger, fuzzingData, catsResponse)
+                || testCaseListener.reportTruncatedResponse(logger, fuzzingData, catsResponse)) {
             return;
         }
         if (matchArguments.isMatchResponse(catsResponse)) {

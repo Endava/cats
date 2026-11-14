@@ -114,6 +114,7 @@ public class ServiceCaller {
     OkHttpClient okHttpClient;
 
     private RateLimiter rateLimiter;
+    private RateLimitRetryPolicy rateLimitRetryPolicy;
 
     /**
      * Constructs a new {@code ServiceCaller} with the specified parameters.
@@ -139,6 +140,9 @@ public class ServiceCaller {
         this.runtimeResourcePool = runtimeResourcePool;
         this.filterArguments = filterArguments;
         this.sessionHealthMonitor = sessionHealthMonitor;
+        if (apiArguments != null && apiArguments.getMaxRequestsPerMinute() > 0) {
+            this.initRateLimiter();
+        }
     }
 
     /**
@@ -147,6 +151,12 @@ public class ServiceCaller {
     @PostConstruct
     public void initRateLimiter() {
         rateLimiter = new RateLimiter(apiArguments.getMaxRequestsPerMinute());
+        rateLimitRetryPolicy = new RateLimitRetryPolicy(apiArguments, rateLimiter, testCaseListener);
+    }
+
+    void setRateLimitRetryPolicy(RateLimiter customRateLimiter, RateLimitRetryPolicy customRetryPolicy) {
+        this.rateLimiter = customRateLimiter;
+        this.rateLimitRetryPolicy = customRetryPolicy;
     }
 
     /**
@@ -275,6 +285,7 @@ public class ServiceCaller {
                 .httpMethod(data.getHttpMethod().name())
                 .sendBody(data.getAllMutationTargets().contains(RequestTarget.requestBody()))
                 .preserveContentType(preserveContentType)
+                .expectsRateLimit(data.isExpectsRateLimit())
                 .build();
 
         long startTime = System.currentTimeMillis();
@@ -365,6 +376,7 @@ public class ServiceCaller {
                 .headers(unauthenticatedHeaders).payload(catsRequest.getPayload())
                 .httpMethod(catsRequest.getHttpMethod()).sendBody(catsRequest.isSendBody())
                 .preserveContentType(catsRequest.isPreserveContentType())
+                .expectsRateLimit(catsRequest.isExpectsRateLimit())
                 .build();
         retryRequest.setUrl(catsRequest.getUrl());
         CatsResponse retryResponse = this.callService(retryRequest, data.getResponseValidationFields());
@@ -726,8 +738,12 @@ public class ServiceCaller {
      * @throws IOException If an I/O error occurs during the service call.
      */
     public CatsResponse callService(CatsRequest catsRequest, Set<String> responseValidationFields) throws IOException {
-        acquireRateLimitPermit();
-        long startTime = System.currentTimeMillis();
+        Request request = buildHttpRequest(catsRequest);
+        return rateLimitRetryPolicy.execute(catsRequest,
+                () -> executeOnce(request, catsRequest, responseValidationFields));
+    }
+
+    private Request buildHttpRequest(CatsRequest catsRequest) {
         RequestBody requestBody = null;
         Headers.Builder headers = new Headers.Builder();
         catsRequest.getHeaders().forEach(header -> headers.addUnsafeNonAscii(header.getKey(), String.valueOf(header.getValue())));
@@ -742,11 +758,16 @@ public class ServiceCaller {
                 headers.removeAll("Content-Type");
             }
         }
-        Request request = new Request.Builder()
+        return new Request.Builder()
                 .url(catsRequest.getUrl())
                 .headers(headers.build())
                 .method(catsRequest.getHttpMethod(), requestBody)
                 .build();
+    }
+
+    private CatsResponse executeOnce(Request request, CatsRequest catsRequest, Set<String> responseValidationFields) throws IOException {
+        acquireRateLimitPermit();
+        long startTime = System.currentTimeMillis();
         testCaseListener.recordRequestAttempt();
         try (Response response = okHttpClient.newCall(request).execute()) {
             long endTime = System.currentTimeMillis();

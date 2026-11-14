@@ -240,4 +240,35 @@ class ExecutionStatisticsListenerTest {
         return listener;
     }
 
+    @Test
+    void shouldTrackThrottledRequestsEffectiveRateAndRateLimitedOperations() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        listener.recordThrottledRequest("POST /pets", 300, 600);
+        listener.recordThrottledRequest("POST /pets", 150, 600);
+        listener.recordThrottledRequest("GET /pets", 150, 600);
+        listener.recordThrottledRequestRetried();
+        listener.recordThrottledRequestRetried();
+
+        listener.recordOperationResponse("POST /pets", 429, false);
+        listener.recordOperationResponse("POST /pets", 429, false);
+        listener.recordOperationResponse("POST /pets", 200, false);
+
+        listener.recordOperationResponse("GET /pets", 429, false);
+        listener.recordOperationResponse("GET /pets", 200, false);
+
+        listener.recordOperationResponse("POST /expected-429", 429, true);
+
+        var summary = listener.snapshot(true, "");
+
+        Assertions.assertThat(summary.throttledRequests()).isEqualTo(3);
+        Assertions.assertThat(summary.throttledRequestsRetried()).isEqualTo(2);
+        Assertions.assertThat(summary.throttledOperations()).isEqualTo(2);
+        Assertions.assertThat(summary.effectiveRequestsPerMinute()).isEqualTo(150);
+        Assertions.assertThat(summary.throttlingSummary())
+                .isEqualTo("3 requests throttled (2 retried successfully) on 2 operations; effective rate lowered to 150 rpm");
+        Assertions.assertThat(summary.rateLimitedOperations()).containsExactly("POST /pets");
+        Assertions.assertThat(summary.rateLimitedOperationsHint())
+                .contains("POST /pets", "use --maxRequestsPerMinute");
+    }
+
 }

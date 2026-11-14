@@ -27,10 +27,12 @@ import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.util.RateLimiter;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.Fault;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
@@ -63,11 +65,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @QuarkusTest
@@ -168,6 +172,9 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(apiArguments, "writeTimeout", 10);
         ReflectionTestUtils.setField(apiArguments, "callTimeout", 20);
         ReflectionTestUtils.setField(apiArguments, "maxResponseBytes", 10485760L);
+        ReflectionTestUtils.setField(apiArguments, "maxRequestsPerMinute", 10000);
+        ReflectionTestUtils.setField(apiArguments, "maxRateLimitRetries", 3);
+        ReflectionTestUtils.setField(apiArguments, "maxRetryAfterInSec", 30);
         ReflectionTestUtils.setField(reportingArguments, "showSecrets", false);
         ReflectionTestUtils.setField(reportingArguments, "maskHeaders", null);
         reportingArguments.resetSensitiveData();
@@ -1716,6 +1723,150 @@ class ServiceCallerTest {
                 .build());
         Assertions.assertThat(optionsResponse.getResponseCode()).isEqualTo(200);
         Assertions.assertThat(optionsResponse.getHeader("Allow").getValue()).isEqualTo("POST, OPTIONS");
+    }
+
+    @Test
+    void shouldRetry429WithRetryAfterAndReturn200() {
+        wireMockServer.stubFor(WireMock.get(WireMock.urlEqualTo("/rate-limited-recover"))
+                .inScenario("429-to-200")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(WireMock.aResponse().withStatus(429).withHeader("Retry-After", "2").withBody("{\"error\":\"slow down\"}"))
+                .willSetStateTo("RECOVERED"));
+        wireMockServer.stubFor(WireMock.get(WireMock.urlEqualTo("/rate-limited-recover"))
+                .inScenario("429-to-200")
+                .whenScenarioStateIs("RECOVERED")
+                .willReturn(WireMock.okJson("{\"status\":\"ok\"}")));
+
+        List<Long> waitedMillis = configureInstantRetryPolicy();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder()
+                .relativePath("/rate-limited-recover").contractPath("/rate-limited-recover")
+                .payload("{}").httpMethod(HttpMethod.GET).headers(Set.of()).contentType("application/json").build());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
+        Assertions.assertThat(response.isRateLimited()).isFalse();
+        Assertions.assertThat(waitedMillis).containsExactly(2_000L);
+        Mockito.verify(testCaseListener, Mockito.times(2)).recordRequestAttempt();
+        Mockito.verify(testCaseListener).recordRequestThrottled(Mockito.anyString(), Mockito.eq(2_000L), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.verify(testCaseListener).recordThrottledRequestRetriedSuccessfully();
+    }
+
+    @Test
+    void shouldMarkResponseRateLimitedAfterFour429Responses() {
+        wireMockServer.stubFor(WireMock.get(WireMock.urlEqualTo("/rate-limited-exhausted"))
+                .willReturn(WireMock.aResponse().withStatus(429).withBody("{\"error\":\"too many requests\"}")));
+
+        List<Long> waitedMillis = configureInstantRetryPolicy();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder()
+                .relativePath("/rate-limited-exhausted").contractPath("/rate-limited-exhausted")
+                .payload("{}").httpMethod(HttpMethod.GET).headers(Set.of()).contentType("application/json").build());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(429);
+        Assertions.assertThat(response.isRateLimited()).isTrue();
+        Assertions.assertThat(response.getRateLimitRetries()).isEqualTo(3);
+        Assertions.assertThat(waitedMillis).containsExactly(1_000L, 2_000L, 4_000L);
+        Mockito.verify(testCaseListener, Mockito.times(4)).recordRequestAttempt();
+        Mockito.verify(testCaseListener).recordRequestThrottled(Mockito.anyString(), Mockito.eq(1_000L), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.verify(testCaseListener, Mockito.times(2)).recordThrottledRetryAttempt(Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt());
+        Mockito.verify(testCaseListener, Mockito.never()).recordThrottledRequestRetriedSuccessfully();
+    }
+
+    @Test
+    void shouldRetry503WhenRetryAfterIsPresentAndNotRetryPlain503() {
+        wireMockServer.stubFor(WireMock.get(WireMock.urlEqualTo("/503-with-retry-after"))
+                .inScenario("503-recover")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(WireMock.aResponse().withStatus(503).withHeader("Retry-After", "1").withBody("{}"))
+                .willSetStateTo("RECOVERED"));
+        wireMockServer.stubFor(WireMock.get(WireMock.urlEqualTo("/503-with-retry-after"))
+                .inScenario("503-recover")
+                .whenScenarioStateIs("RECOVERED")
+                .willReturn(WireMock.okJson("{\"status\":\"recovered\"}")));
+        wireMockServer.stubFor(WireMock.get(WireMock.urlEqualTo("/503-plain"))
+                .willReturn(WireMock.aResponse().withStatus(503).withBody("{\"error\":\"unavailable\"}")));
+
+        List<Long> waitedMillis = configureInstantRetryPolicy();
+
+        CatsResponse recovered = serviceCaller.call(ServiceData.builder()
+                .relativePath("/503-with-retry-after").contractPath("/503-with-retry-after")
+                .payload("{}").httpMethod(HttpMethod.GET).headers(Set.of()).contentType("application/json").build());
+        Assertions.assertThat(recovered.getResponseCode()).isEqualTo(200);
+        Assertions.assertThat(waitedMillis).containsExactly(1_000L);
+
+        waitedMillis.clear();
+        Mockito.clearInvocations(testCaseListener);
+
+        CatsResponse plain503 = serviceCaller.call(ServiceData.builder()
+                .relativePath("/503-plain").contractPath("/503-plain")
+                .payload("{}").httpMethod(HttpMethod.GET).headers(Set.of()).contentType("application/json").build());
+        Assertions.assertThat(plain503.getResponseCode()).isEqualTo(503);
+        Assertions.assertThat(plain503.isRateLimited()).isFalse();
+        Assertions.assertThat(waitedMillis).isEmpty();
+        Mockito.verify(testCaseListener, Mockito.times(1)).recordRequestAttempt();
+    }
+
+    @Test
+    void shouldNotWaitWhenRetryAfterExceedsCap() {
+        ReflectionTestUtils.setField(apiArguments, "maxRetryAfterInSec", 30);
+        wireMockServer.stubFor(WireMock.get(WireMock.urlEqualTo("/rate-limited-over-cap"))
+                .willReturn(WireMock.aResponse().withStatus(429).withHeader("Retry-After", "60").withBody("{}")));
+
+        List<Long> waitedMillis = configureInstantRetryPolicy();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder()
+                .relativePath("/rate-limited-over-cap").contractPath("/rate-limited-over-cap")
+                .payload("{}").httpMethod(HttpMethod.GET).headers(Set.of()).contentType("application/json").build());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(429);
+        Assertions.assertThat(response.isRateLimited()).isTrue();
+        Assertions.assertThat(response.getRateLimitRetries()).isZero();
+        Assertions.assertThat(waitedMillis).isEmpty();
+        Mockito.verify(testCaseListener, Mockito.times(1)).recordRequestAttempt();
+    }
+
+    @Test
+    void shouldNotRetryWhenExpectsRateLimitOrWhenRetriesDisabled() {
+        wireMockServer.stubFor(WireMock.get(WireMock.urlEqualTo("/rate-limited-expected"))
+                .willReturn(WireMock.aResponse().withStatus(429).withHeader("Retry-After", "1").withBody("{}")));
+
+        List<Long> waitedMillis = configureInstantRetryPolicy();
+
+        CatsResponse expected429 = serviceCaller.call(ServiceData.builder()
+                .relativePath("/rate-limited-expected").contractPath("/rate-limited-expected")
+                .payload("{}").httpMethod(HttpMethod.GET).headers(Set.of()).contentType("application/json")
+                .expectsRateLimit(true).build());
+
+        Assertions.assertThat(expected429.getResponseCode()).isEqualTo(429);
+        Assertions.assertThat(expected429.isRateLimited()).isFalse();
+        Assertions.assertThat(waitedMillis).isEmpty();
+        Mockito.verify(testCaseListener, Mockito.times(1)).recordRequestAttempt();
+
+        ReflectionTestUtils.setField(apiArguments, "maxRateLimitRetries", 0);
+        Mockito.clearInvocations(testCaseListener);
+
+        CatsResponse disabledRetries = serviceCaller.call(ServiceData.builder()
+                .relativePath("/rate-limited-expected").contractPath("/rate-limited-expected")
+                .payload("{}").httpMethod(HttpMethod.GET).headers(Set.of()).contentType("application/json").build());
+
+        Assertions.assertThat(disabledRetries.getResponseCode()).isEqualTo(429);
+        Assertions.assertThat(disabledRetries.isRateLimited()).isFalse();
+        Assertions.assertThat(waitedMillis).isEmpty();
+        Mockito.verify(testCaseListener, Mockito.times(1)).recordRequestAttempt();
+    }
+
+    private List<Long> configureInstantRetryPolicy() {
+        serviceCaller.initHttpClient();
+        AtomicLong clockMillis = new AtomicLong(1_000_000L);
+        List<Long> waitedMillis = new ArrayList<>();
+        RateLimiter limiter = new RateLimiter(apiArguments.getMaxRequestsPerMinute());
+        RateLimitRetryPolicy retryPolicy = new RateLimitRetryPolicy(
+                apiArguments, limiter, testCaseListener, clockMillis::get, wait -> {
+                    waitedMillis.add(wait);
+                    clockMillis.addAndGet(wait);
+                });
+        serviceCaller.setRateLimitRetryPolicy(limiter, retryPolicy);
+        return waitedMillis;
     }
 
 }

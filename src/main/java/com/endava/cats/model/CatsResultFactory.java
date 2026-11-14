@@ -122,6 +122,12 @@ public interface CatsResultFactory {
         return new CatsResult("HTTP call exceeded --callTimeout after %d ms".formatted(responseTimeInMs), Reason.CALL_TIMEOUT_EXCEEDED.value());
     }
 
+    static CatsResult createRateLimited(int retries) {
+        String retryLabel = retries == 1 ? "1 retry" : retries + " retries";
+        String message = "The API kept answering 429 Too Many Requests after %s; the test verdict is unknown".formatted(retryLabel);
+        return new CatsResult(message, Reason.RATE_LIMITED.value());
+    }
+
     static CatsResult createExceptionalResponse(CatsResponse.ExceptionalResponse exceptional, long responseTimeInMs) {
         return switch (exceptional) {
             case EMPTY_BODY -> new CatsResult(
@@ -312,7 +318,8 @@ public interface CatsResultFactory {
         PARTIAL_UPDATE_PUT("PUT did not perform a full replacement", "A successful PUT request did not replace the target resource representation on a subsequent GET, either retaining an omitted optional field or leaving a shared writable field with a different value (RFC 9110 section 9.3.4)"),
         OPTIONS_ALLOW_MISMATCH("OPTIONS Allow header not matching contract", "The Allow header returned for an OPTIONS request lists HTTP methods not documented in the contract for that path, or omits documented ones"),
         REJECTED_UPDATE_PARTIALLY_APPLIED("Rejected update partially applied", "A PUT or PATCH rejected with a 4xx response still persisted a valid change carried in the same request; RFC 5789 requires PATCH changes to be applied atomically or not at all"),
-        FILTER_PARAMETER_IGNORED("Filter parameter ignored", "A GET collection request filtering by a query parameter returned items whose matching field holds a different value");
+        FILTER_PARAMETER_IGNORED("Filter parameter ignored", "A GET collection request filtering by a query parameter returned items whose matching field holds a different value"),
+        RATE_LIMITED("Rate limited", "The API kept answering 429 Too Many Requests after N retries; the test verdict is unknown");
 
 
         private final String value;

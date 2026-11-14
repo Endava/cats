@@ -27,6 +27,18 @@ public class ApiArguments {
             defaultValue = "10000")
     private int maxRequestsPerMinute = 10000;
 
+    @Setter
+    @CommandLine.Option(names = {"--maxRateLimitRetries"},
+            description = "Maximum number of retries when a request is throttled with 429 (or 503 with Retry-After). Use 0 to disable rate-limit retries. Default: @|bold,underline ${DEFAULT-VALUE}|@",
+            defaultValue = "3")
+    private int maxRateLimitRetries = 3;
+
+    @Setter
+    @CommandLine.Option(names = {"--maxRetryAfterInSec"},
+            description = "Maximum time in seconds to wait when honouring a Retry-After header or rate-limit backoff on 429/503 responses. Default: @|bold,underline ${DEFAULT-VALUE}|@",
+            defaultValue = "30")
+    private int maxRetryAfterInSec = 30;
+
     @CommandLine.Option(names = {"--connectionTimeout"},
             description = "Time period in seconds within which CATS should establish a connection with the server. Default: @|bold,underline ${DEFAULT-VALUE}|@",
             defaultValue = "10")
@@ -98,6 +110,12 @@ public class ApiArguments {
         }
         if (maxResponseBytes < 0) {
             throw new CommandLine.ParameterException(spec.commandLine(), "--maxResponseBytes must be 0 or greater");
+        }
+        if (maxRateLimitRetries < 0) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "--maxRateLimitRetries must be 0 or greater");
+        }
+        if (maxRetryAfterInSec < 0) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "--maxRetryAfterInSec must be 0 or greater");
         }
     }
 

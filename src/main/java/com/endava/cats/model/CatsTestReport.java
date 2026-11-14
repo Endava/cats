@@ -43,6 +43,12 @@ public class CatsTestReport {
     private final long stopAfterTests;
     private final long stopAfterErrors;
     private final long stopAfterTimeInSec;
+    private final long throttledRequests;
+    private final long throttledRequestsRetried;
+    private final int throttledOperations;
+    private final int effectiveRequestsPerMinute;
+    private final String throttlingSummary;
+    private final List<String> rateLimitedOperations;
     private final List<ProcessingError> processingErrors;
 
     public List<JunitTestSuite> getTestSuites() {

@@ -473,11 +473,29 @@ public class TestCaseListener {
      * @param response the CatsResponse to be associated with the current test case
      */
     public void addResponse(CatsResponse response) {
-        currentTestCase().setResponse(response);
+        CatsTestCase testCase = currentTestCase();
+        testCase.setResponse(response);
         executionStatisticsListener.recordResponseCode(response.getResponseCode());
+        boolean expectsRateLimit = testCase.getRequest() != null && testCase.getRequest().isExpectsRateLimit();
+        executionStatisticsListener.recordOperationResponse(resolveCurrentOperation(testCase, null),
+                response.getResponseCode(), expectsRateLimit);
         if (!ignoreArguments.isIgnoreErrorLeaksCheck()) {
             extractErrorLeaks();
         }
+    }
+
+    private String resolveCurrentOperation(CatsTestCase testCase, String fallbackOperation) {
+        String method = testCase != null && testCase.getHttpMethod() != null && !testCase.getHttpMethod().isBlank()
+                && !"####".equals(testCase.getHttpMethod())
+                ? testCase.getHttpMethod()
+                : MDC.get(HTTP_METHOD);
+        String path = testCase != null && testCase.getContractPath() != null && !testCase.getContractPath().isBlank()
+                ? testCase.getContractPath()
+                : MDC.get(CONTRACT_PATH);
+        if (path != null && !path.isBlank()) {
+            return method != null && !method.isBlank() ? method + " " + path : path;
+        }
+        return fallbackOperation;
     }
 
     /**
@@ -530,6 +548,44 @@ public class TestCaseListener {
     public void recordRequestAttempt() {
         executionStatisticsListener.increaseRequestsAttempted();
         executionEventPublisher.publish(new CatsExecutionEvent.RequestAttempted(Instant.now()));
+    }
+
+    /**
+     * Records that a logical HTTP request was throttled on its initial attempt and notifies live presentation layers.
+     */
+    public void recordRequestThrottled(String fallbackOperation, long waitMs, int effectiveRpm, int configuredRpm) {
+        String operation = resolveCurrentOperation(testCaseMap.get(MDC.get(ID)), fallbackOperation);
+        executionStatisticsListener.recordThrottledRequest(operation, effectiveRpm, configuredRpm);
+        executionEventPublisher.publish(new CatsExecutionEvent.Throttled(Instant.now(), waitMs, effectiveRpm));
+    }
+
+    /**
+     * Records a subsequent throttle on a retry of an already-throttled logical request.
+     */
+    public void recordThrottledRetryAttempt(long waitMs, int effectiveRpm, int configuredRpm) {
+        executionStatisticsListener.recordEffectiveRate(effectiveRpm, configuredRpm);
+        executionEventPublisher.publish(new CatsExecutionEvent.Throttled(Instant.now(), waitMs, effectiveRpm));
+    }
+
+    /**
+     * Records that a previously throttled request succeeded after retrying.
+     */
+    public void recordThrottledRequestRetriedSuccessfully() {
+        executionStatisticsListener.recordThrottledRequestRetried();
+    }
+
+    /**
+     * Updates the current effective request rate in execution statistics.
+     */
+    public void recordEffectiveRate(int effectiveRpm, int configuredRpm) {
+        executionStatisticsListener.recordEffectiveRate(effectiveRpm, configuredRpm);
+    }
+
+    /**
+     * Checks whether waiting for {@code waitMs} would exceed the configured {@code --stopAfterTimeInSec} deadline.
+     */
+    public boolean wouldExceedTimeLimit(long waitMs, long nowMillis) {
+        return executionStopController != null && executionStopController.wouldExceedTimeLimit(waitMs, nowMillis);
     }
 
     private void keepSummary(CatsTestCase testCase) {
@@ -911,6 +967,15 @@ public class TestCaseListener {
         return true;
     }
 
+    public boolean reportRateLimitedResponse(PrettyLogger logger, FuzzingData data, CatsResponse response) {
+        if (response == null || !response.isRateLimited()) {
+            return false;
+        }
+        CatsResultFactory.CatsResult rateLimited = CatsResultFactory.createRateLimited(response.getRateLimitRetries());
+        this.reportResultWarn(logger, data, rateLimited.reason(), rateLimited.message());
+        return true;
+    }
+
     private void reportError(PrettyLogger logger, CatsResultFactory.CatsResult catsResult, Object... params) {
         setResultReason(catsResult);
         this.reportError(logger, catsResult.message(), params);
@@ -1050,6 +1115,9 @@ public class TestCaseListener {
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
         List<String> detectedKeyWords = testCase.getErrorLeaks();
 
+        if (reportRateLimitedResponse(logger, null, catsResponse)) {
+            return;
+        }
         if (reportTruncatedResponse(logger, null, catsResponse)) {
             return;
         }
@@ -1150,6 +1218,8 @@ public class TestCaseListener {
             this.reportError(logger, CatsResultFactory.createCallTimeoutExceeded(response.getResponseTimeInMs()));
         } else if (exceptionalResponse.isPresent()) {
             this.reportError(logger, CatsResultFactory.createExceptionalResponse(exceptionalResponse.get(), response.getResponseTimeInMs()));
+        } else if (response.isRateLimited()) {
+            this.reportRateLimitedResponse(logger, data, response);
         } else if (response.isBodyTruncated() && !responseCodeExpected) {
             reportUnexpectedResponseCode(logger, response, expectedResultCode, assertions);
         } else if (response.isBodyTruncated()) {

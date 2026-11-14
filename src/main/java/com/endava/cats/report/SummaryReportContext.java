@@ -73,6 +73,10 @@ public final class SummaryReportContext {
     private final boolean hasResponseCodes;
     private final List<FailingPathEntry> topFailingPaths;
     private final boolean hasFailingPaths;
+    private final String throttlingSummary;
+    private final boolean hasThrottledRequests;
+    private final String rateLimitedOperationsHint;
+    private final boolean hasRateLimitedOperations;
 
     /**
      * Creates the view consumed by the HTML and JUnit summary templates.
@@ -137,6 +141,10 @@ public final class SummaryReportContext {
                 .hasResponseCodes(!responseCodes.isEmpty())
                 .topFailingPaths(failingPaths)
                 .hasFailingPaths(!failingPaths.isEmpty())
+                .throttlingSummary(executionSummary.throttlingSummary())
+                .hasThrottledRequests(StringUtils.isNotBlank(executionSummary.throttlingSummary()))
+                .rateLimitedOperationsHint(executionSummary.rateLimitedOperationsHint())
+                .hasRateLimitedOperations(StringUtils.isNotBlank(executionSummary.rateLimitedOperationsHint()))
                 .httpMethods(List.of());
 
         if (configuration != null) {

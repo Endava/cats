@@ -9,7 +9,15 @@ import java.util.List;
  */
 public record RunConfigurationSnapshot(String version, String contract, String basePath,
                                        List<String> httpMethods, int configuredFuzzers, long totalFuzzers,
-                                       int configuredPaths, int totalPaths) {
+                                       int configuredPaths, int totalPaths,
+                                       int maxRequestsPerMinute, int maxRateLimitRetries, int maxRetryAfterInSec) {
+    public RunConfigurationSnapshot(String version, String contract, String basePath,
+                                    List<String> httpMethods, int configuredFuzzers, long totalFuzzers,
+                                    int configuredPaths, int totalPaths) {
+        this(version, contract, basePath, httpMethods, configuredFuzzers, totalFuzzers, configuredPaths, totalPaths,
+                10000, 3, 30);
+    }
+
     /**
      * Creates a snapshot from the CATS configuration.
      *
@@ -19,6 +27,8 @@ public record RunConfigurationSnapshot(String version, String contract, String b
     public static RunConfigurationSnapshot from(CatsConfiguration configuration) {
         return new RunConfigurationSnapshot(configuration.version(), configuration.contract(), configuration.basePath(),
                 configuration.httpMethods().stream().map(Enum::name).toList(), configuration.fuzzers(),
-                configuration.totalFuzzers(), configuration.pathsToRun(), configuration.totalPaths());
+                configuration.totalFuzzers(), configuration.pathsToRun(), configuration.totalPaths(),
+                configuration.maxRequestsPerMinute(), configuration.maxRateLimitRetries(),
+                configuration.maxRetryAfterInSec());
     }
 }

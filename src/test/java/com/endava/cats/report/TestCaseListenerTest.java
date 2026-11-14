@@ -1810,4 +1810,31 @@ class TestCaseListenerTest {
             testCaseListener.reportWarn(logger, "Warn with error leak");
         });
     }
+
+    @Test
+    void shouldReportRateLimitedResponseAsWarningAndEscalateWhenStrict() {
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        CatsResponse rateLimited = CatsResponse.from(429, "{\"error\":\"rate limit\"}", "GET", 15).withRateLimited(3);
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).path("/pets").contractPath("/pets")
+                .responseCodes(Set.of("200")).responses(Map.of("200", List.of("{}"))).build();
+
+        prepareTestCaseListenerSimpleSetup(rateLimited, () ->
+                testCaseListener.reportResult(logger, data, rateLimited, ResponseCodeFamilyPredefined.TWOXX));
+
+        Mockito.verify(executionStatisticsListener).increaseWarns(Mockito.any());
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails.getLast().getResultReason())
+                .isEqualTo("Rate limited");
+
+        NamingArguments namingArgs = Mockito.mock(NamingArguments.class);
+        Mockito.when(namingArgs.isStrict()).thenReturn(true);
+        ReflectionTestUtils.setField(testCaseListener, "namingArguments", namingArgs);
+        try {
+            prepareTestCaseListenerSimpleSetup(rateLimited, () ->
+                    testCaseListener.reportResult(logger, data, rateLimited, ResponseCodeFamilyPredefined.TWOXX));
+
+            Mockito.verify(executionStatisticsListener).increaseErrors(Mockito.any());
+        } finally {
+            ReflectionTestUtils.setField(testCaseListener, "namingArguments", null);
+        }
+    }
 }

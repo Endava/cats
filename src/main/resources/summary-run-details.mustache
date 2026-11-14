@@ -14,6 +14,12 @@
         <h2 class="action-tag no-top">Execution diagnostics</h2>
         <div class="report-detail-row"><span>Authentication errors</span><strong>{{authErrors}}</strong></div>
         <div class="report-detail-row"><span>I/O errors</span><strong>{{ioErrors}}</strong></div>
+        {{#hasThrottledRequests}}
+        <div class="report-detail-row"><span>Rate limiting</span><strong>{{throttlingSummary}}</strong></div>
+        {{/hasThrottledRequests}}
+        {{#hasRateLimitedOperations}}
+        <p class="report-detail-note">{{rateLimitedOperationsHint}}</p>
+        {{/hasRateLimitedOperations}}
     </div>
     <div class="card-wrapper">
         <h2 class="action-tag no-top">Reproduction</h2>

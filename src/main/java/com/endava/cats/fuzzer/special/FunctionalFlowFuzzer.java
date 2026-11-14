@@ -455,6 +455,9 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         Set<CatsHeader> headers = prepareHeaders(step, data, payloads.bodyPayload());
         List<RequestTarget> mutationTargets = computeMutationTargets(data, payloads.bodyPayload(),
                 payloads.pathParamsPayload(), headers, payloads.changedFields());
+        boolean expectsRateLimit = step.expect() != null
+                && step.expect().status() != null
+                && step.expect().status().contains(String.valueOf(ResponseCodeFamily.STATUS_TOO_MANY_REQUESTS));
         CatsResponse response = serviceCaller.call(ServiceData.from(data)
                 .replaceRefData(false)
                 .headers(headers)
@@ -462,6 +465,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                 .pathParamsPayload(payloads.pathParamsPayload())
                 .dynamicVariables(Map.copyOf(variables))
                 .mutationTargets(mutationTargets)
+                .expectsRateLimit(expectsRateLimit)
                 .build());
         return new ExchangeExecutionResult(payloads.bodyPayload(), payloads.pathParamsPayload(), response);
     }
@@ -962,7 +966,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     private void evaluateAndReportStepResult(FunctionalFlowStep step, FuzzingData data, String requestPayload,
                                              CatsResponse response, ResponseCodeFamily expectedCodeFamily) {
         FunctionalFlowExpectation expect = step.expect();
-        if (response.isBodyTruncated()) {
+        if (response.isRateLimited() || response.isBodyTruncated()) {
             testCaseListener.reportResult(logger, data, response, expectedCodeFamily, expect.matchesSchema(), true);
             return;
         }
