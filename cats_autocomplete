@@ -250,7 +250,7 @@ function _picocli_cats() {
   local fieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --fieldFormats values
   local skipFieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --skipFieldFormats values
   local mode_option_args=("ALL" "NEGATIVE" "POSITIVE") # --mode values
-  local fieldsFuzzingStrategy_option_args=("POWERSET" "SIZE" "ONEBYONE") # --fieldsFuzzingStrategy values
+  local fieldsFuzzingStrategy_option_args=("POWERSET" "SIZE" "ONEBYONE" "PAIRWISE") # --fieldsFuzzingStrategy values
   local edgeSpacesStrategy_option_args=("VALIDATE_AND_TRIM" "TRIM_AND_VALIDATE") # --edgeSpacesStrategy values
   local sanitizationStrategy_option_args=("VALIDATE_AND_SANITIZE" "SANITIZE_AND_VALIDATE") # --sanitizationStrategy values
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values

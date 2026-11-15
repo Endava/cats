@@ -70,6 +70,42 @@ class RemoveFieldsFuzzerTest {
         Assertions.assertThat(removeFieldsFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
     }
 
+    @Test
+    void shouldDeduplicateIdenticalPayloadsAcrossSubsets() {
+        String payload = "{\"parent\":{\"child\":\"val\"},\"other\":\"ok\"}";
+        data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn(payload);
+        Mockito.when(data.getAllRequiredFields()).thenReturn(List.of());
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(java.util.Set.of("parent", "parent#child", "other"));
+        Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(FuzzingData.SetFuzzingStrategy.PAIRWISE);
+        java.util.Set<java.util.Set<String>> subsets = new java.util.LinkedHashSet<>();
+        subsets.add(java.util.Set.of("parent"));
+        subsets.add(java.util.Set.of("parent", "parent#child"));
+        subsets.add(java.util.Set.of("other"));
+        Mockito.when(data.getAllFields(FuzzingData.SetFuzzingStrategy.PAIRWISE, 0)).thenReturn(subsets);
+
+        removeFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(simpleExecutor, Mockito.times(2)).execute(Mockito.any());
+    }
+
+    @Test
+    void shouldPassInteractionStrengthThreeForPairwiseStrategy() {
+        data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}");
+        Mockito.when(data.getAllRequiredFields()).thenReturn(List.of());
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(java.util.Set.of("a", "b", "c"));
+        Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(FuzzingData.SetFuzzingStrategy.PAIRWISE);
+        Mockito.when(processingArguments.getInteractionStrength()).thenReturn(3);
+        Mockito.when(data.getAllFields(FuzzingData.SetFuzzingStrategy.PAIRWISE, 0, 3))
+                .thenReturn(java.util.Set.of(java.util.Set.of("a", "b", "c")));
+
+        removeFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(data).getAllFields(FuzzingData.SetFuzzingStrategy.PAIRWISE, 0, 3);
+        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
+    }
+
     private void setup(String payload) {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));

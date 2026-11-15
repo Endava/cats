@@ -25,6 +25,7 @@ import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.ProcessingError;
 import com.endava.cats.model.RequestProvenance;
 import com.endava.cats.model.RequestTarget;
@@ -340,6 +341,7 @@ import java.util.UUID;
         SummaryReportContext.ProcessingErrorEntry.class, SummaryReportContext.ResponseCodeEntry.class,
         SummaryReportContext.FailingPathEntry.class, PathListEntry.class, PathListEntry.PathDetails.class,
         com.endava.cats.http.HttpMethod.class, CustomMutatorConfig.Type.class, CatsWfcFaultCategory.class,
+        FuzzingData.SetFuzzingStrategy.class,
         InfoCommand.CatsInfo.class, StatsCommand.Stats.class, PathDetailsEntry.class, PathDetailsEntry.OperationDetails.class,
         ValidContractEntry.class, MutatorEntry.class, JavaTimeModule.class
 })

@@ -379,17 +379,42 @@ public class FuzzingData {
      * @return A set of sets of field names generated using the specified set fuzzing strategy.
      */
     public Set<Set<String>> getAllFields(SetFuzzingStrategy setFuzzingStrategy, int maxFieldsToRemove) {
-        if (allFieldsSetOfSets == null) {
+        return getAllFields(setFuzzingStrategy, maxFieldsToRemove, BinaryCoveringArray.DEFAULT_STRENGTH);
+    }
 
+    /**
+     * Gets a set of sets of field names based on the specified set fuzzing strategy, maximum fields to remove,
+     * and interaction strength (used when {@code setFuzzingStrategy == SetFuzzingStrategy.PAIRWISE}).
+     *
+     * @param setFuzzingStrategy  The set fuzzing strategy to determine how sets of fields are generated.
+     * @param maxFieldsToRemove   The maximum number of fields to remove when using the {@code SIZE} strategy.
+     * @param interactionStrength The covering-array interaction strength (2 or 3) when using {@code PAIRWISE}.
+     * @return A set of sets of field names generated using the specified set fuzzing strategy.
+     */
+    public Set<Set<String>> getAllFields(SetFuzzingStrategy setFuzzingStrategy, int maxFieldsToRemove, int interactionStrength) {
+        if (allFieldsSetOfSets == null) {
             Set<Set<String>> sets = switch (setFuzzingStrategy) {
                 case POWERSET -> SetFuzzingStrategy.powerSet(this.getAllFields());
                 case SIZE -> SetFuzzingStrategy.getAllSetsWithMinSize(this.getAllFields(), maxFieldsToRemove);
+                case PAIRWISE -> this.getPairwiseFields(interactionStrength);
                 default -> SetFuzzingStrategy.removeOneByOne(this.getAllFields());
             };
             sets.remove(Collections.emptySet());
             allFieldsSetOfSets = sets;
         }
         return allFieldsSetOfSets;
+    }
+
+    private Set<Set<String>> getPairwiseFields(int interactionStrength) {
+        int effectiveStrength = interactionStrength >= 3 ? 3 : BinaryCoveringArray.DEFAULT_STRENGTH;
+        Set<String> all = this.getAllFields();
+        Set<String> required = new HashSet<>(this.getAllRequiredFields());
+        Set<String> optional = all.stream()
+                .filter(Predicate.not(required::contains))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<Set<String>> sets = new LinkedHashSet<>(SetFuzzingStrategy.removeOneByOne(all));
+        sets.addAll(BinaryCoveringArray.generate(optional, effectiveStrength));
+        return sets;
     }
 
     /**
@@ -430,7 +455,12 @@ public class FuzzingData {
         /**
          * Generates sets of field names by removing one field at a time.
          */
-        ONEBYONE;
+        ONEBYONE,
+
+        /**
+         * Generates {@link #ONEBYONE} sets plus a binary covering array over optional fields.
+         */
+        PAIRWISE;
 
         private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(SetFuzzingStrategy.class);
 
@@ -496,9 +526,9 @@ public class FuzzingData {
          * @return a Set of incremental Sets obtained by removing one element at a time from the original Set
          */
         public static <T> Set<Set<T>> removeOneByOne(Set<T> elements) {
-            Set<Set<T>> result = new HashSet<>();
+            Set<Set<T>> result = new LinkedHashSet<>();
             for (T t : elements) {
-                Set<T> subset = new HashSet<>();
+                Set<T> subset = new LinkedHashSet<>();
                 subset.add(t);
                 result.add(subset);
             }

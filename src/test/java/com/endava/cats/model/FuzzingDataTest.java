@@ -214,6 +214,67 @@ class FuzzingDataTest {
         Assertions.assertThat(setOfFields).hasSize(15);
     }
 
+    @Test
+    void shouldGetPairwiseSetsExcludingRequiredFieldsFromCoveringArray() {
+        ObjectSchema baseSchema = new ObjectSchema();
+        Map<String, Schema> props = new HashMap<>();
+        props.put("id", new StringSchema());
+        props.put("opt1", new StringSchema());
+        props.put("opt2", new StringSchema());
+        props.put("opt3", new StringSchema());
+        baseSchema.setProperties(props);
+        baseSchema.setRequired(List.of("id"));
+
+        FuzzingData data = FuzzingData.builder()
+                .selfReferenceDepth(4)
+                .schemaMap(props)
+                .requestPropertyTypes(props)
+                .reqSchema(baseSchema)
+                .build();
+
+        Set<Set<String>> sets = data.getAllFields(FuzzingData.SetFuzzingStrategy.PAIRWISE, 0);
+
+        Assertions.assertThat(sets)
+                .contains(
+                        Set.of("id"),
+                        Set.of("opt1"),
+                        Set.of("opt2"),
+                        Set.of("opt3"),
+                        Set.of("opt2", "opt3"),
+                        Set.of("opt1", "opt3"),
+                        Set.of("opt1", "opt2"))
+                .hasSize(7);
+        Assertions.assertThat(sets.stream().filter(s -> s.size() > 1))
+                .allMatch(subset -> !subset.contains("id"));
+    }
+
+    @Test
+    void shouldGetPairwiseSetsWithStrengthThree() {
+        ObjectSchema baseSchema = new ObjectSchema();
+        Map<String, Schema> props = new HashMap<>();
+        props.put("id", new StringSchema());
+        props.put("opt1", new StringSchema());
+        props.put("opt2", new StringSchema());
+        props.put("opt3", new StringSchema());
+        baseSchema.setProperties(props);
+        baseSchema.setRequired(List.of("id"));
+
+        FuzzingData data = FuzzingData.builder()
+                .selfReferenceDepth(4)
+                .schemaMap(props)
+                .requestPropertyTypes(props)
+                .reqSchema(baseSchema)
+                .build();
+
+        Set<Set<String>> sets = data.getAllFields(FuzzingData.SetFuzzingStrategy.PAIRWISE, 0, 3);
+
+        Assertions.assertThat(sets)
+                .contains(Set.of("id"), Set.of("opt1", "opt2", "opt3"))
+                .hasSize(8);
+        Assertions.assertThat(sets.stream().filter(s -> s.size() > 1))
+                .allMatch(subset -> !subset.contains("id"));
+    }
+
     @ParameterizedTest
     @CsvSource({"1,4", "2,10", "3,14", "4,15"})
     void shouldGetBasedOnSize(int maxSizeToRemove, int expected) {

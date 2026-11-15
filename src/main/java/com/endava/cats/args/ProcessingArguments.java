@@ -18,13 +18,20 @@ import java.util.Optional;
 @Singleton
 @Getter
 public class ProcessingArguments {
+    @Setter
     @CommandLine.Option(names = {"--fieldsFuzzingStrategy"},
-            description = "The strategy used by some of the field fuzzers. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "The strategy used by RemoveFieldsFuzzer: @|bold,underline ONEBYONE|@ (1 request per field), @|bold,underline PAIRWISE|@ (ONEBYONE plus a covering array over optional fields: 5 extra requests for 10 optional fields, 6 for 15, 7 for 35, 8 for 56, 9 for 126), @|bold,underline SIZE|@ (subsets up to --maxFieldsToRemove), or @|bold,underline POWERSET|@ (all 2^n subsets). Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private FuzzingData.SetFuzzingStrategy fieldsFuzzingStrategy = FuzzingData.SetFuzzingStrategy.ONEBYONE;
 
+    @Setter
     @CommandLine.Option(names = {"--maxFieldsToRemove"},
             description = "The maximum number of fields that will be removed from a request when using the @|bold,underline SIZE|@ fieldsFuzzingStrategy")
     private int maxFieldsToRemove;
+
+    @Setter
+    @CommandLine.Option(names = {"--interactionStrength"}, defaultValue = "2",
+            description = "The interaction strength (2 or 3) used when @|bold,underline --fieldsFuzzingStrategy=PAIRWISE|@ is active (2 = Kleitman-Spencer pairwise covering array; 3 = 3-way binary IPOG covering array). Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private int interactionStrength = 2;
 
     @CommandLine.Option(names = {"--edgeSpacesStrategy"},
             description = "This can be either @|bold,underline VALIDATE_AND_TRIM|@ or @|bold,underline TRIM_AND_VALIDATE|@. It can be used to specify what CATS should expect when sending trailing and leading spaces valid values within fields. Default: @|bold,underline ${DEFAULT-VALUE}|@")
@@ -165,6 +172,17 @@ public class ProcessingArguments {
     public void validatePreseedCollectionGets(CommandLine.Model.CommandSpec spec) {
         if (maxPreseedCollectionGets < 0) {
             throw new CommandLine.ParameterException(spec.commandLine(), "--maxPreseedCollectionGets must be 0 or greater");
+        }
+    }
+
+    /**
+     * Rejects an unsupported combinatorial interaction strength before fuzzing begins.
+     *
+     * @param spec command specification used to produce a CLI usage error
+     */
+    public void validateInteractionStrength(CommandLine.Model.CommandSpec spec) {
+        if (interactionStrength < 2 || interactionStrength > 3) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "--interactionStrength must be 2 or 3");
         }
     }
 

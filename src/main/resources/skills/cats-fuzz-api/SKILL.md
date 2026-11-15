@@ -95,6 +95,9 @@ cats -c <spec> -s <url> -p "/orders,/orders/{orderId}" -X POST,PUT
 # Run specific fuzzers (discover names with `cats list -f`)
 cats -c <spec> -s <url> -f "HappyPath,RemoveFields,MassAssignment,SqlInjectionInStringFields"
 
+# Combinatorial optional-field removal (ONEBYONE + optimal strength-2 Kleitman-Spencer covering array; add --interactionStrength 3 for 3-way IPOG)
+cats -c <spec> -s <url> -f RemoveFields --fieldsFuzzingStrategy PAIRWISE
+
 # Skip fuzzers everywhere, per path, per HTTP method, or per method + path (`;` separates fuzzers within one scope)
 cats -c <spec> -s <url> --skipFuzzers "RandomResources,/health*=Jumbo,GET=ControlChars,DELETE /orders/*=ControlChars;Emojis"
 

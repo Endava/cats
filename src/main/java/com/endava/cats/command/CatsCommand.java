@@ -546,6 +546,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         authArguments.getEnvironmentVariables();
         apiArguments.validateRequired(spec);
         processingArguments.validatePreseedCollectionGets(spec);
+        processingArguments.validateInteractionStrength(spec);
         if (filesArguments.getCustomFuzzerFile() != null
                 && FunctionalFlowParser.isFunctionalFlowFile(filesArguments.getCustomFuzzerFile())) {
             filesArguments.setFunctionalFlowFile(filesArguments.getCustomFuzzerFile());

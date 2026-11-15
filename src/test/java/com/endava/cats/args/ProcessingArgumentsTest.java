@@ -65,6 +65,32 @@ class ProcessingArgumentsTest {
                 .hasMessageContaining("--maxPreseedCollectionGets must be 0 or greater");
     }
 
+    @ParameterizedTest
+    @CsvSource({"2", "3"})
+    void shouldConfigurePairwiseStrategyAndInteractionStrength(int strength) {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+        CommandLine commandLine = new CommandLine(processingArguments);
+
+        commandLine.parseArgs("--fieldsFuzzingStrategy=PAIRWISE", "--interactionStrength=" + strength);
+        processingArguments.validateInteractionStrength(commandLine.getCommandSpec());
+
+        Assertions.assertThat(processingArguments.getFieldsFuzzingStrategy())
+                .isEqualTo(com.endava.cats.model.FuzzingData.SetFuzzingStrategy.PAIRWISE);
+        Assertions.assertThat(processingArguments.getInteractionStrength()).isEqualTo(strength);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0", "1", "4", "-2"})
+    void shouldRejectInvalidInteractionStrength(int invalidStrength) {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+        CommandLine commandLine = new CommandLine(processingArguments);
+        commandLine.parseArgs("--interactionStrength=" + invalidStrength);
+
+        Assertions.assertThatThrownBy(() -> processingArguments.validateInteractionStrength(commandLine.getCommandSpec()))
+                .isInstanceOf(CommandLine.ParameterException.class)
+                .hasMessageContaining("--interactionStrength must be 2 or 3");
+    }
+
     @Test
     void shouldMatchXxxSelectionWhenArgumentNotProvided() {
         ProcessingArguments processingArguments = new ProcessingArguments();
