@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -167,7 +168,7 @@ class FilterParameterHonoredFuzzerTest {
     }
 
     private static JsonPrimitive primitive(String raw) {
-        return JsonUtils.parseAsJsonElement(raw.matches("-?\\d+(\\.\\d+)?|true|TRUE") ? raw.toLowerCase() : "\"" + raw + "\"").getAsJsonPrimitive();
+        return JsonUtils.parseAsJsonElement(raw.matches("-?\\d+(\\.\\d+)?|true|TRUE") ? raw.toLowerCase(Locale.ROOT) : "\"" + raw + "\"").getAsJsonPrimitive();
     }
 
     private static Schema<String> enumSchema(String... values) {

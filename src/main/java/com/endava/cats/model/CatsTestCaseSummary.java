@@ -130,7 +130,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     }
 
     /**
-     * Records the error signature computed from the full response body, which {@link #getResponseBody()} only keeps
+     * Records the error signature computed from the full response body, which {@code getResponseBody()} only keeps
      * the first 1000 characters of.
      *
      * @param signature the error signature of the full response

@@ -15,13 +15,11 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 @QuarkusTest
 class InjectionEvidenceVerifierTest {
     private static final String EVIDENCE = "root:x:0:0:root:/root:/bin/bash";
-    private static final Predicate<CatsResponse> DETECTOR = response -> response.getBody().contains(EVIDENCE);
 
     private RuntimeResourcePool runtimeResourcePool;
     private InjectionEvidenceVerifier verifier;
@@ -141,8 +139,12 @@ class InjectionEvidenceVerifierTest {
             replays.incrementAndGet();
             return CatsResponse.builder().responseCode(200).body(replayBody).build();
         };
-        return new InjectionEvidenceVerifier.Check(data, strong, DETECTOR,
+        return new InjectionEvidenceVerifier.Check(data, strong, InjectionEvidenceVerifierTest::detectsEvidence,
                 new InjectionEvidenceVerifier.Probes(() -> freshBaseline, replay));
+    }
+
+    private static boolean detectsEvidence(CatsResponse response) {
+        return response.getBody().contains(EVIDENCE);
     }
 
     private void givenBaseline(List<RuntimeResourcePool.SuccessfulExchange> exchanges) {

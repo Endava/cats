@@ -70,7 +70,7 @@ final class ContractDriftDetector {
     }
 
     private boolean isUndocumentedObservation(TriageTestCase testCase) {
-        return openAPI != null && openAPI.getPaths() != null
+        return (openAPI != null && openAPI.getPaths() != null)
                 ? isUndocumentedInContract(testCase)
                 : isReportedAsUndocumented(testCase);
     }
