@@ -1,6 +1,6 @@
 ---
 name: cats-triage-results
-description: "Triage CATS test reports into deduplicated root-cause clusters, mine working --refData from 2XX responses, synthesize --correlations rules, generate OpenAPI contract patches, replay failing tests, verify fixes live (--verify), and compare reports against a baseline."
+description: "Triage the problems of CATS test reports per operation (root-cause category, diagnosis, remediation), mine working --refData from 2XX responses, synthesize --correlations rules, generate OpenAPI contract patches, replay failing tests, verify fixes live (--verify), and compare reports against a baseline."
 argument-hint: "[-r cats-report] [-s <server-url>]"
 allowed-tools:
   - read
@@ -15,7 +15,20 @@ triggers:
 
 # CATS — Report Triage, Live Fix Verification, Replay & Baseline Diffing
 
-Use this skill after any `cats run`, `cats random`, or `cats template` execution to turn hundreds of `Test*.json` files into deduplicated root causes, ready-to-use configuration files, and verified code fixes.
+Use this skill after any `cats run`, `cats random`, or `cats template` execution to turn hundreds of `Test*.json` files into a short list of problems, ready-to-use configuration files, and verified code fixes.
+
+**Vocabulary (the same in the HTML report, `cats-summary-report.json` and `cats triage`):**
+- A **problem** is a set of failing tests with the same problem key: what the check judged, never the response body by default. Its `problemId` (8 hex characters) is the same in the HTML card footer, the summary JSON (`problems[].id`, `testCases[].problemId`) and triage. Problems span operations.
+- An **occurrence** is one problem on one operation (`METHOD path`). Triage classifies and remediates occurrences.
+- **Kinds** (`problems[].kind`), first match wins:
+  - `SERVER_ERROR`: any `5XX`, keyed by the server message whatever the result reason (the reasons are listed).
+  - `ERROR_MESSAGE`: a `4XX` rejection, keyed by the verdict and the server message (`Unexpected response code: N` and `Unexpected behaviour N` are one verdict).
+  - `RESPONSE_VIOLATION`: the response breaks a rule. Schema mismatches are keyed by the declared response schema (`$ref` name, or `METHOD path status` when inline) with the validator messages as `variants`; content type, missing headers, error leaks, sensitive data and writeOnly exposure by the violation.
+  - `STATUS_CODE`: the status code is the finding (`Undocumented response code`, `Not implemented`, Allow-header checks), keyed by reason and status, with the server messages as `variants`.
+  - `ACCEPTED_REQUEST`: a `2XX`/`3XX` where the fuzzer expected a rejection, keyed by verdict, status family and fuzzer. The body is evidence (`evidence.details`, `evidence.confidence` of the most confident test), never identity.
+  - `NO_RESPONSE`: I/O errors, `9XX` pseudo statuses and contract linter results.
+- `errorTemplate`/`errorTemplateId` is the **server message**, and only exists for `SERVER_ERROR` and `ERROR_MESSAGE` problems (and as `STATUS_CODE` variants). A `2XX`/`3XX` test never has one. The text is stored once per problem; tests keep only `errorTemplateId`.
+- Readers must check `problemKeyVersion` (currently `1`); triage rejects other versions with exit code `2`.
 
 ---
 
@@ -29,9 +42,11 @@ cats triage -r cats-report -c <spec> -j \
   --export-contract-patch contract-patch.yml \
   --export-reproducers reproducers.sh
 ```
-*(Add `--include-warnings` to include warning test cases in clustering alongside errors.)*
+*(Warnings are triaged by default, like the problems of the HTML report. Add `--errors-only` to triage error tests only.)*
 
-**Prerequisite:** the report must contain the `2XX` and warning tests. If the run used `--srs` / `--srw` (`--skipReportingForSuccess` / `--skipReportingForWarning`) or `-k`, `--export-refdata`, `--include-warnings` and `cats replay --stateful` have almost nothing to work with. Re-run without them.
+The JSON is `problems[]` (in report rank order: errors first, then crashes, specific accepted-input findings, rejections, response violations, status codes, generic accepted input) → `occurrences[]`, each with `category`, `severityRank`, `diagnosis`, `remediation`, `fields`, `fuzzers`, `sampleTestIds`, `curlReproducer`, `attribution` and, with `--verify`, `verificationStatus` / `verifiedStatusCode` / `verificationNote`. An occurrence takes the category of most of its tests; its representative (reproducer, `--verify`) is the lowest-numbered test of that category. `totalProblems` and `totalOccurrences` give the size of the work list.
+
+**Prerequisite:** the report must contain the `2XX` and warning tests. If the run used `--srs` / `--srw` (`--skipReportingForSuccess` / `--skipReportingForWarning`) or `-k`, `--export-refdata`, warning problems and `cats replay --stateful` have almost nothing to work with. Re-run without them.
 
 ### Review Exported Artifacts Before Reusing Them
 - **`correlations.yml`**: rules are only synthesized from `400`/`409`/`422` rejections of requests CATS expected to succeed (`HappyPath`, `OnlyRequiredFields`, or `2XX`-only expectations), and only when the message demands presence (`REQUIRE` → `set:`), absence (`REMOVE` → `omit:`) or uniqueness (`UNIQUE` → self-guarded `when: "<field> is not null"` + `set:`). Rules are grouped per path under `rules:`; each carries a `# from:` comment with the source error.
@@ -42,7 +57,7 @@ cats triage -r cats-report -c <spec> -j \
 - **`contract-patch.yml`**: only adds undocumented status codes. It never fixes a test whose fuzzer expected a different code family.
 - **`reproducers.sh`**: masked values are expanded from the environment (`"${Authorization}"`), and the script aborts with a hint when a required variable is unset.
 
-### Root-Cause Cluster Categories
+### Occurrence Categories
 1. **`SERVER_CRASH_5XX` (Severity 0 — Highest Priority)**: unhandled `500+` error. Read the representative `Test*.json` listed in `sampleTestIds` (e.g., `cats-report/Test42.json`) or run `curlReproducer`, fix the backend, then verify (Section 2).
 2. **`FIELD_DOMAIN_CONSTRAINT_4XX` (Severity 1)**: the server rejected a value the fuzzer was mutating (e.g. `MinLengthExactValuesInStringFields` sent a duplicate `name`). Only `--refData` can fix it: pin the field under a path-only key in `#` notation, or tighten the contract constraints. No correlation rule is synthesized for it.
 3. **`CROSS_FIELD_CONSTRAINT_4XX` (Severity 1)**: `HappyPath` / `OnlyRequiredFields` rejected with `400`/`422`, or any test expecting `2XX` that got `400`/`422` on a path that received a synthesized correlation rule. The remediation quotes the matching synthesized rule when one exists.
@@ -57,9 +72,9 @@ cats triage -r cats-report -c <spec> -j \
    - `RESOURCE_POOL_DEPLETED_404`: an earlier successful `DELETE` on the same or a parent path removed the resource.
 8. **`CONTRACT_MISMATCH` (Severity 3)**: catch-all, including undocumented status codes and other unexpected codes. Read the `remediation` text: it says whether the code is undocumented (contract patch) or the request was schema-valid but rejected (refData/correlations/contract constraints).
 
-Clusters are sorted by severity, occurrences, category and operation, so results do not depend on test numbering.
+Problems keep the rank of the report and occurrences are sorted by tests, so results do not depend on test numbering.
 
-Every cluster carries `errorTemplate` and `errorTemplateId`: the error message of its representative test, mined with Drain (He et al., ICWS 2017), with variable parts masked:
+Problems identified by the server message carry `errorTemplate` and `errorTemplateId`, mined with Drain (He et al., ICWS 2017) from the full 4XX/5XX response at report time, with variable parts masked:
 - `<INPUT>`: a value the request sent (body, query, form or path parameter), even when the server echoes only a fragment of it.
 - `<FIELD>`: a field name the request sent.
 - `NUM`, `UUID`, `TIMESTAMP`, `PATH`, `URL`, `'STR'` / `"STR"`, `[LIST]`: generic variable parts. Quoted code identifiers are kept, because they name the crash site: `(reading 'id')`, `KeyError: 'name'`, `Cannot invoke "String.length()"`.
@@ -73,12 +88,12 @@ Custom JSON error envelopes are read by field role, from the end of the field na
 
 HTML error pages (Tomcat, Whitelabel, Werkzeug, Express, Django) are reduced to their title and visible text.
 
-`SERVER_CRASH_5XX` and `CROSS_FIELD_CONSTRAINT_4XX` clusters are keyed by the template, so two crashes with different templates are different root causes (e.g. `Cannot invoke "String.length()"…` vs `Cannot invoke "BigInteger.bitLength()"…`). The `errorTemplateId` (8 hex characters) is the same for the same status code and template text, so you can match clusters across runs. The same `errorTemplateId`/`errorTemplate` pair is stored on every error and warning test in `cats-summary-report.json` and shown as `T-<id>` in the HTML report clusters.
+Two crashes with different server messages are different problems (e.g. `Cannot invoke "String.length()"…` vs `Cannot invoke "BigInteger.bitLength()"…`); the same crash under several result reasons is one problem. The HTML report calls the template the "Server message" and never shows template ids; use `problemId` to refer to a problem.
 
-When a fuzzed test fails with the same HTTP status code and online error signature as an unmodified baseline request (`HappyPath` or `OnlyRequiredFields`) on the same operation in the same run, CATS records `sameErrorAsBaselineTest` (e.g. `"Test 3"`) and `sameErrorAsBaselineFuzzer` (e.g. `"HappyPath"`) in `Test*.json` and `cats-summary-report.json`, and `cats triage` marks the cluster with `attribution: "SAME_AS_BASELINE"` (without needing `--verify`) and tells you to fix the `HappyPath` / seed request for that operation first.
+When a fuzzed test fails with the same HTTP status code and online error signature as an unmodified baseline request (`HappyPath` or `OnlyRequiredFields`) on the same operation in the same run, CATS records `sameErrorAsBaselineTest` (e.g. `"Test 3"`) and `sameErrorAsBaselineFuzzer` (e.g. `"HappyPath"`) in `Test*.json` and `cats-summary-report.json`, and `cats triage` marks the occurrence with `attribution: "SAME_AS_BASELINE"` (without needing `--verify`) and tells you to fix the `HappyPath` / seed request for that operation first.
 
-### Per-Cluster Decision Tree
-For each cluster, open one `sampleTestIds` file and read `fuzzer`, `scenario` (note `is required [TRUE|FALSE]`), `expectedResult`, and the response body. Then:
+### Per-Occurrence Decision Tree
+For each occurrence, open one `sampleTestIds` file and read `fuzzer`, `scenario` (note `is required [TRUE|FALSE]`), `expectedResult`, and the response body. Then:
 1. **`5XX`** → backend bug. Do not hide it with `--refData` / `--correlations`, unless `HappyPath` itself crashes because the seed data is invalid.
 2. **`401`/`403`** → auth configuration. Re-run `cats smoke` after fixing.
 3. **`404`**:
@@ -97,9 +112,9 @@ For each cluster, open one `sampleTestIds` file and read `fuzzer`, `scenario` (n
    4. Required in the contract but the server applies a default → fix the contract (`required: false` + `default:`).
    5. Otherwise → missing server-side validation (real bug).
 6. **`CONTRACT_MISMATCH`**: merge `contract-patch.yml` only when the `remediation` says the code is **undocumented** and the behavior is intended. A remediation of "align service status code or fuzzer expectations" is never fixed by the patch; apply steps 4/5.
-7. **`NOT_MATCHING_RESPONSE_SCHEMA`** (reported as warnings; needs `--include-warnings` and a run without `--srw`) on `oneOf`/`anyOf` responses → try re-running with `--resolveXxxOfCombinationForResponses`. If the warning persists, fix the discriminator mapping or the response schema in the contract.
+7. **`NOT_MATCHING_RESPONSE_SCHEMA`** (reported as warnings; needs a run without `--srw`; one `RESPONSE_VIOLATION` problem per declared schema) on `oneOf`/`anyOf` responses → try re-running with `--resolveXxxOfCombinationForResponses`. If the warning persists, fix the discriminator mapping or the response schema in the contract.
 8. **`Rate limited` (`RATE_LIMITED`, warning)** → the gateway/API kept answering `429 Too Many Requests` after `--maxRateLimitRetries` (or returned a `Retry-After` exceeding `--maxRetryAfterInSec`), so the test verdict is unknown. **This is a transport/throttling outcome, not an API defect** (and is never emitted as a WFC fault). Re-run the affected tests with `cats replay --warnings -r cats-report -s <server_url>` or lower the request rate with `--maxRequestsPerMinute`.
-9. **HTTP-semantics and behavior oracles** (cluster as `CONTRACT_MISMATCH` keyed by the reason; most are warnings, so use `--include-warnings`). These are server behavior bugs: never fix them with `contract-patch.yml`, `--refData` or `--correlations`.
+9. **HTTP-semantics and behavior oracles** (usually classified `CONTRACT_MISMATCH`; most are warnings, which are triaged by default). These are server behavior bugs: never fix them with `contract-patch.yml`, `--refData` or `--correlations`.
    - `Repeated PUT returned 201 Created` (`PutIdempotency`, error) → the PUT handler reports "created" for an existing resource. Return `200`/`204` on update (RFC 9110 §9.3.4).
    - `PUT on existing resource returned 201 Created` (`MisleadingCreatePut`, error) → a `GET` immediately before the `PUT` returned `2XX` proving the resource exists, yet the `PUT` returned `201 Created` instead of `200`/`204` (or the `GET` handler wrongly returns `200` for missing resources).
    - `PUT did not perform a full replacement` (`PartialUpdatePut`, warning) → `PUT` must replace the entire representation (RFC 9110 §9.3.4), not merge fields like `PATCH`. Either an omitted optional field retained its previous value or a shared writable field differed on the subsequent `GET`.
@@ -116,18 +131,18 @@ For each cluster, open one `sampleTestIds` file and read `fuzzer`, `scenario` (n
 
 ## 2. Verify Fixes Live in Seconds (`cats triage --verify`)
 
-After fixing a server bug or updating headers, verify all root-cause clusters against the live server without re-running the full fuzzer suite:
+After fixing a server bug or updating headers, verify all problem occurrences against the live server without re-running the full fuzzer suite:
 ```bash
 export Authorization='Bearer eyJ...'
 cats triage -r cats-report --verify -s <server_url> -j
 ```
 - Reports mask sensitive headers and query params as **`$$<HeaderNameWithOnlyAlphanumerics>`** (e.g. `Authorization` → `$$Authorization`, `X-API-Key` → `$$XAPIKey`), whatever env var you originally used. Export a variable with exactly that name, or override the header with `-H 'Authorization=Bearer eyJ...'`.
-- Replays **1 representative request per root-cause cluster** as-is (no upstream producers are re-run, so IDs may be stale).
-- Marks each cluster with `verificationStatus` and records `verifiedStatusCode` / `verificationNote`:
-  - **`FIXED`**: `SERVER_CRASH_5XX` now returns `< 500`; other clusters return a code allowed by the test's `expectedResult` (e.g. `[400, 422]`, `4XX`).
+- Replays **1 representative request per occurrence** as-is (no upstream producers are re-run, so IDs may be stale).
+- Marks each occurrence with `verificationStatus` and records `verifiedStatusCode` / `verificationNote`:
+  - **`FIXED`**: `SERVER_CRASH_5XX` now returns `< 500`; other occurrences return a code allowed by the test's `expectedResult` (e.g. `[400, 422]`, `4XX`).
   - **`STILL_FAILING`**: the original failure still reproduces.
-  - **`INCONCLUSIVE`**: the replay cannot prove anything: a masked variable is missing, the request could not be sent, an unrelated `401`/`403` came back, a `404` came back for a test that originally got something else (stale IDs; use `cats replay TestN --stateful`), or the cluster is contract-only drift.
-- Returns exit code `0` if all `SERVER_CRASH_5XX` clusters are `FIXED`, or `1` if any crash cluster is `STILL_FAILING` or `INCONCLUSIVE`.
+  - **`INCONCLUSIVE`**: the replay cannot prove anything: a masked variable is missing, the request could not be sent, an unrelated `401`/`403` came back, a `404` came back for a test that originally got something else (stale IDs; use `cats replay TestN --stateful`), or the occurrence is contract-only drift.
+- Returns exit code `0` if every occurrence of a `SERVER_ERROR` problem is `FIXED`, or `1` if any is `STILL_FAILING` or `INCONCLUSIVE`.
 
 ---
 

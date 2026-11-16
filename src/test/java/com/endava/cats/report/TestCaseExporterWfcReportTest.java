@@ -9,8 +9,14 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.RunOutcome;
+import com.endava.cats.report.error.contract.ErrorResponseContracts;
+import com.endava.cats.report.error.mask.ErrorSignatureMasker;
+import com.endava.cats.report.error.template.ErrorSample;
+import com.endava.cats.report.error.template.ErrorTemplate;
+import com.endava.cats.report.error.template.ErrorTemplateMiner;
 import com.endava.cats.report.wfc.WfcReportBuilder;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
@@ -29,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @QuarkusTest
@@ -180,5 +187,43 @@ class TestCaseExporterWfcReportTest {
         Report reportWithoutDir = WfcReportBuilder.build(
                 List.of(summary), null, new OpenAPI(), List.of(), null, "2.0.0", 3L);
         Assertions.assertThat(reportWithoutDir.getTotalTests()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldKeepResultsCountsTemplatesAndTheWfcReportUnchangedByProblems() throws Exception {
+        List<CatsTestCase> run = Stream.concat(ProblemReportFixtures.riskApiRun().stream(), ProblemReportFixtures.injectionRun().stream()
+                .peek(test -> test.setTestId(test.getTestId().replace("Test ", "Test 10")))).toList();
+        List<CatsTestCaseSummary> without = ProblemReportFixtures.summaries(run);
+        List<CatsTestCaseSummary> with = ProblemReportFixtures.summaries(run);
+        List<CatsTestCaseSummary> reportable = without.stream().filter(test -> test.getError() || test.getWarning()).toList();
+        List<ErrorTemplate> previousScope = ErrorTemplateMiner.mine(reportable.stream().map(test -> new ErrorSample(test.getResultReason(),
+                test.getHttpResponseCode(), ErrorSignatureMasker.signatureOf(test.getResponseBody(), null, test.getRequestVocabulary(),
+                        ErrorResponseContracts.lookup(ProblemReportFixtures.RISK_CONTRACT, test.getHttpMethod(), test.getPath(), test.getHttpResponseCode())))).toList());
+        IntStream.range(0, reportable.size()).forEach(index -> reportable.get(index).assignErrorTemplate(previousScope.get(index).id(), previousScope.get(index).text()));
+        ExecutionSummary executionSummary = new ExecutionStatisticsListener().snapshot(false, "fail on errors");
+
+        CatsTestReport report = ProblemReportConsistencyTest.write(with, tempDir);
+
+        Assertions.assertThat(report.getErrors()).isEqualTo(executionSummary.errors());
+        Assertions.assertThat(report.isQualityGatePassed()).isEqualTo(executionSummary.qualityGatePassed());
+        IntStream.range(0, without.size()).forEach(index -> {
+            CatsTestCaseSummary before = without.get(index);
+            CatsTestCaseSummary after = report.getTestCases().stream().filter(test -> test.getId().equals(before.getId())).findFirst().orElseThrow();
+            Assertions.assertThat(after.getResult()).isEqualTo(before.getResult());
+            Assertions.assertThat(after.getResultReason()).isEqualTo(before.getResultReason());
+            int status = before.getHttpResponseCode();
+            Assertions.assertThat(after.getErrorTemplateId()).as(before.getId())
+                    .isEqualTo(status >= 400 && status < 600 ? before.getErrorTemplateId() : null);
+        });
+        report.getProblems().stream().filter(problem -> problem.kind().isIdentifiedByServerMessage()).forEach(problem ->
+                Assertions.assertThat(reportable).filteredOn(test -> test.getErrorTemplateId().equals(problem.errorTemplateId()))
+                        .extracting(CatsTestCaseSummary::getErrorTemplate).containsOnly(problem.errorTemplate()));
+        Assertions.assertThat(wfcJson(without, executionSummary)).isEqualTo(wfcJson(with, executionSummary));
+    }
+
+    private String wfcJson(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary) {
+        Report report = WfcReportBuilder.build(summaries, executionSummary, ProblemReportFixtures.RISK_CONTRACT, List.of(), tempDir, "15.0.4", 3L);
+        report.setCreationTime(null);
+        return JsonUtils.GSON.toJson(report);
     }
 }

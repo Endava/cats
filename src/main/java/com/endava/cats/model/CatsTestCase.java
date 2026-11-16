@@ -163,6 +163,16 @@ public class CatsTestCase {
     }
 
     /**
+     * Returns how the baseline annotation names the shared outcome: {@code error} when the response carries an error
+     * message (a server error or a rejection), {@code result} otherwise, because a 2xx is not an error.
+     *
+     * @return {@code error} or {@code result}
+     */
+    public String getSameAsBaselineNoun() {
+        return ProblemKind.of(response.getResponseCode(), resultReason).isIdentifiedByServerMessage() ? "error" : "result";
+    }
+
+    /**
      * Returns the compact test key without spaces (e.g. {@code Test12}).
      *
      * @return test key without spaces

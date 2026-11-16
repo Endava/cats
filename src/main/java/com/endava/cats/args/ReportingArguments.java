@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -53,7 +54,8 @@ public class ReportingArguments {
     private boolean timestampReports;
 
     @CommandLine.Option(names = {"--reportFormat"},
-            description = "A comma-separated list of formats for the CATS report (supports multiple formats in the same run, e.g. @|bold HTML_JS,WFC_REPORT|@). Default: @|bold,underline ${DEFAULT-VALUE}|@. Available formats: @|bold HTML_JS|@, @|bold HTML_ONLY|@, @|bold HTML_JS_CLUSTERS|@, @|bold JUNIT|@, @|bold WFC_REPORT|@.", split = ",")
+            description = "A comma-separated list of formats for the CATS report (supports multiple formats in the same run, e.g. @|bold HTML_JS,WFC_REPORT|@). Default: @|bold,underline ${DEFAULT-VALUE}|@. Available formats: @|bold HTML_JS|@, @|bold HTML_ONLY|@, @|bold JUNIT|@, @|bold WFC_REPORT|@. Both HTML formats include the problems view.", split = ",",
+            converter = ReportFormatConverter.class)
     private List<ReportFormat> reportFormat = List.of(ReportFormat.HTML_JS);
 
     @CommandLine.Option(names = {"-o", "--output"},
@@ -247,6 +249,27 @@ public class ReportingArguments {
     /**
      * Enumerates different formats for generating reports.
      */
+    /**
+     * Converts {@code --reportFormat} values and explains removed formats instead of only listing the valid ones.
+     */
+    public static final class ReportFormatConverter implements CommandLine.ITypeConverter<ReportFormat> {
+        static final String REMOVED_CLUSTERS_FORMAT = "HTML_JS_CLUSTERS";
+
+        @Override
+        public ReportFormat convert(String value) {
+            String format = value.trim().toUpperCase(Locale.ROOT);
+            if (REMOVED_CLUSTERS_FORMAT.equals(format)) {
+                throw new CommandLine.TypeConversionException(
+                        "HTML_JS_CLUSTERS was removed: the problems view is now part of every HTML report. Use --reportFormat HTML_JS (or HTML_ONLY)");
+            }
+            try {
+                return ReportFormat.valueOf(format);
+            } catch (IllegalArgumentException _) {
+                throw new CommandLine.TypeConversionException("expected one of %s but was '%s'".formatted(List.of(ReportFormat.values()), value));
+            }
+        }
+    }
+
     public enum ReportFormat {
 
         /**
@@ -257,10 +280,6 @@ public class ReportingArguments {
          * Generates a report in HTML format with JavaScript support.
          */
         HTML_JS,
-        /**
-         * Generates a report in HTML format with Javascript support and groups issues in clusters.
-         */
-        HTML_JS_CLUSTERS,
         /**
          * Generates a report in JUnit format.
          */

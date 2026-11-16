@@ -8,7 +8,11 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.Problem;
+import com.endava.cats.report.problem.ProblemCatalog;
+import com.endava.cats.report.problem.ResponseSchemaNames;
 import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -22,6 +26,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @QuarkusTest
 class TestCaseExporterHtmlOnlyTest {
@@ -45,23 +50,49 @@ class TestCaseExporterHtmlOnlyTest {
     }
 
     @Test
-    void shouldIgnoreNullSummariesWhenWritingErrorTemplates() throws Exception {
+    void shouldIgnoreNullSummariesWhenWritingProblemsJs() throws Exception {
         ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
         Mockito.when(reportingArguments.getOutputReportFolder()).thenReturn(reportDirectory.toString());
         TestCaseExporterHtmlJs exporter = new TestCaseExporterHtmlJs(reportingArguments,
                 new CatsGlobalContext(), Mockito.mock(ProcessingArguments.class), Mockito.mock(StopArguments.class));
         exporter.initPath(reportDirectory.toString());
-        CatsTestCaseSummary error = Mockito.mock(CatsTestCaseSummary.class);
-        Mockito.when(error.getError()).thenReturn(true);
-        Mockito.when(error.getKey()).thenReturn("Test1");
-        Mockito.when(error.getErrorTemplateId()).thenReturn("template-1");
-        Mockito.when(error.getErrorTemplate()).thenReturn("Invalid input");
+        CatsTestCaseSummary error = ProblemReportFixtures.summaries(ProblemReportFixtures.injectionRun()).getFirst();
+        List<Problem> problems = ProblemCatalog.build(List.of(error), new ResponseSchemaNames(null));
 
-        exporter.writeErrorTemplatesJs(List.of(error));
-        String expected = Files.readString(reportDirectory.resolve(TestCaseExporter.ERROR_TEMPLATES_JS));
-        exporter.writeErrorTemplatesJs(Arrays.asList(null, error, null));
+        exporter.writeProblemsJs(ProblemPage.of(problems, List.of(error), true), CatsTestReport.builder().testCases(List.of(error)).problems(problems).build());
+        String expected = Files.readString(reportDirectory.resolve(TestCaseExporter.PROBLEMS_JS));
+        List<CatsTestCaseSummary> withNulls = Arrays.asList(null, error, null);
+        exporter.writeProblemsJs(ProblemPage.of(problems, withNulls, true), CatsTestReport.builder().testCases(withNulls).problems(problems).build());
 
-        Assertions.assertThat(Files.readString(reportDirectory.resolve(TestCaseExporter.ERROR_TEMPLATES_JS))).isEqualTo(expected);
+        Assertions.assertThat(Files.readString(reportDirectory.resolve(TestCaseExporter.PROBLEMS_JS))).isEqualTo(expected)
+                .contains("\"Test1\":", "\"fields\": [", "\"body.name\"");
+    }
+
+    @Test
+    void shouldRenderProblemsStaticallyWithoutJavascriptPlaceholdersOrDanglingLinks() throws Exception {
+        ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
+        Mockito.when(reportingArguments.getOutputReportFolder()).thenReturn(reportDirectory.toString());
+        Mockito.when(reportingArguments.getMaskedHeaders()).thenReturn(Set.of());
+        TestCaseExporterHtmlOnly exporter = new TestCaseExporterHtmlOnly(reportingArguments,
+                new CatsGlobalContext(), Mockito.mock(ProcessingArguments.class), Mockito.mock(StopArguments.class));
+        exporter.appVersion = "test-version";
+        exporter.initPath(reportDirectory.toString());
+        List<CatsTestCase> run = ProblemReportFixtures.riskApiRun();
+        run.forEach(exporter::writeTestCase);
+
+        exporter.writeSummary(ProblemReportFixtures.summaries(run), new ExecutionStatisticsListener().snapshot(false, "fail on errors"));
+
+        String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
+        String testPage = Files.readString(reportDirectory.resolve("Test4.html"));
+        List<String> ids = Pattern.compile("\\sid=\"([^\"]+)\"").matcher(html).results().map(match -> match.group(1)).toList();
+        Assertions.assertThat(html).doesNotContain("script.js", "problems.js", "data-view=", "problem-banner", "problem-view-tests", "{{")
+                .contains("href=\"#problems-view\"", "href=\"#problems-by-operation\"", "href=\"#tests-view\"", "id=\"problems-by-operation\"",
+                        "Grouped by:", "href=\"Test4.html\"");
+        Assertions.assertThat(Pattern.compile("href=\"#([^\"]+)\"").matcher(html).results().map(match -> match.group(1)).distinct()).allMatch(ids::contains);
+        Assertions.assertThat(ids).doesNotHaveDuplicates();
+        Assertions.assertThat(testPage).doesNotContain("problems.js", "problem-banner", "script.js")
+                .contains("Same result as the unmodified request");
+        Assertions.assertThat(reportDirectory.resolve(TestCaseExporter.PROBLEMS_JS)).doesNotExist();
     }
 
     @Test
@@ -233,7 +264,8 @@ class TestCaseExporterHtmlOnlyTest {
         String testJson = Files.readString(reportDirectory.resolve("Test12.json"));
         String testHtml = Files.readString(reportDirectory.resolve("Test12.html"));
         String summaryJson = Files.readString(reportDirectory.resolve("cats-summary-report.json"));
-        String templatesJs = Files.readString(reportDirectory.resolve(TestCaseExporter.ERROR_TEMPLATES_JS));
+        String problemsJs = Files.readString(reportDirectory.resolve(TestCaseExporter.PROBLEMS_JS));
+        String summaryHtml = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
 
         Assertions.assertThat(testJson).contains(
                 "\"sameErrorAsBaselineTest\": \"Test 3\"",
@@ -243,27 +275,18 @@ class TestCaseExporterHtmlOnlyTest {
                 "href=\"Test3.html\"",
                 "Test 3",
                 "HappyPath",
-                "error-templates.js",
-                "id=\"error-template-banner\"",
+                "problems.js",
+                "id=\"problem-banner\"",
                 "data-test-key=\"Test12\"");
         Assertions.assertThat(summaryJson).contains(
                 "\"sameErrorAsBaselineTest\": \"Test 3\"",
                 "\"sameErrorAsBaselineFuzzer\": \"HappyPath\"");
-        Assertions.assertThat(templatesJs)
-                .startsWith("window.CATS_TEMPLATES = ")
-                .contains("\"Test12\":", "\"text\": \"Database down\"", "\"count\": 2")
+        Assertions.assertThat(problemsJs)
+                .startsWith("window.CATS_PROBLEMS_PAGE = true;")
+                .contains("window.CATS_PROBLEMS = ", "\"Test12\":", "\"title\": \"Server error (HTTP 500): Database down\"", "\"count\": 2",
+                        "\"anchor\": \"problem-", "\"kind\": \"SERVER_ERROR\"")
                 .doesNotContain("\"Test1\":");
-
-        Path clusterReportDir = reportDirectory.resolve("clusters");
-        TestCaseExporterHtmlJsCluster clusterExporter = new TestCaseExporterHtmlJsCluster(reportingArguments,
-                new CatsGlobalContext(), processingArguments, stopArguments);
-        clusterExporter.appVersion = "test-version";
-        clusterExporter.initPath(clusterReportDir.toString());
-        clusterExporter.writeSummary(summaries, execSummary);
-
-        String clusterHtml = Files.readString(clusterReportDir.resolve(TestCaseExporter.REPORT_HTML));
-        Assertions.assertThat(clusterHtml).contains(
-                "1 of 2 tests in this cluster fail the same way as the unmodified request");
+        Assertions.assertThat(summaryHtml).contains("1 of 2 also fail the same way on the unmodified request");
     }
 
     private static CatsTestCaseSummary summary() {

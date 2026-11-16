@@ -91,4 +91,26 @@ class ReportingArgumentsTest {
             PrettyLogger.enableLevels(PrettyLevel.values());
         }
     }
+
+    @Test
+    void shouldRejectTheRemovedClustersFormatWithAPointerToHtmlJs() {
+        ReportingArguments reportingArguments = new ReportingArguments();
+        CommandLine commandLine = new CommandLine(reportingArguments);
+
+        Assertions.assertThatThrownBy(() -> commandLine.parseArgs("--reportFormat", "HTML_JS,HTML_JS_CLUSTERS"))
+                .isInstanceOf(CommandLine.ParameterException.class)
+                .hasMessageContaining("HTML_JS_CLUSTERS was removed")
+                .hasMessageContaining("Use --reportFormat HTML_JS");
+        Assertions.assertThatThrownBy(() -> commandLine.parseArgs("--reportFormat", "PDF"))
+                .hasMessageContaining("expected one of [HTML_ONLY, HTML_JS, JUNIT, WFC_REPORT]");
+    }
+
+    @Test
+    void shouldParseReportFormatsCaseInsensitively() {
+        ReportingArguments reportingArguments = new ReportingArguments();
+        new CommandLine(reportingArguments).parseArgs("--reportFormat", "html_only,WFC_REPORT");
+
+        Assertions.assertThat(reportingArguments.getReportFormat())
+                .containsExactly(ReportingArguments.ReportFormat.HTML_ONLY, ReportingArguments.ReportFormat.WFC_REPORT);
+    }
 }

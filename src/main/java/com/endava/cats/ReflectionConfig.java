@@ -7,7 +7,8 @@ import com.endava.cats.command.InfoCommand;
 import com.endava.cats.command.InitCommand;
 import com.endava.cats.command.SmokeCommand;
 import com.endava.cats.command.StatsCommand;
-import com.endava.cats.command.triage.RootCauseCluster;
+import com.endava.cats.command.triage.TriageOccurrence;
+import com.endava.cats.command.triage.TriageProblem;
 import com.endava.cats.command.triage.SynthesizedCorrelationRule;
 import com.endava.cats.command.triage.TriageReport;
 import com.endava.cats.command.model.FuzzerListEntry;
@@ -24,6 +25,8 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
+import com.endava.cats.model.Problem;
+import com.endava.cats.model.ProblemKind;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.ProcessingError;
@@ -36,6 +39,8 @@ import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.report.BaselineComparisonEngine;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.wfc.CatsWfcFaultCategory;
+import com.endava.cats.report.ProblemCard;
+import com.endava.cats.report.ProblemPage;
 import com.endava.cats.report.SummaryReportContext;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.KeyValuePair;
@@ -282,14 +287,14 @@ import java.util.UUID;
         ProblemDetails.class, RESTReport.class,
         Report.class, TestCase.class,
         Warning.class,
-        TriageReport.class, RootCauseCluster.class,
+        TriageReport.class, TriageProblem.class, TriageOccurrence.class,
         SynthesizedCorrelationRule.class,
         AnalyzeCommand.BlueprintReport.class, AnalyzeCommand.ScoreBreakdown.class,
         AnalyzeCommand.ProducerConsumerChain.class,
         SmokeCommand.SmokeReport.class, SmokeCommand.OperationProbe.class,
         InitCommand.InitResult.class, InitCommand.AgentPlatform.class,
         BaselineComparisonEngine.ComparisonResult.class, BaselineComparisonEngine.FindingDelta.class,
-        TestCaseExporter.ErrorTemplateEntry.class,
+        TestCaseExporter.ProblemBannerEntry.class,
         ProfileLoader.Profile.class,
         CatsTestReport.JunitTestSuite.class,
         CatsDSLParser.class, CatsRandom.class,
@@ -341,7 +346,10 @@ import java.util.UUID;
         RequestTarget.class, RequestTarget.Location.class, FindingConfidence.class, ExecutionSummary.class, RunOutcome.class, RunOutcome.Status.class,
         ProcessingError.class, SummaryReportContext.class, SummaryReportContext.StopLimit.class,
         SummaryReportContext.ProcessingErrorEntry.class, SummaryReportContext.ResponseCodeEntry.class,
-        SummaryReportContext.FailingPathEntry.class, PathListEntry.class, PathListEntry.PathDetails.class,
+        SummaryReportContext.FailingPathEntry.class,
+        Problem.class, Problem.Occurrence.class, Problem.FieldCount.class, Problem.Evidence.class, Problem.Variant.class, ProblemKind.class,
+        ProblemPage.class, ProblemPage.TestRow.class, ProblemPage.PivotGroup.class, ProblemPage.PivotEntry.class,
+        ProblemCard.class, ProblemCard.OperationRow.class, ProblemCard.TestLink.class, ProblemCard.VariantRow.class, ProblemCard.CrossLink.class, PathListEntry.class, PathListEntry.PathDetails.class,
         com.endava.cats.http.HttpMethod.class, CustomMutatorConfig.Type.class, CatsWfcFaultCategory.class,
         FuzzingData.SetFuzzingStrategy.class,
         InfoCommand.CatsInfo.class, StatsCommand.Stats.class, PathDetailsEntry.class, PathDetailsEntry.OperationDetails.class,

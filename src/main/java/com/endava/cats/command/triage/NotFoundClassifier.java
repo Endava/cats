@@ -48,7 +48,7 @@ final class NotFoundClassifier {
 
     private static ClusterClassification suspiciousCorrelationCluster(TriageTestCase testCase, ResourceCorrelation correlation) {
         String parameter = correlation.getTarget().name();
-        return ClusterClassification.of("SUSPICIOUS_CORRELATION_404", SEVERITY, testCase, correlation.getSourceLocation(),
+        return ClusterClassification.of("SUSPICIOUS_CORRELATION_404", SEVERITY, testCase,
                 new ClusterClassification.Explanation(
                         "Path parameter [%s] was correlated from non-ID field [%s = %s]".formatted(
                                 parameter, correlation.getSourceLocation(), correlation.getValue()),
@@ -73,7 +73,7 @@ final class NotFoundClassifier {
     }
 
     private static ClusterClassification depletedPoolCluster(TriageTestCase testCase, String deletedPath, int deleteTestNumber) {
-        return ClusterClassification.of("RESOURCE_POOL_DEPLETED_404", SEVERITY, testCase, "after:" + deletedPath,
+        return ClusterClassification.of("RESOURCE_POOL_DEPLETED_404", SEVERITY, testCase,
                 new ClusterClassification.Explanation(
                         "Resource pool depleted after earlier DELETE on [%s] (starting at Test %d)".formatted(deletedPath, deleteTestNumber),
                         "Run non-DELETE operations across child paths before parent DELETEs or pin an existing ID via --refData."));
@@ -81,12 +81,12 @@ final class NotFoundClassifier {
 
     private static ClusterClassification withoutPathParameters(TriageTestCase testCase, ErrorMessage message) {
         if (testCase.payloadRootObject().isEmpty() && !testCase.hasRootArrayPayload()) {
-            return ClusterClassification.of("ROUTE_NOT_FOUND_404", SEVERITY, testCase, "",
+            return ClusterClassification.of("ROUTE_NOT_FOUND_404", SEVERITY, testCase,
                     new ClusterClassification.Explanation(
                             "%s returned 404 although the path has no path parameters (%s)".formatted(testCase.path(), message.signature()),
                             "Verify the route exists at the -s base URL (including any base path), or pin referenced query parameter values via --refData / --queryParams."));
         }
-        return ClusterClassification.of("UNRESOLVED_BODY_REFERENCE_404", SEVERITY, testCase, "",
+        return ClusterClassification.of("UNRESOLVED_BODY_REFERENCE_404", SEVERITY, testCase,
                 new ClusterClassification.Explanation(
                         "Request body on %s references a resource that does not exist (%s)".formatted(testCase.path(), message.signature()),
                         "Pin existing identifiers for %s in --refData under \"%s\", or skip %s via --skipPaths."
@@ -110,7 +110,7 @@ final class NotFoundClassifier {
         String diagnosis = producerSucceeded || !producerInSpec
                 ? "Path parameter on %s was not enriched with an active resource ID (%s)".formatted(testCase.path(), message.signature())
                 : "No successful 2XX POST producer recorded for [%s]".formatted(producerPath);
-        return ClusterClassification.of("UNRESOLVED_PATH_PARAM_404", SEVERITY, testCase, "",
+        return ClusterClassification.of("UNRESOLVED_PATH_PARAM_404", SEVERITY, testCase,
                 new ClusterClassification.Explanation(diagnosis, unresolvedPathRemediation(testCase.path(), producerPath, producerInSpec)));
     }
 

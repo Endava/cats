@@ -1,5 +1,7 @@
 package com.endava.cats.command.triage;
 
+import com.endava.cats.model.ProblemKind;
+import com.endava.cats.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -33,7 +35,7 @@ class TriageEngineTest {
         TriageReport report = triage(dir);
 
         Assertions.assertThat(report.synthesizedCorrelations()).isEmpty();
-        Assertions.assertThat(report.clusters()).singleElement().satisfies(cluster -> {
+        Assertions.assertThat(occurrences(report)).singleElement().satisfies(cluster -> {
             Assertions.assertThat(cluster.category()).isEqualTo("FIELD_DOMAIN_CONSTRAINT_4XX");
             Assertions.assertThat(cluster.remediation()).contains("--refData", "\"name\"", "\"/watchlists\"", "--correlations cannot override");
         });
@@ -48,10 +50,10 @@ class TriageEngineTest {
 
         TriageReport report = triage(dir);
 
-        Assertions.assertThat(report.clusters()).extracting(RootCauseCluster::category)
-                .containsExactly("ROUTE_NOT_FOUND_404", "UNRESOLVED_BODY_REFERENCE_404", "UNRESOLVED_PATH_PARAM_404");
-        Assertions.assertThat(report.clusters().get(1).remediation()).contains("customerId");
-        Assertions.assertThat(report.clusters().get(2).remediation()).contains("POST /stores/{storeId}/orders", "orderId");
+        Assertions.assertThat(occurrences(report)).extracting(TriageOccurrence::category)
+                .containsExactlyInAnyOrder("ROUTE_NOT_FOUND_404", "UNRESOLVED_BODY_REFERENCE_404", "UNRESOLVED_PATH_PARAM_404");
+        Assertions.assertThat(occurrence(report, "UNRESOLVED_BODY_REFERENCE_404").remediation()).contains("customerId");
+        Assertions.assertThat(occurrence(report, "UNRESOLVED_PATH_PARAM_404").remediation()).contains("POST /stores/{storeId}/orders", "orderId");
     }
 
     @Test
@@ -60,7 +62,8 @@ class TriageEngineTest {
         write(dir, 2, test("EnumCaseVariantFields", "Should return [4XX]", "POST", "/b", 200, "{}", "{}", null));
         write(dir, 3, test("InvalidValuesInEnumsFields", "Should return [4XX]", "POST", "/c", 200, "{}", "{}", null));
 
-        Assertions.assertThat(triage(dir).clusters()).extracting(RootCauseCluster::remediation)
+        Assertions.assertThat(occurrences(triage(dir)).stream().sorted(java.util.Comparator.comparing(TriageOccurrence::operation)).toList())
+                .extracting(TriageOccurrence::remediation)
                 .satisfiesExactly(
                         remediation -> Assertions.assertThat(remediation).contains("--no-strictTypes"),
                         remediation -> Assertions.assertThat(remediation).contains("--no-allowDifferentCaseEnumValues"),
@@ -81,9 +84,9 @@ class TriageEngineTest {
             write(second, tests.size() - i, tests.get(i));
         }
 
-        Assertions.assertThat(triage(first).clusters()).extracting(RootCauseCluster::operation)
-                .containsExactly("POST /beta", "GET /alpha", "GET /zeta")
-                .isEqualTo(triage(second).clusters().stream().map(RootCauseCluster::operation).toList());
+        Assertions.assertThat(occurrences(triage(first))).extracting(TriageOccurrence::operation)
+                .containsExactlyInAnyOrder("POST /beta", "GET /alpha", "GET /zeta")
+                .isEqualTo(occurrences(triage(second)).stream().map(TriageOccurrence::operation).toList());
         Assertions.assertThat(triage(first).synthesizedCorrelationsYaml()).isEqualTo(triage(second).synthesizedCorrelationsYaml());
     }
 
@@ -98,9 +101,10 @@ class TriageEngineTest {
 
         TriageReport report = triage(dir);
 
-        Assertions.assertThat(report.clusters()).extracting(RootCauseCluster::occurrences).containsExactly(2, 1);
-        Assertions.assertThat(report.clusters().getFirst().errorTemplate()).isEqualTo("For input string: \"<INPUT>\" under radix NUM");
-        Assertions.assertThat(report.clusters()).extracting(RootCauseCluster::errorTemplateId).doesNotHaveDuplicates().allMatch(id -> id.length() == 8);
+        Assertions.assertThat(report.problems()).extracting(TriageProblem::testCount).containsExactly(2, 1);
+        Assertions.assertThat(report.problems().getFirst().errorTemplate()).isEqualTo("For input string: \"<INPUT>\" under radix NUM");
+        Assertions.assertThat(report.problems()).extracting(TriageProblem::errorTemplateId).doesNotHaveDuplicates().allMatch(id -> id.length() == 8);
+        Assertions.assertThat(occurrences(report)).extracting(TriageOccurrence::category).containsOnly("SERVER_CRASH_5XX");
     }
 
     @Test
@@ -111,7 +115,7 @@ class TriageEngineTest {
                  "response": {"responseCode": 999, "jsonBody": "{}"}}
                 """);
 
-        Assertions.assertThat(triage(dir).clusters()).singleElement()
+        Assertions.assertThat(occurrences(triage(dir))).singleElement()
                 .satisfies(cluster -> Assertions.assertThat(cluster.curlReproducer()).isEmpty());
     }
 
@@ -124,8 +128,8 @@ class TriageEngineTest {
 
         TriageReport report = triage(dir);
 
-        Assertions.assertThat(report.clusters()).singleElement().satisfies(cluster -> {
-            Assertions.assertThat(cluster.attribution()).isEqualTo(RootCauseCluster.SAME_AS_BASELINE);
+        Assertions.assertThat(occurrences(report)).singleElement().satisfies(cluster -> {
+            Assertions.assertThat(cluster.attribution()).isEqualTo(TriageOccurrence.SAME_AS_BASELINE);
             Assertions.assertThat(cluster.remediation())
                     .contains("Same error as the unmodified request (Test 3, HappyPath)")
                     .contains("fix the HappyPath request for POST /orders first");
@@ -133,27 +137,100 @@ class TriageEngineTest {
     }
 
     @Test
-    void shouldReportUnfixedCrashesOnlyWhenNotFixed() {
-        RootCauseCluster inconclusive = cluster("SERVER_CRASH_5XX", "INCONCLUSIVE");
-        RootCauseCluster fixed = cluster("SERVER_CRASH_5XX", "FIXED");
+    void shouldReportUnfixedCrashesOnlyWhenAServerErrorOccurrenceIsNotFixed() {
+        TriageProblem fixedCrash = problem(ProblemKind.SERVER_ERROR, "FIXED", "FIXED");
+        TriageProblem unfixedCrash = problem(ProblemKind.SERVER_ERROR, "FIXED", "INCONCLUSIVE");
+        TriageProblem unfixedRejection = problem(ProblemKind.ERROR_MESSAGE, "STILL_FAILING");
 
-        Assertions.assertThat(TriageEngine.hasUnfixedServerCrash(report(List.of(fixed)))).isFalse();
-        Assertions.assertThat(TriageEngine.hasUnfixedServerCrash(report(List.of(fixed, inconclusive)))).isTrue();
+        Assertions.assertThat(TriageEngine.hasUnfixedServerCrash(report(List.of(fixedCrash, unfixedRejection)))).isFalse();
+        Assertions.assertThat(TriageEngine.hasUnfixedServerCrash(report(List.of(fixedCrash, unfixedCrash)))).isTrue();
     }
 
-    private static RootCauseCluster cluster(String category, String status) {
-        return new RootCauseCluster(category, 0, "GET /x", 500, 1, "d", "t", "template", "r", List.of(), List.of(), "", status, 200, null);
+    @Test
+    void shouldTriageWarningsByDefaultAndErrorsOnlyOnRequest(@TempDir Path dir) throws IOException {
+        write(dir, 1, test("HappyPath", "Should return [2XX]", "POST", "/orders", 500, "{}", "{\\\"message\\\":\\\"NPE\\\"}", null));
+        write(dir, 2, test("RemoveFields", "Should return [4XX]", "POST", "/orders", 201, "{}", "{}", null).replace("\"result\": \"error\"", "\"result\": \"warn\""));
+
+        TriageReport all = triage(dir);
+        TriageReport errorsOnly = new TriageEngine(new TriageOptions(true, false, null, Map.of(), _ -> null)).triage(dir, null);
+
+        Assertions.assertThat(all.problems()).extracting(TriageProblem::kind).containsExactly(ProblemKind.SERVER_ERROR, ProblemKind.ACCEPTED_REQUEST);
+        Assertions.assertThat(errorsOnly.problems()).extracting(TriageProblem::kind).containsExactly(ProblemKind.SERVER_ERROR);
+        Assertions.assertThat(all.totalOccurrences()).isEqualTo(2);
+        Assertions.assertThat(all.problemKeyVersion()).isEqualTo(1);
     }
 
-    private static TriageReport report(List<RootCauseCluster> clusters) {
-        return new TriageReport("r", 1, 1, 0, clusters.size(), 0, clusters, List.of(), "", "", "");
+    @Test
+    void shouldUseThePersistedServerMessageForHtmlBodiesInsteadOfReMiningThem(@TempDir Path dir) throws IOException {
+        String tomcat = "<!doctype html><html><head><title>HTTP Status 400 – Bad Request</title><style>body {font-family:Tahoma}</style></head>"
+                + "<body><h1>HTTP Status 400 – Bad Request</h1></body></html>";
+        for (int number = 1; number <= 3; number++) {
+            Files.writeString(dir.resolve("Test%d.json".formatted(number)), JsonUtils.GSON.toJson(Map.of("testId", "Test " + number, "result", "error",
+                    "resultReason", "Unexpected response code: 400", "fuzzer", "ControlCharsInStringFields", "contractPath", "/op" + number,
+                    "request", Map.of("httpMethod", "POST", "url", "http://localhost/op" + number, "payload", "{}"),
+                    "response", Map.of("responseCode", 400, "jsonBody", Map.of("notAJson", tomcat)))));
+        }
+        Files.writeString(dir.resolve(TriageEngine.SUMMARY_FILE), JsonUtils.GSON.toJson(summaryWithTemplate("cafe0400", "HTTP Status NUM – Bad Request", 3)));
+
+        TriageReport report = triage(dir);
+
+        Assertions.assertThat(report.problems()).singleElement().satisfies(problem -> {
+            Assertions.assertThat(problem.errorTemplateId()).isEqualTo("cafe0400");
+            Assertions.assertThat(problem.errorTemplate()).isEqualTo("HTTP Status NUM – Bad Request");
+            Assertions.assertThat(problem.occurrences()).hasSize(3).allMatch(occurrence -> occurrence.testCount() == 1);
+        });
+    }
+
+    @Test
+    void shouldRejectReportsWithoutProblems(@TempDir Path dir) throws IOException {
+        Assertions.assertThatThrownBy(() -> new TriageEngine(OPTIONS).triage(dir, null)).isInstanceOf(UnsupportedReportException.class)
+                .hasMessageContaining("cats-summary-report.json");
+        Files.writeString(dir.resolve(TriageEngine.SUMMARY_FILE), "{\"testCases\": []}");
+
+        Assertions.assertThatThrownBy(() -> new TriageEngine(OPTIONS).triage(dir, null)).isInstanceOf(UnsupportedReportException.class)
+                .hasMessageContaining("problemKeyVersion 0, expected 1").hasMessageContaining("re-run");
+    }
+
+    private static Map<String, Object> summaryWithTemplate(String templateId, String template, int tests) {
+        List<Map<String, Object>> testCases = java.util.stream.IntStream.rangeClosed(1, tests).mapToObj(number -> Map.<String, Object>of("id", "Test " + number,
+                "result", "error", "resultReason", "Unexpected response code: 400", "httpResponseCode", 400, "httpMethod", "post",
+                "path", "/op" + number, "errorTemplateId", templateId, "problemId", "0badc0de")).toList();
+        List<Map<String, Object>> occurrences = java.util.stream.IntStream.rangeClosed(1, tests).mapToObj(number -> Map.<String, Object>of(
+                "operation", "POST /op" + number, "fields", List.of(), "testIds", List.of("Test " + number), "statuses", List.of(400),
+                "fuzzers", List.of("ControlCharsInStringFields"))).toList();
+        return Map.of("testCases", testCases, "problemKeyVersion", 1, "problems", List.of(Map.of("id", "0badc0de", "kind", "ERROR_MESSAGE",
+                "title", "Request rejected (HTTP 400): " + template, "level", "error", "reasons", List.of("Unexpected response code: 400"),
+                "testCount", tests, "errorTemplateId", templateId, "errorTemplate", template, "occurrences", occurrences)));
+    }
+
+    private static TriageProblem problem(ProblemKind kind, String... statuses) {
+        List<TriageOccurrence> occurrences = java.util.Arrays.stream(statuses)
+                .map(status -> TriageOccurrence.builder().operation("GET /x").statusCodes(List.of(500)).category("SERVER_CRASH_5XX")
+                        .fuzzers(List.of()).fields(List.of()).sampleTestIds(List.of()).curlReproducer("").verificationStatus(status).build())
+                .toList();
+        return new TriageProblem("1a2b3c4d", kind, "t", "error", List.of(), statuses.length, null, null, occurrences);
+    }
+
+    private static TriageReport report(List<TriageProblem> problems) {
+        return new TriageReport("r", 1, 1, 1, 0, problems.size(), problems.size(), 0, problems, List.of(), "", "", "");
+    }
+
+    private static List<TriageOccurrence> occurrences(TriageReport report) {
+        return report.problems().stream().flatMap(problem -> problem.occurrences().stream()).toList();
+    }
+
+    private static TriageOccurrence occurrence(TriageReport report, String category) {
+        return occurrences(report).stream().filter(occurrence -> category.equals(occurrence.category())).findFirst().orElseThrow();
     }
 
     private static List<String> categories(Path dir) throws IOException {
-        return triage(dir).clusters().stream().map(RootCauseCluster::category).toList();
+        return occurrences(triage(dir)).stream().map(TriageOccurrence::category).toList();
     }
 
     private static TriageReport triage(Path dir) throws IOException {
+        if (!Files.exists(dir.resolve(TriageEngine.SUMMARY_FILE))) {
+            TriageReportFixtures.writeSummary(dir);
+        }
         return new TriageEngine(OPTIONS).triage(dir, null);
     }
 
@@ -163,9 +240,9 @@ class TriageEngineTest {
 
     private static String test(String fuzzer, String expected, String method, String path, int code, String payload, String body, String extra) {
         return """
-                {"testId": "T", "result": "error", "fuzzer": "%s", "expectedResult": "%s", "contractPath": "%s",
+                {"testId": "T", "result": "error", "resultReason": "Unexpected response code: %d", "fuzzer": "%s", "expectedResult": "%s", "contractPath": "%s",
                  "request": {"httpMethod": "%s", "url": "http://localhost:8080%s", "payload": "%s"},
                  "response": {"responseCode": %d, "jsonBody": "%s"}%s}
-                """.formatted(fuzzer, expected, path, method, path, payload, code, body, extra == null ? "" : ", " + extra);
+                """.formatted(code, fuzzer, expected, path, method, path, payload, code, body, extra == null ? "" : ", " + extra);
     }
 }

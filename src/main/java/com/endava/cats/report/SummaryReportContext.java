@@ -68,7 +68,7 @@ public final class SummaryReportContext {
     private final int paths;
     private final int totalPaths;
     private final String profile;
-    private final List<Map<String, Object>> groupedTestCases;
+    private final ProblemPage problemPage;
     private final List<ResponseCodeEntry> responseCodeDistribution;
     private final boolean hasResponseCodes;
     private final List<FailingPathEntry> topFailingPaths;
@@ -136,7 +136,7 @@ public final class SummaryReportContext {
                 .warnPercentage(percentage(report.getWarnings(), report.getReportedResults()))
                 .errorPercentage(percentage(report.getErrors(), report.getReportedResults()))
                 .successPercentage(percentage(report.getSuccess(), report.getReportedResults()))
-                .groupedTestCases(ClusterCompute.createClusters(report.getTestCases()))
+                .problemPage(ProblemPage.of(report.getProblems(), report.getTestCases(), javascript))
                 .responseCodeDistribution(responseCodes)
                 .hasResponseCodes(!responseCodes.isEmpty())
                 .topFailingPaths(failingPaths)

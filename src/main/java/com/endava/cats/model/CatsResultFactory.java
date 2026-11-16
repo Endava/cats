@@ -1,6 +1,11 @@
 package com.endava.cats.model;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Creates expected cats results with description and reason.
@@ -336,6 +341,22 @@ public interface CatsResultFactory {
 
         public String value() {
             return value;
+        }
+
+        /**
+         * Resolves the reason of a result reason as written in reports, by the longest matching prefix of the reason's
+         * value or description, so that reasons with a status suffix ({@code Unexpected response code: 422}) resolve.
+         *
+         * @param resultReason the result reason of a test
+         * @return the reason, or empty for result reasons that are not a {@link Reason} (e.g. linter results)
+         */
+        public static Optional<Reason> fromResultReason(String resultReason) {
+            String text = resultReason == null ? "" : resultReason;
+            return Arrays.stream(values())
+                    .flatMap(reason -> Stream.of(Map.entry(reason.value, reason), Map.entry(reason.description, reason)))
+                    .filter(entry -> text.startsWith(entry.getKey()))
+                    .max(Comparator.comparingInt(entry -> entry.getKey().length()))
+                    .map(Map.Entry::getValue);
         }
     }
 }

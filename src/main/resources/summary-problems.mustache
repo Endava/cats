@@ -1,0 +1,124 @@
+{{#problemPage}}
+<section id="problems-view" class="report-view{{#hasProblems}} active{{/hasProblems}}">
+    <h2 class="title-section">Problems</h2>
+    {{#hasProblems}}
+    <p class="problems-headline">{{headline}}</p>
+    {{#hasHint}}
+    <div class="problems-hint" role="note">{{hint}}</div>
+    {{/hasHint}}
+    {{#javascript}}
+    <div class="problems-toolbar card-wrapper">
+        <div class="problems-toolbar-group">
+            <span class="problems-toolbar-label">Group by:</span>
+            <label><input type="radio" name="problem-pivot" value="pivot-problem" checked> Problem</label>
+            <label><input type="radio" name="problem-pivot" value="pivot-reason"> Reason</label>
+            <label><input type="radio" name="problem-pivot" value="pivot-operation"> Operation</label>
+            <label><input type="radio" name="problem-pivot" value="pivot-status"> Status</label>
+        </div>
+        <div class="problems-toolbar-group">
+            <span class="problems-toolbar-label">Show:</span>
+            <button type="button" class="problem-filter-btn active" data-problem-filter="all">All</button>
+            <button type="button" class="problem-filter-btn" data-problem-filter="error">Errors</button>
+            <button type="button" class="problem-filter-btn" data-problem-filter="warn">Warnings</button>
+            <button type="button" class="problem-filter-btn" data-problem-filter="5xx">5xx</button>
+            <input type="text" id="problemSearchInput" class="problem-search-input" placeholder="Search problems by title, path, fuzzer or reason...">
+        </div>
+    </div>
+    {{/javascript}}
+    <div id="pivot-problem" class="problem-pivot active">
+        {{#cards}}
+        <article id="{{anchor}}" class="problem-card problem-card-{{level}}" data-problem="{{id}}" data-level="{{level}}" data-kind="{{kind}}" data-is5xx="{{is5xx}}">
+            <div class="problem-head">
+                <span class="problem-rank">{{rank}}</span>
+                <h3 class="problem-title">{{heading}}</h3>
+                <span class="problem-badges"><span class="problem-level problem-level-{{level}}">{{levelLabel}}</span><span class="problem-kind">{{kindLabel}}</span></span>
+            </div>
+            <div class="problem-meta">{{meta}}</div>
+            {{#hasServerMessage}}
+            <div class="problem-line"><strong>Server message:</strong> <code class="problem-message">{{serverMessage}}</code>
+                <span class="problem-legend">&lt;*&gt; varies · &lt;INPUT&gt; a value CATS sent · &lt;FIELD&gt; a field name · NUM a number · STR a string</span></div>
+            {{/hasServerMessage}}
+            {{#hasEvidence}}
+            <div class="problem-line"><strong>Evidence:</strong> {{evidence}}</div>
+            {{/hasEvidence}}
+            {{#hasBaselineNote}}
+            <div class="problem-line problem-baseline">&#9873; {{baselineNote}}</div>
+            {{/hasBaselineNote}}
+            <div class="problem-grouped-by">Grouped by: {{groupedBy}}</div>
+            <table class="problem-operations">
+                <thead>
+                <tr><th>Operation</th><th>Mutated fields (tests)</th><th>Tests</th></tr>
+                </thead>
+                <tbody>
+                {{#rows}}
+                <tr>
+                    <td><code>{{operation}}</code> <span class="problem-count">({{tests}})</span></td>
+                    <td>{{#hasFields}}{{fields}}{{/hasFields}}{{^hasFields}}&mdash;{{/hasFields}}</td>
+                    <td class="problem-test-links">{{#links}}<a class="problem-test-pill" href="{{key}}.html" target="_blank">{{id}}</a> {{/links}}{{#hasMore}}{{#javascript}}<a href="#tests-view" class="problem-view-all" data-problem="{{problemId}}" data-operation="{{operation}}">{{viewAllLabel}}</a>{{/javascript}}{{^javascript}}<details class="problem-all-tests"><summary>{{viewAllLabel}}</summary>{{#allLinks}}<a class="problem-test-pill" href="{{key}}.html" target="_blank">{{id}}</a> {{/allLinks}}</details>{{/javascript}}{{/hasMore}}</td>
+                </tr>
+                {{/rows}}
+                </tbody>
+            </table>
+            {{#hasVariants}}
+            <details class="problem-variants">
+                <summary>{{variantsLabel}}</summary>
+                <ul>
+                    {{#variants}}
+                    <li><code>{{text}}</code> <span class="problem-count">({{count}})</span></li>
+                    {{/variants}}
+                </ul>
+            </details>
+            {{/hasVariants}}
+            {{#hasRelated}}
+            <ul class="problem-related">
+                {{#related}}
+                <li>&harr; <a href="#{{anchor}}" class="problem-jump">{{label}}</a></li>
+                {{/related}}
+            </ul>
+            {{/hasRelated}}
+            {{#hasSampleResponse}}
+            <details class="problem-sample">
+                <summary>Sample response</summary>
+                <pre>{{sampleResponse}}</pre>
+            </details>
+            {{/hasSampleResponse}}
+            <div class="problem-footer">
+                {{#javascript}}<button type="button" class="problem-view-tests" data-problem="{{id}}">{{testsLabel}}</button>{{/javascript}}
+                <span class="problem-id">id <code>{{id}}</code>{{#javascript}} <button type="button" class="problem-copy" data-copy="{{id}}" title="Copy the problem id">&#10697;</button>{{/javascript}}</span>
+            </div>
+        </article>
+        {{/cards}}
+    </div>
+    {{#javascript}}
+    <div id="pivot-reason" class="problem-pivot">
+        {{#byReason}}
+        <div class="pivot-group card-wrapper">
+            <h4>{{label}} <span class="problem-count">({{tests}} tests)</span></h4>
+            <ul>{{#entries}}<li class="pivot-entry pivot-entry-{{level}}"><a href="#{{anchor}}" class="problem-jump">{{rank}}. {{title}}</a> <span class="problem-count">({{tests}})</span></li>{{/entries}}</ul>
+        </div>
+        {{/byReason}}
+    </div>
+    <div id="pivot-status" class="problem-pivot">
+        {{#byStatus}}
+        <div class="pivot-group card-wrapper">
+            <h4>{{label}} <span class="problem-count">({{tests}} tests)</span></h4>
+            <ul>{{#entries}}<li class="pivot-entry pivot-entry-{{level}}"><a href="#{{anchor}}" class="problem-jump">{{rank}}. {{title}}</a> <span class="problem-count">({{tests}})</span></li>{{/entries}}</ul>
+        </div>
+        {{/byStatus}}
+    </div>
+    {{/javascript}}
+    <div id="pivot-operation" class="problem-pivot">
+        {{^javascript}}<h2 id="problems-by-operation" class="title-section">Problems by operation</h2>{{/javascript}}
+        {{#byOperation}}
+        <div class="pivot-group card-wrapper">
+            <h4><code>{{label}}</code> <span class="problem-count">({{tests}} tests)</span></h4>
+            <ul>{{#entries}}<li class="pivot-entry pivot-entry-{{level}}"><a href="#{{anchor}}" class="problem-jump">{{rank}}. {{title}}</a> <span class="problem-count">({{tests}})</span></li>{{/entries}}</ul>
+        </div>
+        {{/byOperation}}
+    </div>
+    {{/hasProblems}}
+    {{^hasProblems}}
+    <p class="problems-headline">No failing or warning tests: there are no problems to show.</p>
+    {{/hasProblems}}
+</section>
+{{/problemPage}}

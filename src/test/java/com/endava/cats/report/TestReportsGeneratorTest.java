@@ -206,7 +206,7 @@ class TestReportsGeneratorTest {
         Assertions.assertThat(ctx.getWarnPercentage()).isEqualTo(20.0);
         Assertions.assertThat(ctx.getErrorPercentage()).isEqualTo(10.0);
         Assertions.assertThat(ctx.getSuccessPercentage()).isEqualTo(70.0);
-        Assertions.assertThat(ctx.getGroupedTestCases()).isEmpty();
+        Assertions.assertThat(ctx.getProblemPage().hasProblems()).isFalse();
         Assertions.assertThat(ctx.getTopFailingPaths()).hasSize(1);
     }
 }

@@ -6,7 +6,6 @@ import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
-import com.endava.cats.report.error.template.ErrorTemplate;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -28,9 +27,9 @@ final class ClusterClassifier {
     }
 
     /**
-     * A failing test together with its (optional) failure analysis, extracted error message and mined error template.
+     * A failing test together with its (optional) failure analysis and extracted error message.
      */
-    record Candidate(TriageTestCase testCase, ErrorMessage message, Optional<FailureAnalysis> analysis, ErrorTemplate template) {
+    record Candidate(TriageTestCase testCase, ErrorMessage message, Optional<FailureAnalysis> analysis) {
     }
 
     ClusterClassification classify(Candidate candidate) {
@@ -53,7 +52,7 @@ final class ClusterClassifier {
         if (!ResponseCodeFamily.is5xxCode(testCase.statusCode())) {
             return Optional.empty();
         }
-        return Optional.of(ClusterClassification.of("SERVER_CRASH_5XX", 0, testCase, candidate.template().id(),
+        return Optional.of(ClusterClassification.of("SERVER_CRASH_5XX", 0, testCase,
                 new ClusterClassification.Explanation(
                         "Unhandled %d server error (%s)".formatted(testCase.statusCode(), candidate.message().signature()),
                         "Inspect the server stacktrace for %s, then verify the fix with `cats triage --verify` or `cats replay %s --stateful`."
@@ -77,7 +76,7 @@ final class ClusterClassifier {
 
     private static ClusterClassification headerCollisionCluster(TriageTestCase testCase, ResourceCorrelation correlation) {
         String header = correlation.getTarget().name();
-        return ClusterClassification.of("HEADER_CORRELATION_COLLISION", 1, testCase, header,
+        return ClusterClassification.of("HEADER_CORRELATION_COLLISION", 1, testCase,
                 new ClusterClassification.Explanation(
                         "Header [%s] was overwritten by runtime correlation from [%s]".formatted(header, correlation.getSourceLocation()),
                         "Pin header '%s' via -H or headers.yml under `all` or the path key (method-scoped keys are not protected from runtime correlation)."
@@ -90,7 +89,7 @@ final class ClusterClassifier {
         if ((code != 401 && code != 403) || testCase.isFuzzer(BypassAuthenticationFuzzer.class)) {
             return Optional.empty();
         }
-        return Optional.of(ClusterClassification.of("AUTH_CONFIGURATION_GAP", 2, testCase, String.valueOf(code),
+        return Optional.of(ClusterClassification.of("AUTH_CONFIGURATION_GAP", 2, testCase,
                 new ClusterClassification.Explanation(
                         "Endpoint rejected credentials with HTTP %d (%s)".formatted(code, candidate.message().signature()),
                         "Pass valid credentials via -H 'Authorization=$$API_AUTH' (the env placeholder must be the whole value), --headers, --wfcAuth or --basicAuth.")));
@@ -106,7 +105,7 @@ final class ClusterClassifier {
         TriageTestCase testCase = candidate.testCase();
         return candidate.analysis()
                 .flatMap(FailureAnalysis::protectedField)
-                .map(field -> ClusterClassification.of("FIELD_DOMAIN_CONSTRAINT_4XX", 1, testCase, field,
+                .map(field -> ClusterClassification.of("FIELD_DOMAIN_CONSTRAINT_4XX", 1, testCase,
                         Remediations.fieldDomain(testCase, field, candidate.message())));
     }
 
@@ -118,7 +117,7 @@ final class ClusterClassifier {
         if (!validationRejection || !seedRejection) {
             return Optional.empty();
         }
-        return Optional.of(ClusterClassification.of("CROSS_FIELD_CONSTRAINT_4XX", 1, testCase, candidate.template().id(),
+        return Optional.of(ClusterClassification.of("CROSS_FIELD_CONSTRAINT_4XX", 1, testCase,
                 Remediations.crossField(testCase, candidate.message(), context)));
     }
 
@@ -127,7 +126,7 @@ final class ClusterClassifier {
         if (!ResponseCodeFamily.is2xxCode(testCase.statusCode()) || !testCase.expected().expectsOnly4xx()) {
             return Optional.empty();
         }
-        return Optional.of(ClusterClassification.of("VALIDATION_BYPASS_2XX", 2, testCase, testCase.fuzzer(),
+        return Optional.of(ClusterClassification.of("VALIDATION_BYPASS_2XX", 2, testCase,
                 new ClusterClassification.Explanation(
                         "Fuzzer [%s] expected 4XX rejection, but server accepted input with HTTP %d".formatted(testCase.fuzzer(), testCase.statusCode()),
                         Remediations.validationBypass(testCase))));
@@ -138,7 +137,6 @@ final class ClusterClassifier {
         String reason = StringUtils.defaultIfBlank(testCase.testCase().getResultReason(), "Unexpected response " + testCase.statusCode());
         boolean undocumented = context.drift().isUndocumented(testCase);
         ClusterClassification classification = ClusterClassification.of("CONTRACT_MISMATCH", 3, testCase,
-                testCase.statusCode() + "|" + reason,
                 new ClusterClassification.Explanation(
                         "%s (HTTP %d; %s)".formatted(reason, testCase.statusCode(), candidate.message().signature()),
                         Remediations.contractMismatch(testCase, undocumented)));

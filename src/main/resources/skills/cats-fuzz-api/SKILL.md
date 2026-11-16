@@ -69,7 +69,7 @@ export API_AUTH='Bearer eyJ...'
 - `-R "field=value"` / `--refData refData.yml` — pins existing resource IDs or domain-validated values (see `/cats-write-tests` Section 5 for key-notation rules).
 - `--correlations correlations.yml` — applies cross-field `when` $\rightarrow$ `set` / `omit` rules to every built-in fuzzer request (see `/cats-write-tests` Section 3).
 
-**Never pass `--srs` / `--srw`** (`--skipReportingForSuccess` / `--skipReportingForWarning`) or `-b -k` when you plan to triage. They drop the `2XX` and warning tests from `cats-report`, which breaks `cats triage --export-refdata`, `cats replay --stateful`, and `--include-warnings`.
+**Never pass `--srs` / `--srw`** (`--skipReportingForSuccess` / `--skipReportingForWarning`) or `-b -k` when you plan to triage. They drop the `2XX` and warning tests from `cats-report`, which breaks `cats triage --export-refdata`, `cats replay --stateful`, and the warning problems of the report and triage.
 
 ### Expectation Flags (Match the API's Intended Leniency)
 - `--no-strictTypes` — type-coercion fuzzers accept `2XX` or `4XX` instead of requiring `4XX`.

@@ -101,8 +101,7 @@ public class TestReportsGenerator {
         TestCaseExporter currentPrimary = currentExporters.getFirst();
         TestCaseExporter writerExporter = currentExporters.stream()
                 .filter(exp -> exp.reportFormat() == ReportingArguments.ReportFormat.HTML_JS
-                        || exp.reportFormat() == ReportingArguments.ReportFormat.HTML_ONLY
-                        || exp.reportFormat() == ReportingArguments.ReportFormat.HTML_JS_CLUSTERS)
+                        || exp.reportFormat() == ReportingArguments.ReportFormat.HTML_ONLY)
                 .findFirst()
                 .orElse(currentPrimary);
         writerExporter.writeTestCase(catsTestCase);

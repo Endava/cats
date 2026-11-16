@@ -67,4 +67,20 @@ public record RequestTarget(@NonNull Location location, @NonNull String name) {
     public String getLocationName() {
         return location.getDisplayName();
     }
+
+    /**
+     * Returns a compact label of the target, e.g. {@code body.description}, {@code query.name} or {@code header.X-Id}.
+     *
+     * @return the label
+     */
+    public String label() {
+        return switch (location) {
+            case BODY -> "body." + name;
+            case HEADER -> "header." + name;
+            case PATH -> "path." + name;
+            case QUERY -> "query." + name;
+            case REQUEST_BODY -> "body";
+            case HTTP_METHOD -> "method";
+        };
+    }
 }

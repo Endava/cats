@@ -1,12 +1,11 @@
 package com.endava.cats.command.triage;
 
 /**
- * The root cause assigned to one failing test.
+ * The root cause assigned to one failing test; an occurrence takes the classification of most of its tests.
  *
  * @param liveVerifiable {@code false} when a live replay cannot prove a fix (e.g. contract-only drift)
  */
-record ClusterClassification(String clusterKey,
-                             String category,
+record ClusterClassification(String category,
                              int severityRank,
                              String operation,
                              int statusCode,
@@ -14,14 +13,13 @@ record ClusterClassification(String clusterKey,
                              String remediation,
                              boolean liveVerifiable) {
 
-    static ClusterClassification of(String category, int severityRank, TriageTestCase testCase, String keySuffix,
-                                    Explanation explanation) {
-        return new ClusterClassification(String.join("|", category, testCase.operation(), keySuffix), category, severityRank,
-                testCase.operation(), testCase.statusCode(), explanation.diagnosis(), explanation.remediation(), true);
+    static ClusterClassification of(String category, int severityRank, TriageTestCase testCase, Explanation explanation) {
+        return new ClusterClassification(category, severityRank, testCase.operation(), testCase.statusCode(),
+                explanation.diagnosis(), explanation.remediation(), true);
     }
 
     ClusterClassification notLiveVerifiable() {
-        return new ClusterClassification(clusterKey, category, severityRank, operation, statusCode, diagnosis, remediation, false);
+        return new ClusterClassification(category, severityRank, operation, statusCode, diagnosis, remediation, false);
     }
 
     /**

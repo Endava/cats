@@ -46,10 +46,24 @@ public final class ErrorResponseContracts {
         if (statusCode < MIN_ERROR_STATUS) {
             return ErrorResponseContract.NONE;
         }
-        return operation(openAPI, httpMethod, contractPath).map(Operation::getResponses)
-                .flatMap(responses -> errorSchema(openAPI, responses, statusCode))
+        return declaredBodySchema(openAPI, httpMethod, contractPath, statusCode)
                 .map(schema -> new ErrorSchemaFields(componentSchemas(openAPI)).contractOf(schema))
                 .orElse(ErrorResponseContract.NONE);
+    }
+
+    /**
+     * Looks up the body schema the contract declares for a response of any status, trying the exact status code, then
+     * its range, then {@code default}.
+     *
+     * @param openAPI      the contract, may be {@code null}
+     * @param httpMethod   the HTTP method, in any case
+     * @param contractPath the path as written in the contract, e.g. {@code /pets/{id}}
+     * @param statusCode   the response status code
+     * @return the declared body schema, unresolved (it may be a {@code $ref}), or empty when the contract declares none
+     */
+    public static Optional<Schema> declaredBodySchema(OpenAPI openAPI, String httpMethod, String contractPath, int statusCode) {
+        return operation(openAPI, httpMethod, contractPath).map(Operation::getResponses)
+                .flatMap(responses -> errorSchema(openAPI, responses, statusCode));
     }
 
     private static Optional<Operation> operation(OpenAPI openAPI, String httpMethod, String contractPath) {

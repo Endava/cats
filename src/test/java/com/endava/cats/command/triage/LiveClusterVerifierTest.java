@@ -109,7 +109,7 @@ class LiveClusterVerifierTest {
     }
 
     private static ClusterClassification classification(String category, boolean liveVerifiable) {
-        return new ClusterClassification(category, category, 0, "GET /orders", 500, "d", "r", liveVerifiable);
+        return new ClusterClassification(category, 0, "GET /orders", 500, "d", "r", liveVerifiable);
     }
 
     private static TriageTestCase testCase(int originalCode, String expected, String authorization) {

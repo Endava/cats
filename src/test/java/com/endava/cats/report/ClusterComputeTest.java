@@ -19,7 +19,12 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,249 +43,96 @@ class ClusterComputeTest {
         ClusterCompute.assignErrorTemplates(summaries);
         ClusterCompute.assignErrorTemplates(summaries, null);
 
-        assertThat(ClusterCompute.createClusters(summaries)).isEmpty();
+        assertThat(templateGroupSizes(summaries)).isEmpty();
     }
 
     @Test
-    void shouldReturnNoClustersWhenFilteringRemovesEverySummary() {
-        List<CatsTestCaseSummary> summaries = Arrays.asList(null,
-                createTestCaseSummary(200, "OK", "success", "{}"));
-
-        assertThat(ClusterCompute.createClusters(summaries)).isEmpty();
-    }
-
-    @Test
-    void shouldIgnoreNullSummariesWhenAssigningTemplatesAndClustering() {
+    void shouldIgnoreNullAndPassingSummariesWhenAssigningTemplates() {
         CatsTestCaseSummary error = createTestCaseSummary(400, "Bad Request", "error", "Invalid input");
-        List<CatsTestCaseSummary> summaries = Arrays.asList(null, error, null);
+        CatsTestCaseSummary success = createTestCaseSummary(400, "OK", "success", "Fine");
 
-        ClusterCompute.assignErrorTemplates(summaries);
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(summaries);
+        ClusterCompute.assignErrorTemplates(Arrays.asList(null, error, success, null));
 
         assertThat(error.getErrorTemplateId()).isNotBlank();
-        assertThat(clusters).singleElement().satisfies(cluster -> assertThat(cluster)
-                .containsEntry("resultReason", "Bad Request").containsEntry("totalTests", 1));
-    }
-
-    @Test
-    void testCreateClustersWithDifferentResultReasons() {
-        List<CatsTestCaseSummary> testCases = List.of(
-                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
-                createTestCaseSummary(404, "Resource Missing", "error", "Error: Resource not available")
-        );
-
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(2);
-        assertThat(clusters.get(0).get("resultReason")).isIn("Not Found", "Resource Missing");
-        assertThat(clusters.get(1).get("resultReason")).isIn("Not Found", "Resource Missing");
-    }
-
-    @Test
-    void testCreateClustersWithWarningsCases() {
-        List<CatsTestCaseSummary> testCases = List.of(
-                createTestCaseSummary(400, "Bad Request", "warning", "Warning: Potential data inconsistency"),
-                createTestCaseSummary(400, "Bad Request", "warning", "Warning: Potential data inconsistency")
-        );
-
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(1);
-        assertThat(clusters.getFirst()).containsEntry("resultReason", "Bad Request");
-    }
-
-    @Test
-    void testCreateClustersClusterProperties() {
-        List<CatsTestCaseSummary> testCases = List.of(
-                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
-                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /another/path")
-        );
-
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(1);
-        Map<String, Object> cluster = ((List<Map<String, Object>>) clusters.getFirst().get("clusters")).getFirst();
-
-        assertThat(cluster).containsKeys("clusterId", "errorMessage", "borderColor", "paths");
-        assertThat(cluster.get("paths")).isInstanceOf(List.class);
-    }
-
-    @Test
-    void testCreateClustersWithMixedSuccessAndErrorCases() {
-        List<CatsTestCaseSummary> testCases = List.of(
-                createTestCaseSummary(200, "OK", "success", "Success"),
-                createTestCaseSummary(404, "Not Found", "error", "Error: Resource not found"),
-                createTestCaseSummary(500, "Server Error", "error", "Error: Internal server error")
-        );
-
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(2);  // One for "Not Found", one for "Server Error"
-    }
-
-    @Test
-    void testCreateClustersWithComplexErrorScenarios() {
-        List<CatsTestCaseSummary> testCases = List.of(
-                createTestCaseSummary(400, "Bad Request", "error", "Error: Invalid input"),
-                createTestCaseSummary(400, "Bad Request", "error", "Error: Invalid input format"),
-                createTestCaseSummary(404, "Not Found", "error", "Error: Resource missing"),
-                createTestCaseSummary(500, "Server Error", "error", "Error: Database connection failed")
-        );
-
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(3);
-        assertThat(clusters.stream().map(c -> c.get("resultReason")))
-                .containsExactlyInAnyOrder("Bad Request", "Not Found", "Server Error");
+        assertThat(success.getErrorTemplateId()).isNull();
     }
 
     @ParameterizedTest
-    @MethodSource("provideTestCasesAndExpectedClusterSize")
-    void testCreateClusters(List<CatsTestCaseSummary> testCases, int expectedClusterSize) {
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-        assertThat(clusters).hasSize(expectedClusterSize);
+    @MethodSource("similarAndDifferentErrors")
+    void shouldShareTemplatesOnlyBetweenSimilarErrorsOfOneReason(List<CatsTestCaseSummary> testCases, List<Integer> expectedGroupSizes) {
+        assertThat(templateGroupSizes(testCases)).containsExactlyElementsOf(expectedGroupSizes);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideSimilarErrorTestCases")
-    void testCreateClustersWithSimilarErrors(List<CatsTestCaseSummary> testCases, int expectedClusterCount) {
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-        assertThat(clusters).hasSize(expectedClusterCount);
-    }
-
-    private static Stream<Arguments> provideTestCasesAndExpectedClusterSize() {
+    private static Stream<Arguments> similarAndDifferentErrors() {
         return Stream.of(
-                Arguments.of(new ArrayList<CatsTestCaseSummary>(), 0),
-
-                Arguments.of(
-                        List.of(
-                                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
-                                createTestCaseSummary(500, "Internal Server Error", "error", "Error: Unable to connect to database")
-                        ),
-                        2
-                ),
-
-                Arguments.of(
-                        List.of(
-                                createTestCaseSummary(200, "OK", "success", "Success"),
-                                createTestCaseSummary(201, "Created", "success", "Resource created")
-                        ),
-                        0
-                ),
-
-                Arguments.of(
-                        List.of(
-                                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
-                                createTestCaseSummary(200, "OK", "success", "Success"),
-                                createTestCaseSummary(500, "Internal Server Error", "error", "Error: Unable to connect to database")
-                        ),
-                        2
-                ),
-
-                Arguments.of(
-                        List.of(
-                                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
-                                createTestCaseSummary(500, "Internal Server Error", "error", "Error: Unable to connect to database")
-                        ),
-                        2
-                ),
-
-                Arguments.of(
-                        List.of(
-                                createTestCaseSummary(404, "Not Found", "error", ""),
-                                createTestCaseSummary(500, "Internal Server Error", "error", "")
-                        ),
-                        2
-                ),
-
-                Arguments.of(
-                        List.of(
-                                createTestCaseSummary(404, "Not Found", "error", null),
-                                createTestCaseSummary(500, "Internal Server Error", "error", null)
-                        ),
-                        2
-                )
-        );
-    }
-
-    private static Stream<Arguments> provideSimilarErrorTestCases() {
-        return Stream.of(
-                Arguments.of(
-                        List.of(
-                                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
-                                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /another/path/to/file")
-                        ),
-                        1
-                ),
-
-                Arguments.of(
-                        List.of(
-                                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
-                                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
-                                createTestCaseSummary(500, "Internal Server Error", "error", "Error: Unable to connect to database")
-                        ),
-                        2
-                )
-        );
+                Arguments.of(new ArrayList<CatsTestCaseSummary>(), List.of()),
+                Arguments.of(List.of(
+                        createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
+                        createTestCaseSummary(500, "Internal Server Error", "error", "Error: Unable to connect to database")), List.of(1, 1)),
+                Arguments.of(List.of(
+                        createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
+                        createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /another/path/to/file")), List.of(2)),
+                Arguments.of(List.of(
+                        createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/to/file"),
+                        createTestCaseSummary(404, "Resource Missing", "error", "Error: File not found at /path/to/file")), List.of(1, 1)),
+                Arguments.of(List.of(
+                        createTestCaseSummary(404, "Not Found", "error", ""),
+                        createTestCaseSummary(404, "Not Found", "error", ""),
+                        createTestCaseSummary(404, "Not Found", "error", "   ")), List.of(3)),
+                Arguments.of(List.of(
+                        createTestCaseSummary(404, "Not Found", "error", null),
+                        createTestCaseSummary(500, "Internal Server Error", "error", null)), List.of(1, 1)));
     }
 
     @Test
-    void testCreateClustersWithLargeNumberOfSimilarErrors() {
-        List<CatsTestCaseSummary> testCases = new ArrayList<>();
-        for (int i = 0; i < 50; i++) {
-            testCases.add(createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/" + i));
-        }
+    void shouldMineOneTemplateForManySimilarErrors() {
+        List<CatsTestCaseSummary> testCases = IntStream.range(0, 50)
+                .mapToObj(i -> createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/" + i)).toList();
 
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(1);
-        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
-        assertThat(clusterList).hasSize(1);
-        assertThat(clusterList.getFirst().get("paths")).isInstanceOf(List.class);
+        assertThat(templateGroupSizes(testCases)).containsExactly(50);
     }
 
     @Test
-    void testCreateClustersWithMultiplePatternGroups() {
-        List<CatsTestCaseSummary> testCases = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            testCases.add(createTestCaseSummary(404, "Not Found", "error", "Error: File not found at /path/" + i));
-        }
-        for (int i = 0; i < 10; i++) {
-            testCases.add(createTestCaseSummary(404, "Not Found", "error", "Warning: Resource unavailable for id " + i));
-        }
-        for (int i = 0; i < 10; i++) {
-            testCases.add(createTestCaseSummary(404, "Not Found", "error", "Exception: Database connection timeout after " + i + " seconds"));
-        }
+    void shouldMineOneTemplatePerMessagePattern() {
+        List<CatsTestCaseSummary> testCases = IntStream.range(0, 30).mapToObj(i -> createTestCaseSummary(404, "Not Found", "error", switch (i % 3) {
+            case 0 -> "Error: File not found at /path/" + i;
+            case 1 -> "Warning: Resource unavailable for id " + i;
+            default -> "Exception: Database connection timeout after " + i + " seconds";
+        })).toList();
 
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(1);
-        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
-        assertThat(clusterList).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(templateGroupSizes(testCases)).hasSizeGreaterThanOrEqualTo(3);
     }
 
     @Test
-    void testCreateClustersWithVeryLongErrorMessages() {
-        String longError1 = "Error: " + "A".repeat(300) + " occurred at line 123";
-        String longError2 = "Error: " + "A".repeat(300) + " occurred at line 456";
-        String longError3 = "Error: " + "B".repeat(300) + " occurred at line 789";
-        String otherError = "Error: " + "B".repeat(300) + " failed after retrying twice";
-
+    void shouldGeneralizeALongVariableTokenOfAnOtherwiseIdenticalMessage() {
         List<CatsTestCaseSummary> testCases = List.of(
-                createTestCaseSummary(500, "Server Error", "error", longError1),
-                createTestCaseSummary(500, "Server Error", "error", longError2),
-                createTestCaseSummary(500, "Server Error", "error", longError3),
-                createTestCaseSummary(500, "Server Error", "error", otherError)
-        );
+                createTestCaseSummary(500, "Server Error", "error", "Error: " + "A".repeat(300) + " occurred at line 123"),
+                createTestCaseSummary(500, "Server Error", "error", "Error: " + "A".repeat(300) + " occurred at line 456"),
+                createTestCaseSummary(500, "Server Error", "error", "Error: " + "B".repeat(300) + " occurred at line 789"),
+                createTestCaseSummary(500, "Server Error", "error", "Error: " + "B".repeat(300) + " failed after retrying twice"));
 
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
+        assertThat(templateGroupSizes(testCases)).containsExactly(3, 1);
+        assertThat(testCases.getFirst().getErrorTemplate()).isEqualTo("Error: <*> occurred at line NUM");
+    }
 
-        assertThat(clusters).hasSize(1);
-        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
-        // A single long token is a variable part of an otherwise identical message, so the first three share a template
-        assertThat(clusterList).hasSize(2);
-        assertThat(clusterList.getFirst()).containsEntry("testCount", 3)
-                .containsEntry("errorTemplate", "Error: <*> occurred at line NUM");
+    @Test
+    void shouldSeparateDifferent500JsonExceptionsAndGroupIdenticalExceptionCauses() {
+        String jacksonError1 = "{\"type\":\"http://localhost:8080/petclinic/api/owners/1\",\"title\":\"HttpMessageNotReadableException\",\"status\":500,\"detail\":\"JSON parse error: Cannot construct instance of OwnerDto\"}";
+        String jacksonError2 = "{\"type\":\"http://localhost:8080/petclinic/api/pets/14\",\"title\":\"HttpMessageNotReadableException\",\"status\":500,\"detail\":\"JSON parse error: Cannot construct instance of OwnerDto\"}";
+        String typeMismatch1 = "{\"type\":\"http://localhost:8080/petclinic/api/owners/-9223372036854775808\",\"title\":\"MethodArgumentTypeMismatchException\",\"status\":500,\"detail\":\"Failed to convert value of type 'java.lang.String' to required type 'int'; For input string: '-9223372036854775808'\"}";
+        String typeMismatch2 = "{\"type\":\"http://localhost:8080/petclinic/api/pets/2147483648\",\"title\":\"MethodArgumentTypeMismatchException\",\"status\":500,\"detail\":\"Failed to convert value of type 'java.lang.String' to required type 'int'; For input string: '2147483648'\"}";
+        String sqlIntegrity = "{\"type\":\"http://localhost:8080/petclinic/api/owners/1\",\"title\":\"DataIntegrityViolationException\",\"status\":500,\"detail\":\"could not execute statement [NULL not allowed for column 'TYPE_ID']\"}";
+        List<CatsTestCaseSummary> testCases = List.of(
+                createTestCaseSummary(500, "Unexpected response code: 500", "error", jacksonError1),
+                createTestCaseSummary(500, "Unexpected response code: 500", "error", jacksonError2),
+                createTestCaseSummary(500, "Unexpected response code: 500", "error", typeMismatch1),
+                createTestCaseSummary(500, "Unexpected response code: 500", "error", typeMismatch2),
+                createTestCaseSummary(500, "Unexpected response code: 500", "error", sqlIntegrity),
+                createTestCaseSummary(200, "Unexpected response code: 200", "error", "{\"id\":1,\"status\":\"accepted\"}"));
+
+        assertThat(templateGroupSizes(testCases)).containsExactly(2, 2, 1);
+        assertThat(testCases.get(4).getErrorTemplate()).contains("DataIntegrityViolationException");
+        assertThat(testCases.getLast().getErrorTemplateId()).isNull();
     }
 
     @Test
@@ -296,9 +148,23 @@ class ClusterComputeTest {
                 .containsOnly("<FIELD>: must not be blank");
         assertThat(testCases.getFirst().getErrorTemplateId()).isEqualTo(testCases.get(1).getErrorTemplateId());
         assertThat(testCases.getLast().getErrorTemplateId()).isNull();
-        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) ClusterCompute.createClusters(testCases).getFirst().get("clusters");
-        assertThat(clusterList).singleElement()
-                .satisfies(cluster -> assertThat(cluster).containsEntry("templateId", testCases.getFirst().getErrorTemplateId()));
+    }
+
+    @Test
+    void shouldOnlyMineTemplatesForResponsesThatCarryAnErrorMessage() {
+        CatsTestCaseSummary created = createTestCaseSummary(201, "XSS payload accepted without validation", "warn", "{\"name\":\"x\"}");
+        CatsTestCaseSummary staleFromAnOlderReport = createTestCaseSummary(200, "Unexpected response code: 200", "warn", "{}");
+        staleFromAnOlderReport.assignErrorTemplate("deadbeef", "<INPUT>: <INPUT>");
+        CatsTestCaseSummary rejected = createTestCaseSummary(422, "Unexpected response code: 422", "error", "{\"message\":\"bad\"}");
+
+        ClusterCompute.assignErrorTemplates(List.of(created, staleFromAnOlderReport, rejected));
+
+        assertThat(List.of(created, staleFromAnOlderReport)).allSatisfy(test -> {
+            assertThat(test.getErrorTemplateId()).isNull();
+            assertThat(test.getErrorTemplate()).isNull();
+        });
+        assertThat(rejected.getErrorTemplateId()).isNotBlank();
+        assertThat(rejected.getErrorTemplate()).isEqualTo("bad");
     }
 
     @Test
@@ -319,117 +185,6 @@ class ClusterComputeTest {
         ClusterCompute.assignErrorTemplates(List.of(summary));
 
         assertThat(summary.getErrorTemplateId()).isEqualTo("cafebabe");
-    }
-
-    @Test
-    void testCreateClustersWithSingleTestCaseInGroup() {
-        List<CatsTestCaseSummary> testCases = List.of(
-                createTestCaseSummary(404, "Not Found", "error", "Error: Unique error message")
-        );
-
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(1);
-        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
-        assertThat(clusterList).hasSize(1);
-    }
-
-    @Test
-    void testCreateClustersWithEmptyResponseBodies() {
-        List<CatsTestCaseSummary> testCases = List.of(
-                createTestCaseSummary(404, "Not Found", "error", ""),
-                createTestCaseSummary(404, "Not Found", "error", ""),
-                createTestCaseSummary(404, "Not Found", "error", "   ")
-        );
-
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(1);
-        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
-        assertThat(clusterList).hasSize(1);
-    }
-
-    @Test
-    void testCreateClustersWithMixedEmptyAndNonEmptyResponses() {
-        List<CatsTestCaseSummary> testCases = List.of(
-                createTestCaseSummary(404, "Not Found", "error", "Error: File not found"),
-                createTestCaseSummary(404, "Not Found", "error", ""),
-                createTestCaseSummary(404, "Not Found", "error", null),
-                createTestCaseSummary(404, "Not Found", "error", "Error: File not found at different location")
-        );
-
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(1);
-        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
-        assertThat(clusterList).hasSizeGreaterThanOrEqualTo(2);
-    }
-
-    @Test
-    void testCreateClustersWithDifferentPathsSameError() {
-        List<CatsTestCaseSummary> testCases = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            CatsTestCaseSummary tc = createTestCaseSummary(404, "Not Found", "error", "Error: Resource not found");
-            testCases.add(tc);
-        }
-
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(1);
-        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
-        assertThat(clusterList).hasSize(1);
-        Map<String, Object> cluster = clusterList.getFirst();
-        List<Map<String, Object>> paths = (List<Map<String, Object>>) cluster.get("paths");
-        assertThat(paths).isNotEmpty();
-    }
-
-    @Test
-    void testCreateClustersWithComparisonTrackerGrowth() {
-        List<CatsTestCaseSummary> testCases = new ArrayList<>();
-        for (int i = 0; i < 20; i++) {
-            testCases.add(createTestCaseSummary(404, "Not Found", "error", "Error type " + (i % 5) + ": details " + i));
-        }
-
-        List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
-
-        assertThat(clusters).hasSize(1);
-        List<Map<String, Object>> clusterList = (List<Map<String, Object>>) clusters.getFirst().get("clusters");
-        assertThat(clusterList).isNotEmpty();
-    }
-
-    @Test
-    void shouldSeparateDifferent500JsonExceptionsAndGroupIdenticalExceptionCauses() {
-        String jacksonError1 = "{\"type\":\"http://localhost:8080/petclinic/api/owners/1\",\"title\":\"HttpMessageNotReadableException\",\"status\":500,\"detail\":\"JSON parse error: Cannot construct instance of OwnerDto\"}";
-        String jacksonError2 = "{\"type\":\"http://localhost:8080/petclinic/api/pets/14\",\"title\":\"HttpMessageNotReadableException\",\"status\":500,\"detail\":\"JSON parse error: Cannot construct instance of OwnerDto\"}";
-        String typeMismatch1 = "{\"type\":\"http://localhost:8080/petclinic/api/owners/-9223372036854775808\",\"title\":\"MethodArgumentTypeMismatchException\",\"status\":500,\"detail\":\"Failed to convert value of type 'java.lang.String' to required type 'int'; For input string: '-9223372036854775808'\"}";
-        String typeMismatch2 = "{\"type\":\"http://localhost:8080/petclinic/api/pets/2147483648\",\"title\":\"MethodArgumentTypeMismatchException\",\"status\":500,\"detail\":\"Failed to convert value of type 'java.lang.String' to required type 'int'; For input string: '2147483648'\"}";
-        String sqlIntegrity = "{\"type\":\"http://localhost:8080/petclinic/api/owners/1\",\"title\":\"DataIntegrityViolationException\",\"status\":500,\"detail\":\"could not execute statement [NULL not allowed for column 'TYPE_ID']\"}";
-
-        List<CatsTestCaseSummary> testCases = List.of(
-                createTestCaseSummary(500, "Unexpected response code: 500", "error", jacksonError1),
-                createTestCaseSummary(500, "Unexpected response code: 500", "error", jacksonError2),
-                createTestCaseSummary(500, "Unexpected response code: 500", "error", typeMismatch1),
-                createTestCaseSummary(500, "Unexpected response code: 500", "error", typeMismatch2),
-                createTestCaseSummary(500, "Unexpected response code: 500", "error", sqlIntegrity),
-                createTestCaseSummary(200, "Unexpected response code: 200", "error", "{\"id\":1,\"status\":\"accepted\"}")
-        );
-
-        List<Map<String, Object>> groups = ClusterCompute.createClusters(testCases);
-
-        // Both the 500 reason group and the 200 error reason group are included, sorted by count descending
-        assertThat(groups).hasSize(2);
-        assertThat(groups.getFirst()).containsEntry("resultReason", "Unexpected response code: 500")
-                .containsEntry("totalTests", 5);
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> clusters500 = (List<Map<String, Object>>) groups.getFirst().get("clusters");
-        // The 5 500 responses should form 3 distinct root-cause clusters (2 Jackson, 2 TypeMismatch, 1 DataIntegrity)
-        assertThat(clusters500).hasSize(3);
-        assertThat(clusters500.get(0)).containsEntry("testCount", 2).containsEntry("httpStatusCode", 500);
-        assertThat(clusters500.get(1)).containsEntry("testCount", 2).containsEntry("httpStatusCode", 500);
-        assertThat(clusters500.get(2)).containsEntry("testCount", 1).containsEntry("httpStatusCode", 500);
-        assertThat(String.valueOf(clusters500.get(2).get("rootCauseSummary")))
-                .contains("DataIntegrityViolationException");
     }
 
     @Test
@@ -474,41 +229,12 @@ class ClusterComputeTest {
         assertThat(testCases.getFirst().getErrorTemplateId()).isNotEqualTo(testCases.getLast().getErrorTemplateId());
     }
 
-    @Test
-    void shouldCountBaselineFailuresPerCluster() {
-        CatsTestCase seed = new CatsTestCase();
-        seed.setTestId("Test 1");
-        seed.setFuzzer("HappyPath");
-        seed.setResult("error");
-        seed.setResultReason("Unexpected response code: 500");
-        seed.setPath("/orders");
-        seed.setContractPath("/orders");
-        seed.setRequest(CatsRequest.builder().httpMethod("POST").build());
-        seed.setResponse(CatsResponse.builder().responseCode(500).body("{\"message\":\"Database down\"}").build());
-
-        CatsTestCase fuzzed = new CatsTestCase();
-        fuzzed.setTestId("Test 2");
-        fuzzed.setFuzzer("RemoveFields");
-        fuzzed.setResult("error");
-        fuzzed.setResultReason("Unexpected response code: 500");
-        fuzzed.setPath("/orders");
-        fuzzed.setContractPath("/orders");
-        fuzzed.setSameErrorAsBaselineTest("Test 1");
-        fuzzed.setSameErrorAsBaselineFuzzer("HappyPath");
-        fuzzed.setRequest(CatsRequest.builder().httpMethod("POST").build());
-        fuzzed.setResponse(CatsResponse.builder().responseCode(500).body("{\"message\":\"Database down\"}").build());
-
-        List<Map<String, Object>> groups = ClusterCompute.createClusters(List.of(
-                CatsTestCaseSummary.fromCatsTestCase(seed),
-                CatsTestCaseSummary.fromCatsTestCase(fuzzed)));
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> clusters = (List<Map<String, Object>>) groups.getFirst().get("clusters");
-        assertThat(clusters).singleElement()
-                .satisfies(cluster -> assertThat(cluster)
-                        .containsEntry("testCount", 2)
-                        .containsEntry("baselineFailureCount", 1L)
-                        .containsEntry("hasBaselineFailures", true));
+    private static List<Integer> templateGroupSizes(List<CatsTestCaseSummary> testCases) {
+        ClusterCompute.assignErrorTemplates(testCases);
+        return Optional.ofNullable(testCases).orElse(List.of()).stream().filter(Objects::nonNull)
+                .filter(test -> test.getErrorTemplateId() != null)
+                .collect(Collectors.groupingBy(test -> test.getResultReason() + "|" + test.getErrorTemplateId(), LinkedHashMap::new, Collectors.counting()))
+                .values().stream().map(Long::intValue).sorted(Comparator.reverseOrder()).toList();
     }
 
     private static CatsTestCaseSummary createTestCaseSummaryAt(String contractPath, String responseBody) {

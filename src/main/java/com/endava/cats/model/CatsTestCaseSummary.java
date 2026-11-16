@@ -3,6 +3,7 @@ package com.endava.cats.model;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -28,7 +29,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private int httpResponseCode;
     private FindingConfidence confidence;
     private String errorTemplateId;
-    private String errorTemplate;
+    private String problemId;
     private String sameErrorAsBaselineTest;
     private String sameErrorAsBaselineFuzzer;
     // Gson must exclude this in-memory state from every serializer, including plain Gson.
@@ -37,6 +38,12 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     // Gson must exclude this in-memory state from every serializer, including plain Gson.
     @SuppressWarnings("java:S2065")
     private transient ErrorSignature errorSignature;
+    // The template text is persisted once per problem, not per test.
+    @SuppressWarnings("java:S2065")
+    private transient String errorTemplate;
+    // The mutated fields are persisted per problem occurrence, not per test.
+    @SuppressWarnings("java:S2065")
+    private transient List<String> mutatedFields;
 
     /**
      * Creates a CatsTestCaseSummary object from a CatsTestCase.
@@ -63,6 +70,9 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.sameErrorAsBaselineFuzzer = testCase.getSameErrorAsBaselineFuzzer();
         String response = Optional.ofNullable(testCase.getResponse().getBody()).orElse("[Empty response body]");
         summary.responseBody = response.substring(0, Math.min(response.length(), 1000));
+        summary.mutatedFields = Optional.ofNullable(testCase.getRequestProvenance())
+                .map(RequestProvenance::getMutationTargets).orElse(List.of()).stream()
+                .sorted(RequestTarget.ordering()).map(RequestTarget::label).toList();
         summary.requestVocabulary = summary.getError() || summary.getWarning()
                 ? RequestVocabulary.from(testCase.getRequest().getPayload(), testCase.getRequest().getUrl(), testCase.getContractPath())
                 : RequestVocabulary.EMPTY;
@@ -71,7 +81,8 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     }
 
     /**
-     * Records the error template mined for this (failing or warning) test case.
+     * Records the error template mined for this (failing or warning) test case. Pass {@code null}s to drop a template
+     * read from an older report for a response that carries no error message.
      *
      * @param templateId the stable template identifier
      * @param template   the human-readable template text
@@ -79,6 +90,43 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     public void assignErrorTemplate(String templateId, String template) {
         this.errorTemplateId = templateId;
         this.errorTemplate = template;
+    }
+
+    /**
+     * Records the problem this (failing or warning) test case belongs to.
+     *
+     * @param problemId the id of the problem
+     */
+    public void assignProblem(String problemId) {
+        this.problemId = problemId;
+    }
+
+    /**
+     * Records the mutated request fields of summaries read back from a report, whose per-test files carry them.
+     *
+     * @param fields the mutated fields, e.g. {@code body.description}
+     */
+    public void attachMutatedFields(List<String> fields) {
+        this.mutatedFields = List.copyOf(fields);
+    }
+
+    /**
+     * Returns the mutated request fields, or an empty list for summaries read from a report file.
+     *
+     * @return the mutated fields, e.g. {@code body.description}
+     */
+    public List<String> getMutatedFields() {
+        return Optional.ofNullable(mutatedFields).orElse(List.of());
+    }
+
+    /**
+     * Returns the mined error template text, or {@code null} for summaries read from a report file, which keep only
+     * the template id; the text is persisted once in the problem.
+     *
+     * @return the error template text
+     */
+    public String getErrorTemplate() {
+        return errorTemplate;
     }
 
     /**

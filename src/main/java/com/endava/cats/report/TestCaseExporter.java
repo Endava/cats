@@ -12,10 +12,13 @@ import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.Problem;
 import com.endava.cats.model.ProcessingError;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
+import com.endava.cats.report.problem.ProblemCatalog;
+import com.endava.cats.report.problem.ResponseSchemaNames;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
@@ -63,6 +66,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -77,7 +81,7 @@ public abstract class TestCaseExporter {
     static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
     static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
     private static final String REPORT_JS = "cats-summary-report.json";
-    static final String ERROR_TEMPLATES_JS = "error-templates.js";
+    static final String PROBLEMS_JS = "problems.js";
     private static final String EXECUTION_TIME_REPORT = "execution_times.json";
     private static final String REPLAY_ENV_EXAMPLE = "replay.env.example";
     private static final String HTML = ".html";
@@ -333,7 +337,8 @@ public abstract class TestCaseExporter {
     public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary) {
         Objects.requireNonNull(summaries, "summaries must not be null");
         ClusterCompute.assignErrorTemplates(summaries, catsGlobalContext.getOpenAPI());
-        CatsTestReport report = this.createTestReport(summaries, executionSummary);
+        List<Problem> problems = ProblemCatalog.build(summaries, new ResponseSchemaNames(catsGlobalContext.getOpenAPI()));
+        CatsTestReport report = this.createTestReport(summaries, executionSummary, problems);
         double averageResponseTime = summaries.stream().mapToDouble(CatsTestCaseSummary::getTimeToExecuteInMs).average().orElse(0);
 
         CatsConfiguration catsConfiguration = catsGlobalContext.getCatsConfiguration();
@@ -345,7 +350,7 @@ public abstract class TestCaseExporter {
             writer.flush();
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), this.getSummaryReportTitle()), writer.toString().getBytes(StandardCharsets.UTF_8));
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), maskingSerializer.toJson(report).getBytes(StandardCharsets.UTF_8));
-            writeErrorTemplatesJs(report.getTestCases());
+            writeProblemsJs(context.getProblemPage(), report);
             writeReplayEnvironmentExample(replayEnvironmentVariables());
         } catch (IOException e) {
             throw reportFailure("Unable to write the report summary", e);
@@ -353,32 +358,50 @@ public abstract class TestCaseExporter {
 
     }
 
+    /**
+     * Writes {@code problems.js}, which test pages load to say which problem they belong to. Script tags work from
+     * {@code file://}, where fetching JSON does not.
+     *
+     * @param report the report with its problems
+     * @throws IOException if the file cannot be written
+     */
     @DryRun
-    void writeErrorTemplatesJs(List<CatsTestCaseSummary> summaries) throws IOException {
+    void writeProblemsJs(ProblemPage page, CatsTestReport report) throws IOException {
         if (!this.isJavascript()) {
             return;
         }
-        List<CatsTestCaseSummary> withTemplates = Optional.ofNullable(summaries).orElse(List.of()).stream()
-                .filter(Objects::nonNull)
-                .filter(tc -> (tc.getError() || tc.getWarning()) && StringUtils.isNotBlank(tc.getErrorTemplateId()))
+        Map<String, CatsTestCaseSummary> testsById = report.getTestCases().stream().filter(Objects::nonNull)
+                .collect(Collectors.toMap(CatsTestCaseSummary::getId, Function.identity(), (left, _) -> left));
+        Map<String, ProblemBannerEntry> entries = new LinkedHashMap<>();
+        page.cards().forEach(card -> bannerEntries(card, report.getProblems().get(card.rank() - 1), testsById)
+                .forEach(entry -> entries.put(entry.getKey(), entry.getValue())));
+        String script = "window.CATS_PROBLEMS_PAGE = true;\nwindow.CATS_PROBLEMS = %s;\n".formatted(JsonUtils.GSON.toJson(entries));
+        Files.writeString(reportingPath.resolve(PROBLEMS_JS), script, StandardCharsets.UTF_8);
+    }
+
+    private static List<Map.Entry<String, ProblemBannerEntry>> bannerEntries(ProblemCard card, Problem problem, Map<String, CatsTestCaseSummary> testsById) {
+        return problem.occurrences().stream().flatMap(occurrence -> occurrence.testIds().stream())
+                .map(testId -> Map.entry(testId.replace(" ", ""), ProblemBannerEntry.of(card, problem, testsById.get(testId))))
                 .toList();
-        Map<String, Long> countsByTemplate = withTemplates.stream()
-                .collect(Collectors.groupingBy(CatsTestCaseSummary::getErrorTemplateId, Collectors.counting()));
-        Map<String, ErrorTemplateEntry> entries = new LinkedHashMap<>();
-        for (CatsTestCaseSummary summary : withTemplates) {
-            entries.put(summary.getKey(), new ErrorTemplateEntry(
-                    summary.getErrorTemplateId(),
-                    summary.getErrorTemplate(),
-                    countsByTemplate.getOrDefault(summary.getErrorTemplateId(), 1L).intValue()));
-        }
-        String script = "window.CATS_TEMPLATES = " + JsonUtils.GSON.toJson(entries) + ";\n";
-        Files.writeString(reportingPath.resolve(ERROR_TEMPLATES_JS), script, StandardCharsets.UTF_8);
     }
 
     /**
-     * Per-test error template entry serialized into {@code error-templates.js}.
+     * Per-test problem entry serialized into {@code problems.js}.
+     *
+     * @param problem    the problem id
+     * @param count      the number of tests of the problem, this test included
+     * @param anchor     the anchor of the problem card in {@code index.html}
+     * @param title      the problem title
+     * @param kind       the problem kind
+     * @param operations the number of operations of the problem
+     * @param fields     the request fields this test mutated
      */
-    public record ErrorTemplateEntry(String id, String text, int count) {
+    public record ProblemBannerEntry(String problem, int count, String anchor, String title, String kind, int operations, List<String> fields) {
+        static ProblemBannerEntry of(ProblemCard card, Problem problem, CatsTestCaseSummary test) {
+            List<String> fields = Optional.ofNullable(test).map(CatsTestCaseSummary::getMutatedFields).orElse(List.of());
+            return new ProblemBannerEntry(problem.id(), problem.testCount(), card.anchor(), problem.title(), problem.kind().name(),
+                    problem.occurrences().size(), fields);
+        }
     }
 
     private List<String> replayEnvironmentVariables() {
@@ -404,7 +427,7 @@ public abstract class TestCaseExporter {
         return Paths.get(REPLAY_ENV_EXAMPLE).toAbsolutePath().normalize();
     }
 
-    private CatsTestReport createTestReport(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary) {
+    private CatsTestReport createTestReport(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary, List<Problem> problems) {
         List<CatsTestCaseSummary> sortedSummaries = summaries.stream().sorted().toList();
         List<ProcessingError> processingErrors = catsGlobalContext.getRecordedErrors().stream()
                 .sorted(Comparator.comparing(ProcessingError::toString))
@@ -436,6 +459,8 @@ public abstract class TestCaseExporter {
                 .throttlingSummary(executionSummary.throttlingSummary())
                 .rateLimitedOperations(executionSummary.rateLimitedOperations())
                 .processingErrors(processingErrors)
+                .problemKeyVersion(Problem.KEY_VERSION)
+                .problems(problems)
                 .build();
     }
 

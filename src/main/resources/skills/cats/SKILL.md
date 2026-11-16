@@ -19,7 +19,7 @@ Use this orchestrator skill to run a complete, closed-loop API quality and secur
 
 1. **`/cats-analyze-api`** — Validate the OpenAPI contract, compute the 0–100 Fuzzability Score & Producer $\rightarrow$ Consumer dependency chains, and run the contract linters (`cats validate`, `cats analyze`, `cats stats`, `cats lint`).
 2. **`/cats-fuzz-api`** — Run a pre-flight smoke probe (`cats smoke`), configure auth/headers, and execute stateful negative, boundary, and security fuzzing (`cats`, `cats random`, `cats template`, `cats run security.yml`).
-3. **`/cats-triage-results`** — Cluster `cats-report` failures into deduplicated root causes, walk the per-cluster decision tree, mine `refData.yml` / `correlations.yml`, replay reproducers, verify fixes live (`cats triage --verify`), and compare baselines (`cats compare`).
+3. **`/cats-triage-results`** — Triage the problems of `cats-report` per operation, walk the per-occurrence decision tree, mine `refData.yml` / `correlations.yml`, replay reproducers, verify fixes live (`cats triage --verify`), and compare baselines (`cats compare`).
 4. **`/cats-write-tests`** — Generate schema-valid payloads (`cats generate`), write stateful multi-step functional flows (`cats run flows.yml`), cross-field correlation rules (`correlations:`), and reference data (`refData.yml`).
 
 ---
@@ -51,7 +51,7 @@ cats smoke -c <spec> -s <server_url> -j
    ```bash
    cats -c <spec> -s <server_url> --profile ci --preseedCollectionGets -o cats-report
    ```
-   **Never pass `--srs` / `--srw`** (`--skipReportingForSuccess` / `--skipReportingForWarning`) or `-b -k` before triage: they drop the `2XX` and warning tests that `triage --export-refdata`, `replay --stateful`, and `--include-warnings` depend on.
+   **Never pass `--srs` / `--srw`** (`--skipReportingForSuccess` / `--skipReportingForWarning`) or `-b -k` before triage: they drop the `2XX` and warning tests that `triage --export-refdata`, `replay --stateful`, and warning problems depend on.
 2. Triage the report and auto-extract configuration fixes:
    ```bash
    cats triage -r cats-report -c <spec> -j \
@@ -60,8 +60,8 @@ cats smoke -c <spec> -s <server_url> -j
      --export-contract-patch contract-patch.yml \
      --export-reproducers reproducers.sh
    ```
-3. Walk the per-cluster decision tree in `/cats-triage-results` to choose between a backend fix, `--refData`, `--correlations`, a contract fix, or a CLI flag. Never pass exported files back unreviewed: synthesized correlation rules carry placeholder values (typed from the contract when `-c` is passed) and heuristic `when:` triggers, and mined refData pins disable runtime resource reuse for those parameters.
-4. For **`SERVER_CRASH_5XX`** clusters: inspect the representative `Test*.json` and `curlReproducer`, fix the backend bug, and verify:
+3. Open `cats-report/index.html`: the **Problems** tab lists the distinct problems ranked (crashes first), each with its operations × mutated fields; **All tests** keeps the full table with a Problem column. Then walk the per-occurrence decision tree in `/cats-triage-results` to choose between a backend fix, `--refData`, `--correlations`, a contract fix, or a CLI flag. Never pass exported files back unreviewed: synthesized correlation rules carry placeholder values (typed from the contract when `-c` is passed) and heuristic `when:` triggers, and mined refData pins disable runtime resource reuse for those parameters.
+4. For **`SERVER_CRASH_5XX`** occurrences (`SERVER_ERROR` problems): inspect the representative `Test*.json` and `curlReproducer`, fix the backend bug, and verify:
    ```bash
    export Authorization='Bearer eyJ...'   # reports mask headers as $$<HeaderNameAlphanumeric>
    cats triage -r cats-report --verify -s <server_url>

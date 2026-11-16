@@ -2,18 +2,16 @@ package com.endava.cats.command.triage;
 
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsTestCase;
-import com.endava.cats.model.RequestVocabulary;
+import com.endava.cats.model.CatsTestReport;
+import com.endava.cats.model.Problem;
+import com.endava.cats.model.ProblemKind;
+import com.endava.cats.report.BaselineComparisonEngine;
 import com.endava.cats.report.BaselineFailureRegistry;
-import com.endava.cats.report.error.template.ErrorSample;
-import com.endava.cats.report.error.mask.ErrorSignatureMasker;
-import com.endava.cats.report.error.template.ErrorTemplate;
-import com.endava.cats.report.error.template.ErrorTemplateMiner;
 import io.swagger.v3.oas.models.OpenAPI;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -22,26 +20,21 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * Builds a {@link TriageReport} from a {@code cats-report} folder in two passes: a report-wide observation pass
- * (successful producers, deletes, refData mining, contract drift) followed by analysis, rule synthesis and
- * clustering of every failing test, so results do not depend on the order in which failures are visited.
+ * Builds a {@link TriageReport} from a {@code cats-report} folder: it reads the problems persisted in
+ * {@code cats-summary-report.json} and classifies each occurrence (one problem on one operation) from its
+ * {@code TestN.json} files, after a report-wide observation pass (successful producers, deletes, refData mining,
+ * contract drift) and rule synthesis, so results do not depend on the order in which failures are visited.
  */
 public final class TriageEngine {
+    static final String SUMMARY_FILE = "cats-summary-report.json";
     private static final Pattern TEST_FILE = Pattern.compile("Test(\\d+)\\.json$");
-    private static final Comparator<RootCauseCluster> CLUSTER_ORDER = Comparator
-            .comparingInt(RootCauseCluster::severityRank)
-            .thenComparing(Comparator.comparingInt(RootCauseCluster::occurrences).reversed())
-            .thenComparing(RootCauseCluster::category)
-            .thenComparing(RootCauseCluster::operation)
-            .thenComparingInt(RootCauseCluster::statusCode)
-            .thenComparing(RootCauseCluster::diagnosis);
 
     private final TriageOptions options;
 
@@ -50,26 +43,41 @@ public final class TriageEngine {
     }
 
     public TriageReport triage(Path reportFolder, OpenAPI openAPI) throws IOException {
+        CatsTestReport summary = readProblems(reportFolder);
         List<TriageTestCase> tests = loadTestCases(reportFolder);
         annotateBaselineMatches(tests);
         ReportScan scan = ReportScan.of(tests, openAPI);
         RequestSchemaLookup schemaLookup = new RequestSchemaLookup(openAPI);
         List<ClusterClassifier.Candidate> candidates = analyze(tests.stream().filter(this::isTriaged).toList(), schemaLookup);
         SynthesizedRules rules = SynthesizedRules.of(candidates, new CorrelationRuleSynthesizer(schemaLookup));
-        ClusterClassifier classifier = new ClusterClassifier(scan.context(rules, openAPI));
-        List<RootCauseCluster> clusters = verifyAndSort(accumulate(candidates, classifier));
-        int triaged = scan.errorCount() + (options.includeWarnings() ? scan.warningCount() : 0);
-        return new TriageReport(reportFolder.toString(), tests.size(), scan.errorCount(), scan.warningCount(), clusters.size(),
-                noiseReduction(triaged, clusters.size()), clusters, rules.distinct(),
+        OccurrenceTriage occurrenceTriage = new OccurrenceTriage(new ClusterClassifier(scan.context(rules, openAPI)), verifier());
+        List<TriageProblem> problems = triageProblems(summary.getProblems(), byTestId(candidates), occurrenceTriage);
+        int occurrences = problems.stream().mapToInt(problem -> problem.occurrences().size()).sum();
+        return new TriageReport(reportFolder.toString(), summary.getProblemKeyVersion(), tests.size(), scan.errorCount(), scan.warningCount(),
+                problems.size(), occurrences, noiseReduction(candidates.size(), problems.size()), problems, rules.distinct(),
                 CorrelationsYamlRenderer.render(rules.distinct()), scan.refDataMiner().renderYaml(), scan.drift().renderPatch());
     }
 
     /**
-     * Returns {@code true} when {@code --verify} found a {@code SERVER_CRASH_5XX} cluster that is not {@code FIXED}.
+     * Returns {@code true} when {@code --verify} found an occurrence of a server error that is not {@code FIXED}.
      */
     public static boolean hasUnfixedServerCrash(TriageReport report) {
-        return report.clusters().stream()
-                .anyMatch(cluster -> "SERVER_CRASH_5XX".equals(cluster.category()) && !LiveClusterVerifier.FIXED.equals(cluster.verificationStatus()));
+        return report.problems().stream()
+                .filter(problem -> problem.kind() == ProblemKind.SERVER_ERROR)
+                .flatMap(problem -> problem.occurrences().stream())
+                .anyMatch(occurrence -> !LiveClusterVerifier.FIXED.equals(occurrence.verificationStatus()));
+    }
+
+    static CatsTestReport readProblems(Path reportFolder) throws IOException {
+        if (!Files.isRegularFile(reportFolder.resolve(SUMMARY_FILE))) {
+            throw new UnsupportedReportException("%s has no %s; run CATS first".formatted(reportFolder, SUMMARY_FILE));
+        }
+        CatsTestReport summary = BaselineComparisonEngine.loadReport(reportFolder);
+        if (summary.getProblemKeyVersion() != Problem.KEY_VERSION || summary.getProblems() == null) {
+            throw new UnsupportedReportException("%s was written by a CATS version without problems (problemKeyVersion %d, expected %d); re-run it with this CATS version"
+                    .formatted(SUMMARY_FILE, summary.getProblemKeyVersion(), Problem.KEY_VERSION));
+        }
+        return summary;
     }
 
     static List<TriageTestCase> loadTestCases(Path folder) throws IOException {
@@ -104,60 +112,53 @@ public final class TriageEngine {
     }
 
     private boolean isTriaged(TriageTestCase testCase) {
-        return testCase.isError() || (options.includeWarnings() && testCase.isWarning());
+        return testCase.isError() || (!options.errorsOnly() && testCase.isWarning());
     }
 
     private static List<ClusterClassifier.Candidate> analyze(List<TriageTestCase> failing, RequestSchemaLookup schemaLookup) {
         FailureAnalyzer analyzer = new FailureAnalyzer(schemaLookup);
-        List<ErrorTemplate> templates = ErrorTemplateMiner.mine(failing.stream().map(TriageEngine::errorSample).toList());
-        return IntStream.range(0, failing.size())
-                .mapToObj(index -> new ClusterClassifier.Candidate(failing.get(index), ErrorMessage.of(failing.get(index)),
-                        analyzer.analyze(failing.get(index)), templates.get(index)))
+        return failing.stream()
+                .map(test -> new ClusterClassifier.Candidate(test, ErrorMessage.of(test), analyzer.analyze(test)))
                 .toList();
     }
 
-    private static ErrorSample errorSample(TriageTestCase test) {
-        RequestVocabulary vocabulary = RequestVocabulary.from(test.payload(), test.url(), test.path());
-        return new ErrorSample("", test.statusCode(),
-                ErrorSignatureMasker.signatureOf(test.rawResponseBody(), test.testCase().getResultReason(), vocabulary));
+    private static Map<String, ClusterClassifier.Candidate> byTestId(List<ClusterClassifier.Candidate> candidates) {
+        return candidates.stream().filter(candidate -> candidate.testCase().testCase().getTestId() != null)
+                .collect(Collectors.toMap(candidate -> candidate.testCase().testCase().getTestId(), Function.identity(), (left, _) -> left));
     }
 
-    private static List<ClusterAccumulator> accumulate(List<ClusterClassifier.Candidate> candidates, ClusterClassifier classifier) {
-        List<ClusterAccumulator> accumulators = new ArrayList<>();
-        candidates.forEach(candidate -> assign(accumulators, candidate, classifier.classify(candidate)));
-        return accumulators;
+    private static List<TriageProblem> triageProblems(List<Problem> problems, Map<String, ClusterClassifier.Candidate> candidates,
+                                                      OccurrenceTriage occurrenceTriage) {
+        return problems.stream()
+                .map(problem -> triageProblem(problem, candidates, occurrenceTriage))
+                .flatMap(Optional::stream)
+                .toList();
     }
 
-    private static void assign(List<ClusterAccumulator> accumulators, ClusterClassifier.Candidate candidate, ClusterClassification classification) {
-        accumulators.stream()
-                .filter(accumulator -> accumulator.accepts(classification))
-                .findFirst()
-                .orElseGet(() -> register(accumulators, new ClusterAccumulator(classification, candidate.testCase(), candidate.template())))
-                .add(candidate.testCase());
+    private static Optional<TriageProblem> triageProblem(Problem problem, Map<String, ClusterClassifier.Candidate> candidates,
+                                                         OccurrenceTriage occurrenceTriage) {
+        List<TriageOccurrence> occurrences = problem.occurrences().stream()
+                .map(occurrence -> occurrenceTriage.triage(occurrence, occurrence.testIds().stream().map(candidates::get).filter(Objects::nonNull).toList()))
+                .flatMap(Optional::stream)
+                .toList();
+        if (occurrences.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(new TriageProblem(problem.id(), problem.kind(), problem.title(), problem.level(), problem.reasons(),
+                occurrences.stream().mapToInt(TriageOccurrence::testCount).sum(), problem.errorTemplateId(), problem.errorTemplate(), occurrences));
     }
 
-    private static ClusterAccumulator register(List<ClusterAccumulator> accumulators, ClusterAccumulator accumulator) {
-        accumulators.add(accumulator);
-        return accumulator;
-    }
-
-    private List<RootCauseCluster> verifyAndSort(List<ClusterAccumulator> accumulators) {
-        Optional<LiveClusterVerifier> verifier = options.verify()
+    private Optional<LiveClusterVerifier> verifier() {
+        return options.verify()
                 ? Optional.of(new LiveClusterVerifier(options.serverUrl(), options.headers(), options.environment()))
                 : Optional.empty();
-        return accumulators.stream()
-                .map(accumulator -> accumulator.toCluster(verifier
-                        .map(live -> live.verify(accumulator.classification(), accumulator.representative()))
-                        .orElseGet(LiveClusterVerifier.Verification::disabled)))
-                .sorted(CLUSTER_ORDER)
-                .toList();
     }
 
-    private static double noiseReduction(int triagedCount, int clusterCount) {
-        if (triagedCount == 0 || clusterCount == 0) {
+    private static double noiseReduction(int triagedCount, int problemCount) {
+        if (triagedCount == 0 || problemCount == 0) {
             return 0.0;
         }
-        double percent = Math.max(0.0, 100.0 * (triagedCount - clusterCount) / triagedCount);
+        double percent = Math.max(0.0, 100.0 * (triagedCount - problemCount) / triagedCount);
         return Math.round(percent * 10.0) / 10.0;
     }
 

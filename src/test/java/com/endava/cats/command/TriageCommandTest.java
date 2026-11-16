@@ -1,6 +1,7 @@
 package com.endava.cats.command;
 
-import com.endava.cats.command.triage.RootCauseCluster;
+import com.endava.cats.command.triage.TriageOccurrence;
+import com.endava.cats.command.triage.TriageReportFixtures;
 import com.endava.cats.command.triage.SynthesizedCorrelationRule;
 import com.endava.cats.command.triage.TriageReport;
 import com.endava.cats.fuzzer.special.FunctionalFlowParser;
@@ -148,19 +149,28 @@ class TriageCommandTest {
         triageCommand.exportContractPatchFile = exportedPatch.toString();
         triageCommand.exportReproducersFile = exportedSh.toString();
 
-        triageCommand.run();
+        runOn(triageCommand);
 
         Assertions.assertThat(triageCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
         TriageReport report = triageCommand.getLastReport();
         Assertions.assertThat(report).isNotNull();
         Assertions.assertThat(report.totalTestsScanned()).isEqualTo(5);
         Assertions.assertThat(report.totalErrors()).isEqualTo(4);
-        Assertions.assertThat(report.clusters()).extracting(RootCauseCluster::category)
-                .containsExactly(
+        Assertions.assertThat(occurrences(report)).extracting(TriageOccurrence::category)
+                .containsExactlyInAnyOrder(
                         "SERVER_CRASH_5XX",
                         "CROSS_FIELD_CONSTRAINT_4XX",
                         "RESOURCE_POOL_DEPLETED_404",
-                        "SUSPICIOUS_CORRELATION_404");
+                        "SUSPICIOUS_CORRELATION_404",
+                        "CONTRACT_MISMATCH");
+        Assertions.assertThat(occurrences(report).getFirst().category()).isEqualTo("SERVER_CRASH_5XX");
+        Assertions.assertThat(report.problems()).allMatch(problem -> problem.problemId().matches("[0-9a-f]{8}"));
+        com.google.gson.JsonObject json = com.endava.cats.util.JsonUtils.GSON.toJsonTree(report).getAsJsonObject();
+        Assertions.assertThat(json.keySet()).contains("problems", "totalProblems", "totalOccurrences", "problemKeyVersion").doesNotContain("clusters", "totalClusters");
+        Assertions.assertThat(json.getAsJsonArray("problems").get(0).getAsJsonObject().keySet())
+                .contains("problemId", "kind", "title", "level", "reasons", "errorTemplateId", "errorTemplate", "occurrences");
+        Assertions.assertThat(json.getAsJsonArray("problems").get(0).getAsJsonObject().getAsJsonArray("occurrences").get(0).getAsJsonObject().keySet())
+                .contains("operation", "category", "diagnosis", "remediation", "curlReproducer", "fields", "fuzzers", "sampleTestIds");
         Assertions.assertThat(report.synthesizedCorrelations()).hasSize(1);
         Assertions.assertThat(Files.readString(exportedCorr))
                 .contains("correlations:", "- \"/billing-plans\"", "planType == 'RECURRING'", "billingSchedule:");
@@ -220,10 +230,10 @@ class TriageCommandTest {
             triageCommand.serverUrl = "http://127.0.0.1:" + port;
             triageCommand.json = true;
 
-            triageCommand.run();
+            runOn(triageCommand);
 
             Assertions.assertThat(triageCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
-            Assertions.assertThat(triageCommand.getLastReport().clusters())
+            Assertions.assertThat(occurrences(triageCommand.getLastReport()))
                     .singleElement()
                     .satisfies(cluster -> {
                         Assertions.assertThat(cluster.verificationStatus()).isEqualTo("FIXED");
@@ -244,10 +254,16 @@ class TriageCommandTest {
         TriageCommand emptyCmd = new TriageCommand();
         emptyCmd.reportFolder = tempDir.toString();
         emptyCmd.json = true;
-        emptyCmd.includeWarnings = true;
         emptyCmd.run();
-        Assertions.assertThat(emptyCmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
-        Assertions.assertThat(emptyCmd.getLastReport().totalClusters()).isZero();
+        Assertions.assertThat(emptyCmd.getExitCode()).isEqualTo(CommandLine.ExitCode.USAGE);
+        Assertions.assertThat(emptyCmd.getLastReport()).isNull();
+
+        TriageCommand noFailuresCmd = new TriageCommand();
+        noFailuresCmd.reportFolder = tempDir.toString();
+        noFailuresCmd.json = true;
+        runOn(noFailuresCmd);
+        Assertions.assertThat(noFailuresCmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+        Assertions.assertThat(noFailuresCmd.getLastReport().totalProblems()).isZero();
     }
 
     @Test
@@ -406,22 +422,22 @@ class TriageCommandTest {
         TriageCommand cmd = new TriageCommand();
         cmd.reportFolder = tempDir.toString();
         cmd.contractPath = "src/test/resources/petstore.yml";
-        cmd.run();
+        runOn(cmd);
 
         Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
-        Assertions.assertThat(cmd.getLastReport().clusters()).extracting(RootCauseCluster::category)
+        Assertions.assertThat(occurrences(cmd.getLastReport())).extracting(TriageOccurrence::category)
                 .contains("HEADER_CORRELATION_COLLISION", "CROSS_FIELD_CONSTRAINT_4XX",
                         "AUTH_CONFIGURATION_GAP", "UNRESOLVED_PATH_PARAM_404",
                         "UNRESOLVED_BODY_REFERENCE_404", "VALIDATION_BYPASS_2XX", "CONTRACT_MISMATCH");
-        RootCauseCluster enumCluster = cmd.getLastReport().clusters().stream()
+        TriageOccurrence enumCluster = occurrences(cmd.getLastReport()).stream()
                 .filter(c -> "VALIDATION_BYPASS_2XX".equals(c.category()) && c.fuzzers().contains("InvalidValuesInEnumsFields"))
                 .findFirst().orElseThrow();
         Assertions.assertThat(enumCluster.remediation()).contains("--allowInvalidEnumValues");
-        RootCauseCluster nonEnumCluster = cmd.getLastReport().clusters().stream()
+        TriageOccurrence nonEnumCluster = occurrences(cmd.getLastReport()).stream()
                 .filter(c -> "VALIDATION_BYPASS_2XX".equals(c.category()) && c.fuzzers().contains("NonEnumeratedFieldsFuzzer"))
                 .findFirst().orElseThrow();
         Assertions.assertThat(nonEnumCluster.remediation()).doesNotContain("--allowInvalidEnumValues");
-        Assertions.assertThat(cmd.getLastReport().clusters())
+        Assertions.assertThat(occurrences(cmd.getLastReport()))
                 .anyMatch(c -> "UNRESOLVED_BODY_REFERENCE_404".equals(c.category()) && "POST /orders/bulk".equals(c.operation()))
                 .anyMatch(c -> "UNRESOLVED_PATH_PARAM_404".equals(c.category()) && "POST /users/{id}/tags".equals(c.operation()))
                 .anyMatch(c -> "CONTRACT_MISMATCH".equals(c.category()) && c.fuzzers().contains("StringFieldsRightBoundary"));
@@ -515,7 +531,7 @@ class TriageCommandTest {
         cmd.verify = true;
         cmd.serverUrl = "http://127.0.0.1:1/base";
         cmd.customHeaders.put("X-Override", "1");
-        cmd.run();
+        runOn(cmd);
 
         Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
         Assertions.assertThat(cmd.getLastReport().synthesizedCorrelationsYaml())
@@ -599,7 +615,7 @@ class TriageCommandTest {
         TriageCommand driftCmd = new TriageCommand();
         driftCmd.reportFolder = openApiDriftDir.toString();
         driftCmd.contractPath = driftSpec.toString();
-        driftCmd.run();
+        runOn(driftCmd);
         Assertions.assertThat(driftCmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
         Assertions.assertThat(driftCmd.getLastReport().synthesizedCorrelationsYaml())
                 .contains("wrapper.channelType == 'WEB'", "wrapper.targetField");
@@ -650,7 +666,7 @@ class TriageCommandTest {
         TriageCommand extraCmd = new TriageCommand();
         extraCmd.reportFolder = extraTriageDir.toString();
         extraCmd.contractPath = driftSpec.toString();
-        extraCmd.run();
+        runOn(extraCmd);
         Assertions.assertThat(extraCmd.getLastReport().synthesizedCorrelationsYaml()).contains("omit:");
     }
 
@@ -777,9 +793,8 @@ class TriageCommandTest {
 
         TriageCommand cmd = new TriageCommand();
         cmd.reportFolder = tempDir.toString();
-        cmd.includeWarnings = true;
         cmd.json = true;
-        cmd.run();
+        runOn(cmd);
 
         Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
         TriageReport report = cmd.getLastReport();
@@ -794,5 +809,18 @@ class TriageCommandTest {
                         Assertions.tuple("/risk-watchlists", "name", null, "name"),
                         Assertions.tuple("/risk-rules", "expression.operator", "GT", "expression.value"),
                         Assertions.tuple("/risk-rules", "expression.type", "NOT", "expression.children"));
+    }
+
+    private static void runOn(TriageCommand command) {
+        try {
+            TriageReportFixtures.writeSummary(Path.of(command.reportFolder));
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+        command.run();
+    }
+
+    private static java.util.List<TriageOccurrence> occurrences(TriageReport report) {
+        return report.problems().stream().flatMap(problem -> problem.occurrences().stream()).toList();
     }
 }

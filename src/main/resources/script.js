@@ -1,5 +1,6 @@
 let selectedFilter = "All";
 let selectedFuzzer = "All";
+let selectedOperation = "";
 let set = new Set();
 
 const entityMap = {
@@ -24,6 +25,8 @@ function populateTable() {
     const fuzzer = (selectedFuzzer || "All").toUpperCase();
     const searchInput = document.querySelector('.search-input');
     const searchText = searchInput ? searchInput.value.trim().toUpperCase() : "";
+    const problemSelect = document.getElementById('problemFilter');
+    const problem = problemSelect ? problemSelect.value : "";
 
     document.querySelectorAll('#summaryTable tr:not(.header)').forEach((tr) => {
         const resultEl = tr.querySelector(".test-result");
@@ -35,8 +38,10 @@ function populateTable() {
         const matchFilter = filter === "ALL" || result.includes(filter);
         const matchFuzzer = fuzzer === "ALL" || fuzzerName.includes(fuzzer);
         const matchSearch = searchText === "" || rowText.includes(searchText);
+        const matchProblem = problem === "" || tr.getAttribute('data-problem') === problem;
+        const matchOperation = selectedOperation === "" || tr.getAttribute('data-operation') === selectedOperation;
 
-        if (matchFilter && matchFuzzer && matchSearch) {
+        if (matchFilter && matchFuzzer && matchSearch && matchProblem && matchOperation) {
             tr.style.display = '';
         } else {
             tr.style.display = 'none';
@@ -84,7 +89,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.querySelector('.search-input');
     if (searchInput) {
         searchInput.addEventListener('input', handleSearch);
-        handleSearch();
+        if (searchInput.value.trim() !== '') {
+            handleSearch();
+        } else {
+            const clearButton = document.querySelector('.search-clear-btn');
+            if (clearButton) {
+                clearButton.style.display = 'none';
+            }
+        }
     }
 });
 
@@ -268,80 +280,6 @@ function copyElement(element, copyButton) {
     }, 2000);
 }
 
-let activeClusterFilter = 'all';
-
-function toggleCluster(element) {
-    element.classList.toggle('collapsed');
-    const content = element.nextElementSibling;
-    if (content) {
-        content.classList.toggle('collapsed');
-    }
-}
-
-function toggleErrorCluster(element) {
-    element.classList.toggle('collapsed');
-    const content = element.nextElementSibling;
-    if (content) {
-        content.classList.toggle('collapsed');
-    }
-}
-
-function expandAllClusters() {
-    document.querySelectorAll('.error-cluster-content.collapsed, .cluster-content.collapsed').forEach(content => {
-        content.classList.remove('collapsed');
-        if (content.previousElementSibling) {
-            content.previousElementSibling.classList.remove('collapsed');
-        }
-    });
-}
-
-function collapseAllClusters() {
-    document.querySelectorAll('.cluster-content:not(.collapsed)').forEach(content => {
-        content.classList.add('collapsed');
-        if (content.previousElementSibling) {
-            content.previousElementSibling.classList.add('collapsed');
-        }
-    });
-}
-
-function setClusterFilter(filter, btn) {
-    activeClusterFilter = filter;
-    document.querySelectorAll('.cluster-filter-btn').forEach(b => b.classList.remove('active'));
-    if (btn) {
-        btn.classList.add('active');
-    }
-    filterClusters();
-}
-
-function filterClusters() {
-    const input = document.getElementById('clusterSearchInput');
-    const query = input ? input.value.trim().toLowerCase() : '';
-
-    document.querySelectorAll('.cluster-reason-group').forEach(group => {
-        let visibleInGroup = 0;
-        const reasonText = (group.querySelector('.error-title')?.textContent || '').toLowerCase();
-        group.querySelectorAll('.error-card').forEach(card => {
-            const severity = card.getAttribute('data-severity') || '';
-            const is5xx = card.getAttribute('data-is5xx') === 'true';
-            const matchesFilter = activeClusterFilter === 'all'
-                || (activeClusterFilter === 'error' && severity === 'error')
-                || (activeClusterFilter === 'warning' && severity === 'warning')
-                || (activeClusterFilter === '5xx' && is5xx);
-            const matchesQuery = !query
-                || reasonText.includes(query)
-                || card.textContent.toLowerCase().includes(query);
-
-            if (matchesFilter && matchesQuery) {
-                card.style.display = '';
-                visibleInGroup++;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-        group.style.display = visibleInGroup > 0 ? '' : 'none';
-    });
-}
-
 function highlightJsonText(raw) {
     if (!raw) return '';
     const trimmed = raw.trim();
@@ -391,22 +329,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    const templateBanner = document.getElementById('error-template-banner');
-    if (templateBanner && window.CATS_TEMPLATES) {
-        const testKey = templateBanner.getAttribute('data-test-key');
-        const tpl = testKey ? window.CATS_TEMPLATES[testKey] : null;
-        if (tpl && tpl.id) {
-            const templateRow = document.getElementById('error-template-row');
-            const codeText = tpl.text ? ' <code class="cluster-template">' + escapeHtml(tpl.text) + '</code>' : '';
-            templateBanner.innerHTML = '<span>Error template <strong>T-' + escapeHtml(tpl.id) + '</strong>' + codeText
-                + ' &middot; shared by ' + Number(tpl.count) + ' tests &rarr; <a href="index.html#template-'
-                + encodeURIComponent(tpl.id) + '" class="anchor-tag">open cluster</a></span>';
-            if (templateRow) {
-                templateRow.style.display = '';
-            }
-            templateBanner.style.display = '';
-        }
-    }
+    renderProblemBanner();
 });
 
 function formatAndHighlightCurl(raw) {
@@ -445,3 +368,157 @@ function formatAndHighlightCurl(raw) {
         return indent + core + slashHtml;
     }).join('\n');
 }
+
+function renderProblemBanner() {
+    const banner = document.getElementById('problem-banner');
+    if (!banner || !window.CATS_PROBLEMS) {
+        return;
+    }
+    const testKey = banner.getAttribute('data-test-key');
+    const entry = testKey ? window.CATS_PROBLEMS[testKey] : null;
+    if (!entry) {
+        return;
+    }
+    const others = Number(entry.count) - 1;
+    const lead = others > 0
+        ? 'Same problem as ' + others + ' other test' + (others === 1 ? '' : 's') + ':'
+        : 'No other test has this problem:';
+    const spread = (entry.kind === 'STATUS_CODE' || entry.kind === 'ACCEPTED_REQUEST') && Number(entry.operations) > 1
+        ? ' on ' + Number(entry.operations) + ' operations' : '';
+    const fields = entry.kind === 'ACCEPTED_REQUEST' && entry.fields && entry.fields.length > 0
+        ? '; this test fuzzed ' + entry.fields.map(escapeHtml).join(', ') : '';
+    const link = window.CATS_PROBLEMS_PAGE && entry.anchor
+        ? ' &rarr; <a href="index.html#' + encodeURIComponent(entry.anchor) + '" class="anchor-tag">view problem</a>' : '';
+    banner.innerHTML = '<span><strong>' + lead + '</strong> ' + escapeHtml(entry.title) + spread + fields + link + '</span>';
+    const row = document.getElementById('problem-row');
+    if (row) {
+        row.style.display = '';
+    }
+    banner.style.display = '';
+}
+
+let activeProblemFilter = 'all';
+
+function showReportView(viewId) {
+    document.querySelectorAll('.report-view').forEach(view => view.classList.toggle('active', view.id === viewId));
+    document.querySelectorAll('.report-tab').forEach(tab => tab.classList.toggle('active', tab.getAttribute('data-view') === viewId));
+}
+
+function showProblemPivot(pivotId) {
+    document.querySelectorAll('.problem-pivot').forEach(pivot => pivot.classList.toggle('active', pivot.id === pivotId));
+    document.querySelectorAll('input[name="problem-pivot"]').forEach(radio => {
+        radio.checked = radio.value === pivotId;
+    });
+}
+
+function jumpToProblem(anchor) {
+    const card = document.getElementById(anchor);
+    if (!card) {
+        return;
+    }
+    showReportView('problems-view');
+    showProblemPivot('pivot-problem');
+    card.style.display = '';
+    card.scrollIntoView({behavior: 'smooth', block: 'start'});
+    card.classList.remove('problem-card-highlight');
+    void card.offsetWidth;
+    card.classList.add('problem-card-highlight');
+    clearTimeout(card.highlightTimer);
+    card.highlightTimer = setTimeout(() => card.classList.remove('problem-card-highlight'), 2700);
+}
+
+function showTestsOfProblem(problemId, operation) {
+    const select = document.getElementById('problemFilter');
+    if (select) {
+        select.value = problemId;
+    }
+    selectedOperation = operation || "";
+    const chip = document.getElementById('operationFilterChip');
+    if (chip) {
+        chip.style.display = selectedOperation ? '' : 'none';
+        chip.innerHTML = selectedOperation
+            ? 'Operation: <code>' + escapeHtml(selectedOperation) + '</code> <button type="button" onclick="clearOperationFilter()">&times;</button>' : '';
+    }
+    showReportView('tests-view');
+    populateTable();
+    window.scrollTo({top: document.getElementById('tests-view').offsetTop, behavior: 'smooth'});
+}
+
+function clearOperationFilter() {
+    selectedOperation = "";
+    const chip = document.getElementById('operationFilterChip');
+    if (chip) {
+        chip.style.display = 'none';
+    }
+    populateTable();
+}
+
+function filterProblems() {
+    const input = document.getElementById('problemSearchInput');
+    const query = input ? input.value.trim().toLowerCase() : '';
+    document.querySelectorAll('.problem-card').forEach(card => {
+        const level = card.getAttribute('data-level');
+        const matchesFilter = activeProblemFilter === 'all'
+            || (activeProblemFilter === '5xx' && card.getAttribute('data-is5xx') === 'true')
+            || activeProblemFilter === level;
+        const matchesQuery = !query || card.textContent.toLowerCase().includes(query);
+        card.style.display = matchesFilter && matchesQuery ? '' : 'none';
+    });
+}
+
+function copyProblemId(button) {
+    const id = button.getAttribute('data-copy');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(id).catch(() => undefined);
+    }
+    button.classList.add('copied');
+    setTimeout(() => button.classList.remove('copied'), 1500);
+}
+
+document.addEventListener('click', function (event) {
+    const row = event.target.closest('#summaryTable tr[data-id]');
+    if (row && !event.target.closest('a')) {
+        window.open(row.getAttribute('data-id') + '.html', '_blank');
+        return;
+    }
+    const target = event.target.closest('.report-tab, .problem-jump, .problem-view-tests, .problem-view-all, .problem-copy, .problem-filter-btn');
+    if (!target) {
+        return;
+    }
+    if (target.classList.contains('report-tab')) {
+        showReportView(target.getAttribute('data-view'));
+    } else if (target.classList.contains('problem-jump')) {
+        event.preventDefault();
+        const anchor = target.getAttribute('href').substring(1);
+        history.replaceState(null, '', '#' + anchor);
+        jumpToProblem(anchor);
+    } else if (target.classList.contains('problem-view-tests') || target.classList.contains('problem-view-all')) {
+        event.preventDefault();
+        showTestsOfProblem(target.getAttribute('data-problem'), target.getAttribute('data-operation'));
+    } else if (target.classList.contains('problem-copy')) {
+        copyProblemId(target);
+    } else {
+        activeProblemFilter = target.getAttribute('data-problem-filter');
+        document.querySelectorAll('.problem-filter-btn').forEach(button => button.classList.toggle('active', button === target));
+        filterProblems();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('input[name="problem-pivot"]').forEach(radio =>
+        radio.addEventListener('change', () => showProblemPivot(radio.value)));
+    const problemSearch = document.getElementById('problemSearchInput');
+    if (problemSearch) {
+        problemSearch.addEventListener('input', filterProblems);
+    }
+    const problemSelect = document.getElementById('problemFilter');
+    if (problemSelect) {
+        problemSelect.addEventListener('change', () => {
+            selectedOperation = "";
+            clearOperationFilter();
+        });
+    }
+    if (window.location.hash && window.location.hash.startsWith('#problem-')) {
+        jumpToProblem(decodeURIComponent(window.location.hash.substring(1)));
+    }
+});

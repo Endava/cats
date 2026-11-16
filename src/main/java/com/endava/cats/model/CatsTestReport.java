@@ -50,6 +50,10 @@ public class CatsTestReport {
     private final String throttlingSummary;
     private final List<String> rateLimitedOperations;
     private final List<ProcessingError> processingErrors;
+    /** The version of the problem key rules that produced {@link #problems}; see {@link Problem#KEY_VERSION}. */
+    private final int problemKeyVersion;
+    /** The failing and warning tests grouped into ranked problems. */
+    private final List<Problem> problems;
 
     public List<JunitTestSuite> getTestSuites() {
         DecimalFormat decimalFormat = new DecimalFormat("#.###");
