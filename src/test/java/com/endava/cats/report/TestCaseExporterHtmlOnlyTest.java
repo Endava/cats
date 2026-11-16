@@ -149,6 +149,87 @@ class TestCaseExporterHtmlOnlyTest {
                         "Results included in report", "Skipped tests", "Omitted by reporting rules");
     }
 
+    @Test
+    void shouldExportBaselineAnnotationAndErrorTemplatesJsForJsFormats() throws Exception {
+        ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
+        ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);
+        StopArguments stopArguments = Mockito.mock(StopArguments.class);
+        Mockito.when(reportingArguments.getOutputReportFolder()).thenReturn(reportDirectory.toString());
+        Mockito.when(reportingArguments.getMaskedHeaders()).thenReturn(Set.of());
+
+        TestCaseExporterHtmlJs jsExporter = new TestCaseExporterHtmlJs(reportingArguments,
+                new CatsGlobalContext(), processingArguments, stopArguments);
+        jsExporter.appVersion = "test-version";
+        jsExporter.initPath(reportDirectory.toString());
+
+        CatsTestCase baselineCase = new CatsTestCase();
+        baselineCase.setTestId("Test 3");
+        baselineCase.setScenario("Happy path scenario");
+        baselineCase.setResult("error");
+        baselineCase.setResultReason("Unexpected response code: 500");
+        baselineCase.setResultDetails("Unexpected 500");
+        baselineCase.setFuzzer("HappyPath");
+        baselineCase.setContractPath("/orders");
+        baselineCase.setRequest(CatsRequest.builder().httpMethod("POST").payload("{}").build());
+        baselineCase.setResponse(CatsResponse.builder().responseCode(500).responseTimeInMs(10).body("{\"message\":\"Database down\"}").build());
+
+        CatsTestCase annotatedCase = new CatsTestCase();
+        annotatedCase.setTestId("Test 12");
+        annotatedCase.setScenario("Fuzzed scenario");
+        annotatedCase.setResult("error");
+        annotatedCase.setResultReason("Unexpected response code: 500");
+        annotatedCase.setResultDetails("Unexpected 500");
+        annotatedCase.setFuzzer("RemoveFields");
+        annotatedCase.setContractPath("/orders");
+        annotatedCase.setSameErrorAsBaselineTest("Test 3");
+        annotatedCase.setSameErrorAsBaselineFuzzer("HappyPath");
+        annotatedCase.setRequest(CatsRequest.builder().httpMethod("POST").payload("{}").build());
+        annotatedCase.setResponse(CatsResponse.builder().responseCode(500).responseTimeInMs(10).body("{\"message\":\"Database down\"}").build());
+
+        jsExporter.writeTestCase(annotatedCase);
+        List<CatsTestCaseSummary> summaries = List.of(
+                CatsTestCaseSummary.fromCatsTestCase(baselineCase),
+                CatsTestCaseSummary.fromCatsTestCase(annotatedCase),
+                summary());
+        ExecutionSummary execSummary = new ExecutionStatisticsListener().snapshot(false, "Default: fail on any error");
+        jsExporter.writeSummary(summaries, execSummary);
+
+        String testJson = Files.readString(reportDirectory.resolve("Test12.json"));
+        String testHtml = Files.readString(reportDirectory.resolve("Test12.html"));
+        String summaryJson = Files.readString(reportDirectory.resolve("cats-summary-report.json"));
+        String templatesJs = Files.readString(reportDirectory.resolve(TestCaseExporter.ERROR_TEMPLATES_JS));
+
+        Assertions.assertThat(testJson).contains(
+                "\"sameErrorAsBaselineTest\": \"Test 3\"",
+                "\"sameErrorAsBaselineFuzzer\": \"HappyPath\"");
+        Assertions.assertThat(testHtml).contains(
+                "Same error as the unmodified request",
+                "href=\"Test3.html\"",
+                "Test 3",
+                "HappyPath",
+                "error-templates.js",
+                "id=\"error-template-banner\"",
+                "data-test-key=\"Test12\"");
+        Assertions.assertThat(summaryJson).contains(
+                "\"sameErrorAsBaselineTest\": \"Test 3\"",
+                "\"sameErrorAsBaselineFuzzer\": \"HappyPath\"");
+        Assertions.assertThat(templatesJs)
+                .startsWith("window.CATS_TEMPLATES = ")
+                .contains("\"Test12\":", "\"text\": \"Database down\"", "\"count\": 2")
+                .doesNotContain("\"Test1\":");
+
+        Path clusterReportDir = reportDirectory.resolve("clusters");
+        TestCaseExporterHtmlJsCluster clusterExporter = new TestCaseExporterHtmlJsCluster(reportingArguments,
+                new CatsGlobalContext(), processingArguments, stopArguments);
+        clusterExporter.appVersion = "test-version";
+        clusterExporter.initPath(clusterReportDir.toString());
+        clusterExporter.writeSummary(summaries, execSummary);
+
+        String clusterHtml = Files.readString(clusterReportDir.resolve(TestCaseExporter.REPORT_HTML));
+        Assertions.assertThat(clusterHtml).contains(
+                "1 of 2 tests in this cluster fail the same way as the unmodified request");
+    }
+
     private static CatsTestCaseSummary summary() {
         CatsTestCase testCase = new CatsTestCase();
         testCase.setTestId("Test 1");

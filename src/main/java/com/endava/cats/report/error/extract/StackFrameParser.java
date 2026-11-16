@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * table order and the first one that matches any frame wins; their patterns do not overlap.
  */
 public final class StackFrameParser {
-    private static final Pattern NEVER = Pattern.compile("(?!)");
+    private static final Pattern NEVER = Pattern.compile("[^\\s\\S]");
     private static final Pattern PARAGRAPH_BREAK = Pattern.compile("\\n\\s*\\n");
     private static final Pattern TRACEBACK_HEADER = Pattern.compile("(?i)traceback \\(most recent call last\\):?");
     private static final Pattern INDENTED_FRAME_LINE = Pattern.compile("(?m)^[ \\t]+at\\s");

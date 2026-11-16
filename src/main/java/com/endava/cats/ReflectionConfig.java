@@ -34,6 +34,7 @@ import com.endava.cats.model.RunOutcome;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.report.BaselineComparisonEngine;
+import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.wfc.CatsWfcFaultCategory;
 import com.endava.cats.report.SummaryReportContext;
 import com.endava.cats.util.CatsRandom;
@@ -288,6 +289,7 @@ import java.util.UUID;
         SmokeCommand.SmokeReport.class, SmokeCommand.OperationProbe.class,
         InitCommand.InitResult.class, InitCommand.AgentPlatform.class,
         BaselineComparisonEngine.ComparisonResult.class, BaselineComparisonEngine.FindingDelta.class,
+        TestCaseExporter.ErrorTemplateEntry.class,
         ProfileLoader.Profile.class,
         CatsTestReport.JunitTestSuite.class,
         CatsDSLParser.class, CatsRandom.class,

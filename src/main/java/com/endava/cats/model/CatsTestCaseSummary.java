@@ -29,7 +29,13 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private FindingConfidence confidence;
     private String errorTemplateId;
     private String errorTemplate;
+    private String sameErrorAsBaselineTest;
+    private String sameErrorAsBaselineFuzzer;
+    // Gson must exclude this in-memory state from every serializer, including plain Gson.
+    @SuppressWarnings("java:S2065")
     private transient RequestVocabulary requestVocabulary;
+    // Gson must exclude this in-memory state from every serializer, including plain Gson.
+    @SuppressWarnings("java:S2065")
     private transient ErrorSignature errorSignature;
 
     /**
@@ -53,6 +59,8 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.switchedResult = testCase.getResultIgnoreDetails() != null;
         summary.httpResponseCode = testCase.getResponse().getResponseCode();
         summary.confidence = testCase.getConfidence();
+        summary.sameErrorAsBaselineTest = testCase.getSameErrorAsBaselineTest();
+        summary.sameErrorAsBaselineFuzzer = testCase.getSameErrorAsBaselineFuzzer();
         String response = Optional.ofNullable(testCase.getResponse().getBody()).orElse("[Empty response body]");
         summary.responseBody = response.substring(0, Math.min(response.length(), 1000));
         summary.requestVocabulary = summary.getError() || summary.getWarning()

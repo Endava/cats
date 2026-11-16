@@ -121,6 +121,8 @@ public class TestCaseListener {
     private final ResponseSchemaValidator responseSchemaValidator;
     @Inject
     NamingArguments namingArguments;
+    @Inject
+    BaselineFailureRegistry baselineFailureRegistry = new BaselineFailureRegistry();
     private boolean reportingInitialized;
     private Consumer<String> beforeDeleteTestCallback;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
@@ -515,6 +517,7 @@ public class TestCaseListener {
             currentTestCase.setFuzzer(MDC.get(FUZZER_KEY));
             executionStatisticsListener.increaseProcessedTests();
             if (currentTestCase.isNotSkipped()) {
+                baselineFailureRegistry.recordOrAnnotate(currentTestCase);
                 testReportsGenerator.writeTestCase(currentTestCase);
                 keepSummary(currentTestCase);
             } else {
@@ -719,6 +722,7 @@ public class TestCaseListener {
         testCaseMap.clear();
         testCaseSummaryDetails.clear();
         testCaseExecutionDetails.clear();
+        baselineFailureRegistry.clear();
         runPerPathListener.clear();
         noColorRenderedPaths.clear();
         TEST.set(0);

@@ -274,15 +274,18 @@ public final class WfcFaultClassifier {
                 && !ResponseCodeFamily.isNotFoundOrGone(code) && !ResponseCodeFamily.is5xxCode(code)) {
             faults.add(faultId(DefinedFaultCategory.HTTP_INVALID_LOCATION, summary.getResultReason()));
         } else if (ConsoleUtils.matchesFuzzer(fuzzer, BypassAuthenticationFuzzer.class) && is2xx) {
-            FaultCategory cat = HttpMethod.isResourceModificationMethod(method)
-                    ? DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS
-                    : DefinedFaultCategory.SECURITY_DECLARED_AUTH_NOT_ENFORCED;
-            faults.add(faultId(cat, method));
+            faults.add(faultId(authenticationFault(method), method));
         } else if (ConsoleUtils.matchesAnyFuzzer(fuzzer, UNDOCUMENTED_HTTP_METHOD_FUZZER_CLASSES) && is2xx) {
             faults.add(faultId(DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT, method));
         } else if (ConsoleUtils.matchesFuzzer(fuzzer, InsecureDirectObjectReferencesFuzzer.class) && is2xx) {
             faults.add(faultId(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, summary.getFuzzer()));
         }
+    }
+
+    private static FaultCategory authenticationFault(String method) {
+        return HttpMethod.isResourceModificationMethod(method)
+                ? DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS
+                : DefinedFaultCategory.SECURITY_DECLARED_AUTH_NOT_ENFORCED;
     }
 
     private static void classifyReasonBasedFaults(CatsTestCaseSummary summary, int code, Set<FaultCategoryId> faults) {

@@ -385,7 +385,7 @@ public final class BinaryCoveringArray {
         }
 
         boolean tryApplyCompatibleTo(int[] row) {
-            if (mask == 0) {
+            if (mask == 0 || !hasUnsetSlotColumn(row)) {
                 return false;
             }
             for (int combo = 7; combo >= 1; combo--) {
@@ -395,6 +395,10 @@ public final class BinaryCoveringArray {
                 }
             }
             return false;
+        }
+
+        boolean hasUnsetSlotColumn(int[] row) {
+            return row[i] == UNSET || row[j] == UNSET || row[k] == UNSET;
         }
 
         boolean isCompatibleWith(int[] row, int combo) {

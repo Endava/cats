@@ -5,7 +5,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.util.Optional;
 
 @QuarkusTest
 class ErrorFieldRoleResolverTest {
@@ -25,7 +24,7 @@ class ErrorFieldRoleResolverTest {
     @ParameterizedTest
     @CsvSource({"context", "barcode", "decode", "timestamp", "path", "status", "title", "error", "requestId", "errors", "trace", "codeName"})
     void shouldNotGuessARoleForOtherFields(String field) {
-        Assertions.assertThat(ErrorFieldRoleResolver.BY_NAME.roleOf(field)).isEqualTo(Optional.empty());
+        Assertions.assertThat(ErrorFieldRoleResolver.BY_NAME.roleOf(field)).isEmpty();
     }
 
     @ParameterizedTest

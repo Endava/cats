@@ -27,6 +27,8 @@ final class ClusterAccumulator {
     private final Set<String> fuzzers = new LinkedHashSet<>();
     private final List<String> sampleTestIds = new ArrayList<>();
     private int occurrences;
+    private String baselineTestId;
+    private String baselineFuzzer;
 
     ClusterAccumulator(ClusterClassification classification, TriageTestCase representative, ErrorTemplate template) {
         this.classification = classification;
@@ -55,14 +57,23 @@ final class ClusterAccumulator {
         if (StringUtils.isNotBlank(testId) && sampleTestIds.size() < MAX_SAMPLES) {
             sampleTestIds.add(testId);
         }
+        if (baselineTestId == null && testCase.testCase().hasSameErrorAsBaseline()) {
+            baselineTestId = testCase.testCase().getSameErrorAsBaselineTest();
+            baselineFuzzer = StringUtils.defaultIfBlank(testCase.testCase().getSameErrorAsBaselineFuzzer(), "HappyPath");
+        }
     }
 
     RootCauseCluster toCluster(LiveClusterVerifier.Verification verification) {
+        String attribution = baselineTestId != null ? RootCauseCluster.SAME_AS_BASELINE : null;
+        String remediation = baselineTestId != null
+                ? "Same error as the unmodified request (%s, %s): fix the %s request for %s first. %s"
+                        .formatted(baselineTestId, baselineFuzzer, baselineFuzzer, classification.operation(), classification.remediation())
+                : classification.remediation();
         return new RootCauseCluster(classification.category(), classification.severityRank(), classification.operation(),
                 classification.statusCode(), occurrences, classification.diagnosis(), template.id(), template.text(),
-                classification.remediation(),
+                remediation,
                 List.copyOf(fuzzers), List.copyOf(sampleTestIds), curlReproducer(),
-                verification.status(), verification.statusCode(), verification.note());
+                verification.status(), verification.statusCode(), verification.note(), attribution);
     }
 
     private String curlReproducer() {

@@ -220,8 +220,8 @@
         <div class="error-cluster-content">
             <div class="error-cluster-container">
                 {{#clusters}}
-                <div class="error-card cluster-card-{{severity}}"
-                     data-severity="{{severity}}" data-is5xx="{{is5xx}}" data-status="{{httpStatusCode}}">
+                <div id="template-{{templateId}}" class="error-card cluster-card-{{severity}}"
+                     data-severity="{{severity}}" data-is5xx="{{is5xx}}" data-status="{{httpStatusCode}}" data-template="{{templateId}}">
                     <div class="cluster-title" onclick="toggleCluster(this)">
                         <div class="cluster-title-main">
                             <span class="cluster-id-label">Cluster #{{clusterId}}</span>
@@ -240,6 +240,11 @@
                         <div class="cluster-meta-row">
                             <strong>Triggered by Fuzzers:</strong> <span class="cluster-fuzzers-list">{{fuzzers}}</span>
                         </div>
+                        {{#hasBaselineFailures}}
+                        <div class="cluster-meta-row cluster-baseline-note">
+                            {{baselineFailureCount}} of {{testCount}} tests in this cluster fail the same way as the unmodified request
+                        </div>
+                        {{/hasBaselineFailures}}
                         <details class="cluster-response-details">
                             <summary>Sample Response Body</summary>
                             <pre class="cluster-response-pre">{{errorMessage}}</pre>

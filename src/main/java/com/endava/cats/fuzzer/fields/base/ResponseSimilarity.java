@@ -37,9 +37,9 @@ public final class ResponseSimilarity {
     private static final Set<String> VOLATILE_JSON_KEYS = Set.of(
             "timestamp", "traceid", "requestid", "correlationid", "spanid", "x-request-id");
     private static final Pattern ISO_TIMESTAMP = Pattern.compile(
-            "\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})?");
+            "\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d:\\d\\d(?:\\.\\d+)?(?:Z|[+-]\\d\\d:?\\d\\d)?");
     private static final Splitter LINE_SPLITTER = Splitter.on(Pattern.compile("\r\n|\r|\n"));
-    private static final Splitter WORD_SPLITTER = Splitter.on(Pattern.compile("[^a-zA-Z0-9_]+")).omitEmptyStrings();
+    private static final Splitter WORD_SPLITTER = Splitter.on(Pattern.compile("\\W+")).omitEmptyStrings();
 
     private ResponseSimilarity() {
     }

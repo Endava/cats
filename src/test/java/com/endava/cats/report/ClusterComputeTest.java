@@ -442,6 +442,43 @@ class ClusterComputeTest {
         assertThat(testCases.getFirst().getErrorTemplateId()).isNotEqualTo(testCases.getLast().getErrorTemplateId());
     }
 
+    @Test
+    void shouldCountBaselineFailuresPerCluster() {
+        CatsTestCase seed = new CatsTestCase();
+        seed.setTestId("Test 1");
+        seed.setFuzzer("HappyPath");
+        seed.setResult("error");
+        seed.setResultReason("Unexpected response code: 500");
+        seed.setPath("/orders");
+        seed.setContractPath("/orders");
+        seed.setRequest(CatsRequest.builder().httpMethod("POST").build());
+        seed.setResponse(CatsResponse.builder().responseCode(500).body("{\"message\":\"Database down\"}").build());
+
+        CatsTestCase fuzzed = new CatsTestCase();
+        fuzzed.setTestId("Test 2");
+        fuzzed.setFuzzer("RemoveFields");
+        fuzzed.setResult("error");
+        fuzzed.setResultReason("Unexpected response code: 500");
+        fuzzed.setPath("/orders");
+        fuzzed.setContractPath("/orders");
+        fuzzed.setSameErrorAsBaselineTest("Test 1");
+        fuzzed.setSameErrorAsBaselineFuzzer("HappyPath");
+        fuzzed.setRequest(CatsRequest.builder().httpMethod("POST").build());
+        fuzzed.setResponse(CatsResponse.builder().responseCode(500).body("{\"message\":\"Database down\"}").build());
+
+        List<Map<String, Object>> groups = ClusterCompute.createClusters(List.of(
+                CatsTestCaseSummary.fromCatsTestCase(seed),
+                CatsTestCaseSummary.fromCatsTestCase(fuzzed)));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> clusters = (List<Map<String, Object>>) groups.getFirst().get("clusters");
+        assertThat(clusters).singleElement()
+                .satisfies(cluster -> assertThat(cluster)
+                        .containsEntry("testCount", 2)
+                        .containsEntry("baselineFailureCount", 1L)
+                        .containsEntry("hasBaselineFailures", true));
+    }
+
     private static CatsTestCaseSummary createTestCaseSummaryAt(String contractPath, String responseBody) {
         CatsTestCase testCase = new CatsTestCase();
         testCase.setRequest(CatsRequest.builder().httpMethod("POST").build());

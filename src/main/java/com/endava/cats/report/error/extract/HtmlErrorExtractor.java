@@ -18,7 +18,7 @@ public final class HtmlErrorExtractor implements ErrorBodyExtractor {
     private static final Pattern HTML_START = Pattern.compile("(?is)\\s*<(?:!doctype\\s+html|html|head|body|title|h1|pre)\\b.*");
     private static final Pattern TITLE = Pattern.compile("(?is)<title[^>]*>(.*?)</title>");
     private static final Pattern INVISIBLE = Pattern.compile("(?is)<!--.*?(?:-->|$)|<(style|script|head)\\b.*?(?:</\\1>|$)");
-    private static final Pattern LINE_BREAK = Pattern.compile("(?i)<br\\s*/?>|<hr\\b[^>]*>|</(?:p|div|h[1-6]|li|tr|pre|title|table|ul|ol)>");
+    private static final Pattern LINE_BREAK = Pattern.compile("(?i)<br\\s*/?>|<hr\\b[^>]*>|</(?:p|div|h[1-6]|li|tr|pre|title|table|[uo]l)>");
     private static final Pattern TAG = Pattern.compile("<[^>]*>?");
     private static final Pattern SPACES = Pattern.compile("[ \\u00a0]+");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");

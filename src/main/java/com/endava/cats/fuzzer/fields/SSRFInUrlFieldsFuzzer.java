@@ -130,6 +130,9 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
                     "Response contains HTTP client error [%s] indicating the server attempted to make an outbound request. Response code: %d",
                     false));
 
+    // Intentional SSRF probe/evidence targets: loopback, unspecified and cloud metadata addresses.
+    // These identify attack payloads; they are not CATS service endpoints.
+    @SuppressWarnings("java:S1313")
     private static final List<String> INTERNAL_TARGETS = List.of(
             "localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254", "metadata.google.internal", "metadata.azure.com");
 

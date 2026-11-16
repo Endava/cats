@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -96,7 +97,7 @@ public final class ErrorSchemaFields {
     }
 
     private static Stream<Schema> composedParts(Schema<?> schema) {
-        return Stream.of(schema.getAllOf(), schema.getOneOf(), schema.getAnyOf()).filter(parts -> parts != null).flatMap(List::stream);
+        return Stream.of(schema.getAllOf(), schema.getOneOf(), schema.getAnyOf()).filter(Objects::nonNull).flatMap(List::stream);
     }
 
     private Schema<?> resolve(Schema<?> schema) {

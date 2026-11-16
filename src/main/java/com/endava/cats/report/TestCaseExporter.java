@@ -19,6 +19,7 @@ import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.KeyValueSerializer;
 import com.endava.cats.util.LongTypeSerializer;
@@ -55,6 +56,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -75,6 +77,7 @@ public abstract class TestCaseExporter {
     static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
     static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
     private static final String REPORT_JS = "cats-summary-report.json";
+    static final String ERROR_TEMPLATES_JS = "error-templates.js";
     private static final String EXECUTION_TIME_REPORT = "execution_times.json";
     private static final String REPLAY_ENV_EXAMPLE = "replay.env.example";
     private static final String HTML = ".html";
@@ -341,11 +344,39 @@ public abstract class TestCaseExporter {
             writer.flush();
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), this.getSummaryReportTitle()), writer.toString().getBytes(StandardCharsets.UTF_8));
             Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), maskingSerializer.toJson(report).getBytes(StandardCharsets.UTF_8));
+            writeErrorTemplatesJs(report.getTestCases());
             writeReplayEnvironmentExample(replayEnvironmentVariables());
         } catch (IOException e) {
             throw reportFailure("Unable to write the report summary", e);
         }
 
+    }
+
+    @DryRun
+    void writeErrorTemplatesJs(List<CatsTestCaseSummary> summaries) throws IOException {
+        if (!this.isJavascript()) {
+            return;
+        }
+        List<CatsTestCaseSummary> withTemplates = Optional.ofNullable(summaries).orElse(List.of()).stream()
+                .filter(tc -> tc != null && (tc.getError() || tc.getWarning()) && StringUtils.isNotBlank(tc.getErrorTemplateId()))
+                .toList();
+        Map<String, Long> countsByTemplate = withTemplates.stream()
+                .collect(Collectors.groupingBy(CatsTestCaseSummary::getErrorTemplateId, Collectors.counting()));
+        Map<String, ErrorTemplateEntry> entries = new LinkedHashMap<>();
+        for (CatsTestCaseSummary summary : withTemplates) {
+            entries.put(summary.getKey(), new ErrorTemplateEntry(
+                    summary.getErrorTemplateId(),
+                    summary.getErrorTemplate(),
+                    countsByTemplate.getOrDefault(summary.getErrorTemplateId(), 1L).intValue()));
+        }
+        String script = "window.CATS_TEMPLATES = " + JsonUtils.GSON.toJson(entries) + ";\n";
+        Files.writeString(reportingPath.resolve(ERROR_TEMPLATES_JS), script, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Per-test error template entry serialized into {@code error-templates.js}.
+     */
+    public record ErrorTemplateEntry(String id, String text, int count) {
     }
 
     private List<String> replayEnvironmentVariables() {

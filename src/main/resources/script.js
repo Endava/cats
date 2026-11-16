@@ -390,6 +390,23 @@ document.addEventListener('DOMContentLoaded', function () {
             codeEl.innerHTML = formatAndHighlightCurl(codeEl.textContent);
         }
     });
+
+    const templateBanner = document.getElementById('error-template-banner');
+    if (templateBanner && window.CATS_TEMPLATES) {
+        const testKey = templateBanner.getAttribute('data-test-key');
+        const tpl = testKey ? window.CATS_TEMPLATES[testKey] : null;
+        if (tpl && tpl.id) {
+            const templateRow = document.getElementById('error-template-row');
+            const codeText = tpl.text ? ' <code class="cluster-template">' + escapeHtml(tpl.text) + '</code>' : '';
+            templateBanner.innerHTML = '<span>Error template <strong>T-' + escapeHtml(tpl.id) + '</strong>' + codeText
+                + ' &middot; shared by ' + Number(tpl.count) + ' tests &rarr; <a href="index.html#template-'
+                + encodeURIComponent(tpl.id) + '" class="anchor-tag">open cluster</a></span>';
+            if (templateRow) {
+                templateRow.style.display = '';
+            }
+            templateBanner.style.display = '';
+        }
+    }
 });
 
 function formatAndHighlightCurl(raw) {

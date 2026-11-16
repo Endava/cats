@@ -368,7 +368,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
         return getTopBooleanInjectionPairs();
     }
 
-    protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data, String payload) {
+    protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data, String ignoredPayload) {
         return detectInjectionEvidence(response, data);
     }
 

@@ -100,6 +100,20 @@
                 <div>{{{resultDetailsForHtml}}}</div>
             </div>
 
+            {{#hasSameErrorAsBaseline}}
+            <div class="t1-lbl">Baseline Match</div>
+            <div class="t1-val span-3">
+                <div class="baseline-annotation-box" role="note">
+                    Same error as the unmodified request (<a href="{{sameErrorAsBaselineTestPage}}" class="anchor-tag">{{sameErrorAsBaselineTest}}</a>{{#sameErrorAsBaselineFuzzer}}, {{sameErrorAsBaselineFuzzer}}{{/sameErrorAsBaselineFuzzer}}). This failure is probably not caused by this test's mutation; fix the base request or seed data first.
+                </div>
+            </div>
+            {{/hasSameErrorAsBaseline}}
+
+            {{#js}}
+            <div id="error-template-row" class="t1-lbl" style="display: none;">Error Template</div>
+            <div id="error-template-banner" class="t1-val span-3 error-template-annotation" data-test-key="{{testKey}}" style="display: none;"></div>
+            {{/js}}
+
             {{#hasConfidence}}
             <div class="t1-lbl">Confidence</div>
             <div class="t1-val span-3"><strong>{{confidence}}</strong></div>
@@ -288,6 +302,7 @@
 </div>
 {{/TEST_CASE}}
 {{#JS}}
+<script src="error-templates.js"></script>
 <script src="script.js"></script>
 {{/JS}}
 </body>

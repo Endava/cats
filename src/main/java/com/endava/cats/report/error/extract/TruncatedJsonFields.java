@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
  * keep only the first 1000 characters of a response body.
  */
 public final class TruncatedJsonFields {
-    private static final Pattern STRING_FIELD = Pattern.compile("\"(\\w+)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+    private static final Pattern STRING_FIELD = Pattern.compile("\"(\\w+)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*+)\"");
     private static final Pattern TRACE_FIELD = Pattern.compile(
-            "\"(?:trace|stackTrace|stack|exceptionTrace|stack_trace|backtrace)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)");
+            "\"(?:trace|stackTrace|stack|exceptionTrace|stack_trace|backtrace)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*+)");
 
     private TruncatedJsonFields() {
     }

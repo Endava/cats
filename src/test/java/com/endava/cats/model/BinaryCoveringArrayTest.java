@@ -47,7 +47,7 @@ class BinaryCoveringArrayTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {2, 3, 4, 6, 10, 15, 20})
+    @ValueSource(ints = {2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20})
     void shouldExhaustivelyCoverEveryTripleForStrength3(int factors) {
         List<boolean[]> matrix = BinaryCoveringArray.generateMatrix(factors, 3);
 

@@ -2050,3 +2050,30 @@ body.dark-mode .coffee-badge {
 		grid-column: span 1 !important;
 	}
 }
+
+.baseline-annotation-box {
+	background: rgba(37, 99, 235, 0.08);
+	border-left: 3px solid #2563eb;
+	padding: 6px 12px;
+	border-radius: 6px;
+	font-size: 13px;
+	line-height: 1.45;
+}
+
+body.dark-mode .baseline-annotation-box {
+	background: rgba(96, 165, 250, 0.14);
+	border-left-color: #60a5fa;
+}
+
+.error-template-annotation code.cluster-template {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	background: rgba(0, 0, 0, 0.05);
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-size: 12.5px;
+}
+
+body.dark-mode .error-template-annotation code.cluster-template {
+	background: rgba(255, 255, 255, 0.08);
+}
+

@@ -116,6 +116,23 @@ class TriageEngineTest {
     }
 
     @Test
+    void shouldAssignSameAsBaselineAttributionWithoutVerifyWhenSeedRequestFailedSameWay(@TempDir Path dir) throws IOException {
+        write(dir, 3, test("HappyPath", "Should return [2XX]", "POST", "/orders", 500,
+                "{\\\"customerId\\\":\\\"c-1\\\"}", "{\\\"message\\\":\\\"Customer c-1 does not exist\\\"}", null));
+        write(dir, 12, test("RemoveFields", "Should return [4XX]", "POST", "/orders", 500,
+                "{\\\"customerId\\\":\\\"c-1\\\"}", "{\\\"message\\\":\\\"Customer c-1 does not exist\\\"}", null));
+
+        TriageReport report = triage(dir);
+
+        Assertions.assertThat(report.clusters()).singleElement().satisfies(cluster -> {
+            Assertions.assertThat(cluster.attribution()).isEqualTo(RootCauseCluster.SAME_AS_BASELINE);
+            Assertions.assertThat(cluster.remediation())
+                    .contains("Same error as the unmodified request (Test 3, HappyPath)")
+                    .contains("fix the HappyPath request for POST /orders first");
+        });
+    }
+
+    @Test
     void shouldReportUnfixedCrashesOnlyWhenNotFixed() {
         RootCauseCluster inconclusive = cluster("SERVER_CRASH_5XX", "INCONCLUSIVE");
         RootCauseCluster fixed = cluster("SERVER_CRASH_5XX", "FIXED");

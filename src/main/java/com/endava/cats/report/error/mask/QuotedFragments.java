@@ -28,8 +28,9 @@ public final class QuotedFragments {
     private static final Pattern SINGLE_QUOTED = Pattern.compile("(?<![\\w'])'([^'\\n]{1,120})'(?![\\w'])");
     private static final Pattern DOUBLE_QUOTED = Pattern.compile("(?<![\\w\"])\"([^\"\\n]{1,200})\"(?![\\w\"])");
     private static final Pattern QUOTED_TOKEN = Pattern.compile("[^'\"]*(['\"])([^'\"]+)\\1[^'\"]*");
-    private static final Pattern CODE_IDENTIFIER = Pattern.compile(
-            "(?:[A-Za-z_$][\\w$]*|<[\\w$]+>)(?:\\.(?:[\\w$]+|<[\\w$]+>))*(?:\\([\\w$.,\\[\\] ]*\\))?");
+    private static final Pattern IDENTIFIER_HEAD = Pattern.compile("[A-Za-z_$][\\w$]*|<[\\w$]+>");
+    private static final Pattern IDENTIFIER_PART = Pattern.compile("[\\w$]+|<[\\w$]+>");
+    private static final Pattern ARGUMENTS = Pattern.compile("\\([\\w$.,\\[\\] ]*\\)");
     private static final int MIN_IDENTIFIER_LENGTH = 2;
     private static final int MAX_IDENTIFIER_LENGTH = 64;
     private static final Set<String> HTTP_METHODS = Arrays.stream(HttpMethod.values()).map(Enum::name)
@@ -68,7 +69,18 @@ public final class QuotedFragments {
 
     private static boolean isCodeIdentifier(String quoted) {
         return quoted.length() >= MIN_IDENTIFIER_LENGTH && quoted.length() <= MAX_IDENTIFIER_LENGTH
-                && !HTTP_METHODS.contains(quoted) && CODE_IDENTIFIER.matcher(quoted).matches();
+                && !HTTP_METHODS.contains(quoted) && matchesCodeIdentifier(quoted);
+    }
+
+    private static boolean matchesCodeIdentifier(String quoted) {
+        int arguments = quoted.indexOf('(');
+        if (arguments >= 0 && !ARGUMENTS.matcher(quoted.substring(arguments)).matches()) {
+            return false;
+        }
+        String name = arguments < 0 ? quoted : quoted.substring(0, arguments);
+        String[] parts = name.split("\\.", -1);
+        return IDENTIFIER_HEAD.matcher(parts[0]).matches()
+                && Arrays.stream(parts).skip(1).allMatch(part -> IDENTIFIER_PART.matcher(part).matches());
     }
 
     private static boolean isPlaceholder(String identifier) {

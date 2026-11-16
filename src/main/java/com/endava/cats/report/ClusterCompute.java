@@ -181,11 +181,16 @@ public class ClusterCompute {
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         List<Map<String, Object>> paths = createPathList(cluster);
+        long baselineFailureCount = cluster.stream()
+                .filter(tc -> StringUtils.isNotBlank(tc.getSameErrorAsBaselineTest()))
+                .count();
         return Map.of(
                 "testCount", cluster.size(),
                 "pathCount", paths.size(),
                 "fuzzerCount", distinctFuzzers.size(),
                 "fuzzers", distinctFuzzers.isEmpty() ? "N/A" : String.join(", ", distinctFuzzers),
+                "baselineFailureCount", baselineFailureCount,
+                "hasBaselineFailures", baselineFailureCount > 0,
                 "paths", paths);
     }
 

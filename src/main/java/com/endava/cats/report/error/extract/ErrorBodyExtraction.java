@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 public final class ErrorBodyExtraction {
     static final int MAX_SUMMARY_MESSAGES = 5;
     private static final int MAX_ANALYZED_LENGTH = 32_768;
-    private static final Pattern JSON_STRING = Pattern.compile("(?s)\"((?:[^\"\\\\]|\\\\.)*)(?:\"|\\\\?)");
+    private static final Pattern JSON_STRING = Pattern.compile("(?s)\"((?:[^\"\\\\]|\\\\.)*+)(?:\"|\\\\?)");
     private static final int SUMMARY_LENGTH = 160;
 
     private ErrorBodyExtraction() {

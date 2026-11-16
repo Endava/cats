@@ -3,6 +3,7 @@ package com.endava.cats.command.triage;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.RequestVocabulary;
+import com.endava.cats.report.BaselineFailureRegistry;
 import com.endava.cats.report.error.template.ErrorSample;
 import com.endava.cats.report.error.mask.ErrorSignatureMasker;
 import com.endava.cats.report.error.template.ErrorTemplate;
@@ -50,6 +51,7 @@ public final class TriageEngine {
 
     public TriageReport triage(Path reportFolder, OpenAPI openAPI) throws IOException {
         List<TriageTestCase> tests = loadTestCases(reportFolder);
+        annotateBaselineMatches(tests);
         ReportScan scan = ReportScan.of(tests, openAPI);
         RequestSchemaLookup schemaLookup = new RequestSchemaLookup(openAPI);
         List<ClusterClassifier.Candidate> candidates = analyze(tests.stream().filter(this::isTriaged).toList(), schemaLookup);
@@ -87,6 +89,18 @@ public final class TriageEngine {
         }
         int number = Integer.parseInt(matcher.group(1));
         return CatsTestCase.readTestCaseFile(file).map(testCase -> new TriageTestCase(number, testCase));
+    }
+
+    private static void annotateBaselineMatches(List<TriageTestCase> tests) {
+        BaselineFailureRegistry registry = new BaselineFailureRegistry();
+        tests.stream()
+                .map(TriageTestCase::testCase)
+                .filter(BaselineFailureRegistry::isSeedTestCase)
+                .forEach(registry::recordOrAnnotate);
+        tests.stream()
+                .map(TriageTestCase::testCase)
+                .filter(testCase -> !testCase.hasSameErrorAsBaseline())
+                .forEach(registry::recordOrAnnotate);
     }
 
     private boolean isTriaged(TriageTestCase testCase) {

@@ -173,7 +173,9 @@ class PartialUpdatePutFuzzerTest {
                     .reqSchema(new ObjectSchema().addProperty("onlyInPut", new StringSchema()))
                     .requestPropertyTypes(Map.of("onlyInPut", new StringSchema()))
                     .build();
-            default -> { }
+            default -> {
+                // The noOwnedPut case uses the unchanged request and no owned write.
+            }
         }
         if (!reason.equals("noOwnedPut")) {
             ownedPut("{\"name\":\"Updated\",\"description\":\"KeepMe\"}");

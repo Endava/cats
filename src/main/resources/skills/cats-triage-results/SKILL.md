@@ -75,6 +75,8 @@ HTML error pages (Tomcat, Whitelabel, Werkzeug, Express, Django) are reduced to 
 
 `SERVER_CRASH_5XX` and `CROSS_FIELD_CONSTRAINT_4XX` clusters are keyed by the template, so two crashes with different templates are different root causes (e.g. `Cannot invoke "String.length()"…` vs `Cannot invoke "BigInteger.bitLength()"…`). The `errorTemplateId` (8 hex characters) is the same for the same status code and template text, so you can match clusters across runs. The same `errorTemplateId`/`errorTemplate` pair is stored on every error and warning test in `cats-summary-report.json` and shown as `T-<id>` in the HTML report clusters.
 
+When a fuzzed test fails with the same HTTP status code and online error signature as an unmodified baseline request (`HappyPath` or `OnlyRequiredFields`) on the same operation in the same run, CATS records `sameErrorAsBaselineTest` (e.g. `"Test 3"`) and `sameErrorAsBaselineFuzzer` (e.g. `"HappyPath"`) in `Test*.json` and `cats-summary-report.json`, and `cats triage` marks the cluster with `attribution: "SAME_AS_BASELINE"` (without needing `--verify`) and tells you to fix the `HappyPath` / seed request for that operation first.
+
 ### Per-Cluster Decision Tree
 For each cluster, open one `sampleTestIds` file and read `fuzzer`, `scenario` (note `is required [TRUE|FALSE]`), `expectedResult`, and the response body. Then:
 1. **`5XX`** → backend bug. Do not hide it with `--refData` / `--correlations`, unless `HappyPath` itself crashes because the seed data is invalid.

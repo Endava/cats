@@ -29,7 +29,7 @@ public record RequestVocabulary(Set<String> fieldNames, Set<String> values) {
     private static final int MIN_VALUE_LENGTH = 3;
     private static final int MAX_VALUE_LENGTH = 200;
     private static final Set<String> NON_IDENTIFYING_VALUES = Set.of("true", "false", "null");
-    private static final Pattern FORM_BODY = Pattern.compile("[\\w.\\[\\]%-]+=[^&\\s]*(?:&[\\w.\\[\\]%-]+=[^&\\s]*)*");
+    private static final Pattern FORM_BODY = Pattern.compile("[\\w.\\[\\]%-]+=[^&\\s]*(?:&[\\w.\\[\\]%-]+=[^&\\s]*)*+");
 
     /**
      * Builds the vocabulary of a request from its JSON or form payload, its query string and its path parameter values.

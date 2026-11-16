@@ -163,7 +163,9 @@ class RejectedUpdateSideEffectsFuzzerTest {
             case "format" -> schema.setFormat("email");
             case "maxLength" -> schema.setMaxLength(5);
             case "minLength" -> schema.setMinLength(50);
-            default -> { }
+            default -> {
+                // Missing and volatile fields need no schema constraint.
+            }
         }
         if (!constraint.equals("missing")) {
             types.put(field, schema);

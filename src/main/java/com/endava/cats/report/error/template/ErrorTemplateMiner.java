@@ -87,7 +87,7 @@ public final class ErrorTemplateMiner {
             return Optional.empty();
         }
         String prefix = firstToken(sample);
-        return Optional.ofNullable(lengthNode.containsKey(prefix) ? lengthNode.get(prefix) : lengthNode.get(WILDCARD));
+        return Optional.ofNullable(lengthNode.get(lengthNode.containsKey(prefix) ? prefix : WILDCARD));
     }
 
     private Optional<TemplateCluster> bestMatch(List<TemplateCluster> leaf, List<String> tokens) {

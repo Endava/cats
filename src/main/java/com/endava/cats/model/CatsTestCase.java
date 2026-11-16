@@ -59,6 +59,8 @@ public class CatsTestCase {
     private String resultDetails;
     private String resultIgnoreDetails;
     private FindingConfidence confidence;
+    private String sameErrorAsBaselineTest;
+    private String sameErrorAsBaselineFuzzer;
     private CatsRequest request = CatsRequest.empty();
     private CatsResponse response = CatsResponse.empty();
     private String path = "####";
@@ -139,6 +141,34 @@ public class CatsTestCase {
      */
     public boolean hasConfidence() {
         return confidence != null;
+    }
+
+    /**
+     * Checks whether this test case failed with the same error signature and HTTP status as an unmodified seed test
+     * ({@code HappyPath} or {@code OnlyRequiredFields}) on the same operation.
+     *
+     * @return true when a matching baseline seed failure was recorded in the same run
+     */
+    public boolean hasSameErrorAsBaseline() {
+        return StringUtils.isNotBlank(sameErrorAsBaselineTest);
+    }
+
+    /**
+     * Returns the HTML report file name of the matching baseline test case (e.g. {@code Test3.html}).
+     *
+     * @return HTML file name of the baseline test case, or empty string when not set
+     */
+    public String getSameErrorAsBaselineTestPage() {
+        return sameErrorAsBaselineTest == null ? "" : sameErrorAsBaselineTest.replace(" ", "") + ".html";
+    }
+
+    /**
+     * Returns the compact test key without spaces (e.g. {@code Test12}).
+     *
+     * @return test key without spaces
+     */
+    public String getTestKey() {
+        return testId == null ? "" : testId.replace(" ", "");
     }
 
     /**

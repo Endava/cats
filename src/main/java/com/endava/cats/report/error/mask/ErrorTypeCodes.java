@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 public final class ErrorTypeCodes {
     private static final int MAX_LENGTH = 64;
     private static final int MAX_DIGIT_RUN = 6;
-    private static final Pattern CODE = Pattern.compile("[A-Za-z0-9]+(?:[-_.:][A-Za-z0-9]+)*");
+    private static final Pattern CODE = Pattern.compile("[A-Za-z0-9]+(?:[-_.:][A-Za-z0-9]+)*+");
     private static final Pattern LETTER = Pattern.compile("[A-Za-z]");
     private static final List<Pattern> PER_OCCURRENCE = List.of(
             Pattern.compile("\\d{%d,}".formatted(MAX_DIGIT_RUN)),
