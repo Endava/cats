@@ -19,6 +19,7 @@ import org.slf4j.MDC;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -27,6 +28,26 @@ class TestCaseExporterHtmlOnlyTest {
 
     @TempDir
     Path reportDirectory;
+
+    @Test
+    void shouldIgnoreNullSummariesWhenWritingErrorTemplates() throws Exception {
+        ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
+        Mockito.when(reportingArguments.getOutputReportFolder()).thenReturn(reportDirectory.toString());
+        TestCaseExporterHtmlJs exporter = new TestCaseExporterHtmlJs(reportingArguments,
+                new CatsGlobalContext(), Mockito.mock(ProcessingArguments.class), Mockito.mock(StopArguments.class));
+        exporter.initPath(reportDirectory.toString());
+        CatsTestCaseSummary error = Mockito.mock(CatsTestCaseSummary.class);
+        Mockito.when(error.getError()).thenReturn(true);
+        Mockito.when(error.getKey()).thenReturn("Test1");
+        Mockito.when(error.getErrorTemplateId()).thenReturn("template-1");
+        Mockito.when(error.getErrorTemplate()).thenReturn("Invalid input");
+
+        exporter.writeErrorTemplatesJs(List.of(error));
+        String expected = Files.readString(reportDirectory.resolve(TestCaseExporter.ERROR_TEMPLATES_JS));
+        exporter.writeErrorTemplatesJs(Arrays.asList(null, error, null));
+
+        Assertions.assertThat(Files.readString(reportDirectory.resolve(TestCaseExporter.ERROR_TEMPLATES_JS))).isEqualTo(expected);
+    }
 
     @Test
     void shouldIncludeRunDetailsAndExecutionDiagnosticsInHtmlAndJsonReports() throws Exception {

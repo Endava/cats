@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -195,6 +196,6 @@ public final class StructuredJsonErrorExtractor implements ErrorBodyExtractor {
     }
 
     private static String firstPresent(Map<String, String> fields, List<String> keys) {
-        return keys.stream().map(fields::get).filter(StringUtils::isNotBlank).findFirst().orElse("");
+        return keys.stream().map(fields::get).filter(Objects::nonNull).filter(StringUtils::isNotBlank).findFirst().orElse("");
     }
 }

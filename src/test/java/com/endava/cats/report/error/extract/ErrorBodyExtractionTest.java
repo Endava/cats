@@ -5,11 +5,29 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 
 @QuarkusTest
 class ErrorBodyExtractionTest {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"<br>", "<BR />", "<br\n/>", "<hr>", "<HR class='x'>",
+            "</p>", "</div>", "</h1>", "</H6>", "</li>", "</tr>", "</pre>", "</title>", "</table>", "</ul>", "</ol>"})
+    void shouldKeepHtmlLineBreaksBetweenMessageFragments(String separator) {
+        String body = "<html><title>Error</title><body>first" + separator + "second</body></html>";
+
+        Assertions.assertThat(ErrorBodyExtraction.extract(body))
+                .isEqualTo(new ErrorCause("Error", List.of("first second"), ""));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"message\":\"bad\",\"cut\":", "{\"detail\":\" \",\"reason\":\"bad\",\"cut\":",
+            "{\"description\":\"bad\",\"cut\":"})
+    void shouldRecoverTruncatedMessagesWhenEarlierDetailKeysAreAbsentOrBlank(String body) {
+        Assertions.assertThat(ErrorBodyExtraction.extract(body).detail(ErrorBodyExtraction.MAX_SUMMARY_MESSAGES)).isEqualTo("bad");
+    }
 
     @Test
     void shouldExtractTomcatPagesCutInsideTheirCssByTheirTitle() {

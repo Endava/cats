@@ -368,10 +368,14 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
         return getTopBooleanInjectionPairs();
     }
 
+    // The payload is consumed by payload-aware overrides; keep this hook forwarding to the two-argument detector.
+    @SuppressWarnings("java:S1172")
     protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data, String ignoredPayload) {
         return detectInjectionEvidence(response, data);
     }
 
+    // Subclasses override this hook to inspect the response and request; the default remains a no-op.
+    @SuppressWarnings("java:S1172")
     protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data) {
         return InjectionDetectionResult.notVulnerable();
     }

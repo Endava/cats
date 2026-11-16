@@ -184,7 +184,7 @@ public final class BinaryCoveringArray {
         int nonZeroRows = totalRows - 1;
         int weight = (totalRows + 1) / 2;
         List<boolean[]> columns = new ArrayList<>(factors);
-        VectorSearch search = new VectorSearch(nonZeroRows, factors, columns);
+        VectorSearch search = new VectorSearch(factors, columns);
         collectWeightVectors(search, new boolean[nonZeroRows], 0, weight);
         return transpose(columns, nonZeroRows, factors);
     }
@@ -193,11 +193,11 @@ public final class BinaryCoveringArray {
         if (search.result().size() >= search.limit()) {
             return;
         }
-        if (index == search.length()) {
+        if (index == current.length) {
             search.result().add(current.clone());
             return;
         }
-        int remainingSlots = search.length() - 1 - index;
+        int remainingSlots = current.length - 1 - index;
         if (remainingSlots >= remainingOnes) {
             current[index] = false;
             collectWeightVectors(search, current, index + 1, remainingOnes);
@@ -350,7 +350,7 @@ public final class BinaryCoveringArray {
         return result;
     }
 
-    private record VectorSearch(int length, int limit, List<boolean[]> result) {
+    private record VectorSearch(int limit, List<boolean[]> result) {
     }
 
     private record ColumnCandidate(int col, int bit) {

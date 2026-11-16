@@ -21,7 +21,7 @@ class CatsTuiStateTest {
     private static final Instant NOW = Instant.parse("2026-07-31T10:00:00Z");
 
     @Test
-    void shouldTrackLiveProgressAndUseFinalSummary() {
+    void shouldTrackLiveProgress() {
         CatsTuiState state = new CatsTuiState();
         state.accept(new CatsExecutionEvent.SessionStarted(NOW, "cats", "1", "today", "test"));
         state.accept(new CatsExecutionEvent.ConfigurationLoaded(NOW,
@@ -44,6 +44,15 @@ class CatsTuiStateTest {
         Assertions.assertThat(state.throttledRequests()).isEqualTo(1);
         Assertions.assertThat(state.lastThrottleWaitMs()).isEqualTo(1000L);
         Assertions.assertThat(state.effectiveRpm()).isEqualTo(300);
+
+    }
+
+    @Test
+    void shouldReplaceLiveCountsWithFinalSummary() {
+        CatsTuiState state = new CatsTuiState();
+        state.accept(new CatsExecutionEvent.SessionStarted(NOW, "cats", "1", "today", "test"));
+        state.accept(new CatsExecutionEvent.TestCompleted(NOW, test("success")));
+        state.accept(new CatsExecutionEvent.TestCompleted(NOW, test("warning")));
 
         state.accept(new CatsExecutionEvent.SessionEnded(NOW.plusSeconds(5),
                 new ExecutionSummary(20, 18, 10, 3, 5, 2, 0, 0, Map.of(200, 10),

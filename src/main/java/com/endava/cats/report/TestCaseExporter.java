@@ -358,7 +358,8 @@ public abstract class TestCaseExporter {
             return;
         }
         List<CatsTestCaseSummary> withTemplates = Optional.ofNullable(summaries).orElse(List.of()).stream()
-                .filter(tc -> tc != null && (tc.getError() || tc.getWarning()) && StringUtils.isNotBlank(tc.getErrorTemplateId()))
+                .filter(Objects::nonNull)
+                .filter(tc -> (tc.getError() || tc.getWarning()) && StringUtils.isNotBlank(tc.getErrorTemplateId()))
                 .toList();
         Map<String, Long> countsByTemplate = withTemplates.stream()
                 .collect(Collectors.groupingBy(CatsTestCaseSummary::getErrorTemplateId, Collectors.counting()));

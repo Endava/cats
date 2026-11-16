@@ -16,6 +16,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -28,6 +29,19 @@ class ClusterComputeTest {
     @BeforeEach
     void setUp() {
         CatsRandom.initRandom(0);
+    }
+
+    @Test
+    void shouldIgnoreNullSummariesWhenAssigningTemplatesAndClustering() {
+        CatsTestCaseSummary error = createTestCaseSummary(400, "Bad Request", "error", "Invalid input");
+        List<CatsTestCaseSummary> summaries = Arrays.asList(null, error, null);
+
+        ClusterCompute.assignErrorTemplates(summaries);
+        List<Map<String, Object>> clusters = ClusterCompute.createClusters(summaries);
+
+        assertThat(error.getErrorTemplateId()).isNotBlank();
+        assertThat(clusters).singleElement().satisfies(cluster -> assertThat(cluster)
+                .containsEntry("resultReason", "Bad Request").containsEntry("totalTests", 1));
     }
 
     @Test

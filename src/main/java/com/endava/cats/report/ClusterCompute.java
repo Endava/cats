@@ -94,8 +94,8 @@ public class ClusterCompute {
 
     private static List<CatsTestCaseSummary> filterReportableTestCases(List<CatsTestCaseSummary> testCases) {
         return testCases.stream()
-                .filter(tc -> tc != null
-                        && StringUtils.isNotBlank(tc.getResultReason())
+                .filter(Objects::nonNull)
+                .filter(tc -> StringUtils.isNotBlank(tc.getResultReason())
                         && (tc.getError() || tc.getWarning()))
                 .toList();
     }
