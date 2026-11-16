@@ -6,6 +6,7 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.Problem;
 import com.endava.cats.util.SensitiveDataPolicy;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Singleton;
@@ -118,11 +119,12 @@ public class TestReportsGenerator {
      * Writes a summary of the test case execution details.
      *
      * @param testCaseSummaryDetails the list of test case summaries to be written
+     * @param problems the precomputed problems shared with the baseline gate
      * @param executionSummary the single execution snapshot shared by every exporter
      */
-    public void writeSummary(List<CatsTestCaseSummary> testCaseSummaryDetails, ExecutionSummary executionSummary) {
+    public void writeSummary(List<CatsTestCaseSummary> testCaseSummaryDetails, ExecutionSummary executionSummary, List<Problem> problems) {
         resolveSelectedExporters().forEach(testCaseExporter ->
-                testCaseExporter.writeSummary(testCaseSummaryDetails, executionSummary));
+                testCaseExporter.writeSummary(testCaseSummaryDetails, executionSummary, problems));
     }
 
     /**

@@ -1,144 +1,149 @@
 package com.endava.cats.command;
 
-import com.endava.cats.args.QualityGateArguments;
-import com.endava.cats.model.CatsRequest;
-import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.CatsTestCase;
-import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
-import com.endava.cats.report.BaselineComparisonEngine;
+import com.endava.cats.model.Problem;
+import com.endava.cats.model.ProblemKind;
+import com.endava.cats.report.problem.OccurrenceDelta.State;
 import com.endava.cats.util.JsonUtils;
-import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static com.endava.cats.report.ComparisonFixtures.occurrence;
+import static com.endava.cats.report.ComparisonFixtures.problem;
+import static com.endava.cats.report.ComparisonFixtures.report;
+
 @QuarkusTest
 class CompareCommandTest {
+    @TempDir
+    Path directory;
 
     @Test
-    void shouldCompareApplesToApplesAndIgnoreUnsharedScopes(@TempDir Path tempDir) throws IOException {
-        CatsTestCaseSummary baseOk = summary("Test 1", "GET", "/pets", "HappyPath", "success", null, 200);
-        CatsTestCaseSummary baseKnownError = summary("Test 2", "POST", "/pets", "NullValuesInFields", "error", "Unexpected response code", 500);
-        CatsTestCaseSummary baseOnlyScope = summary("Test 3", "DELETE", "/pets/{id}", "HappyPath", "error", "Server error", 500);
-
-        CatsTestCaseSummary targetRegressed = summary("Test 10", "GET", "/pets", "HappyPath", "error", "Unexpected response code", 500);
-        CatsTestCaseSummary targetSameKnownError = summary("Test 11", "POST", "/pets", "NullValuesInFields", "error", "Unexpected response code", 500);
-        CatsTestCaseSummary targetNewScopeError = summary("Test 12", "PUT", "/pets/{id}", "HappyPath", "error", "Server error", 500);
-
-        Path baseDir = tempDir.resolve("baseline");
-        Path targetDir = tempDir.resolve("target");
-        Files.createDirectories(baseDir);
-        Files.createDirectories(targetDir);
-
-        writeReport(baseDir.resolve(BaselineComparisonEngine.SUMMARY_FILE_NAME),
-                List.of(baseOk, baseKnownError, baseOnlyScope), 10);
-        writeReport(targetDir.resolve(BaselineComparisonEngine.SUMMARY_FILE_NAME),
-                List.of(targetRegressed, targetSameKnownError, targetNewScopeError), 12);
-
-        CompareCommand cmd = new CompareCommand();
-        cmd.baseline = baseDir.toFile();
-        cmd.target = targetDir.toFile();
-        cmd.run();
-
-        Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
-        BaselineComparisonEngine.ComparisonResult result = cmd.getLastResult();
-        Assertions.assertThat(result.sharedScopes()).isEqualTo(2);
-        Assertions.assertThat(result.onlyInBaselineScopes()).isEqualTo(1);
-        Assertions.assertThat(result.onlyInTargetScopes()).isEqualTo(1);
-        Assertions.assertThat(result.newErrorCount()).isEqualTo(1);
-        Assertions.assertThat(result.unchangedErrors()).isEqualTo(1);
-        Assertions.assertThat(result.executionTimeDeltaSec()).isEqualTo(2);
+    void shouldPrintEveryStateAndCountChangesPerOccurrence() throws Exception {
+        Problem a = problem("a", ProblemKind.STATUS_CODE, 2);
+        Problem b = problem("b", ProblemKind.STATUS_CODE, 1);
+        Problem c = problem("c", ProblemKind.ACCEPTED_REQUEST, 1).toBuilder()
+                .occurrences(List.of(occurrence("POST /orders", 1, List.of(new Problem.FieldCount("body.note", 1))))).build();
+        Problem d = problem("d", ProblemKind.SERVER_ERROR, 1).toBuilder().occurrences(List.of(new Problem.Occurrence(
+                "GET /orders", List.of(), List.of("Test 4"), List.of(500), List.of("Absent")))).build();
+        CompareCommand command = command(report(a, b), report(problem("a", ProblemKind.STATUS_CODE, 4), c, d));
+        PrettyLogger logger = Mockito.mock(PrettyLogger.class);
+        ReflectionTestUtils.setField(command, "logger", logger);
+        command.run();
+        Assertions.assertThat(command.getExitCode()).isEqualTo(1);
+        Mockito.verify(logger).noFormat("{} ({})", "New", 1);
+        Mockito.verify(logger).noFormat("{} ({})", "Fixed", 1);
+        Mockito.verify(logger).noFormat("{} ({})", "Not comparable", 1);
+        Mockito.verify(logger).noFormat("{} ({})", "Unchanged (count changed)", 1);
+        verifyLine(logger, State.NEW, c, " body.note", 0, 1);
+        verifyLine(logger, State.FIXED, b, "", 1, 0);
+        verifyLine(logger, State.UNCHANGED, a, "", 2, 4);
+        Mockito.verify(logger).noFormat("{} {} {}{} {} (baseline {} -> target {} tests)",
+                State.NOT_COMPARABLE, "d", "GET /orders", "", "Problem d", 0, 1);
     }
 
     @Test
-    void shouldPassWhenLegacyErrorsAreUnchangedOrResolvedAndSupportJsonOutput(@TempDir Path tempDir) throws IOException {
-        CatsTestCaseSummary baseKnownError = summary("Test 1", "POST", "/pets", "NullValuesInFields", "error", "Server crash", 500);
-        CatsTestCaseSummary targetFixed = summary("Test 1", "POST", "/pets", "NullValuesInFields", "success", null, 400);
-
-        Path baseFile = tempDir.resolve("base-summary.json");
-        Path targetFile = tempDir.resolve("target-summary.json");
-        writeReport(baseFile, List.of(baseKnownError), 8);
-        writeReport(targetFile, List.of(targetFixed), 7);
-
-        CompareCommand cmd = new CompareCommand();
-        cmd.baseline = baseFile.toFile();
-        cmd.target = targetFile.toFile();
-        cmd.json = true;
-        cmd.run();
-
-        Assertions.assertThat(cmd.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
-        Assertions.assertThat(cmd.getLastResult().newErrorCount()).isZero();
-        Assertions.assertThat(cmd.getLastResult().resolvedErrorCount()).isEqualTo(1);
-
-        QualityGateArguments qg = new QualityGateArguments();
-        qg.setBaseline(baseFile.toFile());
-        qg.setBaselineRegressionDetected(false);
-        Assertions.assertThat(qg.shouldFailBuild(5, 2)).isFalse();
-        Assertions.assertThat(qg.getQualityGateDescription()).contains("Baseline comparison:");
+    void shouldOutputExactlyOneJsonResultWithTheApprovedFields() throws Exception {
+        CompareCommand command = command(report(problem("a", ProblemKind.SERVER_ERROR, 2)),
+                report(problem("b", ProblemKind.SERVER_ERROR, 3).toBuilder().errorTemplate("Cluster <*> cannot be found.").build()));
+        PrettyLogger logger = Mockito.mock(PrettyLogger.class);
+        ReflectionTestUtils.setField(command, "logger", logger);
+        command.json = true;
+        command.run();
+        ArgumentCaptor<String> output = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(logger).noFormat(output.capture());
+        Mockito.verifyNoMoreInteractions(logger);
+        JsonObject json = JsonParser.parseString(output.getValue()).getAsJsonObject();
+        Assertions.assertThat(json.keySet()).containsExactlyInAnyOrder("baseline", "target", "problemKeyVersion", "regression",
+                "newOccurrences", "fixedOccurrences", "unchangedOccurrences", "notComparable", "matchedByPattern");
+        Assertions.assertThat(json.get("regression").getAsBoolean()).isFalse();
+        Assertions.assertThat(json.get("problemKeyVersion").getAsInt()).isEqualTo(1);
+        Assertions.assertThat(json.get("matchedByPattern").getAsInt()).isEqualTo(1);
+        JsonObject delta = json.getAsJsonArray("unchangedOccurrences").get(0).getAsJsonObject();
+        Assertions.assertThat(delta.keySet()).containsExactlyInAnyOrder("state", "problemId", "kind", "level", "title", "operation", "field",
+                "statuses", "baselineTests", "targetTests", "matchedBy");
+        Assertions.assertThat(delta.get("matchedBy").getAsString()).isEqualTo("PATTERN");
+        Assertions.assertThat(command.getExitCode()).isZero();
     }
 
     @Test
-    void shouldHandleWarningsCompareWithCurrentAndErrorPaths(@TempDir Path tempDir) throws IOException {
-        CatsTestCaseSummary baseWarn = summary("Test 1", "GET", "/pets", "HappyPath", "warn", "Undocumented code", 201);
-        CatsTestCaseSummary targetNewWarn = summary("Test 2", "POST", "/pets", "HappyPath", "warning", "Slow response", 200);
-        CatsTestCaseSummary targetSameScopeOk = summary("Test 1", "GET", "/pets", "HappyPath", "success", null, 200);
-        CatsTestCaseSummary basePostOk = summary("Test 2", "POST", "/pets", "HappyPath", "success", null, 200);
-
-        Path baseFile = tempDir.resolve("base-warn.json");
-        writeReport(baseFile, List.of(baseWarn, basePostOk), 5);
-
-        BaselineComparisonEngine.ComparisonResult currentDiff = BaselineComparisonEngine.compareWithCurrent(
-                baseFile, List.of(targetSameScopeOk, targetNewWarn), 6);
-        Assertions.assertThat(currentDiff.newWarningCount()).isEqualTo(1);
-        Assertions.assertThat(currentDiff.resolvedWarningCount()).isEqualTo(1);
-        Assertions.assertThat(currentDiff.hasRegressions(true)).isTrue();
-        Assertions.assertThat(currentDiff.hasRegressions(false)).isFalse();
-
-        BaselineComparisonEngine.renderToConsole(
-                PrettyLoggerFactory.getConsoleLogger(), currentDiff, true);
-
-        Assertions.assertThatThrownBy(() -> BaselineComparisonEngine.loadReport(null))
-                .isInstanceOf(IOException.class);
-        Assertions.assertThatThrownBy(() -> BaselineComparisonEngine.loadReport(tempDir.resolve("missing.json")))
-                .isInstanceOf(IOException.class);
-        Path emptyJson = tempDir.resolve("empty.json");
-        Files.writeString(emptyJson, "");
-        Assertions.assertThatThrownBy(() -> BaselineComparisonEngine.loadReport(emptyJson))
-                .isInstanceOf(IOException.class);
-
-        CompareCommand failingCmd = new CompareCommand();
-        failingCmd.baseline = tempDir.resolve("missing.json").toFile();
-        failingCmd.target = baseFile.toFile();
-        failingCmd.run();
-        Assertions.assertThat(failingCmd.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+    void shouldExitZeroForCountChangesFixesAndNotComparable() throws Exception {
+        Problem a = problem("a", ProblemKind.STATUS_CODE, 2);
+        CompareCommand changed = command(report(a), report(problem("a", ProblemKind.STATUS_CODE, 9)));
+        changed.run();
+        Assertions.assertThat(changed.getExitCode()).isZero();
+        CompareCommand fixed = command(report(a), report());
+        fixed.run();
+        Assertions.assertThat(fixed.getExitCode()).isZero();
+        var absent = CatsTestReport.builder().problemKeyVersion(1).problems(List.of()).testCases(List.of()).build();
+        CompareCommand incomparable = command(absent, report(a));
+        incomparable.run();
+        Assertions.assertThat(incomparable.getExitCode()).isZero();
     }
 
-    private static void writeReport(Path file, List<CatsTestCaseSummary> cases, long execTime) throws IOException {
-        CatsTestReport report = CatsTestReport.builder()
-                .testCases(cases)
-                .executionTime(execTime)
-                .build();
-        Files.writeString(file, JsonUtils.GSON.toJson(report));
+    @Test
+    void shouldFailOnNewErrorsAndOptionallyWarnings() throws Exception {
+        CompareCommand errors = command(report(), report(problem("a", ProblemKind.STATUS_CODE, 1)));
+        errors.run();
+        Assertions.assertThat(errors.getExitCode()).isEqualTo(1);
+        CompareCommand warnings = command(report(), report(problem("a", ProblemKind.STATUS_CODE, 1).toBuilder().level("warn").build()));
+        warnings.run();
+        Assertions.assertThat(warnings.getExitCode()).isZero();
+        warnings.failOnNewWarnings = true;
+        warnings.run();
+        Assertions.assertThat(warnings.getExitCode()).isEqualTo(1);
     }
 
-    private static CatsTestCaseSummary summary(String id, String method, String path, String fuzzer,
-                                               String result, String reason, int code) {
-        CatsTestCase tc = new CatsTestCase();
-        tc.setTestId(id);
-        tc.setContractPath(path);
-        tc.setFuzzer(fuzzer);
-        tc.setResult(result);
-        tc.setResultReason(reason);
-        tc.setRequest(CatsRequest.builder().httpMethod(method).build());
-        tc.setResponse(CatsResponse.builder().responseCode(code).responseTimeInMs(10).body("{}").build());
-        return CatsTestCaseSummary.fromCatsTestCase(tc);
+    @Test
+    void shouldExitTwoForMissingInvalidOrIncompatibleReports() throws Exception {
+        for (String invalid : List.of("", "not json", "null", "{\"testCases\":[]}", "{\"problemKeyVersion\":2,\"problems\":[]}")) {
+            CompareCommand command = command(report(), report());
+            Files.writeString(command.target.toPath(), invalid);
+            command.run();
+            Assertions.assertThat(command.getExitCode()).as(invalid).isEqualTo(2);
+        }
+        CompareCommand missing = command(report(), report());
+        Files.delete(missing.baseline.toPath());
+        missing.run();
+        Assertions.assertThat(missing.getExitCode()).isEqualTo(2);
+        Assertions.assertThat(new CommandLine(new CompareCommand()).execute()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldAcceptReportDirectoriesAndRejectRemovedModes() throws Exception {
+        CompareCommand command = command(report(), report());
+        Path folder = Files.createDirectory(directory.resolve("report"));
+        Files.copy(command.baseline.toPath(), folder.resolve("cats-summary-report.json"));
+        command.baseline = folder.toFile();
+        command.run();
+        Assertions.assertThat(command.getExitCode()).isZero();
+        Assertions.assertThat(new CommandLine(new CompareCommand()).execute("--compareBy", "count")).isEqualTo(2);
+        Assertions.assertThat(new CommandLine(new CompareCommand()).execute("--compareScope", "operation")).isEqualTo(2);
+    }
+
+    private CompareCommand command(CatsTestReport baseline, CatsTestReport target) throws Exception {
+        CompareCommand command = new CompareCommand();
+        command.baseline = directory.resolve("base.json").toFile();
+        command.target = directory.resolve("target.json").toFile();
+        Files.writeString(command.baseline.toPath(), JsonUtils.GSON.toJson(baseline));
+        Files.writeString(command.target.toPath(), JsonUtils.GSON.toJson(target));
+        return command;
+    }
+
+    private static void verifyLine(PrettyLogger logger, State state, Problem problem, String field, int baseline, int target) {
+        Mockito.verify(logger).noFormat("{} {} {}{} {} (baseline {} -> target {} tests)",
+                state, problem.id(), "POST /orders", field, problem.title(), baseline, target);
     }
 }

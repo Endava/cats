@@ -7,7 +7,7 @@ import com.endava.cats.command.triage.TriageOccurrence;
 import com.endava.cats.command.triage.TriageOptions;
 import com.endava.cats.command.triage.TriageProblem;
 import com.endava.cats.command.triage.TriageReport;
-import com.endava.cats.command.triage.UnsupportedReportException;
+import com.endava.cats.exception.UnsupportedReportException;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;

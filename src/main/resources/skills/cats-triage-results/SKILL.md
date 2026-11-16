@@ -181,7 +181,13 @@ cats compare \
   --failOnNewWarnings \
   -j
 ```
-- `-b/--baseline` and `-t/--target` accept a `cats-report` folder or a `cats-summary-report.json` file. Comparison is scoped to shared `(path, httpMethod, fuzzer)` triples.
-- JSON fields: `newErrors`, `newWarnings`, `resolvedErrors`, `resolvedWarnings` (each a list of `{httpMethod, path, fuzzer, level, reason, httpResponseCode, count}`), `unchangedErrors`, `unchangedWarnings`, `sharedScopes`, `onlyInBaselineScopes`, `onlyInTargetScopes`, `executionTimeDeltaSec`.
-- Exits with code `1` on new errors (`--failOnNewErrors`, default `true`), or also on new warnings with `--failOnNewWarnings`.
-- To gate during the fuzzing run itself instead, pass `--baseline <report>` (plus optional `--failOnNewWarnings`) to the root `cats` command.
+- `-b/--baseline` and `-t/--target` accept a report folder or a `cats-summary-report.json` file.
+- Both summaries must have `problemKeyVersion: 1` and persisted `problems`. Missing or other versions exit `2` with: `<file> was written by a CATS version without problems (problemKeyVersion N, expected 1); re-run it with this CATS version`. No recomputation, count mode, `--compareBy` or `--compareScope`.
+- Identity is `(problemId, operation)`; `ACCEPTED_REQUEST` also includes each mutated field (empty string when there are no fields).
+- States: `NEW` (target only), `FIXED` (baseline only), `UNCHANGED` (matched by `ID` or `PATTERN`), `NOT_COMPARABLE` (all occurrence fuzzers absent from the other run's `testCases[].fuzzer`, including successful tests).
+- Unmatched `SERVER_ERROR` and `ERROR_MESSAGE` occurrences can match a server-message pattern: equal whitespace-token counts, with each token equal or `<*>` on either side. Matching is one-to-one, within the same kind, operation and statuses; `ERROR_MESSAGE` also requires the same verdict family.
+- Exit codes: `0` no regression, `1` a `NEW` error occurrence (also a warning with `--failOnNewWarnings`), `2` invalid input. Changed test counts are informational and never fail the gate. `NOT_COMPARABLE` never fails it.
+- Console sections: `New`, `Fixed`, `Not comparable`, `Unchanged (count changed)`. Each line names the state, problem id, operation, optional field, title and baseline/target test counts.
+- JSON (`-j`): `{baseline, target, problemKeyVersion, regression, newOccurrences, fixedOccurrences, unchangedOccurrences, notComparable, matchedByPattern}`. Each occurrence has `{state, problemId, kind, level, title, operation, field, statuses, baselineTests, targetTests, matchedBy}`; `matchedBy` is `ID`, `PATTERN`, or `null` for unmatched occurrences. `matchedByPattern` is the number of pattern pairs.
+- To gate during fuzzing, pass `--baseline <report>` and optional `--failOnNewWarnings` to the root `cats` command. The gate and exporters share the same prepared problems.
+- `FIXED` means absent in this run under these comparison rules; confirm the operation and input were exercised before treating it as a verified fix.

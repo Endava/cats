@@ -1,5 +1,6 @@
 package com.endava.cats.command.triage;
 
+import com.endava.cats.exception.UnsupportedReportException;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestReport;
@@ -73,10 +74,6 @@ public final class TriageEngine {
             throw new UnsupportedReportException("%s has no %s; run CATS first".formatted(reportFolder, SUMMARY_FILE));
         }
         CatsTestReport summary = BaselineComparisonEngine.loadReport(reportFolder);
-        if (summary.getProblemKeyVersion() != Problem.KEY_VERSION || summary.getProblems() == null) {
-            throw new UnsupportedReportException("%s was written by a CATS version without problems (problemKeyVersion %d, expected %d); re-run it with this CATS version"
-                    .formatted(SUMMARY_FILE, summary.getProblemKeyVersion(), Problem.KEY_VERSION));
-        }
         return summary;
     }
 

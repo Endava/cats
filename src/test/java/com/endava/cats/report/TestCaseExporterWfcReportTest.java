@@ -124,7 +124,10 @@ class TestCaseExporterWfcReportTest {
                 Map.of("/pets", 1L, "/pets/{id}", 1L),
                 false, "Default: fail on any error", RunOutcome.completed());
 
-        generator.writeSummary(summaries, execSummary);
+        ClusterCompute.assignErrorTemplates(summaries, globalContext.getOpenAPI());
+        var problems = com.endava.cats.report.problem.ProblemCatalog.build(summaries,
+                new com.endava.cats.report.problem.ResponseSchemaNames(globalContext.getOpenAPI()));
+        generator.writeSummary(summaries, execSummary, problems);
 
         // Both HTML_JS (index.html, Test1.html, cats-summary-report.json) and WFC_REPORT (report.json) must exist
         Assertions.assertThat(tempDir.resolve("index.html")).exists();

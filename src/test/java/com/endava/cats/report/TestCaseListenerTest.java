@@ -349,7 +349,7 @@ class TestCaseListenerTest {
         Mockito.verify(testReportsGenerator).initPath(null);
         Mockito.verify(testReportsGenerator, Mockito.times(1)).writeHelperFiles();
         Mockito.verify(testReportsGenerator, Mockito.times(1))
-                .writeSummary(Mockito.anyList(), Mockito.any(ExecutionSummary.class));
+                .writeSummary(Mockito.anyList(), Mockito.any(ExecutionSummary.class), Mockito.anyList());
     }
 
     @Test
@@ -371,6 +371,37 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldEvaluatePreparedProblemsBeforeSnapshotAndShareThemWithTheReport(@TempDir Path directory) throws Exception {
+        List<CatsTestCaseSummary> baseline = ProblemReportFixtures.summaries(ProblemReportFixtures.riskApiRun());
+        Path baselineFolder = directory.resolve("baseline");
+        ProblemReportConsistencyTest.write(baseline, baselineFolder);
+        QualityGateArguments gate = new QualityGateArguments();
+        ReflectionTestUtils.setField(gate, "baseline", baselineFolder.toFile());
+        Mockito.when(executionSummaryProvider.getQualityGateArguments()).thenReturn(gate);
+        List<CatsTestCaseSummary> current = ProblemReportFixtures.summaries(ProblemReportFixtures.riskApiRun());
+        Assertions.assertThat(current).allMatch(test -> test.getProblemId() == null);
+        testCaseListener.testCaseSummaryDetails.addAll(current);
+        var previousSchema = catsGlobalContext.getOpenAPI();
+        catsGlobalContext.setOpenAPI(ProblemReportFixtures.RISK_CONTRACT);
+        try {
+            Mockito.when(executionSummaryProvider.snapshot()).thenAnswer(_ -> {
+                Assertions.assertThat(gate.getBaselineRegressionDetected()).isFalse();
+                Assertions.assertThat(current).filteredOn(com.endava.cats.report.problem.ProblemCatalog::isReportable)
+                        .allMatch(test -> test.getProblemId() != null);
+                return new ExecutionStatisticsListener().snapshot(true, "baseline");
+            });
+            testCaseListener.endSession();
+            var comparison = (com.endava.cats.command.model.ComparisonResult) ReflectionTestUtils.getField(testCaseListener, "lastBaselineComparison");
+            Mockito.verify(testReportsGenerator).writeSummary(Mockito.same(testCaseListener.testCaseSummaryDetails), Mockito.any(),
+                    Mockito.argThat(problems -> problems.stream().allMatch(problem -> comparison.unchangedOccurrences().stream()
+                            .anyMatch(delta -> delta.problemId().equals(problem.id())))));
+            Assertions.assertThat(comparison.regression()).isFalse();
+        } finally {
+            catsGlobalContext.setOpenAPI(previousSchema);
+        }
+    }
+
+    @Test
     void shouldMarkSessionFailedWhenFinalReportGenerationFails() {
         ExecutionSummary completed = new ExecutionSummary(
                 0, 0, 0, 0, 0, 0, 0, 0, Map.of(), Map.of(), true, "", RunOutcome.completed());
@@ -379,7 +410,7 @@ class TestCaseListenerTest {
                 RunOutcome.failed("Report generation failed: disk full"));
         Mockito.when(executionSummaryProvider.snapshot()).thenReturn(completed, failed);
         Mockito.doThrow(new IllegalStateException("disk full"))
-                .when(testReportsGenerator).writeSummary(Mockito.anyList(), Mockito.any());
+                .when(testReportsGenerator).writeSummary(Mockito.anyList(), Mockito.any(), Mockito.anyList());
 
         ExecutionSummary result = testCaseListener.endSession();
 
@@ -401,8 +432,8 @@ class TestCaseListenerTest {
         ExecutionSummary result = testCaseListener.endSession();
 
         Assertions.assertThat(result).isSameAs(failed);
-        Mockito.verify(testReportsGenerator).writeSummary(testCaseListener.testCaseSummaryDetails, completed);
-        Mockito.verify(testReportsGenerator).writeSummary(testCaseListener.testCaseSummaryDetails, failed);
+        Mockito.verify(testReportsGenerator).writeSummary(Mockito.eq(testCaseListener.testCaseSummaryDetails), Mockito.eq(completed), Mockito.anyList());
+        Mockito.verify(testReportsGenerator).writeSummary(Mockito.eq(testCaseListener.testCaseSummaryDetails), Mockito.eq(failed), Mockito.anyList());
     }
 
     @Test
@@ -1770,9 +1801,24 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldShowTheRerunMessageForAnIncompatibleRuntimeBaseline(@TempDir Path directory) throws Exception {
+        Path baseline = directory.resolve("old.json");
+        Files.writeString(baseline, "{\"testCases\":[]}");
+        QualityGateArguments gate = new QualityGateArguments();
+        ReflectionTestUtils.setField(gate, "baseline", baseline.toFile());
+        Mockito.when(executionSummaryProvider.getQualityGateArguments()).thenReturn(gate);
+        ReflectionTestUtils.setField(testCaseListener, "logger", logger);
+        ReflectionTestUtils.invokeMethod(testCaseListener, "evaluateBaselineIfConfigured", List.of());
+        Assertions.assertThat(testCaseListener.isBaselineUsageError()).isTrue();
+        Assertions.assertThat(gate.getBaselineRegressionDetected()).isTrue();
+        Mockito.verify(logger).fatal(Mockito.eq("Unable to load baseline report from {}: {}"), Mockito.eq(baseline.toFile()),
+                Mockito.contains("re-run it with this CATS version"));
+    }
+
+    @Test
     void shouldEvaluateAndPrintBaselineComparisonAndMatchAdditionalPropertiesResponse(@TempDir Path tempDir) throws Exception {
         Path baselineFile = tempDir.resolve("cats-summary-report.json");
-        Files.writeString(baselineFile, "{\"testCases\":[]}", StandardCharsets.UTF_8);
+        Files.writeString(baselineFile, "{\"problemKeyVersion\":1,\"problems\":[],\"testCases\":[]}", StandardCharsets.UTF_8);
 
         QualityGateArguments qgArgs = new QualityGateArguments();
         ReflectionTestUtils.setField(qgArgs, "baseline", baselineFile.toFile());
@@ -1781,12 +1827,12 @@ class TestCaseListenerTest {
         Object origProvider = ReflectionTestUtils.getField(testCaseListener, "executionSummaryProvider");
         ReflectionTestUtils.setField(testCaseListener, "executionSummaryProvider", provider);
         try {
-            ReflectionTestUtils.invokeMethod(testCaseListener, "evaluateBaselineIfConfigured");
+            ReflectionTestUtils.invokeMethod(testCaseListener, "evaluateBaselineIfConfigured", List.of());
             ReflectionTestUtils.invokeMethod(testCaseListener, "printBaselineComparisonIfConfigured");
             Assertions.assertThat(qgArgs.getBaselineRegressionDetected()).isFalse();
 
             ReflectionTestUtils.setField(qgArgs, "baseline", tempDir.resolve("missing.json").toFile());
-            ReflectionTestUtils.invokeMethod(testCaseListener, "evaluateBaselineIfConfigured");
+            ReflectionTestUtils.invokeMethod(testCaseListener, "evaluateBaselineIfConfigured", List.of());
             Assertions.assertThat(qgArgs.getBaselineRegressionDetected()).isTrue();
         } finally {
             ReflectionTestUtils.setField(testCaseListener, "executionSummaryProvider", origProvider);

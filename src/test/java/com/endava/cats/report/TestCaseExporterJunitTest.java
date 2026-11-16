@@ -41,7 +41,7 @@ class TestCaseExporterJunitTest {
         exporter.appVersion = "test-version";
         exporter.initPath(reportDirectory.toString());
 
-        exporter.writeSummary(List.of(summary()), executionSummary);
+        ProblemReportFixtures.writeSummary(exporter, List.of(summary()), executionSummary);
 
         Assertions.assertThat(Files.readString(reportDirectory.resolve("junit.xml")))
                 .contains("name=\"CATS test-version\"", "tests=\"1\"", "HappyPathFuzzer")

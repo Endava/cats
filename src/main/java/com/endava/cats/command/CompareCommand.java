@@ -1,6 +1,8 @@
 package com.endava.cats.command;
 
 import com.endava.cats.command.model.ConfigOptions;
+import com.endava.cats.command.model.ComparisonResult;
+import com.endava.cats.exception.UnsupportedReportException;
 import com.endava.cats.report.BaselineComparisonEngine;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.VersionProvider;
@@ -14,20 +16,19 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Compares two CATS report directories or {@code cats-summary-report.json} files apples-to-apples across their
- * shared {@code (contractPath, httpMethod, fuzzer)} scope.
+ * Compares the persisted problem occurrences of two CATS summaries.
  */
 @CommandLine.Command(
         name = "compare",
         aliases = {"diff"},
         mixinStandardHelpOptions = true,
         usageHelpAutoWidth = true,
-        description = "Compare two cats-report folders or cats-summary-report.json files apples-to-apples for regressions and fixes.",
+        description = "Compare problem occurrences in two cats-report folders or cats-summary-report.json files.",
         abbreviateSynopsis = true,
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
         exitCodeList = {"@|bold  0|@:No new regressions detected compared to baseline",
-                "@|bold 2|@:Usage error: user input for the command was incorrect",
-                "@|bold 1|@:New error regressions (or warnings with --failOnNewWarnings) detected, or report files could not be read"},
+                "@|bold 2|@:Usage error: missing, invalid or incompatible report",
+                "@|bold 1|@:New error occurrences (or warnings with --failOnNewWarnings)"},
         footerHeading = "%n@|bold,underline Examples:|@%n",
         footer = {"  Compare a baseline report folder against a PR report folder:",
                 "    cats compare -b baseline-report -t pr-report",
@@ -50,10 +51,6 @@ public class CompareCommand implements Runnable, CommandLine.IExitCodeGenerator 
             description = "Target (current/PR) cats-report folder or cats-summary-report.json file.")
     File target;
 
-    @CommandLine.Option(names = {"--failOnNewErrors"}, defaultValue = "true", fallbackValue = "true",
-            description = "Exit with code 1 when new error regressions are introduced. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    boolean failOnNewErrors = true;
-
     @CommandLine.Option(names = {"--failOnNewWarnings"},
             description = "Also exit with code 1 when new warnings are introduced. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     boolean failOnNewWarnings;
@@ -66,23 +63,23 @@ public class CompareCommand implements Runnable, CommandLine.IExitCodeGenerator 
     private int exitCode = CommandLine.ExitCode.OK;
 
     @Getter
-    private BaselineComparisonEngine.ComparisonResult lastResult;
+    private ComparisonResult lastResult;
 
     @Override
     public void run() {
+        exitCode = CommandLine.ExitCode.OK;
+        lastResult = null;
         try {
-            lastResult = BaselineComparisonEngine.compareReports(baseline.toPath(), target.toPath());
+            lastResult = BaselineComparisonEngine.compareReports(baseline.toPath(), target.toPath(), failOnNewWarnings);
             if (json) {
                 logger.noFormat(JsonUtils.GSON.toJson(lastResult));
             } else {
-                BaselineComparisonEngine.renderToConsole(logger, lastResult, failOnNewWarnings);
+                BaselineComparisonEngine.renderToConsole(logger, lastResult);
             }
-            boolean regressed = (failOnNewErrors && lastResult.newErrorCount() > 0) ||
-                    (failOnNewWarnings && lastResult.newWarningCount() > 0);
-            exitCode = regressed ? CommandLine.ExitCode.SOFTWARE : CommandLine.ExitCode.OK;
-        } catch (IOException e) {
+            exitCode = lastResult.regression() ? CommandLine.ExitCode.SOFTWARE : CommandLine.ExitCode.OK;
+        } catch (IOException | UnsupportedReportException e) {
             logger.error("Failed to compare reports: {}", e.getMessage());
-            exitCode = CommandLine.ExitCode.SOFTWARE;
+            exitCode = CommandLine.ExitCode.USAGE;
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.endava.cats;
 
+import com.endava.cats.report.problem.OccurrenceKey;
+import com.endava.cats.report.problem.OccurrenceDelta;
 import com.endava.cats.aop.DryRunEntry;
 import com.endava.cats.args.util.ProfileLoader;
 import com.endava.cats.command.AnalyzeCommand;
@@ -36,7 +38,7 @@ import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.model.RunOutcome;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
-import com.endava.cats.report.BaselineComparisonEngine;
+import com.endava.cats.command.model.ComparisonResult;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.wfc.CatsWfcFaultCategory;
 import com.endava.cats.report.ProblemCard;
@@ -293,7 +295,7 @@ import java.util.UUID;
         AnalyzeCommand.ProducerConsumerChain.class,
         SmokeCommand.SmokeReport.class, SmokeCommand.OperationProbe.class,
         InitCommand.InitResult.class, InitCommand.AgentPlatform.class,
-        BaselineComparisonEngine.ComparisonResult.class, BaselineComparisonEngine.FindingDelta.class,
+        ComparisonResult.class, OccurrenceKey.class, OccurrenceDelta.class, OccurrenceDelta.State.class, OccurrenceDelta.MatchedBy.class,
         TestCaseExporter.ProblemBannerEntry.class,
         ProfileLoader.Profile.class,
         CatsTestReport.JunitTestSuite.class,

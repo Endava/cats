@@ -17,8 +17,6 @@ import com.endava.cats.model.ProcessingError;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
-import com.endava.cats.report.problem.ProblemCatalog;
-import com.endava.cats.report.problem.ResponseSchemaNames;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
@@ -332,12 +330,11 @@ public abstract class TestCaseExporter {
      * The gathered information is exposed through a typed template context.
      *
      * @param summaries                   the pre-created summary for each test case
+     * @param problems the precomputed problems shared with the baseline gate
      * @param executionSummary immutable statistics and outcome captured for this execution
      */
-    public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary) {
+    public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary, List<Problem> problems) {
         Objects.requireNonNull(summaries, "summaries must not be null");
-        ClusterCompute.assignErrorTemplates(summaries, catsGlobalContext.getOpenAPI());
-        List<Problem> problems = ProblemCatalog.build(summaries, new ResponseSchemaNames(catsGlobalContext.getOpenAPI()));
         CatsTestReport report = this.createTestReport(summaries, executionSummary, problems);
         double averageResponseTime = summaries.stream().mapToDouble(CatsTestCaseSummary::getTimeToExecuteInMs).average().orElse(0);
 

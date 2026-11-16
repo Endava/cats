@@ -1,5 +1,6 @@
 package com.endava.cats.command.triage;
 
+import com.endava.cats.exception.UnsupportedReportException;
 import com.endava.cats.model.ProblemKind;
 import com.endava.cats.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;

@@ -1,11 +1,13 @@
 package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
+import com.endava.cats.command.model.ComparisonResult;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.exception.UnsupportedReportException;
 import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.execution.ExecutionSummaryProvider;
@@ -24,6 +26,10 @@ import com.endava.cats.model.ErrorSignature;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.Problem;
+import com.endava.cats.model.CatsTestReport;
+import com.endava.cats.report.problem.ProblemCatalog;
+import com.endava.cats.report.problem.ResponseSchemaNames;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.model.SecurityFinding;
@@ -48,6 +54,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.Builder;
+import lombok.Getter;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
@@ -791,7 +798,8 @@ public class TestCaseListener {
      * @return the immutable final execution summary shared by reports and presentation layers
      */
     public ExecutionSummary endSession() {
-        evaluateBaselineIfConfigured();
+        List<Problem> problems = prepareProblems();
+        evaluateBaselineIfConfigured(problems);
         ExecutionSummary executionSummary = executionSummaryProvider.snapshot();
         if (!reportingInitialized) {
             return executionSummary;
@@ -804,7 +812,7 @@ public class TestCaseListener {
             testReportsGenerator.writeErrorsByReason(testCaseSummaryDetails);
             testReportsGenerator.writeTopFuzzers(testCaseSummaryDetails);
             testReportsGenerator.writePerformanceReport(testCaseExecutionDetails);
-            testReportsGenerator.writeSummary(testCaseSummaryDetails, executionSummary);
+            testReportsGenerator.writeSummary(testCaseSummaryDetails, executionSummary, problems);
             testReportsGenerator.printExecutionDetails(executionSummary);
             printBaselineComparisonIfConfigured();
             if (!reportingArguments.isTui()) {
@@ -819,7 +827,7 @@ public class TestCaseListener {
             ExecutionSummary failedSummary = executionSummaryProvider.snapshot();
             if (reportingInitialized) {
                 try {
-                    testReportsGenerator.writeSummary(testCaseSummaryDetails, failedSummary);
+                    testReportsGenerator.writeSummary(testCaseSummaryDetails, failedSummary, problems);
                 } catch (Exception summaryFailure) {
                     logger.debug("Unable to write the failed execution outcome to the summary report", summaryFailure);
                 }
@@ -838,10 +846,18 @@ public class TestCaseListener {
         }
     }
 
-    private BaselineComparisonEngine.ComparisonResult lastBaselineComparison;
+    private ComparisonResult lastBaselineComparison;
+    @Getter
+    private boolean baselineUsageError;
 
-    private void evaluateBaselineIfConfigured() {
+    private List<Problem> prepareProblems() {
+        ClusterCompute.assignErrorTemplates(testCaseSummaryDetails, globalContext.getOpenAPI());
+        return ProblemCatalog.build(testCaseSummaryDetails, new ResponseSchemaNames(globalContext.getOpenAPI()));
+    }
+
+    private void evaluateBaselineIfConfigured(List<Problem> problems) {
         lastBaselineComparison = null;
+        baselineUsageError = false;
         if (executionSummaryProvider == null || executionSummaryProvider.getQualityGateArguments() == null) {
             return;
         }
@@ -852,19 +868,24 @@ public class TestCaseListener {
         }
         try {
             lastBaselineComparison = BaselineComparisonEngine.compareWithCurrent(
-                    qg.getBaseline().toPath(), testCaseSummaryDetails, 0);
-            qg.setBaselineRegressionDetected(lastBaselineComparison.hasRegressions(qg.isFailOnNewWarnings()));
-        } catch (IOException e) {
-            logger.error("Unable to load baseline report from {}: {}", qg.getBaseline(), e.getMessage());
+                    qg.getBaseline().toPath(), CatsTestReport.builder().problemKeyVersion(Problem.KEY_VERSION)
+                            .problems(problems).testCases(testCaseSummaryDetails).build(), qg.isFailOnNewWarnings());
+            qg.setBaselineRegressionDetected(lastBaselineComparison.regression());
+        } catch (IOException | UnsupportedReportException e) {
+            reportBaselineUsageError(qg.getBaseline(), e);
             qg.setBaselineRegressionDetected(true);
         }
+    }
+
+    private void reportBaselineUsageError(java.io.File baseline, Exception failure) {
+        baselineUsageError = true;
+        logger.fatal("Unable to load baseline report from {}: {}", baseline, failure.getMessage());
     }
 
     private void printBaselineComparisonIfConfigured() {
         if (lastBaselineComparison != null && !reportingArguments.isTui() &&
                 executionSummaryProvider != null && executionSummaryProvider.getQualityGateArguments() != null) {
-            BaselineComparisonEngine.renderToConsole(logger, lastBaselineComparison,
-                    executionSummaryProvider.getQualityGateArguments().isFailOnNewWarnings());
+            BaselineComparisonEngine.renderToConsole(logger, lastBaselineComparison);
         }
     }
 

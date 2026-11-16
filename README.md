@@ -66,6 +66,27 @@ cats replay Test12 --curl
   <img alt="CATS" width="100%" src="images/tests_result.png"/>
 </div>
 
+## Baseline comparison
+
+Compare two report folders (or their `cats-summary-report.json` files):
+
+```shell
+cats compare -b baseline-report -t current-report -j
+```
+
+Comparison uses persisted problem occurrences: `(problemId, operation)`, plus each mutated field for accepted requests.
+The states are `NEW`, `FIXED`, `UNCHANGED` and `NOT_COMPARABLE`. Test-count changes are informational. Compatible
+server-message patterns can match across runs when the miner generalized them differently.
+
+Exit codes are `0` for no regression, `1` for a new error occurrence (also warnings with `--failOnNewWarnings`), and `2`
+for invalid input. Use `--baseline <report>` during fuzzing for the same gate. Occurrences found only by fuzzers absent
+from the other run are not comparable. `FIXED` means absent in the compared run; verify coverage before claiming a fix.
+
+**Migration:** compare and triage require summaries with `problemKeyVersion: 1`; re-run older reports with this CATS
+version. Compare JSON now contains `baseline`, `target`, `problemKeyVersion`, `regression`, `newOccurrences`,
+`fixedOccurrences`, `unchangedOccurrences`, `notComparable` and `matchedByPattern`. The former scope/count fields
+and `--failOnNewErrors` are removed; new errors always fail comparison. There is no count mode or `--compareScope`.
+
 ## Command Line
 
 <div align="center">

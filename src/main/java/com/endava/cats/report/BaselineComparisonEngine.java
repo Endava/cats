@@ -1,8 +1,16 @@
 package com.endava.cats.report;
 
+import com.endava.cats.command.model.ComparisonResult;
+import com.endava.cats.exception.UnsupportedReportException;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
-import com.endava.cats.util.AnsiUtils;
+import com.endava.cats.model.Problem;
+import com.endava.cats.model.ProblemKind;
+import com.endava.cats.report.problem.OccurrenceDelta;
+import com.endava.cats.report.problem.OccurrenceDelta.MatchedBy;
+import com.endava.cats.report.problem.OccurrenceDelta.State;
+import com.endava.cats.report.problem.OccurrenceKey;
+import com.endava.cats.report.problem.ServerMessagePattern;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 
@@ -11,35 +19,23 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-/**
- * Performs an apples-to-apples regression comparison between a baseline CATS report and a target/current run.
- * <p>
- * Only {@code (contractPath, httpMethod, fuzzer)} scopes present in both runs are evaluated for regressions and
- * fixes so differences in profile or path selection never produce false-positive regressions.
- */
+/** Compares persisted problem occurrences. Test-count changes never create regressions. */
 public final class BaselineComparisonEngine {
     public static final String SUMMARY_FILE_NAME = "cats-summary-report.json";
 
     private BaselineComparisonEngine() {
     }
 
-    /**
-     * Loads a {@link CatsTestReport} from either a report directory or a direct summary JSON file path.
-     *
-     * @param reportPath directory containing {@code cats-summary-report.json} or path to the JSON file itself
-     * @return parsed {@link CatsTestReport}
-     * @throws IOException when the file does not exist or cannot be parsed
-     */
     public static CatsTestReport loadReport(Path reportPath) throws IOException {
         Path resolved = resolveSummaryFile(reportPath);
         try (Reader reader = Files.newBufferedReader(resolved, StandardCharsets.UTF_8)) {
@@ -47,7 +43,17 @@ public final class BaselineComparisonEngine {
             if (report == null) {
                 throw new IOException("Empty or invalid CATS summary report: " + resolved);
             }
+            requireProblems(report, resolved.toString());
             return report;
+        } catch (com.google.gson.JsonParseException e) {
+            throw new IOException("Invalid CATS summary report: " + resolved, e);
+        }
+    }
+
+    private static void requireProblems(CatsTestReport report, String file) {
+        if (report.getProblemKeyVersion() != Problem.KEY_VERSION || report.getProblems() == null) {
+            throw new UnsupportedReportException("%s was written by a CATS version without problems (problemKeyVersion %d, expected %d); re-run it with this CATS version"
+                    .formatted(file, report.getProblemKeyVersion(), Problem.KEY_VERSION));
         }
     }
 
@@ -62,246 +68,118 @@ public final class BaselineComparisonEngine {
         return candidate;
     }
 
-    /**
-     * Compares a baseline report file/directory against the live test case summaries of the current run.
-     *
-     * @param baselinePath       baseline report directory or summary JSON file
-     * @param currentTestCases   test case summaries from the current run
-     * @param currentExecTimeSec current execution time in seconds
-     * @return apples-to-apples comparison result
-     * @throws IOException if the baseline report cannot be read
-     */
-    public static ComparisonResult compareWithCurrent(Path baselinePath, List<CatsTestCaseSummary> currentTestCases,
-                                                      long currentExecTimeSec) throws IOException {
-        CatsTestReport baselineReport = loadReport(baselinePath);
-        List<CatsTestCaseSummary> baselineCases = Optional.ofNullable(baselineReport.getTestCases()).orElse(List.of());
-        return compareSummaries(baselineCases, Optional.ofNullable(currentTestCases).orElse(List.of()),
-                baselineReport.getExecutionTime(), currentExecTimeSec);
+    public static ComparisonResult compareReports(Path baseline, Path target, boolean failOnNewWarnings) throws IOException {
+        return compare(new Reports(baseline.toString(), target.toString(), loadReport(baseline), loadReport(target)), failOnNewWarnings);
     }
 
-    /**
-     * Compares two CATS report directories or summary JSON files.
-     *
-     * @param baselinePath baseline report directory or summary JSON file
-     * @param targetPath   target report directory or summary JSON file
-     * @return apples-to-apples comparison result
-     * @throws IOException if either report cannot be read
-     */
-    public static ComparisonResult compareReports(Path baselinePath, Path targetPath) throws IOException {
-        CatsTestReport baseline = loadReport(baselinePath);
-        CatsTestReport target = loadReport(targetPath);
-        return compareSummaries(
-                Optional.ofNullable(baseline.getTestCases()).orElse(List.of()),
-                Optional.ofNullable(target.getTestCases()).orElse(List.of()),
-                baseline.getExecutionTime(),
-                target.getExecutionTime());
+    public static ComparisonResult compareWithCurrent(Path baseline, CatsTestReport current, boolean failOnNewWarnings) throws IOException {
+        return compare(new Reports(baseline.toString(), "current run", loadReport(baseline), current), failOnNewWarnings);
     }
 
-    /**
-     * Compares two lists of {@link CatsTestCaseSummary} apples-to-apples across their shared
-     * {@code (path, httpMethod, fuzzer)} scope.
-     */
-    public static ComparisonResult compareSummaries(List<CatsTestCaseSummary> baselineCases,
-                                                    List<CatsTestCaseSummary> targetCases,
-                                                    long baselineExecTimeSec,
-                                                    long targetExecTimeSec) {
-        Map<ScopeKey, List<CatsTestCaseSummary>> baselineByScope = groupByScope(baselineCases);
-        Map<ScopeKey, List<CatsTestCaseSummary>> targetByScope = groupByScope(targetCases);
-
-        Set<ScopeKey> sharedScopes = new LinkedHashSet<>(baselineByScope.keySet());
-        sharedScopes.retainAll(targetByScope.keySet());
-
-        int onlyInBaseline = baselineByScope.size() - sharedScopes.size();
-        int onlyInTarget = targetByScope.size() - sharedScopes.size();
-
-        List<FindingDelta> newErrors = new ArrayList<>();
-        List<FindingDelta> newWarnings = new ArrayList<>();
-        List<FindingDelta> resolvedErrors = new ArrayList<>();
-        List<FindingDelta> resolvedWarnings = new ArrayList<>();
-        int unchangedErrors = 0;
-        int unchangedWarnings = 0;
-
-        for (ScopeKey scope : sharedScopes) {
-            ScopeDiff diff = diffScope(scope, baselineByScope.get(scope), targetByScope.get(scope));
-            newErrors.addAll(diff.newErrors());
-            newWarnings.addAll(diff.newWarnings());
-            resolvedErrors.addAll(diff.resolvedErrors());
-            resolvedWarnings.addAll(diff.resolvedWarnings());
-            unchangedErrors += diff.unchangedErrors();
-            unchangedWarnings += diff.unchangedWarnings();
-        }
-
-        return new ComparisonResult(
-                sharedScopes.size(),
-                onlyInBaseline,
-                onlyInTarget,
-                List.copyOf(newErrors),
-                List.copyOf(newWarnings),
-                List.copyOf(resolvedErrors),
-                List.copyOf(resolvedWarnings),
-                unchangedErrors,
-                unchangedWarnings,
-                targetExecTimeSec - baselineExecTimeSec);
+    public static ComparisonResult compare(Reports reports, boolean failOnNewWarnings) {
+        requireProblems(reports.baseline(), reports.baselineName());
+        requireProblems(reports.target(), reports.targetName());
+        Map<OccurrenceKey, Side> baseline = occurrences(reports.baseline());
+        Map<OccurrenceKey, Side> target = occurrences(reports.target());
+        List<OccurrenceDelta> exact = target.keySet().stream().filter(baseline::containsKey)
+                .map(key -> delta(State.UNCHANGED, baseline.get(key), target.get(key), MatchedBy.ID)).toList();
+        Map<OccurrenceKey, Side> baselineOnly = difference(baseline, target.keySet());
+        Map<OccurrenceKey, Side> targetOnly = difference(target, baseline.keySet());
+        List<OccurrenceDelta> patterns = matchPatterns(baselineOnly, targetOnly);
+        List<OccurrenceDelta> remaining = remaining(reports, baselineOnly, targetOnly);
+        return result(reports, Stream.concat(Stream.concat(exact.stream(), patterns.stream()), remaining.stream()).toList(), failOnNewWarnings);
     }
 
-    private static Map<ScopeKey, List<CatsTestCaseSummary>> groupByScope(List<CatsTestCaseSummary> cases) {
-        Map<ScopeKey, List<CatsTestCaseSummary>> grouped = new LinkedHashMap<>();
-        for (CatsTestCaseSummary tc : cases) {
-            if (tc != null && tc.getPath() != null && tc.getFuzzer() != null) {
-                grouped.computeIfAbsent(ScopeKey.from(tc), _ -> new ArrayList<>()).add(tc);
-            }
-        }
-        return grouped;
+    private static List<OccurrenceDelta> remaining(Reports reports, Map<OccurrenceKey, Side> baseline, Map<OccurrenceKey, Side> target) {
+        Set<String> baselineFuzzers = ran(reports.baseline());
+        Set<String> targetFuzzers = ran(reports.target());
+        return Stream.concat(baseline.values().stream().map(side -> unmatched(side, targetFuzzers, false)),
+                target.values().stream().map(side -> unmatched(side, baselineFuzzers, true))).toList();
     }
 
-    private static ScopeDiff diffScope(ScopeKey scope, List<CatsTestCaseSummary> baseList,
-                                       List<CatsTestCaseSummary> targetList) {
-        Map<String, List<CatsTestCaseSummary>> baseErrors = groupByReason(baseList, "error");
-        Map<String, List<CatsTestCaseSummary>> targetErrors = groupByReason(targetList, "error");
-        Map<String, List<CatsTestCaseSummary>> baseWarnings = groupByReason(baseList, "warning");
-        Map<String, List<CatsTestCaseSummary>> targetWarnings = groupByReason(targetList, "warning");
-
-        List<FindingDelta> newErrors = new ArrayList<>();
-        List<FindingDelta> resolvedErrors = new ArrayList<>();
-        int unchangedErrors = compareReasonBuckets(scope, "error", baseErrors, targetErrors, newErrors, resolvedErrors);
-
-        List<FindingDelta> newWarnings = new ArrayList<>();
-        List<FindingDelta> resolvedWarnings = new ArrayList<>();
-        int unchangedWarnings = compareReasonBuckets(scope, "warning", baseWarnings, targetWarnings, newWarnings, resolvedWarnings);
-
-        return new ScopeDiff(newErrors, newWarnings, resolvedErrors, resolvedWarnings, unchangedErrors, unchangedWarnings);
+    private static ComparisonResult result(Reports reports, List<OccurrenceDelta> deltas, boolean failOnNewWarnings) {
+        List<OccurrenceDelta> added = inState(deltas, State.NEW);
+        boolean regression = added.stream().anyMatch(delta -> delta.isError() || failOnNewWarnings);
+        return new ComparisonResult(reports.baselineName(), reports.targetName(), Problem.KEY_VERSION, regression,
+                added, inState(deltas, State.FIXED), inState(deltas, State.UNCHANGED), inState(deltas, State.NOT_COMPARABLE),
+                (int) deltas.stream().filter(delta -> delta.matchedBy() == MatchedBy.PATTERN).count());
     }
 
-    private static Map<String, List<CatsTestCaseSummary>> groupByReason(List<CatsTestCaseSummary> list, String level) {
-        return list.stream()
-                .filter(tc -> matchesResultLevel(tc.getResult(), level))
-                .collect(Collectors.groupingBy(
-                        tc -> Optional.ofNullable(tc.getResultReason()).orElse("Unspecified"),
-                        LinkedHashMap::new,
-                        Collectors.toList()));
+    private static List<OccurrenceDelta> inState(List<OccurrenceDelta> deltas, State state) {
+        return deltas.stream().filter(delta -> delta.state() == state).toList();
     }
 
-    private static boolean matchesResultLevel(String result, String level) {
-        if (result == null) {
-            return false;
-        }
-        if ("warning".equalsIgnoreCase(level) || "warn".equalsIgnoreCase(level)) {
-            return "warn".equalsIgnoreCase(result) || "warning".equalsIgnoreCase(result);
-        }
-        return level.equalsIgnoreCase(result);
+    private static Map<OccurrenceKey, Side> occurrences(CatsTestReport report) {
+        return Optional.ofNullable(report.getProblems()).orElse(List.of()).stream()
+                .flatMap(problem -> problem.occurrences().stream().flatMap(occurrence -> sides(problem, occurrence)))
+                .collect(Collectors.toMap(Side::key, Function.identity(), (first, _) -> first, LinkedHashMap::new));
     }
 
-    private static int compareReasonBuckets(ScopeKey scope, String level,
-                                            Map<String, List<CatsTestCaseSummary>> baseBuckets,
-                                            Map<String, List<CatsTestCaseSummary>> targetBuckets,
-                                            List<FindingDelta> addedOut,
-                                            List<FindingDelta> resolvedOut) {
-        int unchanged = 0;
-        Set<String> allReasons = new LinkedHashSet<>(baseBuckets.keySet());
-        allReasons.addAll(targetBuckets.keySet());
-
-        for (String reason : allReasons) {
-            List<CatsTestCaseSummary> baseItems = baseBuckets.getOrDefault(reason, List.of());
-            List<CatsTestCaseSummary> targetItems = targetBuckets.getOrDefault(reason, List.of());
-            int overlap = Math.min(baseItems.size(), targetItems.size());
-            unchanged += overlap;
-            if (targetItems.size() > baseItems.size()) {
-                CatsTestCaseSummary sample = targetItems.getFirst();
-                addedOut.add(new FindingDelta(scope.httpMethod(), scope.path(), scope.fuzzer(),
-                        level, reason, sample.getHttpResponseCode(), targetItems.size() - baseItems.size()));
-            } else if (baseItems.size() > targetItems.size()) {
-                CatsTestCaseSummary sample = baseItems.getFirst();
-                resolvedOut.add(new FindingDelta(scope.httpMethod(), scope.path(), scope.fuzzer(),
-                        level, reason, sample.getHttpResponseCode(), baseItems.size() - targetItems.size()));
-            }
+    private static Stream<Side> sides(Problem problem, Problem.Occurrence occurrence) {
+        if (problem.kind() != ProblemKind.ACCEPTED_REQUEST || occurrence.fields().isEmpty()) {
+            return Stream.of(new Side(new OccurrenceKey(problem.id(), occurrence.operation(), ""), problem, occurrence, occurrence.testIds().size()));
         }
-        return unchanged;
+        return occurrence.fields().stream().map(field -> new Side(
+                new OccurrenceKey(problem.id(), occurrence.operation(), field.field()), problem, occurrence, field.tests()));
     }
 
-    /**
-     * Renders a human-readable summary of the baseline comparison to the console logger.
-     */
-    public static void renderToConsole(PrettyLogger logger, ComparisonResult result, boolean failOnNewWarnings) {
-        logger.noFormat("");
-        logger.noFormat(AnsiUtils.bold("=== CATS Baseline Comparison (Apples-to-Apples) ==="));
-        logger.noFormat("Shared (path, method, fuzzer) scopes compared: {} (only in baseline: {}, only in current: {})",
-                result.sharedScopes(), result.onlyInBaselineScopes(), result.onlyInTargetScopes());
-        logger.noFormat("New Errors (Regressions): {} | Resolved Errors: {} | Unchanged Errors: {}",
-                result.newErrorCount(), result.resolvedErrorCount(), result.unchangedErrors());
-        logger.noFormat("New Warnings:             {} | Resolved Warnings: {} | Unchanged Warnings: {}",
-                result.newWarningCount(), result.resolvedWarningCount(), result.unchangedWarnings());
-        if (!result.newErrors().isEmpty()) {
-            logger.noFormat(AnsiUtils.boldRed("New Error Regressions:"));
-            result.newErrors().forEach(delta -> logger.noFormat("  - [{}] {} {} • {} • HTTP {} ({}) (+{})",
-                    delta.level().toUpperCase(Locale.ROOT), delta.httpMethod(), delta.path(),
-                    delta.fuzzer(), delta.httpResponseCode(), delta.reason(), delta.count()));
-        }
-        if (!result.newWarnings().isEmpty()) {
-            logger.noFormat(AnsiUtils.boldYellow("New Warnings:"));
-            result.newWarnings().forEach(delta -> logger.noFormat("  - [{}] {} {} • {} • HTTP {} ({}) (+{})",
-                    delta.level().toUpperCase(Locale.ROOT), delta.httpMethod(), delta.path(),
-                    delta.fuzzer(), delta.httpResponseCode(), delta.reason(), delta.count()));
-        }
-        if (!result.resolvedErrors().isEmpty() || !result.resolvedWarnings().isEmpty()) {
-            logger.noFormat(AnsiUtils.boldGreen("Resolved Issues:"));
-            result.resolvedErrors().forEach(delta -> logger.noFormat("  - [FIXED ERROR] {} {} • {} ({}) (-{})",
-                    delta.httpMethod(), delta.path(), delta.fuzzer(), delta.reason(), delta.count()));
-            result.resolvedWarnings().forEach(delta -> logger.noFormat("  - [FIXED WARN]  {} {} • {} ({}) (-{})",
-                    delta.httpMethod(), delta.path(), delta.fuzzer(), delta.reason(), delta.count()));
-        }
-        boolean regressed = result.hasRegressions(failOnNewWarnings);
-        logger.noFormat("Baseline Verdict: {}", regressed ? AnsiUtils.boldRed("REGRESSION_DETECTED") : AnsiUtils.boldGreen("PASS"));
+    private static Map<OccurrenceKey, Side> difference(Map<OccurrenceKey, Side> sides, Set<OccurrenceKey> excluded) {
+        return sides.values().stream().filter(side -> !excluded.contains(side.key()))
+                .collect(Collectors.toMap(Side::key, Function.identity(), (first, _) -> first, LinkedHashMap::new));
     }
 
-    /**
-     * Normalized {@code (path, httpMethod, fuzzer)} scope key for apples-to-apples matching.
-     */
-    public record ScopeKey(String path, String httpMethod, String fuzzer) {
-        static ScopeKey from(CatsTestCaseSummary summary) {
-            return new ScopeKey(
-                    Optional.ofNullable(summary.getPath()).orElse("").trim(),
-                    Optional.ofNullable(summary.getHttpMethod()).orElse("").trim().toUpperCase(Locale.ROOT),
-                    Optional.ofNullable(summary.getFuzzer()).orElse("").trim());
+    private static List<OccurrenceDelta> matchPatterns(Map<OccurrenceKey, Side> baseline, Map<OccurrenceKey, Side> target) {
+        Map<OccurrenceKey, Side> matched = new LinkedHashMap<>();
+        for (Side right : target.values()) {
+            baseline.values().stream().filter(left -> left.matches(right)).findFirst()
+                    .ifPresent(left -> matched.put(right.key(), baseline.remove(left.key())));
         }
+        return matched.entrySet().stream()
+                .map(entry -> delta(State.UNCHANGED, entry.getValue(), target.remove(entry.getKey()), MatchedBy.PATTERN)).toList();
     }
 
-    private record ScopeDiff(List<FindingDelta> newErrors, List<FindingDelta> newWarnings,
-                             List<FindingDelta> resolvedErrors, List<FindingDelta> resolvedWarnings,
-                             int unchangedErrors, int unchangedWarnings) {
+    private static Set<String> ran(CatsTestReport report) {
+        return Optional.ofNullable(report.getTestCases()).orElse(List.of()).stream().filter(Objects::nonNull)
+                .map(CatsTestCaseSummary::getFuzzer).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
-    /**
-     * Represents a regression or fix within a shared {@code (path, httpMethod, fuzzer)} scope.
-     */
-    public record FindingDelta(String httpMethod, String path, String fuzzer, String level,
-                               String reason, int httpResponseCode, int count) {
+    private static OccurrenceDelta unmatched(Side side, Set<String> otherFuzzers, boolean target) {
+        State state = side.occurrence().fuzzers().stream().noneMatch(otherFuzzers::contains)
+                ? State.NOT_COMPARABLE : target ? State.NEW : State.FIXED;
+        return delta(state, target ? null : side, target ? side : null, null);
     }
 
-    /**
-     * Complete apples-to-apples comparison outcome.
-     */
-    public record ComparisonResult(int sharedScopes, int onlyInBaselineScopes, int onlyInTargetScopes,
-                                   List<FindingDelta> newErrors, List<FindingDelta> newWarnings,
-                                   List<FindingDelta> resolvedErrors, List<FindingDelta> resolvedWarnings,
-                                   int unchangedErrors, int unchangedWarnings, long executionTimeDeltaSec) {
-        public int newErrorCount() {
-            return newErrors.stream().mapToInt(FindingDelta::count).sum();
-        }
+    private static OccurrenceDelta delta(State state, Side baseline, Side target, MatchedBy matchedBy) {
+        Side shown = target == null ? baseline : target;
+        return new OccurrenceDelta(state, shown.problem().id(), shown.problem().kind(), shown.problem().level(), shown.problem().title(),
+                shown.key().operation(), shown.key().field(), shown.occurrence().statuses(),
+                baseline == null ? 0 : baseline.tests(), target == null ? 0 : target.tests(), matchedBy);
+    }
 
-        public int newWarningCount() {
-            return newWarnings.stream().mapToInt(FindingDelta::count).sum();
-        }
+    public static void renderToConsole(PrettyLogger logger, ComparisonResult result) {
+        renderSection(logger, "New", result.newOccurrences());
+        renderSection(logger, "Fixed", result.fixedOccurrences());
+        renderSection(logger, "Not comparable", result.notComparable());
+        renderSection(logger, "Unchanged (count changed)", result.unchangedOccurrences().stream()
+                .filter(delta -> delta.baselineTests() != delta.targetTests()).toList());
+        logger.noFormat("Baseline Verdict: {}", result.regression() ? "REGRESSION_DETECTED" : "PASS");
+    }
 
-        public int resolvedErrorCount() {
-            return resolvedErrors.stream().mapToInt(FindingDelta::count).sum();
-        }
+    private static void renderSection(PrettyLogger logger, String name, List<OccurrenceDelta> deltas) {
+        logger.noFormat("{} ({})", name, deltas.size());
+        deltas.forEach(delta -> logger.noFormat("{} {} {}{} {} (baseline {} -> target {} tests)",
+                delta.state(), delta.problemId(), delta.operation(), delta.field().isEmpty() ? "" : " " + delta.field(),
+                delta.title(), delta.baselineTests(), delta.targetTests()));
+    }
 
-        public int resolvedWarningCount() {
-            return resolvedWarnings.stream().mapToInt(FindingDelta::count).sum();
-        }
+    /** Named inputs also appear verbatim in the JSON result. */
+    public record Reports(String baselineName, String targetName, CatsTestReport baseline, CatsTestReport target) {
+    }
 
-        public boolean hasRegressions(boolean includeNewWarnings) {
-            return newErrorCount() > 0 || (includeNewWarnings && newWarningCount() > 0);
+    private record Side(OccurrenceKey key, Problem problem, Problem.Occurrence occurrence, int tests) {
+        boolean matches(Side other) {
+            return key.operation().equals(other.key.operation()) && occurrence.statuses().equals(other.occurrence.statuses())
+                    && ServerMessagePattern.matches(problem, other.problem);
         }
     }
 }

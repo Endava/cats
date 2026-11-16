@@ -224,7 +224,7 @@ class ProblemReportConsistencyTest {
                 Mockito.mock(ProcessingArguments.class), Mockito.mock(StopArguments.class));
         exporter.appVersion = "test-version";
         exporter.initPath(directory.toString());
-        exporter.writeSummary(summaries, new ExecutionStatisticsListener().snapshot(false, "fail on errors"));
+        ProblemReportFixtures.writeSummary(exporter, summaries, new ExecutionStatisticsListener().snapshot(false, "fail on errors"));
         return BaselineComparisonEngine.loadReport(directory);
     }
 

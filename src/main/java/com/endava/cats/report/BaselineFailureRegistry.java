@@ -25,8 +25,9 @@ import java.util.Set;
 
 /**
  * Tracks baseline seed-wave failures ({@code HappyPath}, {@code OnlyRequiredFields}) per operation during a run
- * and annotates subsequent fuzzed tests that fail on the same operation with the same HTTP status and online
- * error signature key.
+ * and annotates subsequent fuzzed tests that fail on the same operation with the same HTTP status, result reason and
+ * online error signature key. The result reason is part of the key because successful responses that echo the created
+ * resource have near-identical signatures whatever the finding is.
  */
 @Singleton
 public class BaselineFailureRegistry {
@@ -85,7 +86,8 @@ public class BaselineFailureRegistry {
         if (isEmptySignature(signature)) {
             return Optional.empty();
         }
-        return Optional.of(new BaselineKey(operation, testCase.getResponse().getResponseCode(), signatureHash(signature)));
+        return Optional.of(new BaselineKey(operation, testCase.getResponse().getResponseCode(),
+                StringUtils.defaultString(testCase.getResultReason()), signatureHash(signature)));
     }
 
     private static boolean isEmptySignature(ErrorSignature signature) {
@@ -157,7 +159,7 @@ public class BaselineFailureRegistry {
         return testCase != null && isSeedFuzzer(normalizeFuzzer(testCase.getFuzzer()));
     }
 
-    record BaselineKey(String operation, int statusCode, String signatureKey) {
+    record BaselineKey(String operation, int statusCode, String resultReason, String signatureKey) {
     }
 
     record BaselineOrigin(String testId, String fuzzer) {

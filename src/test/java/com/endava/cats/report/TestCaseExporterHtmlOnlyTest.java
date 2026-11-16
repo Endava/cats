@@ -42,7 +42,7 @@ class TestCaseExporterHtmlOnlyTest {
         exporter.initPath(reportDirectory.toString());
         ExecutionSummary executionSummary = new ExecutionStatisticsListener().snapshot(false, "fail on errors");
 
-        Assertions.assertThatThrownBy(() -> exporter.writeSummary(null, executionSummary))
+        Assertions.assertThatThrownBy(() -> ProblemReportFixtures.writeSummary(exporter, null, executionSummary))
                 .isInstanceOf(NullPointerException.class);
         try (var files = Files.list(reportDirectory)) {
             Assertions.assertThat(files).isEmpty();
@@ -80,7 +80,7 @@ class TestCaseExporterHtmlOnlyTest {
         List<CatsTestCase> run = ProblemReportFixtures.riskApiRun();
         run.forEach(exporter::writeTestCase);
 
-        exporter.writeSummary(ProblemReportFixtures.summaries(run), new ExecutionStatisticsListener().snapshot(false, "fail on errors"));
+        ProblemReportFixtures.writeSummary(exporter, ProblemReportFixtures.summaries(run), new ExecutionStatisticsListener().snapshot(false, "fail on errors"));
 
         String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
         String testPage = Files.readString(reportDirectory.resolve("Test4.html"));
@@ -127,7 +127,7 @@ class TestCaseExporterHtmlOnlyTest {
                 processingArguments, stopArguments);
         exporter.appVersion = "test-version";
         exporter.initPath(reportDirectory.toString());
-        exporter.writeSummary(List.of(summary()), executionSummary);
+        ProblemReportFixtures.writeSummary(exporter, List.of(summary()), executionSummary);
 
         String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
         String json = Files.readString(reportDirectory.resolve("cats-summary-report.json"));
@@ -163,7 +163,7 @@ class TestCaseExporterHtmlOnlyTest {
         exporter.appVersion = "test-version";
         exporter.initPath(reportDirectory.toString());
 
-        exporter.writeSummary(List.of(summary()), new ExecutionStatisticsListener().snapshot(true, "Default: fail on any error"));
+        ProblemReportFixtures.writeSummary(exporter, List.of(summary()), new ExecutionStatisticsListener().snapshot(true, "Default: fail on any error"));
 
         Assertions.assertThat(Files.readString(reportDirectory.resolve("replay.env.example")))
                 .contains("Authorization=", "ACCESS_TOKEN=").doesNotContain("secret");
@@ -185,7 +185,7 @@ class TestCaseExporterHtmlOnlyTest {
         exporter.appVersion = "test-version";
         exporter.initPath(reportDirectory.resolve("report").toString());
 
-        exporter.writeSummary(List.of(summary()), new ExecutionStatisticsListener().snapshot(true, "Default: fail on any error"));
+        ProblemReportFixtures.writeSummary(exporter, List.of(summary()), new ExecutionStatisticsListener().snapshot(true, "Default: fail on any error"));
 
         Assertions.assertThat(Files.readString(existingExample)).isEqualTo("EXISTING=value\n");
     }
@@ -206,7 +206,7 @@ class TestCaseExporterHtmlOnlyTest {
                 new CatsGlobalContext(), processingArguments, stopArguments);
         exporter.appVersion = "test-version";
         exporter.initPath(reportDirectory.toString());
-        exporter.writeSummary(List.of(summary()), statistics.snapshot(true, "Default: fail on any error"));
+        ProblemReportFixtures.writeSummary(exporter, List.of(summary()), statistics.snapshot(true, "Default: fail on any error"));
 
         String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
 
@@ -259,7 +259,7 @@ class TestCaseExporterHtmlOnlyTest {
                 CatsTestCaseSummary.fromCatsTestCase(annotatedCase),
                 summary());
         ExecutionSummary execSummary = new ExecutionStatisticsListener().snapshot(false, "Default: fail on any error");
-        jsExporter.writeSummary(summaries, execSummary);
+        ProblemReportFixtures.writeSummary(jsExporter, summaries, execSummary);
 
         String testJson = Files.readString(reportDirectory.resolve("Test12.json"));
         String testHtml = Files.readString(reportDirectory.resolve("Test12.html"));

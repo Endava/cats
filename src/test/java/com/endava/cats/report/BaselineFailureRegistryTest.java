@@ -70,6 +70,25 @@ class BaselineFailureRegistryTest {
         Assertions.assertThat(fuzzed.getSameErrorAsBaselineFuzzer()).isNull();
     }
 
+    @Test
+    void shouldNotAnnotateWhenTheFindingDiffersEvenIfTheEchoedBodyMatchesTheBaseline() {
+        BaselineFailureRegistry registry = new BaselineFailureRegistry();
+        String echoedResource = "{\"token\":\"abc123\",\"label\":\"x\",\"state\":\"ACTIVE\"}";
+        CatsTestCase baseline = testCase("Test 1", "HappyPath", "warn", "POST", "/tokens", 201, "{}", echoedResource);
+        baseline.setResultReason("Not matching response schema");
+        CatsTestCase sameFinding = testCase("Test 2", "RemoveFields", "warn", "POST", "/tokens", 201, "{}", echoedResource);
+        sameFinding.setResultReason("Not matching response schema");
+        CatsTestCase otherFinding = testCase("Test 3", "XssInjectionInStringFields", "warn", "POST", "/tokens", 201, "{}", echoedResource);
+        otherFinding.setResultReason("XSS payload reflected in response");
+
+        registry.recordOrAnnotate(baseline);
+        registry.recordOrAnnotate(sameFinding);
+        registry.recordOrAnnotate(otherFinding);
+
+        Assertions.assertThat(sameFinding.getSameErrorAsBaselineTest()).isEqualTo("Test 1");
+        Assertions.assertThat(otherFinding.getSameErrorAsBaselineTest()).isNull();
+    }
+
     @ParameterizedTest
     @CsvSource(nullValues = "NULL", value = {
             "NULL",
@@ -113,8 +132,10 @@ class BaselineFailureRegistryTest {
         annotated.setResultReason("Unexpected response code: 500");
 
         BaselineFailureRegistry registry = new BaselineFailureRegistry();
-        registry.recordOrAnnotate(testCase("Test 1", "HappyPath", "error", "POST", "/orders", 500,
-                "{\"name\":\"x\"}", "{\"message\":\"Database down\"}"));
+        CatsTestCase baseline = testCase("Test 1", "HappyPath", "error", "POST", "/orders", 500,
+                "{\"name\":\"x\"}", "{\"message\":\"Database down\"}");
+        baseline.setResultReason("Unexpected response code: 500");
+        registry.recordOrAnnotate(baseline);
         registry.recordOrAnnotate(annotated);
 
         CatsTestCaseSummary summaryBefore = CatsTestCaseSummary.fromCatsTestCase(unannotated);
@@ -125,10 +146,16 @@ class BaselineFailureRegistryTest {
         Assertions.assertThat(summaryAfter.getSameErrorAsBaselineTest()).isEqualTo("Test 1");
         Assertions.assertThat(summaryAfter.getSameErrorAsBaselineFuzzer()).isEqualTo("HappyPath");
 
-        BaselineComparisonEngine.ComparisonResult comparison = BaselineComparisonEngine.compareSummaries(
-                List.of(summaryBefore), List.of(summaryAfter), 1L, 1L);
-        Assertions.assertThat(comparison.hasRegressions(true)).isFalse();
-        Assertions.assertThat(comparison.unchangedErrors()).isEqualTo(1);
+        ClusterCompute.assignErrorTemplates(List.of(summaryBefore));
+        ClusterCompute.assignErrorTemplates(List.of(summaryAfter));
+        var schemas = new com.endava.cats.report.problem.ResponseSchemaNames(null);
+        var before = com.endava.cats.model.CatsTestReport.builder().problemKeyVersion(1).testCases(List.of(summaryBefore))
+                .problems(com.endava.cats.report.problem.ProblemCatalog.build(List.of(summaryBefore), schemas)).build();
+        var after = com.endava.cats.model.CatsTestReport.builder().problemKeyVersion(1).testCases(List.of(summaryAfter))
+                .problems(com.endava.cats.report.problem.ProblemCatalog.build(List.of(summaryAfter), schemas)).build();
+        var comparison = BaselineComparisonEngine.compare(new BaselineComparisonEngine.Reports("before", "after", before, after), true);
+        Assertions.assertThat(comparison.regression()).isFalse();
+        Assertions.assertThat(comparison.unchangedOccurrences()).hasSize(1);
 
         Assertions.assertThat(WfcFaultClassifier.classify(summaryAfter, annotated))
                 .isEqualTo(WfcFaultClassifier.classify(summaryBefore, unannotated));

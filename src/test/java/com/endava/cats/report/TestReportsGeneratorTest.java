@@ -42,11 +42,12 @@ class TestReportsGeneratorTest {
         Mockito.when(junitExporter.reportFormat()).thenReturn(ReportingArguments.ReportFormat.JUNIT);
         TestReportsGenerator generator = new TestReportsGenerator(exporters, reportingArguments);
 
-        generator.writeSummary(List.of(), summary);
+        var problems = List.of(ComparisonFixtures.problem("problem-a", com.endava.cats.model.ProblemKind.SERVER_ERROR, 1));
+        generator.writeSummary(List.of(), summary, problems);
         generator.printExecutionDetails(summary);
 
-        Mockito.verify(htmlExporter).writeSummary(List.of(), summary);
-        Mockito.verify(junitExporter).writeSummary(List.of(), summary);
+        Mockito.verify(htmlExporter).writeSummary(Mockito.eq(List.of()), Mockito.same(summary), Mockito.same(problems));
+        Mockito.verify(junitExporter).writeSummary(Mockito.eq(List.of()), Mockito.same(summary), Mockito.same(problems));
         Mockito.verify(htmlExporter).printExecutionDetails(summary);
         Mockito.verify(junitExporter, Mockito.never()).printExecutionDetails(Mockito.any());
     }

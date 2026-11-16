@@ -8,6 +8,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.Problem;
 import com.endava.cats.report.wfc.WfcReportBuilder;
 import com.github.mustachejava.Mustache;
 import com.google.gson.ExclusionStrategy;
@@ -67,7 +68,7 @@ public class TestCaseExporterWfcReport extends TestCaseExporter {
     }
 
     @Override
-    public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary) {
+    public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary, List<Problem> problems) {
         long executionTimeSeconds = Math.max(0, (System.currentTimeMillis() - getT0()) / 1000);
         Report wfcReport = WfcReportBuilder.build(
                 summaries,

@@ -43,7 +43,7 @@ public class QualityGateArguments {
 
     @CommandLine.Option(names = {"--baseline"},
             description = "Path to a baseline cats-report directory or cats-summary-report.json file. " +
-                    "Compares the current run apples-to-apples against the baseline and fails only if new regressions are introduced.")
+                    "Compares problem occurrences and fails on new errors; both reports must use the current problemKeyVersion.")
     @Setter
     private File baseline;
 

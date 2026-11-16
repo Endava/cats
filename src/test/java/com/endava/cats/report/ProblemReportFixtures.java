@@ -43,6 +43,18 @@ final class ProblemReportFixtures {
     private final List<CatsTestCase> tests = new ArrayList<>();
     private final AtomicInteger number = new AtomicInteger();
 
+    static void writeSummary(TestCaseExporter exporter, List<CatsTestCaseSummary> summaries,
+                             com.endava.cats.model.ExecutionSummary execution) {
+        if (summaries == null) {
+            exporter.writeSummary(null, execution, List.of());
+            return;
+        }
+        ClusterCompute.assignErrorTemplates(summaries, exporter.catsGlobalContext.getOpenAPI());
+        var problems = com.endava.cats.report.problem.ProblemCatalog.build(summaries,
+                new com.endava.cats.report.problem.ResponseSchemaNames(exporter.catsGlobalContext.getOpenAPI()));
+        exporter.writeSummary(summaries, execution, problems);
+    }
+
     static List<CatsTestCase> riskApiRun() {
         ProblemReportFixtures run = new ProblemReportFixtures();
         run.add("success", "All Good!", 200, "HappyPath", "GET", "/risk-rules", "", "[]");

@@ -376,7 +376,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                 this.printSuggestions();
                 this.printUnresolvedParameters();
             }
-            if (executionSummary != null && executionSummary.outcome().status() == RunOutcome.Status.FAILED) {
+            if (testCaseListener.isBaselineUsageError()) {
+                exitCodeDueToErrors = CommandLine.ExitCode.USAGE;
+            } else if (executionSummary != null && executionSummary.outcome().status() == RunOutcome.Status.FAILED) {
                 exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
             }
             if (executionSummary != null && executionEventPublisher.hasSubscribers()) {
