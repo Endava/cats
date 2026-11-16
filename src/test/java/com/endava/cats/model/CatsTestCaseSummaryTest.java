@@ -1,11 +1,61 @@
 package com.endava.cats.model;
 
+import com.google.gson.Gson;
+import com.endava.cats.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 @QuarkusTest
 class CatsTestCaseSummaryTest {
+
+    @Test
+    void shouldPersistTypedExpectationsWithoutChangingTheDescription() {
+        CatsTestCase test = new CatsTestCase();
+        test.setTestId("Test 1");
+        test.setExpectedResult("Should return a successful response");
+        test.recordExpectedResponse(new ExpectedResponse(List.of("405")));
+        test.setRequest(CatsRequest.builder().httpMethod("PUT").build());
+        CatsTestCaseSummary summary = CatsTestCaseSummary.fromCatsTestCase(test);
+
+        CatsTestCase readTest = JsonUtils.GSON.fromJson(JsonUtils.GSON.toJson(test), CatsTestCase.class);
+        CatsTestCaseSummary readSummary = JsonUtils.GSON.fromJson(JsonUtils.GSON.toJson(summary), CatsTestCaseSummary.class);
+
+        Assertions.assertThat(readTest.getExpectedResult()).isEqualTo(test.getExpectedResult());
+        Assertions.assertThat(readTest.getExpectedResponseCodes()).containsExactly("405");
+        Assertions.assertThat(readSummary.getExpectedResponseCodes()).containsExactly("405");
+        Assertions.assertThat(readSummary.getExpectedOutcome()).isEqualTo(ExpectedResponse.Outcome.REJECTION);
+        Assertions.assertThat(readSummary.hasRecordedExpectedResponse()).isTrue();
+    }
+
+    @Test
+    void shouldKeepLegacyExpectationsUnknownUntilTheyAreExplicitlyRecorded() {
+        CatsTestCase test = JsonUtils.GSON.fromJson("{\"expectedResult\":\"Should return [2XX]\"}", CatsTestCase.class);
+        CatsTestCaseSummary summary = JsonUtils.GSON.fromJson("{}", CatsTestCaseSummary.class);
+
+        Assertions.assertThat(test.hasRecordedExpectedResponse()).isFalse();
+        Assertions.assertThat(test.getExpectedResponseCodes()).isEmpty();
+        Assertions.assertThat(test.getExpectedOutcome()).isEqualTo(ExpectedResponse.Outcome.UNKNOWN);
+        Assertions.assertThat(summary.hasRecordedExpectedResponse()).isFalse();
+        Assertions.assertThat(summary.getExpectedOutcome()).isEqualTo(ExpectedResponse.Outcome.UNKNOWN);
+    }
+
+    @Test
+    void shouldKeepWfcCompatibilityStateOutOfSummaryJson() {
+        CatsTestCase test = new CatsTestCase();
+        test.setTestId("Test 1");
+        test.setResult("error");
+        test.setRequest(CatsRequest.builder().httpMethod("POST").payload("\"TOKEN_ALPHA\"").build());
+        test.setResponse(CatsResponse.builder().responseCode(500).body("{}").build());
+        CatsTestCaseSummary summary = CatsTestCaseSummary.fromCatsTestCase(test);
+        summary.attachWfcErrorSignature(new ErrorSignature("Error", List.of("TOKEN_ALPHA"), ""));
+
+        Assertions.assertThat(summary.getRequestVocabulary().values()).containsExactly("TOKEN_ALPHA");
+        Assertions.assertThat(summary.getWfcRequestVocabulary()).isEqualTo(RequestVocabulary.EMPTY);
+        Assertions.assertThat(new Gson().toJson(summary)).doesNotContain("wfcRequestVocabulary", "wfcErrorSignature", "TOKEN_ALPHA");
+    }
 
     @Test
     void givenTwoTestCaseSummaryInstancesWithTheDifferentStringParts_whenComparingThem_thenTheyAreNotEqual() {

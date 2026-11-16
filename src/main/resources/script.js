@@ -20,38 +20,115 @@ function escapeHtml(string) {
     });
 }
 
-function populateTable() {
-    const filter = (selectedFilter || "All").toUpperCase();
-    const fuzzer = (selectedFuzzer || "All").toUpperCase();
-    const searchInput = document.querySelector('.search-input');
-    const searchText = searchInput ? searchInput.value.trim().toUpperCase() : "";
-    const problemSelect = document.getElementById('problemFilter');
-    const problem = problemSelect ? problemSelect.value : "";
+// The embedded data contains every test, independent of how many rows have been rendered.
+let testsTable = null;
+let testsRenderHandle = null;
+let testsRenderGeneration = 0;
 
-    document.querySelectorAll('#summaryTable tr:not(.header)').forEach((tr) => {
-        const resultEl = tr.querySelector(".test-result");
-        const result = resultEl ? resultEl.textContent.toUpperCase() : "";
-        const fuzzerEl = tr.querySelector("td:nth-child(2)");
-        const fuzzerName = fuzzerEl ? fuzzerEl.textContent.toUpperCase() : "";
-        const rowText = tr.textContent.toUpperCase();
-
-        const matchFilter = filter === "ALL" || result.includes(filter);
-        const matchFuzzer = fuzzer === "ALL" || fuzzerName.includes(fuzzer);
-        const matchSearch = searchText === "" || rowText.includes(searchText);
-        const matchProblem = problem === "" || tr.getAttribute('data-problem') === problem;
-        const matchOperation = selectedOperation === "" || tr.getAttribute('data-operation') === selectedOperation;
-
-        if (matchFilter && matchFuzzer && matchSearch && matchProblem && matchOperation) {
-            tr.style.display = '';
-        } else {
-            tr.style.display = 'none';
-        }
+function initializeTestsTable() {
+    const data = document.getElementById('cats-test-data');
+    if (!data || testsTable) return;
+    const [rows, problems] = JSON.parse(data.textContent);
+    testsTable = {rows, problems, matches: [], rendered: 0};
+    rows.forEach(row => {
+        row.searchText = [row[0], row[1], row[2], row[3], row[4], row[5], row[6], problems[row[8]]?.[0] || ''].join(' ').toUpperCase();
     });
+    const fuzzerSelect = document.getElementById('fuzzerFilter');
+    [...new Set(rows.map(row => row[1]))].sort().forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        fuzzerSelect.appendChild(option);
+    });
+    fuzzerSelect.addEventListener('change', () => {
+        selectedFuzzer = fuzzerSelect.value;
+        populateTable();
+    });
+}
 
-    const clearButton = document.querySelector('.search-clear-btn');
-    if (clearButton) {
-        clearButton.style.display = searchText.length > 0 ? 'inline-block' : 'none';
-    }
+function testFilters() {
+    return {
+        result: (selectedFilter || 'All').toUpperCase(),
+        fuzzer: (selectedFuzzer || 'All').toUpperCase(),
+        query: (document.querySelector('.search-input')?.value || '').trim().toUpperCase(),
+        problem: document.getElementById('problemFilter')?.value || '',
+        operation: selectedOperation
+    };
+}
+
+function matchesTest(row, filters) {
+    return (filters.result === 'ALL' || row[5].toUpperCase().includes(filters.result))
+        && (filters.fuzzer === 'ALL' || row[1].toUpperCase().includes(filters.fuzzer))
+        && (!filters.query || row.searchText.includes(filters.query))
+        && (!filters.problem || row[8] === filters.problem)
+        && (!filters.operation || row[2].toUpperCase() + ' ' + row[3] === filters.operation);
+}
+
+function populateTable() {
+    initializeTestsTable();
+    if (!testsTable) return;
+    cancelTestsRender();
+    testsRenderGeneration++;
+    const filters = testFilters();
+    testsTable.matches = testsTable.rows.filter(row => matchesTest(row, filters));
+    testsTable.rendered = 0;
+    document.querySelector('#summaryTable tbody').replaceChildren();
+    const clear = document.querySelector('.search-clear-btn');
+    if (clear) clear.style.display = filters.query ? 'inline-block' : 'none';
+    if (document.getElementById('tests-view').classList.contains('active')) renderTestsChunk(testsRenderGeneration, 100);
+    else updateTestsRenderStatus();
+}
+
+function cancelTestsRender() {
+    if (!testsRenderHandle) return;
+    if (testsRenderHandle.idle) window.cancelIdleCallback(testsRenderHandle.id);
+    else clearTimeout(testsRenderHandle.id);
+    testsRenderHandle = null;
+}
+
+function scheduleTestsRender(generation) {
+    const callback = () => {
+        testsRenderHandle = null;
+        renderTestsChunk(generation, 500);
+    };
+    testsRenderHandle = window.requestIdleCallback
+        ? {id: window.requestIdleCallback(callback, {timeout: 100}), idle: true}
+        : {id: setTimeout(callback, 0), idle: false};
+}
+
+function renderTestsChunk(generation, size) {
+    if (!testsTable || generation !== testsRenderGeneration || !document.getElementById('tests-view').classList.contains('active')) return;
+    const end = Math.min(testsTable.rendered + size, testsTable.matches.length);
+    const template = document.createElement('template');
+    template.innerHTML = testsTable.matches.slice(testsTable.rendered, end).map(testRowHtml).join('');
+    document.querySelector('#summaryTable tbody').appendChild(template.content);
+    testsTable.rendered = end;
+    updateTestsRenderStatus();
+    if (end < testsTable.matches.length) scheduleTestsRender(generation);
+}
+
+function updateTestsRenderStatus() {
+    const complete = testsTable.rendered === testsTable.matches.length;
+    const status = document.getElementById('tests-render-status');
+    status.dataset.complete = String(complete);
+    status.textContent = complete
+        ? 'Showing ' + testsTable.matches.length.toLocaleString() + ' tests'
+        : 'Showing ' + testsTable.rendered.toLocaleString() + ' of ' + testsTable.matches.length.toLocaleString() + ' matching tests…';
+    document.getElementById('summaryTable').setAttribute('aria-busy', String(!complete));
+}
+
+function testRowHtml(row) {
+    const [id, fuzzer, method, path, scenario, result, reason, switched, problemId] = row;
+    const key = id.replace(/ /g, '');
+    const problem = testsTable.problems[problemId];
+    const problemLink = problem ? '<a href="#' + escapeHtml(problem[1]) + '" class="problem-jump">' + escapeHtml(problem[0]) + '</a>' : '';
+    const pathHtml = escapeHtml(path).replace(/&#x2F;/g, '/<wbr>').replace(/(\{[^}]+})/g, '<span class="param-tok">$1</span>');
+    return '<tr data-id="' + escapeHtml(key) + '" data-problem="' + escapeHtml(problemId) + '" data-operation="' + escapeHtml(method.toUpperCase() + ' ' + path) + '">'
+        + '<td><a href="' + encodeURIComponent(key) + '.html" target="_blank" rel="noopener">' + escapeHtml(id) + '</a></td>'
+        + '<td class="fuzzer-cell">' + escapeHtml(fuzzer) + '</td><td><span class="active rounded rounded-' + escapeHtml(method) + '">' + escapeHtml(method) + '</span>'
+        + '<span class="active rounded path">' + pathHtml + '</span><span class="scenario">' + escapeHtml(scenario) + '</span></td>'
+        + '<td><label class="test-result result-' + escapeHtml(result) + '">' + escapeHtml(result) + '</label></td>'
+        + '<td>' + (switched ? '<span class="result-warn"> ⚠ </span>' : '') + escapeHtml(reason) + '</td><td class="problem-cell">' + problemLink + '</td></tr>';
 }
 
 function handleFilter(filter) {
@@ -79,6 +156,8 @@ document.addEventListener('DOMContentLoaded', function () {
             selectedFilter = menuSpan.getAttribute('data-filtered') || "All";
             menuSpan.classList.add("active");
             selectedFuzzer = "All";
+            const fuzzerSelect = document.getElementById('fuzzerFilter');
+            if (fuzzerSelect) fuzzerSelect.value = 'All';
 
             handleFilter(selectedFilter);
             set.clear();
@@ -375,7 +454,9 @@ function renderProblemBanner() {
         return;
     }
     const testKey = banner.getAttribute('data-test-key');
-    const entry = testKey ? window.CATS_PROBLEMS[testKey] : null;
+    const reference = testKey ? window.CATS_PROBLEMS[testKey] : null;
+    const problem = reference ? window.CATS_PROBLEMS_INDEX?.[reference.problem] : null;
+    const entry = problem ? {...problem, fields: reference.fields} : null;
     if (!entry) {
         return;
     }
@@ -401,10 +482,22 @@ let activeProblemFilter = 'all';
 
 function showReportView(viewId) {
     document.querySelectorAll('.report-view').forEach(view => view.classList.toggle('active', view.id === viewId));
-    document.querySelectorAll('.report-tab').forEach(tab => tab.classList.toggle('active', tab.getAttribute('data-view') === viewId));
+    document.querySelectorAll('.report-tab').forEach(tab => {
+        const selected = tab.getAttribute('data-view') === viewId;
+        tab.classList.toggle('active', selected);
+        tab.setAttribute('aria-selected', String(selected));
+    });
+    cancelTestsRender();
+    if (viewId === 'tests-view' && testsTable && testsTable.rendered < testsTable.matches.length) {
+        renderTestsChunk(testsRenderGeneration, 100);
+    }
 }
 
 function showProblemPivot(pivotId) {
+    const filters = document.getElementById('problemCardFilters');
+    if (filters) {
+        filters.hidden = pivotId !== 'pivot-problem';
+    }
     document.querySelectorAll('.problem-pivot').forEach(pivot => pivot.classList.toggle('active', pivot.id === pivotId));
     document.querySelectorAll('input[name="problem-pivot"]').forEach(radio => {
         radio.checked = radio.value === pivotId;
@@ -418,7 +511,12 @@ function jumpToProblem(anchor) {
     }
     showReportView('problems-view');
     showProblemPivot('pivot-problem');
-    card.style.display = '';
+    activeProblemFilter = 'all';
+    document.querySelectorAll('.problem-filter-btn').forEach(button =>
+        button.classList.toggle('active', button.getAttribute('data-problem-filter') === 'all'));
+    const search = document.getElementById('problemSearchInput');
+    if (search) search.value = '';
+    filterProblems();
     card.scrollIntoView({behavior: 'smooth', block: 'start'});
     card.classList.remove('problem-card-highlight');
     void card.offsetWidth;
@@ -432,6 +530,8 @@ function showTestsOfProblem(problemId, operation) {
     if (select) {
         select.value = problemId;
     }
+    resetTestFilters();
+    updateProblemSelection();
     selectedOperation = operation || "";
     const chip = document.getElementById('operationFilterChip');
     if (chip) {
@@ -442,6 +542,24 @@ function showTestsOfProblem(problemId, operation) {
     showReportView('tests-view');
     populateTable();
     window.scrollTo({top: document.getElementById('tests-view').offsetTop, behavior: 'smooth'});
+}
+
+function resetTestFilters() {
+    selectedFilter = "All";
+    selectedFuzzer = "All";
+    const fuzzerSelect = document.getElementById('fuzzerFilter');
+    if (fuzzerSelect) fuzzerSelect.value = 'All';
+    const search = document.querySelector('.search-input');
+    if (search) search.value = '';
+    document.querySelectorAll('#summary span.menu').forEach(menu =>
+        menu.classList.toggle('active', menu.getAttribute('data-filtered') === 'All'));
+}
+
+function updateProblemSelection() {
+    const select = document.getElementById('problemFilter');
+    if (select) {
+        select.title = select.selectedOptions[0]?.title || 'Filter by problem';
+    }
 }
 
 function clearOperationFilter() {
@@ -514,11 +632,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const problemSelect = document.getElementById('problemFilter');
     if (problemSelect) {
         problemSelect.addEventListener('change', () => {
+            updateProblemSelection();
             selectedOperation = "";
             clearOperationFilter();
         });
     }
+    initializeTestsTable();
     if (window.location.hash && window.location.hash.startsWith('#problem-')) {
         jumpToProblem(decodeURIComponent(window.location.hash.substring(1)));
     }
+    populateTable();
 });

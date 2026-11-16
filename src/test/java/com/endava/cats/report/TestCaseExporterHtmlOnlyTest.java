@@ -65,7 +65,7 @@ class TestCaseExporterHtmlOnlyTest {
         exporter.writeProblemsJs(ProblemPage.of(problems, withNulls, true), CatsTestReport.builder().testCases(withNulls).problems(problems).build());
 
         Assertions.assertThat(Files.readString(reportDirectory.resolve(TestCaseExporter.PROBLEMS_JS))).isEqualTo(expected)
-                .contains("\"Test1\":", "\"fields\": [", "\"body.name\"");
+                .contains("\"Test1\":", "\"fields\":[", "\"body.name\"");
     }
 
     @Test
@@ -87,12 +87,14 @@ class TestCaseExporterHtmlOnlyTest {
         List<String> ids = Pattern.compile("\\sid=\"([^\"]+)\"").matcher(html).results().map(match -> match.group(1)).toList();
         Assertions.assertThat(html).doesNotContain("script.js", "problems.js", "data-view=", "problem-banner", "problem-view-tests", "{{")
                 .contains("href=\"#problems-view\"", "href=\"#problems-by-operation\"", "href=\"#tests-view\"", "id=\"problems-by-operation\"",
-                        "Grouped by:", "href=\"Test4.html\"");
+                        "How these tests were grouped", "href=\"Test4.html\"");
         Assertions.assertThat(Pattern.compile("href=\"#([^\"]+)\"").matcher(html).results().map(match -> match.group(1)).distinct()).allMatch(ids::contains);
         Assertions.assertThat(ids).doesNotHaveDuplicates();
         Assertions.assertThat(testPage).doesNotContain("problems.js", "problem-banner", "script.js")
                 .contains("Same result as the unmodified request");
         Assertions.assertThat(reportDirectory.resolve(TestCaseExporter.PROBLEMS_JS)).doesNotExist();
+        Assertions.assertThat(html.indexOf("id=\"tests-view\"")).isLessThan(html.indexOf("id=\"problems-view\""));
+        Assertions.assertThat(html).contains("Unmodified request:", "href=\"Test2.html\"");
     }
 
     @Test
@@ -283,8 +285,8 @@ class TestCaseExporterHtmlOnlyTest {
                 "\"sameErrorAsBaselineFuzzer\": \"HappyPath\"");
         Assertions.assertThat(problemsJs)
                 .startsWith("window.CATS_PROBLEMS_PAGE = true;")
-                .contains("window.CATS_PROBLEMS = ", "\"Test12\":", "\"title\": \"Server error (HTTP 500): Database down\"", "\"count\": 2",
-                        "\"anchor\": \"problem-", "\"kind\": \"SERVER_ERROR\"")
+                .contains("window.CATS_PROBLEMS_INDEX = ", "window.CATS_PROBLEMS = ", "\"Test12\":", "\"title\":\"Server error (HTTP 500): Database down\"", "\"count\":2",
+                        "\"anchor\":\"problem-", "\"kind\":\"SERVER_ERROR\"")
                 .doesNotContain("\"Test1\":");
         Assertions.assertThat(summaryHtml).contains("1 of 2 also fail the same way on the unmodified request");
     }

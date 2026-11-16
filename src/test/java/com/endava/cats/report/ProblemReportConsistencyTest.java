@@ -4,14 +4,19 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.model.CatsRequest;
+import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.FindingConfidence;
+import com.endava.cats.model.ExpectedResponse;
 import com.endava.cats.model.Problem;
 import com.endava.cats.model.ProblemKind;
+import com.endava.cats.report.problem.OccurrenceDelta.MatchedBy;
 import com.endava.cats.report.problem.ProblemCatalog;
 import com.endava.cats.report.problem.ResponseSchemaNames;
+import com.endava.cats.report.wfc.WfcReportBuilder;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
@@ -158,6 +163,7 @@ class ProblemReportConsistencyTest {
         CatsTestReport report = write(ProblemReportFixtures.summaries(ProblemReportFixtures.riskApiRun()), reportDirectory);
         String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
         Map<String, TestCaseExporter.ProblemBannerEntry> banners = banners(reportDirectory);
+        Map<String, TestCaseExporter.ProblemIndexEntry> index = problemIndex(reportDirectory);
         Map<String, String> cards = cards(html);
 
         List<String> ids = ID_ATTRIBUTE.matcher(html).results().map(match -> match.group(1)).toList();
@@ -167,12 +173,15 @@ class ProblemReportConsistencyTest {
         Assertions.assertThat(banners.keySet()).containsExactlyInAnyOrderElementsOf(report.getTestCases().stream()
                 .filter(ProblemCatalog::isReportable).map(CatsTestCaseSummary::getKey).toList());
         banners.forEach((testKey, banner) -> {
-            Problem problem = report.getProblems().stream().filter(candidate -> ("problem-" + candidate.id()).equals(banner.anchor())).findFirst().orElseThrow();
-            Assertions.assertThat(ids).contains(banner.anchor());
-            Assertions.assertThat(banner.count()).isEqualTo(problem.testCount());
-            Assertions.assertThat(banner.title()).isEqualTo(problem.title());
-            Assertions.assertThat(cards.get(banner.anchor())).contains("href=\"" + testKey + ".html\"");
+            Problem problem = report.getProblems().stream().filter(candidate -> candidate.id().equals(banner.problem())).findFirst().orElseThrow();
+            TestCaseExporter.ProblemIndexEntry metadata = index.get(banner.problem());
+            Assertions.assertThat(ids).contains(metadata.anchor());
+            Assertions.assertThat(metadata.count()).isEqualTo(problem.testCount());
+            Assertions.assertThat(metadata.title()).isEqualTo(problem.title());
+            Assertions.assertThat(cards.get(metadata.anchor())).contains("href=\"" + testKey + ".html\"");
+            Assertions.assertThat(JsonUtils.GSON.toJsonTree(banner).getAsJsonObject().keySet()).containsExactly("problem", "fields");
         });
+        Assertions.assertThat(index.keySet()).containsExactlyElementsOf(report.getProblems().stream().map(Problem::id).toList());
     }
 
     @Test
@@ -187,26 +196,138 @@ class ProblemReportConsistencyTest {
         Assertions.assertThat(html).doesNotContainPattern("T-[0-9a-f]{8}").doesNotContainIgnoringCase("error template").doesNotContainIgnoringCase("cluster");
         report.getProblems().stream().filter(problem -> !problem.kind().isIdentifiedByServerMessage()).forEach(problem -> {
             String card = cards.get("problem-" + problem.id());
-            Assertions.assertThat(card).as(problem.title()).doesNotContain("Server message:", "Sample response");
+            Assertions.assertThat(card).as(problem.title()).doesNotContain("Server-message pattern:", "Example response");
             Assertions.assertThat(templates).noneMatch(template -> problem.title().contains(template));
         });
         report.getProblems().stream().filter(problem -> problem.kind().isIdentifiedByServerMessage())
-                .forEach(problem -> Assertions.assertThat(cards.get("problem-" + problem.id())).contains("Server message:"));
+                .forEach(problem -> Assertions.assertThat(cards.get("problem-" + problem.id())).contains("Server-message pattern:"));
     }
 
     @Test
-    void shouldShowTheProblemsTabByDefaultWhenThereAreFailures() throws IOException {
+    void shouldDefaultToAllTestsAndKeepProblemsAvailableWhenThereAreFailures() throws IOException {
         write(ProblemReportFixtures.summaries(ProblemReportFixtures.riskApiRun()), reportDirectory);
         String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
 
-        Assertions.assertThat(html).contains("class=\"report-tab active\" data-view=\"problems-view\"", "id=\"problems-view\" class=\"report-view active\"",
-                "id=\"tests-view\" class=\"report-view\"", "<th style=\"width: 220px\">Problem</th>", "id=\"problemFilter\"", "Grouped by:", "View 8 tests");
+        Assertions.assertThat(html).contains("class=\"report-tab active\" aria-selected=\"true\" data-view=\"tests-view\"",
+                "id=\"tests-view\" class=\"report-view active\"", "id=\"problems-view\" class=\"report-view\"",
+                "<th style=\"width: 220px\">Problem</th>", "id=\"problemFilter\"", "How these tests were grouped", "View 8 tests");
+        Assertions.assertThat(html).contains("id=\"cats-test-data\" type=\"application/json\"", "id=\"fuzzerFilter\"")
+                .doesNotContain("<tr data-id=");
+        Assertions.assertThat(html.indexOf("id=\"tests-view\"")).isLessThan(html.indexOf("id=\"problems-view\""));
+    }
+
+    @Test
+    void shouldRenderBaselineLinksBesideTheHintAndReadableProblemOptions() throws IOException {
+        write(ProblemReportFixtures.summaries(ProblemReportFixtures.riskApiRun()), reportDirectory);
+        String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
+        String note = Pattern.compile("(?s)<div class=\"problem-line problem-baseline\">(.*?)</div>")
+                .matcher(html).results().findFirst().orElseThrow().group(1);
+
+        Assertions.assertThat(note).contains("2 of 8 also fail the same way", "Unmodified request:", "href=\"Test2.html\"");
+        Assertions.assertThat(html).contains("class=\"tests-filters\"", "class=\"problem-filter-control\"", "<label for=\"problemFilter\">Problem</label>");
+    }
+
+    @Test
+    void shouldExplainDistinctRejectionsAndExposeActualValidationBounds() throws IOException {
+        CatsTestReport report = write(ProblemReportFixtures.summaries(ProblemReportFixtures.riskApiRun()), reportDirectory);
+        Map<String, String> cards = cards(Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML)));
+        Problem operator = report.getProblems().stream().filter(problem -> problem.title().contains("XEL-4220")).findFirst().orElseThrow();
+        Problem bounds = report.getProblems().stream().filter(problem -> problem.title().contains("XEL-4221")).findFirst().orElseThrow();
+
+        Assertions.assertThat(cards.get("problem-" + operator.id())).contains("Expected HTTP 2xx; received HTTP 422.</h3>",
+                        "<div class=\"problem-example-message\">XEL-4220: Operator GT requires a numeric value</div>",
+                        "Expected HTTP 2xx; received HTTP 422.", "2 tests share this server-message pattern and HTTP 422 across 2 operations.")
+                .doesNotContain("problem-legend", "&lt;*&gt; varies");
+        Assertions.assertThat(cards.get("problem-" + bounds.id())).contains("Observed in one test on one operation.",
+                "<details class=\"problem-grouping\">", "<details class=\"problem-sample\">", "between 1 and 64",
+                "A number hidden for grouping", "this does not mean they differed between responses", "Open Test ");
+        report.getProblems().stream().filter(problem -> problem.kind().isIdentifiedByServerMessage())
+                .forEach(problem -> assertMessagePresentation(cards.get("problem-" + problem.id())));
+    }
+
+    private static void assertMessagePresentation(String card) {
+        String heading = Pattern.compile("<h3 class=\"problem-title\">(.*?)</h3>").matcher(card).results().findFirst().orElseThrow().group(1);
+        Assertions.assertThat(heading).doesNotContain("NUM", "&lt;*&gt;").contains("HTTP");
+        Assertions.assertThat(card.indexOf("problem-example")).isLessThan(card.indexOf("problem-operations-scroll"));
+        Assertions.assertThat(card.indexOf("problem-operations-scroll")).isLessThan(card.indexOf("problem-sample"));
+        Assertions.assertThat(card.indexOf("problem-sample")).isLessThan(card.indexOf("problem-grouping"));
+        Assertions.assertThat(card).contains("Example server message", "Full example response").doesNotContain("problem-expectation");
+    }
+
+    @Test
+    void shouldEscapeUnmaskedExamplesWhileLinkingTheirSourceTest() throws IOException {
+        CatsTestCase test = ProblemReportFixtures.riskApiRun().stream().filter(tc -> tc.getFuzzer().equals("HappyPath"))
+                .filter(tc -> tc.getResponse().getResponseCode() == 422).findFirst().orElseThrow();
+        test.setResponse(CatsResponse.builder().responseCode(422).body(JsonUtils.GSON.toJson(
+                Map.of("message", "</div><script>alert('example')</script>"))).build());
+        write(ProblemReportFixtures.summaries(List.of(test)), reportDirectory);
+        String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
+        String example = Pattern.compile("<div class=\"problem-example-message\">(.*?)</div>").matcher(html)
+                .results().findFirst().orElseThrow().group(1);
+
+        Assertions.assertThat(example).contains("&lt;script&gt;", "alert(").doesNotContain("<script>", "</div>");
+        Assertions.assertThat(html).contains("href=\"" + test.getTestId().replace(" ", "") + ".html\"");
+    }
+
+    @Test
+    void shouldComparePersistedRootStringParseErrorsByIdWithoutWarningRegressions() throws IOException {
+        Path baseline = reportDirectory.resolve("baseline");
+        Path target = reportDirectory.resolve("target");
+        write(List.of(rootStringRejection("TOKEN_ALPHA")), baseline);
+        write(List.of(rootStringRejection("TOKEN_BETA")), target);
+
+        var comparison = BaselineComparisonEngine.compareReports(baseline, target, true);
+
+        Assertions.assertThat(comparison.regression()).isFalse();
+        Assertions.assertThat(comparison.newOccurrences()).isEmpty();
+        Assertions.assertThat(comparison.fixedOccurrences()).isEmpty();
+        Assertions.assertThat(comparison.notComparable()).isEmpty();
+        Assertions.assertThat(comparison.unchangedOccurrences()).singleElement()
+                .satisfies(delta -> Assertions.assertThat(delta.matchedBy()).isEqualTo(MatchedBy.ID));
+    }
+
+    @Test
+    void shouldKeepProblemKeysAndWfcFaultsWhenOnlyExpectationMetadataChanges() throws IOException {
+        List<CatsTestCase> run = ProblemReportFixtures.riskApiRun();
+        List<CatsTestCaseSummary> before = ProblemReportFixtures.summaries(run);
+        run.forEach(test -> test.recordExpectedResponse(new ExpectedResponse(List.of("2XX", "4XX"))));
+        List<CatsTestCaseSummary> after = ProblemReportFixtures.summaries(run);
+        CatsTestReport baseline = write(before, reportDirectory.resolve("before"));
+        CatsTestReport target = write(after, reportDirectory.resolve("after"));
+
+        Assertions.assertThat(target.getProblems()).isEqualTo(baseline.getProblems());
+        Assertions.assertThat(BaselineComparisonEngine.compareReports(reportDirectory.resolve("before"), reportDirectory.resolve("after"), true).regression()).isFalse();
+        var oldFaults = WfcReportBuilder.build(before, null, ProblemReportFixtures.RISK_CONTRACT, List.of(), null, "test", 0).getFaults();
+        var newFaults = WfcReportBuilder.build(after, null, ProblemReportFixtures.RISK_CONTRACT, List.of(), null, "test", 0).getFaults();
+        Assertions.assertThat(JsonUtils.GSON.toJson(newFaults)).isEqualTo(JsonUtils.GSON.toJson(oldFaults));
+    }
+
+    private static CatsTestCaseSummary rootStringRejection(String value) {
+        CatsTestCase test = new CatsTestCase();
+        test.setTestId("Test 1");
+        test.setResult("warn");
+        test.setResultReason("Unexpected response code: 400");
+        test.setFuzzer("HttpMethods");
+        test.setContractPath("/items");
+        test.setRequest(CatsRequest.builder().httpMethod("PUT").url("http://localhost/items").payload(JsonUtils.GSON.toJson(value)).build());
+        String body = JsonUtils.GSON.toJson(Map.of("message", "Cannot deserialize from String value ('%s')".formatted(value)));
+        test.setResponse(CatsResponse.builder().responseCode(400).body(body).build());
+        return CatsTestCaseSummary.fromCatsTestCase(test);
     }
 
     static Map<String, TestCaseExporter.ProblemBannerEntry> banners(Path directory) throws IOException {
         String script = Files.readString(directory.resolve(TestCaseExporter.PROBLEMS_JS));
         String json = script.substring(script.indexOf(PROBLEMS_VARIABLE) + PROBLEMS_VARIABLE.length(), script.lastIndexOf(';'));
         return JsonUtils.GSON.fromJson(json, new TypeToken<Map<String, TestCaseExporter.ProblemBannerEntry>>() {
+        }.getType());
+    }
+
+    static Map<String, TestCaseExporter.ProblemIndexEntry> problemIndex(Path directory) throws IOException {
+        String script = Files.readString(directory.resolve(TestCaseExporter.PROBLEMS_JS));
+        String assignment = "window.CATS_PROBLEMS_INDEX = ";
+        int start = script.indexOf(assignment) + assignment.length();
+        String json = script.substring(start, script.indexOf(";\n", start));
+        return JsonUtils.GSON.fromJson(json, new TypeToken<Map<String, TestCaseExporter.ProblemIndexEntry>>() {
         }.getType());
     }
 

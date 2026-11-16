@@ -7,6 +7,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.ExpectedResponse;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -59,6 +60,7 @@ class SimpleExecutorTest {
 
         ArgumentCaptor<ServiceData> serviceData = ArgumentCaptor.forClass(ServiceData.class);
         Mockito.verify(serviceCaller).call(serviceData.capture());
+        Mockito.verify(testCaseListener).addExpectedResponse(new ExpectedResponse(ResponseCodeFamilyPredefined.FOURXX.allowedResponseCodes()));
         Assertions.assertThat(serviceData.getValue().getPayload()).contains("mutated");
         Assertions.assertThat(serviceData.getValue().getOriginalPayload()).contains("original");
         Assertions.assertThat(serviceData.getValue().getAllMutationTargets()).containsExactly(

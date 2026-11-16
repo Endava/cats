@@ -1,5 +1,5 @@
 {{#problemPage}}
-<section id="problems-view" class="report-view{{#hasProblems}} active{{/hasProblems}}">
+<section id="problems-view" class="report-view">
     <h2 class="title-section">Problems</h2>
     {{#hasProblems}}
     <p class="problems-headline">{{headline}}</p>
@@ -15,7 +15,7 @@
             <label><input type="radio" name="problem-pivot" value="pivot-operation"> Operation</label>
             <label><input type="radio" name="problem-pivot" value="pivot-status"> Status</label>
         </div>
-        <div class="problems-toolbar-group">
+        <div id="problemCardFilters" class="problems-toolbar-group">
             <span class="problems-toolbar-label">Show:</span>
             <button type="button" class="problem-filter-btn active" data-problem-filter="all">All</button>
             <button type="button" class="problem-filter-btn" data-problem-filter="error">Errors</button>
@@ -34,17 +34,21 @@
                 <span class="problem-badges"><span class="problem-level problem-level-{{level}}">{{levelLabel}}</span><span class="problem-kind">{{kindLabel}}</span></span>
             </div>
             <div class="problem-meta">{{meta}}</div>
-            {{#hasServerMessage}}
-            <div class="problem-line"><strong>Server message:</strong> <code class="problem-message">{{serverMessage}}</code>
-                <span class="problem-legend">&lt;*&gt; varies · &lt;INPUT&gt; a value CATS sent · &lt;FIELD&gt; a field name · NUM a number · STR a string</span></div>
-            {{/hasServerMessage}}
+            {{#message}}
+            <div class="problem-example">
+                <div class="problem-example-label">Example server message{{#sampleTest}} · <a class="problem-test-pill" href="{{key}}.html" target="_blank">{{id}}</a>{{/sampleTest}}</div>
+                <div class="problem-example-message">{{exampleText}}</div>
+            </div>
+            {{/message}}
             {{#hasEvidence}}
             <div class="problem-line"><strong>Evidence:</strong> {{evidence}}</div>
             {{/hasEvidence}}
             {{#hasBaselineNote}}
-            <div class="problem-line problem-baseline">&#9873; {{baselineNote}}</div>
+            <div class="problem-line problem-baseline">&#9873; {{baselineNote}}
+                {{#hasBaselineTests}}<span class="problem-baseline-tests">{{baselineTestsLabel}}: {{#baselineTests}}<a class="problem-test-pill" href="{{key}}.html" target="_blank">{{id}}</a> {{/baselineTests}}</span>{{/hasBaselineTests}}
+            </div>
             {{/hasBaselineNote}}
-            <div class="problem-grouped-by">Grouped by: {{groupedBy}}</div>
+            <div class="problem-operations-scroll">
             <table class="problem-operations">
                 <thead>
                 <tr><th>Operation</th><th>Mutated fields (tests)</th><th>Tests</th></tr>
@@ -59,6 +63,7 @@
                 {{/rows}}
                 </tbody>
             </table>
+            </div>
             {{#hasVariants}}
             <details class="problem-variants">
                 <summary>{{variantsLabel}}</summary>
@@ -78,10 +83,20 @@
             {{/hasRelated}}
             {{#hasSampleResponse}}
             <details class="problem-sample">
-                <summary>Sample response</summary>
+                <summary>Full example response{{#message}}{{#hasSampleTest}} from {{sampleTest.id}}{{/hasSampleTest}}{{/message}}</summary>
+                {{#message}}{{#sampleTest}}<a class="problem-test-pill" href="{{key}}.html" target="_blank">Open {{id}}</a>{{/sampleTest}}{{/message}}
                 <pre>{{sampleResponse}}</pre>
             </details>
             {{/hasSampleResponse}}
+            <details class="problem-grouping">
+                <summary>How these tests were grouped</summary>
+                <p class="problem-grouped-by">{{groupedBy}}</p>
+                {{#hasServerMessage}}<div class="problem-line"><strong>Server-message pattern:</strong> <code class="problem-message">{{serverMessage}}</code></div>{{/hasServerMessage}}
+                {{#message}}{{#hasTokens}}
+                <ul class="problem-legend">{{#tokens}}<li><code>{{text}}</code>: {{explanation}}</li>{{/tokens}}</ul>
+                <p class="problem-legend">Values are hidden only for grouping; this does not mean they differed between responses.</p>
+                {{/hasTokens}}{{/message}}
+            </details>
             <div class="problem-footer">
                 {{#javascript}}<button type="button" class="problem-view-tests" data-problem="{{id}}">{{testsLabel}}</button>{{/javascript}}
                 <span class="problem-id">id <code>{{id}}</code>{{#javascript}} <button type="button" class="problem-copy" data-copy="{{id}}" title="Copy the problem id">&#10697;</button>{{/javascript}}</span>

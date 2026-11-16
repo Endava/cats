@@ -26,6 +26,7 @@ const responseCodeChart = new Chart(responseCodeCtx, {
     type: 'bar',
     data: responseCodeChartData,
     options: {
+        animation: animateReportCharts ? undefined : false,
         responsive: true,
         maintainAspectRatio: false,
         plugins: {

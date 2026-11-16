@@ -82,10 +82,32 @@ Exit codes are `0` for no regression, `1` for a new error occurrence (also warni
 for invalid input. Use `--baseline <report>` during fuzzing for the same gate. Occurrences found only by fuzzers absent
 from the other run are not comparable. `FIXED` means absent in the compared run; verify coverage before claiming a fix.
 
+`NEW` means newly observed, including when the API build is unchanged. Keep seed, configuration and initial data
+consistent when checking regressions. A negative field test receiving `404` does not prove that the field was validated;
+confirm that the unmodified request reaches the intended resource. Use `cats replay TestN --stateful -r cats-report`
+when fresh producer IDs are needed. Repeat intermittent server-error requests under their original conditions;
+`cats triage --verify` records one replay per occurrence.
+
 **Migration:** compare and triage require summaries with `problemKeyVersion: 1`; re-run older reports with this CATS
 version. Compare JSON now contains `baseline`, `target`, `problemKeyVersion`, `regression`, `newOccurrences`,
 `fixedOccurrences`, `unchangedOccurrences`, `notComparable` and `matchedByPattern`. The former scope/count fields
 and `--failOnNewErrors` are removed; new errors always fail comparison. There is no count mode or `--compareScope`.
+Quoted root JSON-string inputs are now masked when echoed in problem messages. Re-run both baseline and target with
+this build if those inputs occur in older reports; persisted problem identities are not recomputed. WFC fault contexts
+retain their historical normalization and fault counts.
+
+New reports store `expectedResponseCodes` and `expectedOutcome` per test, using the effective HTTP oracle after
+configuration overrides. Reports and triage prefer these facts and retain text fallback for older files. Expectations
+are not inferred from the received response. This adds metadata without changing problem identities or verdicts.
+
+Message-based problem cards lead with the observed HTTP outcome and a source-linked example of the actual server
+message. Canonical masked patterns are under "How these tests were grouped"; the full example response is expandable.
+The example represents one test and does not change masking, grouping or comparison identities.
+
+HTML_JS embeds compact test data in `index.html` and progressively renders All tests, which remains the default.
+Filters search the complete dataset. Shared test-page problem metadata is stored once in `problems.js`.
+HTML_ONLY keeps its server-rendered table. Tools consuming reports should use `cats-summary-report.json` rather than
+scraping HTML_JS rows before JavaScript has rendered them.
 
 ## Command Line
 

@@ -74,6 +74,10 @@ The JSON is `problems[]` (in report rank order: errors first, then crashes, spec
 
 Problems keep the rank of the report and occurrences are sorted by tests, so results do not depend on test numbering.
 
+New `TestN.json` files and summary `testCases[]` record `expectedResponseCodes` and `expectedOutcome` from the effective HTTP oracle, after `--fuzzConfig` overrides where the shared oracle applies. Exact alternatives stay exact: `["200", "201", "202", "204"]` does not mean every `2XX`. `SUCCESS` means only 2xx alternatives, `REJECTION` only 4xx, `ANY` all five HTTP families, `OTHER` mixed/redirect/server-error expectations, and `UNKNOWN` no known ordinary HTTP expectation. The code list remains authoritative. Custom tests without a typed HTTP oracle stay unknown; these fields do not describe additional security or schema assertions. Triage and problem explanations prefer the recorded codes; old files retain their existing prose fallback. This does not change problem grouping, `problemKeyVersion`, verdicts or WFC counts.
+
+HTML_JS keeps All tests as the default and searches all embedded test data while rendering rows in batches. Test-page banners read shared problem metadata from `CATS_PROBLEMS_INDEX`; each test entry retains only its problem and fields. HTML_ONLY retains its static table. Use the summary JSON for tooling instead of assuming all HTML_JS rows exist before rendering completes.
+
 Problems identified by the server message carry `errorTemplate` and `errorTemplateId`, mined with Drain (He et al., ICWS 2017) from the full 4XX/5XX response at report time, with variable parts masked:
 - `<INPUT>`: a value the request sent (body, query, form or path parameter), even when the server echoes only a fragment of it.
 - `<FIELD>`: a field name the request sent.
@@ -88,13 +92,13 @@ Custom JSON error envelopes are read by field role, from the end of the field na
 
 HTML error pages (Tomcat, Whitelabel, Werkzeug, Express, Django) are reduced to their title and visible text.
 
-Two crashes with different server messages are different problems (e.g. `Cannot invoke "String.length()"…` vs `Cannot invoke "BigInteger.bitLength()"…`); the same crash under several result reasons is one problem. The HTML report calls the template the "Server message" and never shows template ids; use `problemId` to refer to a problem.
+Two crashes with different server messages are different problems (e.g. `Cannot invoke "String.length()"…` vs `Cannot invoke "BigInteger.bitLength()"…`); the same crash under several result reasons is one problem. Message-based HTML cards lead with received HTTP status and the expected responses when consistently recorded. An always-visible, bounded unmasked server-message example links to its source test; it is one observation, not a claim that every response had those values. Navigation labels use the example to distinguish cards with the same statuses. The full example response is expandable. The collapsed "How these tests were grouped" section contains the canonical server-message pattern and only the normalization markers it contains; masking a value does not prove that it varied. These presentation choices do not alter templates, problem identities or test-page banners. The report never shows template ids; use `problemId` to refer to a problem.
 
 When a fuzzed test fails with the same HTTP status code and online error signature as an unmodified baseline request (`HappyPath` or `OnlyRequiredFields`) on the same operation in the same run, CATS records `sameErrorAsBaselineTest` (e.g. `"Test 3"`) and `sameErrorAsBaselineFuzzer` (e.g. `"HappyPath"`) in `Test*.json` and `cats-summary-report.json`, and `cats triage` marks the occurrence with `attribution: "SAME_AS_BASELINE"` (without needing `--verify`) and tells you to fix the `HappyPath` / seed request for that operation first.
 
 ### Per-Occurrence Decision Tree
 For each occurrence, open one `sampleTestIds` file and read `fuzzer`, `scenario` (note `is required [TRUE|FALSE]`), `expectedResult`, and the response body. Then:
-1. **`5XX`** → backend bug. Do not hide it with `--refData` / `--correlations`, unless `HappyPath` itself crashes because the seed data is invalid.
+1. **`5XX`** → failure in the API/gateway path. Inspect the response and replay under the original conditions, especially oversized-header or other stress tests. Keep the observation visible even if a later replay succeeds. Check the unmodified request when the seed data may be invalid.
 2. **`401`/`403`** → auth configuration. Re-run `cats smoke` after fixing.
 3. **`404`**:
    - Path contains `{p}` → pin `p` in `refData.yml` under the **exact contract path template**, or pass `--urlParams p:value`.
@@ -110,7 +114,10 @@ For each occurrence, open one `sampleTestIds` file and read `fuzzer`, `scenario`
    2. Type-coercion fuzzers and lenient parsing is intended → `--no-strictTypes`.
    3. `InvalidValuesInEnumsFields` and unknown values are intentionally accepted → `--allowInvalidEnumValues`.
    4. Required in the contract but the server applies a default → fix the contract (`required: false` + `default:`).
-   5. Otherwise → missing server-side validation (real bug).
+   5. Otherwise → candidate missing server-side validation; confirm the invalid input and request preconditions before filing it.
+
+   For negative body-field tests, first confirm that the unmodified request succeeds against an active resource with the same relevant references. A `404` can prevent the request from reaching field validation, even when it falls in the fuzzer's expected `4XX` family. Such a success verdict alone does not demonstrate validation. Use a fresh database or valid pinned references; `cats replay TestN --stateful` can refresh IDs when successful producer tests are present. Re-check newly observed acceptance with valid preconditions before claiming an API-build regression.
+
 6. **`CONTRACT_MISMATCH`**: merge `contract-patch.yml` only when the `remediation` says the code is **undocumented** and the behavior is intended. A remediation of "align service status code or fuzzer expectations" is never fixed by the patch; apply steps 4/5.
 7. **`NOT_MATCHING_RESPONSE_SCHEMA`** (reported as warnings; needs a run without `--srw`; one `RESPONSE_VIOLATION` problem per declared schema) on `oneOf`/`anyOf` responses → try re-running with `--resolveXxxOfCombinationForResponses`. If the warning persists, fix the discriminator mapping or the response schema in the contract.
 8. **`Rate limited` (`RATE_LIMITED`, warning)** → the gateway/API kept answering `429 Too Many Requests` after `--maxRateLimitRetries` (or returned a `Retry-After` exceeding `--maxRetryAfterInSec`), so the test verdict is unknown. **This is a transport/throttling outcome, not an API defect** (and is never emitted as a WFC fault). Re-run the affected tests with `cats replay --warnings -r cats-report -s <server_url>` or lower the request rate with `--maxRequestsPerMinute`.
@@ -138,6 +145,7 @@ cats triage -r cats-report --verify -s <server_url> -j
 ```
 - Reports mask sensitive headers and query params as **`$$<HeaderNameWithOnlyAlphanumerics>`** (e.g. `Authorization` → `$$Authorization`, `X-API-Key` → `$$XAPIKey`), whatever env var you originally used. Export a variable with exactly that name, or override the header with `-H 'Authorization=Bearer eyJ...'`.
 - Replays **1 representative request per occurrence** as-is (no upstream producers are re-run, so IDs may be stale).
+- A successful server-error replay includes a `verificationNote` that one replay cannot rule out intermittent failures. Repeat the request under the original conditions when checking stress/gateway failures. Verification does not automatically repeat requests or change the fuzzing verdicts.
 - Marks each occurrence with `verificationStatus` and records `verifiedStatusCode` / `verificationNote`:
   - **`FIXED`**: `SERVER_CRASH_5XX` now returns `< 500`; other occurrences return a code allowed by the test's `expectedResult` (e.g. `[400, 422]`, `4XX`).
   - **`STILL_FAILING`**: the original failure still reproduces.
@@ -191,3 +199,5 @@ cats compare \
 - JSON (`-j`): `{baseline, target, problemKeyVersion, regression, newOccurrences, fixedOccurrences, unchangedOccurrences, notComparable, matchedByPattern}`. Each occurrence has `{state, problemId, kind, level, title, operation, field, statuses, baselineTests, targetTests, matchedBy}`; `matchedBy` is `ID`, `PATTERN`, or `null` for unmatched occurrences. `matchedByPattern` is the number of pattern pairs.
 - To gate during fuzzing, pass `--baseline <report>` and optional `--failOnNewWarnings` to the root `cats` command. The gate and exporters share the same prepared problems.
 - `FIXED` means absent in this run under these comparison rules; confirm the operation and input were exercised before treating it as a verified fix.
+- `NEW` means newly observed, not necessarily introduced by a changed API build. Control seed, configuration and initial data, and confirm the relevant request/resource preconditions. A received HTTP `502` is a server/proxy response even when client I/O error counts are zero.
+- Root JSON-string bodies contribute their sent value to `<INPUT>` masking. When comparing reports written before that correction, re-run both sides with the current build if such payloads occur; existing persisted problems are not recomputed. WFC fault contexts retain the historical vocabulary guard for compatibility.

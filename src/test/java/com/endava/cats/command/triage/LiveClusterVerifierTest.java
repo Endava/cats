@@ -60,6 +60,18 @@ class LiveClusterVerifierTest {
     }
 
     @Test
+    void shouldExplainThatOneSuccessfulReplayDoesNotRuleOutIntermittentServerErrors() {
+        status.set(400);
+
+        LiveClusterVerifier.Verification verification = verifier(Map.of(), _ -> null)
+                .verify(classification("SERVER_CRASH_5XX", true), testCase(502, "Should return [4XX]", "application/json"));
+
+        Assertions.assertThat(verification.status()).isEqualTo(LiveClusterVerifier.FIXED);
+        Assertions.assertThat(verification.statusCode()).isEqualTo(400);
+        Assertions.assertThat(verification.note()).contains("single replay", "intermittent");
+    }
+
+    @Test
     void shouldResolveMaskedHeadersFromTheEnvironment() {
         verifier(Map.of(), name -> "Authorization".equals(name) ? "Bearer real" : null)
                 .verify(classification("SERVER_CRASH_5XX", true), testCase(500, "Should return [2XX]", "$$Authorization"));

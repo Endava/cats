@@ -2167,7 +2167,7 @@ body.report-js .report-view.active {
 	color: #fff;
 }
 
-.problem-search-input, .problem-filter-select {
+.problem-search-input, .problem-filter-select, #fuzzerFilter {
 	border: 1px solid var(--hairline);
 	border-radius: 6px;
 	padding: 6px 10px;
@@ -2179,8 +2179,95 @@ body.report-js .report-view.active {
 	color: inherit;
 }
 
-body.dark-mode .problem-search-input, body.dark-mode .problem-filter-select {
+body.dark-mode .problem-search-input, body.dark-mode .problem-filter-select, body.dark-mode #fuzzerFilter {
 	background: var(--sub-surface);
+}
+
+#summary {
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+#summary .summary-container {
+	flex-wrap: wrap;
+}
+
+.tests-filters {
+	display: flex;
+	flex: 1 1 100%;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 12px;
+	min-width: 0;
+}
+
+.problem-filter-control, .fuzzer-filter-control {
+	display: flex;
+	flex: 1 1 320px;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.problem-filter-control label, .fuzzer-filter-control label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--secondary-ink);
+}
+
+.tests-filters .problem-filter-select, #fuzzerFilter {
+	width: 100%;
+	min-width: 0;
+	max-width: none;
+	height: 38px;
+	text-overflow: ellipsis;
+	cursor: pointer;
+}
+
+.fuzzer-filter-control {
+	flex: 0 1 250px;
+}
+
+.tests-render-status {
+	margin: 10px 0 0;
+	font-size: 12px;
+	color: var(--secondary-ink);
+}
+
+.expected-response-codes {
+	margin-top: 4px;
+	font-size: 13px;
+	color: var(--secondary-ink);
+}
+
+.tests-filters .search-container {
+	flex: 1 1 320px;
+	min-width: 0;
+	height: 38px;
+	gap: 8px;
+	padding-right: 12px;
+}
+
+.tests-filters .search-input {
+	flex: 1;
+	min-width: 0;
+	width: 100%;
+}
+
+.tests-filters .search-clear-btn {
+	position: static;
+	flex-shrink: 0;
+	padding: 5px 10px;
+}
+
+.tests-filters .search-icon {
+	flex-shrink: 0;
+	margin-left: 0;
+}
+
+.problems-toolbar-group[hidden] {
+	display: none;
 }
 
 .problem-pivot {
@@ -2335,7 +2422,6 @@ body.dark-mode .problem-card:hover {
 }
 
 .problem-grouped-by {
-	font-style: italic;
 	margin: 6px 0;
 }
 
@@ -2343,6 +2429,22 @@ body.dark-mode .problem-card:hover {
 	margin: 6px 0;
 	font-size: 13.5px;
 	overflow-wrap: anywhere;
+}
+
+.problem-example {
+	margin: 10px 0 14px;
+	overflow-wrap: anywhere;
+}
+
+.problem-example-label {
+	color: var(--secondary-ink);
+	font-size: 12px;
+	margin-bottom: 4px;
+}
+
+.problem-example-message {
+	font-size: 14px;
+	line-height: 1.45;
 }
 
 .problem-message, .problem-variants code, .problem-operations code, .problem-id code, .operation-filter-chip code {
@@ -2359,8 +2461,7 @@ body.dark-mode .problem-message, body.dark-mode .problem-variants code, body.dar
 }
 
 .problem-legend {
-	display: block;
-	margin-top: 2px;
+	margin: 6px 0;
 	font-size: 12px;
 }
 
@@ -2373,11 +2474,39 @@ body.dark-mode .problem-baseline {
 	color: #93c5fd;
 }
 
+.problem-baseline-tests {
+	display: block;
+	margin-top: 4px;
+}
+
+.problem-baseline-tests a {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.problem-operations-scroll {
+	overflow-x: auto;
+}
+
 .problem-operations {
 	width: 100%;
+	min-width: 640px;
+	table-layout: fixed;
 	border-collapse: collapse;
 	margin: 8px 0;
 	font-size: 13px;
+}
+
+.problem-operations th:first-child {
+	width: 34%;
+}
+
+.problem-operations th:nth-child(2) {
+	width: 36%;
+}
+
+.problem-operations th:last-child {
+	width: 30%;
 }
 
 .problem-operations th {
@@ -2388,6 +2517,7 @@ body.dark-mode .problem-baseline {
 }
 
 .problem-operations td {
+	overflow-wrap: anywhere;
 	border-bottom: 1px solid var(--hairline);
 	padding: 4px 6px;
 	vertical-align: top;
@@ -2399,7 +2529,7 @@ body.dark-mode .problem-baseline {
 	white-space: nowrap;
 }
 
-.problem-variants, .problem-sample, .problem-all-tests {
+.problem-variants, .problem-sample, .problem-all-tests, .problem-grouping {
 	margin: 6px 0;
 	font-size: 13px;
 }

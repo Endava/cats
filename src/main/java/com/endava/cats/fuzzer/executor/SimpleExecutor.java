@@ -64,6 +64,8 @@ public class SimpleExecutor {
                 return;
             }
 
+            testCaseListener.addExpectedResponse(context.getExpectedResponseForReporting());
+
             CatsResponse response = serviceCaller.call(toServiceData(context));
 
             if (testCaseListener.reportRateLimitedResponse(context.getLogger(), context.getFuzzingData(), response)) {

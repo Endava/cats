@@ -80,6 +80,7 @@ public abstract class TestCaseExporter {
     static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
     private static final String REPORT_JS = "cats-summary-report.json";
     static final String PROBLEMS_JS = "problems.js";
+    private static final Gson SCRIPT_SERIALIZER = new Gson();
     private static final String EXECUTION_TIME_REPORT = "execution_times.json";
     private static final String REPLAY_ENV_EXAMPLE = "replay.env.example";
     private static final String HTML = ".html";
@@ -370,15 +371,18 @@ public abstract class TestCaseExporter {
         Map<String, CatsTestCaseSummary> testsById = report.getTestCases().stream().filter(Objects::nonNull)
                 .collect(Collectors.toMap(CatsTestCaseSummary::getId, Function.identity(), (left, _) -> left));
         Map<String, ProblemBannerEntry> entries = new LinkedHashMap<>();
-        page.cards().forEach(card -> bannerEntries(card, report.getProblems().get(card.rank() - 1), testsById)
+        Map<String, ProblemIndexEntry> index = page.cards().stream().collect(Collectors.toMap(ProblemCard::id,
+                card -> ProblemIndexEntry.of(card, report.getProblems().get(card.rank() - 1)), (first, _) -> first, LinkedHashMap::new));
+        page.cards().forEach(card -> bannerEntries(report.getProblems().get(card.rank() - 1), testsById)
                 .forEach(entry -> entries.put(entry.getKey(), entry.getValue())));
-        String script = "window.CATS_PROBLEMS_PAGE = true;\nwindow.CATS_PROBLEMS = %s;\n".formatted(JsonUtils.GSON.toJson(entries));
+        String script = "window.CATS_PROBLEMS_PAGE = true;\nwindow.CATS_PROBLEMS_INDEX = %s;\nwindow.CATS_PROBLEMS = %s;\n"
+                .formatted(SCRIPT_SERIALIZER.toJson(index), SCRIPT_SERIALIZER.toJson(entries));
         Files.writeString(reportingPath.resolve(PROBLEMS_JS), script, StandardCharsets.UTF_8);
     }
 
-    private static List<Map.Entry<String, ProblemBannerEntry>> bannerEntries(ProblemCard card, Problem problem, Map<String, CatsTestCaseSummary> testsById) {
+    private static List<Map.Entry<String, ProblemBannerEntry>> bannerEntries(Problem problem, Map<String, CatsTestCaseSummary> testsById) {
         return problem.occurrences().stream().flatMap(occurrence -> occurrence.testIds().stream())
-                .map(testId -> Map.entry(testId.replace(" ", ""), ProblemBannerEntry.of(card, problem, testsById.get(testId))))
+                .map(testId -> Map.entry(testId.replace(" ", ""), ProblemBannerEntry.of(problem, testsById.get(testId))))
                 .toList();
     }
 
@@ -386,18 +390,19 @@ public abstract class TestCaseExporter {
      * Per-test problem entry serialized into {@code problems.js}.
      *
      * @param problem    the problem id
-     * @param count      the number of tests of the problem, this test included
-     * @param anchor     the anchor of the problem card in {@code index.html}
-     * @param title      the problem title
-     * @param kind       the problem kind
-     * @param operations the number of operations of the problem
      * @param fields     the request fields this test mutated
      */
-    public record ProblemBannerEntry(String problem, int count, String anchor, String title, String kind, int operations, List<String> fields) {
-        static ProblemBannerEntry of(ProblemCard card, Problem problem, CatsTestCaseSummary test) {
+    public record ProblemBannerEntry(String problem, List<String> fields) {
+        static ProblemBannerEntry of(Problem problem, CatsTestCaseSummary test) {
             List<String> fields = Optional.ofNullable(test).map(CatsTestCaseSummary::getMutatedFields).orElse(List.of());
-            return new ProblemBannerEntry(problem.id(), problem.testCount(), card.anchor(), problem.title(), problem.kind().name(),
-                    problem.occurrences().size(), fields);
+            return new ProblemBannerEntry(problem.id(), fields);
+        }
+    }
+
+    /** Shared metadata serialized once per problem; test entries retain only their problem and fields. */
+    public record ProblemIndexEntry(int count, String anchor, String title, String kind, int operations) {
+        static ProblemIndexEntry of(ProblemCard card, Problem problem) {
+            return new ProblemIndexEntry(problem.testCount(), card.anchor(), problem.title(), problem.kind().name(), problem.occurrences().size());
         }
     }
 

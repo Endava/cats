@@ -30,6 +30,7 @@ import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.Problem;
 import com.endava.cats.model.ProblemKind;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.ExpectedResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.ProcessingError;
 import com.endava.cats.model.RequestProvenance;
@@ -42,6 +43,7 @@ import com.endava.cats.command.model.ComparisonResult;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.wfc.CatsWfcFaultCategory;
 import com.endava.cats.report.ProblemCard;
+import com.endava.cats.report.ProblemMessage;
 import com.endava.cats.report.ProblemPage;
 import com.endava.cats.report.SummaryReportContext;
 import com.endava.cats.util.CatsRandom;
@@ -297,6 +299,8 @@ import java.util.UUID;
         InitCommand.InitResult.class, InitCommand.AgentPlatform.class,
         ComparisonResult.class, OccurrenceKey.class, OccurrenceDelta.class, OccurrenceDelta.State.class, OccurrenceDelta.MatchedBy.class,
         TestCaseExporter.ProblemBannerEntry.class,
+        TestCaseExporter.ProblemIndexEntry.class,
+        ExpectedResponse.class, ExpectedResponse.Outcome.class,
         ProfileLoader.Profile.class,
         CatsTestReport.JunitTestSuite.class,
         CatsDSLParser.class, CatsRandom.class,
@@ -351,7 +355,8 @@ import java.util.UUID;
         SummaryReportContext.FailingPathEntry.class,
         Problem.class, Problem.Occurrence.class, Problem.FieldCount.class, Problem.Evidence.class, Problem.Variant.class, ProblemKind.class,
         ProblemPage.class, ProblemPage.TestRow.class, ProblemPage.PivotGroup.class, ProblemPage.PivotEntry.class,
-        ProblemCard.class, ProblemCard.OperationRow.class, ProblemCard.TestLink.class, ProblemCard.VariantRow.class, ProblemCard.CrossLink.class, PathListEntry.class, PathListEntry.PathDetails.class,
+        ProblemCard.class, ProblemCard.OperationRow.class, ProblemCard.TestLink.class, ProblemCard.VariantRow.class, ProblemCard.CrossLink.class,
+        ProblemMessage.class, ProblemMessage.Token.class, PathListEntry.class, PathListEntry.PathDetails.class,
         com.endava.cats.http.HttpMethod.class, CustomMutatorConfig.Type.class, CatsWfcFaultCategory.class,
         FuzzingData.SetFuzzingStrategy.class,
         InfoCommand.CatsInfo.class, StatsCommand.Stats.class, PathDetailsEntry.class, PathDetailsEntry.OperationDetails.class,

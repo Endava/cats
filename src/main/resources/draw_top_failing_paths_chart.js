@@ -17,6 +17,7 @@ const topFailingPathsChart = new Chart(topFailingPathsCtx, {
     type: 'bar',
     data: topFailingPathsChartData,
     options: {
+        animation: animateReportCharts ? undefined : false,
         indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,

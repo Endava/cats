@@ -4,6 +4,7 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.report.error.mask.ErrorSignatureMasker;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,27 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 @QuarkusTest
 class WfcFaultContextTest {
+
+    @Test
+    void shouldKeepHistoricalWfcFaultIdentitiesForRootStringPayloads() {
+        String first = contextOf("{\"message\":\"Cannot deserialize from String value ('TOKEN_ALPHA')\"}", "\"TOKEN_ALPHA\"");
+        String second = contextOf("{\"message\":\"Cannot deserialize from String value ('TOKEN_BETA')\"}", "\"TOKEN_BETA\"");
+
+        Assertions.assertThat(first).contains("TOKEN_ALPHA").doesNotContain("<INPUT>").isNotEqualTo(second);
+    }
+
+    @Test
+    void shouldNotUseAProblemOnlySnapshotWhenWfcNeedsItsHistoricalVocabulary() {
+        CatsTestCase test = new CatsTestCase();
+        String body = "{\"message\":\"Cannot deserialize from String value ('TOKEN_ALPHA')\"}";
+        test.setRequest(CatsRequest.builder().httpMethod("POST").payload("\"TOKEN_ALPHA\"").build());
+        test.setResponse(CatsResponse.builder().responseCode(500).body(body).build());
+        test.setResult("error");
+        CatsTestCaseSummary summary = CatsTestCaseSummary.fromCatsTestCase(test);
+        summary.attachErrorSignature(ErrorSignatureMasker.signatureOf(body, null, summary.getRequestVocabulary()));
+
+        Assertions.assertThat(WfcFaultContext.of(summary)).contains("TOKEN_ALPHA").doesNotContain("<INPUT>");
+    }
 
     @Test
     void shouldKeepOneContextForTheSameCrashWhateverTheEchoedValuesAndIds() {

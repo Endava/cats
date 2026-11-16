@@ -78,6 +78,16 @@ public final class SummaryReportContext {
     private final String rateLimitedOperationsHint;
     private final boolean hasRateLimitedOperations;
 
+    /** @return compact data used only by the HTML_JS tests table */
+    public String getTestRowsJson() {
+        return SummaryTableData.of(problemPage);
+    }
+
+    /** @return whether initial chart animation can run without competing with a large tests table */
+    public boolean isAnimateCharts() {
+        return testCases == null || testCases.size() < 1000;
+    }
+
     /**
      * Creates the view consumed by the HTML and JUnit summary templates.
      *

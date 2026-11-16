@@ -25,6 +25,7 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.ExpectedResponse;
 import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTarget;
@@ -504,6 +505,27 @@ class TestCaseListenerTest {
 
         CatsTestCaseSummary summary = testCaseListener.testCaseSummaryDetails.getLast();
         Assertions.assertThat(summary.getErrorSignature()).get().satisfies(signature -> Assertions.assertThat(signature.tokens()).containsExactly("Name", "too", "long"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"400,true", "500,false"})
+    void shouldCaptureRootStringInputsWhileKeepingFullWfcFaultContexts(int status, boolean sharedSignature) {
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        String body = "{\"padding\":\"%s\",\"message\":\"Cannot deserialize from String value ('TOKEN_ALPHA')\"}".formatted("x".repeat(1100));
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("POST").payload("\"TOKEN_ALPHA\"").build());
+            testCaseListener.addResponse(CatsResponse.builder().responseCode(status).body(body).build());
+            testCaseListener.addContractPath("/items");
+            testCaseListener.reportError(logger, "Rejected request");
+        }, FuzzingData.builder().build());
+
+        CatsTestCaseSummary summary = testCaseListener.testCaseSummaryDetails.getLast();
+        Assertions.assertThat(summary.getResponseBody()).doesNotContain("TOKEN_ALPHA");
+        Assertions.assertThat(summary.getErrorSignature()).get().satisfies(signature -> Assertions.assertThat(signature.tokens()).contains("('<INPUT>')"));
+        Assertions.assertThat(summary.getWfcErrorSignature().equals(summary.getErrorSignature())).isEqualTo(sharedSignature);
+        if (!sharedSignature) {
+            Assertions.assertThat(summary.getWfcErrorSignature()).get().satisfies(signature -> Assertions.assertThat(signature.tokens()).contains("('TOKEN_ALPHA')"));
+        }
     }
 
     @ParameterizedTest
@@ -1700,6 +1722,42 @@ class TestCaseListenerTest {
 
         Assertions.assertThat(result).isTrue();
         Mockito.verify(logger, Mockito.never()).skip(Mockito.anyString(), Mockito.any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"TWOXX,SUCCESS", "FOURXX,REJECTION", "FOURXX_TWOXX,OTHER"})
+    void shouldRecordTheDeclaredHttpOracleForCustomResponseProcessors(ResponseCodeFamilyPredefined family, ExpectedResponse.Outcome outcome) {
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("POST").build());
+            testCaseListener.addResponse(CatsResponse.builder().responseCode(200).body("").build());
+            testCaseListener.shouldContinueExecution(logger, family);
+            testCaseListener.reportInfo(logger, "Synthetic custom response processor");
+        }, FuzzingData.builder().build());
+
+        CatsTestCaseSummary summary = testCaseListener.testCaseSummaryDetails.getLast();
+        Assertions.assertThat(summary.getExpectedResponseCodes()).containsExactlyElementsOf(family.allowedResponseCodes());
+        Assertions.assertThat(summary.getExpectedOutcome()).isEqualTo(outcome);
+    }
+
+    @Test
+    void shouldReplaceTheDeclaredExpectationWithTheEffectiveConfiguredCodes() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPath()).thenReturn("/items");
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("405"));
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        CatsResponse response = CatsResponse.builder().responseCode(405).body("").httpMethod("POST").build();
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("POST").build());
+            testCaseListener.addResponse(response);
+            testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.TWOXX);
+            catsGlobalContext.getFuzzersConfiguration().setProperty(testCaseListener.getCurrentFuzzer() + ".expectedResponseCode", "405");
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX, false, false);
+        }, FuzzingData.builder().build());
+
+        CatsTestCaseSummary summary = testCaseListener.testCaseSummaryDetails.getLast();
+        Assertions.assertThat(summary.getExpectedResponseCodes()).containsExactly("405");
+        Assertions.assertThat(summary.getExpectedOutcome()).isEqualTo(ExpectedResponse.Outcome.REJECTION);
     }
 
     @Test

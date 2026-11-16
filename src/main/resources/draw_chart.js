@@ -20,6 +20,7 @@ const myChart = new Chart(ctx, {
     type: 'doughnut',
     data: data,
     options: {
+        animation: animateReportCharts ? undefined : false,
         responsive: true,
         plugins: {
             legend: {

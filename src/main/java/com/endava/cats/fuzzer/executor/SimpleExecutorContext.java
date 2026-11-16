@@ -6,6 +6,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.ExpectedResponse;
 import com.endava.cats.model.RequestTarget;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import lombok.Builder;
@@ -159,6 +160,12 @@ public class SimpleExecutorContext {
             return expectedResponseCode.asString();
         }
         return expectedSpecificResponseCode;
+    }
+
+    /** @return the actual code family, or a dedicated exact-code declaration used by a custom response processor */
+    public ExpectedResponse getExpectedResponseForReporting() {
+        return expectedResponseCode == null ? ExpectedResponse.fromCodeDeclaration(expectedSpecificResponseCode)
+                : new ExpectedResponse(expectedResponseCode.allowedResponseCodes());
     }
 
     /**

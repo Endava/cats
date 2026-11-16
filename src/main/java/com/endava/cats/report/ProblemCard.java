@@ -14,8 +14,10 @@ import java.util.List;
  * @param title          the kind-specific title
  * @param meta           reasons, tests, operations and fuzzers in one line
  * @param serverMessage  the server message, only for problems identified by it
+ * @param message        recorded response expectations and grouping explanations, or {@code null}
  * @param evidence       the evidence of the most confident test, or {@code null}
  * @param baselineNote   how many tests also fail on the unmodified request, or {@code null}
+ * @param baselineTests  distinct unmodified tests available in this report
  * @param groupedBy      why the tests were grouped
  * @param rows           the operations × mutated fields table
  * @param variantsLabel  e.g. {@code Server messages (12)}, or {@code null} without variants
@@ -25,19 +27,26 @@ import java.util.List;
  * @param testCount      the number of tests
  */
 public record ProblemCard(int rank, String id, String anchor, String kind, String kindLabel, String level, String title,
-                          String meta, String serverMessage, String evidence, String baselineNote, String groupedBy,
+                          String meta, String serverMessage, ProblemMessage message, String evidence, String baselineNote, List<TestLink> baselineTests, String groupedBy,
                           List<OperationRow> rows, String variantsLabel, List<VariantRow> variants, List<CrossLink> related,
                           String sampleResponse, int testCount) {
 
     /**
-     * The card heading: the title without the server message for problems identified by it, because the card shows the
-     * message on its own line.
+     * Message-based problems lead with the observed HTTP outcome; other problems keep their kind-specific title.
      *
      * @return the heading
      */
     public String heading() {
-        String suffix = ": " + serverMessage;
-        return serverMessage != null && title.endsWith(suffix) ? title.substring(0, title.length() - suffix.length()) : title;
+        return message == null ? title : message.expectation();
+    }
+
+    /** @return a distinctive observed message for navigation, falling back to the finding when unavailable */
+    public String navigationTitle() {
+        return message == null || message.example() == null ? heading() : message.example();
+    }
+
+    public String filterTitle() {
+        return message == null ? title : heading() + " " + message.exampleText();
     }
 
     public String levelLabel() {
@@ -58,6 +67,18 @@ public record ProblemCard(int rank, String id, String anchor, String kind, Strin
 
     public boolean hasBaselineNote() {
         return baselineNote != null;
+    }
+
+    public boolean hasBaselineTests() {
+        return !baselineTests.isEmpty();
+    }
+
+    public String baselineTestsLabel() {
+        return baselineTests.size() == 1 ? "Unmodified request" : "Unmodified requests";
+    }
+
+    public String filterLabel() {
+        return "%s (%d)".formatted(ProblemPage.label(this), testCount);
     }
 
     public boolean hasVariants() {

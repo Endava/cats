@@ -45,7 +45,7 @@ record TriageTestCase(int number, CatsTestCase testCase) {
     }
 
     ExpectedCodes expected() {
-        return ExpectedCodes.parse(testCase.getExpectedResult());
+        return ExpectedCodes.from(testCase);
     }
 
     boolean isError() {

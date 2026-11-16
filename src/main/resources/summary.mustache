@@ -12,6 +12,7 @@
         const totalErr = parseInt('{{errors}}'.replace(/ /g, ''));
         const totalWrn = parseInt('{{warnings}}'.replace(/ /g, ''));
         const totalScs = parseInt('{{success}}'.replace(/ /g, ''));
+        const animateReportCharts = {{animateCharts}};
     </script>
     <title>Cats</title>
 </head>
@@ -249,19 +250,18 @@
 
     {{#javascript}}
     <nav class="report-tabs" role="tablist">
-        <button type="button" role="tab" class="report-tab{{#problemPage.hasProblems}} active{{/problemPage.hasProblems}}" data-view="problems-view">Problems ({{problemPage.problemCount}})</button>
-        <button type="button" role="tab" class="report-tab{{^problemPage.hasProblems}} active{{/problemPage.hasProblems}}" data-view="tests-view">All tests ({{reportedResults}})</button>
+        <button type="button" role="tab" class="report-tab active" aria-selected="true" data-view="tests-view">All tests ({{reportedResults}})</button>
+        <button type="button" role="tab" class="report-tab" aria-selected="false" data-view="problems-view">Problems ({{problemPage.problemCount}})</button>
     </nav>
     {{/javascript}}
     {{^javascript}}
     <nav class="report-jump-links">
+        <a href="#tests-view">All tests ({{reportedResults}})</a>
         <a href="#problems-view">Problems ({{problemPage.problemCount}})</a>
         {{#problemPage.hasProblems}}<a href="#problems-by-operation">Problems by operation</a>{{/problemPage.hasProblems}}
-        <a href="#tests-view">All tests ({{reportedResults}})</a>
     </nav>
     {{/javascript}}
-    {{> summary-problems}}
-    <section id="tests-view" class="report-view{{^problemPage.hasProblems}} active{{/problemPage.hasProblems}}">
+    <section id="tests-view" class="report-view active">
     {{^javascript}}<h2 class="title-section">All tests</h2>{{/javascript}}
     <div class="ran-tests-component">
         <div id="summary">
@@ -272,18 +272,27 @@
                 <span class="menu-success menu" data-filtered="success">Success <button type="button" data-filtered="success">{{success}}</button></span>
             </div>
             {{#javascript}}
-            <div class="search-container">
+            <div class="tests-filters">
+                <div class="fuzzer-filter-control">
+                    <label for="fuzzerFilter">Fuzzer</label>
+                    <select id="fuzzerFilter" aria-label="Filter by fuzzer"><option value="All">All fuzzers</option></select>
+                </div>
                 {{#problemPage.hasProblems}}
+                <div class="problem-filter-control">
+                <label for="problemFilter">Problem</label>
                 <select id="problemFilter" class="problem-filter-select" aria-label="Filter by problem">
                     <option value="">All problems</option>
                     {{#problemPage.filterOptions}}
-                    <option value="{{id}}">{{rank}}. {{title}} ({{testCount}})</option>
+                    <option value="{{id}}" title="{{filterTitle}}">{{filterLabel}}</option>
                     {{/problemPage.filterOptions}}
                 </select>
+                </div>
                 {{/problemPage.hasProblems}}
+                <div class="search-container">
                 <input type="text" class="search-input" placeholder="Search path, method, fuzzer, or reason...">
                 <button class="search-clear-btn" onclick="clearSearch()">Clear</button>
                 <img class="search-icon" src="./assets/magnifying-glass.svg" alt="Search Icon">
+                </div>
             </div>
             <div id="operationFilterChip" class="operation-filter-chip" style="display: none;"></div>
             {{/javascript}}
@@ -301,16 +310,24 @@
                 </tr>
                 </thead>
                 <tbody>
+                {{^javascript}}
                 {{#problemPage.testRows}}
                 {{#tc}}
                 <tr data-id="{{key}}" data-problem="{{problemId}}" data-operation="{{operation}}"{{^javascript}} onclick="window.open('{{key}}.html','_blank')"{{/javascript}}><td><a href="{{key}}.html" target="_blank">{{id}}</a></td><td class="fuzzer-cell">{{fuzzer}}</td><td><span class="active rounded rounded-{{httpMethod}}">{{httpMethod}}</span><span class="active rounded path">{{{pathHtml}}}</span><span class="scenario">{{scenario}}</span></td><td><label class="test-result result-{{result}}">{{result}}</label></td><td>{{#switchedResult}}<span class="result-warn"> ⚠ </span>{{/switchedResult}}{{resultReason}}</td><td class="problem-cell">{{#problemAnchor}}<a href="#{{problemAnchor}}" class="problem-jump"{{^javascript}} onclick="event.stopPropagation()"{{/javascript}}>{{problemLabel}}</a>{{/problemAnchor}}</td></tr>
                 {{/tc}}
                 {{/problemPage.testRows}}
+                {{/javascript}}
                 </tbody>
             </table>
         </div>
+        {{#javascript}}
+        <p id="tests-render-status" class="tests-render-status" role="status">Loading tests…</p>
+        <script id="cats-test-data" type="application/json">{{{testRowsJson}}}</script>
+        <noscript>Enable JavaScript to view the tests table, or generate an HTML_ONLY report.</noscript>
+        {{/javascript}}
     </div>
     </section>
+    {{> summary-problems}}
     <footer class="cats-funny-footer">
         <span class="footer-quips">You've reached the end of the fuzzing universe — no more endpoints left to torture.</span>
         <span class="footer-sep">·</span>

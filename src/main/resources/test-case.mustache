@@ -75,7 +75,7 @@
             <div class="t1-lbl">Result</div>
             <div class="t1-val"><label class="test-result result-{{result}}">{{result}}</label></div>
             <div class="t1-lbl">Expected Result</div>
-            <div class="t1-val">{{expectedResult}}</div>
+            <div class="t1-val"><div>{{expectedResult}}{{#hasExpectedResponseCodes}}<div class="expected-response-codes">Effective HTTP expectation: {{expectedResponseCodesText}}</div>{{/hasExpectedResponseCodes}}</div></div>
 
             <div class="t1-lbl">Fuzzer</div>
             <div class="t1-val"><strong>{{fuzzer}}</strong></div>

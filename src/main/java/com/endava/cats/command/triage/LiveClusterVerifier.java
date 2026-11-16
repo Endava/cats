@@ -101,7 +101,14 @@ final class LiveClusterVerifier {
             return Verification.inconclusive(code, "Resource IDs from the original run no longer exist; use `cats replay %s --stateful`."
                     .formatted(ClusterClassifier.testId(representative)));
         }
-        return new Verification(isFixed(classification, representative.expected(), code) ? FIXED : STILL_FAILING, code, null);
+        return verifiedOutcome(classification, representative.expected(), code);
+    }
+
+    private static Verification verifiedOutcome(ClusterClassification classification, ExpectedCodes expected, int code) {
+        boolean fixed = isFixed(classification, expected, code);
+        String note = fixed && "SERVER_CRASH_5XX".equals(classification.category())
+                ? "This single replay returned no server error; repeat under the original conditions to check for intermittent failures." : null;
+        return new Verification(fixed ? FIXED : STILL_FAILING, code, note);
     }
 
     static boolean isFixed(ClusterClassification classification, ExpectedCodes expected, int code) {

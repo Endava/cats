@@ -2,6 +2,7 @@ package com.endava.cats.model;
 
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URLDecoder;
@@ -41,7 +42,23 @@ public record RequestVocabulary(Set<String> fieldNames, Set<String> values) {
      * @return the request vocabulary
      */
     public static RequestVocabulary from(String payload, String url, String contractPath) {
-        JsonElement root = parseJson(payload);
+        return fromPayload(payload, url, contractPath, parseJson(payload));
+    }
+
+    /**
+     * Builds the historical vocabulary used by WFC fault contexts. Its structured-JSON guard intentionally excludes
+     * simple root primitives, preserving existing WFC fault identities while problem identities capture all JSON values.
+     *
+     * @param payload      the request payload
+     * @param url          the request URL
+     * @param contractPath the contract path used to locate path parameters
+     * @return the vocabulary with the historical body guard
+     */
+    public static RequestVocabulary fromStructuredPayload(String payload, String url, String contractPath) {
+        return fromPayload(payload, url, contractPath, JsonUtils.isValidJson(payload) ? parseJson(payload) : null);
+    }
+
+    private static RequestVocabulary fromPayload(String payload, String url, String contractPath, JsonElement root) {
         String form = formPayload(payload, root);
         Set<String> names = Stream.of(names(root, 0), queryParts(url, 0), formParts(form, 0)).flatMap(Function.identity())
                 .filter(StringUtils::isNotBlank).limit(MAX_ENTRIES).collect(Collectors.toUnmodifiableSet());
@@ -76,7 +93,11 @@ public record RequestVocabulary(Set<String> fieldNames, Set<String> values) {
     }
 
     private static JsonElement parseJson(String payload) {
-        return StringUtils.isNotBlank(payload) && JsonUtils.isValidJson(payload) ? JsonUtils.parseAsJsonElement(payload) : null;
+        try {
+            return JsonUtils.JSON_STRICT_PARSER.fromJson(payload, JsonElement.class);
+        } catch (JsonParseException _) {
+            return null;
+        }
     }
 
     private static Stream<String> names(JsonElement element, int depth) {

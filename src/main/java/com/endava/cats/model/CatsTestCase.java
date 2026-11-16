@@ -10,6 +10,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.Strictness;
 import com.google.gson.stream.JsonReader;
 import lombok.Getter;
+import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
@@ -54,6 +55,10 @@ public class CatsTestCase {
     private String traceId = UUID.randomUUID().toString();
     private String scenario;
     private String expectedResult;
+    @Setter(AccessLevel.NONE)
+    private List<String> expectedResponseCodes;
+    @Setter(AccessLevel.NONE)
+    private ExpectedResponse.Outcome expectedOutcome = ExpectedResponse.Outcome.UNKNOWN;
     private String result;
     private String resultReason;
     private String resultDetails;
@@ -81,6 +86,32 @@ public class CatsTestCase {
 
     @Exclude
     private List<String> errorLeaks = List.of();
+
+    /** Records the effective HTTP oracle independently of the human-readable expected-result description. */
+    public void recordExpectedResponse(ExpectedResponse expectation) {
+        this.expectedResponseCodes = expectation.codes();
+        this.expectedOutcome = expectation.outcome();
+    }
+
+    public boolean hasRecordedExpectedResponse() {
+        return expectedResponseCodes != null;
+    }
+
+    public List<String> getExpectedResponseCodes() {
+        return Optional.ofNullable(expectedResponseCodes).orElse(List.of());
+    }
+
+    public ExpectedResponse.Outcome getExpectedOutcome() {
+        return Optional.ofNullable(expectedOutcome).orElse(ExpectedResponse.Outcome.UNKNOWN);
+    }
+
+    public boolean hasExpectedResponseCodes() {
+        return !getExpectedResponseCodes().isEmpty();
+    }
+
+    public String getExpectedResponseCodesText() {
+        return String.join(" or ", getExpectedResponseCodes());
+    }
 
     /**
      * Checks if the test result is not marked as skipped.

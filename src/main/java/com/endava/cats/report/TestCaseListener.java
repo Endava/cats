@@ -24,6 +24,7 @@ import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ErrorSignature;
 import com.endava.cats.model.ExecutionSummary;
+import com.endava.cats.model.ExpectedResponse;
 import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.Problem;
@@ -31,6 +32,7 @@ import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.report.problem.ProblemCatalog;
 import com.endava.cats.report.problem.ResponseSchemaNames;
 import com.endava.cats.model.RequestTarget;
+import com.endava.cats.model.RequestVocabulary;
 import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.model.SecurityFinding;
 import com.endava.cats.report.error.contract.ErrorResponseContract;
@@ -369,6 +371,7 @@ public class TestCaseListener {
      * @return true if execution should continue, false to skip the test
      */
     public boolean shouldContinueExecution(PrettyLogger logger, ResponseCodeFamily expectedResponseCode) {
+        recordExpectedResponse(expectedResponseCode);
         // no filtering enabled
         if (!filterArguments.isOnly4xxFuzzers() && !filterArguments.isOnly2xxFuzzers()) {
             return true;
@@ -391,6 +394,15 @@ public class TestCaseListener {
         }
 
         return matches;
+    }
+
+    private void recordExpectedResponse(ResponseCodeFamily family) {
+        addExpectedResponse(new ExpectedResponse(family == null ? List.of() : family.allowedResponseCodes()));
+    }
+
+    /** Records a typed HTTP expectation from an executor without changing execution filters or verdicts. */
+    public void addExpectedResponse(ExpectedResponse expectation) {
+        Optional.ofNullable(testCaseMap.get(MDC.get(ID))).ifPresent(test -> test.recordExpectedResponse(expectation));
     }
 
     /**
@@ -601,15 +613,18 @@ public class TestCaseListener {
     private void keepSummary(CatsTestCase testCase) {
         CatsTestCaseSummary summary = CatsTestCaseSummary.fromCatsTestCase(testCase);
         if (summary.getError() || summary.getWarning()) {
-            summary.attachErrorSignature(errorSignatureOf(testCase, summary));
+            summary.attachErrorSignature(errorSignatureOf(testCase, summary, summary.getRequestVocabulary()));
+            if (!summary.getWfcRequestVocabulary().equals(summary.getRequestVocabulary())) {
+                summary.attachWfcErrorSignature(errorSignatureOf(testCase, summary, summary.getWfcRequestVocabulary()));
+            }
         }
         testCaseSummaryDetails.add(summary);
     }
 
-    private ErrorSignature errorSignatureOf(CatsTestCase testCase, CatsTestCaseSummary summary) {
+    private ErrorSignature errorSignatureOf(CatsTestCase testCase, CatsTestCaseSummary summary, RequestVocabulary vocabulary) {
         ErrorResponseContract declaredBody = ErrorResponseContracts.lookup(globalContext.getOpenAPI(), summary.getHttpMethod(),
                 summary.getPath(), summary.getHttpResponseCode());
-        return ErrorSignatureMasker.signatureOf(testCase.getResponse().getBody(), null, summary.getRequestVocabulary(), declaredBody);
+        return ErrorSignatureMasker.signatureOf(testCase.getResponse().getBody(), null, vocabulary, declaredBody);
     }
 
     private void keepExecutionDetails(CatsTestCase testCase) {
@@ -1222,6 +1237,7 @@ public class TestCaseListener {
      */
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema, boolean shouldMatchContentType) {
         expectedResultCode = this.getExpectedResponseCodeConfiguredFor(MDC.get(FUZZER_KEY), data.getPath(), String.valueOf(data.getMethod()).toLowerCase(Locale.ROOT), expectedResultCode);
+        recordExpectedResponse(expectedResultCode);
         boolean isHead = data.getMethod() == HttpMethod.HEAD;
         ResponseSchemaValidator.ValidationResult schemaValidation = shouldMatchToResponseSchema && !isHead && !ignoreArguments.isIgnoreResponseBodyCheck()
                 ? this.validateResponseSchema(response, data) : ResponseSchemaValidator.ValidationResult.valid();

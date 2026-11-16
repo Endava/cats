@@ -1,16 +1,21 @@
 package com.endava.cats.command.triage;
 
+import com.endava.cats.model.CatsTestCase;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
 /**
- * Status codes and families ({@code 2XX}, {@code 404}, ...) parsed from a test case's {@code expectedResult} text
- * such as {@code "Should return [4XX|2XX]"} or {@code "Should return [200, 201]"}.
+ * Status codes and families ({@code 2XX}, {@code 404}, ...) recorded by the response oracle. Older test files fall
+ * back to {@code expectedResult} text such as {@code "Should return [4XX|2XX]"} or {@code "Should return [200, 201]"}.
  */
 record ExpectedCodes(List<String> tokens) {
     private static final Pattern CODE_TOKEN = Pattern.compile("\\b([1-5](?:XX|\\d{2}))\\b", Pattern.CASE_INSENSITIVE);
+
+    static ExpectedCodes from(CatsTestCase test) {
+        return test.hasRecordedExpectedResponse() ? new ExpectedCodes(test.getExpectedResponseCodes()) : parse(test.getExpectedResult());
+    }
 
     static ExpectedCodes parse(String expectedResult) {
         if (expectedResult == null) {

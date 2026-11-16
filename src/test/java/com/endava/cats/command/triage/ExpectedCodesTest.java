@@ -1,12 +1,30 @@
 package com.endava.cats.command.triage;
 
+import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.model.ExpectedResponse;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 @QuarkusTest
 class ExpectedCodesTest {
+    @Test
+    void shouldPreferTypedCodesAndUseProseOnlyForLegacyTests() {
+        CatsTestCase test = new CatsTestCase();
+        test.setExpectedResult("Should return [2XX]");
+        Assertions.assertThat(ExpectedCodes.from(test).allows(200)).isTrue();
+
+        test.recordExpectedResponse(new ExpectedResponse(List.of("405")));
+        Assertions.assertThat(ExpectedCodes.from(test).allows(405)).isTrue();
+        Assertions.assertThat(ExpectedCodes.from(test).allows(200)).isFalse();
+
+        test.recordExpectedResponse(new ExpectedResponse(List.of()));
+        Assertions.assertThat(ExpectedCodes.from(test).isEmpty()).isTrue();
+    }
 
     @ParameterizedTest
     @CsvSource(delimiter = ';', quoteCharacter = '`', value = {

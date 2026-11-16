@@ -60,9 +60,16 @@ final class ProblemCards {
             Problem problem = problems.get(index);
             boolean message = problem.kind().isIdentifiedByServerMessage();
             return new ProblemCard(index + 1, problem.id(), anchors.get(index), problem.kind().name(), kindLabel(problem.kind()),
-                    problem.level(), problem.title(), meta(problem), message ? problem.errorTemplate() : null, evidence(problem),
-                    baselineNote(problem), groupedBy(problem), rows(problem), variantsLabel(problem), variantRows(problem),
+                    problem.level(), problem.title(), meta(problem), message ? problem.errorTemplate() : null,
+                    message ? ProblemMessage.of(problem, tests(problem).toList()) : null, evidence(problem),
+                    baselineNote(problem), baselineTests(problem), groupedBy(problem), rows(problem), variantsLabel(problem), variantRows(problem),
                     links(problem), message ? sampleResponse(problem) : null, problem.testCount());
+        }
+
+        private List<ProblemCard.TestLink> baselineTests(Problem problem) {
+            return tests(problem).map(CatsTestCaseSummary::getSameErrorAsBaselineTest)
+                    .filter(StringUtils::isNotBlank).distinct().filter(testsById::containsKey)
+                    .map(ProblemCards::link).toList();
         }
 
         private List<ProblemCard.OperationRow> rows(Problem problem) {
@@ -141,9 +148,7 @@ final class ProblemCards {
     private static String groupedBy(Problem problem) {
         String status = problem.occurrences().stream().flatMap(occurrence -> occurrence.statuses().stream()).findFirst().map(String::valueOf).orElse("");
         return switch (problem.kind()) {
-            case SERVER_ERROR -> "same server message (HTTP %s)%s".formatted(status,
-                    problem.reasons().size() > 1 ? ", under %d result reasons".formatted(problem.reasons().size()) : "");
-            case ERROR_MESSAGE -> "same server message (HTTP %s)".formatted(status);
+            case SERVER_ERROR, ERROR_MESSAGE -> messageGrouping(problem, status);
             case RESPONSE_VIOLATION -> problem.variants().isEmpty() ? "same violation"
                     : "same declared response schema; %d different %s".formatted(problem.variants().size(), ProblemPage.plural(problem.variants().size(), "violation"));
             case STATUS_CODE -> problem.variants().isEmpty() ? "same status code"
@@ -154,6 +159,15 @@ final class ProblemCards {
                     problem.discriminator().startsWith("Unexpected status") ? "the returned resource" : "evidence, not identity,");
             case NO_RESPONSE -> "same result reason; no HTTP response was judged";
         };
+    }
+
+    private static String messageGrouping(Problem problem, String status) {
+        String observation = problem.testCount() == 1 ? "Observed in one test on one operation."
+                : "%d tests share this server-message pattern and HTTP %s across %d %s.".formatted(problem.testCount(), status,
+                problem.occurrences().size(), ProblemPage.plural(problem.occurrences().size(), "operation"));
+        return observation + (problem.kind() == ProblemKind.ERROR_MESSAGE
+                ? " Rejections also stay separate when CATS judged a different kind of finding."
+                : " Different server-message patterns or HTTP statuses are kept separate.");
     }
 
     private static String variantsLabel(Problem problem) {

@@ -4,10 +4,53 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.stream.Stream;
 
 @QuarkusTest
 class RequestVocabularyTest {
+
+    static Stream<Arguments> rootValues() {
+        return Stream.of(
+                Arguments.of("\"TOKEN_ALPHA\"", "TOKEN_ALPHA"),
+                Arguments.of("  \"hello world\"  ", "hello world"),
+                Arguments.of("\"a\\\"b\"", "a\"b"),
+                Arguments.of("\"\\u0041\\u0042\\u0043\"", "ABC"),
+                Arguments.of("\"language=uk-UA\"", "language=uk-UA"),
+                Arguments.of("123", "123"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("rootValues")
+    void shouldCollectIdentifyingRootJsonValues(String payload, String expected) {
+        RequestVocabulary vocabulary = RequestVocabulary.from(payload, null, null);
+
+        Assertions.assertThat(vocabulary.fieldNames()).isEmpty();
+        Assertions.assertThat(vocabulary.values()).containsExactly(expected);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "TOKEN_ALPHA", "\"unfinished", "\"TOKEN_ALPHA\" trailing", "\"one\" \"two\"",
+            "{'value':'TOKEN_ALPHA'}", "{\"value\":\"TOKEN_ALPHA\",}", "// comment\n\"TOKEN_ALPHA\"",
+            "true", "false", "null", "\"xy\""})
+    void shouldIgnoreInvalidJsonAndNonIdentifyingRootValues(String payload) {
+        Assertions.assertThat(RequestVocabulary.from(payload, null, null)).isEqualTo(RequestVocabulary.EMPTY);
+    }
+
+    @Test
+    void shouldPreserveTheHistoricalWfcBodyGuardWithoutLosingUrlOrFormValues() {
+        Assertions.assertThat(RequestVocabulary.fromStructuredPayload("\"TOKEN_ALPHA\"", null, null)).isEqualTo(RequestVocabulary.EMPTY);
+        Assertions.assertThat(RequestVocabulary.fromStructuredPayload("\"TOKEN_ALPHA\"", "/items?q=QUERY_TOKEN", null).values())
+                .containsExactly("QUERY_TOKEN");
+        Assertions.assertThat(RequestVocabulary.fromStructuredPayload("value=FORM_TOKEN", null, null).values()).containsExactly("FORM_TOKEN");
+        Assertions.assertThat(RequestVocabulary.fromStructuredPayload("\"TOKEN_WITH_]\"", null, null).values()).containsExactly("TOKEN_WITH_]");
+    }
 
     @Test
     void shouldCollectNestedFieldNamesAndIdentifyingValuesFromPayloadAndQuery() {

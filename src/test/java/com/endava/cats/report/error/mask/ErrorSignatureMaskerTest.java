@@ -2,6 +2,7 @@ package com.endava.cats.report.error.mask;
 
 import com.endava.cats.model.ErrorSignature;
 import com.endava.cats.model.RequestVocabulary;
+import com.endava.cats.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -9,10 +10,27 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
 @QuarkusTest
 class ErrorSignatureMaskerTest {
+
+    @Test
+    void shouldKeepTheSameSignatureWhenAParseErrorEchoesDifferentRootStringInputs() {
+        ErrorSignature first = rootStringSignature("TOKEN_ALPHA");
+        ErrorSignature second = rootStringSignature("TOKEN_BETA");
+
+        Assertions.assertThat(first).isEqualTo(second);
+        Assertions.assertThat(String.join(" ", first.tokens())).isEqualTo("Cannot deserialize from String value ('<INPUT>')");
+        Assertions.assertThat(first).isNotEqualTo(ErrorSignatureMasker.signatureOf(
+                "{\"message\":\"Cannot read properties of undefined (reading 'id')\"}", null, RequestVocabulary.EMPTY));
+    }
+
+    private static ErrorSignature rootStringSignature(String value) {
+        String body = JsonUtils.GSON.toJson(Map.of("message", "Cannot deserialize from String value ('%s')".formatted(value)));
+        return ErrorSignatureMasker.signatureOf(body, null, RequestVocabulary.from(JsonUtils.GSON.toJson(value), null, null));
+    }
 
     static Stream<Arguments> maskedDetails() {
         return Stream.of(

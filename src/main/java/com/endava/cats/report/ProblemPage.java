@@ -102,7 +102,7 @@ public record ProblemPage(boolean hasProblems, int problemCount, String headline
     }
 
     static String label(ProblemCard card) {
-        return "%d. %s".formatted(card.rank(), StringUtils.abbreviate(card.title(), TITLE_LABEL_LENGTH));
+        return "%d. %s".formatted(card.rank(), StringUtils.abbreviate(card.navigationTitle(), TITLE_LABEL_LENGTH));
     }
 
     /**
@@ -193,7 +193,7 @@ public record ProblemPage(boolean hasProblems, int problemCount, String headline
         }
 
         private static PivotEntry entry(ProblemCard card, int tests) {
-            return new PivotEntry(card.rank(), card.anchor(), card.title(), card.level(), tests);
+            return new PivotEntry(card.rank(), card.anchor(), card.filterTitle(), card.level(), tests);
         }
     }
 }
