@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +30,23 @@ class ClusterComputeTest {
     @BeforeEach
     void setUp() {
         CatsRandom.initRandom(0);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    void shouldKeepNullAndEmptySummaryListsAsNoOps(List<CatsTestCaseSummary> summaries) {
+        ClusterCompute.assignErrorTemplates(summaries);
+        ClusterCompute.assignErrorTemplates(summaries, null);
+
+        assertThat(ClusterCompute.createClusters(summaries)).isEmpty();
+    }
+
+    @Test
+    void shouldReturnNoClustersWhenFilteringRemovesEverySummary() {
+        List<CatsTestCaseSummary> summaries = Arrays.asList(null,
+                createTestCaseSummary(200, "OK", "success", "{}"));
+
+        assertThat(ClusterCompute.createClusters(summaries)).isEmpty();
     }
 
     @Test

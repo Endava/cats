@@ -41,7 +41,8 @@ class ExecutionSummaryTest {
         Assertions.assertThat(summary.rateLimitedOperations()).containsExactly("GET /pets", "POST /orders");
         Assertions.assertThat(summary.rateLimitedOperationsHint()).isEqualTo(
                 "More than 50% of final responses on GET /pets, POST /orders were HTTP 429 Too Many Requests; use --maxRequestsPerMinute to lower the request rate.");
-        Assertions.assertThatThrownBy(() -> summary.rateLimitedOperations().add("DELETE /pets"))
+        List<String> snapshotOperations = summary.rateLimitedOperations();
+        Assertions.assertThatThrownBy(() -> snapshotOperations.add("DELETE /pets"))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 

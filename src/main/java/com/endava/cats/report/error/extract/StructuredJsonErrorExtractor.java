@@ -181,7 +181,8 @@ public final class StructuredJsonErrorExtractor implements ErrorBodyExtractor {
             return Optional.empty();
         }
         Map<String, String> fields = TruncatedJsonFields.recover(trimmed);
-        String stack = TruncatedJsonFields.trace(trimmed);
+        // Trace recovery returns a captured string (possibly empty), or an empty string when absent.
+        String stack = Objects.requireNonNull(TruncatedJsonFields.trace(trimmed));
         String detail = firstPresent(fields, TRUNCATED_DETAIL_KEYS);
         List<String> messages = detail.isEmpty() ? traceMessage(stack) : List.of(detail);
         String frame = StackFrameParser.crashSite(stack.isEmpty() ? TruncatedJsonFields.unescape(trimmed) : stack);

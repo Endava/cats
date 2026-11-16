@@ -93,11 +93,12 @@ public class ClusterCompute {
     }
 
     private static List<CatsTestCaseSummary> filterReportableTestCases(List<CatsTestCaseSummary> testCases) {
-        return testCases.stream()
+        // Stream.toList() never returns null; keep that contract explicit across template assignment.
+        return Objects.requireNonNull(testCases.stream()
                 .filter(Objects::nonNull)
                 .filter(tc -> StringUtils.isNotBlank(tc.getResultReason())
                         && (tc.getError() || tc.getWarning()))
-                .toList();
+                .toList());
     }
 
     private static Map<String, List<CatsTestCaseSummary>> groupTestCasesByReason(List<CatsTestCaseSummary> testCases) {

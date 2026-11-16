@@ -30,6 +30,21 @@ class TestCaseExporterHtmlOnlyTest {
     Path reportDirectory;
 
     @Test
+    void shouldRejectNullSummaryListsBeforeWritingAReport() throws Exception {
+        ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
+        TestCaseExporterHtmlOnly exporter = new TestCaseExporterHtmlOnly(reportingArguments,
+                new CatsGlobalContext(), Mockito.mock(ProcessingArguments.class), Mockito.mock(StopArguments.class));
+        exporter.initPath(reportDirectory.toString());
+        ExecutionSummary executionSummary = new ExecutionStatisticsListener().snapshot(false, "fail on errors");
+
+        Assertions.assertThatThrownBy(() -> exporter.writeSummary(null, executionSummary))
+                .isInstanceOf(NullPointerException.class);
+        try (var files = Files.list(reportDirectory)) {
+            Assertions.assertThat(files).isEmpty();
+        }
+    }
+
+    @Test
     void shouldIgnoreNullSummariesWhenWritingErrorTemplates() throws Exception {
         ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
         Mockito.when(reportingArguments.getOutputReportFolder()).thenReturn(reportDirectory.toString());

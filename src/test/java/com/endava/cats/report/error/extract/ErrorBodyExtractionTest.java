@@ -13,6 +13,14 @@ import java.util.List;
 class ErrorBodyExtractionTest {
 
     @ParameterizedTest
+    @ValueSource(strings = {"", " ", "\\n", "\\t"})
+    void shouldReturnNoStructuredCauseForATruncatedBodyWithOnlyABlankTrace(String trace) {
+        String body = "{\"trace\":\"" + trace;
+
+        Assertions.assertThat(new StructuredJsonErrorExtractor().extract(body)).isEmpty();
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"<br>", "<BR />", "<br\n/>", "<hr>", "<HR class='x'>",
             "</p>", "</div>", "</h1>", "</H6>", "</li>", "</tr>", "</pre>", "</title>", "</table>", "</ul>", "</ol>"})
     void shouldKeepHtmlLineBreaksBetweenMessageFragments(String separator) {

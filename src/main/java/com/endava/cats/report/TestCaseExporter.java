@@ -331,6 +331,7 @@ public abstract class TestCaseExporter {
      * @param executionSummary immutable statistics and outcome captured for this execution
      */
     public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionSummary executionSummary) {
+        Objects.requireNonNull(summaries, "summaries must not be null");
         ClusterCompute.assignErrorTemplates(summaries, catsGlobalContext.getOpenAPI());
         CatsTestReport report = this.createTestReport(summaries, executionSummary);
         double averageResponseTime = summaries.stream().mapToDouble(CatsTestCaseSummary::getTimeToExecuteInMs).average().orElse(0);
