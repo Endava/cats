@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 /**
  * Arguments used to ignore CATS response matching. The difference between Filter and Ignore arguments
@@ -113,7 +112,7 @@ public class IgnoreArguments {
     private boolean skipReportingForWarnings;
 
     @CommandLine.Option(names = {"-b", "--blackbox"},
-            description = "Ignore all response codes except for @|bold,underline 5XX|@ which will be returned as @|bold,underline error|@. This is similar to @|bold --ignoreResponseCodes=\"2xx,4xx\"|@")
+            description = "Report high-signal findings: @|bold 5XX server errors (except 501)|@ and high-severity security findings with explicit CONFIRMED confidence. FIRM, TENTATIVE, unassessed and keyword-only security findings become info; combine with @|bold -k|@ to omit them. Explicit @|bold -i|@ filters still apply.")
 
     private boolean blackbox;
 
@@ -123,10 +122,7 @@ public class IgnoreArguments {
      * @return a list of response codes to ignore
      */
     public List<String> getIgnoreResponseCodes() {
-        List<String> ignored = Optional.ofNullable(this.ignoreResponseCodes).orElse(Collections.emptyList());
-        List<String> fromBlackbox = blackbox ? List.of("2xx", "4xx", "501") : Collections.emptyList();
-
-        return Stream.concat(ignored.stream(), fromBlackbox.stream()).toList();
+        return List.copyOf(Optional.ofNullable(this.ignoreResponseCodes).orElse(List.of()));
     }
 
     /**

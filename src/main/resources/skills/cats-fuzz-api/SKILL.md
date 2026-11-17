@@ -110,11 +110,13 @@ cats -c <spec> -s <url> --stopAfterTimeInSec 120 --stopAfterErrors 50
 # Set --maxRequestsPerMinute to stay under known gateway quotas, or --maxRateLimitRetries 0 to disable retries:
 cats -c <spec> -s <url> --maxRequestsPerMinute 300 --maxRateLimitRetries 3 --maxRetryAfterInSec 30
 
-# Blackbox mode: only report 5XX server crashes as errors (-k also drops ignored tests from the report; skip it if you plan to triage)
+# Blackbox mode: retain 5XX (except 501) and high-severity security findings; -k drops suppressed results/successes
 cats -c <spec> -s <url> -b -k
 ```
 
 ---
+
+Blackbox security findings require explicit `CONFIRMED` confidence, CATS's highest level; automated confirmation remains heuristic. `FIRM`, `TENTATIVE` and unassessed findings are suppressed even if normally errors or promoted by `--strict`. Keyword matches alone cannot promote a security finding. Explicit `-i` remains literal (`-b -i 2xx` suppresses 2XX security findings); exceptional-response, response-time and server-error leak handling remain. This changes reporting and CI gates. Run without `-b` for all findings; `-i 2xx,4xx,501` without `-b` reproduces the former code filter. Use an unfiltered run before `cats triage --export-refdata`. Blackbox uses CATS security types independently of WFC codes. Findings without a matching standard WFC category use tool-specific exports: SSTI `913 CATS_SSTI`, XXE `914 CATS_XXE`, and path traversal `915 CATS_PATH_TRAVERSAL`; their confidence requirement is unchanged.
 
 ## Step 4: Continuous Random Fuzzing (`cats random`)
 

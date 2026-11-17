@@ -42,8 +42,8 @@ class IgnoreArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"200,true", "501,true", "500,false", "400,true", "503,false"})
-    void shouldMatchIgnoredResponseCodesWhenBlackbox(String responseCode, boolean expected) {
+    @CsvSource({"200,false", "501,false", "500,false", "400,false", "503,false"})
+    void shouldLeaveSeverityFilteringOutOfLiteralCodesWhenBlackbox(String responseCode, boolean expected) {
         ReflectionTestUtils.setField(ignoreArguments, "blackbox", true);
         Assertions.assertThat(ignoreArguments.isIgnoredResponseCode(responseCode)).isEqualTo(expected);
     }

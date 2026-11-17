@@ -14,6 +14,8 @@ import com.endava.cats.execution.ExecutionSummaryProvider;
 import com.endava.cats.execution.ExecutionStopController;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.http.RandomResourcesFuzzer;
+import com.endava.cats.fuzzer.http.BypassAuthenticationFuzzer;
+import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyDynamic;
@@ -21,6 +23,7 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
@@ -133,6 +136,207 @@ class TestCaseListenerTest {
     @AfterEach
     void tearDown() {
         TestCaseListener.TEST.set(0);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false", "true"})
+    void shouldRetainConfirmedSecurityErrorsUsingTheActiveFuzzerBeforeEndSession(boolean skipIgnored) {
+        configureBlackbox(skipIgnored, List.of());
+        executeBlackboxFinding(BypassAuthenticationFuzzer.class, CatsResponse.builder().responseCode(200).body("{}").build(), () -> {
+            testCaseListener.addConfidence(FindingConfidence.CONFIRMED);
+            testCaseListener.reportResultError(logger, null, "Unexpected response code: 200", "Synthetic confirmed finding");
+        });
+
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).singleElement().satisfies(summary -> {
+            Assertions.assertThat(summary.getError()).isTrue();
+            Assertions.assertThat(summary.getFuzzer()).isEqualTo("BypassAuthentication");
+        });
+        Mockito.verify(executionStatisticsListener).increaseErrors("/items");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+    void shouldKeepUnassessedSecurityErrorsOnlyOutsideBlackbox(boolean blackbox, boolean skipIgnored) {
+        configureBlackbox(skipIgnored, List.of());
+        IgnoreArguments arguments = (IgnoreArguments) ReflectionTestUtils.getField(testCaseListener, "ignoreArguments");
+        ReflectionTestUtils.setField(arguments, "blackbox", blackbox);
+        executeBlackboxFinding(BypassAuthenticationFuzzer.class, CatsResponse.builder().responseCode(200).body("{}").build(), () ->
+                testCaseListener.reportResultError(logger, null, "Unexpected response code: 200", "Anonymous request succeeded"));
+
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).hasSize(blackbox && skipIgnored ? 0 : 1);
+        testCaseListener.testCaseSummaryDetails.forEach(summary -> {
+            Assertions.assertThat(summary.getError()).isEqualTo(!blackbox);
+            Assertions.assertThat(summary.getConfidence()).isNull();
+        });
+        Mockito.verify(executionStatisticsListener, Mockito.times(blackbox ? 0 : 1)).increaseErrors("/items");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false", "true"})
+    void shouldLetLiteralIgnoreCodesOverrideNewBlackboxSecurityInclusions(boolean skipIgnored) {
+        configureBlackbox(skipIgnored, List.of("2xx"));
+        executeBlackboxFinding(BypassAuthenticationFuzzer.class, CatsResponse.builder().responseCode(200).body("{}").build(), () -> {
+            testCaseListener.addConfidence(FindingConfidence.CONFIRMED);
+            testCaseListener.testCaseMap.get(MDC.get(TestCaseListener.ID)).setErrorLeaks(List.of("nullpointerexception"));
+            testCaseListener.reportResultError(logger, null, "Unexpected response code: 200", "Synthetic confirmed finding");
+        });
+
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).hasSize(skipIgnored ? 0 : 1);
+        if (!skipIgnored) {
+            Assertions.assertThat(testCaseListener.testCaseSummaryDetails.getFirst().getResult()).isEqualTo("success");
+        }
+    }
+
+    @Test
+    void shouldNotTreatStrictPromotedWarningsAsNativeErrorsInBlackbox() {
+        configureBlackbox(false, List.of());
+        NamingArguments naming = Mockito.mock(NamingArguments.class);
+        Mockito.when(naming.isStrict()).thenReturn(true);
+        ReflectionTestUtils.setField(testCaseListener, "namingArguments", naming);
+        executeBlackboxFinding(BypassAuthenticationFuzzer.class, CatsResponse.builder().responseCode(200).body("{}").build(), () ->
+                testCaseListener.reportResultWarn(logger, null, Reason.CROSS_PARENT_RESOURCE_EXPOSURE.value(), "Synthetic warning"));
+
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).singleElement()
+                .satisfies(summary -> Assertions.assertThat(summary.getResult()).isEqualTo("success"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"CONFIRMED,true,false", "FIRM,false,false", "TENTATIVE,false,false",
+            "CONFIRMED,true,true", "FIRM,false,true", "TENTATIVE,false,true"})
+    void shouldRespectSecurityConfidenceDespiteKeywordLeaksInBlackbox(FindingConfidence confidence, boolean reportable,
+                                                                      boolean skipIgnored) {
+        configureBlackbox(skipIgnored, List.of());
+        CatsResponse response = CatsResponse.builder().responseCode(200).body("{}").build();
+        executeBlackboxFinding(HappyPathFuzzer.class, response, () -> {
+            testCaseListener.testCaseMap.get(MDC.get(TestCaseListener.ID)).setErrorLeaks(List.of("nullpointerexception"));
+            testCaseListener.reportSecurityFinding(logger, null, response,
+                    new SecurityFinding(Reason.SQL_INJECTION.value(), "Synthetic injection", confidence));
+        });
+
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).hasSize(skipIgnored && !reportable ? 0 : 1);
+        testCaseListener.testCaseSummaryDetails.forEach(summary -> {
+            Assertions.assertThat(summary.getError()).isEqualTo(reportable);
+            Assertions.assertThat(summary.getConfidence()).isEqualTo(confidence);
+            Assertions.assertThat(summary.getResultReason()).isEqualTo(Reason.SQL_INJECTION.value());
+        });
+    }
+
+    @ParameterizedTest
+    @CsvSource({"101", "302", "501"})
+    void shouldSuppressOrdinaryNonServerResponsesAnd501InBlackbox(int responseCode) {
+        configureBlackbox(false, List.of());
+        executeBlackboxFinding(HappyPathFuzzer.class, CatsResponse.builder().responseCode(responseCode).body("{}").build(), () ->
+                testCaseListener.reportResultError(logger, null, "Unexpected response code: " + responseCode, "Synthetic outcome"));
+
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).singleElement()
+                .satisfies(summary -> Assertions.assertThat(summary.getResult()).isEqualTo("success"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"999,0", "200,20"})
+    void shouldPreserveExistingExceptionAndTimeoutBypasses(int status, long responseTime) {
+        configureBlackbox(true, List.of("2xx", "4xx", "9xx"));
+        Mockito.when(reportingArguments.getMaxResponseTime()).thenReturn(10);
+        CatsResponse response = CatsResponse.builder().responseCode(status).body("{}").responseTimeInMs(responseTime).build();
+        executeBlackboxFinding(HappyPathFuzzer.class, response, () ->
+                testCaseListener.reportResultError(logger, null, "Synthetic error", "Synthetic error"));
+
+        Mockito.verify(executionStatisticsListener).increaseErrors("/items");
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).singleElement()
+                .satisfies(summary -> Assertions.assertThat(summary.getError()).isTrue());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"200,ERROR,false", "400,WARN,false", "200,INFO,false", "501,INFO,false",
+            "200,ERROR,true", "400,WARN,true", "200,INFO,true", "501,INFO,true",
+            "500,ERROR,true", "502,WARN,true", "500,INFO,true"})
+    void shouldKeepKeywordOnlyLeaksOutOfBlackboxUnlessTheServerFailed(int status, Level level, boolean skipIgnored) {
+        configureBlackbox(skipIgnored, List.of());
+        executeBlackboxFinding(HappyPathFuzzer.class, CatsResponse.builder().responseCode(status).body("nullpointerexception").build(), () -> {
+            ReflectionTestUtils.invokeMethod(testCaseListener, "extractErrorLeaks");
+            switch (level) {
+                case ERROR -> testCaseListener.reportResultError(logger, null, "Synthetic error", "Synthetic error");
+                case WARN -> testCaseListener.reportResultWarn(logger, null, "Synthetic warning", "Synthetic warning");
+                default -> testCaseListener.reportResultInfo(logger, null, "Synthetic success");
+            }
+        });
+
+        boolean serverError = status == 500 || status == 502;
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).hasSize(skipIgnored && !serverError ? 0 : 1);
+        testCaseListener.testCaseSummaryDetails.forEach(summary -> Assertions.assertThat(summary.getError()).isEqualTo(serverError));
+        Mockito.verify(executionStatisticsListener, Mockito.times(serverError ? 1 : 0)).increaseErrors("/items");
+    }
+
+    @Test
+    void shouldDropOrdinarySuccessesWhenBlackboxAndSkipIgnoredAreEnabled() {
+        configureBlackbox(true, List.of());
+        executeBlackboxFinding(HappyPathFuzzer.class, CatsResponse.builder().responseCode(200).body("{}").build(), () ->
+                testCaseListener.reportResultInfo(logger, null, "Synthetic success"));
+
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).isEmpty();
+        Mockito.verify(executionStatisticsListener).increaseSkippedFromReporting("/items");
+    }
+
+    @Test
+    void shouldDemoteRateLimitWarningsWithoutRedispatchingThemRecursively() {
+        configureBlackbox(false, List.of());
+        CatsResponse response = CatsResponse.from(429, "{}", "GET", 5).withRateLimited(2);
+        executeBlackboxFinding(HappyPathFuzzer.class, response, () -> testCaseListener.reportRateLimitedResponse(logger, null, response));
+
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).singleElement()
+                .satisfies(summary -> Assertions.assertThat(summary.getResult()).isEqualTo("success"));
+        Mockito.verify(executionStatisticsListener).increaseSuccess("/items");
+    }
+
+    @Test
+    void shouldDemoteTruncatedWarningsWithoutRedispatchingThemRecursively() {
+        configureBlackbox(false, List.of());
+        CatsResponse response = CatsResponse.builder().responseCode(200).body("partial").bodyTruncated(true)
+                .capturedBodyBytes(1024).responseBodyLimit(1024).declaredContentLength(2048).build();
+        executeBlackboxFinding(HappyPathFuzzer.class, response, () -> testCaseListener.reportTruncatedResponse(logger, null, response));
+
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).singleElement()
+                .satisfies(summary -> Assertions.assertThat(summary.getResult()).isEqualTo("success"));
+        Mockito.verify(executionStatisticsListener).increaseSuccess("/items");
+    }
+
+    @Test
+    void shouldRetainKnownTransportErrorsUnderBlackbox() {
+        configureBlackbox(true, List.of());
+        CatsResponse response = CatsResponse.builder().responseCode(953).body("connection refused").build();
+        executeBlackboxFinding(HappyPathFuzzer.class, response, () ->
+                testCaseListener.reportResultError(logger, null, Reason.CONNECTION_REFUSED.value(), "Connection refused"));
+
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails).singleElement()
+                .satisfies(summary -> Assertions.assertThat(summary.getError()).isTrue());
+    }
+
+    private void configureBlackbox(boolean skipIgnored, List<String> ignoredCodes) {
+        IgnoreArguments arguments = new IgnoreArguments();
+        ReflectionTestUtils.setField(arguments, "blackbox", true);
+        ReflectionTestUtils.setField(arguments, "skipReportingForIgnoredCodes", skipIgnored);
+        ReflectionTestUtils.setField(arguments, "ignoreResponseCodes", ignoredCodes);
+        ReflectionTestUtils.setField(testCaseListener, "ignoreArguments", arguments);
+    }
+
+    private void executeBlackboxFinding(Class<?> activeFuzzer, CatsResponse response, Runnable report) {
+        testCaseListener.beforeFuzz(activeFuzzer, "/items", "GET");
+        try {
+            testCaseListener.createAndExecuteTest(logger, fuzzer, () -> reportBlackboxResponse(response, report), FuzzingData.builder().build());
+        } finally {
+            testCaseListener.afterFuzz("/items");
+        }
+    }
+
+    private void reportBlackboxResponse(CatsResponse response, Runnable report) {
+        testCaseListener.addRequest(CatsRequest.builder().httpMethod("GET").url("http://localhost/items").payload("{}").build());
+        testCaseListener.addResponse(response);
+        testCaseListener.addContractPath("/items");
+        Assertions.assertThat(testCaseListener.testCaseMap.get(MDC.get(TestCaseListener.ID)).getFuzzer()).isNull();
+        report.run();
     }
 
     @Test

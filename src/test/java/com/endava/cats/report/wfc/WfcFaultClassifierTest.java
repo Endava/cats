@@ -7,6 +7,8 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.util.KeyValuePair;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.webfuzzing.commons.faults.DefinedFaultCategory;
 import com.webfuzzing.commons.report.FaultCategoryId;
 import io.quarkus.test.junit.QuarkusTest;
@@ -19,14 +21,83 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 @QuarkusTest
 class WfcFaultClassifierTest {
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "Potential SSTI vulnerability detected|CONFIRMED|913",
+            "SSTI injection error detected|FIRM|913",
+            "Potential SSTI reflection detected|FIRM|913",
+            "SSTI injection vulnerability detected|CONFIRMED|913",
+            "XXE vulnerability detected|CONFIRMED|914",
+            "Potential XXE vulnerability detected|FIRM|914",
+            "Potential XXE DoS vulnerability detected|FIRM|914",
+            "XXE injection vulnerability detected|CONFIRMED|914",
+            "Path traversal vulnerability detected|CONFIRMED|915",
+            "PathTraversal injection vulnerability detected|CONFIRMED|915",
+            "XSS injection vulnerability detected|CONFIRMED|301",
+            "Potential SSTI vulnerability detected|TENTATIVE|0",
+            "XXE vulnerability detected|TENTATIVE|0"
+    })
+    void shouldExportSpecificCustomSecurityCategories(String reason, FindingConfidence confidence, int expectedCode) {
+        CatsTestCase test = buildTestCase("POST", "/items", 200,
+                confidence == FindingConfidence.TENTATIVE ? "warn" : "error", reason, "InjectionFuzzer", "{}");
+        test.setConfidence(confidence);
+
+        Set<FaultCategoryId> faults = WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(test), test);
+
+        Assertions.assertThat(faults).extracting(FaultCategoryId::getCode)
+                .containsExactlyElementsOf(expectedCode == 0 ? List.of() : List.of(expectedCode));
+    }
+
+    @Test
+    void shouldKeepCustomCategoryCodesUniqueAndWithinTheWfcExtensionRange() {
+        Assertions.assertThat(Arrays.stream(CatsWfcFaultCategory.values()).map(CatsWfcFaultCategory::getCode).toList())
+                .doesNotHaveDuplicates().allMatch(code -> code >= 900 && code <= 999);
+    }
+
+    @Test
+    void shouldPreserveCompleteSyntheticFaultSetsCapturedBeforeTheSeverityRefactor() throws IOException {
+        try (var input = getClass().getResourceAsStream("/wfc/card13-classification-golden.json")) {
+            JsonParser.parseString(new String(Objects.requireNonNull(input).readAllBytes(), StandardCharsets.UTF_8))
+                    .getAsJsonArray().forEach(fixture -> assertGoldenClassification(fixture.getAsJsonObject()));
+        }
+    }
+
+    private static void assertGoldenClassification(JsonObject fixture) {
+        CatsTestCase test = buildTestCase(fixture.get("method").getAsString(), "/synthetic", fixture.get("status").getAsInt(),
+                fixture.get("result").getAsString(), Reason.valueOf(fixture.get("reason").getAsString()).value(),
+                fixture.get("fuzzer").getAsString(), fixture.get("body").getAsString());
+        if (fixture.has("confidence")) {
+            test.setConfidence(FindingConfidence.valueOf(fixture.get("confidence").getAsString()));
+        }
+        List<String> expected = fixture.getAsJsonArray("expected").asList().stream().map(value -> value.getAsString()).toList();
+        Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(test), test, fixtureContract(fixture))
+                        .stream().map(WfcFaultClassifierTest::faultKey).sorted().toList())
+                .as(fixture.get("name").getAsString()).containsExactlyElementsOf(expected);
+    }
+
+    private static OperationAuthContract fixtureContract(JsonObject fixture) {
+        if (!fixture.has("auth")) {
+            return OperationAuthContract.UNKNOWN;
+        }
+        var auth = fixture.getAsJsonArray("auth");
+        return new OperationAuthContract(auth.get(0).getAsBoolean(), auth.get(1).getAsBoolean(), auth.get(2).getAsBoolean());
+    }
+
+    private static String faultKey(FaultCategoryId fault) {
+        return fault.getId() + "|" + fault.getCode() + "|" + Objects.toString(fault.getContext(), "");
+    }
+
     private static final Set<Reason> NON_FAULT_OUTCOME_REASONS = EnumSet.of(
             Reason.ALL_GOOD, Reason.NOT_FOUND, Reason.RESPONSE_BODY_TRUNCATED,
             Reason.UNEXPECTED_EXCEPTION, Reason.RESPONSE_MATCHES_ARGUMENTS, Reason.UNDOCUMENTED_RESPONSE_CODE);

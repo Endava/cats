@@ -47,6 +47,8 @@ cats smoke -c <spec> -s <server_url> -j
 - **`READY`** only means at least one `2XX` and no `5XX`; still inspect `notFound404` and `validation4xx`.
 
 ### Phase 3: Stateful Fuzzing & Triage Loop
+
+For an initial high-signal view, `-b` retains 5XX except 501 and high-severity security findings with explicit `CONFIRMED` confidence. `FIRM`, `TENTATIVE` and unassessed findings are suppressed, even with an ordinary error verdict or `--strict`. Keyword matches alone cannot promote a security finding. Confirmation remains heuristic; inspect the evidence. `-k` drops suppressed results and ordinary successes. Run without `-b` for all findings. This changes error counts/CI gates; use `-i 2xx,4xx,501` without `-b` for the former code filter. Explicit `-i` still applies with `-b`; exceptional-response, response-time and server-error leak handling remain. Keep the unfiltered run below for reference-data triage. Blackbox uses CATS security types independently of WFC codes. Findings without a matching standard WFC category use tool-specific exports: SSTI `913 CATS_SSTI`, XXE `914 CATS_XXE`, and path traversal `915 CATS_PATH_TRAVERSAL`; their confidence requirement is unchanged.
 1. Run fuzzing using the root `cats` command. Stateful resource reuse and breadth-first waves are **on by default**; add `--preseedCollectionGets` to harvest existing IDs first:
    ```bash
    cats -c <spec> -s <server_url> --profile ci --preseedCollectionGets -o cats-report

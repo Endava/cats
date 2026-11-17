@@ -112,7 +112,7 @@ import java.util.concurrent.TimeUnit;
                 "@|bold 1|@:Internal execution error: an exception occurred when executing command",
                 "@|bold 130|@:Execution cancelled from the terminal interface"},
         footerHeading = "%n@|bold,underline Examples:|@%n",
-        footer = {"  Run CATS in blackbox mode and only report 500 http error codes:",
+        footer = {"  Run CATS in blackbox mode: 5XX errors (except 501) and CONFIRMED high-severity security findings:",
                 "    cats -c openapi.yml -s http://localhost:8080 -b -k",
                 "", "  Run CATS with authentication headers from an environment variable called TOKEN:",
                 "    cats -c openapi.yml -s http://localhost:8080 -H API-Token=$$TOKEN"},
@@ -485,6 +485,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                 .anyMatch(documentedMethod -> documentedMethod.name().equals(method.name()));
     }
 
+    private void printBlackboxConfiguration() {
+        if (ignoreArguments != null && ignoreArguments.isBlackbox()) {
+            logger.config("Blackbox: true (high-severity only)");
+        }
+    }
+
     private void initGlobalData(OpenAPI openAPI) {
         CatsConfiguration catsConfiguration = new CatsConfiguration(appVersion, apiArguments.getContract(), apiArguments.getServer(), filterArguments.getHttpMethods(),
                 filterArguments.getFirstPhaseFuzzersForPath().size() + filterArguments.getSecondPhaseFuzzers().size(), filterArguments.getTotalFuzzersOrLinters(),
@@ -498,7 +504,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties(), catsConfiguration,
                 filesArguments.getErrorLeaksKeywordsList(), refs);
         executionEventPublisher.publish(new CatsExecutionEvent.ConfigurationLoaded(Instant.now(),
-                RunConfigurationSnapshot.from(catsConfiguration)));
+                RunConfigurationSnapshot.from(catsConfiguration, ignoreArguments != null && ignoreArguments.isBlackbox())));
 
         logger.debug("Fuzzers custom configuration: {}", globalContext.getFuzzersConfiguration());
         logger.debug("Schemas: {}", globalContext.getSchemaMap().keySet());
@@ -606,6 +612,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                     AnsiUtils.blue(stopArguments.getStopAfterErrors()),
                     AnsiUtils.blue(stopArguments.getStopAfterMutations()));
         }
+        printBlackboxConfiguration();
         if (ignoreArguments != null && (!ignoreArguments.getIgnoreResponseCodes().isEmpty() ||
                 ignoreArguments.isSkipReportingForIgnoredCodes() ||
                 ignoreArguments.isSkipReportingForSuccess() ||

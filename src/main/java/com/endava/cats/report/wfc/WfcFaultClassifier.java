@@ -12,12 +12,8 @@ import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
 import com.endava.cats.fuzzer.http.BypassAuthenticationFuzzer;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.fuzzer.http.CreatedResourceLocationFuzzer;
-import com.endava.cats.fuzzer.http.CustomHttpMethodsFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
-import com.endava.cats.fuzzer.http.HttpMethodsFuzzer;
-import com.endava.cats.fuzzer.http.InsecureDirectObjectReferencesFuzzer;
 import com.endava.cats.fuzzer.http.MisleadingCreatePutFuzzer;
-import com.endava.cats.fuzzer.http.NonRestHttpMethodsFuzzer;
 import com.endava.cats.fuzzer.http.PutIdempotencyFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.fuzzer.special.RandomFuzzer;
@@ -27,6 +23,9 @@ import com.endava.cats.model.CatsResultFactory.Reason;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FindingConfidence;
+import com.endava.cats.model.FindingEvidence;
+import com.endava.cats.model.SecurityFindingType;
+import com.endava.cats.report.security.SecurityFindingClassifier;
 import com.endava.cats.report.error.extract.EmptyBody;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.KeyValuePair;
@@ -66,26 +65,6 @@ public final class WfcFaultClassifier {
             FunctionalFuzzer.class,
             RandomFuzzer.class);
 
-    private static final List<Class<?>> UNDOCUMENTED_HTTP_METHOD_FUZZER_CLASSES = List.of(
-            HttpMethodsFuzzer.class,
-            NonRestHttpMethodsFuzzer.class,
-            CustomHttpMethodsFuzzer.class);
-
-    private static final Set<String> SSRF_REASONS = Set.of(
-            Reason.SSRF_REFLECTED.value(),
-            Reason.INTERNAL_TARGET_REFLECTED_SSRF.value(),
-            Reason.CLOUD_METADATA_REFLECTED_SSRF.value(),
-            Reason.FILE_CONTENT_EXPOSED_SSRF.value(),
-            Reason.NETWORK_ERROR_SSRF.value(),
-            Reason.DNS_RESOLUTION_SSRF.value(),
-            Reason.HTTP_CLIENT_SSRF.value());
-
-    private static final Set<String> LDAP_REASONS = Set.of(
-            Reason.LDAP_INJECTION.value(),
-            Reason.POSSIBLE_LDAP_INJECTION.value(),
-            Reason.LDAP_DATA_EXTRACTION.value(),
-            Reason.LDAP_AUTHENTICATION_BYPASS.value());
-
     private static final Map<String, FaultCategory> EXACT_REASON_MAP = buildExactReasonMap();
 
     private WfcFaultClassifier() {
@@ -112,31 +91,13 @@ public final class WfcFaultClassifier {
         map.put(Reason.CONDITIONAL_GET_IGNORED.value(), CatsWfcFaultCategory.CATS_CONDITIONAL_GET_IGNORED);
         map.put(Reason.ARITHMETIC_TOTAL_MISMATCH_ACCEPTED.value(), CatsWfcFaultCategory.CATS_ARITHMETIC_TOTAL_MISMATCH_ACCEPTED);
         map.put(Reason.PATH_BODY_ID_MISMATCH_ACCEPTED.value(), CatsWfcFaultCategory.CATS_PATH_BODY_ID_MISMATCH_ACCEPTED);
-        map.put(Reason.SQL_INJECTION.value(), DefinedFaultCategory.SECURITY_SQL_INJECTION);
-        map.put(Reason.XSS_INJECTION.value(), DefinedFaultCategory.SECURITY_XSS_INJECTION);
-        map.put(Reason.MASS_ASSIGNMENT_DETECTED.value(), DefinedFaultCategory.SECURITY_MASS_ASSIGNMENT);
         map.put(Reason.UNDECLARED_FIELD_ACCEPTED.value(), DefinedFaultCategory.SCHEMA_VALIDATION_BYPASS);
-        map.put(Reason.ERROR_LEAKS_DETECTED.value(), DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES);
-        map.put(Reason.CALL_TIMEOUT_EXCEEDED.value(), DefinedFaultCategory.SECURITY_CALL_TIMEOUT);
-        map.put(Reason.RESPONSE_TIME_EXCEEDS_MAX.value(), DefinedFaultCategory.SECURITY_CALL_TIMEOUT);
-        map.put(Reason.POTENTIAL_IDOR.value(), DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION);
-        map.put(Reason.COMMAND_INJECTION.value(), DefinedFaultCategory.SECURITY_COMMAND_INJECTION);
-        map.put(Reason.POSSIBLE_COMMAND_INJECTION.value(), DefinedFaultCategory.SECURITY_COMMAND_INJECTION);
-        map.put(Reason.PATH_TRAVERSAL.value(), DefinedFaultCategory.SECURITY_LEAKED_STACK_TRACES);
-        map.put(Reason.HTTP_METHOD_OVERRIDE_ACCEPTED.value(), DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT);
-        map.put(Reason.NOSQL_INJECTION.value(), DefinedFaultCategory.SECURITY_NOSQL_INJECTION);
-        LDAP_REASONS.forEach(reason -> map.put(reason, DefinedFaultCategory.SECURITY_LDAP_INJECTION));
-        map.put(Reason.WRITE_ONLY_FIELDS_EXPOSED.value(), DefinedFaultCategory.SECURITY_EXCESSIVE_DATA_EXPOSURE);
-        map.put(Reason.SENSITIVE_DATA_EXPOSED.value(), DefinedFaultCategory.SECURITY_EXCESSIVE_DATA_EXPOSURE);
-        map.put(Reason.MISSING_SECURITY_HEADERS.value(), DefinedFaultCategory.SECURITY_MISSING_HEADERS);
         map.put(Reason.READ_BROKEN_AFTER_FUZZING.value(), DefinedFaultCategory.HTTP_BROKEN_READ);
         map.put(Reason.UPDATE_READ_INCONSISTENCY.value(), DefinedFaultCategory.HTTP_UPDATE_READ_INCONSISTENCY);
         map.put(Reason.PUT_NOT_IDEMPOTENT.value(), DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT);
         map.put(Reason.PUT_RETRY_REJECTED.value(), DefinedFaultCategory.HTTP_NON_IDEMPOTENT_PUT);
         map.put(Reason.CREATED_RESOURCE_UNAVAILABLE.value(), DefinedFaultCategory.HTTP_CREATED_RESOURCE_NOT_FOUND);
         map.put(Reason.STALE_IF_MATCH_ACCEPTED.value(), DefinedFaultCategory.HTTP_STALE_ETAG_ACCEPTED);
-        map.put(Reason.CROSS_PARENT_RESOURCE_EXPOSURE.value(), DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION);
-        SSRF_REASONS.forEach(reason -> map.put(reason, DefinedFaultCategory.SECURITY_SSRF));
         return Map.copyOf(map);
     }
 
@@ -171,16 +132,36 @@ public final class WfcFaultClassifier {
             return Set.copyOf(faults);
         }
 
-        classifyStatusCodeFaults(summary, code, faults);
-        classifySecondPhaseAndSecurityFuzzers(summary, code, method, faults);
-        if (summary.getConfidence() != FindingConfidence.TENTATIVE) {
-            classifyReasonBasedFaults(summary, code, faults);
-        }
+        findingFaults(FindingEvidence.from(summary)).stream().map(fault -> contextualFault(fault, summary)).forEach(faults::add);
 
         if (faults.isEmpty() && summary.getError() && !summary.is9xxResponse()) {
             faults.add(faultId(CatsWfcFaultCategory.CATS_UNEXPECTED_BEHAVIOUR, summary.getResultReason()));
         }
         return Set.copyOf(faults);
+    }
+
+    /** Returns the shared finding categories, without report-specific contexts or passive protocol checks. */
+    public static Set<FaultCategory> categoriesOf(FindingEvidence evidence) {
+        return findingFaults(evidence).stream().map(FindingFault::category).collect(java.util.stream.Collectors.toUnmodifiableSet());
+    }
+
+    private static Set<FindingFault> findingFaults(FindingEvidence evidence) {
+        Set<FindingFault> faults = new LinkedHashSet<>();
+        classifyStatusCodeFaults(evidence, evidence.responseCode(), faults);
+        classifySecondPhaseFuzzers(evidence, evidence.responseCode(), faults);
+        SecurityFindingClassifier.fromFuzzer(evidence).map(type -> fuzzerSecurityFault(evidence, type)).ifPresent(faults::add);
+        if (evidence.confidence() != FindingConfidence.TENTATIVE) {
+            classifyReasonBasedFaults(evidence, evidence.responseCode(), faults);
+        }
+        return Set.copyOf(faults);
+    }
+
+    private static FaultCategoryId contextualFault(FindingFault fault, CatsTestCaseSummary summary) {
+        String context = fault.category() == DefinedFaultCategory.HTTP_STATUS_500 ? WfcFaultContext.of(summary) : fault.context();
+        return faultId(fault.category(), context);
+    }
+
+    private record FindingFault(FaultCategory category, String context) {
     }
 
     private static void classifyAuthSchemaFaults(int code, OperationAuthContract contract, Set<FaultCategoryId> faults) {
@@ -195,15 +176,15 @@ public final class WfcFaultClassifier {
         }
     }
 
-    private static void classifyStatusCodeFaults(CatsTestCaseSummary summary, int code, Set<FaultCategoryId> faults) {
+    private static void classifyStatusCodeFaults(FindingEvidence evidence, int code, Set<FindingFault> faults) {
         if (ResponseCodeFamily.isInternalServerError(code)) {
-            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_500, WfcFaultContext.of(summary)));
+            faults.add(new FindingFault(DefinedFaultCategory.HTTP_STATUS_500, null));
         } else if (ResponseCodeFamily.isUnimplemented(code)) {
-            faults.add(faultId(DefinedFaultCategory.SCHEMA_STATUS_NO_501_IF_IMPLEMENTED, null));
+            faults.add(new FindingFault(DefinedFaultCategory.SCHEMA_STATUS_NO_501_IF_IMPLEMENTED, null));
         } else if (ResponseCodeFamily.isServerErrorOtherThan500And501(code)) {
-            faults.add(faultId(DefinedFaultCategory.HTTP_OTHER_STATUS_5XX, HTTP_STATUS_CONTEXT_PREFIX + code));
-        } else if (!ResponseCodeFamily.isValidHttpCode(code) && !summary.is9xxResponse()) {
-            faults.add(faultId(DefinedFaultCategory.HTTP_STATUS_NO_NON_STANDARD_CODES, HTTP_STATUS_CONTEXT_PREFIX + code));
+            faults.add(new FindingFault(DefinedFaultCategory.HTTP_OTHER_STATUS_5XX, HTTP_STATUS_CONTEXT_PREFIX + code));
+        } else if (!ResponseCodeFamily.isValidHttpCode(code) && code / 100 != 9) {
+            faults.add(new FindingFault(DefinedFaultCategory.HTTP_STATUS_NO_NON_STANDARD_CODES, HTTP_STATUS_CONTEXT_PREFIX + code));
         }
     }
 
@@ -260,54 +241,47 @@ public final class WfcFaultClassifier {
         return headers.stream().anyMatch(h -> h.getKey() != null && h.getKey().equalsIgnoreCase(target));
     }
 
-    private static void classifySecondPhaseAndSecurityFuzzers(CatsTestCaseSummary summary, int code, String method,
-                                                              Set<FaultCategoryId> faults) {
-        String fuzzer = summary.getFuzzer();
-        boolean is2xx = ResponseCodeFamily.is2xxCode(code);
+    private static void classifySecondPhaseFuzzers(FindingEvidence evidence, int code, Set<FindingFault> faults) {
+        String fuzzer = evidence.fuzzer();
         if (ConsoleUtils.matchesFuzzer(fuzzer, CheckDeletedResourcesNotAvailableFuzzer.class) && !ResponseCodeFamily.is5xxCode(code)) {
-            faults.add(faultId(DefinedFaultCategory.HTTP_NONWORKING_DELETE, null));
+            faults.add(new FindingFault(DefinedFaultCategory.HTTP_NONWORKING_DELETE, null));
         } else if (ConsoleUtils.matchesFuzzer(fuzzer, PutIdempotencyFuzzer.class) && code == ResponseCodeFamily.STATUS_CREATED) {
-            faults.add(faultId(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT, fuzzer));
+            faults.add(new FindingFault(DefinedFaultCategory.HTTP_REPEATED_CREATE_PUT, fuzzer));
         } else if (ConsoleUtils.matchesFuzzer(fuzzer, MisleadingCreatePutFuzzer.class) && code == ResponseCodeFamily.STATUS_CREATED) {
-            faults.add(faultId(DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT, fuzzer));
+            faults.add(new FindingFault(DefinedFaultCategory.HTTP_MISLEADING_CREATE_PUT, fuzzer));
         } else if (ConsoleUtils.matchesFuzzer(fuzzer, CreatedResourceLocationFuzzer.class)
                 && !ResponseCodeFamily.isNotFoundOrGone(code) && !ResponseCodeFamily.is5xxCode(code)) {
-            faults.add(faultId(DefinedFaultCategory.HTTP_INVALID_LOCATION, summary.getResultReason()));
-        } else if (ConsoleUtils.matchesFuzzer(fuzzer, BypassAuthenticationFuzzer.class) && is2xx) {
-            faults.add(faultId(authenticationFault(method), method));
-        } else if (ConsoleUtils.matchesAnyFuzzer(fuzzer, UNDOCUMENTED_HTTP_METHOD_FUZZER_CLASSES) && is2xx) {
-            faults.add(faultId(DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT, method));
-        } else if (ConsoleUtils.matchesFuzzer(fuzzer, InsecureDirectObjectReferencesFuzzer.class) && is2xx) {
-            faults.add(faultId(DefinedFaultCategory.SECURITY_INCONSISTENT_WRITE_AUTHORIZATION, summary.getFuzzer()));
+            faults.add(new FindingFault(DefinedFaultCategory.HTTP_INVALID_LOCATION, evidence.reason()));
         }
     }
 
-    private static FaultCategory authenticationFault(String method) {
-        return HttpMethod.isResourceModificationMethod(method)
-                ? DefinedFaultCategory.SECURITY_ANONYMOUS_MODIFICATIONS
-                : DefinedFaultCategory.SECURITY_DECLARED_AUTH_NOT_ENFORCED;
+    private static FindingFault fuzzerSecurityFault(FindingEvidence evidence, SecurityFindingType type) {
+        String context = type == SecurityFindingType.INCONSISTENT_WRITE_AUTHORIZATION
+                ? evidence.fuzzer() : optionalUpper(evidence.httpMethod());
+        return new FindingFault(WfcSecurityMapping.categoryOf(type), context);
     }
 
-    private static void classifyReasonBasedFaults(CatsTestCaseSummary summary, int code, Set<FaultCategoryId> faults) {
-        String reason = summary.getResultReason();
+    private static void classifyReasonBasedFaults(FindingEvidence evidence, int code, Set<FindingFault> faults) {
+        String reason = evidence.reason();
         if (StringUtils.isBlank(reason)) {
             return;
         }
-        FaultCategory exact = EXACT_REASON_MAP.get(reason.trim());
+        FaultCategory exact = SecurityFindingType.fromReason(reason).map(WfcSecurityMapping::categoryOf)
+                .orElseGet(() -> EXACT_REASON_MAP.get(reason.trim()));
         if (exact != null) {
-            faults.add(faultId(exact, summary.getFuzzer()));
+            faults.add(new FindingFault(exact, evidence.fuzzer()));
             return;
         }
         if (reason.startsWith(Reason.UNEXPECTED_RESPONSE_CODE.value())
                 || reason.startsWith(Reason.UNEXPECTED_BEHAVIOUR.value())) {
-            classifyUnexpectedStatusCodeOracle(summary, code, faults);
+            classifyUnexpectedStatusCodeOracle(evidence, code, faults);
         }
     }
 
-    private static void classifyUnexpectedStatusCodeOracle(CatsTestCaseSummary summary, int code,
-                                                           Set<FaultCategoryId> faults) {
-        String fuzzer = summary.getFuzzer();
-        if (ConsoleUtils.matchesAnyFuzzer(fuzzer, UNDOCUMENTED_HTTP_METHOD_FUZZER_CLASSES)
+    private static void classifyUnexpectedStatusCodeOracle(FindingEvidence evidence, int code,
+                                                           Set<FindingFault> faults) {
+        String fuzzer = evidence.fuzzer();
+        if (SecurityFindingClassifier.isUndocumentedMethodFuzzer(fuzzer)
                 || ConsoleUtils.matchesFuzzer(fuzzer, CheckDeletedResourcesNotAvailableFuzzer.class)
                 || ConsoleUtils.matchesFuzzer(fuzzer, BypassAuthenticationFuzzer.class)) {
             return;
@@ -315,12 +289,12 @@ public final class WfcFaultClassifier {
         boolean isPositiveFuzzer = ConsoleUtils.matchesAnyFuzzer(fuzzer, POSITIVE_VALID_INPUT_FUZZER_CLASSES);
         if (isPositiveFuzzer) {
             if (ResponseCodeFamily.isClientValidationError(code)) {
-                faults.add(faultId(DefinedFaultCategory.SCHEMA_VALID_INPUT_REJECTED, fuzzer));
+                faults.add(new FindingFault(DefinedFaultCategory.SCHEMA_VALID_INPUT_REJECTED, fuzzer));
             } else if (code == ResponseCodeFamily.STATUS_NOT_ACCEPTABLE) {
-                faults.add(faultId(DefinedFaultCategory.SCHEMA_STATUS_HAS_406_IF_ACCEPT, fuzzer));
+                faults.add(new FindingFault(DefinedFaultCategory.SCHEMA_STATUS_HAS_406_IF_ACCEPT, fuzzer));
             }
         } else if (ResponseCodeFamily.is2xxCode(code)) {
-            faults.add(faultId(DefinedFaultCategory.SCHEMA_VALIDATION_BYPASS, fuzzer));
+            faults.add(new FindingFault(DefinedFaultCategory.SCHEMA_VALIDATION_BYPASS, fuzzer));
         }
     }
 

@@ -35,15 +35,18 @@ cats smoke -c openapi.yml -s https://staging.example.com \
 
 Depending on what you want to fix first, pick **one** of these three modes:
 
-### Option A: Hunt for `5XX` Server Crashes First (Recommended First Run)
-When testing an API for the first time, OpenAPI contracts often have minor documentation drift (undocumented `400` codes or slightly different error bodies). Use **blackbox mode (`-b -k`)** to ignore everything except **`5XX` server errors**:
+### Option A: Review Server Errors and High-Severity Security Findings First
+When testing an API for the first time, OpenAPI contracts often have minor documentation drift (undocumented `400` codes or slightly different error bodies). Use **blackbox mode (`-b -k`)** to focus on **5XX server errors (except 501)** and **high-severity security findings**:
 
 ```shell
 cats -c openapi.yml -s https://staging.example.com \
   -H "Authorization=Bearer $$API_TOKEN" \
   -b -k
 ```
-- **What to aim for**: **`0` errors**. Every error reported with `-b -k` is a real unhandled exception or `500 Internal Server Error` in your service.
+- **What to aim for**: **`0` errors**, after inspecting the evidence. Security findings require explicit `CONFIRMED` confidence, CATS's highest level. `FIRM`, `TENTATIVE` and unassessed findings are suppressed, including ordinary errors and strict-promoted warnings. Keyword matches alone cannot promote a security finding. Confirmation is automated and remains heuristic; exceptional-response, response-time and server-error leak handling remain.
+- **Migration:** blackbox counts and CI outcomes can change: confirmed 2XX security findings qualify, while unassessed findings and keyword-only leaks are suppressed. Run without `-b` to review all findings. Use `-i 2xx,4xx,501` without `-b` for the former code filter. Explicit `-i` still applies with `-b`; `-b -i 2xx` suppresses 2XX security findings.
+- Keep a separate run without `-b -k` before `cats triage --export-refdata`; filtered successes and warnings are needed for reference-data extraction.
+- SSTI and XXE use the same `CONFIRMED` security rule. WFC exports use CATS-specific categories where the standard has none: SSTI `913`, XXE `914`, and path traversal `915`. These replace generic/mismatched export labels; ordinary verdicts and problem identities are unchanged.
 
 ### Option B: Fast Validation & Security Smoke Test (`--profile quick`)
 Runs 24 core fuzzers (missing required fields, nulls, boundary numbers, invalid enums, SQLi, auth bypass, malformed JSON) in seconds:
@@ -115,11 +118,11 @@ cats list --paths --executionOrder -c openapi.yml
 
 ## Step 5: Adding CATS to Your CI/CD Pipeline
 
-A good CI pipeline starts strict on `5XX` crashes and progressively tightens contract compliance:
+A good CI pipeline can gate server errors and high-severity security findings first, then tighten contract compliance:
 
-### Stage 1 — Gate Every PR on Zero `5XX` Crashes or Zero Regressions vs. a Baseline
+### Stage 1 — Gate Every PR on High-Severity Errors or New Regressions
 ```shell
-# Option A: Fail on any 5XX crash
+# Option A: Fail on server errors (except 501) and retained high-severity security findings
 cats -c openapi.yml -s https://ci-env.example.com \
   -H "Authorization=Bearer $$API_TOKEN" \
   --profile ci \

@@ -26,6 +26,7 @@ import com.endava.cats.model.ErrorSignature;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.ExpectedResponse;
 import com.endava.cats.model.FindingConfidence;
+import com.endava.cats.model.FindingEvidence;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.Problem;
 import com.endava.cats.model.CatsTestReport;
@@ -933,14 +934,14 @@ public class TestCaseListener {
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
         List<String> detectedKeyWords = testCase.getErrorLeaks();
 
-        if (!ignoreArguments.isIgnoreErrorLeaksCheck() && !detectedKeyWords.isEmpty()) {
+        if (hasReportableKeywordLeaks(testCase)) {
             logger.debug("Detected keywords in response body: {}", detectedKeyWords);
             reportError(logger, CatsResultFactory.createErrorLeaksDetectedInResponse(detectedKeyWords));
         } else if (ignoreArguments.isSkipReportingForWarnings()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipFromReporting(logger, message, params,
                     "Skip reporting as --skipReportingForWarnings is enabled");
-        } else if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
+        } else if (ignoreArguments.isNotIgnoredResponse(catsResponse) && !isSuppressedByBlackbox(testCase)) {
             this.logger.debug("Received response is not marked as ignored... reporting warn!");
             executionStatisticsListener.increaseWarns(testCase.getContractPath());
             logger.warning(message, params);
@@ -990,7 +991,8 @@ public class TestCaseListener {
      */
     public void reportResultWarn(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
         if (namingArguments != null && namingArguments.isStrict()) {
-            this.reportResultError(logger, data, reason, message, params);
+            setResultReason(reason);
+            this.reportError(logger, message, params);
             return;
         }
         setResultReason(reason);
@@ -1035,11 +1037,12 @@ public class TestCaseListener {
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
 
-        if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())
+        if (ignoreArguments.isNotIgnoredResponse(catsResponse) && !isSuppressedByBlackbox(testCase)
+                || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())
                 || isException(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
             logAndRecordError(logger, message, params, testCase, catsResponse);
-        } else if (hasKeywordLeaks(testCase)) {
+        } else if (hasReportableKeywordLeaks(testCase)) {
             CatsResultFactory.CatsResult result = CatsResultFactory.createErrorLeaksDetectedInResponse(testCase.getErrorLeaks());
             setResultReason(result.reason());
             logAndRecordError(logger, result.message(), testCase.getErrorLeaks().toArray(), testCase, catsResponse);
@@ -1053,6 +1056,21 @@ public class TestCaseListener {
             this.reportInfo(logger, message, params);
         }
         recordAuthAndIoErrors(catsResponse);
+    }
+
+    private boolean isSuppressedByBlackbox(CatsTestCase testCase) {
+        CatsResponse response = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
+        return ignoreArguments.isBlackbox() && !isException(response)
+                && CatsResponse.ExceptionalResponse.fromResponseCode(response.getResponseCode()).isEmpty()
+                && !response.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())
+                && !BlackboxSeverityPolicy.isReportable(FindingEvidence.from(testCase, getCurrentFuzzer()));
+    }
+
+    private boolean hasReportableKeywordLeaks(CatsTestCase testCase) {
+        CatsResponse response = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
+        boolean serverError = ResponseCodeFamily.is5xxCode(response.getResponseCode())
+                && !ResponseCodeFamily.isUnimplemented(response.getResponseCode());
+        return hasKeywordLeaks(testCase) && (!ignoreArguments.isBlackbox() || serverError);
     }
 
     private void logAndRecordError(PrettyLogger logger, String message, Object[] params, CatsTestCase testCase, CatsResponse catsResponse) {
@@ -1155,20 +1173,21 @@ public class TestCaseListener {
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
         List<String> detectedKeyWords = testCase.getErrorLeaks();
 
-        if (reportRateLimitedResponse(logger, null, catsResponse)) {
+        if (shouldRecheckInfoResponse(testCase) && reportRateLimitedResponse(logger, null, catsResponse)) {
             return;
         }
-        if (reportTruncatedResponse(logger, null, catsResponse)) {
+        if (shouldRecheckInfoResponse(testCase) && reportTruncatedResponse(logger, null, catsResponse)) {
             return;
         }
-        if (!ignoreArguments.isIgnoreErrorLeaksCheck() && !detectedKeyWords.isEmpty()) {
+        if (hasReportableKeywordLeaks(testCase)) {
             logger.debug("Detected keywords in response body: {}", detectedKeyWords);
             reportError(logger, CatsResultFactory.createErrorLeaksDetectedInResponse(detectedKeyWords));
         } else if (ignoreArguments.isSkipReportingForSuccess()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipFromReporting(logger, message, params,
                     "Skip reporting as --skipReportingForSuccess is enabled");
-        } else if (ignoreArguments.isIgnoredResponse(catsResponse) && ignoreArguments.isSkipReportingForIgnoredCodes()) {
+        } else if ((ignoreArguments.isIgnoredResponse(catsResponse) || isSuppressedByBlackbox(testCase))
+                && ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipFromReporting(logger, message, params,
                     "Some response elements were marked as ignored and --skipReportingForIgnoredCodes is enabled.");
@@ -1181,6 +1200,10 @@ public class TestCaseListener {
             logger.success(message, params);
             this.recordResult(message, params, "success", logger);
         }
+    }
+
+    private boolean shouldRecheckInfoResponse(CatsTestCase testCase) {
+        return !ignoreArguments.isBlackbox() || testCase.getResultIgnoreDetails() == null;
     }
 
     private void reportInfo(PrettyLogger logger, CatsResultFactory.CatsResult catsResult, Object... params) {

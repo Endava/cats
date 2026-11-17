@@ -38,7 +38,22 @@ public enum CatsWfcFaultCategory implements FaultCategory {
             912,
             "Path And Body Identifier Mismatch Accepted",
             "pathBodyIdMismatchAccepted",
-            "A PUT or PATCH request whose body identifier contradicted the identifier in the URL path was accepted and the body identifier was reflected back, so the target resource of the write is ambiguous.");
+            "A PUT or PATCH request whose body identifier contradicted the identifier in the URL path was accepted and the body identifier was reflected back, so the target resource of the write is ambiguous."),
+    CATS_SSTI(
+            913,
+            "Server-Side Template Injection",
+            "serverSideTemplateInjection",
+            "A server-side template injection probe produced evidence of template evaluation or template-engine behavior. The finding's confidence describes the strength of that evidence."),
+    CATS_XXE(
+            914,
+            "XML External Entity Injection",
+            "xmlExternalEntityInjection",
+            "An XML entity probe produced evidence of entity expansion, external resource disclosure or XML parser behavior. The finding's confidence describes the strength of that evidence."),
+    CATS_PATH_TRAVERSAL(
+            915,
+            "Path Traversal",
+            "pathTraversal",
+            "A path traversal probe produced evidence of local file disclosure or filesystem path handling. The finding's confidence describes the strength of that evidence.");
 
     private final int code;
     private final String descriptiveName;

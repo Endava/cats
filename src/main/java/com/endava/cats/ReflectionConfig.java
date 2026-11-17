@@ -25,6 +25,8 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.FindingConfidence;
+import com.endava.cats.model.FindingEvidence;
+import com.endava.cats.model.SecurityFindingType;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.Problem;
@@ -349,7 +351,7 @@ import java.util.UUID;
         FuzzerListEntry.class, FuzzerListEntry.FuzzerDetails.class, TimeExecutionDetails.class, TimeExecution.class,
         CatsTestReport.class, CatsResultFactory.class, CatsResultFactory.CatsResult.class, CatsResultFactory.Reason.class, CatsTestCase.class,
         KeyValuePair.class, CatsResponse.class, CatsRequest.class, ResourceCorrelation.class, RequestProvenance.class,
-        RequestTarget.class, RequestTarget.Location.class, FindingConfidence.class, ExecutionSummary.class, RunOutcome.class, RunOutcome.Status.class,
+        RequestTarget.class, RequestTarget.Location.class, FindingConfidence.class, FindingEvidence.class, SecurityFindingType.class, ExecutionSummary.class, RunOutcome.class, RunOutcome.Status.class,
         ProcessingError.class, SummaryReportContext.class, SummaryReportContext.StopLimit.class,
         SummaryReportContext.ProcessingErrorEntry.class, SummaryReportContext.ResponseCodeEntry.class,
         SummaryReportContext.FailingPathEntry.class,

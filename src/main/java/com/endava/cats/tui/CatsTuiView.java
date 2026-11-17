@@ -327,11 +327,12 @@ final class CatsTuiView {
         return richLines(
                 labelled("OpenAPI specs: ", display(state.configuration().contract())),
                 labelled("API base url: ", display(state.configuration().basePath())),
-                labelled("Configured: ", "%d/%d paths • %d/%d fuzzers • HTTP methods in scope: %s • Rate: %d rpm (retries: %d, max wait: %ds)".formatted(
+                labelled("Configured: ", "%d/%d paths • %d/%d fuzzers • HTTP methods in scope: %s • Rate: %d rpm (retries: %d, max wait: %ds)%s".formatted(
                         state.configuration().configuredPaths(), state.configuration().totalPaths(),
                         state.configuration().configuredFuzzers(), state.configuration().totalFuzzers(), methods,
                         state.effectiveRpm(), state.configuration().maxRateLimitRetries(),
-                        state.configuration().maxRetryAfterInSec())),
+                        state.configuration().maxRetryAfterInSec(),
+                        state.configuration().blackbox() ? " • Blackbox: high-severity only" : "")),
                 labelled("Path / Fuzzer: ", "%s • %s".formatted(state.currentPath(), state.currentFuzzer())),
                 labelledPairs("Response time: ", "average %dms • worst case %dms".formatted(
                                 state.averageResponseTime(), state.maximumResponseTime()),

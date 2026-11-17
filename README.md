@@ -66,6 +66,36 @@ cats replay Test12 --curl
   <img alt="CATS" width="100%" src="images/tests_result.png"/>
 </div>
 
+## Blackbox reporting (breaking change)
+
+`--blackbox` (`-b`) is the high-signal view: 5XX server errors except 501 and high-severity security findings
+with explicit `CONFIRMED` confidence, CATS's highest confidence level. `FIRM`, `TENTATIVE` and findings without a
+confidence assessment become info, even when their ordinary verdict is an error or `--strict` is enabled.
+Keyword matches alone cannot promote a security finding in blackbox mode. `-k` omits suppressed results and
+ordinary successes. Automated confirmation remains heuristic; review the evidence of retained findings.
+
+**Breaking:** compared with the former code-filter mode, blackbox retains server errors and adds explicitly
+confirmed security findings, including SSTI and XXE. Existing CI gates can therefore fail on findings returned on
+2XX. The intermediate implementation also admitted unassessed security errors; those candidates and keyword-only
+leaks are now suppressed. Run without `-b` for all findings under the ordinary reporting rules. Use
+`-i 2xx,4xx,501` without `-b` for the former code-filter behavior. Explicit ignores remain literal with `-b`, so
+`-b -i 2xx` suppresses 2XX security findings. Existing exceptional-response and response-time diagnostics remain;
+server-error leak handling is preserved. Use a run without `-b -k` before `cats triage --export-refdata`.
+
+Blackbox recognizes CATS security types independently of WFC export codes. Where the pinned WFC catalog has no
+matching category, CATS provides a tool-specific category:
+
+| Finding | WFC export category |
+|---|---|
+| Server-side template injection | `913 CATS_SSTI` (formerly generic `907`) |
+| XML external entity injection | `914 CATS_XXE` (formerly generic `907`) |
+| Path traversal | `915 CATS_PATH_TRAVERSAL` (formerly `309`, leaked stack traces) |
+
+These category changes affect WFC consumers and can change distinct-fault totals where formerly merged categories
+are separated. Request generation, confidence assignment, ordinary verdicts, problem identities and comparison
+rules are unchanged. A future matching WFC category can replace the export mapping without changing blackbox
+eligibility; category migrations must be documented.
+
 ## Baseline comparison
 
 Compare two report folders (or their `cats-summary-report.json` files):

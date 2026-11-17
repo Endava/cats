@@ -1,0 +1,294 @@
+[
+  {
+    "name": "500 context",
+    "method": "GET",
+    "status": 500,
+    "result": "error",
+    "reason": "SERVER_ERROR",
+    "fuzzer": "HappyPath",
+    "body": "{\"error\":\"NullPointerException\",\"message\":\"Cannot invoke String.length()\"}",
+    "expected": [
+      "HTTP_STATUS_500|100|NullPointerException: Cannot invoke String.length()"
+    ]
+  },
+  {
+    "name": "501",
+    "method": "POST",
+    "status": 501,
+    "result": "error",
+    "reason": "NOT_IMPLEMENTED",
+    "fuzzer": "HappyPath",
+    "body": "{}",
+    "expected": [
+      "SCHEMA_STATUS_NO_501_IF_IMPLEMENTED|205|",
+      "SCHEMA_STATUS_NO_501_IF_IMPLEMENTED|205|HappyPath"
+    ]
+  },
+  {
+    "name": "502",
+    "method": "GET",
+    "status": 502,
+    "result": "warn",
+    "reason": "UNEXPECTED_RESPONSE_CODE",
+    "fuzzer": "HappyPath",
+    "body": "{}",
+    "expected": [
+      "HTTP_OTHER_STATUS_5XX|121|HTTP 502"
+    ]
+  },
+  {
+    "name": "nonstandard",
+    "method": "GET",
+    "status": 700,
+    "result": "error",
+    "reason": "UNEXPECTED_RESPONSE_CODE",
+    "fuzzer": "AnyOracle",
+    "body": "{}",
+    "expected": [
+      "HTTP_STATUS_NO_NON_STANDARD_CODES|101|HTTP 700"
+    ]
+  },
+  {
+    "name": "anonymous read",
+    "method": "GET",
+    "status": 200,
+    "result": "error",
+    "reason": "UNEXPECTED_RESPONSE_CODE",
+    "fuzzer": "BypassAuthentication",
+    "body": "{}",
+    "expected": [
+      "SECURITY_DECLARED_AUTH_NOT_ENFORCED|311|GET"
+    ]
+  },
+  {
+    "name": "anonymous write",
+    "method": "POST",
+    "status": 200,
+    "result": "error",
+    "reason": "UNEXPECTED_RESPONSE_CODE",
+    "fuzzer": "BypassAuthentication",
+    "body": "{}",
+    "expected": [
+      "SECURITY_DECLARED_AUTH_NOT_ENFORCED|311|POST"
+    ]
+  },
+  {
+    "name": "hidden and reason contexts",
+    "method": "POST",
+    "status": 200,
+    "result": "error",
+    "reason": "HTTP_METHOD_OVERRIDE_ACCEPTED",
+    "fuzzer": "HttpMethods",
+    "body": "{}",
+    "expected": [
+      "SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT|310|HttpMethods",
+      "SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT|310|POST"
+    ]
+  },
+  {
+    "name": "confirmed SQLi",
+    "method": "POST",
+    "status": 200,
+    "result": "error",
+    "reason": "SQL_INJECTION",
+    "fuzzer": "SqlInjectionInStringFields",
+    "body": "{}",
+    "confidence": "CONFIRMED",
+    "expected": [
+      "SECURITY_SQL_INJECTION|300|SqlInjectionInStringFields"
+    ]
+  },
+  {
+    "name": "firm SQLi",
+    "method": "POST",
+    "status": 200,
+    "result": "error",
+    "reason": "SQL_INJECTION",
+    "fuzzer": "SqlInjectionInStringFields",
+    "body": "{}",
+    "confidence": "FIRM",
+    "expected": [
+      "SECURITY_SQL_INJECTION|300|SqlInjectionInStringFields"
+    ]
+  },
+  {
+    "name": "tentative SQLi fallback",
+    "method": "POST",
+    "status": 200,
+    "result": "error",
+    "reason": "SQL_INJECTION",
+    "fuzzer": "SqlInjectionInStringFields",
+    "body": "{}",
+    "confidence": "TENTATIVE",
+    "expected": [
+      "CATS_UNEXPECTED_BEHAVIOUR|907|SQL injection vulnerability detected"
+    ]
+  },
+  {
+    "name": "strict-like warning error",
+    "method": "GET",
+    "status": 200,
+    "result": "error",
+    "reason": "CROSS_PARENT_RESOURCE_EXPOSURE",
+    "fuzzer": "CrossParentResourceIsolation",
+    "body": "{}",
+    "expected": [
+      "SECURITY_INCONSISTENT_WRITE_AUTHORIZATION|306|CrossParentResourceIsolation"
+    ]
+  },
+  {
+    "name": "functional",
+    "method": "PUT",
+    "status": 200,
+    "result": "warn",
+    "reason": "PUT_NOT_IDEMPOTENT",
+    "fuzzer": "PutIdempotency",
+    "body": "{}",
+    "expected": [
+      "HTTP_NON_IDEMPOTENT_PUT|118|PutIdempotency"
+    ]
+  },
+  {
+    "name": "missing headers",
+    "method": "GET",
+    "status": 200,
+    "result": "error",
+    "reason": "MISSING_SECURITY_HEADERS",
+    "fuzzer": "CheckSecurityHeaders",
+    "body": "{}",
+    "expected": [
+      "SECURITY_MISSING_HEADERS|316|CheckSecurityHeaders"
+    ]
+  },
+  {
+    "name": "ordinary schema",
+    "method": "GET",
+    "status": 400,
+    "result": "warn",
+    "reason": "NOT_MATCHING_RESPONSE_SCHEMA",
+    "fuzzer": "HappyPath",
+    "body": "{}",
+    "expected": [
+      "SCHEMA_INVALID_RESPONSE|200|HappyPath"
+    ]
+  },
+  {
+    "name": "positive reject",
+    "method": "GET",
+    "status": 400,
+    "result": "error",
+    "reason": "UNEXPECTED_RESPONSE_CODE",
+    "fuzzer": "HappyPath",
+    "body": "{}",
+    "expected": [
+      "SCHEMA_VALID_INPUT_REJECTED|207|HappyPath"
+    ]
+  },
+  {
+    "name": "validation bypass",
+    "method": "POST",
+    "status": 200,
+    "result": "error",
+    "reason": "UNEXPECTED_RESPONSE_CODE",
+    "fuzzer": "EmptyStringsInFields",
+    "body": "{}",
+    "expected": [
+      "SCHEMA_VALIDATION_BYPASS|206|EmptyStringsInFields"
+    ]
+  },
+  {
+    "name": "passive success",
+    "method": "GET",
+    "status": 201,
+    "result": "success",
+    "reason": "ALL_GOOD",
+    "fuzzer": "HappyPath",
+    "body": "{}",
+    "expected": [
+      "HTTP_STATUS_NO_201_IF_GET|103|"
+    ]
+  },
+  {
+    "name": "passive 204",
+    "method": "DELETE",
+    "status": 204,
+    "result": "success",
+    "reason": "ALL_GOOD",
+    "fuzzer": "HappyPath",
+    "body": "{\"unexpected\":true}",
+    "expected": [
+      "HTTP_STATUS_NO_204_IF_CONTENT|105|"
+    ]
+  },
+  {
+    "name": "auth schema",
+    "method": "GET",
+    "status": 401,
+    "result": "warn",
+    "reason": "UNDOCUMENTED_RESPONSE_CODE",
+    "fuzzer": "HappyPath",
+    "body": "{}",
+    "auth": [
+      false,
+      false,
+      false
+    ],
+    "expected": [
+      "SCHEMA_STATUS_NO_401_IF_NO_AUTH|202|"
+    ]
+  },
+  {
+    "name": "public auth schema",
+    "method": "GET",
+    "status": 401,
+    "result": "success",
+    "reason": "ALL_GOOD",
+    "fuzzer": "HappyPath",
+    "body": "{}",
+    "auth": [
+      true,
+      true,
+      false
+    ],
+    "expected": [
+      "SCHEMA_STATUS_NO_401_IF_NO_AUTH|202|security: []"
+    ]
+  },
+  {
+    "name": "forbidden schema",
+    "method": "GET",
+    "status": 403,
+    "result": "warn",
+    "reason": "UNDOCUMENTED_RESPONSE_CODE",
+    "fuzzer": "HappyPath",
+    "body": "{}",
+    "auth": [
+      true,
+      false,
+      false
+    ],
+    "expected": [
+      "SCHEMA_STATUS_NO_403_IF_NO_401|203|"
+    ]
+  },
+  {
+    "name": "rate limited",
+    "method": "POST",
+    "status": 500,
+    "result": "warn",
+    "reason": "RATE_LIMITED",
+    "fuzzer": "HappyPath",
+    "body": "{}",
+    "expected": []
+  },
+  {
+    "name": "no response",
+    "method": "GET",
+    "status": 900,
+    "result": "error",
+    "reason": "UNEXPECTED_EXCEPTION",
+    "fuzzer": "HappyPath",
+    "body": "{}",
+    "expected": []
+  }
+]
