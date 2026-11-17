@@ -118,6 +118,10 @@ public class DryRunAspect {
      * @return nothing
      */
     public Object report(InvocationContext context) {
+        Class<?> returnType = context.getMethod().getReturnType();
+        if (returnType != void.class) {
+            return defaultValue(returnType);
+        }
         Object data = context.getParameters()[1];
 
         if (data instanceof FuzzingData fuzzingData) {

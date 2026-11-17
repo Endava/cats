@@ -12,15 +12,16 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.RequestTargetResolver;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -53,14 +54,20 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     public void fuzz(FuzzingData data) {
         logger.debug("All required fields, including subfields: {}", data.getAllRequiredFields());
         Set<Set<String>> sets = this.getAllFields(data);
-        List<String> executedPayloads = new ArrayList<>();
+        RemovalContext context = createContext(data);
 
         for (Set<String> subset : sets) {
             Set<String> finalSubset = this.removeIfSkipped(subset);
             if (!finalSubset.isEmpty()) {
-                process(data, data.getAllRequiredFields(), finalSubset, executedPayloads);
+                process(context, finalSubset);
             }
         }
+    }
+
+    private RemovalContext createContext(FuzzingData data) {
+        String payload = data.getPayload();
+        String prefix = JsonUtils.isJsonArray(payload) ? JsonUtils.ALL_ELEMENTS_ROOT_ARRAY : "";
+        return new RemovalContext(data, prefix, toComparablePayload(payload), new HashSet<>());
     }
 
     private Set<String> removeIfSkipped(Set<String> subset) {
@@ -82,25 +89,38 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         return sets;
     }
 
-    private void process(FuzzingData data, List<String> required, Set<String> subset, List<String> executedPayloads) {
+    private void process(RemovalContext context, Set<String> subset) {
+        FuzzingData data = context.data();
         logger.debug("Payload {} and fields to remove {}", data.getPayload(), subset);
-        String finalJsonPayload = this.getFuzzedJsonWithFieldsRemove(data.getPayload(), subset);
+        String finalJsonPayload = this.getFuzzedJsonWithFieldsRemove(data.getPayload(), context.prefix(), subset);
+        Object comparablePayload = finalJsonPayload.equals(data.getPayload())
+                ? context.baseline()
+                : toComparablePayload(finalJsonPayload);
 
-        if (JsonUtils.equalAsJson(finalJsonPayload, data.getPayload())) {
+        if (comparablePayload.equals(context.baseline())) {
             logger.skip("Field is from a different ANY_OF or ONE_OF payload. Skipping test");
             return;
         }
-        if (isDuplicatePayload(finalJsonPayload, executedPayloads)) {
+        if (!context.executedPayloads().add(comparablePayload)) {
             logger.skip("Payload after removing fields {} is identical to an already executed payload. Skipping test", subset);
             return;
         }
-        executedPayloads.add(finalJsonPayload);
-        executeSubset(data, required, subset, finalJsonPayload);
+        executeSubset(data, data.getAllRequiredFields(), subset, finalJsonPayload);
     }
 
-    private boolean isDuplicatePayload(String candidatePayload, List<String> executedPayloads) {
-        return executedPayloads.stream()
-                .anyMatch(previous -> JsonUtils.equalAsJson(candidatePayload, previous));
+    private static Object toComparablePayload(String payload) {
+        if (payload == null) {
+            return "";
+        }
+        try {
+            JsonNode node = JsonUtils.getSimpleObjectMapper().readTree(payload);
+            if (node != null && !node.isMissingNode()) {
+                return node;
+            }
+        } catch (Exception _) {
+            // Fall through to case-insensitive string comparison for non-JSON payloads
+        }
+        return payload.toLowerCase(Locale.ROOT);
     }
 
     private void executeSubset(FuzzingData data, List<String> required, Set<String> subset, String finalJsonPayload) {
@@ -125,18 +145,15 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         return !intersection.isEmpty();
     }
 
-
-    private String getFuzzedJsonWithFieldsRemove(String payload, Set<String> fieldsToRemove) {
-        String prefix = "";
-
-        if (JsonUtils.isJsonArray(payload)) {
-            prefix = JsonUtils.ALL_ELEMENTS_ROOT_ARRAY;
-        }
+    private String getFuzzedJsonWithFieldsRemove(String payload, String prefix, Set<String> fieldsToRemove) {
         for (String field : fieldsToRemove) {
             payload = JsonUtils.deleteNode(payload, prefix + field);
         }
 
         return payload;
+    }
+
+    private record RemovalContext(FuzzingData data, String prefix, Object baseline, Set<Object> executedPayloads) {
     }
 
     @Override
