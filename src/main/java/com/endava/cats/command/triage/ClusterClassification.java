@@ -1,7 +1,7 @@
 package com.endava.cats.command.triage;
 
 /**
- * The root cause assigned to one failing test; an occurrence takes the classification of most of its tests.
+ * The triage category assigned to one failing test; an occurrence takes the classification of most of its tests.
  *
  * @param liveVerifiable {@code false} when a live replay cannot prove a fix (e.g. contract-only drift)
  */

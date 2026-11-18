@@ -34,7 +34,7 @@ public final class TriageConsoleRenderer {
 
         private void renderSummary() {
             logger.noFormat(AnsiUtils.bold(BANNER));
-            logger.noFormat(AnsiUtils.bold("  CATS Report Triage: Problems and Root-Cause Diagnosis"));
+            logger.noFormat(AnsiUtils.bold("  CATS Report Triage: Problems and Evidence"));
             logger.noFormat(AnsiUtils.bold(BANNER));
             logger.noFormat("  Report Folder : " + report.reportFolder());
             logger.noFormat("  Saved Tests   : %d  (Errors: %d, Warnings: %d)"
@@ -52,21 +52,23 @@ public final class TriageConsoleRenderer {
         }
 
         private void renderOccurrence(TriageOccurrence occurrence) {
-            logger.noFormat("      - %s %s -> HTTP %s (%s)%s".formatted(categoryBadge(occurrence), AnsiUtils.bold(occurrence.operation()),
-                    occurrence.statusCodes(), count(occurrence.testCount(), "test"), verificationBadge(occurrence)));
-            logger.noFormat("        Diagnosis   : " + occurrence.diagnosis());
+            logger.noFormat("      - %s %s -> %s (%s)%s".formatted(categoryBadge(occurrence), AnsiUtils.bold(occurrence.operation()),
+                    statuses(occurrence.statusCodes()), count(occurrence.testCount(), "test"), verificationBadge(occurrence)));
+            logger.noFormat("        Observed    : " + occurrence.diagnosis());
             if (StringUtils.isNotBlank(occurrence.attribution())) {
-                logger.noFormat("        Attribution : " + occurrence.attribution());
+                logger.noFormat("        Attribution : " + (TriageOccurrence.SAME_AS_BASELINE.equals(occurrence.attribution())
+                        ? "Also observed on an unmodified request; see next check." : occurrence.attribution()));
             }
-            logger.noFormat("        Remediation : " + occurrence.remediation());
+            renderSample(occurrence);
+            logger.noFormat("        Next check  : " + occurrence.remediation());
             renderDetails(occurrence);
         }
 
         private void renderDetails(TriageOccurrence occurrence) {
             if (!occurrence.fields().isEmpty()) {
-                logger.noFormat("        Fields      : " + String.join(", ", occurrence.fields()));
+                logger.noFormat("        Fields      : " + abbreviated(occurrence.fields()));
             }
-            logger.noFormat("        Fuzzers     : " + String.join(", ", occurrence.fuzzers()));
+            logger.noFormat("        Fuzzers     : " + abbreviated(occurrence.fuzzers()));
             logger.noFormat("        Sample Tests: " + String.join(", ", occurrence.sampleTestIds()));
             if (showReproducers) {
                 logger.noFormat("        Reproducer  : " + occurrence.curlReproducer());
@@ -74,6 +76,34 @@ public final class TriageConsoleRenderer {
             if (StringUtils.isNotBlank(occurrence.verificationNote())) {
                 logger.noFormat("        Verification: " + occurrence.verificationNote());
             }
+        }
+
+        private void renderSample(TriageOccurrence occurrence) {
+            TriageSample sample = occurrence.sample();
+            if (sample == null) {
+                return;
+            }
+            String expected = sample.expectedResponseCodes().isEmpty() ? "not recorded" : String.join(" | ", sample.expectedResponseCodes());
+            logger.noFormat("        Sample      : %s — expected %s; received %s".formatted(sample.testId(), expected, status(sample.statusCode())));
+            if (sample.confidence() != null) {
+                logger.noFormat("        Confidence  : " + sample.confidence() + " (recorded by the detector)");
+            } else if ("SECURITY_REVIEW".equals(occurrence.category())) {
+                logger.noFormat("        Confidence  : not recorded; no confirmation inferred");
+            }
+            logger.noFormat("        Evidence    : " + sample.evidence());
+        }
+
+        private static String abbreviated(List<String> values) {
+            String visible = String.join(", ", values.stream().limit(4).map(value -> StringUtils.abbreviate(value, 90)).toList());
+            return values.size() > 4 ? visible + " (+%d more; see JSON)".formatted(values.size() - 4) : visible;
+        }
+
+        private static String statuses(List<Integer> codes) {
+            return String.join(", ", codes.stream().map(Context::status).toList());
+        }
+
+        private static String status(int code) {
+            return code >= 100 && code < 600 ? "HTTP " + code : "CATS code " + code;
         }
 
         private static String levelBadge(TriageProblem problem) {

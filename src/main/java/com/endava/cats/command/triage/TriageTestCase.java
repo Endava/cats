@@ -115,13 +115,19 @@ record TriageTestCase(int number, CatsTestCase testCase) {
     }
 
     /**
-     * Returns the raw response text, unwrapping bodies that reports stored as a JSON string primitive.
+     * Returns the raw response text, unwrapping JSON string primitives and the report's non-JSON body envelope.
      */
     String rawResponseBody() {
         String raw = testCase.getResponse().getBody();
         JsonElement jsonBody = testCase.getResponse().getJsonBody();
         if (StringUtils.isNotBlank(raw) || jsonBody == null || jsonBody.isJsonNull()) {
             return raw;
+        }
+        if (jsonBody.isJsonObject() && jsonBody.getAsJsonObject().size() == 1) {
+            JsonElement nonJson = jsonBody.getAsJsonObject().get("notAJson");
+            if (nonJson != null && nonJson.isJsonPrimitive()) {
+                return nonJson.getAsString();
+            }
         }
         return jsonBody.isJsonPrimitive() ? jsonBody.getAsString() : jsonBody.toString();
     }

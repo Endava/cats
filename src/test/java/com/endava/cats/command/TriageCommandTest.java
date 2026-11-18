@@ -22,6 +22,21 @@ import java.nio.file.Path;
 class TriageCommandTest {
 
     @Test
+    void shouldRejectAnIncompleteReportBeforeWritingExports(@TempDir Path folder) throws Exception {
+        Files.writeString(folder.resolve("cats-summary-report.json"), """
+                {"problemKeyVersion":1,"problems":[],"testCases":[{"id":"Test 1","result":"error"}]}
+                """);
+        Path export = folder.resolve("reproducers.sh");
+        TriageCommand command = new TriageCommand();
+
+        int code = new CommandLine(command).execute("-r", folder.toString(), "--verify", "--export-reproducers", export.toString());
+
+        Assertions.assertThat(code).isEqualTo(2);
+        Assertions.assertThat(command.getLastReport()).isNull();
+        Assertions.assertThat(export).doesNotExist();
+    }
+
+    @Test
     void shouldMakeConsoleReproducersOptIn() {
         TriageCommand command = new TriageCommand();
         Assertions.assertThat(command.showReproducers).isFalse();

@@ -75,7 +75,7 @@ final class LiveClusterVerifier {
 
     Verification verify(ClusterClassification classification, TriageTestCase representative) {
         if (!classification.liveVerifiable()) {
-            return Verification.inconclusive(null, "Contract drift cannot be proven by a live replay; re-run CATS against the updated contract.");
+            return Verification.inconclusive(null, verificationLimitation(classification.category()));
         }
         CatsRequest request = representative.testCase().getRequest();
         ResolvedText url = resolveEnv(StringUtils.defaultIfBlank(request.getUrl(), representative.testCase().getFullRequestPath()));
@@ -87,6 +87,18 @@ final class LiveClusterVerifier {
         }
         int code = execute(request, resolveTargetUrl(url.value()), headers);
         return judge(classification, representative, code);
+    }
+
+    private static String verificationLimitation(String category) {
+        return switch (category) {
+            case "SECURITY_REVIEW", "CONFIRMED_SECURITY_FINDING" ->
+                    "A status-only replay cannot verify a security fix; re-run the detector and inspect its evidence.";
+            case "RESPONSE_CONTENT_TYPE_MISMATCH", "RESPONSE_SCHEMA_MISMATCH", "MISSING_RESPONSE_HEADERS" ->
+                    "A status-only replay cannot verify this response check; re-run CATS against the original contract.";
+            case "RATE_LIMITED", "RESPONSE_TRUNCATED", "TRANSPORT_FAILURE", "CALL_TIMEOUT", "RESPONSE_TIME_LIMIT", "NON_HTTP_RESULT" ->
+                    "Re-run CATS after resolving the recorded execution limit or transport failure; a status-only replay cannot establish the original test verdict.";
+            default -> "Contract drift cannot be proven by a live replay; re-run CATS against the updated contract.";
+        };
     }
 
     private Verification judge(ClusterClassification classification, TriageTestCase representative, int code) {
@@ -106,16 +118,20 @@ final class LiveClusterVerifier {
 
     private static Verification verifiedOutcome(ClusterClassification classification, ExpectedCodes expected, int code) {
         boolean fixed = isFixed(classification, expected, code);
-        String note = fixed && "SERVER_CRASH_5XX".equals(classification.category())
+        String note = fixed && isServerErrorCategory(classification)
                 ? "This single replay returned no server error; repeat under the original conditions to check for intermittent failures." : null;
         return new Verification(fixed ? FIXED : STILL_FAILING, code, note);
     }
 
     static boolean isFixed(ClusterClassification classification, ExpectedCodes expected, int code) {
-        if ("SERVER_CRASH_5XX".equals(classification.category())) {
+        if (isServerErrorCategory(classification)) {
             return code < 500;
         }
         return expected.isEmpty() ? ResponseCodeFamily.is2xxCode(code) : expected.allows(code);
+    }
+
+    private static boolean isServerErrorCategory(ClusterClassification classification) {
+        return "SERVER_CRASH_5XX".equals(classification.category()) || "METHOD_NOT_IMPLEMENTED_501".equals(classification.category());
     }
 
     private Map<String, ResolvedText> resolvedHeaders(CatsRequest request) {

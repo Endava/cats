@@ -1,6 +1,6 @@
 ---
 name: cats-triage-results
-description: "Triage the problems of CATS test reports per operation (root-cause category, diagnosis, remediation), mine working --refData from 2XX responses, synthesize --correlations rules, generate OpenAPI contract patches, replay failing tests, verify fixes live (--verify), and compare reports against a baseline."
+description: "Triage the problems of CATS test reports per operation (evidence-based category, observation, next check), mine working --refData from 2XX responses, synthesize --correlations rules, generate OpenAPI contract patches, replay failing tests, verify fixes live (--verify), and compare reports against a baseline."
 argument-hint: "[-r cats-report] [-s <server-url>]"
 allowed-tools:
   - read
@@ -32,7 +32,7 @@ Use this skill after any `cats run`, `cats random`, or `cats template` execution
 
 ---
 
-## 1. Deduplicate Root Causes & Export Remediation Artifacts (`cats triage`)
+## 1. Review Problems & Export Investigation Artifacts (`cats triage`)
 
 Reports generated with `-b` contain 5XX except 501 plus high-severity security findings with explicit `CONFIRMED` confidence, CATS's highest level. Automated confirmation remains heuristic. `FIRM`, `TENTATIVE` and unassessed findings are suppressed even if normally errors or strict-promoted warnings. Keyword matches alone cannot promote a security finding. Explicit ignores still apply; exceptional-response, response-time and server-error leak handling remain. `-b -k` omits suppressed results and ordinary successes. Run without `-b` for all findings and use an unfiltered run before `--export-refdata`. Counts/CI gates can change; the former code filter remains available as `-i 2xx,4xx,501` without `-b`. Blackbox uses CATS security types independently of WFC codes. Findings without a matching standard WFC category use tool-specific exports: SSTI `913 CATS_SSTI`, XXE `914 CATS_XXE`, and path traversal `915 CATS_PATH_TRAVERSAL`; their confidence requirement is unchanged.
 
@@ -50,12 +50,18 @@ Console output omits full curl commands by default. Add `--show-reproducers` to 
 `--export-reproducers reproducers.sh` to write them separately. JSON always includes `curlReproducer`.
 The console's grouping-reduction percentage measures how much tests were grouped, not verified removal of false positives.
 
-The JSON is `problems[]` (in report rank order: errors first, then crashes, specific accepted-input findings, rejections, response violations, status codes, generic accepted input) → `occurrences[]`, each with `category`, `severityRank`, `diagnosis`, `remediation`, `fields`, `fuzzers`, `sampleTestIds`, `curlReproducer`, `attribution` and, with `--verify`, `verificationStatus` / `verifiedStatusCode` / `verificationNote`. An occurrence takes the category of most of its tests; its representative (reproducer, `--verify`) is the lowest-numbered test of that category. `totalProblems` and `totalOccurrences` give the size of the work list.
+The JSON is `problems[]` (in report rank order: errors first, then crashes, specific accepted-input findings, rejections, response violations, status codes, generic accepted input) → `occurrences[]`, each with `category`, `severityRank`, `diagnosis`, `remediation`, `fields`, `fuzzers`, `sampleTestIds`, `sample`, `curlReproducer`, `attribution` and, with `--verify`, `verificationStatus` / `verifiedStatusCode` / `verificationNote`. An occurrence takes the category of most of its tests; its representative (reproducer, `--verify`) is the lowest-numbered test of that category. `sample` contains the representative `testId`, actual `statusCode`, exact `expectedResponseCodes`, recorded `confidence` (when present), and bounded `evidence`. It is also the first entry of `sampleTestIds`, so the observation, curl and verification refer to the same request. The expectations describe that sample, not every test in the occurrence. Schema evidence prioritizes the validator errors; legacy XSS advice is omitted from the evidence excerpt while the original test details remain in `Test*.json`. `totalProblems` and `totalOccurrences` give the size of the work list.
 
 **Filtered reports:** triage still analyzes retained errors and warnings when a run used `--srs` (`--skipReportingForSuccess`).
 Successful `2XX` exchanges are needed for `--export-refdata` and successful setup steps in `cats replay --stateful`;
 `--srw` (`--skipReportingForWarning`) additionally removes warning findings, and `-k` removes ignored outcomes.
 Re-run without the relevant filters when those omitted results are needed for mining, replay setup or comparison coverage.
+
+Triage requires the `Test*.json` evidence referenced by the summary and its problems. Missing, unreadable or incomplete referenced files give exit code `2` before replay or export; copy the complete report or re-run CATS. Deliberately omitted results (`--srs`, `--srw`, `-k`) are not missing evidence when they are absent from the summary too.
+
+**Interpretation:** the console labels `Observed`, `Evidence` and `Next check` distinguish recorded failures from root-cause hypotheses. New triage categories do not change the persisted problem kind, id, verdict or WFC fault. `501` is `METHOD_NOT_IMPLEMENTED_501`, not evidence of a process crash. `TRANSPORT_FAILURE` uses CATS pseudo codes, not HTTP statuses. Rate limiting and truncated captures receive execution/capture advice. Recorded content-type, response-schema and missing-header checks take precedence over auth guesses. Unexpected `401`/`403` can indicate credentials, permissions or gateway policy; an expected rejection is not automatically an auth configuration gap.
+
+Security signals use `SECURITY_REVIEW` unless the detector already recorded `CONFIRMED`, in which case the category is `CONFIRMED_SECURITY_FINDING`. No confidence is promoted. XSS acceptance/reflection alone does not prove execution: inspect the consuming browser context and output encoding. A status-only `--verify` replay cannot prove a security or response-validation fix, or establish a verdict for an execution/capture limitation; these return `INCONCLUSIVE` with a specific re-run recommendation. The existing JSON name `noiseReductionPercent` remains for compatibility and measures grouping compression only. Console lists are bounded; JSON retains the full fields and fuzzer lists.
 
 ### Review Exported Artifacts Before Reusing Them
 - **`correlations.yml`**: rules are only synthesized from `400`/`409`/`422` rejections of requests CATS expected to succeed (`HappyPath`, `OnlyRequiredFields`, or `2XX`-only expectations), and only when the message demands presence (`REQUIRE` → `set:`), absence (`REMOVE` → `omit:`) or uniqueness (`UNIQUE` → self-guarded `when: "<field> is not null"` + `set:`). Rules are grouped per path under `rules:`; each carries a `# from:` comment with the source error.
@@ -107,8 +113,8 @@ When a fuzzed test fails with the same HTTP status code and online error signatu
 
 ### Per-Occurrence Decision Tree
 For each occurrence, open one `sampleTestIds` file and read `fuzzer`, `scenario` (note `is required [TRUE|FALSE]`), `expectedResult`, and the response body. Then:
-1. **`5XX`** → failure in the API/gateway path. Inspect the response and replay under the original conditions, especially oversized-header or other stress tests. Keep the observation visible even if a later replay succeeds. Check the unmodified request when the seed data may be invalid.
-2. **`401`/`403`** → auth configuration. Re-run `cats smoke` after fixing.
+1. **Read the failed check first.** For `RATE_LIMITED`, `RESPONSE_TRUNCATED` and transport pseudo codes, resolve the execution/capture limitation and re-run. Response-schema, media-type and header failures require inspecting that check even when the HTTP status was expected. **`5XX` other than `501`** → failure in the API/gateway path. Inspect the response and replay under the original conditions, especially oversized-header or other stress tests. Keep the observation visible even if a later replay succeeds. Check the unmodified request when the seed data may be invalid.
+2. **Unexpected `401`/`403`** → check credentials, permissions and gateway policies. If the rejection was expected, inspect the actual failed check instead. Re-run `cats smoke` after confirmed auth configuration fixes. **`501`** → check method/functionality support and routing, not an assumed crash.
 3. **`404`**:
    - Path contains `{p}` → pin `p` in `refData.yml` under the **exact contract path template**, or pass `--urlParams p:value`.
    - Path has no `{}` → the body references a missing entity → pin that body ID field in `refData.yml` (use `#` for nested fields: `customer#id`).
@@ -118,7 +124,7 @@ For each occurrence, open one `sampleTestIds` file and read `fuzzer`, `scenario`
    2. `FIELD_DOMAIN_CONSTRAINT_4XX`, or the error names **the fuzzed field itself** (`MinLengthExactValuesInStringFields`, `MaxLengthExactValuesInStringFields`, `AllFieldsAtMaxBoundary`, `ExamplesFields`; uniqueness, checksum, closed vocabulary, existing ID) → pin it in `refData.yml` under a **path-only or `all` key** using **`#` notation** for nesting. Correlations cannot help because fields under active mutation are protected from them. If the contract's `minLength`/`maxLength`/`maximum` is simply wrong, fix the contract instead.
    3. `RemoveFields` / `NullValuesInFields` / `EmptyStringsInFields` with `is required [FALSE]` but the server requires the field → always required: add it to `required:` in the contract; only required conditionally: add a correlation rule.
    4. `EnumCaseVariantFields` → the API is case-sensitive: pass `--no-allowDifferentCaseEnumValues` (default expects `2XX`), or fix the server.
-5. **`2XX` while `4XX` was expected (`VALIDATION_BYPASS_2XX`)**:
+5. **`2XX` while `4XX` was expected**: security signals (`SECURITY_REVIEW` / `CONFIRMED_SECURITY_FINDING`) require inspecting detector evidence and recorded confidence first. For ordinary `VALIDATION_BYPASS_2XX`, check the intended validation policy:
    1. `scenario` says `is required [TRUE]` but the contract marks the field/param optional → a correlation `when:` matched where it shouldn't (often GET query params). Tighten `paths:` or the `when:` guard.
    2. Type-coercion fuzzers and lenient parsing is intended → `--no-strictTypes`.
    3. `InvalidValuesInEnumsFields` and unknown values are intentionally accepted → `--allowInvalidEnumValues`.

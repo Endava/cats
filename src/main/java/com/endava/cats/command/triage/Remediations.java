@@ -45,10 +45,10 @@ final class Remediations {
         String hashField = field.replace('.', '#');
         return new ClusterClassification.Explanation(
                 "Server rejected the value that %s sent in fuzzed field [%s] (%s)".formatted(testCase.fuzzer(), field, message.signature()),
-                ("Pin \"%s\" to a known-valid value in --refData under the path-only key \"%s\" (use # for nesting) so %s and other "
-                        + "boundary fuzzers skip it; --correlations cannot override a field the fuzzer is mutating. If the contract allows "
-                        + "values the server rejects, tighten the enum/pattern/format/length constraints of %s.")
-                        .formatted(hashField, testCase.path(), testCase.fuzzer(), field));
+                ("Compare the rejected value with the server's constraint and the contract for %s. If this is an intentional domain constraint, "
+                        + "pin \"%s\" to a known-valid value in --refData under the path-only key \"%s\" (use # for nesting); this makes %s and other "
+                        + "boundary fuzzers skip it and reduces coverage. --correlations cannot override a field the fuzzer is mutating.")
+                        .formatted(field, hashField, testCase.path(), testCase.fuzzer()));
     }
 
     static ClusterClassification.Explanation crossField(TriageTestCase testCase, ErrorMessage message, ClassificationContext context) {
@@ -81,20 +81,33 @@ final class Remediations {
             return ("The field is required by the contract or a --correlations rule, but %s accepts requests without it: "
                     + "remove it from `required` in the contract, or tighten the correlation rule's paths/when guard.").formatted(operation);
         }
-        return "Enforce input validation in %s so invalid input from %s is rejected with 4XX.".formatted(operation, testCase.fuzzer());
+        return "Check whether the constraint tested by %s is intended for %s; if so, enforce it and reject the invalid input with 4XX."
+                .formatted(testCase.fuzzer(), operation);
     }
 
     static String contractMismatch(TriageTestCase testCase, boolean undocumented) {
         if (undocumented) {
-            return "If HTTP %d is intended, add it to %s via `cats triage --export-contract-patch contract-patch.yml`."
+            return "Confirm HTTP %d against the original contract for %s; if intended and missing, add it using `cats triage --export-contract-patch contract-patch.yml`."
                     .formatted(testCase.statusCode(), testCase.operation());
         }
+        if (testCase.expected().allows(testCase.statusCode())) {
+            return "HTTP %d matches the recorded status expectation for %s; inspect the sample's failed check rather than changing the status code."
+                    .formatted(testCase.statusCode(), testCase.operation());
+        }
+        if (testCase.expected().tokens().equals(List.of("405"))) {
+            return "Check method routing and validation order for %s: this scenario expected 405 Method Not Allowed, but received HTTP %d."
+                    .formatted(testCase.operation(), testCase.statusCode());
+        }
+        return statusMismatch(testCase);
+    }
+
+    private static String statusMismatch(TriageTestCase testCase) {
         if (testCase.expected().expectsOnly2xx() && testCase.statusCode() >= 400) {
-            return ("Fuzzer [%s] sent a schema-valid request that %s rejected with HTTP %d: supply valid domain values via --refData "
-                    + "or --correlations, or tighten the contract constraints so the request is no longer considered valid.")
+            return ("Fuzzer [%s] expected success on %s but received HTTP %d. Inspect the server message, generated values and original contract; "
+                    + "the expectation alone does not prove the request was valid. Use --refData or --correlations only for confirmed domain requirements.")
                     .formatted(testCase.fuzzer(), testCase.operation(), testCase.statusCode());
         }
-        return "Fuzzer [%s] (%s) received HTTP %d on %s; align the service status code or the contract."
+        return "Fuzzer [%s] (%s) received HTTP %d on %s; compare the scenario's expected codes with the original contract before changing the service or contract."
                 .formatted(testCase.fuzzer(), StringUtils.defaultIfBlank(testCase.testCase().getExpectedResult(), "expected different status"),
                         testCase.statusCode(), testCase.operation());
     }

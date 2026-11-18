@@ -13,9 +13,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Assigns each failing test exactly one root-cause category. Strategies are evaluated in a fixed precedence order
- * (crash, header collision, auth, not-found, fuzzed-field domain rejection, cross-field, validation bypass) and
- * fall back to {@code CONTRACT_MISMATCH}.
+ * Assigns each failing test one triage category. Recorded limitations, response checks and security evidence take
+ * precedence over status-based hypotheses. These categories do not change the original verdict or problem identity.
  */
 final class ClusterClassifier {
     private final ClassificationContext context;
@@ -34,7 +33,11 @@ final class ClusterClassifier {
 
     ClusterClassification classify(Candidate candidate) {
         return List.<Function<Candidate, Optional<ClusterClassification>>>of(
+                        ResponseObservationClassifier::classify,
+                        ClusterClassifier::notImplemented,
                         ClusterClassifier::serverCrash,
+                        ResponseObservationClassifier::assertion,
+                        SecurityTriageClassifier::classify,
                         ClusterClassifier::headerCollision,
                         ClusterClassifier::authGap,
                         this::notFound,
@@ -47,6 +50,14 @@ final class ClusterClassifier {
                 .orElseGet(() -> contractMismatch(candidate));
     }
 
+    private static Optional<ClusterClassification> notImplemented(Candidate candidate) {
+        TriageTestCase test = candidate.testCase();
+        return test.statusCode() == 501 ? Optional.of(ClusterClassification.of("METHOD_NOT_IMPLEMENTED_501", 0, test,
+                new ClusterClassification.Explanation("The server returned HTTP 501: requested functionality is not implemented.",
+                        "Check support for %s and the expected status in the sample; inspect routing or gateway behavior. HTTP 501 alone does not demonstrate a server crash."
+                                .formatted(test.operation())))) : Optional.empty();
+    }
+
     private static Optional<ClusterClassification> serverCrash(Candidate candidate) {
         TriageTestCase testCase = candidate.testCase();
         if (!ResponseCodeFamily.is5xxCode(testCase.statusCode())) {
@@ -54,8 +65,8 @@ final class ClusterClassifier {
         }
         return Optional.of(ClusterClassification.of("SERVER_CRASH_5XX", 0, testCase,
                 new ClusterClassification.Explanation(
-                        "Unhandled %d server error (%s)".formatted(testCase.statusCode(), candidate.message().signature()),
-                        "Inspect the server stacktrace for %s, then verify the fix with `cats triage --verify` or `cats replay %s --stateful`."
+                        "HTTP %d server error observed (%s)".formatted(testCase.statusCode(), candidate.message().signature()),
+                        "Inspect server and gateway logs for %s using the sample request, then check the response with `cats triage --verify` or `cats replay %s --stateful`."
                                 .formatted(testCase.operation(), testId(testCase)))));
     }
 
@@ -78,21 +89,21 @@ final class ClusterClassifier {
         String header = correlation.getTarget().name();
         return ClusterClassification.of("HEADER_CORRELATION_COLLISION", 1, testCase,
                 new ClusterClassification.Explanation(
-                        "Header [%s] was overwritten by runtime correlation from [%s]".formatted(header, correlation.getSourceLocation()),
-                        "Pin header '%s' via -H or headers.yml under `all` or the path key (method-scoped keys are not protected from runtime correlation)."
+                        "The rejected request used header [%s] from runtime correlation [%s]; this may explain the rejection.".formatted(header, correlation.getSourceLocation()),
+                        "Check the correlated value against the server message. If inappropriate, pin header '%s' via -H or headers.yml under `all` or the path key (method-scoped keys are not protected from runtime correlation)."
                                 .formatted(header)));
     }
 
     private static Optional<ClusterClassification> authGap(Candidate candidate) {
         TriageTestCase testCase = candidate.testCase();
         int code = testCase.statusCode();
-        if ((code != 401 && code != 403) || testCase.isFuzzer(BypassAuthenticationFuzzer.class)) {
+        if ((code != 401 && code != 403) || testCase.isFuzzer(BypassAuthenticationFuzzer.class) || testCase.expected().allows(code)) {
             return Optional.empty();
         }
         return Optional.of(ClusterClassification.of("AUTH_CONFIGURATION_GAP", 2, testCase,
                 new ClusterClassification.Explanation(
-                        "Endpoint rejected credentials with HTTP %d (%s)".formatted(code, candidate.message().signature()),
-                        "Pass valid credentials via -H 'Authorization=$$API_AUTH' (the env placeholder must be the whole value), --headers, --wfcAuth or --basicAuth.")));
+                        "Unexpected HTTP %d authentication or authorization rejection (%s)".formatted(code, candidate.message().signature()),
+                        "Check credentials, permissions and gateway policies. Supply credentials via -H 'Authorization=$$API_AUTH' (the env placeholder must be the whole value), --headers, --wfcAuth or --basicAuth.")));
     }
 
     private Optional<ClusterClassification> notFound(Candidate candidate) {

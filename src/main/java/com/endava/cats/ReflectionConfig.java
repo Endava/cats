@@ -13,6 +13,7 @@ import com.endava.cats.command.triage.TriageOccurrence;
 import com.endava.cats.command.triage.TriageProblem;
 import com.endava.cats.command.triage.SynthesizedCorrelationRule;
 import com.endava.cats.command.triage.TriageReport;
+import com.endava.cats.command.triage.TriageSample;
 import com.endava.cats.command.model.FuzzerListEntry;
 import com.endava.cats.command.model.MutatorEntry;
 import com.endava.cats.command.model.PathDetailsEntry;
@@ -293,7 +294,7 @@ import java.util.UUID;
         ProblemDetails.class, RESTReport.class,
         Report.class, TestCase.class,
         Warning.class,
-        TriageReport.class, TriageProblem.class, TriageOccurrence.class,
+        TriageReport.class, TriageProblem.class, TriageOccurrence.class, TriageSample.class,
         SynthesizedCorrelationRule.class,
         AnalyzeCommand.BlueprintReport.class, AnalyzeCommand.ScoreBreakdown.class,
         AnalyzeCommand.ProducerConsumerChain.class,

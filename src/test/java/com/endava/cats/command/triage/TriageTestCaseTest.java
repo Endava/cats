@@ -19,6 +19,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @QuarkusTest
 class TriageTestCaseTest {
+    @Test
+    void shouldUnwrapTheReportsNonJsonEnvelopeForHtmlDiagnostics() {
+        TriageTestCase test = TriageFixtures.testCase(1, """
+                {"request":{},"response":{"responseCode":400,"jsonBody":{"notAJson":"<!doctype html><html><body>Bad Request</body></html>"}}}
+                """);
+
+        assertThat(test.rawResponseBody()).startsWith("<!doctype html>");
+        assertThat(ErrorMessage.of(test).html()).isTrue();
+    }
     @ParameterizedTest
     @ValueSource(strings = {"", " ", "invalid", "[]", "[1]", "null", "3"})
     void shouldRejectNonObjectPayloads(String payload) {

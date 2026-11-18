@@ -18,7 +18,7 @@ class RemediationsTest {
             "EnumCaseVariantFieldsFuzzer,--no-allowDifferentCaseEnumValues",
             "HomoglyphEnumFieldsFuzzer,look-alike or ordinal",
             "NumericStringsInNumericFieldsFuzzer,--no-strictTypes",
-            "OtherFuzzer,Enforce input validation"
+            "OtherFuzzer,Check whether the constraint"
     })
     void shouldRecommendFuzzerSpecificValidation(String fuzzer, String expected) {
         assertThat(Remediations.validationBypass(test(fuzzer, "4XX", 200))).contains(expected, "POST /items");
@@ -32,7 +32,7 @@ class RemediationsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"true,2XX,404,add it", "false,2XX,400,schema-valid request", "false,2XX,200,align the service", "false,4XX,200,align the service"})
+    @CsvSource({"true,2XX,404,add it", "false,2XX,400,expectation alone does not prove", "false,2XX,200,matches the recorded status", "false,4XX,200,compare the scenario"})
     void shouldExplainStatusMismatch(boolean undocumented, String expected, int status, String recommendation) {
         assertThat(Remediations.contractMismatch(test("Fuzzer", expected, status), undocumented)).contains(recommendation, "POST /items");
     }

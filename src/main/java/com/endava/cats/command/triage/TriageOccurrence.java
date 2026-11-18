@@ -14,8 +14,8 @@ import java.util.List;
  * @param operation          the HTTP method and contract path
  * @param statusCodes        the HTTP status codes of its triaged tests
  * @param testCount          the number of triaged tests
- * @param category           the root-cause category
- * @param severityRank       0 for crashes, higher for less severe categories
+ * @param category           the triage category (observation or hypothesis)
+ * @param severityRank       0 for server errors, higher for less severe categories
  * @param diagnosis          what happened
  * @param remediation        what to do
  * @param fuzzers            the fuzzers that found it
@@ -26,11 +26,12 @@ import java.util.List;
  * @param verifiedStatusCode the status code of the live replay
  * @param verificationNote   why a replay was inconclusive
  * @param attribution        {@link #SAME_AS_BASELINE} or {@code null}
+ * @param sample             expectations, confidence and evidence from the representative test
  */
 @Builder(toBuilder = true)
 public record TriageOccurrence(String operation, List<Integer> statusCodes, int testCount, String category, int severityRank,
                                String diagnosis, String remediation, List<String> fuzzers, List<String> fields,
                                List<String> sampleTestIds, String curlReproducer, String verificationStatus,
-                               Integer verifiedStatusCode, String verificationNote, String attribution) {
+                               Integer verifiedStatusCode, String verificationNote, String attribution, TriageSample sample) {
     public static final String SAME_AS_BASELINE = "SAME_AS_BASELINE";
 }

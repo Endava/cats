@@ -66,6 +66,13 @@ cats replay Test12 --curl
   <img alt="CATS" width="100%" src="images/tests_result.png"/>
 </div>
 
+## Report triage
+
+`cats triage -r cats-report` shows each problem with observations, sample expectations and evidence, and a related next check.
+Full curl commands are opt-in: use `--show-reproducers`, `--export-reproducers reproducers.sh`, or `-j` for structured output.
+Security confidence comes from the saved detector result; acceptance or reflection alone does not confirm exploitation.
+A report missing referenced `Test*.json` evidence is rejected with exit code `2`. Reports using `--srs` remain supported.
+
 ## Baseline comparison
 
 Compare two report folders (or their `cats-summary-report.json` files):

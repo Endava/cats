@@ -41,6 +41,8 @@ class LiveClusterVerifierTest {
 
     @ParameterizedTest
     @CsvSource({
+            "METHOD_NOT_IMPLEMENTED_501,501,Should return [405],400,FIXED",
+            "METHOD_NOT_IMPLEMENTED_501,501,Should return [501],501,STILL_FAILING",
             "SERVER_CRASH_5XX,500,Should return [4XX],400,FIXED",
             "SERVER_CRASH_5XX,500,Should return [4XX],502,STILL_FAILING",
             "SERVER_CRASH_5XX,500,Should return [4XX],401,INCONCLUSIVE",

@@ -8,6 +8,8 @@ import com.endava.cats.model.Problem;
 import com.endava.cats.model.ProblemKind;
 import com.endava.cats.report.BaselineComparisonEngine;
 import com.endava.cats.report.BaselineFailureRegistry;
+import com.endava.cats.util.JsonUtils;
+import com.google.gson.JsonObject;
 import io.swagger.v3.oas.models.OpenAPI;
 
 import java.io.IOException;
@@ -46,6 +48,7 @@ public final class TriageEngine {
     public TriageReport triage(Path reportFolder, OpenAPI openAPI) throws IOException {
         CatsTestReport summary = readProblems(reportFolder);
         List<TriageTestCase> tests = loadTestCases(reportFolder);
+        ReportCompleteness.validate(summary, tests);
         annotateBaselineMatches(tests);
         ReportScan scan = ReportScan.of(tests, openAPI);
         RequestSchemaLookup schemaLookup = new RequestSchemaLookup(openAPI);
@@ -92,7 +95,21 @@ public final class TriageEngine {
             return Optional.empty();
         }
         int number = Integer.parseInt(matcher.group(1));
-        return CatsTestCase.readTestCaseFile(file).map(testCase -> new TriageTestCase(number, testCase));
+        return readEvidence(file).map(testCase -> new TriageTestCase(number, testCase));
+    }
+
+    private static Optional<CatsTestCase> readEvidence(Path file) {
+        try {
+            JsonObject data = JsonUtils.parseAsJsonElement(Files.readString(file)).getAsJsonObject();
+            if (!data.has("request") || !data.get("request").isJsonObject()
+                    || !data.has("response") || !data.get("response").isJsonObject()
+                    || !data.getAsJsonObject("response").has("responseCode")) {
+                return Optional.empty();
+            }
+            return Optional.of(JsonUtils.GSON.fromJson(data, CatsTestCase.class));
+        } catch (IOException | RuntimeException _) {
+            return Optional.empty();
+        }
     }
 
     private static void annotateBaselineMatches(List<TriageTestCase> tests) {

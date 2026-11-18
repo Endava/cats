@@ -8,10 +8,10 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Classifies one occurrence (one problem on one operation) with the triage strategies. Each test is classified and the
@@ -53,12 +53,17 @@ final class OccurrenceTriage {
                 .remediation(classification.remediation())
                 .fuzzers(candidates.stream().map(candidate -> candidate.testCase().fuzzer()).filter(StringUtils::isNotBlank).distinct().toList())
                 .fields(occurrence.fields().stream().map(Problem.FieldCount::field).toList())
-                .sampleTestIds(candidates.stream().map(candidate -> candidate.testCase().testCase().getTestId())
-                        .filter(Objects::nonNull).limit(MAX_SAMPLES).toList())
+                .sampleTestIds(sampleIds(representative, candidates))
+                .sample(TriageSample.from(representative))
                 .curlReproducer(curlReproducer(representative.testCase()))
                 .build())
                 .map(triaged -> withAttribution(triaged, candidates, classification))
                 .map(triaged -> withVerification(triaged, classification, representative.testCase()));
+    }
+
+    private static List<String> sampleIds(ClusterClassifier.Candidate representative, List<ClusterClassifier.Candidate> candidates) {
+        return Stream.concat(Stream.of(representative), candidates.stream())
+                .map(candidate -> candidate.testCase().testCase().getTestId()).filter(StringUtils::isNotBlank).distinct().limit(MAX_SAMPLES).toList();
     }
 
     private static int dominant(List<ClusterClassification> classifications) {
