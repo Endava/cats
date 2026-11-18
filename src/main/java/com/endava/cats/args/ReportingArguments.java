@@ -247,9 +247,6 @@ public class ReportingArguments {
     }
 
     /**
-     * Enumerates different formats for generating reports.
-     */
-    /**
      * Converts {@code --reportFormat} values and explains removed formats instead of only listing the valid ones.
      */
     public static final class ReportFormatConverter implements CommandLine.ITypeConverter<ReportFormat> {
@@ -270,6 +267,9 @@ public class ReportingArguments {
         }
     }
 
+    /**
+     * Enumerates different formats for generating reports.
+     */
     public enum ReportFormat {
 
         /**

@@ -4,6 +4,7 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
+import com.endava.cats.model.Problem;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
 import io.quarkus.test.junit.QuarkusTest;
@@ -25,7 +26,7 @@ class SummaryTableDataTest {
         JsonArray data = JsonUtils.parseAsJsonElement(SummaryTableData.of(page)).getAsJsonArray();
 
         Assertions.assertThat(data.get(0).getAsJsonArray()).hasSize(tests.size());
-        Assertions.assertThat(data.get(1).getAsJsonObject().keySet()).containsExactlyInAnyOrderElementsOf(problems.stream().map(problem -> problem.id()).toList());
+        Assertions.assertThat(data.get(1).getAsJsonObject().keySet()).containsExactlyInAnyOrderElementsOf(problems.stream().map(Problem::id).toList());
         for (int i = 0; i < tests.size(); i++) {
             JsonArray row = data.get(0).getAsJsonArray().get(i).getAsJsonArray();
             Assertions.assertThat(row).hasSize(9);

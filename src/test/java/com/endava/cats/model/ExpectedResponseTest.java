@@ -25,6 +25,36 @@ class ExpectedResponseTest {
     void shouldNotTreatArbitraryDescriptionsAsDedicatedCodeDeclarations(String declaration) {
         Assertions.assertThat(ExpectedResponse.fromCodeDeclaration(declaration).outcome()).isEqualTo(ExpectedResponse.Outcome.UNKNOWN);
     }
+
+    @ParameterizedTest
+    @MethodSource("codeDeclarations")
+    void shouldPreserveCodeDeclarationSyntax(String declaration, List<String> expected) {
+        Assertions.assertThat(ExpectedResponse.fromCodeDeclaration(declaration).codes()).isEqualTo(expected);
+    }
+
+    static Stream<Arguments> codeDeclarations() {
+        return Stream.of(
+                Arguments.of(null, List.of()), Arguments.of("", List.of()), Arguments.of("[]", List.of()),
+                Arguments.of("  [ 200 , 4XX|404 ]  ", List.of("200", "4XX", "404")),
+                Arguments.of("\u2003200\u2003", List.of("200")),
+                Arguments.of("200,\t\n\u000b\f\r400", List.of("200", "400")),
+                Arguments.of("200,200|400", List.of("200", "400")),
+                Arguments.of("200,\u2003400", List.of()), Arguments.of("200,", List.of()),
+                Arguments.of("200||400", List.of()), Arguments.of("200,4xx", List.of()),
+                Arguments.of("200,4Xx", List.of()), Arguments.of("2٠٠", List.of()),
+                Arguments.of("2９９", List.of()), Arguments.of("600", List.of()),
+                Arguments.of(",200", List.of()), Arguments.of("[200,400]]", List.of()),
+                Arguments.of("[[200]]", List.of()), Arguments.of("200 400", List.of()));
+    }
+
+    @Test
+    void shouldParseLargeDeclarationsAndRejectMalformedSuffixesWithoutStackOverflow() {
+        String declaration = "200, ".repeat(20_000) + "400";
+
+        Assertions.assertThat(ExpectedResponse.fromCodeDeclaration("[" + declaration + "]").codes()).containsExactly("200", "400");
+        Assertions.assertThat(ExpectedResponse.fromCodeDeclaration(declaration + ",").codes()).isEmpty();
+    }
+
     static Stream<Arguments> expectations() {
         return Stream.of(
                 Arguments.of(List.of("405"), ExpectedResponse.Outcome.REJECTION),
@@ -55,7 +85,8 @@ class ExpectedResponseTest {
         ExpectedResponse response = new ExpectedResponse(codes);
         codes.clear();
 
-        Assertions.assertThat(response.codes()).containsExactly("400", "422");
-        Assertions.assertThatThrownBy(() -> response.codes().add("404")).isInstanceOf(UnsupportedOperationException.class);
+        List<String> recordedCodes = response.codes();
+        Assertions.assertThat(recordedCodes).containsExactly("400", "422");
+        Assertions.assertThatThrownBy(() -> recordedCodes.add("404")).isInstanceOf(UnsupportedOperationException.class);
     }
 }

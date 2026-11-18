@@ -20,7 +20,6 @@ import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.KeyValueSerializer;
 import com.endava.cats.util.LongTypeSerializer;
@@ -375,9 +374,13 @@ public abstract class TestCaseExporter {
                 card -> ProblemIndexEntry.of(card, report.getProblems().get(card.rank() - 1)), (first, _) -> first, LinkedHashMap::new));
         page.cards().forEach(card -> bannerEntries(report.getProblems().get(card.rank() - 1), testsById)
                 .forEach(entry -> entries.put(entry.getKey(), entry.getValue())));
-        String script = "window.CATS_PROBLEMS_PAGE = true;\nwindow.CATS_PROBLEMS_INDEX = %s;\nwindow.CATS_PROBLEMS = %s;\n"
-                .formatted(SCRIPT_SERIALIZER.toJson(index), SCRIPT_SERIALIZER.toJson(entries));
-        Files.writeString(reportingPath.resolve(PROBLEMS_JS), script, StandardCharsets.UTF_8);
+        Files.writeString(reportingPath.resolve(PROBLEMS_JS), problemsScript(index, entries), StandardCharsets.UTF_8);
+    }
+
+    private static String problemsScript(Map<String, ProblemIndexEntry> index, Map<String, ProblemBannerEntry> entries) {
+        return String.join("\n", "window.CATS_PROBLEMS_PAGE = true;",
+                "window.CATS_PROBLEMS_INDEX = %s;".formatted(SCRIPT_SERIALIZER.toJson(index)),
+                "window.CATS_PROBLEMS = %s;".formatted(SCRIPT_SERIALIZER.toJson(entries)), "");
     }
 
     private static List<Map.Entry<String, ProblemBannerEntry>> bannerEntries(Problem problem, Map<String, CatsTestCaseSummary> testsById) {

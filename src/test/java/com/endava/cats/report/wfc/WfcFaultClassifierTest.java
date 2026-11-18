@@ -7,6 +7,7 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FindingConfidence;
 import com.endava.cats.util.KeyValuePair;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.webfuzzing.commons.faults.DefinedFaultCategory;
@@ -80,7 +81,7 @@ class WfcFaultClassifierTest {
         if (fixture.has("confidence")) {
             test.setConfidence(FindingConfidence.valueOf(fixture.get("confidence").getAsString()));
         }
-        List<String> expected = fixture.getAsJsonArray("expected").asList().stream().map(value -> value.getAsString()).toList();
+        List<String> expected = fixture.getAsJsonArray("expected").asList().stream().map(JsonElement::getAsString).toList();
         Assertions.assertThat(WfcFaultClassifier.classify(CatsTestCaseSummary.fromCatsTestCase(test), test, fixtureContract(fixture))
                         .stream().map(WfcFaultClassifierTest::faultKey).sorted().toList())
                 .as(fixture.get("name").getAsString()).containsExactlyElementsOf(expected);

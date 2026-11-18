@@ -5,9 +5,13 @@ import com.endava.cats.model.Problem;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @QuarkusTest
 class ProblemMessageTest {
@@ -85,6 +89,44 @@ class ProblemMessageTest {
         Assertions.assertThat(message.sampleTest()).isEqualTo(new ProblemCard.TestLink("Test7", "Test 7"));
         Assertions.assertThat(ProblemMessage.of(problem("invalid input"), List.of(test("expected [422, 400], actual [422]"))).expectation())
                 .isEqualTo("Expected HTTP 400 or 422; received HTTP 422.");
+    }
+
+    @ParameterizedTest
+    @MethodSource("legacyExpectations")
+    void shouldPreserveLegacyExpectationSyntaxAndSelectTheFirstValidMatch(String details, String expected) {
+        String expectation = expected.isEmpty() ? "Received HTTP 422." : "Expected HTTP %s; received HTTP 422.".formatted(expected);
+
+        Assertions.assertThat(ProblemMessage.of(problem("validation failed"), List.of(test(details))).expectation()).isEqualTo(expectation);
+    }
+
+    static Stream<Arguments> legacyExpectations() {
+        return Stream.of(
+                Arguments.of("expected [200, 4xX,200], actual [000]", "200 or 4xx"),
+                Arguments.of("expected [2xx,2Xx,2xX,2XX], actual [999]", "2xx"),
+                Arguments.of("expected [200,    400], actual [422]", "200 or 400"),
+                Arguments.of("expected [200,\t400], actual [422]", ""), Arguments.of("expected [200 ,400], actual [422]", ""),
+                Arguments.of("expected [200 ], actual [422]", ""), Arguments.of("expected [200,], actual [422]", ""),
+                Arguments.of("expected [200,,400], actual [422]", ""), Arguments.of("expected [200|400], actual [422]", ""),
+                Arguments.of("expected [2٠٠], actual [422]", ""), Arguments.of("expected [200], actual [４２２]", ""),
+                Arguments.of("expected [200], actual [4220]", ""), Arguments.of("Expected [200], actual [422]", ""),
+                Arguments.of("expected [200], Actual [422]", ""), Arguments.of("expected [], actual [422]", ""),
+                Arguments.of("expected [bad], actual [422]; expected [405], actual [422]", "405"),
+                Arguments.of("expected [200], actual [422]; expected [405], actual [422]", "200"),
+                Arguments.of("expected [invalid expected [405], actual [422]", "405"),
+                Arguments.of("expected [200], actual [expected [405], actual [422]]", "405"),
+                Arguments.of("expected [bad expected [200], actual [422]], actual [422]", "200"));
+    }
+
+    @Test
+    void shouldReadLargeLegacyDeclarationsAndSkipMalformedOnesWithoutStackOverflow() {
+        String codes = "200, ".repeat(20_000) + "405";
+        String valid = "expected [" + codes + "], actual [422]";
+        String invalid = "expected [" + codes + ",], actual [422]; expected [400], actual [422]";
+
+        Assertions.assertThat(ProblemMessage.of(problem("validation failed"), List.of(test(valid))).expectation())
+                .isEqualTo("Expected HTTP 200 or 405; received HTTP 422.");
+        Assertions.assertThat(ProblemMessage.of(problem("validation failed"), List.of(test(invalid))).expectation())
+                .isEqualTo("Expected HTTP 400; received HTTP 422.");
     }
 
     @Test

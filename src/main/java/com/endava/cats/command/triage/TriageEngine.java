@@ -73,8 +73,7 @@ public final class TriageEngine {
         if (!Files.isRegularFile(reportFolder.resolve(SUMMARY_FILE))) {
             throw new UnsupportedReportException("%s has no %s; run CATS first".formatted(reportFolder, SUMMARY_FILE));
         }
-        CatsTestReport summary = BaselineComparisonEngine.loadReport(reportFolder);
-        return summary;
+        return BaselineComparisonEngine.loadReport(reportFolder);
     }
 
     static List<TriageTestCase> loadTestCases(Path folder) throws IOException {

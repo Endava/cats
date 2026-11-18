@@ -69,7 +69,7 @@ final class ProblemCards {
         private List<ProblemCard.TestLink> baselineTests(Problem problem) {
             return tests(problem).map(CatsTestCaseSummary::getSameErrorAsBaselineTest)
                     .filter(StringUtils::isNotBlank).distinct().filter(testsById::containsKey)
-                    .map(ProblemCards::link).toList();
+                    .map(Context::link).toList();
         }
 
         private List<ProblemCard.OperationRow> rows(Problem problem) {
@@ -77,7 +77,7 @@ final class ProblemCards {
         }
 
         private ProblemCard.OperationRow row(Problem problem, Problem.Occurrence occurrence) {
-            List<ProblemCard.TestLink> links = occurrence.testIds().stream().map(ProblemCards::link).toList();
+            List<ProblemCard.TestLink> links = occurrence.testIds().stream().map(Context::link).toList();
             boolean truncated = links.size() > MAX_LINKS_PER_OPERATION;
             String fields = occurrence.fields().stream().map(field -> "%s (%d)".formatted(field.field(), field.tests())).collect(Collectors.joining(", "));
             return new ProblemCard.OperationRow(occurrence.operation(), problem.id(), links.size(), fields,
@@ -111,76 +111,76 @@ final class ProblemCards {
         private String sampleResponse(Problem problem) {
             return tests(problem).findFirst().map(CatsTestCaseSummary::getResponseBody).filter(StringUtils::isNotBlank).orElse(EmptyBody.PLACEHOLDER);
         }
-    }
 
-    private static ProblemCard.TestLink link(String testId) {
-        return new ProblemCard.TestLink(testId.replace(" ", ""), testId);
-    }
-
-    private static String meta(Problem problem) {
-        List<String> fuzzers = problem.occurrences().stream().flatMap(occurrence -> occurrence.fuzzers().stream()).distinct().toList();
-        int operations = problem.occurrences().size();
-        return String.join(" · ", reasons(problem),
-                "%d %s".formatted(problem.testCount(), ProblemPage.plural(problem.testCount(), "test")),
-                "%d %s".formatted(operations, ProblemPage.plural(operations, "operation")),
-                "%d %s".formatted(fuzzers.size(), ProblemPage.plural(fuzzers.size(), "fuzzer"))
-                        + (fuzzers.size() <= MAX_LISTED_FUZZERS ? " (%s)".formatted(String.join(", ", fuzzers)) : ""));
-    }
-
-    private static String reasons(Problem problem) {
-        List<String> reasons = problem.reasons();
-        String listed = String.join(" · ", reasons.subList(0, Math.min(reasons.size(), MAX_LISTED_REASONS)));
-        return reasons.size() > MAX_LISTED_REASONS ? "%s · %d more reasons".formatted(listed, reasons.size() - MAX_LISTED_REASONS) : listed;
-    }
-
-    private static String evidence(Problem problem) {
-        return Optional.ofNullable(problem.evidence())
-                .map(evidence -> "%s%s: %s".formatted(evidence.testId(),
-                        evidence.confidence() == null ? "" : ", confidence " + evidence.confidence(), StringUtils.defaultString(evidence.details())))
-                .orElse(null);
-    }
-
-    private static String baselineNote(Problem problem) {
-        return problem.sameAsBaseline() == 0 ? null : "%d of %d also fail the same way on the unmodified request: fix that request first"
-                .formatted(problem.sameAsBaseline(), problem.testCount());
-    }
-
-    private static String groupedBy(Problem problem) {
-        String status = problem.occurrences().stream().flatMap(occurrence -> occurrence.statuses().stream()).findFirst().map(String::valueOf).orElse("");
-        return switch (problem.kind()) {
-            case SERVER_ERROR, ERROR_MESSAGE -> messageGrouping(problem, status);
-            case RESPONSE_VIOLATION -> problem.variants().isEmpty() ? "same violation"
-                    : "same declared response schema; %d different %s".formatted(problem.variants().size(), ProblemPage.plural(problem.variants().size(), "violation"));
-            case STATUS_CODE -> problem.variants().isEmpty() ? "same status code"
-                    : "same status code; %d different server %s".formatted(problem.variants().size(), ProblemPage.plural(problem.variants().size(), "message"));
-            case ACCEPTED_REQUEST -> "%s, request accepted (%sxx); the response body is %s and is not used for grouping".formatted(
-                    problem.discriminator().startsWith("Unexpected status") ? "same fuzzer" : "same finding",
-                    status.isEmpty() ? "2" : status.substring(0, 1),
-                    problem.discriminator().startsWith("Unexpected status") ? "the returned resource" : "evidence, not identity,");
-            case NO_RESPONSE -> "same result reason; no HTTP response was judged";
-        };
-    }
-
-    private static String messageGrouping(Problem problem, String status) {
-        String observation = problem.testCount() == 1 ? "Observed in one test on one operation."
-                : "%d tests share this server-message pattern and HTTP %s across %d %s.".formatted(problem.testCount(), status,
-                problem.occurrences().size(), ProblemPage.plural(problem.occurrences().size(), "operation"));
-        return observation + (problem.kind() == ProblemKind.ERROR_MESSAGE
-                ? " Rejections also stay separate when CATS judged a different kind of finding."
-                : " Different server-message patterns or HTTP statuses are kept separate.");
-    }
-
-    private static String variantsLabel(Problem problem) {
-        if (problem.variants().isEmpty()) {
-            return null;
+        private static ProblemCard.TestLink link(String testId) {
+            return new ProblemCard.TestLink(testId.replace(" ", ""), testId);
         }
-        String noun = problem.kind() == ProblemKind.STATUS_CODE ? "Server messages" : "Violations";
-        return "%s (%d)".formatted(noun, problem.variants().size());
-    }
 
-    private static List<ProblemCard.VariantRow> variantRows(Problem problem) {
-        return problem.variants().stream()
-                .map(variant -> new ProblemCard.VariantRow(StringUtils.defaultIfBlank(variant.text(), "(message not available)"), variant.count()))
-                .toList();
+        private static String meta(Problem problem) {
+            List<String> fuzzers = problem.occurrences().stream().flatMap(occurrence -> occurrence.fuzzers().stream()).distinct().toList();
+            int operations = problem.occurrences().size();
+            return String.join(" · ", reasons(problem),
+                    "%d %s".formatted(problem.testCount(), ProblemPage.plural(problem.testCount(), "test")),
+                    "%d %s".formatted(operations, ProblemPage.plural(operations, "operation")),
+                    "%d %s".formatted(fuzzers.size(), ProblemPage.plural(fuzzers.size(), "fuzzer"))
+                            + (fuzzers.size() <= MAX_LISTED_FUZZERS ? " (%s)".formatted(String.join(", ", fuzzers)) : ""));
+        }
+
+        private static String reasons(Problem problem) {
+            List<String> reasons = problem.reasons();
+            String listed = String.join(" · ", reasons.subList(0, Math.min(reasons.size(), MAX_LISTED_REASONS)));
+            return reasons.size() > MAX_LISTED_REASONS ? "%s · %d more reasons".formatted(listed, reasons.size() - MAX_LISTED_REASONS) : listed;
+        }
+
+        private static String evidence(Problem problem) {
+            return Optional.ofNullable(problem.evidence())
+                    .map(evidence -> "%s%s: %s".formatted(evidence.testId(),
+                            evidence.confidence() == null ? "" : ", confidence " + evidence.confidence(), StringUtils.defaultString(evidence.details())))
+                    .orElse(null);
+        }
+
+        private static String baselineNote(Problem problem) {
+            return problem.sameAsBaseline() == 0 ? null : "%d of %d also fail the same way on the unmodified request: fix that request first"
+                    .formatted(problem.sameAsBaseline(), problem.testCount());
+        }
+
+        private static String groupedBy(Problem problem) {
+            String status = problem.occurrences().stream().flatMap(occurrence -> occurrence.statuses().stream()).findFirst().map(String::valueOf).orElse("");
+            return switch (problem.kind()) {
+                case SERVER_ERROR, ERROR_MESSAGE -> messageGrouping(problem, status);
+                case RESPONSE_VIOLATION -> problem.variants().isEmpty() ? "same violation"
+                        : "same declared response schema; %d different %s".formatted(problem.variants().size(), ProblemPage.plural(problem.variants().size(), "violation"));
+                case STATUS_CODE -> problem.variants().isEmpty() ? "same status code"
+                        : "same status code; %d different server %s".formatted(problem.variants().size(), ProblemPage.plural(problem.variants().size(), "message"));
+                case ACCEPTED_REQUEST -> "%s, request accepted (%sxx); the response body is %s and is not used for grouping".formatted(
+                        problem.discriminator().startsWith("Unexpected status") ? "same fuzzer" : "same finding",
+                        status.isEmpty() ? "2" : status.substring(0, 1),
+                        problem.discriminator().startsWith("Unexpected status") ? "the returned resource" : "evidence, not identity,");
+                case NO_RESPONSE -> "same result reason; no HTTP response was judged";
+            };
+        }
+
+        private static String messageGrouping(Problem problem, String status) {
+            String observation = problem.testCount() == 1 ? "Observed in one test on one operation."
+                    : "%d tests share this server-message pattern and HTTP %s across %d %s.".formatted(problem.testCount(), status,
+                    problem.occurrences().size(), ProblemPage.plural(problem.occurrences().size(), "operation"));
+            return observation + (problem.kind() == ProblemKind.ERROR_MESSAGE
+                    ? " Rejections also stay separate when CATS judged a different kind of finding."
+                    : " Different server-message patterns or HTTP statuses are kept separate.");
+        }
+
+        private static String variantsLabel(Problem problem) {
+            if (problem.variants().isEmpty()) {
+                return null;
+            }
+            String noun = problem.kind() == ProblemKind.STATUS_CODE ? "Server messages" : "Violations";
+            return "%s (%d)".formatted(noun, problem.variants().size());
+        }
+
+        private static List<ProblemCard.VariantRow> variantRows(Problem problem) {
+            return problem.variants().stream()
+                    .map(variant -> new ProblemCard.VariantRow(StringUtils.defaultIfBlank(variant.text(), "(message not available)"), variant.count()))
+                    .toList();
+        }
     }
 }

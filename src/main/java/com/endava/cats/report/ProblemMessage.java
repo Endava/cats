@@ -5,7 +5,6 @@ import com.endava.cats.model.Problem;
 import com.endava.cats.report.error.extract.ErrorBodyExtraction;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -20,8 +19,10 @@ import java.util.stream.Collectors;
  * @param example a bounded, unmasked excerpt of that test's server message, or {@code null} when unavailable
  */
 public record ProblemMessage(String expectation, List<Token> tokens, ProblemCard.TestLink sampleTest, String example) {
-    private static final Pattern EXPECTED = Pattern.compile("expected \\[([1-5](?:[0-9]{2}|[Xx]{2})(?:, *[1-5](?:[0-9]{2}|[Xx]{2}))*)\\], actual \\[[0-9]{3}\\]");
-    private static final List<Token> TOKENS = List.of(
+    // Exclude opening brackets too: malformed outer prose must not hide a valid nested declaration.
+    private static final Pattern EXPECTED = Pattern.compile("expected \\[([^\\[\\]]*+)\\], actual \\[\\d{3}\\]");
+    private static final Pattern LEGACY_HTTP_CODE = Pattern.compile("[1-5](?:\\d{2}|[Xx]{2})");
+    private static final List<Token> TOKEN_LEGEND = List.of(
             new Token("<*>", "A value generalized across matching messages"),
             new Token("<INPUT>", "A value CATS sent in the request"),
             new Token("<FIELD>", "A field name"),
@@ -32,7 +33,7 @@ public record ProblemMessage(String expectation, List<Token> tokens, ProblemCard
         var sample = tests.stream().findFirst().map(test -> new ProblemCard.TestLink(test.getId().replace(" ", ""), test.getId())).orElse(null);
         String example = tests.stream().findFirst().map(CatsTestCaseSummary::getResponseBody)
                 .map(body -> ErrorBodyExtraction.rootCauseSummary(body, null)).orElse(null);
-        return new ProblemMessage(expectation(problem, tests), TOKENS.stream().filter(token -> token.presentIn(problem.errorTemplate())).toList(), sample, example);
+        return new ProblemMessage(expectation(problem, tests), TOKEN_LEGEND.stream().filter(token -> token.presentIn(problem.errorTemplate())).toList(), sample, example);
     }
 
     public boolean hasTokens() {
@@ -62,8 +63,10 @@ public record ProblemMessage(String expectation, List<Token> tokens, ProblemCard
         if (test.hasRecordedExpectedResponse()) {
             return test.getExpectedResponseCodes().stream().map(code -> code.replace('X', 'x')).distinct().sorted().collect(Collectors.joining(" or "));
         }
-        return EXPECTED.matcher(StringUtils.defaultString(test.getResultDetails())).results().findFirst()
-                .map(match -> Arrays.stream(match.group(1).split(", *")).map(code -> code.replace('X', 'x'))
+        return EXPECTED.matcher(StringUtils.defaultString(test.getResultDetails())).results()
+                .map(match -> List.of(match.group(1).split(", *", -1)))
+                .filter(codes -> codes.stream().allMatch(code -> LEGACY_HTTP_CODE.matcher(code).matches())).findFirst()
+                .map(codes -> codes.stream().map(code -> code.replace('X', 'x'))
                         .distinct().sorted().collect(Collectors.joining(" or "))).orElse("");
     }
 

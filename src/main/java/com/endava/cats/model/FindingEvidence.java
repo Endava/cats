@@ -17,7 +17,7 @@ public record FindingEvidence(String fuzzer, String httpMethod, int responseCode
 
     public static FindingEvidence from(CatsTestCase test, String activeFuzzer) {
         CatsResponse response = Optional.ofNullable(test.getResponse()).orElse(CatsResponse.empty());
-        String method = Optional.ofNullable(test.getRequest()).map(request -> request.getHttpMethod()).orElse("");
+        String method = Optional.ofNullable(test.getRequest()).map(CatsRequest::getHttpMethod).orElse("");
         return new FindingEvidence(activeFuzzer, method, response.getResponseCode(), test.getResultReason(),
                 test.getConfidence(), response.getBody(), test.getResultDetails());
     }

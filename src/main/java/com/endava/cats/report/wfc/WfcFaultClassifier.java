@@ -147,7 +147,7 @@ public final class WfcFaultClassifier {
 
     private static Set<FindingFault> findingFaults(FindingEvidence evidence) {
         Set<FindingFault> faults = new LinkedHashSet<>();
-        classifyStatusCodeFaults(evidence, evidence.responseCode(), faults);
+        classifyStatusCodeFaults(evidence.responseCode(), faults);
         classifySecondPhaseFuzzers(evidence, evidence.responseCode(), faults);
         SecurityFindingClassifier.fromFuzzer(evidence).map(type -> fuzzerSecurityFault(evidence, type)).ifPresent(faults::add);
         if (evidence.confidence() != FindingConfidence.TENTATIVE) {
@@ -176,7 +176,7 @@ public final class WfcFaultClassifier {
         }
     }
 
-    private static void classifyStatusCodeFaults(FindingEvidence evidence, int code, Set<FindingFault> faults) {
+    private static void classifyStatusCodeFaults(int code, Set<FindingFault> faults) {
         if (ResponseCodeFamily.isInternalServerError(code)) {
             faults.add(new FindingFault(DefinedFaultCategory.HTTP_STATUS_500, null));
         } else if (ResponseCodeFamily.isUnimplemented(code)) {

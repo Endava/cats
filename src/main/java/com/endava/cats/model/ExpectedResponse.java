@@ -8,9 +8,9 @@ import java.util.regex.Pattern;
 
 /** The exact HTTP status alternatives declared by a test's response oracle, independent of its prose. */
 public record ExpectedResponse(List<String> codes) {
-    private static final Pattern HTTP_CODE = Pattern.compile("[1-5](?:[0-9]{2}|XX)");
+    private static final Pattern HTTP_CODE = Pattern.compile("[1-5](?:\\d{2}|XX)");
     private static final List<String> ALL_FAMILIES = List.of("1XX", "2XX", "3XX", "4XX", "5XX");
-    private static final Pattern CODE_DECLARATION = Pattern.compile("[1-5](?:[0-9]{2}|XX)(?:\\s*[,|]\\s*[1-5](?:[0-9]{2}|XX))*");
+    private static final Pattern CODE_DECLARATION = Pattern.compile("[1-5](?:\\d{2}|XX)(?:\\s*[,|]\\s*[1-5](?:\\d{2}|XX))*+");
 
     public ExpectedResponse {
         codes = Optional.ofNullable(codes).orElse(List.of()).stream().filter(Objects::nonNull).distinct().toList();

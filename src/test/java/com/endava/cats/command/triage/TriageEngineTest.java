@@ -184,11 +184,13 @@ class TriageEngineTest {
 
     @Test
     void shouldRejectReportsWithoutProblems(@TempDir Path dir) throws IOException {
-        Assertions.assertThatThrownBy(() -> new TriageEngine(OPTIONS).triage(dir, null)).isInstanceOf(UnsupportedReportException.class)
+        TriageEngine missingReportEngine = new TriageEngine(OPTIONS);
+        Assertions.assertThatThrownBy(() -> missingReportEngine.triage(dir, null)).isInstanceOf(UnsupportedReportException.class)
                 .hasMessageContaining("cats-summary-report.json");
         Files.writeString(dir.resolve(TriageEngine.SUMMARY_FILE), "{\"testCases\": []}");
 
-        Assertions.assertThatThrownBy(() -> new TriageEngine(OPTIONS).triage(dir, null)).isInstanceOf(UnsupportedReportException.class)
+        TriageEngine incompatibleReportEngine = new TriageEngine(OPTIONS);
+        Assertions.assertThatThrownBy(() -> incompatibleReportEngine.triage(dir, null)).isInstanceOf(UnsupportedReportException.class)
                 .hasMessageContaining("problemKeyVersion 0, expected 1").hasMessageContaining("re-run");
     }
 
