@@ -66,36 +66,6 @@ cats replay Test12 --curl
   <img alt="CATS" width="100%" src="images/tests_result.png"/>
 </div>
 
-## Blackbox reporting (breaking change)
-
-`--blackbox` (`-b`) is the high-signal view: 5XX server errors except 501 and high-severity security findings
-with explicit `CONFIRMED` confidence, CATS's highest confidence level. `FIRM`, `TENTATIVE` and findings without a
-confidence assessment become info, even when their ordinary verdict is an error or `--strict` is enabled.
-Keyword matches alone cannot promote a security finding in blackbox mode. `-k` omits suppressed results and
-ordinary successes. Automated confirmation remains heuristic; review the evidence of retained findings.
-
-**Breaking:** compared with the former code-filter mode, blackbox retains server errors and adds explicitly
-confirmed security findings, including SSTI and XXE. Existing CI gates can therefore fail on findings returned on
-2XX. The intermediate implementation also admitted unassessed security errors; those candidates and keyword-only
-leaks are now suppressed. Run without `-b` for all findings under the ordinary reporting rules. Use
-`-i 2xx,4xx,501` without `-b` for the former code-filter behavior. Explicit ignores remain literal with `-b`, so
-`-b -i 2xx` suppresses 2XX security findings. Existing exceptional-response and response-time diagnostics remain;
-server-error leak handling is preserved. Use a run without `-b -k` before `cats triage --export-refdata`.
-
-Blackbox recognizes CATS security types independently of WFC export codes. Where the pinned WFC catalog has no
-matching category, CATS provides a tool-specific category:
-
-| Finding | WFC export category |
-|---|---|
-| Server-side template injection | `913 CATS_SSTI` (formerly generic `907`) |
-| XML external entity injection | `914 CATS_XXE` (formerly generic `907`) |
-| Path traversal | `915 CATS_PATH_TRAVERSAL` (formerly `309`, leaked stack traces) |
-
-These category changes affect WFC consumers and can change distinct-fault totals where formerly merged categories
-are separated. Request generation, confidence assignment, ordinary verdicts, problem identities and comparison
-rules are unchanged. A future matching WFC category can replace the export mapping without changing blackbox
-eligibility; category migrations must be documented.
-
 ## Baseline comparison
 
 Compare two report folders (or their `cats-summary-report.json` files):
@@ -117,27 +87,6 @@ consistent when checking regressions. A negative field test receiving `404` does
 confirm that the unmodified request reaches the intended resource. Use `cats replay TestN --stateful -r cats-report`
 when fresh producer IDs are needed. Repeat intermittent server-error requests under their original conditions;
 `cats triage --verify` records one replay per occurrence.
-
-**Migration:** compare and triage require summaries with `problemKeyVersion: 1`; re-run older reports with this CATS
-version. Compare JSON now contains `baseline`, `target`, `problemKeyVersion`, `regression`, `newOccurrences`,
-`fixedOccurrences`, `unchangedOccurrences`, `notComparable` and `matchedByPattern`. The former scope/count fields
-and `--failOnNewErrors` are removed; new errors always fail comparison. There is no count mode or `--compareScope`.
-Quoted root JSON-string inputs are now masked when echoed in problem messages. Re-run both baseline and target with
-this build if those inputs occur in older reports; persisted problem identities are not recomputed. WFC fault contexts
-retain their historical normalization and fault counts.
-
-New reports store `expectedResponseCodes` and `expectedOutcome` per test, using the effective HTTP oracle after
-configuration overrides. Reports and triage prefer these facts and retain text fallback for older files. Expectations
-are not inferred from the received response. This adds metadata without changing problem identities or verdicts.
-
-Message-based problem cards lead with the observed HTTP outcome and a source-linked example of the actual server
-message. Canonical masked patterns are under "How these tests were grouped"; the full example response is expandable.
-The example represents one test and does not change masking, grouping or comparison identities.
-
-HTML_JS embeds compact test data in `index.html` and progressively renders All tests, which remains the default.
-Filters search the complete dataset. Shared test-page problem metadata is stored once in `problems.js`.
-HTML_ONLY keeps its server-rendered table. Tools consuming reports should use `cats-summary-report.json` rather than
-scraping HTML_JS rows before JavaScript has rendered them.
 
 ## Command Line
 
