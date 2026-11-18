@@ -9,13 +9,9 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.ConsoleUtils;
-import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * Fuzzes cursor and continuation pagination token fields with valid Base64 payloads containing
@@ -25,18 +21,6 @@ import java.util.Set;
 @Singleton
 @FieldFuzzer
 public class CursorAndPaginationTokenFieldsFuzzer implements Fuzzer {
-    private static final Set<String> CURSOR_FIELD_NAMES = Set.of(
-            "cursor", "nextcursor", "prevcursor", "previouscursor",
-            "pagetoken", "nextpagetoken", "prevpagetoken", "continuationtoken",
-            "startingafter", "endingbefore", "after", "before", "scrollid", "searchafter"
-    );
-    private static final List<Object> MALFORMED_CURSOR_TOKENS = List.of(
-            "e30=",
-            "bnVsbA==",
-            "bm90LWEtdGltZXN0YW1wOm5vdC1hbi1pZA==",
-            "===invalid-cursor==="
-    );
-
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CursorAndPaginationTokenFieldsFuzzer.class);
     private final FieldsIteratorExecutor catsExecutor;
 
@@ -61,14 +45,14 @@ public class CursorAndPaginationTokenFieldsFuzzer implements Fuzzer {
                         .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX_TWOXX)
                         .schemaFilter(CatsModelUtils::isStringSchema)
                         .fieldFilter(CursorAndPaginationTokenFieldsFuzzer::isCursorField)
-                        .fuzzValueProducer((_, _) -> MALFORMED_CURSOR_TOKENS)
+                        .fuzzValueProducer((_, _) -> Base64DecoderInputs.cursorValues())
                         .skipMessage("Field is not a cursor or pagination token string field.")
                         .build()
         );
     }
 
     static boolean isCursorField(String fieldName) {
-        return CURSOR_FIELD_NAMES.contains(WordUtils.normalizeLeaf(fieldName));
+        return Base64DecoderInputs.isCursorField(fieldName);
     }
 
     @Override

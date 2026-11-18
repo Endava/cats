@@ -68,6 +68,7 @@ profiles:
       - SensitiveDataExposure
 
       # Malicious Input
+      - Base64DecoderBoundaryFields
       - VeryLargeStringsInFields
       - VeryLargeUnicodeStringsInFields
       - VeryLargeIntegersInNumericFields
@@ -301,6 +302,7 @@ profiles:
       # Format & Enum Validation
       - StringFormatTotallyWrongValues
       - StringFormatAlmostValidValues
+      - Base64DecoderBoundaryFields
       - InvalidValuesInEnumsFields
       - EnumCaseVariantFields
       - ConstAndNotSchemaFields
@@ -447,6 +449,7 @@ profiles:
       - TimezoneAndLocaleCodeFields
       - SpecialFloatTokensInNumericFields
       - PathBodyIdMismatch
+      - Base64DecoderBoundaryFields
 
   # ============================================
   # FULL PROFILE (Default)

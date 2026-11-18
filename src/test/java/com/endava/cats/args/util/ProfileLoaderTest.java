@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,6 +25,17 @@ class ProfileLoaderTest {
     void setUp() {
         // Create a fresh ProfileLoader instance for each test to avoid state pollution
         profileLoader = new ProfileLoader();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"security", "ci", "crash"})
+    void shouldIncludeBase64DecoderBoundaryChecks(String profile) {
+        Assertions.assertThat(profileLoader.getProfile(profile).orElseThrow().fuzzers()).containsOnlyOnce("Base64DecoderBoundaryFields");
+    }
+
+    @Test
+    void shouldAppendBase64BoundaryChecksAfterExistingCrashFuzzers() {
+        Assertions.assertThat(profileLoader.getProfile("crash").orElseThrow().fuzzers()).endsWith("Base64DecoderBoundaryFields");
     }
 
     @Nested
