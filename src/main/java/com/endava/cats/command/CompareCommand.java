@@ -70,16 +70,22 @@ public class CompareCommand implements Runnable, CommandLine.IExitCodeGenerator 
         exitCode = CommandLine.ExitCode.OK;
         lastResult = null;
         try {
-            lastResult = BaselineComparisonEngine.compareReports(baseline.toPath(), target.toPath(), failOnNewWarnings);
-            if (json) {
-                logger.noFormat(JsonUtils.GSON.toJson(lastResult));
-            } else {
-                BaselineComparisonEngine.renderToConsole(logger, lastResult);
-            }
+            compareReports();
             exitCode = lastResult.regression() ? CommandLine.ExitCode.SOFTWARE : CommandLine.ExitCode.OK;
         } catch (IOException | UnsupportedReportException e) {
             logger.error("Failed to compare reports: {}", e.getMessage());
             exitCode = CommandLine.ExitCode.USAGE;
+        }
+    }
+
+    private void compareReports() throws IOException {
+        var reports = new BaselineComparisonEngine.Reports(baseline.toString(), target.toString(),
+                BaselineComparisonEngine.loadReport(baseline.toPath()), BaselineComparisonEngine.loadReport(target.toPath()));
+        lastResult = BaselineComparisonEngine.compare(reports, failOnNewWarnings);
+        if (json) {
+            logger.noFormat(JsonUtils.GSON.toJson(lastResult));
+        } else {
+            BaselineComparisonEngine.renderToConsole(logger, lastResult, reports);
         }
     }
 }

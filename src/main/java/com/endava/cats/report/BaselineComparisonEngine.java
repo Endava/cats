@@ -157,19 +157,11 @@ public final class BaselineComparisonEngine {
     }
 
     public static void renderToConsole(PrettyLogger logger, ComparisonResult result) {
-        renderSection(logger, "New", result.newOccurrences());
-        renderSection(logger, "Fixed", result.fixedOccurrences());
-        renderSection(logger, "Not comparable", result.notComparable());
-        renderSection(logger, "Unchanged (count changed)", result.unchangedOccurrences().stream()
-                .filter(delta -> delta.baselineTests() != delta.targetTests()).toList());
-        logger.noFormat("Baseline Verdict: {}", result.regression() ? "REGRESSION_DETECTED" : "PASS");
+        ComparisonConsoleRenderer.render(logger, result, null);
     }
 
-    private static void renderSection(PrettyLogger logger, String name, List<OccurrenceDelta> deltas) {
-        logger.noFormat("{} ({})", name, deltas.size());
-        deltas.forEach(delta -> logger.noFormat("{} {} {}{} {} (baseline {} -> target {} tests)",
-                delta.state(), delta.problemId(), delta.operation(), delta.field().isEmpty() ? "" : " " + delta.field(),
-                delta.title(), delta.baselineTests(), delta.targetTests()));
+    public static void renderToConsole(PrettyLogger logger, ComparisonResult result, Reports reports) {
+        ComparisonConsoleRenderer.render(logger, result, reports);
     }
 
     /** Named inputs also appear verbatim in the JSON result. */

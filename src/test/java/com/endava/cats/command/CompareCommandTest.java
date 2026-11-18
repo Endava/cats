@@ -3,7 +3,6 @@ package com.endava.cats.command;
 import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.Problem;
 import com.endava.cats.model.ProblemKind;
-import com.endava.cats.report.problem.OccurrenceDelta.State;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -46,12 +45,15 @@ class CompareCommandTest {
         Mockito.verify(logger).noFormat("{} ({})", "New", 1);
         Mockito.verify(logger).noFormat("{} ({})", "Fixed", 1);
         Mockito.verify(logger).noFormat("{} ({})", "Not comparable", 1);
-        Mockito.verify(logger).noFormat("{} ({})", "Unchanged (count changed)", 1);
-        verifyLine(logger, State.NEW, c, " body.note", 0, 1);
-        verifyLine(logger, State.FIXED, b, "", 1, 0);
-        verifyLine(logger, State.UNCHANGED, a, "", 2, 4);
-        Mockito.verify(logger).noFormat("{} {} {}{} {} (baseline {} -> target {} tests)",
-                State.NOT_COMPARABLE, "d", "GET /orders", "", "Problem d", 0, 1);
+        Mockito.verify(logger).noFormat("{} ({})", "Unchanged (test counts changed; 1 total unchanged)", 1);
+        Mockito.verify(logger).noFormat("Occurrences: {} new | {} fixed | {} unchanged | {} not comparable", 1, 1, 1, 1);
+        verifyLine(logger, c, " [body.note]", List.of("0 tests", "1 test"));
+        verifyLine(logger, b, "", List.of("1 test", "0 tests"));
+        verifyLine(logger, a, "", List.of("2 tests", "4 tests"));
+        Mockito.verify(logger).noFormat("  {} [{}] {}{}", "d", "ERROR", "GET /orders", "");
+        Mockito.verify(logger).noFormat("    Baseline: {} | Target: {}", "not observed", "1 test");
+        Mockito.verify(logger).noFormat("    Coverage: no saved {} results for {}.", "baseline", "Absent");
+        Mockito.verify(logger).noFormat("New regressions detected.");
     }
 
     @Test
@@ -142,8 +144,9 @@ class CompareCommandTest {
         return command;
     }
 
-    private static void verifyLine(PrettyLogger logger, State state, Problem problem, String field, int baseline, int target) {
-        Mockito.verify(logger).noFormat("{} {} {}{} {} (baseline {} -> target {} tests)",
-                state, problem.id(), "POST /orders", field, problem.title(), baseline, target);
+    private static void verifyLine(PrettyLogger logger, Problem problem, String field, List<String> counts) {
+        Mockito.verify(logger).noFormat("  {} [{}] {}{}", problem.id(), "ERROR", "POST /orders", field);
+        Mockito.verify(logger).noFormat("    {}", problem.title());
+        Mockito.verify(logger).noFormat("    Baseline: {} | Target: {}", counts.getFirst(), counts.getLast());
     }
 }

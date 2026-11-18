@@ -48,7 +48,10 @@ cats triage -r cats-report -c <spec> -j \
 
 The JSON is `problems[]` (in report rank order: errors first, then crashes, specific accepted-input findings, rejections, response violations, status codes, generic accepted input) → `occurrences[]`, each with `category`, `severityRank`, `diagnosis`, `remediation`, `fields`, `fuzzers`, `sampleTestIds`, `curlReproducer`, `attribution` and, with `--verify`, `verificationStatus` / `verifiedStatusCode` / `verificationNote`. An occurrence takes the category of most of its tests; its representative (reproducer, `--verify`) is the lowest-numbered test of that category. `totalProblems` and `totalOccurrences` give the size of the work list.
 
-**Prerequisite:** the report must contain the `2XX` and warning tests. If the run used `--srs` / `--srw` (`--skipReportingForSuccess` / `--skipReportingForWarning`) or `-k`, `--export-refdata`, warning problems and `cats replay --stateful` have almost nothing to work with. Re-run without them.
+**Filtered reports:** triage still analyzes retained errors and warnings when a run used `--srs` (`--skipReportingForSuccess`).
+Successful `2XX` exchanges are needed for `--export-refdata` and successful setup steps in `cats replay --stateful`;
+`--srw` (`--skipReportingForWarning`) additionally removes warning findings, and `-k` removes ignored outcomes.
+Re-run without the relevant filters when those omitted results are needed for mining, replay setup or comparison coverage.
 
 ### Review Exported Artifacts Before Reusing Them
 - **`correlations.yml`**: rules are only synthesized from `400`/`409`/`422` rejections of requests CATS expected to succeed (`HappyPath`, `OnlyRequiredFields`, or `2XX`-only expectations), and only when the message demands presence (`REQUIRE` → `set:`), absence (`REMOVE` → `omit:`) or uniqueness (`UNIQUE` → self-guarded `when: "<field> is not null"` + `set:`). Rules are grouped per path under `rules:`; each carries a `# from:` comment with the source error.
@@ -197,7 +200,13 @@ cats compare \
 - States: `NEW` (target only), `FIXED` (baseline only), `UNCHANGED` (matched by `ID` or `PATTERN`), `NOT_COMPARABLE` (all occurrence fuzzers absent from the other run's `testCases[].fuzzer`, including successful tests).
 - Unmatched `SERVER_ERROR` and `ERROR_MESSAGE` occurrences can match a server-message pattern: equal whitespace-token counts, with each token equal or `<*>` on either side. Matching is one-to-one, within the same kind, operation and statuses; `ERROR_MESSAGE` also requires the same verdict family.
 - Exit codes: `0` no regression, `1` a `NEW` error occurrence (also a warning with `--failOnNewWarnings`), `2` invalid input. Changed test counts are informational and never fail the gate. `NOT_COMPARABLE` never fails it.
-- Console sections: `New`, `Fixed`, `Not comparable`, `Unchanged (count changed)`. Each line names the state, problem id, operation, optional field, title and baseline/target test counts.
+- Console: baseline/target paths and all four occurrence totals are always shown. Non-empty `New`, `Fixed`, `Not comparable`
+  sections use indented blocks with the problem id, error/warning level, operation, optional field, title and test counts.
+  Only unchanged occurrences whose test counts differ are expanded, with their total unchanged count kept visible.
+  A missing side of `NOT_COMPARABLE` says `not observed`; the coverage explanation identifies fuzzers absent from that
+  side's saved results. Filtered reports (for example `--srs`) can omit all successful evidence for a fuzzer that ran.
+  The footer distinguishes the regression result from the target's remaining errors/warnings and reports unassessed occurrences.
+  JSON fields, matching rules and exit codes are unchanged.
 - JSON (`-j`): `{baseline, target, problemKeyVersion, regression, newOccurrences, fixedOccurrences, unchangedOccurrences, notComparable, matchedByPattern}`. Each occurrence has `{state, problemId, kind, level, title, operation, field, statuses, baselineTests, targetTests, matchedBy}`; `matchedBy` is `ID`, `PATTERN`, or `null` for unmatched occurrences. `matchedByPattern` is the number of pattern pairs.
 - To gate during fuzzing, pass `--baseline <report>` and optional `--failOnNewWarnings` to the root `cats` command. The gate and exporters share the same prepared problems.
 - `FIXED` means absent in this run under these comparison rules; confirm the operation and input were exercised before treating it as a verified fix.

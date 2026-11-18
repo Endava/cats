@@ -53,7 +53,7 @@ For an initial high-signal view, `-b` retains 5XX except 501 and high-severity s
    ```bash
    cats -c <spec> -s <server_url> --profile ci --preseedCollectionGets -o cats-report
    ```
-   **Never pass `--srs` / `--srw`** (`--skipReportingForSuccess` / `--skipReportingForWarning`) or `-b -k` before triage: they drop the `2XX` and warning tests that `triage --export-refdata`, `replay --stateful`, and warning problems depend on.
+   Keep successful results for this configuration-mining workflow: `--srs` removes the `2XX` exchanges needed by `triage --export-refdata` and successful setup steps in `replay --stateful`; `--srw` additionally removes warnings. Ordinary triage still works on retained findings. `-b -k` also filters results, and filtered reports can leave comparison coverage unavailable.
 2. Triage the report and auto-extract configuration fixes:
    ```bash
    cats triage -r cats-report -c <spec> -j \
