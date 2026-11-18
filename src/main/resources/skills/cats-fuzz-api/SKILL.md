@@ -84,10 +84,10 @@ successful setup steps in `cats replay --stateful`. `--srw` (`--skipReportingFor
 | Profile | When to Use | Command |
 | :--- | :--- | :--- |
 | **`quick`** | Fast smoke + core boundary/required-field checks (24 fuzzers) | `cats -c <spec> -s <url> --profile quick` |
-| **`ci`** | Balanced functional, boundary, type-coercion & security suite (80 fuzzers) | `cats -c <spec> -s <url> --profile ci` |
-| **`security`** | OWASP API Top 10 and decoder robustness (SQLi, NoSQLi, XSS, Command/LDAP/XXE/SSTI injection, SSRF, IDOR, Mass Assignment, Auth Bypass, Security Headers) (59 fuzzers) | `cats -c <spec> -s <url> --profile security` |
+| **`ci`** | Balanced functional, boundary, type-coercion & security suite (83 fuzzers) | `cats -c <spec> -s <url> --profile ci` |
+| **`security`** | OWASP API Top 10 and decoder robustness (SQLi, NoSQLi, XSS, Command/LDAP/XXE/SSTI injection, SSRF, IDOR, Mass Assignment, Auth Bypass, Security Headers) (62 fuzzers) | `cats -c <spec> -s <url> --profile security` |
 | **`coverage`** | Fast positive + field-removal fuzzers to maximize `2XX` operation & code coverage (10 fuzzers) | `cats -c <spec> -s <url> --profile coverage` |
-| **`crash`** | High-yield boundary, type-coercion, control-char & injection fuzzers targeting `5XX` server faults (65 fuzzers) | `cats -c <spec> -s <url> --profile crash` |
+| **`crash`** | High-yield boundary, type-coercion, control-char & injection fuzzers targeting `5XX` server faults (68 fuzzers) | `cats -c <spec> -s <url> --profile crash` |
 
 Other profiles: `compliance`, `type-coercion`, `health-check`, `full` (default). Inspect any profile with `cats explain -t PROFILE <name>`.
 
@@ -101,6 +101,9 @@ cats -c <spec> -s <url> -f "HappyPath,RemoveFields,MassAssignment,SqlInjectionIn
 
 # Base64 decoder boundaries: 12 values per eligible field, at most 257 characters each
 cats -c <spec> -s <url> -f Base64DecoderBoundaryFields
+
+# Bounded parser robustness: encoded auth headers, JSON nesting and exact numeric tokens
+cats -c <spec> -s <url> -f "EncodedAuthenticationHeaders,JsonNestingDepth,NumericParserBoundaryFields"
 
 # Combinatorial optional-field removal (ONEBYONE + optimal strength-2 Kleitman-Spencer covering array; add --interactionStrength 3 for 3-way IPOG)
 cats -c <spec> -s <url> -f RemoveFields --fieldsFuzzingStrategy PAIRWISE
@@ -127,6 +130,14 @@ accepts normal `2XX`/`4XX` handling, and uses existing reporting for failures. R
 token fields are excluded unless they also match a Base64 declaration or a recognized cursor name. It is included in
 `ci`, `security`, `crash` and the default full run. The cursor fuzzer's four existing structure probes remain separate;
 running both produces 16 distinct values per cursor field. These checks have no warm-up loop and do not establish a specific CVE.
+
+Additional parser robustness probes (also in `ci`, `security`, `crash` and full):
+- `EncodedAuthenticationHeaders`: Basic and JWT-shaped/declared authentication, selected from effective operation/global OpenAPI security or supplied Authorization headers / `--basicAuth`. Explicit anonymous operation security overrides global declarations. Opaque bearer tokens are not guessed to be JWTs. Per operation, 13 Basic cases and/or 37 JWT cases (one synthetic envelope control plus Base64 tails in each segment); no login or warm-up loop is added. Deliberately mutated headers survive configured/WFC/Basic authentication injection.
+- `JsonNestingDepth`: 24 complete/truncated JSON documents across object, array and alternating shapes at depths 32, 128, 512 and 1024. Runs once per JSON body operation across schema variants; each document is smaller than 8 KiB.
+- `NumericParserBoundaryFields`: 32 exact raw/quoted number representations per present, non-enum numeric field (or numeric root) in each generated payload, including decimal conversion edges and malformed grammar. Runs on JSON body operations, respects refData field omissions, and bypasses payload normalization/refData replacement so tokens reach the wire unchanged. Existing large-number and scientific-notation fuzzers remain available.
+
+These robustness probes accept controlled `2XX`/`3XX`/`4XX` responses (including authentication redirects), even when those statuses are not documented in the contract and disable schema/media-type checks for their probe responses. Existing server-error and transport reporting still apply; they do not assign security confidence or prove a specific CVE/RCE. Timeouts and connection failures remain observations. Existing `--basicAuth` no longer restores a header explicitly removed by an authentication test. Streaming chunk boundaries and malformed wire-byte encodings are not implemented by these probes.
+
 
 ---
 

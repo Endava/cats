@@ -30,12 +30,12 @@ class ProfileLoaderTest {
     @ParameterizedTest
     @ValueSource(strings = {"security", "ci", "crash"})
     void shouldIncludeBase64DecoderBoundaryChecks(String profile) {
-        Assertions.assertThat(profileLoader.getProfile(profile).orElseThrow().fuzzers()).containsOnlyOnce("Base64DecoderBoundaryFields");
+        Assertions.assertThat(profileLoader.getProfile(profile).orElseThrow().fuzzers()).containsOnlyOnce("Base64DecoderBoundaryFields", "EncodedAuthenticationHeaders", "JsonNestingDepth", "NumericParserBoundaryFields");
     }
 
     @Test
-    void shouldAppendBase64BoundaryChecksAfterExistingCrashFuzzers() {
-        Assertions.assertThat(profileLoader.getProfile("crash").orElseThrow().fuzzers()).endsWith("Base64DecoderBoundaryFields");
+    void shouldAppendDecoderAndParserChecksAfterExistingCrashFuzzers() {
+        Assertions.assertThat(profileLoader.getProfile("crash").orElseThrow().fuzzers()).endsWith("Base64DecoderBoundaryFields", "EncodedAuthenticationHeaders", "JsonNestingDepth", "NumericParserBoundaryFields");
     }
 
     @Nested

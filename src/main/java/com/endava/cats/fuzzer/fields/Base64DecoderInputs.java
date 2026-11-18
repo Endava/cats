@@ -1,12 +1,12 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.generator.simple.Base64BoundaryGenerator;
 import com.endava.cats.util.WordUtils;
 import io.swagger.v3.oas.models.media.Schema;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.IntStream;
 
 /** Shared, disjoint inputs for cursor structure checks and Base64 decoder boundary checks. */
 final class Base64DecoderInputs {
@@ -16,8 +16,7 @@ final class Base64DecoderInputs {
             "startingafter", "endingbefore", "after", "before", "scrollid", "searchafter");
     private static final List<Object> CURSOR_VALUES = List.of(
             "e30=", "bnVsbA==", "bm90LWEtdGltZXN0YW1wOm5vdC1hbi1pZA==", "===invalid-cursor===");
-    private static final List<Object> BOUNDARY_VALUES = IntStream.of(64, 256)
-            .mapToObj(Base64DecoderInputs::atBoundary).flatMap(List::stream).toList();
+    private static final List<Object> BOUNDARY_VALUES = Base64BoundaryGenerator.values().stream().map(value -> (Object) value).toList();
 
     private Base64DecoderInputs() {
     }
@@ -43,10 +42,4 @@ final class Base64DecoderInputs {
         return BOUNDARY_VALUES;
     }
 
-    private static List<Object> atBoundary(int length) {
-        String prefix = "A".repeat(length);
-        String shortPrefix = prefix.substring(0, length - 1);
-        // Include valid padded/unpadded controls and malformed final quanta; acceptance alone is not a defect.
-        return List.of(shortPrefix, shortPrefix + "=", prefix, prefix + "=", prefix + "A", shortPrefix + "==");
-    }
 }

@@ -52,6 +52,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -76,6 +77,73 @@ import java.util.stream.Collectors;
 
 @QuarkusTest
 class ServiceCallerTest {
+    private void initializeParserProbeClient() {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1e+", "-0.0", "2.2250738585072012e-308", "1e10000"})
+    void shouldPutExactNumericParserTokensOnTheWire(String token) {
+        initializeParserProbeClient();
+        String payload = "{\"amount\":" + token + "}";
+        serviceCaller.call(ServiceData.builder().relativePath("/pets").httpMethod(HttpMethod.POST).headers(Set.of())
+                .contentType("application/json").payload(payload).replaceRefData(false).validJson(false)
+                .mutationTarget(RequestTarget.body("amount")).build());
+
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets")).withRequestBody(WireMock.equalTo(payload)));
+    }
+
+    @Test
+    void shouldPutDeepJsonOnTheWireWithoutLocalNormalization() {
+        initializeParserProbeClient();
+        String payload = "[".repeat(1024) + "0" + "]".repeat(1024);
+        serviceCaller.call(ServiceData.builder().relativePath("/pets").httpMethod(HttpMethod.POST).headers(Set.of())
+                .contentType("application/json").payload(payload).replaceRefData(false).validJson(false)
+                .mutationTarget(RequestTarget.requestBody()).build());
+
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets")).withRequestBody(WireMock.equalTo(payload)));
+    }
+
+    @Test
+    void shouldPutTheMutatedAuthorizationHeaderOnTheWire() {
+        initializeParserProbeClient();
+        serviceCaller.call(ServiceData.builder().relativePath("/pets").httpMethod(HttpMethod.POST).payload("{}")
+                .headers(Set.of(CatsHeader.from("Authorization", "Basic " + "A".repeat(64) + "=", false, null)))
+                .contentType("application/json").mutationTarget(RequestTarget.header("Authorization")).build());
+
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets"))
+                .withHeader("Authorization", WireMock.equalTo("Basic " + "A".repeat(64) + "=")));
+    }
+    @Test
+    void shouldPreserveExplicitAuthorizationMutationAgainstBasicAuth() {
+        ServiceData data = ServiceData.builder().relativePath("/pets").httpMethod(HttpMethod.POST).contentType("application/json")
+                .headers(Set.of(CatsHeader.from("authorization", "Basic malformed=", false, null)))
+                .mutationTarget(RequestTarget.header("Authorization")).build();
+
+        Assertions.assertThat(serviceCaller.buildHeaders(data)).filteredOn(header -> header.getKey().equalsIgnoreCase("Authorization"))
+                .extracting(KeyValuePair::getValue).containsExactly("Basic malformed=");
+    }
+
+    @Test
+    void shouldNotRestoreSkippedBasicAuthentication() {
+        ServiceData data = ServiceData.builder().relativePath("/pets").httpMethod(HttpMethod.POST).contentType("application/json")
+                .headers(Set.of()).skippedHeaders(Set.of("authorization")).build();
+
+        Assertions.assertThat(serviceCaller.buildHeaders(data)).noneMatch(header -> header.getKey().equalsIgnoreCase("Authorization"));
+    }
+
+    @Test
+    void shouldPreserveExplicitWfcAuthenticationMutation() {
+        ReflectionTestUtils.setField(authArguments, "basicAuth", null);
+        ReflectionTestUtils.setField(authArguments, "wfcAuthFile", new File("src/test/resources/wfc-static-auth.yml"));
+        ServiceData data = ServiceData.builder().relativePath("/wfc-static").httpMethod(HttpMethod.POST).contentType("application/json")
+                .headers(Set.of(CatsHeader.from("X-Session-Token", "mutated", false, null)))
+                .mutationTarget(RequestTarget.header("x-session-token")).build();
+
+        Assertions.assertThat(serviceCaller.buildHeaders(data)).filteredOn(header -> "X-Session-Token".equalsIgnoreCase(header.getKey()))
+                .extracting(KeyValuePair::getValue).containsExactly("mutated");
+    }
 
     public static WireMockServer wireMockServer;
     @Inject

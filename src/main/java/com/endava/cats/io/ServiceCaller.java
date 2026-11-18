@@ -682,7 +682,7 @@ public class ServiceCaller {
         reportingArguments.registerSensitiveHeaders(wfcAuthProvider.getAuthenticationHeaderNames());
         reportingArguments.registerSensitiveQueryParams(wfcAuthProvider.getAuthenticationQueryParamNames());
         this.removeSkippedHeaders(data, headers);
-        this.addBasicAuth(headers);
+        this.addBasicAuth(data, headers);
 
         return Collections.unmodifiableList(headers);
     }
@@ -831,8 +831,9 @@ public class ServiceCaller {
         return String.valueOf(Optional.ofNullable(response.body().contentType()).orElse(defaultResponseMediaType));
     }
 
-    private void addBasicAuth(List<KeyValuePair<String, Object>> headers) {
-        if (authArguments.isBasicAuthSupplied()) {
+    private void addBasicAuth(ServiceData data, List<KeyValuePair<String, Object>> headers) {
+        if (authArguments.isBasicAuthSupplied() && !data.isFuzzedHeader("Authorization")
+                && data.getSkippedHeaders().stream().noneMatch("Authorization"::equalsIgnoreCase)) {
             headers.add(new KeyValuePair<>("Authorization", authArguments.getBasicAuthHeader()));
         }
     }
@@ -1104,7 +1105,8 @@ public class ServiceCaller {
     private void addWfcAuthHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
         String method = data.getHttpMethod() == null ? "" : data.getHttpMethod().name();
         wfcAuthProvider.getHeaders(okHttpClient, data.getRelativePath(), method)
-                .forEach((name, value) -> replaceHeaderWithUserSuppliedHeader(headers, name, value));
+                .entrySet().stream().filter(entry -> !data.isFuzzedHeader(entry.getKey()))
+                .forEach(entry -> replaceHeaderWithUserSuppliedHeader(headers, entry.getKey(), entry.getValue()));
     }
 
     private String addWfcAuthQueryParams(String url, ServiceData data) {

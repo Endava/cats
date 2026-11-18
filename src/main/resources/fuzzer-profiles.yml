@@ -69,6 +69,9 @@ profiles:
 
       # Malicious Input
       - Base64DecoderBoundaryFields
+      - EncodedAuthenticationHeaders
+      - JsonNestingDepth
+      - NumericParserBoundaryFields
       - VeryLargeStringsInFields
       - VeryLargeUnicodeStringsInFields
       - VeryLargeIntegersInNumericFields
@@ -303,6 +306,9 @@ profiles:
       - StringFormatTotallyWrongValues
       - StringFormatAlmostValidValues
       - Base64DecoderBoundaryFields
+      - EncodedAuthenticationHeaders
+      - JsonNestingDepth
+      - NumericParserBoundaryFields
       - InvalidValuesInEnumsFields
       - EnumCaseVariantFields
       - ConstAndNotSchemaFields
@@ -450,6 +456,9 @@ profiles:
       - SpecialFloatTokensInNumericFields
       - PathBodyIdMismatch
       - Base64DecoderBoundaryFields
+      - EncodedAuthenticationHeaders
+      - JsonNestingDepth
+      - NumericParserBoundaryFields
 
   # ============================================
   # FULL PROFILE (Default)
