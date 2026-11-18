@@ -1,6 +1,5 @@
 package com.endava.cats.util;
 
-import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.generator.simple.EncodedAuthenticationGenerator;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.RequestProvenance;
@@ -24,9 +23,8 @@ public final class SyntheticAuthHeaderPolicy {
                 && Optional.ofNullable(testCase.getRequest().getHeaders()).orElse(List.of()).stream().anyMatch(SyntheticAuthHeaderPolicy::isPublicHeader);
     }
 
-    public static boolean mayShow(CatsTestCase testCase, KeyValuePair<String, ?> header, ReportingArguments arguments) {
-        return isProbe(testCase) && isPublicHeader(header) && Optional.ofNullable(arguments.getMaskHeaders()).orElse(Set.of())
-                .stream().noneMatch(name -> name.equalsIgnoreCase(header.getKey()));
+    public static boolean allows(CatsTestCase testCase, KeyValuePair<String, ?> header) {
+        return isProbe(testCase) && isPublicHeader(header);
     }
 
     public static boolean isPublicHeader(KeyValuePair<String, ?> header) {

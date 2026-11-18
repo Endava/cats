@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  */
 @Getter
 @Setter
-@Builder
+@Builder(toBuilder = true)
 public class CatsRequest {
     private static final Pattern MASKED_PLACEHOLDER = Pattern.compile("\\$\\$(\\w+)");
 

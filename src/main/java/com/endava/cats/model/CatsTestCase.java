@@ -1,9 +1,7 @@
 package com.endava.cats.model;
 
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.ann.Exclude;
 import com.endava.cats.util.JsonUtils;
-import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.SimpleJsonFormatter;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
@@ -32,17 +30,6 @@ import java.util.UUID;
 @Setter
 @ToString(of = "scenario")
 public class CatsTestCase {
-    private static final String CURL_TEMPLATE = """
-            curl  -X %s \\
-                 %s \\
-                 %s \\
-                  %s
-            """;
-    private static final String CURL_HEADER = """
-            -H "%s: %s" \\
-            """;
-    private static final String CURL_BODY = " -d '%s'";
-
     private static final String CATS_REPLAY = "cats replay %s";
     private static final String SKIPPED = "skipped";
 
@@ -83,10 +70,6 @@ public class CatsTestCase {
 
     @Exclude
     private Gson maskingSerializer;
-
-    @Exclude
-    @SuppressWarnings("java:S2065") // Gson must also omit this state when used without an exclusion strategy.
-    private transient Gson requestMaskingSerializer;
 
     @Exclude
     private List<String> errorLeaks = List.of();
@@ -253,15 +236,6 @@ public class CatsTestCase {
     }
 
     /**
-     * A json formatted version of the http headers sent in request
-     *
-     * @return request headers in json format
-     */
-    public String getHeaders() {
-        return requestSerializer().toJson(request.getHeaders());
-    }
-
-    /**
      * Well formatted json if request is a valid json or just the payload string otherwise
      *
      * @return the request payload
@@ -332,51 +306,6 @@ public class CatsTestCase {
         } catch (IOException | RuntimeException _) {
             return Optional.empty();
         }
-    }
-
-    /**
-     * Returns the curl equivalent of running the test case.
-     *
-     * @return curl equivalent of running the test case
-     */
-    public String getCurl() {
-        if (request == null || HttpMethod.fromString(request.getHttpMethod()).isEmpty()) {
-            return "";
-        }
-
-        StringBuilder headersString = new StringBuilder();
-        String body = "";
-        Optional.ofNullable(request.getHeaders()).orElse(List.of())
-                .forEach(header -> headersString.append(CURL_HEADER.formatted(header.getKey(), this.getHeaderValueForCurl(header))));
-
-        if (HttpMethod.requiresBody(request.getHttpMethod())) {
-            body = CURL_BODY.formatted(Optional.ofNullable(request.getPayload()).orElse(""));
-        }
-
-        String targetUrl = Optional.ofNullable(fullRequestPath).orElseGet(() -> Optional.ofNullable(request.getUrl()).orElse(""));
-        return CURL_TEMPLATE.formatted(request.getHttpMethod(), headersString.toString(), body, targetUrl.replace("$$", "$"));
-    }
-
-    /**
-     * CATS uses $$variable to refer to env variables, while curl needs $variable.
-     * We make sure that when masking is done, the header from curl command uses a single $.
-     *
-     * @param header the current header being processed
-     * @return a header value that passed through masking
-     */
-    private Object getHeaderValueForCurl(KeyValuePair<String, Object> header) {
-        Gson serializer = requestSerializer();
-        if (serializer == null) {
-            String raw = String.valueOf(header.getValue());
-            return raw.startsWith("$$") ? raw.substring(1) : header.getValue();
-        }
-        String value = String.valueOf(JsonUtils.getVariableFromJson(serializer.toJson(header), "value"));
-
-        return value.startsWith("$$") ? value.substring(1) : header.getValue();
-    }
-
-    private Gson requestSerializer() {
-        return requestMaskingSerializer == null ? maskingSerializer : requestMaskingSerializer;
     }
 
     /**

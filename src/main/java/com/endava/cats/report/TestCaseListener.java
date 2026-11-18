@@ -546,7 +546,7 @@ public class TestCaseListener {
             keepExecutionDetails(currentTestCase);
             if (executionEventPublisher.hasSubscribers()) {
                 executionEventPublisher.publish(new CatsExecutionEvent.TestCompleted(Instant.now(),
-                        TestResultSnapshot.from(currentTestCase, reportingArguments.getMaskedHeaders())));
+                        TestResultSnapshot.from(currentTestCase, reportingArguments)));
             }
             int testNumber = NumberUtils.toInt(testId, 0);
             if (!reportingArguments.isColor() && reportingArguments.isSummaryInConsole()

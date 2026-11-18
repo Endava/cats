@@ -201,7 +201,7 @@ For mutual TLS, use `--sslKeystore`, `--sslKeystorePwd` and `--sslKeyPwd`. If `-
 
 CATS masks authentication headers and sensitive query parameters in reports by default, replacing request values with replayable `$$EnvironmentVariable` placeholders. It creates `replay.env.example` without secret values in the directory where CATS is run.
 
-`EncodedAuthenticationHeaders` reports its exact, fully synthetic Authorization probes in request headers and curl commands so they can be replayed without substituting a real credential. This exception requires the fuzzer's Authorization mutation metadata and an exact match with its public probe corpus. Real credentials and response headers retain normal masking; an explicit `--maskHeaders Authorization` also masks these probes.
+`EncodedAuthenticationHeaders` reports its exact, fully synthetic Authorization probes in request headers and curl commands so they can be replayed without substituting a real credential. This exception requires the fuzzer's Authorization mutation metadata and an exact match with its public probe corpus. HTML, JSON and the terminal UI share this rule. Real credentials and response headers retain normal masking; an explicit `--maskHeaders Authorization` also masks these probes. HTML and terminal curl commands use the same shell quoting as replay and triage.
 
 CATS automatically loads `./.env` when present. Use `--envFile path/to/cats.env` to select a different file or `--noEnvFile` to disable dotenv loading in normal, random, functional, template and replay commands. Process environment variables take precedence over dotenv values. Use `--showSecrets` only when unmasked report and console output is explicitly required.
 

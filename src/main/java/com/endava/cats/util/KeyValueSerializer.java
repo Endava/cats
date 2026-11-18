@@ -16,7 +16,7 @@ import java.util.function.Predicate;
 public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, Object>> {
 
     private final Set<String> toMask;
-    private final ReportingArguments reportingArguments;
+    private final HeaderPresentation headers;
     private final Predicate<KeyValuePair<String, Object>> publicRequestHeader;
 
     /**
@@ -26,7 +26,7 @@ public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, O
      */
     public KeyValueSerializer(Set<String> keysToMask) {
         this.toMask = keysToMask;
-        this.reportingArguments = null;
+        this.headers = null;
         this.publicRequestHeader = _ -> false;
     }
 
@@ -36,7 +36,7 @@ public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, O
 
     public KeyValueSerializer(ReportingArguments reportingArguments, Predicate<KeyValuePair<String, Object>> publicRequestHeader) {
         this.toMask = Set.of();
-        this.reportingArguments = reportingArguments;
+        this.headers = new HeaderPresentation(reportingArguments);
         this.publicRequestHeader = publicRequestHeader;
     }
 
@@ -52,12 +52,9 @@ public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, O
         if (SensitiveDataPolicy.REDACTED.equals(header.getValue())) {
             return SensitiveDataPolicy.REDACTED;
         }
-        boolean explicitlyMasked = toMask.stream().anyMatch(key -> key.equalsIgnoreCase(header.getKey()))
-                || (reportingArguments != null && SensitiveDataPolicy.isSensitiveHeader(header.getKey(), reportingArguments.getMaskHeaders(), true));
-        if (explicitlyMasked || (reportingArguments != null && reportingArguments.shouldMaskHeader(header.getKey()) && !publicRequestHeader.test(header))) {
+        if (toMask.stream().anyMatch(key -> key.equalsIgnoreCase(header.getKey()))) {
             return SensitiveDataPolicy.placeholder(SensitiveDataPolicy.headerEnvironmentVariable(header.getKey()));
         }
-
-        return header.getValue();
+        return headers == null ? header.getValue() : headers.value(header, publicRequestHeader.test(header));
     }
 }

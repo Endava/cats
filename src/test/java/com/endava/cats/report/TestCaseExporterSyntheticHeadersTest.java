@@ -10,6 +10,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.util.KeyValuePair;
+import com.endava.cats.tui.model.TestResultSnapshot;
 import com.endava.cats.util.SensitiveDataPolicy;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -46,7 +47,7 @@ class TestCaseExporterSyntheticHeadersTest {
             CatsTestCase testCase = testCase(value);
             SensitiveDataPolicy.sanitize(testCase, arguments);
             exporter.writeTestCase(testCase);
-            assertPublicRequestAndMaskedResponse(testCase, value);
+            assertPublicRequestAndMaskedResponse(testCase, value, arguments);
         }
         assertThat(arguments.getReplayEnvironmentVariables()).containsExactly("XApiKey");
     }
@@ -67,8 +68,8 @@ class TestCaseExporterSyntheticHeadersTest {
         exporter(ReportingArguments.ReportFormat.HTML_JS, arguments).writeTestCase(testCase);
 
         assertThat(Files.readString(directory.resolve("Test1.json"))).contains("$$Authorization").doesNotContain("private-credential", "Y2F0czpjYXRz-private");
-        assertThat(testCase.getHeaders()).contains("$$Authorization");
-        assertThat(testCase.getCurl()).contains("Authorization: $Authorization");
+        assertThat(StringEscapeUtils.unescapeHtml4(Files.readString(directory.resolve("Test1.html"))))
+                .contains("$$Authorization", "${Authorization}");
     }
 
     @Test
@@ -84,7 +85,7 @@ class TestCaseExporterSyntheticHeadersTest {
         assertThat(testCase.getResponseHeaders()).contains("$$Authorization").doesNotContain("Y2F0czpjYXRz");
     }
 
-    private void assertPublicRequestAndMaskedResponse(CatsTestCase testCase, String value) throws Exception {
+    private void assertPublicRequestAndMaskedResponse(CatsTestCase testCase, String value, ReportingArguments arguments) throws Exception {
         JsonObject json = readJson();
         assertThat(json.getAsJsonObject("request").getAsJsonArray("headers").get(0).getAsJsonObject().get("value").getAsString()).isEqualTo(value);
         assertThat(json.getAsJsonObject("response").getAsJsonArray("headers").get(0).getAsJsonObject().get("value").getAsString())
@@ -92,8 +93,10 @@ class TestCaseExporterSyntheticHeadersTest {
         assertThat(json.toString()).contains("$$XApiKey").doesNotContain("private-api-key", "requestMaskingSerializer");
         assertThat(StringEscapeUtils.unescapeHtml4(Files.readString(directory.resolve("Test1.html"))))
                 .contains(value).doesNotContain("private-api-key", "$$Authorization");
-        assertThat(testCase.getHeaders()).contains(value).doesNotContain("$$Authorization");
-        assertThat(testCase.getCurl()).contains("Authorization: " + value).doesNotContain("$Authorization");
+        TestResultSnapshot snapshot = TestResultSnapshot.from(testCase, arguments);
+        assertThat(snapshot.request().headers().getFirst().value()).isEqualTo(value);
+        assertThat(snapshot.response().headers().getFirst().value()).isEqualTo(SensitiveDataPolicy.REDACTED);
+        assertThat(snapshot.curlCommand()).contains("Authorization: " + value).doesNotContain("$Authorization");
         assertThat(CatsTestCase.readTestCaseFile(directory.resolve("Test1.json"))).hasValueSatisfying(saved ->
                 assertThat(saved.getRequest().getHeaders().getFirst().getValue()).isEqualTo(value));
     }

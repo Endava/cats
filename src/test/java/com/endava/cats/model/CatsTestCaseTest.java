@@ -19,15 +19,6 @@ import java.util.Map;
 @QuarkusTest
 class CatsTestCaseTest {
 
-    @ParameterizedTest
-    @CsvSource({"N/A", "####", "UNKNOWN"})
-    void shouldReturnEmptyCurlForLinterResultsWithoutAnHttpMethod(String method) {
-        CatsTestCase testCase = new CatsTestCase();
-        testCase.setRequest(CatsRequest.builder().httpMethod(method).url("####").payload("{}").build());
-
-        Assertions.assertThat(testCase.getCurl()).isEmpty();
-    }
-
     @Test
     void shouldNotUpdateServer() {
         CatsTestCase catsTestCase = new CatsTestCase();
