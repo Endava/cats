@@ -3,16 +3,13 @@ package com.endava.cats.command;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.command.triage.ReproducerScriptRenderer;
 import com.endava.cats.command.triage.TriageEngine;
-import com.endava.cats.command.triage.TriageOccurrence;
+import com.endava.cats.command.triage.TriageConsoleRenderer;
 import com.endava.cats.command.triage.TriageOptions;
-import com.endava.cats.command.triage.TriageProblem;
 import com.endava.cats.command.triage.TriageReport;
 import com.endava.cats.exception.UnsupportedReportException;
-import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
-import com.google.common.base.Splitter;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
@@ -27,10 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
-import java.util.stream.IntStream;
 
 /**
  * Contract-aware triage of the report's problems per occurrence (one problem on one operation), live fix verification ({@code --verify}), {@code --refData} mining from
@@ -62,9 +57,6 @@ import java.util.stream.IntStream;
         versionProvider = VersionProvider.class)
 @Unremovable
 public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
-    private static final String SEPARATOR = "-".repeat(80);
-    private static final String BANNER = "=".repeat(80);
-
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
 
     @CommandLine.Mixin
@@ -89,6 +81,10 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @CommandLine.Option(names = {"--verify"},
             description = "Replay 1 representative request per problem occurrence against the server and report FIXED, STILL_FAILING or INCONCLUSIVE.")
     boolean verify;
+
+    @CommandLine.Option(names = {"--show-reproducers"},
+            description = "Include full curl commands in console output. JSON and --export-reproducers always retain them.")
+    boolean showReproducers;
 
     @CommandLine.Option(names = {"--errors-only"},
             description = "Triage error test cases only. By default warnings are triaged too, like the problems of the HTML report.")
@@ -176,83 +172,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             logger.noFormat(JsonUtils.GSON.toJson(report));
             return;
         }
-        renderSummary(report);
-        List<TriageProblem> problems = report.problems();
-        IntStream.range(0, problems.size()).forEach(index -> renderProblem(index + 1, problems.get(index)));
-        renderCorrelations(report);
-        logger.noFormat(AnsiUtils.bold(BANNER));
+        TriageConsoleRenderer.render(logger, report, showReproducers);
     }
 
-    private void renderSummary(TriageReport report) {
-        logger.noFormat(AnsiUtils.bold(BANNER));
-        logger.noFormat(AnsiUtils.bold("  CATS Report Triage: Problems and Root-Cause Diagnosis"));
-        logger.noFormat(AnsiUtils.bold(BANNER));
-        logger.noFormat("  Report Folder : " + report.reportFolder());
-        logger.noFormat("  Tests Scanned : %d  (Errors: %d, Warnings: %d)"
-                .formatted(report.totalTestsScanned(), report.totalErrors(), report.totalWarnings()));
-        logger.noFormat("  Problems      : %d on %d operation occurrences  (Signal-to-Noise Reduction: %s%%)"
-                .formatted(report.totalProblems(), report.totalOccurrences(), report.noiseReductionPercent()));
-        logger.noFormat(SEPARATOR);
-    }
-
-    private void renderProblem(int rank, TriageProblem problem) {
-        logger.noFormat("  %2d. %s %s  %s".formatted(rank, levelBadge(problem), AnsiUtils.bold(problem.title()), "(id " + problem.problemId() + ")"));
-        logger.noFormat("      %s · %d tests · %d operations".formatted(String.join(" · ", problem.reasons()), problem.testCount(), problem.occurrences().size()));
-        problem.occurrences().forEach(this::renderOccurrence);
-        logger.noFormat("");
-    }
-
-    private void renderOccurrence(TriageOccurrence occurrence) {
-        logger.noFormat("      - %s %s -> HTTP %s (%d tests)%s".formatted(categoryBadge(occurrence), AnsiUtils.bold(occurrence.operation()),
-                occurrence.statusCodes(), occurrence.testCount(), verificationBadge(occurrence)));
-        logger.noFormat("        Diagnosis   : " + occurrence.diagnosis());
-        if (StringUtils.isNotBlank(occurrence.attribution())) {
-            logger.noFormat("        Attribution : " + occurrence.attribution());
-        }
-        logger.noFormat("        Remediation : " + occurrence.remediation());
-        if (!occurrence.fields().isEmpty()) {
-            logger.noFormat("        Fields      : " + String.join(", ", occurrence.fields()));
-        }
-        logger.noFormat("        Fuzzers     : " + String.join(", ", occurrence.fuzzers()));
-        logger.noFormat("        Sample Tests: " + String.join(", ", occurrence.sampleTestIds()));
-        logger.noFormat("        Reproducer  : " + occurrence.curlReproducer());
-        if (StringUtils.isNotBlank(occurrence.verificationNote())) {
-            logger.noFormat("        Verification: " + occurrence.verificationNote());
-        }
-    }
-
-    private static String levelBadge(TriageProblem problem) {
-        return "error".equals(problem.level()) ? AnsiUtils.red("[ERROR]") : AnsiUtils.yellow("[WARN]");
-    }
-
-    private static String categoryBadge(TriageOccurrence occurrence) {
-        String badge = "[" + occurrence.category() + "]";
-        return switch (occurrence.severityRank()) {
-            case 0 -> AnsiUtils.red(badge);
-            case 1 -> AnsiUtils.yellow(badge);
-            default -> AnsiUtils.blue(badge);
-        };
-    }
-
-    private static String verificationBadge(TriageOccurrence occurrence) {
-        if (occurrence.verificationStatus() == null) {
-            return "";
-        }
-        String text = " [%s -> HTTP %s]".formatted(occurrence.verificationStatus().replace('_', ' '),
-                occurrence.verifiedStatusCode() == null ? "n/a" : occurrence.verifiedStatusCode());
-        return switch (occurrence.verificationStatus()) {
-            case "FIXED" -> AnsiUtils.green(text);
-            case "STILL_FAILING" -> AnsiUtils.red(text);
-            default -> AnsiUtils.yellow(text);
-        };
-    }
-
-    private void renderCorrelations(TriageReport report) {
-        if (report.synthesizedCorrelations().isEmpty()) {
-            return;
-        }
-        logger.noFormat(AnsiUtils.bold("  Synthesized --correlations YAML Rules (pass --export-correlations <file>):"));
-        logger.noFormat(SEPARATOR);
-        Splitter.on('\n').split(report.synthesizedCorrelationsYaml()).forEach(line -> logger.noFormat("  " + line));
-    }
 }

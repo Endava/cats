@@ -22,6 +22,16 @@ import java.nio.file.Path;
 class TriageCommandTest {
 
     @Test
+    void shouldMakeConsoleReproducersOptIn() {
+        TriageCommand command = new TriageCommand();
+        Assertions.assertThat(command.showReproducers).isFalse();
+
+        new CommandLine(command).parseArgs("--show-reproducers");
+
+        Assertions.assertThat(command.showReproducers).isTrue();
+    }
+
+    @Test
     void shouldClusterRootCausesMineRefDataGenerateContractPatchAndSynthesizeCorrelations(@TempDir Path tempDir) throws Exception {
         Files.writeString(tempDir.resolve("Test1.json"), """
                 {

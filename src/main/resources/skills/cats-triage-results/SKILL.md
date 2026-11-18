@@ -46,6 +46,10 @@ cats triage -r cats-report -c <spec> -j \
 ```
 *(Warnings are triaged by default, like the problems of the HTML report. Add `--errors-only` to triage error tests only.)*
 
+Console output omits full curl commands by default. Add `--show-reproducers` to include them, or use
+`--export-reproducers reproducers.sh` to write them separately. JSON always includes `curlReproducer`.
+The console's grouping-reduction percentage measures how much tests were grouped, not verified removal of false positives.
+
 The JSON is `problems[]` (in report rank order: errors first, then crashes, specific accepted-input findings, rejections, response violations, status codes, generic accepted input) → `occurrences[]`, each with `category`, `severityRank`, `diagnosis`, `remediation`, `fields`, `fuzzers`, `sampleTestIds`, `curlReproducer`, `attribution` and, with `--verify`, `verificationStatus` / `verifiedStatusCode` / `verificationNote`. An occurrence takes the category of most of its tests; its representative (reproducer, `--verify`) is the lowest-numbered test of that category. `totalProblems` and `totalOccurrences` give the size of the work list.
 
 **Filtered reports:** triage still analyzes retained errors and warnings when a run used `--srs` (`--skipReportingForSuccess`).
