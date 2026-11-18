@@ -98,7 +98,7 @@ public final class SensitiveDataPolicy {
         CatsRequest request = testCase.getRequest();
         if (request != null) {
             for (KeyValuePair<String, Object> header : Optional.ofNullable(request.getHeaders()).orElseGet(List::of)) {
-                if (reportingArguments.shouldMaskHeader(header.getKey())) {
+                if (reportingArguments.shouldMaskHeader(header.getKey()) && !SyntheticAuthHeaderPolicy.mayShow(testCase, header, reportingArguments)) {
                     String variable = headerEnvironmentVariable(header.getKey());
                     reportingArguments.registerSensitiveHeaders(Set.of(header.getKey()));
                     reportingArguments.registerReplayEnvironmentVariable(variable);

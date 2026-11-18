@@ -45,4 +45,29 @@ class KeyValueSerializerTest {
         JsonElement element = keyValueSerializer.serialize(new KeyValuePair<>("header1", "myValue"), KeyValuePair.class, null);
         Assertions.assertThat(element.toString()).contains("myValue").doesNotContain("$$header1");
     }
+
+    @Test
+    void shouldAllowPublicProbeValuesWithoutExemptingOtherSensitiveValues() {
+        KeyValueSerializer serializer = new KeyValueSerializer(new ReportingArguments(), SyntheticAuthHeaderPolicy::isPublicHeader);
+
+        Assertions.assertThat(serializer.serialize(new KeyValuePair<>("Authorization", "Basic Y2F0czpjYXRz"), KeyValuePair.class, null).toString())
+                .contains("Basic Y2F0czpjYXRz").doesNotContain("$$Authorization");
+        Assertions.assertThat(serializer.serialize(new KeyValuePair<>("Authorization", "Bearer private-token"), KeyValuePair.class, null).toString())
+                .contains("$$Authorization").doesNotContain("private-token");
+        Assertions.assertThat(serializer.serialize(new KeyValuePair<>("X-Api-Key", "Basic Y2F0czpjYXRz"), KeyValuePair.class, null).toString())
+                .contains("$$XApiKey").doesNotContain("Y2F0czpjYXRz");
+    }
+
+    @Test
+    void shouldPrioritizeExplicitMasksAndRedactionOverPublicValues() {
+        ReportingArguments arguments = new ReportingArguments();
+        ReflectionTestUtils.setField(arguments, "maskHeaders", Set.of("AUTHORIZATION"));
+        ReflectionTestUtils.setField(arguments, "showSecrets", true);
+        KeyValueSerializer serializer = new KeyValueSerializer(arguments, _ -> true);
+
+        Assertions.assertThat(serializer.serialize(new KeyValuePair<>("Authorization", "Basic Y2F0czpjYXRz"), KeyValuePair.class, null).toString())
+                .contains("$$Authorization").doesNotContain("Y2F0czpjYXRz");
+        Assertions.assertThat(serializer.serialize(new KeyValuePair<>("Authorization", SensitiveDataPolicy.REDACTED), KeyValuePair.class, null).toString())
+                .contains(SensitiveDataPolicy.REDACTED).doesNotContain("$$Authorization");
+    }
 }

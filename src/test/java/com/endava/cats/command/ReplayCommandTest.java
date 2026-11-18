@@ -5,6 +5,7 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument;
 import com.endava.cats.fuzzer.special.FunctionalFlowParser;
+import com.endava.cats.generator.simple.EncodedAuthenticationGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -12,6 +13,7 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.KeyValuePair;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -34,6 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @QuarkusTest
 class ReplayCommandTest {
@@ -66,6 +70,30 @@ class ReplayCommandTest {
         String resolved = ReflectionTestUtils.invokeMethod(replayCommand, "resolveReplayValue", "$$CATS_TEST_REPLAY_AUTH_HEADER", "header Authorization");
 
         Assertions.assertThat(resolved).isEqualTo("Bearer from-file");
+    }
+
+    @ParameterizedTest
+    @MethodSource("syntheticAuthorizationValues")
+    void shouldReplayPublicSyntheticCredentialsLiterallyWithoutAnEnvironmentVariable(String value) throws Exception {
+        CatsTestCase testCase = new CatsTestCase();
+        testCase.setResult("success");
+        testCase.setRequest(CatsRequest.builder().httpMethod("GET").url("http://localhost/items")
+                .headers(List.of(new KeyValuePair<>("Authorization", value))).build());
+        Path file = tempDir.resolve("synthetic-auth.json");
+        Files.writeString(file, JsonUtils.GSON.toJson(testCase));
+        replayCommand.tests = new String[]{file.toString()};
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of());
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenReturn(CatsResponse.empty());
+
+        replayCommand.run();
+
+        ArgumentCaptor<CatsRequest> request = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(serviceCaller).callService(request.capture(), Mockito.anySet());
+        Assertions.assertThat(request.getValue().getHeaders()).containsExactly(new KeyValuePair<>("Authorization", value));
+    }
+
+    private static Stream<String> syntheticAuthorizationValues() {
+        return Stream.concat(EncodedAuthenticationGenerator.basicValues().stream(), EncodedAuthenticationGenerator.jwtValues().stream());
     }
 
     @Test

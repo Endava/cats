@@ -85,6 +85,10 @@ public class CatsTestCase {
     private Gson maskingSerializer;
 
     @Exclude
+    @SuppressWarnings("java:S2065") // Gson must also omit this state when used without an exclusion strategy.
+    private transient Gson requestMaskingSerializer;
+
+    @Exclude
     private List<String> errorLeaks = List.of();
 
     /** Records the effective HTTP oracle independently of the human-readable expected-result description. */
@@ -254,7 +258,7 @@ public class CatsTestCase {
      * @return request headers in json format
      */
     public String getHeaders() {
-        return maskingSerializer.toJson(request.getHeaders());
+        return requestSerializer().toJson(request.getHeaders());
     }
 
     /**
@@ -361,13 +365,18 @@ public class CatsTestCase {
      * @return a header value that passed through masking
      */
     private Object getHeaderValueForCurl(KeyValuePair<String, Object> header) {
-        if (maskingSerializer == null) {
+        Gson serializer = requestSerializer();
+        if (serializer == null) {
             String raw = String.valueOf(header.getValue());
             return raw.startsWith("$$") ? raw.substring(1) : header.getValue();
         }
-        String value = String.valueOf(JsonUtils.getVariableFromJson(maskingSerializer.toJson(header), "value"));
+        String value = String.valueOf(JsonUtils.getVariableFromJson(serializer.toJson(header), "value"));
 
         return value.startsWith("$$") ? value.substring(1) : header.getValue();
+    }
+
+    private Gson requestSerializer() {
+        return requestMaskingSerializer == null ? maskingSerializer : requestMaskingSerializer;
     }
 
     /**

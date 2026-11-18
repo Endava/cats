@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.generator.simple.Base64BoundaryGenerator;
+import com.endava.cats.generator.simple.EncodedAuthenticationGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
@@ -12,12 +12,10 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /** Selects encoded authentication envelopes without logging in or guessing that opaque bearer tokens are JWTs. */
 final class EncodedAuthenticationInputs {
-    private static final List<String> JWT_PARTS = List.of("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", "e30", "c2ln");
 
     private EncodedAuthenticationInputs() {
     }
@@ -70,16 +68,6 @@ final class EncodedAuthenticationInputs {
     }
 
     static List<String> values(Scheme scheme) {
-        if (scheme == Scheme.BASIC) {
-            return Stream.concat(Stream.of("Basic Y2F0czpjYXRz"), Base64BoundaryGenerator.values().stream().map(value -> "Basic " + value)).toList();
-        }
-        Stream<String> mutations = IntStream.range(0, 3).boxed()
-                .flatMap(index -> Base64BoundaryGenerator.values().stream().map(value -> jwt(index, value)));
-        return Stream.concat(Stream.of("Bearer " + String.join(".", JWT_PARTS)), mutations).toList();
-    }
-
-    private static String jwt(int selected, String value) {
-        return "Bearer " + IntStream.range(0, 3).mapToObj(index -> index == selected ? value : JWT_PARTS.get(index))
-                .collect(java.util.stream.Collectors.joining("."));
+        return scheme == Scheme.BASIC ? EncodedAuthenticationGenerator.basicValues() : EncodedAuthenticationGenerator.jwtValues();
     }
 }

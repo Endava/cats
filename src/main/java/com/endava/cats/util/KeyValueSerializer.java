@@ -8,6 +8,7 @@ import com.google.gson.JsonSerializer;
 
 import java.lang.reflect.Type;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Custom Gson serializer for key-value pairs. Masks specific keys during serialization.
@@ -16,6 +17,7 @@ public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, O
 
     private final Set<String> toMask;
     private final ReportingArguments reportingArguments;
+    private final Predicate<KeyValuePair<String, Object>> publicRequestHeader;
 
     /**
      * Constructs a new instance of KeyValueSerializer with the specified keys to mask.
@@ -25,11 +27,17 @@ public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, O
     public KeyValueSerializer(Set<String> keysToMask) {
         this.toMask = keysToMask;
         this.reportingArguments = null;
+        this.publicRequestHeader = _ -> false;
     }
 
     public KeyValueSerializer(ReportingArguments reportingArguments) {
+        this(reportingArguments, _ -> false);
+    }
+
+    public KeyValueSerializer(ReportingArguments reportingArguments, Predicate<KeyValuePair<String, Object>> publicRequestHeader) {
         this.toMask = Set.of();
         this.reportingArguments = reportingArguments;
+        this.publicRequestHeader = publicRequestHeader;
     }
 
     @Override
@@ -44,8 +52,9 @@ public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, O
         if (SensitiveDataPolicy.REDACTED.equals(header.getValue())) {
             return SensitiveDataPolicy.REDACTED;
         }
-        boolean explicitlyMasked = toMask.stream().anyMatch(key -> key.equalsIgnoreCase(header.getKey()));
-        if (explicitlyMasked || (reportingArguments != null && reportingArguments.shouldMaskHeader(header.getKey()))) {
+        boolean explicitlyMasked = toMask.stream().anyMatch(key -> key.equalsIgnoreCase(header.getKey()))
+                || (reportingArguments != null && SensitiveDataPolicy.isSensitiveHeader(header.getKey(), reportingArguments.getMaskHeaders(), true));
+        if (explicitlyMasked || (reportingArguments != null && reportingArguments.shouldMaskHeader(header.getKey()) && !publicRequestHeader.test(header))) {
             return SensitiveDataPolicy.placeholder(SensitiveDataPolicy.headerEnvironmentVariable(header.getKey()));
         }
 

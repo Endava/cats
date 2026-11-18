@@ -23,11 +23,13 @@ import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.KeyValueSerializer;
 import com.endava.cats.util.LongTypeSerializer;
+import com.endava.cats.util.SyntheticAuthHeaderPolicy;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.google.gson.Strictness;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -98,6 +100,7 @@ public abstract class TestCaseExporter {
     private long t0;
     @Getter
     private final Gson maskingSerializer;
+    private final Gson syntheticRequestSerializer;
     @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
@@ -128,6 +131,9 @@ public abstract class TestCaseExporter {
                 .registerTypeAdapter(Long.class, new LongTypeSerializer())
                 .registerTypeAdapter(KeyValuePair.class, new KeyValueSerializer(reportingArguments))
                 .serializeNulls()
+                .create();
+        syntheticRequestSerializer = maskingSerializer.newBuilder()
+                .registerTypeAdapter(KeyValuePair.class, new KeyValueSerializer(reportingArguments, SyntheticAuthHeaderPolicy::isPublicHeader))
                 .create();
         this.osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
     }
@@ -550,10 +556,19 @@ public abstract class TestCaseExporter {
         String testFileName = testCase.getTestId().replace(" ", "").concat(JSON);
         try {
             // Write raw bytes to preserve exact payload for replay - don't sanitize
-            Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), maskingSerializer.toJson(testCase).getBytes(StandardCharsets.UTF_8));
+            Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), serializeTestCase(testCase).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw reportFailure("Unable to write JSON for test case " + testCase.getTestId(), e);
         }
+    }
+
+    private String serializeTestCase(CatsTestCase testCase) {
+        if (!SyntheticAuthHeaderPolicy.isProbe(testCase)) {
+            return maskingSerializer.toJson(testCase);
+        }
+        JsonObject serialized = maskingSerializer.toJsonTree(testCase).getAsJsonObject();
+        serialized.getAsJsonObject("request").add("headers", syntheticRequestSerializer.toJsonTree(testCase.getRequest().getHeaders()));
+        return maskingSerializer.toJson(serialized);
     }
 
     private void writeHtmlTestCase(CatsTestCase testCase) {
@@ -561,6 +576,7 @@ public abstract class TestCaseExporter {
         Map<String, Object> context = new HashMap<>();
         testCase.setJs(this.isJavascript());
         testCase.setMaskingSerializer(maskingSerializer);
+        testCase.setRequestMaskingSerializer(SyntheticAuthHeaderPolicy.isProbe(testCase) ? syntheticRequestSerializer : maskingSerializer);
         context.put("TEST_CASE", testCase);
         context.put("TIMESTAMP", OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME));
         context.put("VERSION", appVersion);
