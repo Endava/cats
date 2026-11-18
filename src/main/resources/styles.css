@@ -250,7 +250,12 @@ body.dark-mode .search-input {
 #summaryTable {
 	border-collapse: collapse;
 	width: 100%;
+	min-width: 900px;
 	table-layout: fixed;
+}
+
+#tests-view .table-container {
+	overflow-x: auto;
 }
 
 thead tr.header th {
@@ -2576,8 +2581,36 @@ body.dark-mode .problem-baseline {
 	color: var(--crimson-red);
 }
 
-.problem-cell a {
+#summaryTable .result-details-heading {
+	width: 300px;
+}
+
+.result-reason, .result-problem {
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	line-height: 1.5;
+}
+
+.result-problem {
+	margin-top: 3px;
 	font-size: 12.5px;
+	color: var(--dark-blue);
+}
+
+body.dark-mode .result-problem {
+	color: var(--light-blue);
+}
+
+.result-problem:hover, .result-problem:focus-visible {
+	text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+	#summaryTable .result-details-heading {
+		width: 30%;
+	}
 }
 
 .operation-filter-chip {

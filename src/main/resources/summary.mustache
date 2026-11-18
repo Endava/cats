@@ -305,15 +305,14 @@
                     <th style="width: 18%">Fuzzer</th>
                     <th>Scenario</th>
                     <th style="width: 86px">Result</th>
-                    <th style="width: 210px">Result Reason</th>
-                    <th style="width: 220px">Problem</th>
+                    <th class="result-details-heading" scope="col">Reason / Problem</th>
                 </tr>
                 </thead>
                 <tbody>
                 {{^javascript}}
                 {{#problemPage.testRows}}
                 {{#tc}}
-                <tr data-id="{{key}}" data-problem="{{problemId}}" data-operation="{{operation}}"{{^javascript}} onclick="window.open('{{key}}.html','_blank')"{{/javascript}}><td><a href="{{key}}.html" target="_blank">{{id}}</a></td><td class="fuzzer-cell">{{fuzzer}}</td><td><span class="active rounded rounded-{{httpMethod}}">{{httpMethod}}</span><span class="active rounded path">{{{pathHtml}}}</span><span class="scenario">{{scenario}}</span></td><td><label class="test-result result-{{result}}">{{result}}</label></td><td>{{#switchedResult}}<span class="result-warn"> ⚠ </span>{{/switchedResult}}{{resultReason}}</td><td class="problem-cell">{{#problemAnchor}}<a href="#{{problemAnchor}}" class="problem-jump"{{^javascript}} onclick="event.stopPropagation()"{{/javascript}}>{{problemLabel}}</a>{{/problemAnchor}}</td></tr>
+                <tr data-id="{{key}}" data-problem="{{problemId}}" data-operation="{{operation}}"{{^javascript}} onclick="window.open('{{key}}.html','_blank')"{{/javascript}}><td><a href="{{key}}.html" target="_blank">{{id}}</a></td><td class="fuzzer-cell">{{fuzzer}}</td><td><span class="active rounded rounded-{{httpMethod}}">{{httpMethod}}</span><span class="active rounded path">{{{pathHtml}}}</span><span class="scenario">{{scenario}}</span></td><td><label class="test-result result-{{result}}">{{result}}</label></td><td class="result-details-cell"><div class="result-reason" title="{{resultReason}}">{{#switchedResult}}<span class="result-warn"> ⚠ </span>{{/switchedResult}}{{resultReason}}</div>{{#problemAnchor}}<a href="#{{problemAnchor}}" class="problem-jump result-problem" title="{{problemLabel}}"{{^javascript}} onclick="event.stopPropagation()"{{/javascript}}>{{problemLabel}}</a>{{/problemAnchor}}</td></tr>
                 {{/tc}}
                 {{/problemPage.testRows}}
                 {{/javascript}}

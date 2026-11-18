@@ -210,7 +210,7 @@ class ProblemReportConsistencyTest {
 
         Assertions.assertThat(html).contains("class=\"report-tab active\" aria-selected=\"true\" data-view=\"tests-view\"",
                 "id=\"tests-view\" class=\"report-view active\"", "id=\"problems-view\" class=\"report-view\"",
-                "<th style=\"width: 220px\">Problem</th>", "id=\"problemFilter\"", "How these tests were grouped", "View 8 tests")
+                "<th class=\"result-details-heading\" scope=\"col\">Reason / Problem</th>", "id=\"problemFilter\"", "How these tests were grouped", "View 8 tests")
                 .contains("id=\"cats-test-data\" type=\"application/json\"", "id=\"fuzzerFilter\"")
                 .doesNotContain("<tr data-id=");
         Assertions.assertThat(html.indexOf("id=\"tests-view\"")).isLessThan(html.indexOf("id=\"problems-view\""));

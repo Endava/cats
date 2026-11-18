@@ -121,14 +121,15 @@ function testRowHtml(row) {
     const [id, fuzzer, method, path, scenario, result, reason, switched, problemId] = row;
     const key = id.replace(/ /g, '');
     const problem = testsTable.problems[problemId];
-    const problemLink = problem ? '<a href="#' + escapeHtml(problem[1]) + '" class="problem-jump">' + escapeHtml(problem[0]) + '</a>' : '';
+    const problemLink = problem ? '<a href="#' + escapeHtml(problem[1]) + '" class="problem-jump result-problem" title="' + escapeHtml(problem[0]) + '">' + escapeHtml(problem[0]) + '</a>' : '';
     const pathHtml = escapeHtml(path).replace(/&#x2F;/g, '/<wbr>').replace(/(\{[^}]+})/g, '<span class="param-tok">$1</span>');
     return '<tr data-id="' + escapeHtml(key) + '" data-problem="' + escapeHtml(problemId) + '" data-operation="' + escapeHtml(method.toUpperCase() + ' ' + path) + '">'
         + '<td><a href="' + encodeURIComponent(key) + '.html" target="_blank" rel="noopener">' + escapeHtml(id) + '</a></td>'
         + '<td class="fuzzer-cell">' + escapeHtml(fuzzer) + '</td><td><span class="active rounded rounded-' + escapeHtml(method) + '">' + escapeHtml(method) + '</span>'
         + '<span class="active rounded path">' + pathHtml + '</span><span class="scenario">' + escapeHtml(scenario) + '</span></td>'
         + '<td><label class="test-result result-' + escapeHtml(result) + '">' + escapeHtml(result) + '</label></td>'
-        + '<td>' + (switched ? '<span class="result-warn"> ⚠ </span>' : '') + escapeHtml(reason) + '</td><td class="problem-cell">' + problemLink + '</td></tr>';
+        + '<td class="result-details-cell"><div class="result-reason" title="' + escapeHtml(reason) + '">'
+        + (switched ? '<span class="result-warn"> ⚠ </span>' : '') + escapeHtml(reason) + '</div>' + problemLink + '</td></tr>';
 }
 
 function handleFilter(filter) {

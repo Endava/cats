@@ -49,12 +49,12 @@ function rows(count = 500) {
 }
 
 test('renders a useful first batch and then every test', () => {
-    const h = harness(rows());
+    const h = harness(rows(5500));
     h.run('populateTable()');
     assert.equal(h.rendered, 100);
     assert.equal(h.status.dataset.complete, 'false');
     h.flush();
-    assert.equal(h.rendered, 500);
+    assert.equal(h.rendered, 5500);
     assert.equal(h.status.dataset.complete, 'true');
     assert.equal(h.fuzzer.options.length, 2);
 });
@@ -118,11 +118,38 @@ test('renders untrusted report text as text and preserves path highlighting', ()
     const data = rows(1);
     data[0][3] = '/items/{id}';
     data[0][4] = '</td><script>alert("test")</script>';
+    data[0][6] = 'Reason " onmouseover="alert(1)';
     const h = harness(data);
     h.run('populateTable()');
     assert.doesNotMatch(h.html, /<script>/);
     assert.match(h.html, /&lt;script&gt;/);
     assert.match(h.html, /<span class="param-tok">\{id}<\/span>/);
+    assert.match(h.html, /title="Reason &quot; onmouseover&#x3D;&quot;alert\(1\)"/);
+    assert.doesNotMatch(h.html, /" onmouseover="/);
+});
+
+test('stacks the reason and linked problem inside one details cell', () => {
+    const data = rows(1);
+    data[0][7] = true;
+    const h = harness(data);
+    h.run('populateTable()');
+
+    assert.equal([...h.html.matchAll(/<td\b/g)].length, 5);
+    assert.match(h.html, /<td class="result-details-cell"><div class="result-reason" title="Reason"><span class="result-warn"> ⚠ <\/span>Reason<\/div><a href="#problem-p" class="problem-jump result-problem" title="1\. Problem">1\. Problem<\/a><\/td>/);
+    assert.doesNotMatch(h.html, /class="problem-cell"/);
+});
+
+test('success rows have one reason line without an empty problem line', () => {
+    const data = rows(1);
+    data[0][5] = 'success';
+    data[0][6] = 'All Good!';
+    data[0][8] = '';
+    const h = harness(data);
+    h.run('populateTable()');
+
+    assert.equal([...h.html.matchAll(/<td\b/g)].length, 5);
+    assert.match(h.html, /<td class="result-details-cell"><div class="result-reason" title="All Good!">All Good!<\/div><\/td>/);
+    assert.doesNotMatch(h.html, /result-problem|problem-jump/);
 });
 
 test('resolves the same test banner from shared metadata and per-test fields', () => {

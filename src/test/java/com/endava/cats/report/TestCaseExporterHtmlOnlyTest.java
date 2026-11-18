@@ -69,6 +69,30 @@ class TestCaseExporterHtmlOnlyTest {
     }
 
     @Test
+    void shouldStackReasonAndProblemInOneCellWithoutAnEmptyProblemLineForSuccess() throws Exception {
+        TestCaseExporter exporter = new TestCaseExporterHtmlOnly(new ReportingArguments(),
+                new CatsGlobalContext(), new ProcessingArguments(), new StopArguments());
+        exporter.appVersion = "test";
+        exporter.initPath(reportDirectory.toString());
+        List<CatsTestCase> run = ProblemReportFixtures.riskApiRun();
+        run.get(1).setResultIgnoreDetails("Configured downgrade");
+        ProblemReportFixtures.writeSummary(exporter, ProblemReportFixtures.summaries(run), new ExecutionStatisticsListener().snapshot(false, "fail on errors"));
+
+        String html = Files.readString(reportDirectory.resolve(TestCaseExporter.REPORT_HTML));
+        String table = html.substring(html.indexOf("<table id=\"summaryTable\">"), html.indexOf("</table>", html.indexOf("<table id=\"summaryTable\">")));
+        var rows = Pattern.compile("<tr data-id=\"([^\"]+)\"[^>]*>(.*?)</tr>").matcher(table).results().toList();
+
+        Assertions.assertThat(Pattern.compile("<th\\b").matcher(table).results()).hasSize(5);
+        Assertions.assertThat(rows).hasSize(run.size()).allSatisfy(row ->
+                Assertions.assertThat(Pattern.compile("<td\\b").matcher(row.group(2)).results()).hasSize(5));
+        Assertions.assertThat(rows.getFirst().group(2)).contains("<div class=\"result-reason\" title=\"All Good!\">All Good!</div></td>")
+                .doesNotContain("result-problem", "problem-jump");
+        Assertions.assertThat(rows.get(1).group(2)).contains("class=\"result-warn\"", "class=\"problem-jump result-problem\"", "onclick=\"event.stopPropagation()\"")
+                .containsPattern("<td class=\"result-details-cell\">.*</div><a href=\"#problem-");
+        Assertions.assertThat(table).contains("Reason / Problem").doesNotContain("Result Reason", "class=\"problem-cell\"");
+    }
+
+    @Test
     void shouldRenderProblemsStaticallyWithoutJavascriptPlaceholdersOrDanglingLinks() throws Exception {
         ReportingArguments reportingArguments = Mockito.mock(ReportingArguments.class);
         Mockito.when(reportingArguments.getOutputReportFolder()).thenReturn(reportDirectory.toString());
