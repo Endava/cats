@@ -30,12 +30,18 @@ class ProfileLoaderTest {
     @ParameterizedTest
     @ValueSource(strings = {"security", "ci", "crash"})
     void shouldIncludeBase64DecoderBoundaryChecks(String profile) {
-        Assertions.assertThat(profileLoader.getProfile(profile).orElseThrow().fuzzers()).containsOnlyOnce("Base64DecoderBoundaryFields", "EncodedAuthenticationHeaders", "JsonNestingDepth", "NumericParserBoundaryFields");
+        Assertions.assertThat(profileLoader.getProfile(profile).orElseThrow().fuzzers()).containsOnlyOnce(
+                "Base64DecoderBoundaryFields", "EncodedAuthenticationHeaders", "JsonNestingDepth", "NumericParserBoundaryFields",
+                "RegexEngineAndPatternDifferentialFields", "UnicodeNormalizationDifferentialFields",
+                "ContentTypeParameterDifferentialHeaders", "CombinatorialBoundaryAndHeaderHavoc");
     }
 
     @Test
     void shouldAppendDecoderAndParserChecksAfterExistingCrashFuzzers() {
-        Assertions.assertThat(profileLoader.getProfile("crash").orElseThrow().fuzzers()).endsWith("Base64DecoderBoundaryFields", "EncodedAuthenticationHeaders", "JsonNestingDepth", "NumericParserBoundaryFields");
+        Assertions.assertThat(profileLoader.getProfile("crash").orElseThrow().fuzzers()).endsWith(
+                "Base64DecoderBoundaryFields", "EncodedAuthenticationHeaders", "JsonNestingDepth", "NumericParserBoundaryFields",
+                "RegexEngineAndPatternDifferentialFields", "UnicodeNormalizationDifferentialFields",
+                "ContentTypeParameterDifferentialHeaders", "CombinatorialBoundaryAndHeaderHavoc");
     }
 
     @Nested

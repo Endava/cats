@@ -84,10 +84,10 @@ successful setup steps in `cats replay --stateful`. `--srw` (`--skipReportingFor
 | Profile | When to Use | Command |
 | :--- | :--- | :--- |
 | **`quick`** | Fast smoke + core boundary/required-field checks (24 fuzzers) | `cats -c <spec> -s <url> --profile quick` |
-| **`ci`** | Balanced functional, boundary, type-coercion & security suite (83 fuzzers) | `cats -c <spec> -s <url> --profile ci` |
-| **`security`** | OWASP API Top 10 and decoder robustness (SQLi, NoSQLi, XSS, Command/LDAP/XXE/SSTI injection, SSRF, IDOR, Mass Assignment, Auth Bypass, Security Headers) (62 fuzzers) | `cats -c <spec> -s <url> --profile security` |
+| **`ci`** | Balanced functional, boundary, type-coercion & security suite (87 fuzzers) | `cats -c <spec> -s <url> --profile ci` |
+| **`security`** | OWASP API Top 10 and decoder robustness (SQLi, NoSQLi, XSS, Command/LDAP/XXE/SSTI injection, SSRF, IDOR, Mass Assignment, Auth Bypass, Security Headers) (66 fuzzers) | `cats -c <spec> -s <url> --profile security` |
 | **`coverage`** | Fast positive + field-removal fuzzers to maximize `2XX` operation & code coverage (10 fuzzers) | `cats -c <spec> -s <url> --profile coverage` |
-| **`crash`** | High-yield boundary, type-coercion, control-char & injection fuzzers targeting `5XX` server faults (68 fuzzers) | `cats -c <spec> -s <url> --profile crash` |
+| **`crash`** | High-yield boundary, type-coercion, control-char & injection fuzzers targeting `5XX` server faults (72 fuzzers) | `cats -c <spec> -s <url> --profile crash` |
 
 Other profiles: `compliance`, `type-coercion`, `health-check`, `full` (default). Inspect any profile with `cats explain -t PROFILE <name>`.
 
@@ -99,11 +99,11 @@ cats -c <spec> -s <url> -p "/orders,/orders/{orderId}" -X POST,PUT
 # Run specific fuzzers (discover names with `cats list -f`)
 cats -c <spec> -s <url> -f "HappyPath,RemoveFields,MassAssignment,SqlInjectionInStringFields"
 
-# Base64 decoder boundaries: 12 values per eligible field, at most 257 characters each
+# Base64 decoder boundaries: 18 values per eligible field (around 64, 128, and 256 characters), at most 257 characters each
 cats -c <spec> -s <url> -f Base64DecoderBoundaryFields
 
-# Bounded parser robustness: encoded auth headers, JSON nesting and exact numeric tokens
-cats -c <spec> -s <url> -f "EncodedAuthenticationHeaders,JsonNestingDepth,NumericParserBoundaryFields"
+# Bounded parser & cross-layer robustness: encoded auth headers, JSON nesting, numeric tokens, regex/Unicode differentials, Content-Type parameters, and multi-layer havoc
+cats -c <spec> -s <url> -f "EncodedAuthenticationHeaders,JsonNestingDepth,NumericParserBoundaryFields,RegexEngineAndPatternDifferentialFields,UnicodeNormalizationDifferentialFields,ContentTypeParameterDifferentialHeaders,CombinatorialBoundaryAndHeaderHavoc"
 
 # Combinatorial optional-field removal (ONEBYONE + optimal strength-2 Kleitman-Spencer covering array; add --interactionStrength 3 for 3-way IPOG)
 cats -c <spec> -s <url> -f RemoveFields --fieldsFuzzingStrategy PAIRWISE

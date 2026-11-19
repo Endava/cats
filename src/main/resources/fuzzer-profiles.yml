@@ -72,6 +72,10 @@ profiles:
       - EncodedAuthenticationHeaders
       - JsonNestingDepth
       - NumericParserBoundaryFields
+      - RegexEngineAndPatternDifferentialFields
+      - UnicodeNormalizationDifferentialFields
+      - ContentTypeParameterDifferentialHeaders
+      - CombinatorialBoundaryAndHeaderHavoc
       - VeryLargeStringsInFields
       - VeryLargeUnicodeStringsInFields
       - VeryLargeIntegersInNumericFields
@@ -309,6 +313,10 @@ profiles:
       - EncodedAuthenticationHeaders
       - JsonNestingDepth
       - NumericParserBoundaryFields
+      - RegexEngineAndPatternDifferentialFields
+      - UnicodeNormalizationDifferentialFields
+      - ContentTypeParameterDifferentialHeaders
+      - CombinatorialBoundaryAndHeaderHavoc
       - InvalidValuesInEnumsFields
       - EnumCaseVariantFields
       - ConstAndNotSchemaFields
@@ -459,6 +467,10 @@ profiles:
       - EncodedAuthenticationHeaders
       - JsonNestingDepth
       - NumericParserBoundaryFields
+      - RegexEngineAndPatternDifferentialFields
+      - UnicodeNormalizationDifferentialFields
+      - ContentTypeParameterDifferentialHeaders
+      - CombinatorialBoundaryAndHeaderHavoc
 
   # ============================================
   # FULL PROFILE (Default)
