@@ -7,6 +7,7 @@ import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.ProcessingError;
 import com.webfuzzing.commons.VersionNumbers;
+import com.webfuzzing.commons.faults.DefinedFaultCategory;
 import com.webfuzzing.commons.report.Coverage;
 import com.webfuzzing.commons.report.CoverageCriterion;
 import com.webfuzzing.commons.report.CoveredEndpoint;
@@ -32,18 +33,24 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Builds a schema-compliant Web Fuzzing Commons ({@link Report}) from CATS execution results.
  */
 public final class WfcReportBuilder {
     private static final String TOOL_NAME = "CATS";
+    private static final Set<Integer> UNDECLARED_METHOD_ALLOWED_FAULT_CODES = Set.of(
+            DefinedFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW.getCode(),
+            DefinedFaultCategory.SCHEMA_INVALID_ALLOW.getCode(),
+            DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT.getCode());
 
     private WfcReportBuilder() {
         // Utility class
@@ -65,62 +72,38 @@ public final class WfcReportBuilder {
                 .sorted()
                 .toList();
 
-        Set<String> endpointIds = collectDocumentedEndpointIds(openAPI);
-        Map<String, OperationAuthContract> authContracts = OperationAuthContractIndex.from(openAPI);
-        Set<String> testFilePaths = new LinkedHashSet<>();
-        List<TestCase> wfcTestCases = new ArrayList<>(sortedSummaries.size());
-        List<CoveredEndpoint> coveredEndpoints = new ArrayList<>(sortedSummaries.size());
-        List<FoundFault> foundFaults = new ArrayList<>();
-        Set<String> uniqueFaultKeys = new LinkedHashSet<>();
-        Set<String> exercisedEndpoints = new LinkedHashSet<>();
-        Set<String> covered2xxEndpoints = new LinkedHashSet<>();
+        Set<String> documentedEndpoints = collectDocumentedEndpointIds(openAPI);
+        BuildAccumulator acc = new BuildAccumulator(
+                documentedEndpoints,
+                !documentedEndpoints.isEmpty(),
+                new LinkedHashSet<>(documentedEndpoints),
+                collectPrimaryOperationByPath(openAPI),
+                OperationAuthContractIndex.from(openAPI),
+                new LinkedHashSet<>(),
+                new ArrayList<>(sortedSummaries.size()),
+                new ArrayList<>(sortedSummaries.size()),
+                new ArrayList<>(),
+                new LinkedHashSet<>(),
+                new LinkedHashSet<>(),
+                new LinkedHashSet<>());
 
         for (CatsTestCaseSummary summary : sortedSummaries) {
-            String testKey = summary.getKey();
-            String relativeJsonFile = testKey + ".json";
-            TestFileMetadata fileMeta = inspectTestFile(reportingPath, relativeJsonFile);
-            testFilePaths.add(relativeJsonFile);
-
-            String operationId = toOperationId(summary.getHttpMethod(), summary.getPath());
-            endpointIds.add(operationId);
-            exercisedEndpoints.add(operationId);
-
-            int statusCode = summary.getHttpResponseCode();
-            if (ResponseCodeFamily.is2xxCode(statusCode)) {
-                covered2xxEndpoints.add(operationId);
-            }
-
-            wfcTestCases.add(buildWfcTestCase(summary, testKey, relativeJsonFile, fileMeta.lineCount()));
-            coveredEndpoints.add(buildCoveredEndpoint(operationId, testKey, statusCode));
-
-            OperationAuthContract authContract = authContracts.getOrDefault(operationId, OperationAuthContract.UNKNOWN);
-            Set<FaultCategoryId> classifiedFaults = WfcFaultClassifier.classify(summary, fileMeta.parsedTestCase(), authContract);
-            if (!classifiedFaults.isEmpty()) {
-                FoundFault foundFault = new FoundFault();
-                foundFault.setOperationId(operationId);
-                foundFault.setTestCaseId(testKey);
-                foundFault.setFaultCategories(classifiedFaults);
-                foundFaults.add(foundFault);
-
-                for (FaultCategoryId fc : classifiedFaults) {
-                    uniqueFaultKeys.add(operationId + "|" + fc.getCode() + "|" + Optional.ofNullable(fc.getContext()).orElse(""));
-                }
-            }
+            processSummary(summary, reportingPath, acc);
         }
 
         RESTReport restReport = new RESTReport();
-        restReport.setEndpointIds(endpointIds);
+        restReport.setEndpointIds(acc.endpointIds());
         restReport.setOutputHttpCalls(sortedSummaries.size());
         long attempted = executionSummary != null ? executionSummary.requestsAttempted() : sortedSummaries.size();
         restReport.setEvaluatedHttpCalls((int) Math.max(sortedSummaries.size(), attempted));
-        restReport.setCoveredHttpStatus(coveredEndpoints);
+        restReport.setCoveredHttpStatus(acc.coveredEndpoints());
 
         ProblemDetails problemDetails = new ProblemDetails();
         problemDetails.setRest(restReport);
 
         Faults faults = new Faults();
-        faults.setTotalNumber(uniqueFaultKeys.size());
-        faults.setFoundFaults(foundFaults);
+        faults.setTotalNumber(acc.uniqueFaultKeys().size());
+        faults.setFoundFaults(acc.foundFaults());
 
         Report report = new Report();
         report.setSchemaVersion(VersionNumbers.REPORT);
@@ -130,12 +113,65 @@ public final class WfcReportBuilder {
         report.setFaults(faults);
         report.setProblemDetails(problemDetails);
         report.setTotalTests(sortedSummaries.size());
-        report.setTestFilePaths(testFilePaths);
-        report.setTestCases(wfcTestCases);
+        report.setTestFilePaths(acc.testFilePaths());
+        report.setTestCases(acc.wfcTestCases());
         report.setExecutionTimeInSeconds((int) Math.max(0, executionTimeSeconds));
-        report.setExtra(buildExtraCoverage(endpointIds.size(), exercisedEndpoints.size(), covered2xxEndpoints.size()));
+        report.setExtra(buildExtraCoverage(acc.endpointIds().size(), acc.exercisedEndpoints().size(), acc.covered2xxEndpoints().size()));
         report.setWarnings(buildWarnings(processingErrors));
         return report;
+    }
+
+    private static void processSummary(CatsTestCaseSummary summary, Path reportingPath, BuildAccumulator acc) {
+        String testKey = summary.getKey();
+        String relativeJsonFile = testKey + ".json";
+        TestFileMetadata fileMeta = inspectTestFile(reportingPath, relativeJsonFile);
+        acc.testFilePaths().add(relativeJsonFile);
+        acc.wfcTestCases().add(buildWfcTestCase(summary, testKey, relativeJsonFile, fileMeta.lineCount()));
+
+        String operationId = toOperationId(summary.getHttpMethod(), summary.getPath());
+        boolean isDocumented = !acc.hasDocumentedContract() || acc.documentedEndpoints().contains(operationId);
+        if (!acc.hasDocumentedContract()) {
+            acc.endpointIds().add(operationId);
+        }
+        if (isDocumented) {
+            recordDocumentedCoverage(summary, operationId, testKey, acc);
+        }
+
+        String faultOperationId = resolveFaultOperationId(summary, operationId, isDocumented, acc.primaryOperationByPath());
+        if (faultOperationId != null) {
+            recordClassifiedFaults(summary, fileMeta.parsedTestCase(), operationId, faultOperationId, testKey, isDocumented, acc);
+        }
+    }
+
+    private static void recordDocumentedCoverage(CatsTestCaseSummary summary, String operationId,
+                                                 String testKey, BuildAccumulator acc) {
+        acc.exercisedEndpoints().add(operationId);
+        int statusCode = summary.getHttpResponseCode();
+        if (ResponseCodeFamily.is2xxCode(statusCode)) {
+            acc.covered2xxEndpoints().add(operationId);
+        }
+        acc.coveredEndpoints().add(buildCoveredEndpoint(operationId, testKey, statusCode));
+    }
+
+    private static void recordClassifiedFaults(CatsTestCaseSummary summary, CatsTestCase parsedTestCase,
+                                               String operationId, String faultOperationId, String testKey,
+                                               boolean isDocumented, BuildAccumulator acc) {
+        OperationAuthContract authContract = isDocumented
+                ? acc.authContracts().getOrDefault(operationId, OperationAuthContract.UNKNOWN)
+                : OperationAuthContract.UNKNOWN;
+        Set<FaultCategoryId> classifiedFaults = classifyForOperation(summary, parsedTestCase, authContract, isDocumented);
+        if (classifiedFaults.isEmpty()) {
+            return;
+        }
+        FoundFault foundFault = new FoundFault();
+        foundFault.setOperationId(faultOperationId);
+        foundFault.setTestCaseId(testKey);
+        foundFault.setFaultCategories(classifiedFaults);
+        acc.foundFaults().add(foundFault);
+
+        for (FaultCategoryId fc : classifiedFaults) {
+            acc.uniqueFaultKeys().add(faultOperationId + "|" + fc.getCode() + "|" + Optional.ofNullable(fc.getContext()).orElse(""));
+        }
     }
 
     static Set<String> collectDocumentedEndpointIds(OpenAPI openAPI) {
@@ -153,6 +189,43 @@ public final class WfcReportBuilder {
                     endpointIds.add(toOperationId(verb.name(), path)));
         }
         return endpointIds;
+    }
+
+    private static Map<String, String> collectPrimaryOperationByPath(OpenAPI openAPI) {
+        if (openAPI == null || openAPI.getPaths() == null) {
+            return Map.of();
+        }
+        Map<String, String> byPath = new LinkedHashMap<>();
+        for (Map.Entry<String, PathItem> entry : openAPI.getPaths().entrySet()) {
+            String path = StringUtils.defaultIfBlank(entry.getKey(), "/").trim();
+            PathItem item = entry.getValue();
+            if (item == null || item.readOperationsMap() == null || item.readOperationsMap().isEmpty()) {
+                continue;
+            }
+            PathItem.HttpMethod firstVerb = item.readOperationsMap().keySet().iterator().next();
+            byPath.put(path, toOperationId(firstVerb.name(), path));
+        }
+        return Map.copyOf(byPath);
+    }
+
+    private static String resolveFaultOperationId(CatsTestCaseSummary summary, String operationId,
+                                                  boolean isDocumentedOperation, Map<String, String> primaryOperationByPath) {
+        if (isDocumentedOperation) {
+            return operationId;
+        }
+        String path = StringUtils.defaultIfBlank(summary.getPath(), "/").trim();
+        return primaryOperationByPath.get(path);
+    }
+
+    private static Set<FaultCategoryId> classifyForOperation(CatsTestCaseSummary summary, CatsTestCase parsedTestCase,
+                                                             OperationAuthContract authContract, boolean isDocumentedOperation) {
+        Set<FaultCategoryId> rawFaults = WfcFaultClassifier.classify(summary, parsedTestCase, authContract);
+        if (isDocumentedOperation) {
+            return rawFaults;
+        }
+        return rawFaults.stream()
+                .filter(fc -> UNDECLARED_METHOD_ALLOWED_FAULT_CODES.contains(fc.getCode()))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     static String toOperationId(String httpMethod, String contractPath) {
@@ -239,5 +312,20 @@ public final class WfcReportBuilder {
     }
 
     private record TestFileMetadata(int lineCount, CatsTestCase parsedTestCase) {
+    }
+
+    private record BuildAccumulator(
+            Set<String> documentedEndpoints,
+            boolean hasDocumentedContract,
+            Set<String> endpointIds,
+            Map<String, String> primaryOperationByPath,
+            Map<String, OperationAuthContract> authContracts,
+            Set<String> testFilePaths,
+            List<TestCase> wfcTestCases,
+            List<CoveredEndpoint> coveredEndpoints,
+            List<FoundFault> foundFaults,
+            Set<String> uniqueFaultKeys,
+            Set<String> exercisedEndpoints,
+            Set<String> covered2xxEndpoints) {
     }
 }

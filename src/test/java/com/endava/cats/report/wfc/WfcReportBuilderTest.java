@@ -141,6 +141,77 @@ class WfcReportBuilderTest {
                 .containsEntry("POST:/with-401", new OperationAuthContract(false, false, true));
     }
 
+    @Test
+    void shouldKeepEndpointIdsAnd500FaultsWithinDeclaredOperationsWhileAttributingMethodProbesToDocumentedOperation() {
+        String yaml = """
+                openapi: 3.0.3
+                info:
+                  title: Method Probe API
+                  version: 1.0.0
+                paths:
+                  /items:
+                    get:
+                      responses:
+                        '200':
+                          description: ok
+                    post:
+                      responses:
+                        '201':
+                          description: created
+                """;
+        OpenAPI openAPI = parseOpenApi(yaml);
+
+        CatsTestCase documented500 = buildTestCase("Test 1", "GET", "/items", 500, "error",
+                Reason.UNEXPECTED_RESPONSE_CODE.value(), "HappyPath");
+        CatsTestCase undeclaredMethod500 = buildTestCase("Test 2", "PROPFIND", "/items", 500, "error",
+                Reason.UNEXPECTED_RESPONSE_CODE.value(), "NonRestHttpMethods");
+        CatsTestCase undeclaredMethod200 = buildTestCase("Test 3", "DELETE", "/items", 200, "error",
+                Reason.UNEXPECTED_RESPONSE_CODE.value(), "HttpMethods");
+        CatsTestCase undeclaredMethod405 = buildTestCase("Test 4", "PUT", "/items", 405, "warn",
+                Reason.MISSING_ALLOW_HEADER.value(), "HttpMethods");
+        CatsTestCase dummyPath500 = buildTestCase("Test 5", "GET", "/cats-dummy-request", 500, "error",
+                Reason.UNEXPECTED_RESPONSE_CODE.value(), "DummyRequest");
+
+        Report report = WfcReportBuilder.build(
+                List.of(
+                        CatsTestCaseSummary.fromCatsTestCase(documented500),
+                        CatsTestCaseSummary.fromCatsTestCase(undeclaredMethod500),
+                        CatsTestCaseSummary.fromCatsTestCase(undeclaredMethod200),
+                        CatsTestCaseSummary.fromCatsTestCase(undeclaredMethod405),
+                        CatsTestCaseSummary.fromCatsTestCase(dummyPath500)),
+                null, openAPI, List.of(), null, "1.0.0", 2L);
+
+        Assertions.assertThat(report.getProblemDetails().getRest().getEndpointIds())
+                .containsExactly("GET:/items", "POST:/items");
+        Assertions.assertThat(report.getProblemDetails().getRest().getCoveredHttpStatus())
+                .extracting(ce -> ce.getEndpointId())
+                .containsOnly("GET:/items");
+        Assertions.assertThat(report.getFaults().getFoundFaults())
+                .allSatisfy(ff -> Assertions.assertThat(report.getProblemDetails().getRest().getEndpointIds())
+                        .contains(ff.getOperationId()));
+        Assertions.assertThat(report.getFaults().getFoundFaults())
+                .flatMap(ff -> ff.getFaultCategories())
+                .extracting(FaultCategoryId::getCode, FaultCategoryId::getContext)
+                .containsExactlyInAnyOrder(
+                        Assertions.tuple(DefinedFaultCategory.HTTP_STATUS_500.getCode(), "{}"),
+                        Assertions.tuple(DefinedFaultCategory.SECURITY_HIDDEN_ACCESSIBLE_ENDPOINT.getCode(), "DELETE"),
+                        Assertions.tuple(DefinedFaultCategory.HTTP_STATUS_NO_405_IF_NO_ALLOW.getCode(), "HttpMethods"));
+    }
+
+    private static CatsTestCase buildTestCase(String testId, String method, String path, int statusCode,
+                                              String result, String reason, String fuzzer) {
+        CatsTestCase tc = new CatsTestCase();
+        tc.setTestId(testId);
+        tc.setResult(result);
+        tc.setResultReason(reason);
+        tc.setFuzzer(fuzzer);
+        tc.setPath(path);
+        tc.setContractPath(path);
+        tc.setRequest(CatsRequest.builder().httpMethod(method).payload("{}").build());
+        tc.setResponse(CatsResponse.builder().responseCode(statusCode).body("{}").build());
+        return tc;
+    }
+
     private static OpenAPI parseOpenApi(String yaml) {
         ParseOptions options = new ParseOptions();
         options.setResolve(true);
