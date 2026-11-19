@@ -7,9 +7,11 @@ import com.endava.cats.args.StopArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.fuzzer.special.mutators.api.CustomMutator;
 import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorConfig;
 import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorKeywords;
+import com.endava.cats.fuzzer.special.mutators.api.HeadersMutator;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
@@ -155,9 +157,10 @@ public class RandomFuzzer implements Fuzzer {
 
             Set<String> mutatedFields = new LinkedHashSet<>();
             mutatedFields.add(targetField);
-            String mutatedPayload = applyMutations(data.getPayload(), targetField, selectedRandomMutator,
-                    allCatsFields, mutatorsToRun, mutatedFields);
-            Collection<CatsHeader> mutatedHeaders = selectedRandomMutator.mutate(data.getHeaders());
+            String mutatedPayload = applyMutations(data, targetField, selectedRandomMutator,
+                    mutatorsToRun, mutatedFields);
+            Collection<CatsHeader> mutatedHeaders = applyHeaderMutations(
+                    data.getHeaders(), selectedRandomMutator, mutatorsToRun);
 
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
@@ -178,18 +181,31 @@ public class RandomFuzzer implements Fuzzer {
         }
     }
 
-    private String applyMutations(String basePayload, String targetField, Mutator primaryMutator,
-                                  Set<String> allCatsFields, List<Mutator> mutatorsToRun, Set<String> mutatedFields) {
-        String mutatedPayload = primaryMutator.mutate(basePayload, targetField);
-        if (allCatsFields.size() <= 1 || !CatsRandom.instance().nextBoolean()) {
+    private String applyMutations(FuzzingData data, String targetField, Mutator primaryMutator,
+                                  List<Mutator> mutatorsToRun, Set<String> mutatedFields) {
+        String basePayload = data.getPayload();
+        String mutatedPayload = primaryMutator.mutate(basePayload, targetField, data);
+        if (Objects.equals(basePayload, mutatedPayload) && primaryMutator instanceof HeadersMutator) {
+            mutatedPayload = applyPairedBodyMutation(basePayload, targetField, data, mutatorsToRun);
+        }
+        mutatedPayload = applyChainedSameFieldMutation(mutatedPayload, targetField, data, mutatorsToRun);
+        Set<String> allCatsFields = data.getAllFieldsByHttpMethod();
+        if (allCatsFields == null || allCatsFields.size() <= 1 || !CatsRandom.instance().nextBoolean()) {
             return mutatedPayload;
         }
+        return applyMultiFieldMutations(mutatedPayload, data, mutatorsToRun, mutatedFields);
+    }
+
+    private static String applyMultiFieldMutations(String startingPayload, FuzzingData data,
+                                                   List<Mutator> mutatorsToRun, Set<String> mutatedFields) {
+        Set<String> allCatsFields = data.getAllFieldsByHttpMethod();
+        String mutatedPayload = startingPayload;
         int extraMutations = 1 + CatsRandom.instance().nextInt(Math.min(3, allCatsFields.size() - 1));
         for (int i = 0; i < extraMutations && JsonUtils.isValidJson(mutatedPayload); i++) {
             String extraField = CatsUtil.selectRandom(allCatsFields);
             if (JsonUtils.isFieldInJson(mutatedPayload, extraField)) {
                 Mutator extraMutator = CatsUtil.selectRandom(mutatorsToRun);
-                String nextPayload = extraMutator.mutate(mutatedPayload, extraField);
+                String nextPayload = extraMutator.mutate(mutatedPayload, extraField, data);
                 if (!Objects.equals(mutatedPayload, nextPayload)) {
                     mutatedFields.add(extraField);
                 }
@@ -197,6 +213,50 @@ public class RandomFuzzer implements Fuzzer {
             }
         }
         return mutatedPayload;
+    }
+
+    private static String applyChainedSameFieldMutation(String currentPayload, String targetField,
+                                                        FuzzingData data, List<Mutator> mutatorsToRun) {
+        if (!JsonUtils.isValidJson(currentPayload) || !CatsRandom.instance().nextBoolean()) {
+            return currentPayload;
+        }
+        List<Mutator> composable = mutatorsToRun.stream()
+                .filter(Mutator::isComposable)
+                .toList();
+        if (composable.isEmpty()) {
+            return currentPayload;
+        }
+        Mutator chainMutator = composable.get(CatsRandom.instance().nextInt(composable.size()));
+        return chainMutator.mutate(currentPayload, targetField, data);
+    }
+
+    private static String applyPairedBodyMutation(String basePayload, String targetField,
+                                                  FuzzingData data, List<Mutator> mutatorsToRun) {
+        List<Mutator> bodyMutators = mutatorsToRun.stream()
+                .filter(BodyMutator.class::isInstance)
+                .toList();
+        if (bodyMutators.isEmpty() || !CatsRandom.instance().nextBoolean()) {
+            return basePayload;
+        }
+        return bodyMutators.get(CatsRandom.instance().nextInt(bodyMutators.size()))
+                .mutate(basePayload, targetField, data);
+    }
+
+    private static Collection<CatsHeader> applyHeaderMutations(Collection<CatsHeader> baseHeaders,
+                                                               Mutator primaryMutator,
+                                                               List<Mutator> mutatorsToRun) {
+        Collection<CatsHeader> safeHeaders = baseHeaders == null ? Set.of() : baseHeaders;
+        Collection<CatsHeader> mutated = primaryMutator.mutate(safeHeaders);
+        if (!(primaryMutator instanceof BodyMutator) || !CatsRandom.instance().nextBoolean()) {
+            return mutated;
+        }
+        List<Mutator> headerMutators = mutatorsToRun.stream()
+                .filter(HeadersMutator.class::isInstance)
+                .toList();
+        if (headerMutators.isEmpty()) {
+            return mutated;
+        }
+        return headerMutators.get(CatsRandom.instance().nextInt(headerMutators.size())).mutate(mutated);
     }
 
     private boolean shouldStopExecution(long startTime, boolean capPerOperation, int iterationsForOperation) {

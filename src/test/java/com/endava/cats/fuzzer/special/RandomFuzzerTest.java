@@ -6,9 +6,15 @@ import com.endava.cats.args.StopArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.fuzzer.special.mutators.api.CrossLayerMutator;
+import com.endava.cats.fuzzer.special.mutators.api.HeadersMutator;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.fuzzer.special.mutators.impl.DuplicateJsonFieldKeyMutator;
+import com.endava.cats.fuzzer.special.mutators.impl.LocaleAndCaseExpansionCrossMutator;
 import com.endava.cats.fuzzer.special.mutators.impl.RandomBoundaryNumbersMutator;
+import com.endava.cats.fuzzer.special.mutators.impl.RandomContainerWrappingAndGadgetMutator;
 import com.endava.cats.fuzzer.special.mutators.impl.RandomInjectionAndFormatCrashMutator;
+import com.endava.cats.fuzzer.special.mutators.impl.RandomProtocolAndOverrideHeadersMutator;
 import com.endava.cats.fuzzer.special.mutators.impl.RandomTypeConfusionMutator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
@@ -262,6 +268,35 @@ class RandomFuzzerTest {
         cappedFuzzer.fuzz(data);
         Files.deleteIfExists(badFile);
         Files.deleteIfExists(tempDir);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void shouldPairBodyHeaderCrossLayerAndComposableMutatorsAcrossIterations() {
+        CatsRandom.initRandom(0);
+        BodyMutator bodyMutator = new RandomBoundaryNumbersMutator();
+        HeadersMutator headersMutator = new RandomProtocolAndOverrideHeadersMutator();
+        CrossLayerMutator crossLayerMutator = new LocaleAndCaseExpansionCrossMutator();
+        BodyMutator containerMutator = new RandomContainerWrappingAndGadgetMutator();
+        BodyMutator duplicateKeyMutator = new DuplicateJsonFieldKeyMutator();
+        Instance<Mutator> combinedMutators = Mockito.mock(Instance.class);
+        Mockito.when(combinedMutators.stream()).thenAnswer(_ -> Stream.of(
+                bodyMutator, headersMutator, crossLayerMutator, containerMutator, duplicateKeyMutator));
+        Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong()))
+                .thenReturn(false, false, false, false, false, false, false, true);
+
+        RandomFuzzer pairedFuzzer = new RandomFuzzer(simpleExecutor, testCaseListener, executionStatisticsListener,
+                matchArguments, combinedMutators, stopArguments, filesArguments);
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("{\"a\":1,\"b\":\"two\"}");
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(data.getPath()).thenReturn("/items");
+        Mockito.when(data.getHeaders()).thenReturn(Set.of(CatsHeader.from("X-Orig", "1", false, null)));
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("a", "b"));
+
+        pairedFuzzer.fuzz(data);
+
+        Mockito.verify(simpleExecutor, Mockito.times(8)).execute(Mockito.any());
     }
 
     @NotNull

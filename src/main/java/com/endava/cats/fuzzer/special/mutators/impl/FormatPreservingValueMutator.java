@@ -77,6 +77,11 @@ public class FormatPreservingValueMutator implements BodyMutator {
     }
 
     @Override
+    public boolean isComposable() {
+        return true;
+    }
+
+    @Override
     public String description() {
         return "mutate existing field value while preserving its outer format structure";
     }

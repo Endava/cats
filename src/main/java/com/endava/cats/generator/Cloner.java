@@ -23,6 +23,9 @@ public class Cloner {
      * @return A new set containing cloned copies of the provided CatsHeader objects.
      */
     public static Set<CatsHeader> cloneMe(Collection<CatsHeader> items) {
+        if (items == null) {
+            return new HashSet<>();
+        }
         return items.stream().map(CatsHeader::copy).collect(Collectors.toCollection(HashSet::new));
     }
 }

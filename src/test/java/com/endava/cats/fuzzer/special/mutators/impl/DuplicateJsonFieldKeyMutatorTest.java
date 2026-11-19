@@ -29,7 +29,8 @@ class DuplicateJsonFieldKeyMutatorTest {
         String mutatedTop = mutator.mutate(topLevel, "role");
         Assertions.assertThat(mutatedTop)
                 .isNotEqualTo(topLevel)
-                .contains("\"role\":\"USER\",\"role\":");
+                .contains("\"role\":\"USER\",\"role\":")
+                .contains("\"\\u0072ole\":");
 
         String nested = "{\"user\":{\"role\":\"USER\"},\"items\":[{\"code\":\"A\"}]}";
         String mutatedNested = mutator.mutate(nested, "user#role");

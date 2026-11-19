@@ -50,6 +50,11 @@ public class RandomContainerWrappingAndGadgetMutator implements BodyMutator {
     }
 
     @Override
+    public boolean isComposable() {
+        return true;
+    }
+
+    @Override
     public String description() {
         return "wrap existing field value in nested containers or replace with polymorphic and prototype gadget objects";
     }

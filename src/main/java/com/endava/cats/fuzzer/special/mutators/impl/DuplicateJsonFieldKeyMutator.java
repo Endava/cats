@@ -92,11 +92,20 @@ public class DuplicateJsonFieldKeyMutator implements BodyMutator {
             String conflictingLiteral = CONFLICTING_JSON_LITERALS.get(
                     CatsRandom.instance().nextInt(CONFLICTING_JSON_LITERALS.size()));
             joiner.add(formatMember(key, conflictingLiteral));
+            if (!key.isEmpty()) {
+                String escapedKey = "\\u%04x%s".formatted((int) key.charAt(0), JsonUtils.escape(key.substring(1)));
+                joiner.add("\"%s\":%s".formatted(escapedKey, conflictingLiteral));
+            }
         }
     }
 
     private static String formatMember(String key, String rawJsonValue) {
         return "\"%s\":%s".formatted(JsonUtils.escape(key), rawJsonValue);
+    }
+
+    @Override
+    public boolean isComposable() {
+        return true;
     }
 
     @Override

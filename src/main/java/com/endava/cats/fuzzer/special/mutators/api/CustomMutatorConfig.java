@@ -12,6 +12,6 @@ import java.util.List;
 public record CustomMutatorConfig(String name, Type type, List<?> values) {
 
     public enum Type {
-        TRAIL, INSERT, PREFIX, REPLACE, REPLACE_BODY, IN_BODY
+        TRAIL, INSERT, PREFIX, REPLACE, REPLACE_BODY, IN_BODY, DUPLICATE_KEY, REPLACE_HEADER, TRAIL_HEADER
     }
 }
