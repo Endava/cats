@@ -23,6 +23,7 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.model.RequestTarget;
+import com.endava.cats.model.ResourceCorrelation;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -265,9 +266,9 @@ public class ServiceCaller {
         String baselinePayload = this.applySuccessfulRequestBaseline(data);
         String processedPayload = this.replacePayloadWithRefData(data, baselinePayload);
         RuntimeResourcePool.ResolvedRequest resolvedRequest = this.enrichWithRuntimeResources(data, processedPayload);
-        processedPayload = resolvedRequest.payload();
-        resolvedRequest.correlations().forEach(correlation -> testCaseListener.addRuntimeCorrelation(logger, correlation));
-        processedPayload = this.applyConfiguredFieldCorrelations(data, processedPayload);
+        String payloadBeforeCorrelations = resolvedRequest.payload();
+        processedPayload = this.applyConfiguredFieldCorrelations(data, payloadBeforeCorrelations);
+        this.recordEffectiveRuntimeCorrelations(resolvedRequest.correlations(), payloadBeforeCorrelations, processedPayload);
         EncodedRequestBody encodedBody = this.encodeRequestBody(processedPayload, data);
         processedPayload = encodedBody.payload();
         logger.debug("Payload replaced with ref data: {}", processedPayload);
@@ -447,6 +448,34 @@ public class ServiceCaller {
             cachedCorrelationRules = FunctionalFlowParser.parseCorrelationFile(file);
         }
         return cachedCorrelationRules;
+    }
+
+    private void recordEffectiveRuntimeCorrelations(List<ResourceCorrelation> correlations,
+                                                    String payloadBeforeCorrelations,
+                                                    String payloadAfterCorrelations) {
+        if (correlations.isEmpty()) {
+            return;
+        }
+        if (Objects.equals(payloadBeforeCorrelations, payloadAfterCorrelations)) {
+            correlations.forEach(correlation -> testCaseListener.addRuntimeCorrelation(logger, correlation));
+            return;
+        }
+        for (ResourceCorrelation correlation : correlations) {
+            if (isBodyCorrelationRetained(correlation, payloadAfterCorrelations)) {
+                testCaseListener.addRuntimeCorrelation(logger, correlation);
+            }
+        }
+    }
+
+    private static boolean isBodyCorrelationRetained(ResourceCorrelation correlation,
+                                                     String payloadAfterCorrelations) {
+        if (correlation.getTarget() == null || correlation.getTarget().location() != RequestTarget.Location.BODY) {
+            return true;
+        }
+        String fieldPath = FieldCorrelationEvaluator.normalizeFieldPath(correlation.getTarget().name());
+        Object currentValue = JsonUtils.getVariableFromJson(payloadAfterCorrelations, fieldPath);
+        return !JsonUtils.isNotSet(String.valueOf(currentValue))
+                && Objects.equals(String.valueOf(currentValue), correlation.getValue());
     }
 
     private String applySuccessfulRequestBaseline(ServiceData data) {

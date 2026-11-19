@@ -1663,6 +1663,30 @@ class ServiceCallerTest {
                             .mutationTarget(RequestTarget.body("fuzzed")).build(),
                     "{\"mode\":\"EXPRESS\",\"fuzzed\":\"1\"}");
             Assertions.assertThat(correlated).contains("\"priority\":\"HIGH\"");
+
+            Boolean retainedWhenOmitted = ReflectionTestUtils.invokeMethod(ServiceCaller.class, "isBodyCorrelationRetained",
+                    com.endava.cats.model.ResourceCorrelation.builder()
+                            .target(RequestTarget.body("suppliedToken"))
+                            .value("TKN-POOL")
+                            .build(),
+                    "{\"mode\":\"EXPRESS\"}");
+            Assertions.assertThat(retainedWhenOmitted).isFalse();
+
+            Boolean retainedWhenOverwritten = ReflectionTestUtils.invokeMethod(ServiceCaller.class, "isBodyCorrelationRetained",
+                    com.endava.cats.model.ResourceCorrelation.builder()
+                            .target(RequestTarget.body("suppliedToken"))
+                            .value("TKN-POOL")
+                            .build(),
+                    "{\"suppliedToken\":\"TKN-RULE\"}");
+            Assertions.assertThat(retainedWhenOverwritten).isFalse();
+
+            Boolean retainedWhenUnchanged = ReflectionTestUtils.invokeMethod(ServiceCaller.class, "isBodyCorrelationRetained",
+                    com.endava.cats.model.ResourceCorrelation.builder()
+                            .target(RequestTarget.body("suppliedToken"))
+                            .value("TKN-POOL")
+                            .build(),
+                    "{\"suppliedToken\":\"TKN-POOL\"}");
+            Assertions.assertThat(retainedWhenUnchanged).isTrue();
         } finally {
             filesArguments.setCorrelationsFile(null);
         }

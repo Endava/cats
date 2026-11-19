@@ -32,6 +32,7 @@ import java.util.stream.Stream;
  */
 public final class FieldCorrelationEvaluator {
     private static final List<String> OPERATORS = List.of(">=", "<=", "!=", "==", "=", ">", "<", " contains ", " matches ");
+    private static final int MAX_SANITIZED_OPERAND_LENGTH = 4096;
 
     private FieldCorrelationEvaluator() {
         // utility class
@@ -54,18 +55,24 @@ public final class FieldCorrelationEvaluator {
                                                   List<FieldCorrelationRule> rules,
                                                   Map<String, String> variables,
                                                   Set<String> protectedFields) {
-        if (StringUtils.isBlank(jsonPayload) || !JsonUtils.isValidJson(jsonPayload) || rules == null || rules.isEmpty()) {
+        if (StringUtils.isBlank(jsonPayload) || rules == null || rules.isEmpty()) {
             return jsonPayload;
         }
-        JsonElement parsedRoot = JsonUtils.parseAsJsonElement(jsonPayload);
-        if (parsedRoot != null && parsedRoot.isJsonArray()) {
-            return applyRequestCorrelationsToArray(contractPath, parsedRoot.getAsJsonArray(), rules, variables, protectedFields);
+        List<FieldCorrelationRule> matchingRules = rules.stream()
+                .filter(rule -> matchesPathPattern(contractPath, rule.paths()))
+                .toList();
+        if (matchingRules.isEmpty() || !JsonUtils.isValidJson(jsonPayload)) {
+            return jsonPayload;
+        }
+        if (jsonPayload.stripLeading().startsWith("[")) {
+            JsonElement parsedRoot = JsonUtils.parseAsJsonElement(jsonPayload);
+            if (parsedRoot != null && parsedRoot.isJsonArray()) {
+                return applyRequestCorrelationsToArray(contractPath, parsedRoot.getAsJsonArray(), matchingRules, variables, protectedFields);
+            }
         }
         String updated = jsonPayload;
-        for (FieldCorrelationRule rule : rules) {
-            if (matchesPathPattern(contractPath, rule.paths())) {
-                updated = applyRuleToPayload(updated, rule, variables, protectedFields);
-            }
+        for (FieldCorrelationRule rule : matchingRules) {
+            updated = applyRuleToPayload(updated, rule, variables, protectedFields);
         }
         return updated;
     }
@@ -77,15 +84,22 @@ public final class FieldCorrelationEvaluator {
      */
     public static Set<String> collectRequiredFieldsFromCorrelations(String contractPath, String jsonPayload,
                                                                     List<FieldCorrelationRule> rules) {
-        if (StringUtils.isBlank(jsonPayload) || !JsonUtils.isValidJson(jsonPayload) || rules == null || rules.isEmpty()) {
+        if (StringUtils.isBlank(jsonPayload) || rules == null || rules.isEmpty()) {
             return Set.of();
         }
-        JsonElement parsedRoot = JsonUtils.parseAsJsonElement(jsonPayload);
-        if (parsedRoot != null && parsedRoot.isJsonArray()) {
-            return collectRequiredFieldsFromArrayItems(contractPath, parsedRoot.getAsJsonArray(), rules);
-        }
-        return rules.stream()
+        List<FieldCorrelationRule> matchingRules = rules.stream()
                 .filter(rule -> matchesPathPattern(contractPath, rule.paths()))
+                .toList();
+        if (matchingRules.isEmpty() || !JsonUtils.isValidJson(jsonPayload)) {
+            return Set.of();
+        }
+        if (jsonPayload.stripLeading().startsWith("[")) {
+            JsonElement parsedRoot = JsonUtils.parseAsJsonElement(jsonPayload);
+            if (parsedRoot != null && parsedRoot.isJsonArray()) {
+                return collectRequiredFieldsFromArrayItems(contractPath, parsedRoot.getAsJsonArray(), matchingRules);
+            }
+        }
+        return matchingRules.stream()
                 .flatMap(rule -> expandWildcardArrayRule(jsonPayload, rule).stream())
                 .filter(rule -> isTriggeredSetRule(rule, jsonPayload))
                 .flatMap(FieldCorrelationEvaluator::fieldsRequiredBy)
@@ -422,8 +436,8 @@ public final class FieldCorrelationEvaluator {
         if (left == null || right == null || JsonUtils.isNotSet(String.valueOf(left)) || JsonUtils.isNotSet(String.valueOf(right))) {
             return "!=".equals(op) && !Objects.equals(String.valueOf(left), String.valueOf(right));
         }
-        String leftStr = String.valueOf(left).trim();
-        String rightStr = String.valueOf(right).trim();
+        String leftStr = sanitizeOperand(left);
+        String rightStr = "matches".equalsIgnoreCase(op) ? String.valueOf(right).trim() : sanitizeOperand(right);
         if ("contains".equalsIgnoreCase(op)) {
             return leftStr.contains(rightStr);
         }
@@ -440,6 +454,14 @@ public final class FieldCorrelationEvaluator {
             case "<=" -> cmp <= 0;
             default -> false;
         };
+    }
+
+    private static String sanitizeOperand(Object operand) {
+        String raw = String.valueOf(operand);
+        if (raw.length() > MAX_SANITIZED_OPERAND_LENGTH || FuzzingStrategy.isLargeString(raw)) {
+            return raw.strip();
+        }
+        return FuzzingStrategy.stripSpecialAndInvisibleChars(raw).strip();
     }
 
     private static int compareValues(String left, String right) {

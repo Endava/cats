@@ -347,4 +347,26 @@ class FieldCorrelationEvaluatorTest {
         Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
                 "size($) == 0", "{}", "123", resp, Map.of())).isTrue();
     }
+
+    @Test
+    void shouldRespectCorrelationPredicatesWhenFieldContainsZeroWidthOrZalgoCharacters() {
+        List<FieldCorrelationRule> rules = List.of(
+                new FieldCorrelationRule(List.of("/token-owners/{tokenOwnerId}/tokens"), "format.type == SUPPLIED",
+                        Map.of("suppliedToken", "TKN1234567890123"), List.of()),
+                new FieldCorrelationRule(List.of("/token-owners/{tokenOwnerId}/tokens"), "format.type != SUPPLIED",
+                        Map.of(), List.of("suppliedToken"))
+        );
+
+        String zeroWidthPayload = "{\"format\":{\"type\":\"SUPP\\u200BLIED\"},\"suppliedToken\":\"OLD_TOKEN\"}";
+        String afterZeroWidth = FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/token-owners/{tokenOwnerId}/tokens", zeroWidthPayload, rules, Map.of(), Set.of("format#type"));
+        Assertions.assertThat(afterZeroWidth)
+                .contains("\"suppliedToken\":\"TKN1234567890123\"");
+
+        String zalgoPayload = "{\"format\":{\"type\":\"\\u0335\\u035b\\u0352SUPPLIED\"},\"suppliedToken\":\"OLD_TOKEN\"}";
+        String afterZalgo = FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/token-owners/{tokenOwnerId}/tokens", zalgoPayload, rules, Map.of(), Set.of("format#type"));
+        Assertions.assertThat(afterZalgo)
+                .contains("\"suppliedToken\":\"TKN1234567890123\"");
+    }
 }
