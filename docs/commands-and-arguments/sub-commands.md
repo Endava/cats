@@ -55,9 +55,9 @@ All available subcommands are listed below:
 
 - `cats smoke` (alias `probe`) runs a fast 1-request-per-operation health, route, and authentication check against a live server using `HappyPathFuzzer` (skips `DELETE` by default unless `--includeDelete` is passed)
 
-- `cats triage` (aliases `diagnose`, `doctor`) clusters failing report tests into deduplicated root causes, verifies fixes live against a server (`--verify`), mines working `--refData` from `2XX` exchanges (`--export-refdata`), synthesizes `--correlations` rules (`--export-correlations`), exports OpenAPI contract patches (`--export-contract-patch`), and writes minimal `curl` reproducer scripts (`--export-reproducers`)
+- `cats triage` (aliases `diagnose`, `doctor`) reviews persisted report problems and their occurrences, verifies fixes live against a server (`--verify`), mines working `--refData` from `2XX` exchanges (`--export-refdata`), synthesizes `--correlations` rules (`--export-correlations`), exports OpenAPI contract patches (`--export-contract-patch`), and writes minimal `curl` reproducer scripts (`--export-reproducers`)
 
-- `cats compare` (alias `diff`) compares two `cats-report` folders or `cats-summary-report.json` files apples-to-apples across their shared `(path, httpMethod, fuzzer)` scope for regressions and fixes
+- `cats compare` (alias `diff`) compares two `cats-report` folders or `cats-summary-report.json` files using persisted problem occurrences to identify new, fixed, unchanged, and non-comparable findings
 
 - `cats explain` will explain a given fuzzer, linter, profile, mutator, response code, or error reason
 

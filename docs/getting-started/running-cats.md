@@ -25,7 +25,7 @@ export API_AUTH='Bearer eyJ...'
 cats smoke -c openapi.yaml -s http://localhost:8080 -H 'Authorization=$$API_AUTH'
 ```
 
-After a fuzzing run finishes, use `cats triage` to cluster failures by root cause, auto-mine `--refData` from `2XX` responses, synthesize `--correlations` rules, and verify fixes live against the server (`--verify`):
+After a fuzzing run finishes, use `cats triage` to review grouped problems, auto-mine `--refData` from `2XX` responses, synthesize `--correlations` rules, and verify fixes live against the server (`--verify`):
 
 ```bash
 cats triage -r cats-report -c openapi.yaml \
@@ -34,32 +34,45 @@ cats triage -r cats-report -c openapi.yaml \
   --export-contract-patch contract-patch.yml \
   --export-reproducers reproducers.sh
 
-# Verify fixes by replaying 1 representative request per root-cause cluster
+# Verify fixes by replaying one representative request per problem occurrence
 cats triage -r cats-report --verify -s http://localhost:8080
 ```
 
 ## Blackbox Mode
 
-Blackbox mode means that CATS doesn't need any specific context. You just need to provide the service URL, the OpenAPI spec and most probably [authentication headers](headers-file).
+Blackbox mode (`--blackbox` or `-b`) focuses the report on `5XX` server
+errors except `501` and high-severity security findings with explicit
+`CONFIRMED` confidence. Use the OpenAPI contract, service URL, and any
+[authentication headers](headers-file) the API requires.
 
 ```bash
-cats --contract=openapi.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox
+cats -c openapi.yaml -s http://localhost:8080 --headers=headers.yml --blackbox
 ```
 
-Shorter version:
+Other security candidates, including `FIRM`, `TENTATIVE`, unassessed and
+keyword-only findings, become informational even with `--strict`. Use `-k` to
+omit suppressed results and ordinary successes. Explicit status-code ignores
+still apply, so `-b -i 2xx` also suppresses confirmed findings returned on `2XX`.
+Exceptional-response and response-time diagnostics remain available. Review the
+recorded evidence for retained findings.
 
-```bash
-cats -c openapi.yaml -s http://localhost:8080 -H header=value -b
-```
+For the CATS 15.x status filter, pass `-i 2xx,4xx,501` without `-b`. See
+[Upgrading to CATS 16.0.0](../upgrading-to-16.md#blackbox-mode).
 
-In blackbox mode CATS will only report `errors` if the received HTTP response code is a `5XX` (except `501`).
-Any other mismatch between what the Fuzzer expects vs what the service returns (for example service returns `400` and CATS expects `200`) will be reported as `success`.
+## Request pacing and rate limiting
 
-The blackbox mode is similar to a smoke test. It will quickly tell you if the application has major bugs that must be addressed **immediately**.
+`--maxRequestsPerMinute` sets the configured request ceiling. When the API
+returns `429`, CATS can lower its effective request rate and gradually
+recover toward the configured rate after consecutive non-`429` responses.
+CATS also retries `503` responses that carry `Retry-After`. Unused request permits do not accumulate during idle periods.
 
-:::tip
-`--blackbox` is actually equivalent to `--ignoreResponseCodes=2XX,4XX,501`. If you want your final report to only contain the `5XX` errors, you can use `--skipReportingForIgnored`.
-:::
+`--maxRateLimitRetries` defaults to `3` and accepts `0` to disable retries.
+`--maxRetryAfterInSec` caps the wait per retry and defaults to `30` seconds.
+CATS skips the retry when the server asks for a wait above the cap, the wait
+would exceed the run deadline, or the test explicitly expects `429`.
+A `429` left unresolved by the retry policy is reported as a **Rate limited**
+warning because the verdict is inconclusive. An unresolved `503` follows
+ordinary response reporting.
 
 ## Context Mode
 

@@ -22,7 +22,7 @@ match the current output of `cats list --linters`:
 - `ArraySchemaLimitGlobalLinter` - verifies that all global array schemas specify maxItems
 - `ArraySchemaLimitPathLevelLinter` - verifies that array schemas specify maxItems for inline schemas of the current path/method
 - `ArrayWithoutItemsLinter` - detects array schemas that do not define an `items` property
-- `AuthResponseCodesConsistencyLinter` - verifies that secured operations document 401/403 error responses and public operations opting out of security (security: []) do not document 401
+- `AuthResponseCodesConsistencyLinter` - checks authentication response codes against declared security. It also flags `401` on public operations or on unsecured operations without security schemes, and checks for `401` or `4XX` coverage when a non-public operation documents `403`
 - `CollectionPaginationLinter` - verifies that collection GET operations support pagination
 - `ContradictorySchemaConstraintsLinter` - detects contradictory or invalid schema constraints (min > max bounds, invalid regex patterns, undeclared required fields, and invalid enum defaults/examples)
 - `DeleteHasBodyLinter` - checks if DELETE methods have a body

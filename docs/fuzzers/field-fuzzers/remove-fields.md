@@ -57,6 +57,14 @@ If we take the example above again, the resulting sets produced by this strategy
 
 `{address#phone}, {address#postcode}, {address#street}, {name}`
 
+#### PAIRWISE
+
+Runs single-field removals and adds a covering array for optional fields.
+Each pair of optional fields is exercised across combinations of presence
+and absence. Use `--interactionStrength=3` for three-field combinations.
+Required-field removal is covered by the single-field cases. This strategy
+keeps interaction coverage practical for wider request schemas.
+
 #### SIZE
 This is a mixed strategy. It applies principles from the `POWERSET` strategy, but will remove a maximum number of fields (and subfields) supplied though the `--maxFieldsToRemove` option. 
 This means that will generate subsets of fields (and subfields) having size `n - maxFieldsToRemove` or greater, where `n` is the total number of fields and subfields.

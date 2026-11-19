@@ -1,7 +1,6 @@
 # Header Fuzzers
 
-CATS has currently 39 registered `Header` Fuzzers. The names below match
-`cats list --fuzzers`:
+See `cats list --fuzzers` for the full list in your installed version.
 
 - `AbugidasInHeaders` - send abugidas characters in header values
 - `AcceptLanguageHeaders` - send a locale `Accept-Language` header
@@ -42,6 +41,8 @@ CATS has currently 39 registered `Header` Fuzzers. The names below match
 - `ZalgoTextInHeaders` - send Zalgo text
 - `ZeroWidthCharsInNamesHeaders` - inject zero-width characters in header names
 - `ZeroWidthCharsInValuesHeaders` - send zero-width characters in header values
+- `ContentTypeParameterDifferentialHeaders` - checks how request media-type parsers handle conflicting charset or boundary parameters on operations with request bodies.
+- `EncodedAuthenticationHeaders` - checks decoder robustness on operations using declared or configured Basic or JWT authentication.
 
 Run only these fuzzers with `--checkHeaders`.
 

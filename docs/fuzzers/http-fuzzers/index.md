@@ -1,7 +1,6 @@
 # HTTP Fuzzers
 
-CATS has currently 37 registered `HTTP` Fuzzers. The names below match
-`cats list --fuzzers`:
+See `cats list --fuzzers` for the full list in your installed version.
 
 - `BypassAuthentication` - remove authentication headers and check access control
 - `CheckDeletedResourcesNotAvailable` - verify resources are unavailable after successful deletes
@@ -40,6 +39,13 @@ CATS has currently 37 registered `HTTP` Fuzzers. The names below match
 - `UpdateReadConsistency` - read back a created resource after a successful update and warn on differences in comparable writable fields
 - `ZeroDecimalBody` - send a decimal zero body
 - `ZeroIntegerBody` - send an integer zero body
+- `CombinatorialBoundaryAndHeaderHavoc` - checks robustness when request headers and multiple body fields vary together.
+- `JsonNestingDepth` - checks JSON parser behavior with bounded complete and incomplete nested bodies on JSON request operations.
+- `FilterParameterHonored` - checks whether a GET collection honors a declared exact-match filter.
+- `MisleadingCreatePut` - checks the status of a PUT on a resource created during the run and confirmed to exist via GET.
+- `OptionsAllowConformance` - checks the Allow header from one OPTIONS request per contract path.
+- `PartialUpdatePut` - checks replacement semantics for PUT on a resource created during the run.
+- `RejectedUpdateSideEffects` - checks whether a rejected PUT or PATCH changed an owned resource.
 
 Run only these fuzzers with `--checkHttp`.
 

@@ -9,7 +9,7 @@ import styles from './index.module.css';
 const STATS = [
   { value: '200+', label: 'Field, Header & HTTP Fuzzers' },
   { value: '85+', label: 'Semantic Format Generators' },
-  { value: '36', label: 'Continuous Random Mutators' },
+  { value: '44', label: 'Continuous Random Mutators' },
   { value: 'Zero', label: 'Lines of Test Code Required' },
 ];
 
@@ -45,6 +45,10 @@ function HomepageHero() {
             </Link>
           </div>
 
+          <p>
+            <Link to="/docs/upgrading-to-16">Upcoming CATS 16.0.0 upgrade guide</Link>
+          </p>
+
           <div className={styles.terminalCard}>
             <div className={styles.terminalHeader}>
               <div className={styles.terminalDots} aria-hidden="true">
@@ -67,7 +71,7 @@ function HomepageHero() {
                 {'\n'}
                 <span className={styles.cmdPrompt}>$</span> cats smoke -c openapi.yml -s http://localhost:8080 -H <span className={styles.cmdString}>'Authorization=$$API_AUTH'</span>
                 {'\n\n'}
-                <span className={styles.cmdComment}># 3. Run stateful wave fuzzing and cluster root causes</span>
+                <span className={styles.cmdComment}># 3. Run stateful wave fuzzing and triage problems</span>
                 {'\n'}
                 <span className={styles.cmdPrompt}>$</span> cats -c openapi.yml -s http://localhost:8080 --profile ci
                 {'\n'}

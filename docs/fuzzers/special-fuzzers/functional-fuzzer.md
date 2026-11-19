@@ -114,7 +114,7 @@ steps:
 - **`body`**: Map, list, or scalar overriding the request body. Nested maps merge into existing JSON objects, and dot-notation (`home.country`) or `#`-notation (`home#country`) can target nested fields directly. All YAML types (`integer`, `number`, `boolean`, lists, nested maps) and explicit `null` values are preserved.
 - **`path`**, **`query`**, **`headers`**: Maps of path parameters, query parameters, and HTTP headers for the step. OpenAPI-documented headers are generated automatically and only need to be listed in `headers:` when overriding a specific value.
 - **`omit`**: List of field paths to remove from the generated request payload.
-- **`variant`**: Selects a specific `oneOf`/`anyOf` schema branch either by schema name suffix (`variant: "DogRequest"`) or by matching discriminator/property values (`variant: { pet.type: "Dog" }`).
+- **`variant`**: Selects a specific `oneOf`/`anyOf` schema branch either by schema name suffix (`variant: "DogRequest"`) or by matching discriminator/property values (`variant: { pet.type: "Dog" }`). Explicit variant criteria take precedence over body fields when choosing the branch.
 - **`correlate`**: Optional step-scoped cross-field correlation rule (single object `{ when: "...", set: {...}, omit: [...] }` or list of rules) applied before sending the step's request.
 - **`delayMs`**: Optional initial delay in milliseconds before sending the step's request.
 - **`poll`**: Optional polling configuration (`{ maxAttempts: 5, intervalMs: 200 }`) for eventual-consistency or asynchronous state transitions. CATS retries the step up to `maxAttempts` times, waiting `intervalMs` between attempts, until `status` and `expect` assertions pass, and reports only the final attempt.

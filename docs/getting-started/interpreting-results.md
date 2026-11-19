@@ -5,18 +5,30 @@ description: How to interpret CATS reports
 
 # Interpreting Results
 
-This is a typical CATS report summary page:
-![run result](img/index_html.png)
+Open `cats-report/index.html` to review the run. Both HTML formats include
+**All tests** and **Problems**.
+
+## Problems
+
+A problem groups errors and warnings that share the same oracle evidence. Each
+problem lists its occurrences by operation and links to example tests. Review
+the observed HTTP outcome and the server's example message. The masked pattern
+used for grouping appears under **How these tests were grouped**. A pattern
+can cover multiple responses, so use the linked test to inspect the full
+exchange.
+
+CATS persists the problem catalog, problem IDs, and key version in
+`cats-summary-report.json`. Test records hold `expectedResponseCodes` and
+`expectedOutcome` where an effective HTTP expectation is available. These
+fields reflect the oracle after configuration overrides. Older test evidence
+can display its saved expectation text.
 
 ## HTML_JS
-`HTML_JS` is the default report produced by CATS. It has Javascript enabled in order to have some interaction with the reports.
-The execution report is placed in a folder called `cats-report` which is created inside the current folder. 
-Opening the `cats-report/index.html` file, you will be able to:
 
-- filter tests based on the result: `All`, `Success`, `Warn` and `Error`
-- omni-search box to be able to search by any string without the summary table
-- see summary with all the tests with their corresponding path against they were run, and the result
-- have ability to click on any tests and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
+`HTML_JS` is the default report. **All tests** opens first and renders
+progressively for large runs. Search and result filters operate on the complete
+dataset. Open any test to review its scenario, expectation, verdict, and
+request and response. Use the summary JSON for automated processing.
 
 :::tip
 You can change `cats-report` to something else using the `-o` argument. `cats ... -o /tmp/reports` will write the CATS report in the `/tmp/reports` folder.
@@ -43,6 +55,7 @@ Understanding the `Result Reason` values:
 - `Not Found` - reported as an `error` in order to force providing more context; this indicates that CATS needs additional business context in order to run successfully - you can do this using the `--refData` and/or `--urlParams` arguments
 - `Response time exceeds max` - reported as an `error` if the `--maxResponseTimeInMs` is supplied and the response time exceeds this number
 - `Response body truncated` - reported as `warn` when a response body exceeds `--maxResponseBytes` (default `10485760` bytes) and is truncated before body-dependent checks can complete
+- `Rate limited` indicates that throttling exhausted the retry budget and prevented a conclusive verdict. See [Request pacing and rate limiting](running-cats.md#request-pacing-and-rate-limiting).
 - `Call timeout exceeded` - reported as `error` when an HTTP call exceeds the configured `--callTimeout` budget (response code `959`)
 - `Response content type not matching the contract` - reported as `warn` if the content type received in response does not match the one defined in the contract for the received http response code
 - `Error details leak` - reported as `error` if the response body contains sensitive information
@@ -77,18 +90,17 @@ Understanding the `Result Reason` values:
 - `Potential cross-parent resource exposure`, `Cross-parent request caused server error` - reported by `CrossParentResourceIsolationFuzzer` when a child resource is exposed or causes `5XX` under a swapped parent ID
 - `Empty reply from server`, `Connection refused`, `Read timeout`, `Write timeout`, `Connection timeout`, `HTTP protocol exception`, `Connection reset` - explicit I/O error reasons corresponding to `9XX` communication codes
 
-This is what you get when you click on a specific test:
+The following examples show the request, response, and result sections of an individual test page.
 
 ![test details](img/test_details_1.png)
 ![test details](img/test_details_2.png)
 
-You can generate multiple report formats in a single run by passing a comma-separated list to `--reportFormat` (for example `--reportFormat HTML_JS,HTML_JS_CLUSTERS,JUNIT,WFC_REPORT`).
-
-## HTML_JS_CLUSTERS
-`HTML_JS_CLUSTERS` generates an interactive clustered HTML report (`index.html`) that groups failing and warning tests into root-cause clusters using response status, JSON error-message extraction, and response similarity (including `2XX` validation errors).
+You can generate multiple report formats in a single run by passing a comma-separated list to `--reportFormat` (for example `--reportFormat HTML_JS,JUNIT,WFC_REPORT`).
 
 ## HTML_ONLY
-This format is similar with `HTML_JS`, but you cannot do any filtering or sorting. This is more suitable when embedding the CATS report into a CI pipeline.
+
+`HTML_ONLY` provides a pre-rendered test table and Problems view without
+JavaScript filtering or sorting.
 
 ## JUNIT
 CATS also supports [JUNIT](https://llg.cubic.org/docs/junit/) output. The output will contain one `testsuite` per fuzzer. Each test run by that fuzzer will be recorded as a `testcase`.
@@ -101,7 +113,11 @@ As the JUNIT format does not have the concept of `warning` the following mapping
 The JUNIT report is written as `junit.xml` in the `cats-report` folder. Individual tests, both as `.html` and `.json` will also be created.
 
 ## WFC_REPORT
-`WFC_REPORT` generates a standardized Web Fuzzing Commons `report.json` file in the report directory, mapping CATS findings to official WFC `DefinedFaultCategory` constants and `CatsWfcFaultCategory` sub-categories, suitable for cross-fuzzer benchmarking and WFC-compatible tooling.
+`WFC_REPORT` generates a standardized Web Fuzzing Commons `report.json` file in the report directory, mapping CATS findings to official WFC `DefinedFaultCategory` constants and `CatsWfcFaultCategory` sub-categories, suitable for cross-fuzzer benchmarking and WFC-compatible tooling. When an OpenAPI contract is available, WFC endpoint IDs and coverage use its declared operations. Eligible faults from synthetic methods can be attributed to a declared operation on the same path. See the [16.0.0 migration guide](../upgrading-to-16.md#wfc-exports) for changed category IDs.
+
+WFC also checks observed `401` and `403` responses against the operation's
+declared security and response codes. For HTTP `500`, fault context can use
+a normalized error template extracted from the structured response body.
 
 :::tip
 If you want to have history for CATS runs you can use the `--timestampReports` argument. This will create sub-folders for each run within the `cats-reports` folder with the corresponding timestamp.
@@ -109,25 +125,34 @@ If you want to have history for CATS runs you can use the `--timestampReports` a
 
 ## Triaging Reports & Verifying Fixes (`cats triage`)
 
-To turn a `cats-report` folder into deduplicated root-cause clusters, remediation artifacts, and live fix verifications, run `cats triage` (aliases `diagnose`, `doctor`):
+Run `cats triage` (aliases `diagnose`, `doctor`) to review persisted problems, export remediation artifacts, or verify fixes. Triage includes errors and warnings by default. Use `--errors-only` for errors alone.
 
 ```bash
-# Cluster errors by root cause and export remediation artifacts
+# Review problems and export remediation artifacts
 cats triage -r cats-report -c openapi.yml \
   --export-refdata refData.yml \
   --export-correlations correlations.yml \
   --export-contract-patch contract-patch.yml \
   --export-reproducers reproducers.sh
 
-# Replay 1 representative request per root-cause cluster against the live server to check FIXED vs STILL_FAILING vs INCONCLUSIVE
+# Replay one representative request per occurrence against the live server
 export Authorization='Bearer eyJ...'
 cats triage -r cats-report --verify -s http://localhost:8080
 ```
 
-`cats triage` classifies failures into prioritized root-cause categories (`SERVER_CRASH_5XX`, `FIELD_DOMAIN_CONSTRAINT_4XX`, `CROSS_FIELD_CONSTRAINT_4XX`, `HEADER_CORRELATION_COLLISION`, `AUTH_CONFIGURATION_GAP`, `VALIDATION_BYPASS_2XX`, `UNRESOLVED_PATH_PARAM_404`, `UNRESOLVED_BODY_REFERENCE_404`, `ROUTE_NOT_FOUND_404`, `SUSPICIOUS_CORRELATION_404`, `RESOURCE_POOL_DEPLETED_404`, and `CONTRACT_MISMATCH`).
+Triage presents observations and the next check based on recorded evidence.
+Live verification reports `FIXED`, `STILL_FAILING`, or `INCONCLUSIVE`.
+With `--verify`, an unresolved server-error occurrence produces exit code `1`.
+Use `--show-reproducers` to print full curl commands in the console. JSON
+(`-j`) and `--export-reproducers` include those commands by default.
 
-:::tip Keep `2XX` and Warning Tests When Triaging
-Do not pass `--srs` (`--skipReportingForSuccess`), `--srw` (`--skipReportingForWarning`), or `-k` (`--skipReportingForIgnoredCodes`) on runs you plan to triage or replay with `cats replay --stateful`—those flags omit the `2XX` producer exchanges and warnings that `--export-refdata`, `--include-warnings`, and `--stateful` replay rely on.
+Keep the summary and referenced `Test*.json` files together. Triage rejects
+incompatible or incomplete reports with exit code `2`.
+
+:::tip Keep successful exchanges and warnings when collecting evidence
+Retain `2XX` producer exchanges for `--export-refdata` and stateful replay.
+Run in ordinary reporting mode and omit `--srs`, `--srw`, and `-k` when you
+need the full evidence for triage.
 :::
 
 ## Execution summary

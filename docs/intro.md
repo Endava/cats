@@ -13,6 +13,12 @@ Run CATS only against local, staging, or dedicated test environments. Because CA
 
 ---
 
+:::info Upcoming CATS 16.0.0
+This documentation covers the upcoming release. If you are upgrading from
+15.x, review the [16.0.0 migration guide](./upgrading-to-16.md) before reusing
+report jobs, triage scripts, or CI baselines.
+:::
+
 ## Quickstart
 
 Make sure CATS is installed ([Installation Guide](/docs/getting-started/installation)):
@@ -45,7 +51,7 @@ cats -c openapi.yml -s https://api.example.com -H 'Authorization=$$API_AUTH' --p
 # Full contract-aware suite (all active Field, Header, and HTTP fuzzers)
 cats -c openapi.yml -s https://api.example.com -H 'Authorization=$$API_AUTH'
 
-# Blackbox crash hunting: report only 5XX server errors
+# Blackbox reporting for server errors and confirmed high-severity security findings
 cats -c openapi.yml -s https://api.example.com -H 'Authorization=$$API_AUTH' -b
 ```
 
@@ -61,7 +67,7 @@ cats run -c openapi.yml -s https://api.example.com -H 'Authorization=$$API_AUTH'
 
 ### 4. Triage Failures & Verify Fixes
 
-Cluster failing tests by root cause, auto-generate remediation files (`refData.yml`, `correlations.yml`, `reproducers.sh`), and verify fixes live against the server:
+Review grouped problems from the report, auto-generate remediation files (`refData.yml`, `correlations.yml`, `reproducers.sh`), and verify fixes live against the server:
 
 ```bash
 cats triage -r cats-report -c openapi.yml \
@@ -69,7 +75,7 @@ cats triage -r cats-report -c openapi.yml \
   --export-correlations correlations.yml \
   --export-reproducers reproducers.sh
 
-# Replay 1 representative request per root-cause cluster to confirm FIXED vs STILL_FAILING
+# Replay one representative request per problem occurrence
 cats triage -r cats-report --verify -s https://api.example.com -H 'Authorization=$$API_AUTH'
 ```
 
@@ -79,11 +85,11 @@ cats triage -r cats-report --verify -s https://api.example.com -H 'Authorization
 
 | Capability | Scope | Where to Learn More |
 |:--|:--|:--|
-| **Field Fuzzers (`125`)** | Numeric/string boundaries, `exclusiveMinimum`/`Maximum`, `multipleOf`, `minItems`/`maxItems`, `minProperties`, `const`/`not`, merged `oneOf` branches, type coercion (`NaN`/`Infinity`), cross-field business logic (confirmation fields, mutually exclusive fields, arithmetic totals, path-vs-body IDs), search/filter & cursor tokens, timezone/locale/ISO codes, SQL/NoSQL/LDAP/Command/SSTI/XXE/XSS/SSRF/Path Traversal injections, `readOnly` & undeclared Mass Assignment, HTTP Parameter Pollution, and Unicode edge cases. | [Field Fuzzers](/docs/fuzzers/field-fuzzers) |
-| **Header Fuzzers (`39`)** | Content negotiation (`Accept`, `Content-Type`), `Content-Length`/`Transfer-Encoding`, CRLF injection, security headers, duplicate/extra headers, and Unicode/control-character header mutations. | [Header Fuzzers](/docs/fuzzers/header-fuzzers) |
-| **HTTP Fuzzers (`37`)** | `HappyPath`, authentication bypass, BOLA/IDOR, HTTP verb tampering & method-override tunneling (`X-HTTP-Method-Override`), `Idempotency-Key` conflict detection, `PUT` idempotency, partial `PATCH` omitted-field preservation, `GET` pagination limit enforcement, `ETag` preconditions, cross-parent isolation, and post-delete availability. | [HTTP Fuzzers](/docs/fuzzers/http-fuzzers) |
+| **Field Fuzzers** | Numeric/string boundaries, `exclusiveMinimum`/`Maximum`, `multipleOf`, `minItems`/`maxItems`, `minProperties`, `const`/`not`, merged `oneOf` branches, type coercion (`NaN`/`Infinity`), cross-field business logic (confirmation fields, mutually exclusive fields, arithmetic totals, path-vs-body IDs), search/filter & cursor tokens, timezone/locale/ISO codes, SQL/NoSQL/LDAP/Command/SSTI/XXE/XSS/SSRF/Path Traversal injections, `readOnly` & undeclared Mass Assignment, HTTP Parameter Pollution, and Unicode edge cases. | [Field Fuzzers](/docs/fuzzers/field-fuzzers) |
+| **Header Fuzzers** | Content negotiation (`Accept`, `Content-Type`), `Content-Length`/`Transfer-Encoding`, CRLF injection, security headers, duplicate/extra headers, and Unicode/control-character header mutations. | [Header Fuzzers](/docs/fuzzers/header-fuzzers) |
+| **HTTP Fuzzers** | `HappyPath`, authentication bypass, BOLA/IDOR, HTTP verb tampering & method-override tunneling (`X-HTTP-Method-Override`), `Idempotency-Key` conflict detection, `PUT` idempotency, partial `PATCH` omitted-field preservation, `GET` pagination limit enforcement, `ETag` preconditions, cross-parent isolation, and post-delete availability. | [HTTP Fuzzers](/docs/fuzzers/http-fuzzers) |
 | **Stateful Functional Flows** | Declarative `steps:` YAML workflows with schema-backed payload generation, cross-step `$steps` / `save` correlation, `expect.that` assertions, `poll` / `delayMs` async helpers, `repeat`, `forEach` data tables, and `correlate` rules. | [Functional Flow Fuzzer](/docs/fuzzers/special-fuzzers/functional-fuzzer) |
-| **Continuous & Spec-less Fuzzing** | Time- or count-bounded mutation fuzzing with `36` built-in mutators (`cats random`), custom dictionary fuzzing (`SecurityFuzzer`), and template-based fuzzing without an OpenAPI spec (`cats template`). | [Mutators](/docs/getting-started/mutators) · [Template Fuzzer](/docs/fuzzers/special-fuzzers/template-fuzzer) |
+| **Continuous & Spec-less Fuzzing** | Time- or count-bounded mutation fuzzing with 44 built-in mutators (`cats random`), custom dictionary fuzzing (`SecurityFuzzer`), and template-based fuzzing without an OpenAPI spec (`cats template`). | [Mutators](/docs/getting-started/mutators) · [Template Fuzzer](/docs/fuzzers/special-fuzzers/template-fuzzer) |
 | **Contract Linters (`58`)** | Offline OpenAPI 3.0/3.1 structural, semantic, and REST naming checks: ambiguous `oneOf` variants, default/example schema conformance, contradictory bounds, request/response symmetry, pagination & error consistency, and REST path role analysis. | [Contract Linters](/docs/fuzzers/linters) |
 
 ---
@@ -99,7 +105,7 @@ cats triage -r cats-report --verify -s https://api.example.com -H 'Authorization
 | Run fast PR/CI fuzzing suite | `cats -c openapi.yml -s http://localhost:8080 --profile ci` |
 | Run OWASP API Security Top 10 audit | `cats -c openapi.yml -s http://localhost:8080 --profile security` |
 | Execute stateful YAML functional or security flows | `cats run -c openapi.yml -s http://localhost:8080 flow.yml` |
-| Cluster report failures & verify fixes live | `cats triage -r cats-report --verify -s http://localhost:8080` |
+| Triage report problems & verify fixes live | `cats triage -r cats-report --verify -s http://localhost:8080` |
 | Replay a test with its upstream `2XX` producer chain | `cats replay Test42 --stateful` |
 | Export a failing test + producer chain as a runnable `steps:` flow | `cats replay Test42 --export-flow reproducer.yml` |
 | Gate CI against a previous baseline report | `cats compare -b ./baseline-report -t ./cats-report` |

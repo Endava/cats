@@ -49,17 +49,35 @@ cats -c openapi.yml -s http://localhost:8080 \
   --baseline ./baseline-cats-report
 ```
 
-CATS compares only the shared `(contractPath, httpMethod, fuzzer)` scopes
-present in both runs and exits with code `1` only if **new** error regressions
-are introduced (pass `--failOnNewWarnings` to also fail on new warnings).
+CATS compares persisted problem occurrences by problem ID and operation. For
+accepted requests, CATS also tracks each mutated field as a separate occurrence.
+Compatible server-message patterns can match when the two runs generalized
+messages differently. Test-count changes are informational.
 
-You can also diff two existing report directories or `cats-summary-report.json`
+You can also compare existing report directories or `cats-summary-report.json`
 files offline using `cats compare` (alias `cats diff`):
 
 ```bash
 cats compare -b ./baseline-cats-report -t ./cats-report
 cats compare -b ./baseline-cats-report -t ./cats-report --failOnNewWarnings -j
 ```
+
+| State | Meaning |
+| --- | --- |
+| `NEW` | Observed only in the target report with comparable fuzzer coverage. |
+| `FIXED` | Observed only in the baseline report with comparable fuzzer coverage. |
+| `UNCHANGED` | Matched by identity or compatible server-message pattern. |
+| `NOT_COMPARABLE` | None of the occurrence's fuzzers appear in the other report's saved tests. |
+
+Keep the seed, configuration, and starting data consistent. `NEW` can include
+a finding newly observed on an unchanged API build. Check saved coverage and
+verify the finding before treating `FIXED` as a confirmed fix.
+
+`cats compare` exits with `0` when there is no regression, `1` for new errors
+(or new warnings with `--failOnNewWarnings`), and `2` for invalid input.
+Both reports must contain persisted problems with `problemKeyVersion: 1`.
+A run using `--baseline` also exits with `2` if CATS cannot load the baseline.
+See the [16.0.0 migration guide](../upgrading-to-16.md) for JSON and CLI changes.
 
 ## Stop conditions
 

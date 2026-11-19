@@ -1,7 +1,6 @@
 # Field Fuzzers
 
-CATS has currently 125 registered `Field` Fuzzers. The names below match the
-current output of `cats list --fuzzers`.
+See `cats list --fuzzers` for the full list in your installed version.
 
 - `AbugidasInStringFields` - iterate through each field and send values containing abugidas chars
 - `AdditionalPropertiesMassAssignmentFields` - iterate through each object without additional properties field and replace it with object containing unexpected extra properties values
@@ -140,6 +139,10 @@ use `--no-strictTypes` when the service intentionally accepts the coercion.
 - `XxeInjectionInStringFields` - send XML External Entity payloads to string fields
 
 You can run only these Fuzzers by supplying the `--checkFields` argument.
+- `Base64DecoderBoundaryFields` - checks decoder robustness for strings declared as Base64 and cursor or pagination-token fields.
+- `NumericParserBoundaryFields` - checks how numeric fields handle precision, exponent limits, and raw or quoted numeric representations.
+- `RegexEngineAndPatternDifferentialFields` - checks handling of regex-consuming string fields and strings with a contract pattern.
+- `UnicodeNormalizationDifferentialFields` - checks whether string fields handle compatibility normalization and character conversion without a server failure.
 
 ```mdx-code-block
 import DocCardList from '@theme/DocCardList';

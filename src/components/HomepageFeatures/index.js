@@ -34,7 +34,7 @@ const WORKFLOW_STEPS = [
     step: '04',
     title: 'Triage Root Causes & Verify Fixes',
     description:
-      'Cluster failures into deduplicated root causes, auto-mine refData.yml and correlations.yml from recorded traffic, replay stateful producer chains, and verify fixes live against the server.',
+      'Review grouped report problems, auto-mine refData.yml and correlations.yml from recorded traffic, replay stateful producer chains, and verify fixes live against the server.',
     code: 'cats triage -r cats-report --verify -s http://localhost:8080\ncats replay Test42 --stateful --export-flow flow.yml',
     link: '/docs/getting-started/interpreting-results',
     linkLabel: 'Triage & Replay →',

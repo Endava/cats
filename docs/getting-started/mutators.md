@@ -8,7 +8,7 @@ description: Mutators
 Mutators are the fuzzers used by [continuous fuzzing](./running-cats.md#continuous-fuzzing-mode). You can list the built-in mutators using `cats list --mutators` sub-command.
 Mutators are using more randomness than typical fuzzers. 
 They either generate data on the fly or randomly select from a larger set. 
-They also don't take into consideration data types, constraints, boundaries, etc.
+Some mutators use field types, OpenAPI constraints, or existing values to guide their changes.
 
 List the current built-in mutators with:
 
@@ -16,7 +16,7 @@ List the current built-in mutators with:
 cats list --mutators
 ```
 
-The current set of 36 built-in mutators includes:
+The current set of 44 built-in mutators includes:
 
 - `BigListOfNaughtyStringsMutator`, `RandomStringMutator`, `RandomAlphanumericStringMutator`, `FormatPreservingValueMutator`, and `RandomPayloadSizeMutator`
 - `NullStringMutator`, `RandomNumberMutator`, `RandomLargeIntegersMutator`, `RandomLargeDecimalsMutator`, `RandomMinValuesMutator`, `RandomMaxValuesMutator`, and `RandomBoundaryNumbersMutator`
@@ -24,6 +24,13 @@ The current set of 36 built-in mutators includes:
 - `RandomControlCharsInFieldKeysMutator`, `RandomWhitespacesInFieldKeysMutator`, and `RandomLanguageIdentifiersMutator`
 - `RandomAcceptHeaderMutator`, `RandomContentTypeHeaderMutator`, `RandomTransferEncodingHeaderMutator`, and `RandomProtocolAndOverrideHeadersMutator`
 - `LowercaseExpandingBytesMutator`, `LowercaseExpandingLengthMutator`, `UppercaseExpandingBytesMutator`, `UppercaseExpandingLengthMutator`, and `RemoveFieldMutator`
+
+- `RandomBase64BoundaryMutator`, `RandomRawNumericAndLexemeMutator`, `RandomRegexAndPatternCrashMutator`, and `RandomUnicodeNormalizationMutator` add decoder, numeric parser, regex, and Unicode coverage.
+- `RandomCrossFieldSwapAndSkewMutator` varies relationships between fields.
+- `CharsetAndEncodingCrossMutator`, `ConditionalAndIdempotencyCrossMutator`, and `LocaleAndCaseExpansionCrossMutator` vary headers and body fields together.
+
+A random test can now compose compatible mutations on the same field or combine
+body and header mutations in one request.
 
 ## Custom Mutators
 

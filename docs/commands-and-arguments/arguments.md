@@ -21,6 +21,8 @@ or `--name value`.
 - `--writeTimeout=SECONDS` sets the maximum request write inactivity. Default: `10`.
 - `--maxResponseBytes=BYTES` sets the maximum number of decompressed response-body bytes to capture per HTTP call (`0` disables the limit). Default: `10485760`.
 - `--maxRequestsPerMinute=NUMBER` limits request throughput. Default: `10000`.
+- `--maxRateLimitRetries=NUMBER` sets the retry limit for `429` and for `503` with `Retry-After`. Default: `3`. Use `0` to disable retries.
+- `--maxRetryAfterInSec=SECONDS` caps each rate-limit retry wait. Default: `30`.
 - `--userAgent=VALUE` sets the `User-Agent` header. Default: `cats/VERSION`.
 - `--configFile=FILE` loads command configuration from a properties file. If `--configFile` is not supplied, CATS automatically discovers `.cats.properties` in the OpenAPI contract's directory or the current working directory.
 
@@ -53,7 +55,7 @@ for Web Fuzzing Commons configuration.
 ## Fuzzer selection and scope
 
 - `-f, --fuzzers=FUZZER,...` runs only matching fuzzers. Full or partial names are accepted. Use `cats list --fuzzers` to see the current names.
-- `--skipFuzzers=FUZZER,...` ignores matching fuzzers.
+- `--skipFuzzers=FUZZER,...` ignores matching fuzzers. Scope a skip to an HTTP method with `METHOD=Fuzzer1;Fuzzer2` or to a method and an exact or wildcard path with `"METHOD /path*=Fuzzer1"`. Quote scoped entries in the shell. These entries also work in `.cats.properties` and combine with extension-based skips.
 - `--skipFuzzersForExtension=EXTENSION=VALUE:Fuzzer1,Fuzzer2` skips fuzzers for endpoints having a matching OpenAPI extension. `--skipFuzzerForExtension` is an alias.
 - `--mode=ALL|NEGATIVE|POSITIVE` selects all scenarios, only negative scenarios, or only positive/happy-path scenarios. Default: `ALL`.
 - `--profile=security|quick|compliance|ci|coverage|crash|type-coercion|health-check|full` selects a built-in fuzzer profile. Default: `full`.
@@ -81,7 +83,8 @@ for Web Fuzzing Commons configuration.
 
 ## Processing
 
-- `--fieldsFuzzingStrategy=ONEBYONE|SIZE|POWERSET` selects the field-removal strategy. Default: `ONEBYONE`.
+- `--fieldsFuzzingStrategy=ONEBYONE|PAIRWISE|SIZE|POWERSET` selects the field-removal strategy. Default: `ONEBYONE`.
+- `--interactionStrength=2|3` sets optional-field interaction coverage for `PAIRWISE`. Default: `2`. See [Remove Fields](../fuzzers/field-fuzzers/remove-fields.md).
 - `--maxFieldsToRemove=NUMBER` limits fields removed by the `SIZE` strategy.
 - `--limitFuzzedFields=NUMBER` limits request fields selected for fuzzing. `0` means all fields.
 - `--largeStringsSize=NUMBER` controls the size of generated large strings. Default: `40000`.
@@ -111,7 +114,7 @@ for Web Fuzzing Commons configuration.
 - `--errorLeaksKeywords=FILE` supplies keywords used to detect possible error leaks.
 - `--seed=NUMBER` makes random value generation deterministic. Default: `0`.
 - `--dryRun` prints the planned test count and fuzzer selection without invoking the service.
-- `--blackbox` ignores response mismatches except for `5XX` errors.
+- `--blackbox` retains `5XX` server errors except `501` and high-severity security findings with explicit `CONFIRMED` confidence. See [Blackbox Mode](../getting-started/running-cats.md#blackbox-mode).
 - `--includeAllInjectionPayloads` uses the complete SQL, XSS, command, and NoSQL injection payload sets instead of the curated top ten per type.
 
 ## Response handling and reporting
@@ -125,7 +128,7 @@ for Web Fuzzing Commons configuration.
 - Short aliases are available for common response options: `-i`/`--ic` for ignored codes, `-k`/`--sri` for skipped ignored results, `-b` for blackbox, `--fc`, `--fl`, `--fr`, `--fs`, and `--fw` for filters, and `--ib`, `--ie`, `--il`, `--ir`, `--is`, `--it`, `--iu`, and `--iw` for ignore checks. Match options also have `--mc`, `--mi`, `--ml`, `--mr`, `--ms`, and `--mw` aliases.
 - `--maxResponseTimeInMs=MILLISECONDS` reports successful responses exceeding the limit as errors.
 - `-o, --output=DIR` selects the report directory. Default: `cats-report`.
-- `--reportFormat=HTML_JS|HTML_ONLY|HTML_JS_CLUSTERS|JUNIT|WFC_REPORT,...` selects one or more comma-separated report formats to generate in the same run (for example `--reportFormat HTML_JS,WFC_REPORT`). Default: `HTML_JS`.
+- `--reportFormat=HTML_JS|HTML_ONLY|JUNIT|WFC_REPORT,...` selects one or more comma-separated report formats to generate in the same run (for example `--reportFormat HTML_JS,WFC_REPORT`). Default: `HTML_JS`.
 - `--timestampReports` places each run in a timestamped subdirectory.
 - `--printExecutionStatistics` prints endpoint/method timing summaries.
 - `--printDetailedExecutionStatistics` prints per-request timing details.
@@ -148,7 +151,7 @@ for Web Fuzzing Commons configuration.
 
 - `--failOn=error,warn` makes CATS exit with code `1` when any selected result type is reported. Default: `error`.
 - `--qualityGate="errors<5,warns<20"` sets numeric thresholds. Supported metrics are `errors`, `warns`, and `warnings` (non-negative integer thresholds); quality-gate thresholds take precedence over `--failOn`.
-- `--baseline=FILE_OR_DIR` compares the current run apples-to-apples against a baseline `cats-report` directory or `cats-summary-report.json` file across shared `(path, httpMethod, fuzzer)` scopes, failing only when new error regressions are introduced.
+- `--baseline=FILE_OR_DIR` compares persisted problem occurrences against a baseline report directory or summary JSON file with `problemKeyVersion: 1`. New error occurrences fail the gate.
 - `--failOnNewWarnings` when used with `--baseline`, also fails the build if new warnings are introduced compared to the baseline.
 - `--stopAfterErrors=NUMBER` stops after the specified number of error results. `--se` is a short alias.
 - `--stopAfterTests=NUMBER` stops after the specified number of test cases. `--stopAfterMutations` and `--sm` are aliases.
@@ -196,8 +199,8 @@ cats random --help
 - `cats analyze` (alias `blueprint`) requires `-c, --contract=FILE` and supports `--mermaid` and `-j, --json`.
 - `cats init` supports `-c, --contract=FILE` (to scaffold `headers.yml`, `refData.yml`, and `functionalTests.yml`), `--skills [devin,codex,claude,opencode,cursor,all]` (to install the bundled CATS AI coding agent skills), `--global` (install skills into home config directories), `-o, --output=DIR`, `--force`, and `-j, --json`.
 - `cats smoke` (alias `probe`) supports the standard contract, server, authentication, files, filter, and reporting options plus `--includeDelete` and `-j, --json`.
-- `cats triage` (aliases `diagnose`, `doctor`) supports `-r, --report=DIR` (default: `cats-report`), `-c, --contract=FILE`, `-s, --server=URL`, `-H, --header=NAME=VALUE`, `--verify` (replays 1 representative request per root-cause cluster against the server and reports `FIXED` vs `STILL_FAILING`), `--include-warnings`, `--export-refdata=FILE`, `--export-correlations=FILE`, `--export-contract-patch=FILE`, `--export-reproducers=FILE`, and `-j, --json`.
-- `cats compare` (alias `diff`) requires `-b, --baseline=FILE_OR_DIR` and `-t, --target=FILE_OR_DIR`, and supports `--failOnNewErrors` (default: `true`), `--failOnNewWarnings`, and `-j, --json`.
+- `cats triage` (aliases `diagnose`, `doctor`) supports `-r, --report=DIR` (default: `cats-report`), `-c, --contract=FILE`, `-s, --server=URL`, `-H, --header=NAME=VALUE`, `--verify` (replays one representative request per problem occurrence and reports `FIXED`, `STILL_FAILING`, or `INCONCLUSIVE`), `--errors-only`, `--show-reproducers`, `--export-refdata=FILE`, `--export-correlations=FILE`, `--export-contract-patch=FILE`, `--export-reproducers=FILE`, and `-j, --json`.
+- `cats compare` (alias `diff`) requires `-b, --baseline=FILE_OR_DIR` and `-t, --target=FILE_OR_DIR`, and supports `--failOnNewWarnings` and `-j, --json`. New error occurrences always fail comparison.
 - `cats list` supports `--fuzzers`, `--linters`, `--profiles`, `--formats`, `--mutators`, `--customMutatorTypes`, `--fieldsFuzzerStrategies`, and `--paths` (with `--executionOrder` or `--dependencyOrder` to show producer-to-consumer execution order). Use `--json` for machine-readable output.
 - `cats replay TEST` supports `--errors`, `--warnings`, `--reportFolder=DIR`, `--output=DIR`, `--server=URL`, `--callTimeout=SECONDS`, `--maxResponseBytes=BYTES`, `--curl` (prints equivalent `curl` commands without sending HTTP calls), `--stateful` (replays upstream `2XX` producer tests first and substitutes fresh resource IDs), `--export-flow=FILE` (exports the selected tests and upstream producer chain as a runnable `steps:` flow YAML file), and `--verbose`.
 - `cats run FILE` supports `--correlations=FILE` (`--correlate=FILE`), `--headers=FILE`, `-H`, `--queryParams=FILE`, `--refData=FILE`, `--createRefData`, `--contentType=TYPE`, `--oneOfSelection`, `--anyOfSelection`, `--discriminatorCasing`, and `--seed`.

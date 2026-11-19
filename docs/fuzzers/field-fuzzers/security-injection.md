@@ -16,6 +16,11 @@ and SSRF fuzzers:
 They are included in the `security` and `compliance` profiles (`PathTraversalInStringFields` is also included in `ci`). Select them by
 name or include all security fuzzers with `--profile security`.
 
+Review the recorded detector evidence and confidence in the report. A server
+error or a reflected value alone does not establish a confirmed security
+finding. See [Blackbox Mode](../../getting-started/running-cats.md#blackbox-mode)
+for the confidence required to retain a security finding in that mode.
+
 | Full Fuzzer Name | Log Key | Enabled by default? | Target field types | Expected result | Fuzzing logic | Conditions when skipped | HTTP methods skipped | Reporting |
 |:--|:--|:--|:--|:--|:--|:--|:--|:--|
 | `LdapInjectionInStringFieldsFuzzer` | N/A | Yes in the `security`, `compliance`, and `full` profiles | String fields, with priority for identity and filter-like names | `4XX` unless the API intentionally sanitizes and accepts the value | Sends LDAP injection payloads to detect authentication bypass or unauthorized data access. | Non-string fields, discriminators, enums, and reference data. | None | Reports injection evidence, unexpected success, server errors, and other unexpected responses according to normal CATS reporting. |

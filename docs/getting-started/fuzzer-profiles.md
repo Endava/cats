@@ -39,6 +39,14 @@ The built-in profiles are:
 - `ci` provides a balanced suite for CI/CD pipelines covering functional correctness, boundaries, OpenAPI constraints, business logic, and security essentials.
 - `full` runs all fuzzers and is the default.
 
+The `security`, `ci`, and `crash` profiles include the decoder, parser,
+Unicode normalization, content-type parameter, and combined header and body
+checks. The `ci` profile also includes the OPTIONS Allow and collection filter
+checks and the PUT and rejected-update consistency checks. See the
+[Field Fuzzers](../fuzzers/field-fuzzers/index.md),
+[Header Fuzzers](../fuzzers/header-fuzzers/index.md), and
+[HTTP Fuzzers](../fuzzers/http-fuzzers/index.md) for individual profile membership.
+
 The active fuzzer profile is also displayed in the generated HTML summary report (`cats-report/index.html`).
 
 Use `--healthCheck` to run the minimal `health-check` profile before the full
