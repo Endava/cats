@@ -46,7 +46,7 @@ class DuplicateKeysFieldsFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"field#nested#too#deep,0", "nonexistentField,0", "field,1"})
+    @CsvSource({"field#nested#too#deep,0", "nonexistentField,0", "field,2"})
     void shouldRunWithDifferentFields(String field, int expectedExecutions) {
         setupData();
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton(field));
@@ -82,7 +82,7 @@ class DuplicateKeysFieldsFuzzerTest {
 
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(2)).execute(Mockito.any());
     }
 
     @Test
@@ -93,7 +93,7 @@ class DuplicateKeysFieldsFuzzerTest {
 
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(simpleExecutor, Mockito.times(3)).execute(Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(6)).execute(Mockito.any());
     }
 
     @Test
@@ -106,8 +106,8 @@ class DuplicateKeysFieldsFuzzerTest {
         // by having a field that exists but causes an issue during duplication
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        // Should execute once since the field is valid
-        Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
+        // Should execute twice (exact + collision) since the field is valid
+        Mockito.verify(simpleExecutor, Mockito.times(2)).execute(Mockito.any());
     }
 
     @Test
@@ -130,6 +130,12 @@ class DuplicateKeysFieldsFuzzerTest {
 
         Assertions.assertThat(duplicatedPayload)
                 .contains("{\"items\":[{\"id\":1,\"id\":\"catsFuzzyDup\"},{\"id\":2,\"id\":\"catsFuzzyDup\"}]}");
+
+        Optional<String> collisionPayload = duplicateKeysFieldsFuzzer.createEscapedCollisionPayload(
+                "{\"items\":[{\"id\":1}]}", "items#id");
+        Assertions.assertThat(collisionPayload)
+                .contains("{\"items\":[{\"id\":1,\"\\u0069d\":\"catsFuzzyDup\",\"id\\uD800\":\"catsFuzzyDup\"}]}");
+        Assertions.assertThat(DuplicateKeysFieldsFuzzer.escapeFirstCharacterAsUnicode("")).isEmpty();
     }
 
     @Test
@@ -156,7 +162,7 @@ class DuplicateKeysFieldsFuzzerTest {
 
         duplicateKeysFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(simpleExecutor, Mockito.times(100)).execute(Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(200)).execute(Mockito.any());
     }
 
 

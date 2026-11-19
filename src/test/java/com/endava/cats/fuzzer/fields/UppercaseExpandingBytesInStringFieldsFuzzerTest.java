@@ -96,6 +96,6 @@ class UppercaseExpandingBytesInStringFieldsFuzzerTest {
                     }
                 """);
         uppercaseExpandingBytesInStringFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(new ResponseCodeFamilyDynamic(List.of("2XX", "4XX"))));
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(new ResponseCodeFamilyDynamic(List.of("2XX", "4XX"))));
     }
 }

@@ -61,7 +61,7 @@ class EncodedAuthenticationHeadersFuzzerTest {
         fuzzer.fuzz(data);
         fuzzer.fuzz(data);
         var requests = ArgumentCaptor.forClass(ServiceData.class);
-        int count = "basic".equals(scheme) ? 13 : 37;
+        int count = "basic".equals(scheme) ? 19 : 55;
         Mockito.verify(caller, Mockito.times(count)).call(requests.capture());
         assertThat(requests.getAllValues()).extracting(EncodedAuthenticationHeadersFuzzerTest::authorization)
                 .doesNotHaveDuplicates().containsExactlyElementsOf(EncodedAuthenticationInputs.values(
@@ -77,7 +77,7 @@ class EncodedAuthenticationHeadersFuzzerTest {
         Mockito.when(auth.isBasicAuthSupplied()).thenReturn(true);
         Mockito.when(files.getHeaders("/auth")).thenReturn(Map.of("authorization", "Bearer e30.e30.c2ln"));
         fuzzer.fuzz(data());
-        Mockito.verify(caller, Mockito.times(50)).call(Mockito.any());
+        Mockito.verify(caller, Mockito.times(74)).call(Mockito.any());
     }
 
     @Test
@@ -97,9 +97,9 @@ class EncodedAuthenticationHeadersFuzzerTest {
         Mockito.when(caller.call(Mockito.any())).thenReturn(response);
         fuzzer.fuzz(data);
         if (status >= 200 && status < 500) {
-            Mockito.verify(listener, Mockito.times(13)).reportResultInfo(Mockito.any(), Mockito.same(data), Mockito.anyString(), Mockito.eq(status));
+            Mockito.verify(listener, Mockito.times(19)).reportResultInfo(Mockito.any(), Mockito.same(data), Mockito.anyString(), Mockito.eq(status));
         } else {
-            Mockito.verify(listener, Mockito.times(13)).reportResult(Mockito.any(), Mockito.same(data), Mockito.same(response),
+            Mockito.verify(listener, Mockito.times(19)).reportResult(Mockito.any(), Mockito.same(data), Mockito.same(response),
                     Mockito.eq(new ResponseCodeFamilyDynamic(List.of("2XX", "3XX", "4XX"))), Mockito.eq(false), Mockito.eq(false));
         }
         Mockito.verify(listener, Mockito.never()).addConfidence(Mockito.any());

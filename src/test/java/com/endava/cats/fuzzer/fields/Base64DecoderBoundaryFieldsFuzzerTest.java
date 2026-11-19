@@ -56,13 +56,13 @@ class Base64DecoderBoundaryFieldsFuzzerTest {
 
     @ParameterizedTest
     @CsvSource({"POST,byte,attachment", "GET,,next_cursor", "POST,,next_cursor", "POST,byte,next_cursor"})
-    void shouldSendExactlyTwelveUnmodifiedValuesPerMatchingField(HttpMethod method, String format, String field) {
+    void shouldSendExactlyEighteenUnmodifiedValuesPerMatchingField(HttpMethod method, String format, String field) {
         Schema<String> schema = new Schema<String>().type("string").format(format);
         FuzzingData data = data(JsonUtils.GSON.toJson(Map.of(field, "original", "unchanged", "keep")), Map.of(field, schema), method);
 
         fuzzer.fuzz(data);
 
-        List<ServiceData> requests = requests(12);
+        List<ServiceData> requests = requests(18);
         Assertions.assertThat(requests).extracting(request -> fieldValue(request, field)).containsExactlyElementsOf(strings(Base64DecoderInputs.boundaryValues()));
         Assertions.assertThat(requests).extracting(request -> fieldValue(request, "unchanged")).containsOnly("keep");
         Assertions.assertThat(requests).extracting(ServiceData::isReplaceRefData).containsOnly(true);
@@ -79,7 +79,7 @@ class Base64DecoderBoundaryFieldsFuzzerTest {
 
         fuzzer.fuzz(data);
 
-        Mockito.verify(listener, Mockito.times(12)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.same(response),
+        Mockito.verify(listener, Mockito.times(18)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.same(response),
                 Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX));
         Mockito.verify(listener, Mockito.never()).addConfidence(Mockito.any());
     }
@@ -91,7 +91,7 @@ class Base64DecoderBoundaryFieldsFuzzerTest {
         new CursorAndPaginationTokenFieldsFuzzer(executor).fuzz(data);
         fuzzer.fuzz(data);
 
-        Assertions.assertThat(requests(16)).extracting(request -> fieldValue(request, "next_cursor"))
+        Assertions.assertThat(requests(22)).extracting(request -> fieldValue(request, "next_cursor"))
                 .doesNotHaveDuplicates().containsAll(strings(Base64DecoderInputs.cursorValues())).containsAll(strings(Base64DecoderInputs.boundaryValues()));
     }
 

@@ -5,7 +5,6 @@ import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.fields.base.TwoXXorFourXXReplaceStringsFuzzer;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -30,10 +29,7 @@ public class UppercaseExpandingBytesInStringFieldsFuzzer extends TwoXXorFourXXRe
 
     @Override
     protected BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer() {
-        return (schema, s) -> {
-            int schemaLength = schema.getMaxLength() != null ? Math.min(schema.getMaxLength(), 50) : 10;
-            return List.of(CatsUtil.selectRandom(UnicodeGenerator.getUppercaseExpandingBytes(), schemaLength));
-        };
+        return (schema, _) -> UnicodeGenerator.generateCaseExpandingPayloads(schema, UnicodeGenerator.getUppercaseExpandingBytes());
     }
 
     @Override

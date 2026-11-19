@@ -47,7 +47,7 @@ class NumericParserBoundaryFieldsFuzzerTest {
         var data = data("{\"amount\":1,\"keep\":\"unchanged\"}", new Schema<>().type("object"), Map.of("amount", new Schema<>().type("number")));
         fuzzer.fuzz(data);
         var requests = ArgumentCaptor.forClass(ServiceData.class);
-        Mockito.verify(caller, Mockito.times(32)).call(requests.capture());
+        Mockito.verify(caller, Mockito.times(38)).call(requests.capture());
         assertThat(requests.getAllValues()).extracting(ServiceData::getPayload).containsExactlyElementsOf(NumericParserInputs.values().stream()
                 .map(value -> "{\"amount\":" + value + ",\"keep\":\"unchanged\"}").toList());
         assertThat(requests.getAllValues()).allSatisfy(request -> {
@@ -62,7 +62,7 @@ class NumericParserBoundaryFieldsFuzzerTest {
     void shouldSupportNumericRoots() {
         fuzzer.fuzz(data("1", new Schema<>().type("number"), Map.of()));
         var requests = ArgumentCaptor.forClass(ServiceData.class);
-        Mockito.verify(caller, Mockito.times(32)).call(requests.capture());
+        Mockito.verify(caller, Mockito.times(38)).call(requests.capture());
         assertThat(requests.getAllValues()).extracting(ServiceData::getPayload).containsExactlyElementsOf(NumericParserInputs.values());
         assertThat(requests.getAllValues().getFirst().getMutationTargets()).containsExactly(RequestTarget.requestBody());
     }

@@ -27,7 +27,7 @@ public class Base64DecoderBoundaryFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         executor.execute(FieldsIteratorExecutorContext.builder()
-                .scenario("Send valid and malformed Base64 tails around 64- and 256-character decoder boundaries.")
+                .scenario("Send valid and malformed Base64 tails around 64-, 128-, and 256-character decoder boundaries.")
                 .fuzzingData(data).logger(logger).fuzzer(this).fuzzingStrategy(FuzzingStrategy.replace())
                 .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX_TWOXX)
                 .fieldFilter(field -> isTarget(data, field))

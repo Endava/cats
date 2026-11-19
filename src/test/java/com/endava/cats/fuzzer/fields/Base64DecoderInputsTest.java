@@ -47,7 +47,7 @@ class Base64DecoderInputsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {64, 256})
+    @ValueSource(ints = {64, 128, 256})
     void shouldExerciseCompleteTruncatedAndIncorrectlyPaddedTailsAroundEachBoundary(int boundary) {
         String prefix = "A".repeat(boundary);
         String shortPrefix = "A".repeat(boundary - 1);
@@ -58,7 +58,7 @@ class Base64DecoderInputsTest {
 
     @Test
     void shouldKeepTheMatrixBoundedDistinctAndSeparateFromLegacyCursorInputs() {
-        Assertions.assertThat(Base64DecoderInputs.boundaryValues()).hasSize(12).doesNotHaveDuplicates()
+        Assertions.assertThat(Base64DecoderInputs.boundaryValues()).hasSize(18).doesNotHaveDuplicates()
                 .doesNotContainAnyElementsOf(Base64DecoderInputs.cursorValues())
                 .allSatisfy(value -> Assertions.assertThat(value.toString()).hasSizeBetween(63, 257));
         Assertions.assertThat(Base64DecoderInputs.cursorValues())

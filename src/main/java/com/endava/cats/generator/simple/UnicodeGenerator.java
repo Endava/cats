@@ -1,6 +1,8 @@
 package com.endava.cats.generator.simple;
 
 import com.endava.cats.util.CatsRandom;
+import com.endava.cats.util.CatsUtil;
+import io.swagger.v3.oas.models.media.Schema;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -21,6 +23,12 @@ public abstract class UnicodeGenerator {
 
     private static final List<String> UPPERCASE_EXPANDING_BYTES = List.of("ȿ", "ɜ", "ʞ", "ʇ", "ʝ");
     private static final List<String> UPPERCASE_EXPANDING_LENGTH = List.of("ß", "ﬃ", "ﬀ", "ΐ", "ΰ", "ὔ", "ᾼ", "ﬗ");
+    private static final List<Integer> ALLOCATOR_SLAB_LENGTHS = List.of(64, 128, 256);
+    private static final List<String> NFKC_EXPANDING_CHARS = List.of("\uFDFA", "\uFB01", "\uFB02", "\u2163", "\u3395", "\u0130", "\u00DF");
+    private static final List<String> NFKC_AND_BEST_FIT_TRANSFORMERS = List.of(
+            "\u2024\u2024\uFF0F\u2024\u2024\uFF0F",
+            "\uFF07\uFE64\uFF1C\uFF1E\uFF02\u00A5",
+            "\u212A\u017F\u0130\u0131\uFF07\u00A5");
 
     private static final List<String> INVALID_REFERENCES = List.of("?", "??", "/?/", "\u0000", "\u200B", "\r\n", "\n", "\r", "\u001B", "%", "&", "/.. ;/",
             "../", ".. /", ".. ;/", "%5c..%5c.%5c", ".././", "%09", "..%00/", "..%0d/", "..%5c/", "..%ff/", ";.json", ".json");
@@ -327,5 +335,70 @@ public abstract class UnicodeGenerator {
      */
     public static Map<Character, Character> getHomoglyphs() {
         return HOMOGLYPHS;
+    }
+
+    /**
+     * Generates case-expansion payloads that both fill the schema {@code maxLength} boundary
+     * and straddle 64/128/256-byte native allocator slabs with an ASCII prefix plus expanding tail.
+     *
+     * @param schema         the target field schema
+     * @param expandingChars the candidate case-expanding characters
+     * @return two bounded case-expansion probes
+     */
+    public static List<Object> generateCaseExpandingPayloads(Schema<?> schema, List<String> expandingChars) {
+        int targetLength = resolveCaseExpansionLength(schema);
+        String pureExpanding = CatsUtil.selectRandom(expandingChars, targetLength);
+        String slabStraddling = buildSlabStraddlingPayload(schema, expandingChars, targetLength);
+        return List.of(pureExpanding, slabStraddling);
+    }
+
+    private static int resolveCaseExpansionLength(Schema<?> schema) {
+        int min = schema != null && schema.getMinLength() != null ? Math.clamp(schema.getMinLength(), 1, 512) : 1;
+        if (schema != null && schema.getMaxLength() != null && schema.getMaxLength() > 0) {
+            return Math.max(min, Math.clamp(schema.getMaxLength(), 1, 512));
+        }
+        return Math.max(min, 64);
+    }
+
+    private static String buildSlabStraddlingPayload(Schema<?> schema, List<String> expandingChars, int fallbackLength) {
+        int slab = ALLOCATOR_SLAB_LENGTHS.get(CatsRandom.instance().nextInt(ALLOCATOR_SLAB_LENGTHS.size()));
+        int boundedSlab = schema != null && schema.getMaxLength() != null && schema.getMaxLength() > 0
+                ? Math.min(fallbackLength, slab)
+                : slab;
+        int minLength = schema != null && schema.getMinLength() != null
+                ? Math.clamp(schema.getMinLength(), 1, 512)
+                : 1;
+        int effectiveLength = Math.max(minLength, boundedSlab);
+        int tailCount = Math.min(effectiveLength, 1 + CatsRandom.instance().nextInt(3));
+        int prefixLength = Math.max(0, effectiveLength - tailCount);
+        return CatsRandom.alphanumeric(prefixLength) + CatsUtil.selectRandom(expandingChars, tailCount);
+    }
+
+    /**
+     * Generates NFKC compatibility-decomposition and Windows/iconv Best-Fit transformation payloads
+     * respecting the field's length bounds when declared.
+     *
+     * @param schema the target field schema
+     * @return bounded normalization differential probes
+     */
+    public static List<Object> generateNormalizationDifferentialPayloads(Schema<?> schema) {
+        int targetLength = resolveCaseExpansionLength(schema);
+        String nfkcBomb = buildSlabStraddlingPayload(schema, NFKC_EXPANDING_CHARS, targetLength);
+        String transformerSample = NFKC_AND_BEST_FIT_TRANSFORMERS.get(
+                CatsRandom.instance().nextInt(NFKC_AND_BEST_FIT_TRANSFORMERS.size()));
+        String syntaxTransformer = fitToSchemaBounds(schema, transformerSample + CatsRandom.alphanumeric(4));
+        return List.of(nfkcBomb, syntaxTransformer);
+    }
+
+    private static String fitToSchemaBounds(Schema<?> schema, String candidate) {
+        if (schema == null) {
+            return candidate;
+        }
+        int min = schema.getMinLength() != null ? Math.max(0, schema.getMinLength()) : 0;
+        int max = schema.getMaxLength() != null && schema.getMaxLength() > 0 ? Math.min(schema.getMaxLength(), 512) : 512;
+        String padded = candidate.length() < min
+                ? candidate + CatsUtil.selectRandom(NFKC_EXPANDING_CHARS, min - candidate.length())
+                : candidate;
+        return padded.length() > max ? padded.substring(0, max) : padded;
     }
 }

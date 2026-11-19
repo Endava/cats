@@ -89,25 +89,34 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
             return;
         }
 
-        runDuplicationTestCase(data, field, duplicatedPayload.get());
+        runDuplicationTestCase(data, field, duplicatedPayload.get(),
+                "Duplicate key [" + field + "] in parent object with second value [" + DUPLICATE_VALUE + "]");
+        createEscapedCollisionPayload(data.getPayload(), field)
+                .ifPresent(collision -> runDuplicationTestCase(data, field, collision,
+                        "Duplicate key [" + field + "] using Unicode escape and surrogate-truncation key collisions"));
     }
 
     private Optional<String> createDuplicatedPayload(String originalPayload, String fieldPath) {
+        return renderPayloadVariant(originalPayload, fieldPath, false);
+    }
+
+    Optional<String> createEscapedCollisionPayload(String originalPayload, String fieldPath) {
+        return renderPayloadVariant(originalPayload, fieldPath, true);
+    }
+
+    private Optional<String> renderPayloadVariant(String originalPayload, String fieldPath, boolean collisionKeys) {
         try {
             JsonElement root = JsonParser.parseString(originalPayload);
-            String[] pathSegments = fieldPath.split("#");
-            String duplicatedJson = renderJsonWithDuplicateKey(root, pathSegments, 0);
-
-            return duplicatedJson.equals(originalPayload)
-                    ? Optional.empty()
-                    : Optional.of(duplicatedJson);
+            DuplicationStep step = new DuplicationStep(List.of(fieldPath.split("#")), 0, collisionKeys);
+            String duplicatedJson = renderJsonWithDuplicateKey(root, step);
+            return duplicatedJson.equals(originalPayload) ? Optional.empty() : Optional.of(duplicatedJson);
         } catch (Exception e) {
             logger.debug("Error creating duplicated payload for field {}: {}", fieldPath, e.getMessage());
             return Optional.empty();
         }
     }
 
-    private void runDuplicationTestCase(FuzzingData data, String field, String duplicatedPayload) {
+    private void runDuplicationTestCase(FuzzingData data, String field, String duplicatedPayload, String scenario) {
         simpleExecutor.execute(SimpleExecutorContext.builder()
                 .logger(logger)
                 .fuzzer(this)
@@ -115,75 +124,86 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
                 .payload(duplicatedPayload)
                 .mutationTarget(RequestTarget.body(field))
                 .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
-                .scenario("Duplicate key [" + field + "] in parent object with second value [" + DUPLICATE_VALUE + "]")
+                .scenario(scenario)
                 .replaceRefData(false)
                 .validJson(false)
                 .build());
     }
 
+    private record DuplicationStep(List<String> path, int depth, boolean collisionKeys) {
+        boolean isComplete() {
+            return depth >= path.size();
+        }
 
-    /**
-     * Recursively renders JSON while duplicating the target key when the path matches.
-     */
-    private String renderJsonWithDuplicateKey(JsonElement element, String[] pathSegments, int currentDepth) {
-        if (currentDepth >= pathSegments.length) {
+        String currentKey() {
+            return path.get(depth);
+        }
+
+        boolean atTargetLevel() {
+            return depth == path.size() - 1;
+        }
+
+        DuplicationStep next() {
+            return new DuplicationStep(path, depth + 1, collisionKeys);
+        }
+    }
+
+    private String renderJsonWithDuplicateKey(JsonElement element, DuplicationStep step) {
+        if (step.isComplete()) {
             return element.toString();
         }
-
         if (element.isJsonObject()) {
-            return renderObjectWithDuplicateKey(element.getAsJsonObject(), pathSegments, currentDepth);
+            return renderObjectWithDuplicateKey(element.getAsJsonObject(), step);
         }
-
         if (element.isJsonArray()) {
-            return renderArrayWithDuplicateKey(element, pathSegments, currentDepth);
+            return renderArrayWithDuplicateKey(element, step);
         }
-
         return element.toString();
     }
 
-    private String renderObjectWithDuplicateKey(JsonObject obj, String[] path, int depth) {
-        String currentKey = path[depth];
-        boolean atTargetLevel = depth == path.length - 1;
-
+    private String renderObjectWithDuplicateKey(JsonObject obj, DuplicationStep step) {
         StringJoiner joiner = new StringJoiner(",", "{", "}");
-
-        for (Map.Entry<String, JsonElement> en : obj.entrySet()) {
-            String key = en.getKey();
-            JsonElement v = en.getValue();
-
-            /* normal member (recursing deeper when on the path) */
-            if (key.equals(currentKey)) {
-                String processed = atTargetLevel
-                        ? v.toString()
-                        : renderJsonWithDuplicateKey(v, path, depth + 1);
-                joiner.add(formatJsonMember(key, processed));
-
-                /* add the duplicate right after the original */
-                if (atTargetLevel) {
-                    joiner.add(formatJsonMember(key,
-                            JsonUtils.GSON.toJson(DUPLICATE_VALUE)));
-                }
-            } else {
-                joiner.add(formatJsonMember(key, v.toString()));
-            }
+        for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+            appendObjectEntry(joiner, entry, step);
         }
         return joiner.toString();
     }
 
-    private String renderArrayWithDuplicateKey(JsonElement arrayElement, String[] pathSegments, int currentDepth) {
-        StringBuilder arrayBuilder = new StringBuilder("[");
-        boolean firstElement = true;
-
-        for (JsonElement element : arrayElement.getAsJsonArray()) {
-            if (!firstElement) {
-                arrayBuilder.append(",");
-            }
-            firstElement = false;
-            arrayBuilder.append(renderJsonWithDuplicateKey(element, pathSegments, currentDepth));
+    private void appendObjectEntry(StringJoiner joiner, Map.Entry<String, JsonElement> entry, DuplicationStep step) {
+        String key = entry.getKey();
+        boolean matchesKey = key.equals(step.currentKey());
+        String renderedValue = matchesKey && !step.atTargetLevel()
+                ? renderJsonWithDuplicateKey(entry.getValue(), step.next())
+                : entry.getValue().toString();
+        joiner.add(formatJsonMember(key, renderedValue));
+        if (matchesKey && step.atTargetLevel()) {
+            appendDuplicateMembers(joiner, key, step.collisionKeys());
         }
+    }
 
-        arrayBuilder.append("]");
-        return arrayBuilder.toString();
+    private void appendDuplicateMembers(StringJoiner joiner, String key, boolean collisionKeys) {
+        String duplicateVal = JsonUtils.GSON.toJson(DUPLICATE_VALUE);
+        if (!collisionKeys) {
+            joiner.add(formatJsonMember(key, duplicateVal));
+            return;
+        }
+        joiner.add("\"%s\":%s".formatted(escapeFirstCharacterAsUnicode(key), duplicateVal));
+        joiner.add("\"%s\\uD800\":%s".formatted(JsonUtils.escape(key), duplicateVal));
+    }
+
+    static String escapeFirstCharacterAsUnicode(String key) {
+        if (key.isEmpty()) {
+            return key;
+        }
+        return "\\u%04x%s".formatted((int) key.charAt(0), JsonUtils.escape(key.substring(1)));
+    }
+
+    private String renderArrayWithDuplicateKey(JsonElement arrayElement, DuplicationStep step) {
+        StringJoiner arrayJoiner = new StringJoiner(",", "[", "]");
+        for (JsonElement element : arrayElement.getAsJsonArray()) {
+            arrayJoiner.add(renderJsonWithDuplicateKey(element, step));
+        }
+        return arrayJoiner.toString();
     }
 
     private String formatJsonMember(String key, String valueJson) {

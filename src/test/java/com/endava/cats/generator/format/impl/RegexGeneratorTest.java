@@ -17,9 +17,17 @@ class RegexGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"regex,true", "other,false"})
+    @CsvSource({"regex,true", "regexp,true", "REGEX,true", "other,false"})
     void shouldApply(String format, boolean expected) {
         RegexGenerator regexGenerator = new RegexGenerator();
         Assertions.assertThat(regexGenerator.appliesTo(format, "")).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldProvideInvalidRegexBoundariesAndMatchingFormats() {
+        RegexGenerator regexGenerator = new RegexGenerator();
+        Assertions.assertThat(regexGenerator.getAlmostValidValue()).isEqualTo("(?<group>[a-z0-9]+");
+        Assertions.assertThat(regexGenerator.getTotallyWrongValue()).isEqualTo("(*VERB)[z-a]\\k<missing>{");
+        Assertions.assertThat(regexGenerator.matchingFormats()).containsExactly("regex", "regexp");
     }
 }
