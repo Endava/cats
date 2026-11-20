@@ -23,11 +23,28 @@ class PayloadFormatTest {
             "application/xml, XML",
             "text/xml, XML",
             "application/problem+xml, XML",
+            "multipart/form-data, MULTIPART",
+            "multipart/form-data; boundary=abc123, MULTIPART",
+            "multipart/mixed, UNKNOWN",
             "application/json-seq, UNKNOWN",
             "application/octet-stream, UNKNOWN"
     })
     void shouldClassifyMediaTypes(String contentType, PayloadFormat expected) {
         assertThat(PayloadFormat.from(contentType)).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "JSON, true",
+            "FORM, true",
+            "XML, true",
+            "MULTIPART, true",
+            "TEXT, false",
+            "NDJSON, false",
+            "UNKNOWN, false"
+    })
+    void shouldReportNamedFieldSupportPerFormat(PayloadFormat format, boolean expected) {
+        assertThat(format.supportsNamedFields()).isEqualTo(expected);
     }
 
     @Test

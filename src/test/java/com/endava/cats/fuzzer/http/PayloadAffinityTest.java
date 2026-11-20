@@ -21,6 +21,13 @@ class PayloadAffinityTest {
     }
 
     @Test
+    void shouldAllowFieldFuzzersForMultipartPayloads() {
+        Fuzzer fuzzer = new StructuredFuzzer();
+
+        assertThat(fuzzer.isApplicableTo(data("multipart/form-data; boundary=abc"))).isTrue();
+    }
+
+    @Test
     void shouldAllowGenericFuzzersForAllPayloadFormats() {
         Fuzzer fuzzer = new GenericFuzzer();
 

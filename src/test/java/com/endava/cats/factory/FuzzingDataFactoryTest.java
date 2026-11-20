@@ -487,6 +487,19 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldSkipOperationWhenOnlyMultipartIsExplicitlySelected() throws Exception {
+        Mockito.when(processingArguments.getContentType()).thenReturn(List.of("multipart/form-data"));
+
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml", true, openAPI -> {
+            RequestBody requestBody = openAPI.getPaths().get("/pets").getPost().getRequestBody();
+            MediaType json = requestBody.getContent().get("application/json");
+            requestBody.setContent(new Content().addMediaType("multipart/form-data", json));
+        });
+
+        Assertions.assertThat(data).noneMatch(entry -> entry.getMethod() == HttpMethod.POST);
+    }
+
+    @Test
     void shouldFallbackMultipartFormDataToFormUrlEncodedWhenDefaultContentTypesConfigured() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml", true, openAPI -> {
             RequestBody requestBody = openAPI.getPaths().get("/pets").getPost().getRequestBody();

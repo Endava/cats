@@ -8,6 +8,7 @@ public enum PayloadFormat {
     XML,
     TEXT,
     NDJSON,
+    MULTIPART,
     UNKNOWN;
 
     public static PayloadFormat from(String contentType) {
@@ -23,6 +24,9 @@ public enum PayloadFormat {
     }
 
     private static PayloadFormat classifyMediaType(String type, String subtype) {
+        if ("multipart".equals(type) && "form-data".equals(subtype)) {
+            return MULTIPART;
+        }
         if (isXmlSubtype(type, subtype)) {
             return XML;
         }
@@ -48,6 +52,6 @@ public enum PayloadFormat {
     }
 
     public boolean supportsNamedFields() {
-        return this == JSON || this == FORM || this == XML;
+        return this == JSON || this == FORM || this == XML || this == MULTIPART;
     }
 }

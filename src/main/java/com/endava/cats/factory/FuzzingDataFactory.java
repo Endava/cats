@@ -735,7 +735,8 @@ public class FuzzingDataFactory {
     }
 
     private boolean isSupportedRequestContentType(String contentType) {
-        return PayloadFormat.from(contentType) != PayloadFormat.UNKNOWN;
+        PayloadFormat format = PayloadFormat.from(contentType);
+        return format != PayloadFormat.UNKNOWN && format != PayloadFormat.MULTIPART;
     }
 
     static boolean hasContent(Operation operation) {

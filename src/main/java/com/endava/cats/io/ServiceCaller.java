@@ -630,7 +630,7 @@ public class ServiceCaller {
             case TEXT -> new EncodedRequestBody(encodeTextPayload(payload, data.isValidJson()), data.getContentType());
             case NDJSON ->
                     new EncodedRequestBody(encodeNdjsonPayload(payload, data.isValidJson()), data.getContentType());
-            case UNKNOWN ->
+            case MULTIPART, UNKNOWN ->
                     throw new IllegalArgumentException("Unsupported request Content-Type '" + data.getContentType() + "'");
         };
     }

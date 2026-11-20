@@ -555,6 +555,16 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldRejectMultipartRequestContentTypeUntilEncodingIsSupported() {
+        ServiceData serviceData = ServiceData.builder().relativePath("/pets").payload("{\"a\":\"b\"}").httpMethod(HttpMethod.POST)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
+                .contentType("multipart/form-data").build();
+        Assertions.assertThatThrownBy(() -> serviceCaller.call(serviceData))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unsupported request Content-Type", "multipart/form-data");
+    }
+
+    @Test
     void givenAServer_whenDoingAHeadCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
         serviceCaller.initRateLimiter();
