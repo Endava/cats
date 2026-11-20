@@ -27,6 +27,7 @@ public class CatsRequest {
 
     List<KeyValuePair<String, Object>> headers;
     String payload;
+    String encodedBody;
     String httpMethod;
     String url;
     boolean sendBody;

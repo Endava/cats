@@ -19,6 +19,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.io.util.HttpContent;
+import com.endava.cats.io.util.MultipartEncoder;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.QueryParameterSerialization;
@@ -75,6 +76,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -283,6 +285,7 @@ public class ServiceCaller {
                         && HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(t.name()));
         CatsRequest catsRequest = CatsRequest.builder()
                 .headers(headers).payload(processedPayload)
+                .encodedBody(encodedBody.body() == null ? null : Base64.getEncoder().encodeToString(encodedBody.body()))
                 .httpMethod(data.getHttpMethod().name())
                 .sendBody(data.getAllMutationTargets().contains(RequestTarget.requestBody()))
                 .preserveContentType(preserveContentType)
@@ -375,6 +378,7 @@ public class ServiceCaller {
                 .toList();
         CatsRequest retryRequest = CatsRequest.builder()
                 .headers(unauthenticatedHeaders).payload(catsRequest.getPayload())
+                .encodedBody(catsRequest.getEncodedBody())
                 .httpMethod(catsRequest.getHttpMethod()).sendBody(catsRequest.isSendBody())
                 .preserveContentType(catsRequest.isPreserveContentType())
                 .expectsRateLimit(catsRequest.isExpectsRateLimit())
@@ -630,9 +634,16 @@ public class ServiceCaller {
             case TEXT -> new EncodedRequestBody(encodeTextPayload(payload, data.isValidJson()), data.getContentType());
             case NDJSON ->
                     new EncodedRequestBody(encodeNdjsonPayload(payload, data.isValidJson()), data.getContentType());
-            case MULTIPART, UNKNOWN ->
+            case MULTIPART -> encodeMultipartPayload(payload, data);
+            case UNKNOWN ->
                     throw new IllegalArgumentException("Unsupported request Content-Type '" + data.getContentType() + "'");
         };
+    }
+
+    private EncodedRequestBody encodeMultipartPayload(String payload, ServiceData data) {
+        MultipartEncoder.Result result = MultipartEncoder.encode(payload, data.isValidJson(),
+                data.getRequestPropertyTypes(), field -> data.isFuzzedField(field, RequestTarget.Location.BODY));
+        return new EncodedRequestBody(result.summary(), result.contentType(), result.body());
     }
 
     private EncodedRequestBody encodeFormPayload(String payload, ServiceData data) {
@@ -779,8 +790,10 @@ public class ServiceCaller {
 
         if (HttpMethod.requiresBody(catsRequest.getHttpMethod()) || catsRequest.isSendBody()) {
             String contentType = headers.get(HttpHeaders.CONTENT_TYPE);
-            requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8),
-                    contentType == null ? null : MediaType.parse(contentType));
+            byte[] bodyBytes = catsRequest.getEncodedBody() == null
+                    ? catsRequest.getPayload().getBytes(StandardCharsets.UTF_8)
+                    : Base64.getDecoder().decode(catsRequest.getEncodedBody());
+            requestBody = RequestBody.create(bodyBytes, contentType == null ? null : MediaType.parse(contentType));
         } else {
             String currentContentType = headers.get(HttpHeaders.CONTENT_TYPE);
             if (shouldStripBodylessContentType(catsRequest, currentContentType)) {
@@ -1257,6 +1270,9 @@ public class ServiceCaller {
         return payload;
     }
 
-    private record EncodedRequestBody(String payload, String contentType) {
+    private record EncodedRequestBody(String payload, String contentType, byte[] body) {
+        EncodedRequestBody(String payload, String contentType) {
+            this(payload, contentType, null);
+        }
     }
 }

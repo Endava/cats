@@ -33,6 +33,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
@@ -62,11 +63,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyStore;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -144,6 +148,8 @@ class ServiceCallerTest {
         Assertions.assertThat(serviceCaller.buildHeaders(data)).filteredOn(header -> "X-Session-Token".equalsIgnoreCase(header.getKey()))
                 .extracting(KeyValuePair::getValue).containsExactly("mutated");
     }
+
+    private static final Path MULTIPART_FIXTURE = Path.of("src/test/resources/multipart/all-bytes.bin");
 
     public static WireMockServer wireMockServer;
     @Inject
@@ -555,13 +561,84 @@ class ServiceCallerTest {
     }
 
     @Test
-    void shouldRejectMultipartRequestContentTypeUntilEncodingIsSupported() {
-        ServiceData serviceData = ServiceData.builder().relativePath("/pets").payload("{\"a\":\"b\"}").httpMethod(HttpMethod.POST)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
-                .contentType("multipart/form-data").build();
-        Assertions.assertThatThrownBy(() -> serviceCaller.call(serviceData))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Unsupported request Content-Type", "multipart/form-data");
+    void shouldSendMultipartBodyByteExact() throws IOException {
+        byte[] fixture = Files.readAllBytes(MULTIPART_FIXTURE);
+        wireMockServer.stubFor(WireMock.post("/multipart-exact").willReturn(WireMock.ok("{}")));
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath("/multipart-exact")
+                .headers(Set.of()).httpMethod(HttpMethod.POST).contentType("multipart/form-data")
+                .payload("{\"file\":\"cats_file:src/test/resources/multipart/all-bytes.bin\",\"evidenceType\":\"OTHER\"}")
+                .build());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
+        LoggedRequest received = lastRequestTo("/multipart-exact");
+        Assertions.assertThat(received.getHeader("Content-Type")).startsWith("multipart/form-data; boundary=");
+        Assertions.assertThat(indexOf(received.getBody(), fixture)).isNotNegative();
+    }
+
+    @Test
+    void shouldRecordEncodedMultipartBodyAndSummaryInTheRequest() throws IOException {
+        wireMockServer.stubFor(WireMock.post("/multipart-recorded").willReturn(WireMock.ok("{}")));
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/multipart-recorded")
+                .headers(Set.of()).httpMethod(HttpMethod.POST).contentType("multipart/form-data")
+                .payload("{\"file\":\"cats_file:src/test/resources/multipart/all-bytes.bin\",\"evidenceType\":\"OTHER\"}")
+                .build());
+
+        ArgumentCaptor<CatsRequest> request = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(testCaseListener).addRequest(request.capture());
+        Assertions.assertThat(Base64.getDecoder().decode(request.getValue().getEncodedBody()))
+                .isEqualTo(lastRequestTo("/multipart-recorded").getBody());
+        Assertions.assertThat(request.getValue().getPayload()).contains("size=256");
+    }
+
+    @Test
+    void shouldReplaceGeneratedMultipartFileValueWithReferenceData() throws IOException {
+        byte[] fixture = Files.readAllBytes(MULTIPART_FIXTURE);
+        wireMockServer.stubFor(WireMock.post("/multipart-refdata").willReturn(WireMock.ok("{}")));
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of("/multipart-refdata",
+                Map.of("file", "cats_file:src/test/resources/multipart/all-bytes.bin")));
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/multipart-refdata").contractPath("/multipart-refdata")
+                .headers(Set.of()).httpMethod(HttpMethod.POST).contentType("multipart/form-data")
+                .payload("{\"file\":\"Zm9v\",\"evidenceType\":\"OTHER\"}").build());
+
+        Assertions.assertThat(indexOf(lastRequestTo("/multipart-refdata").getBody(), fixture)).isNotNegative();
+    }
+
+    @Test
+    void shouldNotRecordEncodedBodyForJsonRequests() {
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/pets").headers(Set.of()).httpMethod(HttpMethod.POST)
+                .contentType("application/json").payload("{\"id\":1}").build());
+
+        ArgumentCaptor<CatsRequest> request = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(testCaseListener).addRequest(request.capture());
+        Assertions.assertThat(request.getValue().getEncodedBody()).isNull();
+        Assertions.assertThat(new String(lastRequestTo("/pets").getBody(), StandardCharsets.UTF_8))
+                .isEqualTo(request.getValue().getPayload());
+    }
+
+    private static LoggedRequest lastRequestTo(String path) {
+        List<LoggedRequest> requests = wireMockServer.findAll(WireMock.postRequestedFor(WireMock.urlEqualTo(path)));
+        return requests.getLast();
+    }
+
+    private static int indexOf(byte[] source, byte[] target) {
+        for (int i = 0; i <= source.length - target.length; i++) {
+            if (Arrays.equals(source, i, i + target.length, target, 0, target.length)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     @Test
