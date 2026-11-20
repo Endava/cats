@@ -736,6 +736,22 @@ class ServiceCallerTest {
         return count;
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"", "null", " ", "0", "0.0", "{\"cats\": \"cats\"}", "-1234.5"})
+    void shouldSendWholeBodyPayloadsAsRawMultipartBytes(String payload) {
+        wireMockServer.stubFor(WireMock.post("/multipart-whole-body").willReturn(WireMock.ok("{}")));
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/multipart-whole-body").headers(Set.of())
+                .httpMethod(HttpMethod.POST).contentType("multipart/form-data").validJson(false).replaceRefData(false)
+                .payload(payload).mutationTarget(RequestTarget.requestBody()).build());
+
+        LoggedRequest received = lastRequestTo("/multipart-whole-body");
+        Assertions.assertThat(received.getHeader("Content-Type")).startsWith("multipart/form-data; boundary=cats");
+        Assertions.assertThat(received.getBody()).isEqualTo(payload.getBytes(StandardCharsets.UTF_8));
+    }
+
     private static LoggedRequest lastRequestTo(String path) {
         List<LoggedRequest> requests = wireMockServer.findAll(WireMock.postRequestedFor(WireMock.urlEqualTo(path)));
         return requests.getLast();
