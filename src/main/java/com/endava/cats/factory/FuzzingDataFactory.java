@@ -297,11 +297,11 @@ public class FuzzingDataFactory {
         SelectedMediaType selectedMediaType = this.getMediaType(operation, openAPI);
 
         if (selectedMediaType == null) {
-            logger.warn("No supported request content type found for path {}, method {}. Supported payload formats are JSON, form, XML, plain text and NDJSON", path, method);
+            logger.warn("No supported request content type found for path {}, method {}. Supported payload formats are JSON, form, multipart, XML, plain text and NDJSON", path, method);
             return Collections.emptyList();
         }
         if (!isSupportedRequestContentType(selectedMediaType.contentType())) {
-            logger.warn("Request content type {} is not supported for path {}, method {}. Supported payload formats are JSON, form, XML, plain text and NDJSON",
+            logger.warn("Request content type {} is not supported for path {}, method {}. Supported payload formats are JSON, form, multipart, XML, plain text and NDJSON",
                     selectedMediaType.contentType(), path, method);
             return Collections.emptyList();
         }
@@ -713,7 +713,7 @@ public class FuzzingDataFactory {
                 && processingArguments.getContentType().size() > 1) {
             MediaType multipart = content.get("multipart/form-data");
             if (multipart != null) {
-                return new SelectedMediaType("application/x-www-form-urlencoded", multipart);
+                return new SelectedMediaType("multipart/form-data", multipart);
             }
         }
         return null;
@@ -735,8 +735,7 @@ public class FuzzingDataFactory {
     }
 
     private boolean isSupportedRequestContentType(String contentType) {
-        PayloadFormat format = PayloadFormat.from(contentType);
-        return format != PayloadFormat.UNKNOWN && format != PayloadFormat.MULTIPART;
+        return PayloadFormat.from(contentType) != PayloadFormat.UNKNOWN;
     }
 
     static boolean hasContent(Operation operation) {

@@ -1,0 +1,37 @@
+openapi: 3.0.3
+info:
+  title: Multipart upload
+  version: 1.0.0
+paths:
+  /cases/{caseId}/evidence/uploads:
+    post:
+      operationId: uploadEvidence
+      parameters:
+        - name: caseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, evidenceType, checksum]
+              additionalProperties: false
+              properties:
+                file:
+                  type: string
+                  format: binary
+                evidenceType:
+                  type: string
+                  enum: [PROOF_OF_DELIVERY, OTHER]
+                checksum:
+                  type: string
+                  pattern: '^[0-9a-f]{64}$'
+      responses:
+        '200':
+          description: Stored
+        '422':
+          description: Rejected
