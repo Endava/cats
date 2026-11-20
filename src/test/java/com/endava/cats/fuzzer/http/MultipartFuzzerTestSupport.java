@@ -11,6 +11,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +27,23 @@ final class MultipartFuzzerTestSupport {
                 .requestContentTypes(List.of("multipart/form-data")).responseCodes(Set.of("400")).build();
         ReflectionTestUtils.setField(data, "processedPayload", payload);
         return data;
+    }
+
+    static FuzzingData multipartDataWithBinaryFile(HttpMethod method, String payload) {
+        FuzzingData data = FuzzingData.builder().method(method).path("/uploads").reqSchema(new Schema<>())
+                .requestContentTypes(List.of("multipart/form-data")).responseCodes(Set.of("400"))
+                .requestPropertyTypes(Map.of("file", new Schema<>().type("string").format("binary"))).build();
+        ReflectionTestUtils.setField(data, "processedPayload", payload);
+        return data;
+    }
+
+    static boolean contains(byte[] source, byte[] target) {
+        for (int i = 0; i <= source.length - target.length; i++) {
+            if (Arrays.equals(source, i, i + target.length, target, 0, target.length)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static MultipartEncoder.Result encoded() {

@@ -44,6 +44,7 @@ profiles:
       - SstiInjectionInStringFields
       - CommandInjectionInStringFields
       - PathTraversalInStringFields
+      - MultipartHostileFileNames
       - XssInjectionInStringFields
       - SSRFInUrlFields
       - SortColumnOrmLeakFields
@@ -77,6 +78,7 @@ profiles:
       - ContentTypeParameterDifferentialHeaders
       - CombinatorialBoundaryAndHeaderHavoc
       - VeryLargeStringsInFields
+      - MultipartOversizedFile
       - VeryLargeUnicodeStringsInFields
       - VeryLargeIntegersInNumericFields
       - VeryLargeDecimalsInNumericFields
@@ -178,6 +180,7 @@ profiles:
       - MalformedJson
       - MultipartMalformedBoundary
       - MultipartMissingPartHeaders
+      - MultipartEmptyFile
       - EmptyJsonBody
 
   # ============================================
@@ -214,6 +217,7 @@ profiles:
 
       # API4:2023 - Unrestricted Resource Consumption
       - VeryLargeStringsInFields
+      - MultipartOversizedFile
       - VeryLargeIntegersInNumericFields
       - VeryLargeDecimalsInNumericFields
       - VeryLargeUnicodeStringsInFields
@@ -351,6 +355,7 @@ profiles:
       - ReadOnlyFieldsMassAssignment
       - SqlInjectionInStringFields
       - PathTraversalInStringFields
+      - MultipartHostileFileNames
       - XssInjectionInStringFields
       - SSRFInUrlFields
       - InsecureDirectObjectReferences
@@ -368,6 +373,7 @@ profiles:
       - MalformedJson
       - MultipartMalformedBoundary
       - MultipartMissingPartHeaders
+      - MultipartEmptyFile
       - EmptyJsonBody
       - DummyRequest
       - ControlCharsInStringFields
@@ -445,6 +451,7 @@ profiles:
       - MultipartDuplicateParts
       - MultipartMalformedBoundary
       - MultipartMissingPartHeaders
+      - MultipartEmptyFile
       - RandomResources
       - CheckDeletedResourcesNotAvailable
       - LeadingControlCharsInFields

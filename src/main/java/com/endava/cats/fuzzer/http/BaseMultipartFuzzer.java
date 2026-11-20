@@ -11,6 +11,7 @@ import com.endava.cats.io.util.MultipartMutation;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.RequestTarget;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
@@ -19,6 +20,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 /**
  * Base class for Fuzzers that send structurally invalid {@code multipart/form-data} bodies. The request is encoded
@@ -37,6 +39,15 @@ public abstract class BaseMultipartFuzzer implements Fuzzer {
      */
     protected BaseMultipartFuzzer(SimpleExecutor simpleExecutor) {
         this.simpleExecutor = simpleExecutor;
+    }
+
+    /**
+     * Returns the fuzzer logger.
+     *
+     * @return the logger
+     */
+    protected PrettyLogger logger() {
+        return logger;
     }
 
     @Override
@@ -109,6 +120,43 @@ public abstract class BaseMultipartFuzzer implements Fuzzer {
             return List.of();
         }
         return List.of();
+    }
+
+    /**
+     * Returns the names of the top level properties declared as binary strings, in order.
+     *
+     * @param data the current FuzzingData
+     * @return the file part names
+     */
+    protected static List<String> filePartNames(FuzzingData data) {
+        if (data.getRequestPropertyTypes() == null) {
+            return List.of();
+        }
+        return topLevelPartNames(data).stream()
+                .filter(name -> data.getRequestPropertyTypes().get(name) != null
+                        && CatsModelUtils.isBinarySchema(data.getRequestPropertyTypes().get(name)))
+                .toList();
+    }
+
+    /**
+     * Creates a mutation that replaces the first file part with the given name and leaves the body untouched
+     * when there is no such part.
+     *
+     * @param name   the file part name
+     * @param change the change applied to the part
+     * @return the mutation
+     */
+    protected static MultipartMutation replaceFilePart(String name, UnaryOperator<MultipartEncoder.Part> change) {
+        return encoded -> {
+            List<MultipartEncoder.Part> parts = new ArrayList<>(encoded.parts());
+            for (int index = 0; index < parts.size(); index++) {
+                if (parts.get(index).name().equals(name) && parts.get(index).isFile()) {
+                    parts.set(index, change.apply(parts.get(index)));
+                    return withBody(encoded, MultipartEncoder.render(encoded.boundary(), parts), encoded.contentType());
+                }
+            }
+            return encoded;
+        };
     }
 
     /**
