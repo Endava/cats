@@ -99,16 +99,34 @@ public final class MultipartEncoder {
      * @return the exact bytes of the body
      */
     public static byte[] render(String boundary, List<Part> parts) {
+        return render(boundary, parts, Map.of());
+    }
+
+    /**
+     * Renders the parts as a {@code multipart/form-data} body, replacing the default header lines of the parts found
+     * in {@code headerOverrides}. Overrides are written as they are, without any escaping.
+     *
+     * @param boundary        the multipart boundary
+     * @param parts           the parts, in the order they are written
+     * @param headerOverrides header lines by part index; a non-empty value must end with a CRLF
+     * @return the exact bytes of the body
+     */
+    public static byte[] render(String boundary, List<Part> parts, Map<Integer, String> headerOverrides) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for (Part part : parts) {
-            StringBuilder header = new StringBuilder("--").append(boundary).append("\r\n")
-                    .append("Content-Disposition: form-data; name=\"").append(escape(part.name())).append('"');
-            if (part.isFile()) {
-                header.append("; filename=\"").append(escape(part.fileName())).append('"');
-            }
-            header.append("\r\n");
-            if (part.isFile()) {
-                header.append("Content-Type: ").append(part.contentType()).append("\r\n");
+        for (int index = 0; index < parts.size(); index++) {
+            Part part = parts.get(index);
+            StringBuilder header = new StringBuilder("--").append(boundary).append("\r\n");
+            if (headerOverrides.containsKey(index)) {
+                header.append(headerOverrides.get(index));
+            } else {
+                header.append("Content-Disposition: form-data; name=\"").append(escape(part.name())).append('"');
+                if (part.isFile()) {
+                    header.append("; filename=\"").append(escape(part.fileName())).append('"');
+                }
+                header.append("\r\n");
+                if (part.isFile()) {
+                    header.append("Content-Type: ").append(part.contentType()).append("\r\n");
+                }
             }
             header.append("\r\n");
             out.writeBytes(header.toString().getBytes(StandardCharsets.UTF_8));

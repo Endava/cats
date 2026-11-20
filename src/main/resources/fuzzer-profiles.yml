@@ -100,6 +100,7 @@ profiles:
       # Header Manipulation
       - CRLFHeaders
       - DuplicateHeaders
+      - MultipartDuplicateParts
       - LargeNumberOfRandomHeaders
 
       # Resource Manipulation
@@ -175,6 +176,8 @@ profiles:
 
       # Malformed Requests
       - MalformedJson
+      - MultipartMalformedBoundary
+      - MultipartMissingPartHeaders
       - EmptyJsonBody
 
   # ============================================
@@ -363,6 +366,8 @@ profiles:
 
       # Malformed Input
       - MalformedJson
+      - MultipartMalformedBoundary
+      - MultipartMissingPartHeaders
       - EmptyJsonBody
       - DummyRequest
       - ControlCharsInStringFields
@@ -437,6 +442,9 @@ profiles:
       - HttpMethods
       - DummyRequest
       - MalformedJson
+      - MultipartDuplicateParts
+      - MultipartMalformedBoundary
+      - MultipartMissingPartHeaders
       - RandomResources
       - CheckDeletedResourcesNotAvailable
       - LeadingControlCharsInFields

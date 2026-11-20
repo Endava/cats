@@ -223,6 +223,20 @@ class MultipartEncoderTest {
     }
 
     @Test
+    void shouldApplyHeaderOverrides() {
+        List<MultipartEncoder.Part> parts = List.of(
+                new MultipartEncoder.Part("a", null, null, "1".getBytes(StandardCharsets.UTF_8)),
+                new MultipartEncoder.Part("b", null, null, "2".getBytes(StandardCharsets.UTF_8)),
+                new MultipartEncoder.Part("c", null, null, "3".getBytes(StandardCharsets.UTF_8)));
+
+        byte[] rendered = MultipartEncoder.render("B", parts, Map.of(0, "", 1, "X-Custom: \"raw\"\r\n"));
+
+        Assertions.assertThat(new String(rendered, StandardCharsets.UTF_8)).isEqualTo(
+                "--B\r\n\r\n1\r\n--B\r\nX-Custom: \"raw\"\r\n\r\n2\r\n--B\r\n"
+                        + "Content-Disposition: form-data; name=\"c\"\r\n\r\n3\r\n--B--\r\n");
+    }
+
+    @Test
     void shouldReportNoPartsInRawMode() {
         Assertions.assertThat(MultipartEncoder.encode("not json {", false, Map.of(), _ -> false).parts()).isEmpty();
         Assertions.assertThat(MultipartEncoder.encode("{}", true, Map.of(), _ -> false).parts()).isEmpty();
