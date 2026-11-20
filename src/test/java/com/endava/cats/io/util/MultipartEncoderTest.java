@@ -177,6 +177,57 @@ class MultipartEncoderTest {
         Assertions.assertThat(first).isNotEqualTo(second);
     }
 
+    @Test
+    void shouldExposePartsAndBoundary() {
+        MultipartEncoder.Result result = MultipartEncoder.encode("{\"b\":\"1\",\"meta\":{\"a\":2},\"c\":\"3\"}", true,
+                Map.of(), _ -> false);
+
+        Assertions.assertThat(result.parts()).extracting(MultipartEncoder.Part::name).containsExactly("b", "meta[a]", "c");
+        Assertions.assertThat(result.contentType()).isEqualTo(MultipartEncoder.contentType(result.boundary()));
+        Assertions.assertThat(MultipartEncoder.render(result.boundary(), result.parts())).isEqualTo(result.body());
+    }
+
+    @Test
+    void shouldRenderExactWireFormat() {
+        List<MultipartEncoder.Part> parts = List.of(
+                new MultipartEncoder.Part("a", null, null, "1".getBytes(StandardCharsets.UTF_8)),
+                new MultipartEncoder.Part("f", "x.bin", "application/octet-stream", new byte[]{0x00, (byte) 0xFF}));
+
+        byte[] rendered = MultipartEncoder.render("B", parts);
+
+        byte[] head = ("--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n--B\r\n"
+                + "Content-Disposition: form-data; name=\"f\"; filename=\"x.bin\"\r\n"
+                + "Content-Type: application/octet-stream\r\n\r\n").getBytes(StandardCharsets.UTF_8);
+        byte[] tail = "\r\n--B--\r\n".getBytes(StandardCharsets.UTF_8);
+        byte[] expected = new byte[head.length + 2 + tail.length];
+        System.arraycopy(head, 0, expected, 0, head.length);
+        expected[head.length] = 0x00;
+        expected[head.length + 1] = (byte) 0xFF;
+        System.arraycopy(tail, 0, expected, head.length + 2, tail.length);
+        Assertions.assertThat(rendered).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldRenderOnlyClosingDelimiterWithoutParts() {
+        Assertions.assertThat(MultipartEncoder.render("B", List.of())).isEqualTo("--B--\r\n".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void shouldEscapeQuotesAndLineBreaksInDefaultRendering() {
+        List<MultipartEncoder.Part> parts = List.of(
+                new MultipartEncoder.Part("a\"b", "x\r\ny.bin", "application/octet-stream", new byte[]{1}));
+
+        String rendered = new String(MultipartEncoder.render("B", parts), StandardCharsets.ISO_8859_1);
+
+        Assertions.assertThat(rendered).contains("name=\"a%22b\"").contains("filename=\"x%0D%0Ay.bin\"");
+    }
+
+    @Test
+    void shouldReportNoPartsInRawMode() {
+        Assertions.assertThat(MultipartEncoder.encode("not json {", false, Map.of(), _ -> false).parts()).isEmpty();
+        Assertions.assertThat(MultipartEncoder.encode("{}", true, Map.of(), _ -> false).parts()).isEmpty();
+    }
+
     private static String boundaryOf(MultipartEncoder.Result result) {
         String contentType = result.contentType();
         return contentType.substring(contentType.indexOf("boundary=") + "boundary=".length());

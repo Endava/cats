@@ -17,6 +17,7 @@ import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.util.MultipartEncoder;
+import com.endava.cats.io.util.MultipartMutation;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -680,6 +681,59 @@ class ServiceCallerTest {
         Assertions.assertThat(requests.get(1).containsHeader("X-Session-Token")).isFalse();
         Assertions.assertThat(indexOf(requests.get(1).getBody(), Files.readAllBytes(MULTIPART_FIXTURE))).isNotNegative();
         Assertions.assertThat(requests.get(1).getBody()).isEqualTo(requests.get(0).getBody());
+    }
+
+    @Test
+    void shouldApplyMultipartMutationAfterReferenceData() throws IOException {
+        byte[] fixture = Files.readAllBytes(MULTIPART_FIXTURE);
+        wireMockServer.stubFor(WireMock.post("/multipart-mutated").willReturn(WireMock.ok("{}")));
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of("/multipart-mutated",
+                Map.of("file", "cats_file:src/test/resources/multipart/all-bytes.bin")));
+        MultipartMutation duplicateParts = encoded -> {
+            List<MultipartEncoder.Part> doubled = new ArrayList<>(encoded.parts());
+            doubled.addAll(encoded.parts());
+            return new MultipartEncoder.Result(MultipartEncoder.render(encoded.boundary(), doubled),
+                    encoded.contentType(), encoded.summary(), encoded.boundary(), doubled);
+        };
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/multipart-mutated").contractPath("/multipart-mutated")
+                .headers(Set.of()).httpMethod(HttpMethod.POST).contentType("multipart/form-data")
+                .payload("{\"file\":\"Zm9v\",\"evidenceType\":\"OTHER\"}")
+                .multipartMutation(duplicateParts).build());
+
+        LoggedRequest received = lastRequestTo("/multipart-mutated");
+        String boundary = received.getHeader("Content-Type").substring(received.getHeader("Content-Type").indexOf("boundary=") + 9);
+        Assertions.assertThat(countOccurrences(received.getBody(), fixture)).isEqualTo(2);
+        Assertions.assertThat(new String(received.getBody(), StandardCharsets.ISO_8859_1)).startsWith("--" + boundary + "\r\n");
+    }
+
+    @Test
+    void shouldNotApplyMultipartMutationInRawMode() {
+        wireMockServer.stubFor(WireMock.post("/multipart-raw").willReturn(WireMock.ok("{}")));
+        MultipartMutation failing = _ -> {
+            throw new IllegalStateException("must not be called");
+        };
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/multipart-raw").headers(Set.of())
+                .httpMethod(HttpMethod.POST).contentType("multipart/form-data").validJson(false)
+                .payload("not-json").multipartMutation(failing).build());
+
+        Assertions.assertThat(new String(lastRequestTo("/multipart-raw").getBody(), StandardCharsets.UTF_8)).isEqualTo("not-json");
+    }
+
+    private static int countOccurrences(byte[] source, byte[] target) {
+        int count = 0;
+        for (int i = 0; i <= source.length - target.length; i++) {
+            if (Arrays.equals(source, i, i + target.length, target, 0, target.length)) {
+                count++;
+                i += target.length - 1;
+            }
+        }
+        return count;
     }
 
     private static LoggedRequest lastRequestTo(String path) {

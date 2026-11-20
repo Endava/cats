@@ -115,6 +115,7 @@ public class SimpleExecutor {
                 .replaceUrlParams(context.isReplaceUrlParams())
                 .validJson(context.isValidJson())
                 .mutationTargets(context.getMutationTargets())
+                .multipartMutation(context.getMultipartMutation())
                 .build();
     }
 

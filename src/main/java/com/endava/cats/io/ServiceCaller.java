@@ -643,6 +643,9 @@ public class ServiceCaller {
     private EncodedRequestBody encodeMultipartPayload(String payload, ServiceData data) {
         MultipartEncoder.Result result = MultipartEncoder.encode(payload, data.isValidJson(),
                 data.getRequestPropertyTypes(), field -> data.isFuzzedField(field, RequestTarget.Location.BODY));
+        if (data.getMultipartMutation() != null && !result.parts().isEmpty()) {
+            result = data.getMultipartMutation().apply(result);
+        }
         return new EncodedRequestBody(result.summary(), result.contentType(), result.body());
     }
 

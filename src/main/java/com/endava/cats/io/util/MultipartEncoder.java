@@ -10,6 +10,7 @@ import okhttp3.RequestBody;
 import okio.Buffer;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URLConnection;
@@ -18,10 +19,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -57,33 +60,67 @@ public final class MultipartEncoder {
         Map<String, Object> fields = parseObject(payload, validJson);
         if (fields == null || fields.isEmpty()) {
             return new Result(payload == null ? new byte[0] : payload.getBytes(StandardCharsets.UTF_8),
-                    "multipart/form-data; boundary=" + boundary, StringUtils.defaultString(payload));
+                    contentType(boundary), StringUtils.defaultString(payload), boundary, List.of());
         }
 
         Map<String, Object> summary = new LinkedHashMap<>(fields);
-        MultipartBody.Builder builder = new MultipartBody.Builder(boundary).setType(MultipartBody.FORM);
-        int partCount = 0;
+        List<Part> parts = new ArrayList<>();
         for (KeyValuePair<String, Object> field : FormEncoder.flattenParams(fields)) {
             String name = field.getKey();
             Object value = field.getValue();
             if (isFilePart(name, value, propertyTypes)) {
-                FilePart file = toFilePart(name, value, isFuzzedField.test(name));
-                builder.addPart(MultipartBody.Part.createFormData(name, file.fileName(),
-                        RequestBody.create(file.bytes(), MediaType.parse(file.contentType()))));
-                summary.put(name, file.describe());
+                Part file = toFilePart(name, value, isFuzzedField.test(name));
+                parts.add(file);
+                summary.put(name, describe(file));
             } else {
-                builder.addPart(MultipartBody.Part.createFormData(name, String.valueOf(value)));
+                parts.add(new Part(name, null, null, String.valueOf(value).getBytes(StandardCharsets.UTF_8)));
             }
-            partCount++;
         }
+        return new Result(render(boundary, parts), contentType(boundary),
+                JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(summary), boundary, List.copyOf(parts));
+    }
 
-        if (partCount == 0) {
-            return new Result(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8),
-                    "multipart/form-data; boundary=" + boundary, JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(summary));
+    /**
+     * Builds the {@code Content-Type} header value for a multipart body.
+     *
+     * @param boundary the multipart boundary
+     * @return the header value including the boundary
+     */
+    public static String contentType(String boundary) {
+        return "multipart/form-data; boundary=" + boundary;
+    }
+
+    /**
+     * Renders the parts as a {@code multipart/form-data} body. Quotes and line breaks in part and file names are
+     * percent-encoded.
+     *
+     * @param boundary the multipart boundary
+     * @param parts    the parts, in the order they are written
+     * @return the exact bytes of the body
+     */
+    public static byte[] render(String boundary, List<Part> parts) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (Part part : parts) {
+            StringBuilder header = new StringBuilder("--").append(boundary).append("\r\n")
+                    .append("Content-Disposition: form-data; name=\"").append(escape(part.name())).append('"');
+            if (part.isFile()) {
+                header.append("; filename=\"").append(escape(part.fileName())).append('"');
+            }
+            header.append("\r\n");
+            if (part.isFile()) {
+                header.append("Content-Type: ").append(part.contentType()).append("\r\n");
+            }
+            header.append("\r\n");
+            out.writeBytes(header.toString().getBytes(StandardCharsets.UTF_8));
+            out.writeBytes(part.bytes());
+            out.writeBytes("\r\n".getBytes(StandardCharsets.UTF_8));
         }
-        MultipartBody body = builder.build();
-        return new Result(toBytes(body), String.valueOf(body.contentType()),
-                JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(summary));
+        out.writeBytes(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+        return out.toByteArray();
+    }
+
+    private static String escape(String value) {
+        return value.replace("\"", "%22").replace("\r", "%0D").replace("\n", "%0A");
     }
 
     private static Map<String, Object> parseObject(String payload, boolean validJson) {
@@ -125,23 +162,23 @@ public final class MultipartEncoder {
         return !name.contains("[") && propertyTypes != null && CatsModelUtils.isBinarySchema(propertyTypes.get(name));
     }
 
-    private static FilePart toFilePart(String name, Object value, boolean fuzzed) {
+    private static Part toFilePart(String name, Object value, boolean fuzzed) {
         String text = String.valueOf(value);
         if (text.startsWith(FILE_PREFIX)) {
-            return readReferencedFile(text.substring(FILE_PREFIX.length()));
+            return readReferencedFile(name, text.substring(FILE_PREFIX.length()));
         }
         byte[] bytes = fuzzed ? text.getBytes(StandardCharsets.UTF_8) : decodeBase64OrUtf8(text);
-        return new FilePart(name + ".bin", OCTET_STREAM, bytes);
+        return new Part(name, name + ".bin", OCTET_STREAM, bytes);
     }
 
-    private static FilePart readReferencedFile(String location) {
+    private static Part readReferencedFile(String name, String location) {
         Path path = Path.of(location);
         if (!Files.isRegularFile(path)) {
             throw new IllegalArgumentException("File referenced by " + FILE_PREFIX + " does not exist: " + location);
         }
         String fileName = String.valueOf(path.getFileName());
         try {
-            return new FilePart(fileName, detectContentType(path, fileName), Files.readAllBytes(path));
+            return new Part(name, fileName, detectContentType(path, fileName), Files.readAllBytes(path));
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to read file referenced by " + FILE_PREFIX + ": " + location, e);
         }
@@ -168,26 +205,29 @@ public final class MultipartEncoder {
         }
     }
 
-    private static byte[] toBytes(MultipartBody body) {
-        try (Buffer buffer = new Buffer()) {
-            body.writeTo(buffer);
-            return buffer.readByteArray();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Unable to encode multipart body", e);
+    private static String describe(Part file) {
+        return "<file name=" + file.fileName() + " size=" + file.bytes().length + " sha256=" + sha256(file.bytes()) + ">";
+    }
+
+    private static String sha256(byte[] bytes) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
         }
     }
 
-    private record FilePart(String fileName, String contentType, byte[] bytes) {
-        String describe() {
-            return "<file name=" + fileName + " size=" + bytes.length + " sha256=" + sha256() + ">";
-        }
-
-        private String sha256() {
-            try {
-                return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-            } catch (NoSuchAlgorithmException e) {
-                throw new IllegalStateException(e);
-            }
+    /**
+     * A single part of a multipart body.
+     *
+     * @param name        the form field name
+     * @param fileName    the file name, or null for a text part
+     * @param contentType the part {@code Content-Type}, or null for a text part
+     * @param bytes       the part content
+     */
+    public record Part(String name, String fileName, String contentType, byte[] bytes) {
+        public boolean isFile() {
+            return fileName != null;
         }
     }
 
@@ -197,7 +237,9 @@ public final class MultipartEncoder {
      * @param body        the exact bytes to send
      * @param contentType the {@code Content-Type} header value, including the boundary
      * @param summary     a printable description of the body with file contents replaced by name, size and checksum
+     * @param boundary    the multipart boundary used in {@code body}
+     * @param parts       the parts the body was rendered from; empty when the payload was sent as is
      */
-    public record Result(byte[] body, String contentType, String summary) {
+    public record Result(byte[] body, String contentType, String summary, String boundary, List<Part> parts) {
     }
 }
