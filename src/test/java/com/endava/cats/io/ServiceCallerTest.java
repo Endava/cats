@@ -16,6 +16,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
+import com.endava.cats.io.util.MultipartEncoder;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -25,6 +26,7 @@ import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.RateLimiter;
@@ -625,6 +627,59 @@ class ServiceCallerTest {
         Assertions.assertThat(request.getValue().getEncodedBody()).isNull();
         Assertions.assertThat(new String(lastRequestTo("/pets").getBody(), StandardCharsets.UTF_8))
                 .isEqualTo(request.getValue().getPayload());
+    }
+
+    @Test
+    void shouldSendRecordedEncodedBodyByteExactWhenReplaying() throws IOException {
+        MultipartEncoder.Result encoded = MultipartEncoder.encode(
+                "{\"file\":\"cats_file:src/test/resources/multipart/all-bytes.bin\"}", true, Map.of(), _ -> false);
+        wireMockServer.stubFor(WireMock.post("/multipart-replay").willReturn(WireMock.ok("{}")));
+        CatsRequest recorded = CatsRequest.builder().httpMethod("POST")
+                .url("http://localhost:" + wireMockServer.port() + "/multipart-replay")
+                .headers(List.of(new KeyValuePair<>("Content-Type", encoded.contentType())))
+                .payload(encoded.summary()).encodedBody(Base64.getEncoder().encodeToString(encoded.body())).build();
+        CatsRequest replayed = JsonUtils.GSON.fromJson(JsonUtils.GSON.toJson(recorded), CatsRequest.class);
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        CatsResponse response = serviceCaller.callService(replayed, Set.of());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
+        LoggedRequest received = lastRequestTo("/multipart-replay");
+        Assertions.assertThat(received.getBody()).isEqualTo(encoded.body());
+        Assertions.assertThat(received.getHeader("Content-Type")).isEqualTo(encoded.contentType());
+    }
+
+    @Test
+    void shouldRetryUnauthenticatedWithSameBinaryBody() throws IOException {
+        ReflectionTestUtils.setField(authArguments, "basicAuth", null);
+        ReflectionTestUtils.setField(authArguments, "wfcAuthFile", new File("src/test/resources/wfc-static-auth.yml"));
+        wireMockServer.stubFor(WireMock.post(WireMock.urlEqualTo("/bootstrap-multipart"))
+                .withHeader("X-Session-Token", WireMock.equalTo("static-secret"))
+                .willReturn(WireMock.unauthorized()));
+        wireMockServer.stubFor(WireMock.post(WireMock.urlEqualTo("/bootstrap-multipart"))
+                .withHeader("X-Session-Token", WireMock.absent())
+                .willReturn(WireMock.okJson("{\"seeded\":true}")));
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder()
+                .relativePath("/bootstrap-multipart")
+                .contractPath("/bootstrap-multipart")
+                .payload("{\"file\":\"cats_file:src/test/resources/multipart/all-bytes.bin\"}")
+                .httpMethod(HttpMethod.POST)
+                .headers(Set.of())
+                .contentType("multipart/form-data")
+                .build());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
+        List<LoggedRequest> requests = wireMockServer.findAll(
+                WireMock.postRequestedFor(WireMock.urlEqualTo("/bootstrap-multipart")));
+        Assertions.assertThat(requests).hasSize(2);
+        Assertions.assertThat(requests.get(0).containsHeader("X-Session-Token")).isTrue();
+        Assertions.assertThat(requests.get(1).containsHeader("X-Session-Token")).isFalse();
+        Assertions.assertThat(indexOf(requests.get(1).getBody(), Files.readAllBytes(MULTIPART_FIXTURE))).isNotNegative();
+        Assertions.assertThat(requests.get(1).getBody()).isEqualTo(requests.get(0).getBody());
     }
 
     private static LoggedRequest lastRequestTo(String path) {

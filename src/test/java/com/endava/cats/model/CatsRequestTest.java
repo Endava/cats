@@ -8,6 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.Base64;
 import java.util.List;
 
 @QuarkusTest
@@ -44,5 +45,43 @@ class CatsRequestTest {
         CatsRequest request = CatsRequest.builder().httpMethod("post").url("http://localhost/pets").payload("{\"a\":1}").build();
 
         Assertions.assertThat(request.toCurlCommand()).isEqualTo("curl -i -X post -d '{\"a\":1}' 'http://localhost/pets'");
+    }
+
+    @Test
+    void shouldRenderBinaryBodyCurlWithDataBinary() {
+        CatsRequest request = CatsRequest.builder()
+                .httpMethod("POST")
+                .url("http://localhost/upload")
+                .headers(List.of(new KeyValuePair<>("Content-Type", "multipart/form-data; boundary=x")))
+                .payload("{\"file\":\"<file name=a.bin size=3 sha256=00>\"}")
+                .encodedBody(Base64.getEncoder().encodeToString(new byte[]{0x00, 0x01, (byte) 0xFF}))
+                .build();
+
+        Assertions.assertThat(request.toCurlCommand()).isEqualTo(
+                "printf '%s' 'AAH/' | base64 --decode | curl -i -X POST -H 'Content-Type: multipart/form-data; boundary=x' --data-binary @- 'http://localhost/upload'");
+    }
+
+    @Test
+    void shouldRenderTextBodyCurlUnchanged() {
+        CatsRequest request = CatsRequest.builder()
+                .httpMethod("POST")
+                .url("http://localhost/pets")
+                .headers(List.of(new KeyValuePair<>("Content-Type", "application/json")))
+                .payload("{\"a\":1}")
+                .build();
+
+        Assertions.assertThat(request.toCurlCommand()).isEqualTo(
+                "curl -i -X POST -H 'Content-Type: application/json' -d '{\"a\":1}' 'http://localhost/pets'");
+    }
+
+    @Test
+    void shouldNotRenderBinaryBodyForRequestsWithoutBody() {
+        CatsRequest request = CatsRequest.builder()
+                .httpMethod("GET")
+                .url("http://localhost/pets")
+                .encodedBody("AAH/")
+                .build();
+
+        Assertions.assertThat(request.toCurlCommand()).isEqualTo("curl -i -X GET 'http://localhost/pets'");
     }
 }

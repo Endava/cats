@@ -63,13 +63,21 @@ public class CatsRequest {
     }
 
     private String toCurlCommand(HttpMethod method) {
-        StringBuilder cmd = new StringBuilder("curl -i -X ").append(httpMethod);
+        boolean hasBody = HttpMethod.requiresBody(method) || sendBody;
+        boolean binaryBody = hasBody && StringUtils.isNotBlank(encodedBody);
+        StringBuilder cmd = new StringBuilder();
+        if (binaryBody) {
+            cmd.append("printf '%s' ").append(shellQuote(encodedBody)).append(" | base64 --decode | ");
+        }
+        cmd.append("curl -i -X ").append(httpMethod);
         for (KeyValuePair<String, Object> header : Optional.ofNullable(headers).orElse(Collections.emptyList())) {
             if (StringUtils.isNotBlank(header.getKey())) {
                 cmd.append(" -H ").append(shellQuote(header.getKey() + ": " + header.getValue()));
             }
         }
-        if (StringUtils.isNotBlank(payload) && (HttpMethod.requiresBody(method) || sendBody)) {
+        if (binaryBody) {
+            cmd.append(" --data-binary @-");
+        } else if (StringUtils.isNotBlank(payload) && hasBody) {
             cmd.append(" -d ").append(shellQuote(payload));
         }
         cmd.append(" ").append(shellQuote(Optional.ofNullable(url).orElse("")));
