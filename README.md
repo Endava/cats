@@ -9,209 +9,182 @@
 [![GraalVM](https://img.shields.io/badge/GraalVM-Native-orange.svg)](https://www.graalvm.org)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=alert_status)](https://sonarcloud.io/dashboard?id=cats)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=coverage)](https://sonarcloud.io/dashboard?id=cats)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=bugs)](https://sonarcloud.io/dashboard?id=cats)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=code_smells)](https://sonarcloud.io/dashboard?id=cats)
 
 </p>
 
-> CATS documentation is available at [https://endava.github.io/cats/](https://endava.github.io/cats/)
+**CATS** (**C**ontract **A**PI **T**esting and **S**ecurity) is an OpenAPI fuzzer, contract linter, and negative testing CLI for REST APIs. Given an OpenAPI 3.0 or 3.1 specification, it generates, executes, and verifies thousands of HTTP test cases without writing test code.
 
-**REST API fuzzer and negative testing tool. Run thousands of self-healing API tests within minutes with no coding effort!**
+Full documentation: [https://endava.github.io/cats/](https://endava.github.io/cats/) | [Quick Start Guide](https://endava.github.io/cats/docs/intro)
 
-- **Comprehensive**: tests are generated automatically based on a large number scenarios and cover **every** field and header
-- **Intelligent**: tests are generated based on data types and constraints; each Fuzzer has specific expectations depending on the scenario under test
-- **Highly Configurable**: high amount of customization: you can filter specific Fuzzers, HTTP response codes, HTTP methods, request paths, provide business context and a lot more
-- **Self-Healing**: as tests are generated, any OpenAPI spec change is picked up automatically
-- **Simple to Learn**: flat learning curve, with intuitive configuration and syntax
-- **Fast**: automatic process for write, run and report tests which covers thousands of scenarios within minutes
-
-<p align="center"></p>
-
-> Short on time? Check out the [1-minute Quick Start Guide](https://endava.github.io/cats/docs/intro)!
-
-# Overview
-By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**PI **T**esting and **S**ecurity) enables you to generate thousands of API tests within minutes with **no coding effort**.
-All tests are **generated, run and reported automatically** based on a pre-defined set of **160+ Fuzzers** (plus 31 random mutators for continuous fuzzing).
-The Fuzzers cover a wide range of boundary testing, type coercion, injection, and negative scenarios: from large Unicode and control-character payloads to context-dependent values derived from request data types and constraints, as well as stateful checks for IDOR, `PUT` idempotency, update-read consistency, conditional `ETag` handling, deleted resource availability, and sensitive data exposure.
-
-Out of the box, CATS orders producer `POST` paths before dependent operations, executes fuzzers in breadth-first waves across paths, **reuses identifiers and baselines learned** from `2XX` responses in subsequent requests, postpones `HappyPath` `DELETE` calls until the end of the run, and validates responses against OpenAPI 3.0 and 3.1 schemas. You can also write end-to-end functional tests in YAML using `cats run`.
-
-## Quick start
-
-```shell
-# Run the full suite against an OpenAPI contract
-cats -c openapi.yml -s http://localhost:8080
-
-# Run a built-in profile (quick, security, compliance, ci, coverage, crash, type-coercion, health-check)
-cats -c openapi.yml -s http://localhost:8080 --profile quick
-
-# Run for a fixed time budget, continuing with random mutations if deterministic fuzzers finish early, and enforce a quality gate
-cats -c openapi.yml -s http://localhost:8080 --stopAfterTimeInSec 60 --fillTimeBudget --qualityGate "errors<1"
-
-# Lint the OpenAPI contract
-cats lint -c openapi.yml
-
-# Inspect dependency-ordered paths or explain a profile/fuzzer
-cats list --paths --executionOrder -c openapi.yml
-cats explain --type profile security
-
-# Replay a test case or print the equivalent curl command
-cats replay Test12
-cats replay Test12 --curl
-```
-
-## HTML Report
+- **Contract-driven generation**: Builds payloads, headers, query parameters, and path variables directly from OpenAPI data types, formats, regex patterns, enums, and numeric/string bounds.
+- **Stateful execution order**: Runs producer `POST` endpoints before dependent operations, captures resource IDs and `ETag` baselines from `2XX` responses for reuse in subsequent requests, and defers `DELETE` calls until the end of the run.
+- **270+ fuzzers, linters, and mutators**: Covers boundary values, type coercion, malformed JSON, Unicode/control-character handling, injection probes, authentication bypass, IDOR, `PUT`/`PATCH` semantics, deleted-resource checks, and 44 random mutators for continuous fuzzing.
+- **Reproducible findings**: Clusters failures by root cause, masks credentials as `$$ENV_VAR` placeholders, exports standalone `curl` reproducers, and compares runs against baselines in CI.
 
 <div align="center">
-  <img alt="CATS" width="100%" src="images/tests_result.png"/>
+  <img alt="CATS terminal run and triage demo" width="100%" src="images/cats_demo.gif"/>
 </div>
 
-## Report triage
+## Installation
 
-`cats triage -r cats-report` shows each problem with observations, sample expectations and evidence, and a related next check.
-Full curl commands are opt-in: use `--show-reproducers`, `--export-reproducers reproducers.sh`, or `-j` for structured output.
-Security confidence comes from the saved detector result; acceptance or reflection alone does not confirm exploitation.
-A report missing referenced `Test*.json` evidence is rejected with exit code `2`. Reports using `--srs` remain supported.
-
-## Baseline comparison
-
-Compare two report folders (or their `cats-summary-report.json` files):
+### Homebrew (macOS / Linux)
 
 ```shell
-cats compare -b baseline-report -t current-report -j
+brew tap endava/tap
+brew install cats
 ```
 
-Comparison uses persisted problem occurrences: `(problemId, operation)`, plus each mutated field for accepted requests.
-The states are `NEW`, `FIXED`, `UNCHANGED` and `NOT_COMPARABLE`. Test-count changes are informational. Compatible
-server-message patterns can match across runs when the miner generalized them differently.
+### Native Binary or Uber-JAR
 
-Exit codes are `0` for no regression, `1` for a new error occurrence (also warnings with `--failOnNewWarnings`), and `2`
-for invalid input. Use `--baseline <report>` during fuzzing for the same gate. Occurrences found only by fuzzers absent
-from the other run are not comparable. `FIXED` means absent in the compared run; verify coverage before claiming a fix.
-
-`NEW` means newly observed, including when the API build is unchanged. Keep seed, configuration and initial data
-consistent when checking regressions. A negative field test receiving `404` does not prove that the field was validated;
-confirm that the unmodified request reaches the intended resource. Use `cats replay TestN --stateful -r cats-report`
-when fresh producer IDs are needed. Repeat intermittent server-error requests under their original conditions;
-`cats triage --verify` records one replay per occurrence.
-
-## Command Line
-
-<div align="center">
-  <img alt="CATS" width="100%" src="images/run_result.png"/>
-</div>
-
-## Terminal interface
-
-Use `--tui` on a normal fuzzing command to follow execution and inspect results without leaving the terminal:
+Download the prebuilt native binary (Linux / macOS, no JVM required) or `cats.jar` (requires Java 25+) from the [GitHub Releases](https://github.com/Endava/cats/releases) page:
 
 ```shell
-cats --contract openapi.yml --server http://localhost:8080 --tui
-```
-
-The overview shows Paths, Run configuration, Response time, HTTP Response Codes, Success/Warnings/Errors, and Fuzzers run using the same terminology as the CLI and HTML report. The fuzzer table uses all available terminal rows; use `j`/`k` or Page Up/Page Down to browse it when the complete list does not fit. Press `2` for Execution Details, `3` for the Execution summary and Quality gate result, `4` for Execution Details by Result Reason, `5` for Paths included, or `6` for executed tests sorted by Response Time. Result Reason and Path rows open their matching tests with Enter.
-
-Use the arrow keys or `j`/`k` to select a test, and press Enter to inspect its request, response, result, trace, and replay command in a full-screen detail view. Press `/` in the test list to search test IDs, fuzzers, paths, scenarios, result reasons, methods, results, and response codes. `a`, `e`, `w`, `s`, and `i` filter all, error, warning, successful, and skipped results. Esc first clears an active search and otherwise returns to the previous screen; `1` opens the overview.
-
-Press `q` to leave the interface. During an active run this requests cancellation, finishes the current test where possible, preserves results already written, and exits with status `130`. After execution has finished, `q` exits normally.
-
-The TUI requires an interactive terminal of at least 80 columns by 24 rows and cannot be combined with `--dryRun`. It is available for OpenAPI-backed fuzzing commands; the standalone `template` command continues to use normal CLI output. The TUI retains the most recent 10,000 test details by default; use `--tuiMaxResults` to choose a different positive limit. Aggregate statistics continue to cover the complete run when older details are discarded.
-
-# Tutorials on how to use CATS
-
-This is a list of articles with step-by-step guides on how to use CATS:
-* [Testing the GitHub API with CATS](https://ludovicianul.github.io/posts/github-api-testing/)
-* [How to write self-healing functional tests with no coding effort](https://ludovicianul.github.io/posts/self-healing-api-tests/)
-
-# Some bugs found by CATS
-
-- https://github.com/hashicorp/vault/issues/13274 | https://github.com/hashicorp/vault/issues/13273
-- https://github.com/hashicorp/vault/issues/13225 | https://github.com/hashicorp/vault/issues/13232
-- https://github.com/go-gitea/gitea/issues/19397  | https://github.com/go-gitea/gitea/issues/19398
-- https://github.com/go-gitea/gitea/issues/19399
-
-# Installation
-
-## Homebrew
-
-```shell
-> brew tap endava/tap
-> brew install cats
-```
-
-## Manual
-CATS is bundled both as an executable JAR or a native binary. The native binaries do not need Java installed. 
-
-After downloading your OS native binary, you can add it to PATH so that you can execute it as any other command line tool:
-
-```shell
+# Install the native binary on your PATH
 sudo cp cats /usr/local/bin/cats
+
+# Or run the uber-JAR with Java 25+
+java -jar cats.jar --help
 ```
 
-You can enable shell completion in `bash` or `zsh` directly from the binary:
+Enable shell completion for `bash` or `zsh`:
 
 ```shell
 source <(cats generate-completion)
 ```
 
-Alternatively, you can source the [cats_autocomplete](cats_autocomplete) script from the repository:
+## Quick Start
 
 ```shell
-source cats_autocomplete
+# Run the full fuzzer suite against an OpenAPI contract
+cats -c openapi.yml -s http://localhost:8080
+
+# Run a built-in profile (quick, security, compliance, ci, coverage, crash, type-coercion, health-check)
+cats -c openapi.yml -s http://localhost:8080 --profile quick
+
+# Run in blackbox mode (fail only on 5XX crashes and confirmed security findings) with an auth header from $TOKEN
+cats -c openapi.yml -s http://localhost:8080 -b -k -H "Authorization=Bearer $$TOKEN"
+
+# Enforce a 60-second budget (continuing with random mutations if deterministic fuzzers finish early) and a CI gate
+cats -c openapi.yml -s http://localhost:8080 --stopAfterTimeInSec 60 --fillTimeBudget --qualityGate "errors<1"
+
+# Lint the OpenAPI contract without calling a target server
+cats lint -c openapi.yml
+
+# Group report failures into root-cause problems or compare against a previous baseline
+cats triage -r cats-report
+cats compare -b baseline-report -t cats-report
+
+# Replay a recorded test case or print its standalone curl command
+cats replay Test12
+cats replay Test12 --curl
 ```
 
-To make completion persistent, add the command to `.zshrc` or `.bashrc`.
+## CLI Commands
 
-There is no native binary for Windows, but you can use the uberjar version. This requires Java 25+ to be installed.
+| Command | Purpose |
+| :--- | :--- |
+| `cats -c <spec> -s <url>` | Run deterministic fuzzers against an OpenAPI contract |
+| `cats smoke` | Run a fast baseline reachability check across contract operations |
+| `cats analyze` | Inspect contract readiness, unresolved parameters, and runtime hints before fuzzing |
+| `cats lint` | Lint an OpenAPI contract for structural, schema, and security-definition issues |
+| `cats triage` | Cluster report failures into root-cause problems and export `curl` reproducers |
+| `cats compare` | Compare two reports (`NEW`, `FIXED`, `UNCHANGED`) and fail CI on regressions |
+| `cats replay` | Re-execute saved `Test*.json` cases (`--stateful` for fresh IDs) or output `--curl` commands |
+| `cats random` | Run continuous mutation-based fuzzing for a time budget or request count |
+| `cats run` | Execute declarative YAML functional tests and multi-step API flows |
+| `cats template` | Fuzz raw HTTP request templates without an OpenAPI specification |
+| `cats list` / `cats explain` | List and inspect fuzzers, linters, profiles, mutators, formats, paths, and error reasons |
+| `cats stats` / `cats validate` | Show OpenAPI contract metrics or validate specification syntax |
+| `cats init` | Scaffold project configuration files or install AI agent skills (`--skills`) |
 
-You can run it as `java -jar cats.jar`.
+## HTML Report
 
-Head to the releases page to download the latest version: [https://github.com/Endava/cats/releases](https://github.com/Endava/cats/releases).
+Each run generates an interactive HTML report (`cats-report/index.html`) with run health diagnostics, HTTP response code distributions, top failing paths, root-cause problem clusters, and full request/response payloads with copyable `curl` commands.
 
-## Build from sources
+<div align="center">
+  <img alt="CATS HTML Report" width="100%" src="images/tests_result.png"/>
+</div>
 
-You can build CATS from sources on your local machine. You need [Java 25](https://sdkman.io/jdks). Maven is already bundled.
+## Command Line Output
 
-> Before running the first build, please make sure you run `./mvnw clean`. CATS uses patched forks of [OkHttp](https://square.github.io/okhttp/) (`com.squareup.okhttp3:okhttp:5.5.0-CATS`) and [Swagger Parser](https://github.com/swagger-api/swagger-parser) (`io.swagger.parser.v3:swagger-parser-v3:2.1.49-CATS`), which Maven installs locally from `lib/` without overriding official dependency versions.
+<div align="center">
+  <img alt="CATS CLI Output" width="100%" src="images/run_result.png"/>
+</div>
 
-You can use the following Maven command to build the project as an uberjar:
+## Terminal Interface (`--tui`)
 
-`./mvnw package -Dquarkus.package.jar.type=uber-jar -DskipTests`
+Add `--tui` to any OpenAPI fuzzing run to monitor execution and inspect test cases interactively in the terminal:
 
+```shell
+cats -c openapi.yml -s http://localhost:8080 --tui
+```
 
-You will end up with a `cats-runner.jar` in the `target` folder. You can run it with `java -jar cats-runner.jar ...`.
+<div align="center">
+  <img alt="CATS Terminal UI" width="100%" src="images/tui_overview.png"/>
+</div>
 
-You can also build native images using a [GraalVM Java version](https://www.graalvm.org/).
+- Switch views with `1` (Overview), `2` (Execution Details), `3` (Summary & Quality Gate), `4` (By Result Reason), `5` (Paths), and `6` (Response Times).
+- Navigate rows with arrow keys or `j`/`k`, press `Enter` to open the full request/response trace and `curl` command, and press `/` to search or `a`/`e`/`w`/`s`/`i` to filter by status.
+- Press `q` to exit (during an active run, `q` cancels execution cleanly, preserves recorded results, and exits with status `130`).
 
-`./mvnw package -Pnative`
+## Report Triage and Baseline Comparison
 
-### Notes on Unit Tests
+### Triage (`cats triage`)
 
-You may see some `error` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the Fuzzers.
+`cats triage -r cats-report` groups individual failing test cases into deduplicated problem clusters with observed behavior, sample evidence, and next-step checks:
 
-# Runtime defaults
+```shell
+# Print clustered error problems to the console (add -w / --include-warnings to include warnings, or -j for JSON)
+cats triage -r cats-report
+cats triage -r cats-report --include-warnings
 
-## TLS
+# Export standalone curl reproducers or re-verify live against the server
+cats triage -r cats-report --export-reproducers reproducers.sh
+cats triage -r cats-report --verify
+```
 
-CATS verifies server certificates and hostnames by default. For trusted test environments using self-signed certificates, verification can be disabled explicitly with `--insecure`.
+### Baseline Comparison (`cats compare`)
 
-For mutual TLS, use `--sslKeystore`, `--sslKeystorePwd` and `--sslKeyPwd`. If `--sslKeyPwd` is omitted, CATS uses the keystore password for the private key.
+Compare two report folders (or their `cats-summary-report.json` files) to gate CI pipelines on newly introduced regressions:
 
-## Secrets, authentication, and replay
+```shell
+cats compare -b baseline-report -t current-report -j
+```
 
-CATS masks authentication headers and sensitive query parameters in reports by default, replacing request values with replayable `$$EnvironmentVariable` placeholders. It creates `replay.env.example` without secret values in the directory where CATS is run.
+You can also pass `--baseline <report>` directly during a fuzzing run. Exit codes are `0` (no regression), `1` (new error occurrence, or new warning with `--failOnNewWarnings`), and `2` (invalid input).
 
-`EncodedAuthenticationHeaders` reports its exact, fully synthetic Authorization probes in request headers and curl commands so they can be replayed without substituting a real credential. This exception requires the fuzzer's Authorization mutation metadata and an exact match with its public probe corpus. HTML, JSON and the terminal UI share this rule. Real credentials and response headers retain normal masking; an explicit `--maskHeaders Authorization` also masks these probes. HTML and terminal curl commands use the same shell quoting as replay and triage.
+## Runtime Defaults
 
-CATS automatically loads `./.env` when present. Use `--envFile path/to/cats.env` to select a different file or `--noEnvFile` to disable dotenv loading in normal, random, functional, template and replay commands. Process environment variables take precedence over dotenv values. Use `--showSecrets` only when unmasked report and console output is explicitly required.
+- **TLS and mTLS**: Server certificates and hostnames are verified by default. Pass `--insecure` for self-signed test environments, or `--sslKeystore`, `--sslKeystorePwd`, and `--sslKeyPwd` for mutual TLS.
+- **Secret masking and `.env` loading**: Authentication headers and sensitive query parameters are masked in reports and `curl` commands using replayable `$$EnvironmentVariable` placeholders, accompanied by a secret-free `replay.env.example`. CATS loads `./.env` automatically when present (override with `--envFile <path>`, disable with `--noEnvFile`, or unmask with `--showSecrets`).
+- **Web Fuzzing Commons authentication**: Use `--wfcAuth` and `--wfcAuthName` to load WFC authentication definitions, with automatic fallback across entries when baseline requests return `401` or `403`.
+- **Response safety limits**: Calls exceeding `--callTimeout` (default `20` seconds) are cancelled, and response bodies exceeding `--maxResponseBytes` (default `10 MiB` decompressed) are truncated and flagged with a warning. Set either option to `0` to disable the limit.
+- **Dry-run mode**: Pass `--dryRun` to parse contracts and compute test counts without contacting target servers or writing reports.
 
-Web Fuzzing Commons authentication files are supported via `--wfcAuth` and `--wfcAuthName`. When `--wfcAuthName` is omitted and the file defines multiple entries, CATS starts with the first entry and switches to subsequent entries if baseline requests return HTTP `401` or `403`.
+## Bugs Found in Open-Source Projects
 
-## Response safety budgets
+- **HashiCorp Vault**: [#13274](https://github.com/hashicorp/vault/issues/13274), [#13273](https://github.com/hashicorp/vault/issues/13273), [#13225](https://github.com/hashicorp/vault/issues/13225), [#13232](https://github.com/hashicorp/vault/issues/13232)
+- **Gitea**: [#19397](https://github.com/go-gitea/gitea/issues/19397), [#19398](https://github.com/go-gitea/gitea/issues/19398), [#19399](https://github.com/go-gitea/gitea/issues/19399)
 
-CATS cancels calls that exceed `--callTimeout`, which defaults to 20 seconds, and captures at most `--maxResponseBytes`, which defaults to 10 MiB of the decompressed response body. Set either option to `0` to disable its limit. Truncated responses retain their status and headers, skip full-body validation, and are reported with a dedicated warning.
+## Tutorials
 
-When `--dryRun` is enabled, CATS parses local configuration and calculates test counts without invoking target services, WFC login endpoints, authentication scripts, update checks, or report writers.
+- [Testing the GitHub API with CATS](https://ludovicianul.github.io/posts/github-api-testing/)
+- [How to write self-healing functional tests with no coding effort](https://ludovicianul.github.io/posts/self-healing-api-tests/)
 
-# Contributing
-Please refer to [CONTRIBUTING.md](CONTRIBUTING.md). 
+## Building from Source
+
+Requires [Java 25](https://sdkman.io/jdks) (or [GraalVM](https://www.graalvm.org/) for native binaries). Maven is bundled via `./mvnw`.
+
+> Run `./mvnw clean` before the first build so Maven installs the local patched dependencies from `lib/` (`com.squareup.okhttp3:okhttp:5.5.0-CATS` and `io.swagger.parser.v3:swagger-parser-v3:2.1.49-CATS`).
+
+```shell
+# Build the executable uber-JAR (target/cats-runner.jar)
+./mvnw clean package -Dquarkus.package.jar.type=uber-jar -DskipTests
+
+# Build the GraalVM native binary (target/cats-runner)
+./mvnw clean package -Pnative -DskipTests
+```
+
+## Contributing
+
+Please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
