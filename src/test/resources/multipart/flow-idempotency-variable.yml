@@ -1,0 +1,25 @@
+variables:
+  idemKey: "T(java.util.UUID).randomUUID().toString()"
+steps:
+  - name: First upload
+    POST: /cases/case-1/evidence/uploads
+    headers:
+      X-XE-IdempotencyKey: "${idemKey}"
+    body:
+      file: "cats_file:src/test/resources/multipart/all-bytes.bin"
+      evidenceType: OTHER
+      checksum: 40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880
+    status: 200
+    expect:
+      outcome: APPLIED
+  - name: Replay upload
+    POST: /cases/case-1/evidence/uploads
+    headers:
+      X-XE-IdempotencyKey: "${idemKey}"
+    body:
+      file: "cats_file:src/test/resources/multipart/all-bytes.bin"
+      evidenceType: OTHER
+      checksum: 40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880
+    status: 200
+    expect:
+      outcome: REPEATED

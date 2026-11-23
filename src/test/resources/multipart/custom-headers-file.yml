@@ -1,0 +1,3 @@
+all:
+  X-XE-CorrelationId: "T(java.util.UUID).randomUUID().toString()"
+  X-XE-IdempotencyKey: "T(java.util.UUID).randomUUID().toString()"

@@ -1,0 +1,25 @@
+/cases/{caseId}/evidence/uploads:
+  test_b:
+    description: test_b
+    httpMethod: POST
+    expectedResponseCode: 200
+    caseId: case-1
+    file: "cats_file:src/test/resources/multipart/all-bytes.bin"
+    evidenceType: B
+    checksum: 40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880
+  test_a:
+    description: test_a
+    httpMethod: POST
+    expectedResponseCode: 200
+    caseId: case-1
+    file: "cats_file:src/test/resources/multipart/all-bytes.bin"
+    evidenceType: A
+    checksum: 40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880
+  test_c:
+    description: test_c
+    httpMethod: POST
+    expectedResponseCode: 200
+    caseId: case-1
+    file: "cats_file:src/test/resources/multipart/all-bytes.bin"
+    evidenceType: C
+    checksum: 40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880

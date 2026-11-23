@@ -1,0 +1,9 @@
+/cases/{caseId}/evidence/uploads:
+  test_file:
+    description: test_file
+    httpMethod: POST
+    expectedResponseCode: 200
+    caseId: case-1
+    file: "cats_file:src/test/resources/multipart/all-bytes.bin"
+    evidenceType: OTHER
+    checksum: 40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880

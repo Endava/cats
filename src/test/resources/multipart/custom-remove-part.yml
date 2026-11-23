@@ -1,0 +1,9 @@
+/cases/{caseId}/evidence/uploads:
+  test_remove:
+    description: test_remove
+    httpMethod: POST
+    expectedResponseCode: 200
+    caseId: case-1
+    file: "cats_file:src/test/resources/multipart/all-bytes.bin"
+    evidenceType: OTHER
+    checksum: cats_remove_field
