@@ -42,7 +42,7 @@ Never launch a full fuzzing run before verifying reachability, authentication, a
 cats smoke -c <spec> -s <server_url> -j
 ```
 - **`UNREACHABLE_SERVER`** / **`NO_OPERATIONS_EXECUTED`**: Start the target service, fix `-s <server_url>`, or check path/method filters.
-- **`AUTH_FAILURE_ALL_ENDPOINTS`**: Configure credentials and re-run `cats smoke`. `$$VAR` placeholders resolve only when they are the **entire** value, so put the full header value in the env var and single-quote it in the shell: `export API_AUTH='Bearer eyJ...'` then `-H 'Authorization=$$API_AUTH'` (or `--headers headers.yml`, `--wfcAuth auth.yml`, `--basicAuth user:pass`).
+- **`AUTH_FAILURE_ALL_ENDPOINTS`**: Configure credentials and re-run `cats smoke`. `$$VAR` placeholders resolve both standalone and embedded (`"Bearer $$API_TOKEN"`), and must be single-quoted in the shell: `export API_TOKEN='eyJ...'` then `-H 'Authorization=Bearer $$API_TOKEN'` (or `--headers headers.yml`, `--wfcAuth auth.yml`, `--basicAuth user:pass`).
 - **`NEEDS_SEED_OR_AUTH_CONFIG`**: Run `cats init -c <spec>` to scaffold `headers.yml` and `refData.yml` for unresolved path parameters.
 - **`READY`** only means at least one `2XX` and no `5XX`; still inspect `notFound404` and `validation4xx`.
 
@@ -72,7 +72,7 @@ For an initial high-signal view, `-b` retains 5XX except 501 and high-severity s
 5. Re-run CATS with the reviewed `--refData refData.yml` and `--correlations correlations.yml`.
 
 ### Phase 4: Stateful Functional Flows
-Author end-to-end business workflows in `flows.yml` (see `/cats-write-tests`) and execute them. `cats run` ignores `--correlations`; put flow-level cross-field rules in the flow's own `correlate:` block:
+Author end-to-end business workflows in `flows.yml` (see `/cats-write-tests`) and execute them:
 ```bash
 cats run -c <spec> -s <server_url> flows.yml
 ```

@@ -39,19 +39,18 @@ Inspect `verdict` in the JSON output:
 
 ## Step 2: Configure Authentication (`-H`, `--headers`, `--wfcAuth`, `--basicAuth`)
 
-**`$$VAR` environment placeholders resolve only when they are the ENTIRE value.** `"Bearer $$API_TOKEN"` is sent literally. Put the full header value in the env var, and always single-quote `$$` in shells (bash expands `$$` inside double quotes to its process ID):
+**`$$VAR` environment placeholders resolve both standalone (`"$$API_AUTH"`) and embedded (`"Bearer $$API_TOKEN"`).** Always single-quote `$$` in shells (bash expands `$$` inside double quotes to its process ID):
 ```bash
-export API_AUTH='Bearer eyJ...'
+export API_TOKEN='eyJ...'
 ```
-- **Inline header**: `-H 'Authorization=$$API_AUTH'` (resolved from the environment or `--envFile` / auto-detected `./.env`, and masked in reports).
+- **Inline header**: `-H 'Authorization=Bearer $$API_TOKEN'` (resolved from the environment or `--envFile` / auto-detected `./.env`, and masked in reports).
 - **Headers YAML file (`--headers headers.yml`)**:
   ```yaml
   all:
-    Authorization: "$$API_AUTH"
+    Authorization: "Bearer $$API_TOKEN"
   "/admin/users":
     X-Admin-Role: "SUPERUSER"
   ```
-  Pin headers under `all` or a path key: method-scoped keys (`"POST /orders"`) are not protected from runtime header correlation.
 - **Login / token flows (`--wfcAuth auth.yml [--wfcAuthName <name>]`)** — Web Fuzzing Commons auth file: `auth: [{name, fixedHeaders: [{name, value}]}]` or `auth: [{name, loginEndpointAuth: {endpoint | externalEndpointURL, verb, payloadRaw | payloadUserPwd, token: {extractFrom, extractSelector, sendIn, sendName}, expectCookies}}]`. Without `--wfcAuthName`, CATS starts with the first entry and switches on `401`/`403`.
 - **Basic auth**: `--basicAuth user:pass`.
 - **Refreshing tokens**: `--authRefreshScript ./get-token.sh [--authRefreshInterval 300]` replaces header values set to `auth_script`.
@@ -77,7 +76,7 @@ successful setup steps in `cats replay --stateful`. `--srw` (`--skipReportingFor
 
 ### Expectation Flags (Match the API's Intended Leniency)
 - `--no-strictTypes` — type-coercion fuzzers accept `2XX` or `4XX` instead of requiring `4XX`.
-- `--no-allowDifferentCaseEnumValues` — `EnumCaseVariantFields` expects `4XX` (the default expects `2XX`, i.e. case-insensitive enums).
+- `--allowDifferentCaseEnumValues` — `EnumCaseVariantFields` expects `2XX` (the default expects `4XX`, i.e. case-sensitive enums).
 - `--allowInvalidEnumValues` — `InvalidValuesInEnumsFields` expects `2XX`.
 
 ### Built-In Fuzzer Profiles (`--profile`)

@@ -117,7 +117,7 @@
                 <version>${maven-install-plugin.version}</version>
                 <executions>
                     <execution>
-                        <phase>pre-clean</phase>
+                        <phase>initialize</phase>
                         <id>ok-http-jar</id>
                         <goals>
                             <goal>install-file</goal>
@@ -133,7 +133,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <phase>pre-clean</phase>
+                        <phase>initialize</phase>
                         <id>swagger-parser-jar</id>
                         <goals>
                             <goal>install-file</goal>
