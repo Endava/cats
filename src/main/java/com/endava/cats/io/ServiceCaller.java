@@ -469,7 +469,7 @@ public class ServiceCaller {
 
     private static boolean isBodyCorrelationRetained(ResourceCorrelation correlation,
                                                      String payloadAfterCorrelations) {
-        if (correlation.getTarget() == null || correlation.getTarget().location() != RequestTarget.Location.BODY) {
+        if (correlation.getTarget().location() != RequestTarget.Location.BODY) {
             return true;
         }
         String fieldPath = FieldCorrelationEvaluator.normalizeFieldPath(correlation.getTarget().name());

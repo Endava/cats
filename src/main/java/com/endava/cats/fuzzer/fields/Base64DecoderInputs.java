@@ -16,7 +16,7 @@ final class Base64DecoderInputs {
             "startingafter", "endingbefore", "after", "before", "scrollid", "searchafter");
     private static final List<Object> CURSOR_VALUES = List.of(
             "e30=", "bnVsbA==", "bm90LWEtdGltZXN0YW1wOm5vdC1hbi1pZA==", "===invalid-cursor===");
-    private static final List<Object> BOUNDARY_VALUES = Base64BoundaryGenerator.values().stream().map(value -> (Object) value).toList();
+    private static final List<Object> BOUNDARY_VALUES = Base64BoundaryGenerator.values().stream().map(Object.class::cast).toList();
 
     private Base64DecoderInputs() {
     }
