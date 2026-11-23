@@ -704,6 +704,57 @@ class FilterArgumentsTest {
                 .hasSize(2);
     }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "security|MultipartDuplicateParts;MultipartOversizedFile;MultipartHostileFileNames",
+            "quick|MultipartMalformedBoundary;MultipartMissingPartHeaders;MultipartEmptyFile",
+            "compliance|MultipartOversizedFile",
+            "ci|MultipartMalformedBoundary;MultipartMissingPartHeaders;MultipartEmptyFile;MultipartHostileFileNames",
+            "crash|MultipartDuplicateParts;MultipartMalformedBoundary;MultipartMissingPartHeaders;MultipartEmptyFile",
+            "coverage|''",
+            "health-check|''",
+            "type-coercion|''",
+            "full|MultipartDuplicateParts;MultipartMalformedBoundary;MultipartMissingPartHeaders;MultipartEmptyFile;MultipartOversizedFile;MultipartHostileFileNames"
+    })
+    void shouldSelectMultipartFuzzersThroughProfile(String profile, String expected) {
+        try {
+            ReflectionTestUtils.setField(filterArguments, "profile", profile);
+            ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", null);
+
+            filterArguments.applyProfile(spec);
+
+            Assertions.assertThat(multipartFuzzerNames()).containsExactlyInAnyOrderElementsOf(
+                    expected.isEmpty() ? List.of() : List.of(expected.split(";")));
+        } finally {
+            ReflectionTestUtils.setField(filterArguments, "profile", "full");
+        }
+    }
+
+    @Test
+    void shouldSelectMultipartFuzzersSuppliedExplicitly() {
+        List<String> multipartFuzzers = List.of("MultipartDuplicateParts", "MultipartMalformedBoundary", "MultipartMissingPartHeaders",
+                "MultipartEmptyFile", "MultipartOversizedFile", "MultipartHostileFileNames");
+        try {
+            ReflectionTestUtils.setField(filterArguments, "profile", "quick");
+            ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", multipartFuzzers);
+
+            filterArguments.applyProfile(spec);
+
+            Assertions.assertThat(multipartFuzzerNames()).containsExactlyInAnyOrderElementsOf(multipartFuzzers);
+            Assertions.assertThat(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Set.of(HttpMethod.POST), "/upload"))
+                    .map(fuzzer -> fuzzer.toString().replaceFirst("Fuzzer$", "")).containsExactlyInAnyOrderElementsOf(multipartFuzzers);
+        } finally {
+            ReflectionTestUtils.setField(filterArguments, "profile", "full");
+        }
+    }
+
+    private List<String> multipartFuzzerNames() {
+        return filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Set.of(HttpMethod.POST), "/upload").stream()
+                .map(fuzzer -> fuzzer.toString().replaceFirst("Fuzzer$", ""))
+                .filter(name -> name.startsWith("Multipart"))
+                .toList();
+    }
+
     @Test
     void shouldThrowExceptionForInvalidProfile() {
         ReflectionTestUtils.setField(filterArguments, "profile", "non-existent-profile");
