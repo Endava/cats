@@ -156,6 +156,17 @@ class MultipartFunctionalFlowTest {
     }
 
     @Test
+    void shouldReplaceStepHeaderWithHeadersFileValue() throws Exception {
+        stubOutcomes("APPLIED", "APPLIED");
+
+        runFlow("flow-idempotency-variable.yml", "custom-headers-file.yml");
+
+        List<LoggedRequest> requests = requests();
+        Assertions.assertThat(uuids(requests, IDEMPOTENCY_HEADER)).hasSize(2).doesNotHaveDuplicates();
+        Assertions.assertThat(uuids(requests, CORRELATION_HEADER)).hasSize(2).doesNotHaveDuplicates();
+    }
+
+    @Test
     void shouldFailFlowStepWhenFirstOutcomeIsNotApplied() throws Exception {
         stubOutcomes("REPEATED", "REPEATED");
 
