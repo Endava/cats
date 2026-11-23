@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRule;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
@@ -208,6 +209,22 @@ class FieldCorrelationEvaluatorTest {
         Assertions.assertThat(pathKeyedRules.get(0).paths()).containsExactly("*");
         Assertions.assertThat(pathKeyedRules.get(1).paths()).containsExactly("/orders");
         Assertions.assertThat(pathKeyedRules.get(2).paths()).containsExactly("/orders");
+
+        List<FieldCorrelationRule> methodScopedRules = List.of(
+                new FieldCorrelationRule(List.of("POST /orders*"), "mode == 'TEST'", Map.of("dryRun", true), List.of())
+        );
+        Assertions.assertThat(FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/orders/create", HttpMethod.POST, "{\"mode\":\"TEST\"}", methodScopedRules, Map.of(), Set.of()))
+                .contains("\"dryRun\":true");
+        Assertions.assertThat(FieldCorrelationEvaluator.applyRequestCorrelations(
+                "/orders/create", HttpMethod.GET, "{\"mode\":\"TEST\"}", methodScopedRules, Map.of(), Set.of()))
+                .doesNotContain("dryRun");
+        Assertions.assertThat(FieldCorrelationEvaluator.collectRequiredFieldsFromCorrelations(
+                "/orders/create", HttpMethod.POST, "{\"mode\":\"TEST\"}", methodScopedRules))
+                .containsExactly("dryRun");
+        Assertions.assertThat(FieldCorrelationEvaluator.collectRequiredFieldsFromCorrelations(
+                "/orders/create", HttpMethod.GET, "{\"mode\":\"TEST\"}", methodScopedRules))
+                .isEmpty();
     }
 
     @Test
@@ -261,11 +278,12 @@ class FieldCorrelationEvaluatorTest {
                         "response.status == '${expectedStatus}' || response.status == 'PENDING'",
                         "response.tags contains 'fast' && response.id matches 'ord_\\d+'",
                         "response.id is not null && response.missingField is null",
-                        "response.missingField != 'SOMETHING'",
                         "responseTimeMs <= 100 && response.amount < 60 && response.amount > 10",
                         "size(items) == 2 && active"
                 ),
                 reqJson, response, vars)).isEmpty();
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateBooleanExpression(
+                "response.missingField != 'SOMETHING'", reqJson, response.getBody(), response, vars)).isFalse();
 
         String arrayItemPayload = "{\"items\":[{\"name\":\"old\"}]}";
         List<FieldCorrelationRule> itemRules = List.of(

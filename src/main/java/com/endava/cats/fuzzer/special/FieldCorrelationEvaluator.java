@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRule;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
@@ -55,11 +56,22 @@ public final class FieldCorrelationEvaluator {
                                                   List<FieldCorrelationRule> rules,
                                                   Map<String, String> variables,
                                                   Set<String> protectedFields) {
+        return applyRequestCorrelations(contractPath, null, jsonPayload, rules, variables, protectedFields);
+    }
+
+    /**
+     * Applies all matching correlation rules (`when` -> `set` / `omit`) to the given JSON request payload,
+     * scoping by contract path and optional HTTP method, and skipping any target field present in {@code protectedFields}.
+     */
+    public static String applyRequestCorrelations(String contractPath, HttpMethod method, String jsonPayload,
+                                                  List<FieldCorrelationRule> rules,
+                                                  Map<String, String> variables,
+                                                  Set<String> protectedFields) {
         if (StringUtils.isBlank(jsonPayload) || rules == null || rules.isEmpty()) {
             return jsonPayload;
         }
         List<FieldCorrelationRule> matchingRules = rules.stream()
-                .filter(rule -> matchesPathPattern(contractPath, rule.paths()))
+                .filter(rule -> matchesPathPattern(contractPath, method, rule.paths()))
                 .toList();
         if (matchingRules.isEmpty() || !JsonUtils.isValidJson(jsonPayload)) {
             return jsonPayload;
@@ -67,7 +79,7 @@ public final class FieldCorrelationEvaluator {
         if (jsonPayload.stripLeading().startsWith("[")) {
             JsonElement parsedRoot = JsonUtils.parseAsJsonElement(jsonPayload);
             if (parsedRoot != null && parsedRoot.isJsonArray()) {
-                return applyRequestCorrelationsToArray(contractPath, parsedRoot.getAsJsonArray(), matchingRules, variables, protectedFields);
+                return applyRequestCorrelationsToArray(contractPath, method, parsedRoot.getAsJsonArray(), matchingRules, variables, protectedFields);
             }
         }
         String updated = jsonPayload;
@@ -84,11 +96,17 @@ public final class FieldCorrelationEvaluator {
      */
     public static Set<String> collectRequiredFieldsFromCorrelations(String contractPath, String jsonPayload,
                                                                     List<FieldCorrelationRule> rules) {
+        return collectRequiredFieldsFromCorrelations(contractPath, null, jsonPayload, rules);
+    }
+
+    public static Set<String> collectRequiredFieldsFromCorrelations(String contractPath, HttpMethod method,
+                                                                    String jsonPayload,
+                                                                    List<FieldCorrelationRule> rules) {
         if (StringUtils.isBlank(jsonPayload) || rules == null || rules.isEmpty()) {
             return Set.of();
         }
         List<FieldCorrelationRule> matchingRules = rules.stream()
-                .filter(rule -> matchesPathPattern(contractPath, rule.paths()))
+                .filter(rule -> matchesPathPattern(contractPath, method, rule.paths()))
                 .toList();
         if (matchingRules.isEmpty() || !JsonUtils.isValidJson(jsonPayload)) {
             return Set.of();
@@ -96,7 +114,7 @@ public final class FieldCorrelationEvaluator {
         if (jsonPayload.stripLeading().startsWith("[")) {
             JsonElement parsedRoot = JsonUtils.parseAsJsonElement(jsonPayload);
             if (parsedRoot != null && parsedRoot.isJsonArray()) {
-                return collectRequiredFieldsFromArrayItems(contractPath, parsedRoot.getAsJsonArray(), matchingRules);
+                return collectRequiredFieldsFromArrayItems(contractPath, method, parsedRoot.getAsJsonArray(), matchingRules);
             }
         }
         return matchingRules.stream()
@@ -106,11 +124,12 @@ public final class FieldCorrelationEvaluator {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private static Set<String> collectRequiredFieldsFromArrayItems(String contractPath, JsonArray items,
+    private static Set<String> collectRequiredFieldsFromArrayItems(String contractPath, HttpMethod method,
+                                                                   JsonArray items,
                                                                    List<FieldCorrelationRule> rules) {
         return items.asList().stream()
                 .filter(JsonElement::isJsonObject)
-                .flatMap(item -> collectRequiredFieldsFromCorrelations(contractPath, item.toString(), rules).stream())
+                .flatMap(item -> collectRequiredFieldsFromCorrelations(contractPath, method, item.toString(), rules).stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -136,14 +155,14 @@ public final class FieldCorrelationEvaluator {
         return normalizedLhs.equals(normalizedTargetField);
     }
 
-    private static String applyRequestCorrelationsToArray(String contractPath, JsonArray arr,
+    private static String applyRequestCorrelationsToArray(String contractPath, HttpMethod method, JsonArray arr,
                                                           List<FieldCorrelationRule> rules,
                                                           Map<String, String> variables,
                                                           Set<String> protectedFields) {
         JsonArray updatedArr = new JsonArray(arr.size());
         for (JsonElement el : arr) {
             if (el.isJsonObject()) {
-                String updatedEl = applyRequestCorrelations(contractPath, el.toString(), rules, variables, protectedFields);
+                String updatedEl = applyRequestCorrelations(contractPath, method, el.toString(), rules, variables, protectedFields);
                 updatedArr.add(JsonParser.parseString(updatedEl));
             } else {
                 updatedArr.add(el);
@@ -333,7 +352,7 @@ public final class FieldCorrelationEvaluator {
 
     private static Object resolveRuleValue(Object rawValue, Map<String, String> variables) {
         if (rawValue instanceof String strVal) {
-            return DynamicValueResolver.resolve(strVal, variables);
+            return DynamicValueResolver.resolveAsTypedValue(strVal, variables);
         }
         return rawValue;
     }
@@ -434,7 +453,7 @@ public final class FieldCorrelationEvaluator {
 
     private static boolean compareOperands(Object left, Object right, String op) {
         if (left == null || right == null || JsonUtils.isNotSet(String.valueOf(left)) || JsonUtils.isNotSet(String.valueOf(right))) {
-            return "!=".equals(op) && !Objects.equals(String.valueOf(left), String.valueOf(right));
+            return false;
         }
         String leftStr = sanitizeOperand(left);
         String rightStr = "matches".equalsIgnoreCase(op) ? String.valueOf(right).trim() : sanitizeOperand(right);
@@ -661,19 +680,37 @@ public final class FieldCorrelationEvaluator {
         return trimmed.replace('.', '#');
     }
 
-    private static boolean matchesPathPattern(String contractPath, List<String> patterns) {
+    private static boolean matchesPathPattern(String contractPath, HttpMethod method, List<String> patterns) {
         if (patterns == null || patterns.isEmpty() || contractPath == null) {
             return true;
         }
-        for (String pattern : patterns) {
-            if ("*".equals(pattern) || contractPath.equalsIgnoreCase(pattern)) {
-                return true;
-            }
-            if (pattern.endsWith("*") && contractPath.startsWith(pattern.substring(0, pattern.length() - 1))) {
+        for (String rawPattern : patterns) {
+            if (matchesSinglePathPattern(contractPath, method, rawPattern)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static boolean matchesSinglePathPattern(String contractPath, HttpMethod method, String rawPattern) {
+        if (StringUtils.isBlank(rawPattern)) {
+            return false;
+        }
+        String pattern = rawPattern.trim();
+        int space = pattern.indexOf(' ');
+        if (space > 0) {
+            Optional<HttpMethod> patternMethod = HttpMethod.fromString(pattern.substring(0, space).trim());
+            if (patternMethod.isPresent()) {
+                if (method != null && patternMethod.get() != method) {
+                    return false;
+                }
+                pattern = pattern.substring(space + 1).trim();
+            }
+        }
+        if ("*".equals(pattern) || "all".equalsIgnoreCase(pattern) || contractPath.equalsIgnoreCase(pattern)) {
+            return true;
+        }
+        return pattern.endsWith("*") && contractPath.startsWith(pattern.substring(0, pattern.length() - 1));
     }
 
     private static List<String> splitLogicalTopLevel(String input, char operatorChar) {

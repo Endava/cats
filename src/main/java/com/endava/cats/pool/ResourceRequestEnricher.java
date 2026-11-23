@@ -318,7 +318,8 @@ final class ResourceRequestEnricher {
     }
 
     boolean hasExplicitValue(ServiceData data, TargetField target) {
-        boolean hasRefData = filesArguments.getRefData(data.getRelativePath()).keySet().stream()
+        boolean hasRefData = FilesArguments.resolveRefData(filesArguments, data.getRelativePath(), data.getHttpMethod())
+                .keySet().stream()
                 .map(key -> key.replace('.', '#'))
                 .anyMatch(key -> key.equalsIgnoreCase(target.path()));
         if (hasRefData) {
@@ -333,7 +334,8 @@ final class ResourceRequestEnricher {
     }
 
     boolean hasExplicitHeader(ServiceData data, String name) {
-        return filesArguments.getHeaders(data.getRelativePath()).keySet().stream().anyMatch(name::equalsIgnoreCase);
+        return FilesArguments.resolveHeaders(filesArguments, data.getRelativePath(), data.getHttpMethod())
+                .keySet().stream().anyMatch(name::equalsIgnoreCase);
     }
 
     boolean shouldSkipOwnPostIdentifier(ServiceData data, TargetField target) {

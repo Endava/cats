@@ -11,7 +11,7 @@ public class EnvVariableParser implements Parser {
     private static final String ENV_VARIABLE_NOT_FOUND = "not_found_";
 
     public static boolean isMissing(String value) {
-        return value != null && value.startsWith(ENV_VARIABLE_NOT_FOUND + "$$");
+        return value != null && value.contains(ENV_VARIABLE_NOT_FOUND + "$$");
     }
 
     public static String variableName(String expression) {

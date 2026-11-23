@@ -435,7 +435,7 @@ public class ServiceCaller {
                     .collect(Collectors.toSet());
             String pathKey = Optional.ofNullable(data.getContractPath()).orElse(data.getRelativePath());
             return FieldCorrelationEvaluator.applyRequestCorrelations(
-                    pathKey, payload, rules, getHeaderParserContext(data), protectedFields);
+                    pathKey, data.getHttpMethod(), payload, rules, getHeaderParserContext(data), protectedFields);
         } catch (Exception e) {
             logger.debug("Unable to apply field correlation rules", e);
             return payload;
@@ -1160,15 +1160,11 @@ public class ServiceCaller {
     }
 
     private Map<String, Object> resolveHeadersForOperation(ServiceData data) {
-        Map<String, Object> merged = new HashMap<>(filesArguments.getHeaders(data.getContractPath(), data.getHttpMethod()));
-        filesArguments.getHeaders(data.getContractPath()).forEach(merged::putIfAbsent);
-        return merged;
+        return FilesArguments.resolveHeaders(filesArguments, data.getContractPath(), data.getHttpMethod());
     }
 
     private Map<String, Object> resolveRefDataForOperation(ServiceData data) {
-        Map<String, Object> merged = new HashMap<>(filesArguments.getRefData(data.getRelativePath(), data.getHttpMethod()));
-        filesArguments.getRefData(data.getRelativePath()).forEach(merged::putIfAbsent);
-        return merged;
+        return FilesArguments.resolveRefData(filesArguments, data.getRelativePath(), data.getHttpMethod());
     }
 
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
@@ -1231,7 +1227,7 @@ public class ServiceCaller {
         if (refDataValue instanceof String str) {
             Map<String, String> context = new HashMap<>(authArguments.getDynamicVariablesContext());
             context.put(Parser.REQUEST, payload);
-            refDataValue = DynamicValueResolver.resolve(str, context);
+            refDataValue = DynamicValueResolver.resolveAsTypedValue(str, context);
         }
         if (SUBSTITUTE_FOR_NULL.equals(String.valueOf(refDataValue))) {
             refDataValue = null;

@@ -9,6 +9,7 @@ import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRul
 import com.endava.cats.fuzzer.special.FunctionalFlowParser;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
@@ -16,8 +17,10 @@ import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2.GeneratedPayload;
+import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsRandom;
+import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ContentTypeUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
@@ -339,7 +342,7 @@ public class FuzzingDataFactory {
                             .headers(this.extractHeaders(item, operation))
                             .payload(generatedPayload.payload())
                             .allRequiredFields(mergeCorrelationRequiredFields(
-                                    path, generatedPayload.payload(), generatedPayload.requiredFields(), correlationRules))
+                                    path, method, generatedPayload.payload(), generatedPayload.requiredFields(), correlationRules))
                             .responseCodes(operation.getResponses().keySet())
                             .reqSchema(Optional.ofNullable(globalContext.getSchemaFromReference(reqSchemaName)).orElseGet(Schema::new))
                             .pathItem(item).responseContentTypes(responsesContentTypes)
@@ -455,7 +458,7 @@ public class FuzzingDataFactory {
                         .headers(this.extractHeaders(item, operation))
                         .payload(generatedPayload.payload())
                         .allRequiredFields(mergeCorrelationRequiredFields(
-                                path, generatedPayload.payload(), generatedPayload.requiredFields(), correlationRules))
+                                path, method, generatedPayload.payload(), generatedPayload.requiredFields(), correlationRules))
                         .responseCodes(operation.getResponses().keySet())
                         .reqSchema(syntheticSchema.getValue())
                         .pathItem(item)
@@ -495,19 +498,43 @@ public class FuzzingDataFactory {
         }
     }
 
-    private static List<String> mergeCorrelationRequiredFields(String path, String payload,
-                                                               List<String> baseRequiredFields,
-                                                               List<FieldCorrelationRule> correlationRules) {
+    List<String> mergeCorrelationRequiredFields(String path, HttpMethod method, String payload,
+                                                List<String> baseRequiredFields,
+                                                List<FieldCorrelationRule> correlationRules) {
         if (correlationRules == null || correlationRules.isEmpty()) {
             return baseRequiredFields;
         }
-        Set<String> extra = FieldCorrelationEvaluator.collectRequiredFieldsFromCorrelations(path, payload, correlationRules);
+        String effectivePayload = applyRefDataForCorrelationAnalysis(path, method, payload);
+        Set<String> extra = FieldCorrelationEvaluator.collectRequiredFieldsFromCorrelations(path, method, effectivePayload, correlationRules);
         if (extra.isEmpty()) {
             return baseRequiredFields;
         }
         Set<String> merged = new LinkedHashSet<>(Optional.ofNullable(baseRequiredFields).orElse(List.of()));
         merged.addAll(extra);
         return new ArrayList<>(merged);
+    }
+
+    private String applyRefDataForCorrelationAnalysis(String path, HttpMethod method, String payload) {
+        if (StringUtils.isBlank(payload) || !JsonUtils.isValidJson(payload)) {
+            return payload;
+        }
+        Map<String, Object> refData = FilesArguments.resolveRefData(filesArguments, path, method);
+        if (refData.isEmpty()) {
+            return payload;
+        }
+        String current = payload;
+        for (Map.Entry<String, Object> entry : refData.entrySet()) {
+            String key = entry.getKey();
+            if (key == null || key.matches(CatsDSLWords.ADDITIONAL_PROPERTIES)) {
+                continue;
+            }
+            if (ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(entry.getValue()))) {
+                current = JsonUtils.isFieldInJson(current, key) ? JsonUtils.deleteNode(current, key) : current;
+            } else if (JsonUtils.isFieldInJson(current, key)) {
+                current = CatsUtil.justReplaceField(current, key, entry.getValue()).json();
+            }
+        }
+        return current;
     }
 
     private List<String> fuzzersToSkipForOperation(PathItem item, Operation operation, HttpMethod method, String path) {

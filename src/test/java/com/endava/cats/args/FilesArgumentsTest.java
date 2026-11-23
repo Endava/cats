@@ -103,11 +103,13 @@ class FilesArgumentsTest {
     @Test
     void shouldMatchUrlParamNamesExactly() {
         FilesArguments filesArguments = new FilesArguments();
-        filesArguments.setParams(List.of("identifier:wrong", "id:localhost:3000/swagger"));
+        filesArguments.setParams(List.of("identifier:wrong", "id:localhost:3000/swagger", "tenant=acme:corp"));
         filesArguments.loadURLParams();
 
         Assertions.assertThat(filesArguments.getUrlParam("id"))
                 .isEqualTo("localhost:3000/swagger");
+        Assertions.assertThat(filesArguments.getUrlParam("tenant"))
+                .isEqualTo("acme:corp");
         Assertions.assertThat(filesArguments.isNotUrlParam("ident")).isTrue();
     }
 
@@ -335,5 +337,16 @@ class FilesArgumentsTest {
 
         Assertions.assertThat(target.mergePathAndAll(null, "/orders", HttpMethod.GET)).isEmpty();
         Assertions.assertThat(target.mergePathAndAll(Map.of(), "/orders", HttpMethod.GET)).isEmpty();
+
+        Map<String, Map<String, Object>> dotScopedRefData = Map.of(
+                "POST /orders*", Map.of("shippingAddress.country", "DE"),
+                "/orders", Map.of("customer#id", "c_1")
+        );
+        ReflectionTestUtils.setField(target, "refData", dotScopedRefData);
+        Assertions.assertThat(FilesArguments.isRefDataField(target, "/orders/create", HttpMethod.POST, "shippingAddress#country")).isTrue();
+        Assertions.assertThat(FilesArguments.isRefDataField(target, "/orders/create", HttpMethod.POST, "shippingAddress.country")).isTrue();
+        Assertions.assertThat(FilesArguments.isRefDataField(target, "/orders/create", HttpMethod.GET, "shippingAddress#country")).isFalse();
+        Assertions.assertThat(FilesArguments.isRefDataField(target, "/orders", HttpMethod.GET, "customer.id")).isTrue();
+        Assertions.assertThat(FilesArguments.isRefDataField(null, "/orders", HttpMethod.GET, "customer.id")).isFalse();
     }
 }

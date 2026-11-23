@@ -52,4 +52,19 @@ class DynamicValueResolverTest {
         Assertions.assertThat(DynamicValueResolver.resolve("PREFIX-#(upper(alpha(4)))-${suffix}", Map.of("suffix", "99")))
                 .matches("PREFIX-[A-Z]{4}-99");
     }
+
+    @Test
+    void shouldResolveEmbeddedEnvVariablesAndTypedScalarExpressions() {
+        Assertions.assertThat(DynamicValueResolver.resolve("Bearer $$API_TOKEN", Map.of("API_TOKEN", "secret-jwt")))
+                .isEqualTo("Bearer secret-jwt");
+        Assertions.assertThat(DynamicValueResolver.resolve("Basic $$USER_B64", Map.of("USER_B64", "YWRtaW46cGFzcw==")))
+                .isEqualTo("Basic YWRtaW46cGFzcw==");
+        Assertions.assertThat(DynamicValueResolver.resolveAsTypedValue("#(randomInt(5,6))", Map.of()))
+                .isEqualTo(5L);
+        Assertions.assertThat(DynamicValueResolver.resolveAsTypedValue("#(bool)", Map.of()))
+                .isInstanceOf(Boolean.class);
+        Assertions.assertThat(DynamicValueResolver.coerceScalarIfOriginalWasTyped("T(Double).valueOf(1.5)", "1.5"))
+                .isEqualTo(1.5d);
+        Assertions.assertThat(DynamicValueResolver.coerceScalarIfOriginalWasTyped(null, null)).isNull();
+    }
 }

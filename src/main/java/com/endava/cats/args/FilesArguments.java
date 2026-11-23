@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.special.FunctionalFlowParser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.util.AnsiUtils;
+import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +21,7 @@ import picocli.CommandLine;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -56,10 +58,6 @@ public class FilesArguments {
     private Set<String> errorLeaksKeywordsList;
     @Getter
     private Properties fuzzConfigProperties;
-    @Getter
-    private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
-    @Getter
-    private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
     @Getter
     private FunctionalFlowDocument securityFlowDocument;
 
@@ -111,8 +109,7 @@ public class FilesArguments {
     Map<String, Object> queryParamsArguments;
 
     @CommandLine.Option(names = {"--refData"},
-            description = "A YAML file with fields that must have a fixed value in order for requests to succeed. " +
-                    "If this is supplied when @|bold FunctionalFuzzer|@ is also enabled, the @|bold FunctionalFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
+            description = "A YAML file with fields that must have a fixed value in order for requests to succeed")
     @Setter
     @Getter
     private File refDataFile;
@@ -123,13 +120,8 @@ public class FilesArguments {
     @Setter
     Map<String, Object> refDataArguments;
 
-
-    @CommandLine.Option(names = {"--functionalFuzzerFile"},
-            description = "The file used by the @|bold FunctionalFuzzer|@ to create user-supplied payloads and tests")
-    @Getter
-    @Setter
-    private File customFuzzerFile;
-
+    @CommandLine.Option(names = {"--functionalFlow", "--functionalFuzzerFile"},
+            description = "The YAML file used by @|bold FunctionalFlowFuzzer|@ to execute sequential multi-step functional flows")
     @Getter
     @Setter
     private File functionalFlowFile;
@@ -146,11 +138,17 @@ public class FilesArguments {
     private File securityFuzzerFile;
 
     @CommandLine.Option(names = {"--createRefData"},
-            description = "This is only applicable when enabling the @|bold FunctionalFuzzer |@. It will instruct the @|bold FunctionalFuzzer|@ to create a @|bold,underline --refData|@ file " +
-                    "with all the paths defined in the @|bold,underline customFuzzerFile|@ and the corresponding @|bold output|@ variables")
+            description = "This is only applicable when enabling the @|bold FunctionalFlowFuzzer|@. It will instruct the @|bold FunctionalFlowFuzzer|@ to create a @|bold,underline --refData|@ file " +
+                    "with all the paths defined in the flow file and the corresponding saved variables")
     @Getter
     @Setter
     private boolean createRefData;
+
+    @CommandLine.Option(names = {"--export-refdata", "--exportRefData"},
+            description = "Write a --refData YAML file populated with variables captured by FunctionalFlowFuzzer")
+    @Getter
+    @Setter
+    private File exportRefDataFile;
 
     @CommandLine.Option(names = {"--mutators", "-m"},
             description = "A folder containing custom mutators. This argument is taken in consideration only when using the `cats random` sub-command")
@@ -178,24 +176,23 @@ public class FilesArguments {
         this.queryParamsArguments = other.queryParamsArguments;
         this.refDataFile = other.refDataFile;
         this.refDataArguments = other.refDataArguments;
-        this.customFuzzerFile = other.customFuzzerFile;
         this.functionalFlowFile = other.functionalFlowFile;
         this.correlationsFile = other.correlationsFile;
         this.securityFuzzerFile = other.securityFuzzerFile;
         this.securityFlowDocument = other.securityFlowDocument;
         this.createRefData = other.createRefData;
+        this.exportRefDataFile = other.exportRefDataFile;
         this.mutatorsFolder = other.mutatorsFolder;
     }
 
 
     /**
-     * Loads all supplied files for --securityFuzzerFile, --customFuzzerFile, --refData, --urlParams and --headers.
+     * Loads all supplied files for --securityFuzzerFile, --refData, --urlParams and --headers.
      *
      * @throws IOException if something happens during file processing
      */
     public void loadConfig() throws IOException {
         loadSecurityFuzzerFile();
-        loadCustomFuzzerFile();
         loadRefData();
         loadURLParams();
         loadHeaders();
@@ -227,29 +224,25 @@ public class FilesArguments {
     }
 
     /**
-     * Loads the supplied security fuzzer file into a Map.
+     * Loads the supplied security fuzzer file into a FunctionalFlowDocument.
      *
      * @throws IOException if something happens while reading the file
      */
     public void loadSecurityFuzzerFile() throws IOException {
-        if (FunctionalFlowParser.isFunctionalFlowFile(securityFuzzerFile)) {
-            log.config(AnsiUtils.bold("SecurityFuzzer file: {}"),
-                    AnsiUtils.blue(securityFuzzerFile.getCanonicalPath()));
-            securityFlowDocument = FunctionalFlowParser.parse(securityFuzzerFile);
-            securityFuzzerDetails = new HashMap<>();
+        if (securityFuzzerFile == null) {
+            log.debug("No SecurityFuzzer file provided");
+            securityFlowDocument = null;
             return;
         }
-        securityFlowDocument = null;
-        securityFuzzerDetails = this.loadFileAsMapOfMapsOfStrings(securityFuzzerFile, "SecurityFuzzer");
-    }
-
-    /**
-     * Loads the supplied functional fuzzer file into a Map.
-     *
-     * @throws IOException if something happens while reading the file
-     */
-    public void loadCustomFuzzerFile() throws IOException {
-        customFuzzerDetails = this.loadFileAsMapOfMapsOfStrings(customFuzzerFile, "FunctionalFuzzer");
+        if (!securityFuzzerFile.isFile()) {
+            throw new FileNotFoundException("SecurityFuzzer file does not exist: " + securityFuzzerFile);
+        }
+        if (!FunctionalFlowParser.isFunctionalFlowFile(securityFuzzerFile)) {
+            throw new CatsException("File format is wrong for SecurityFuzzer. Make sure you supply a valid 'steps:' flow yaml file!");
+        }
+        log.config(AnsiUtils.bold("SecurityFuzzer file: {}"),
+                AnsiUtils.blue(securityFuzzerFile.getCanonicalPath()));
+        securityFlowDocument = FunctionalFlowParser.parse(securityFuzzerFile);
     }
 
     /**
@@ -367,13 +360,25 @@ public class FilesArguments {
     }
 
     private static String getUrlParamName(String nameValueParam) {
-        int separatorIndex = nameValueParam.indexOf(':');
+        int separatorIndex = findUrlParamSeparator(nameValueParam);
         return separatorIndex < 0 ? nameValueParam : nameValueParam.substring(0, separatorIndex);
     }
 
     private static String getUrlParamValue(String nameValueParam) {
-        int separatorIndex = nameValueParam.indexOf(':');
+        int separatorIndex = findUrlParamSeparator(nameValueParam);
         return separatorIndex < 0 ? "" : nameValueParam.substring(separatorIndex + 1);
+    }
+
+    private static int findUrlParamSeparator(String nameValueParam) {
+        int colon = nameValueParam.indexOf(':');
+        int eq = nameValueParam.indexOf('=');
+        if (colon < 0) {
+            return eq;
+        }
+        if (eq < 0) {
+            return colon;
+        }
+        return Math.min(colon, eq);
     }
 
     /**
@@ -385,11 +390,20 @@ public class FilesArguments {
      * @return a Map representation of the --headers file with paths being the Map keys
      */
     public Map<String, Object> getHeaders(String path) {
-        return mergePathAndAll(headers, path, null);
+        return mergePathAndAll(headers, path, null, false);
     }
 
     public Map<String, Object> getHeaders(String path, HttpMethod method) {
-        return mergePathAndAll(headers, path, method);
+        return mergePathAndAll(headers, path, method, false);
+    }
+
+    public static Map<String, Object> resolveHeaders(FilesArguments filesArguments, String path, HttpMethod method) {
+        if (filesArguments == null) {
+            return Map.of();
+        }
+        Map<String, Object> merged = new HashMap<>( Optional.ofNullable(filesArguments.getHeaders(path, method)).orElse(Map.of()));
+        Optional.ofNullable(filesArguments.getHeaders(path)).orElse(Map.of()).forEach(merged::putIfAbsent);
+        return merged;
     }
 
     /**
@@ -401,11 +415,39 @@ public class FilesArguments {
      * @return a Map with the supplied --refData
      */
     public Map<String, Object> getRefData(String currentPath) {
-        return mergePathAndAll(refData, currentPath, null);
+        return mergePathAndAll(refData, currentPath, null, true);
     }
 
     public Map<String, Object> getRefData(String currentPath, HttpMethod method) {
-        return mergePathAndAll(refData, currentPath, method);
+        return mergePathAndAll(refData, currentPath, method, true);
+    }
+
+    public static Map<String, Object> resolveRefData(FilesArguments filesArguments, String path, HttpMethod method) {
+        if (filesArguments == null) {
+            return Map.of();
+        }
+        Map<String, Object> merged = new HashMap<>();
+        Optional.ofNullable(filesArguments.getRefData(path, method)).orElse(Map.of())
+                .forEach((k, v) -> merged.putIfAbsent(normalizeRefDataKey(k), v));
+        Optional.ofNullable(filesArguments.getRefData(path)).orElse(Map.of())
+                .forEach((k, v) -> merged.putIfAbsent(normalizeRefDataKey(k), v));
+        return merged;
+    }
+
+    public static boolean isRefDataField(FilesArguments filesArguments, String path, HttpMethod method, String field) {
+        if (filesArguments == null || field == null) {
+            return false;
+        }
+        String normalizedField = FieldCorrelationEvaluator.normalizeFieldPath(field);
+        Map<String, Object> resolved = resolveRefData(filesArguments, path, method);
+        return resolved.get(field) != null || resolved.get(normalizedField) != null;
+    }
+
+    private static String normalizeRefDataKey(String key) {
+        if (key == null || key.matches(CatsDSLWords.ADDITIONAL_PROPERTIES)) {
+            return key;
+        }
+        return FieldCorrelationEvaluator.normalizeFieldPath(key);
     }
 
     /**
@@ -455,7 +497,7 @@ public class FilesArguments {
      * @return a key-value map with all additional query params
      */
     public Map<String, Object> getAdditionalQueryParamsForPath(String path) {
-        return mergePathAndAll(queryParams, path, null);
+        return mergePathAndAll(queryParams, path, null, false);
     }
 
     /**
@@ -505,34 +547,41 @@ public class FilesArguments {
     }
 
     Map<String, Object> mergePathAndAll(Map<String, Map<String, Object>> collection, String path, HttpMethod method) {
+        return mergePathAndAll(collection, path, method, false);
+    }
+
+    Map<String, Object> mergePathAndAll(Map<String, Map<String, Object>> collection, String path, HttpMethod method, boolean normalizeFieldPaths) {
         if (collection == null || collection.isEmpty()) {
             return new HashMap<>();
         }
         Map<String, Object> result = new HashMap<>();
         if (path != null) {
             if (method != null) {
-                putMatchingEntries(collection, key -> isExactMethodPathMatch(key, path, method), result);
+                putMatchingEntries(collection, key -> isExactMethodPathMatch(key, path, method), result, normalizeFieldPaths);
             }
-            putMatchingEntries(collection, path::equals, result);
+            putMatchingEntries(collection, path::equals, result, normalizeFieldPaths);
             if (method != null) {
-                putMatchingEntries(collection, key -> isWildcardMethodPathMatch(key, path, method), result);
+                putMatchingEntries(collection, key -> isWildcardMethodPathMatch(key, path, method), result, normalizeFieldPaths);
             }
-            putMatchingEntries(collection, key -> isWildcardPathMatch(key, path), result);
+            putMatchingEntries(collection, key -> isWildcardPathMatch(key, path), result, normalizeFieldPaths);
         }
-        putMatchingEntries(collection, ALL::equalsIgnoreCase, result);
+        putMatchingEntries(collection, ALL::equalsIgnoreCase, result, normalizeFieldPaths);
         return result;
     }
 
     private static void putMatchingEntries(Map<String, Map<String, Object>> collection,
                                            Predicate<String> keyMatcher,
-                                           Map<String, Object> target) {
+                                           Map<String, Object> target,
+                                           boolean normalizeFieldPaths) {
         collection.forEach((k, v) -> {
             if (k != null && v != null && keyMatcher.test(k.trim())) {
                 v.forEach((entryKey, entryVal) -> {
                     if ("omit".equalsIgnoreCase(entryKey)) {
-                        extractOmittedFields(entryVal).forEach(f -> target.putIfAbsent(f, ServiceCaller.CATS_REMOVE_FIELD));
+                        extractOmittedFields(entryVal).forEach(f ->
+                                target.putIfAbsent(normalizeFieldPaths ? normalizeRefDataKey(f) : f, ServiceCaller.CATS_REMOVE_FIELD));
                     } else {
-                        target.putIfAbsent(entryKey, entryVal);
+                        String effectiveKey = normalizeFieldPaths ? normalizeRefDataKey(entryKey) : entryKey;
+                        target.putIfAbsent(effectiveKey, entryVal);
                     }
                 });
             }
