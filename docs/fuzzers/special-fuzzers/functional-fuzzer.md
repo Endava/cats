@@ -347,7 +347,7 @@ steps:
       outcome: "REPEATED"
 ```
 
-A `T(...)` value written directly in a step header (without a variable) is evaluated for each step, so every step gets a different value. Headers supplied using `--headers` are evaluated for each request.
+A `T(...)` value written directly in a step header (without a variable) is evaluated for each step, so every step gets a different value. Headers supplied using `--headers` are evaluated for each request and replace a step header with the same name, so a header shared between steps, such as `Idempotency-Key` above, must not also be defined in the `--headers` file.
 
 ---
 
