@@ -26,6 +26,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -126,6 +127,38 @@ class FunctionalFuzzerTest {
 
         Mockito.verify(localListener).beforeFuzz(FunctionalFuzzer.class, "/pets", "GET");
         Mockito.verify(localListener).afterFuzz("/pets");
+    }
+
+    @Test
+    void shouldExecuteTestsInCustomFuzzerFileOrder() {
+        FilesArguments localFiles = Mockito.mock(FilesArguments.class);
+        CustomFuzzerUtil localUtil = Mockito.mock(CustomFuzzerUtil.class);
+        TestCaseListener localListener = Mockito.mock(TestCaseListener.class);
+        Map<String, Object> petTests = new LinkedHashMap<>();
+        petTests.put("z-create", Map.of("httpMethod", "POST"));
+        petTests.put("a-list", Map.of("httpMethod", "GET"));
+        petTests.put("m-get", Map.of("httpMethod", "GET"));
+        Map<String, Map<String, Object>> details = new LinkedHashMap<>();
+        details.put("/pets", petTests);
+        details.put("/owners", Map.of("b-owner", Map.of("httpMethod", "GET")));
+        Mockito.when(localFiles.getCustomFuzzerDetails()).thenReturn(details);
+        Mockito.when(localUtil.isMatchingHttpMethod(Mockito.any(), Mockito.any(HttpMethod.class))).thenAnswer(invocation ->
+                ((Map<?, ?>) invocation.getArgument(0)).get("httpMethod").equals(invocation.<HttpMethod>getArgument(1).name()));
+        FuzzingData ownersGet = FuzzingData.builder().contractPath("/owners").method(HttpMethod.GET).build();
+        FuzzingData petsGet = FuzzingData.builder().contractPath("/pets").method(HttpMethod.GET).build();
+        FuzzingData petsPost = FuzzingData.builder().contractPath("/pets").method(HttpMethod.POST).build();
+        FunctionalFuzzer localFuzzer = new FunctionalFuzzer(localFiles, localUtil, localListener);
+        localFuzzer.fuzz(ownersGet);
+        localFuzzer.fuzz(petsGet);
+        localFuzzer.fuzz(petsPost);
+
+        localFuzzer.executeCustomFuzzerTests();
+
+        InOrder inOrder = Mockito.inOrder(localUtil);
+        inOrder.verify(localUtil, Mockito.times(1)).executeTestCases(Mockito.eq(petsPost), Mockito.eq("z-create"), Mockito.any(), Mockito.any());
+        inOrder.verify(localUtil, Mockito.times(1)).executeTestCases(Mockito.eq(petsGet), Mockito.eq("a-list"), Mockito.any(), Mockito.any());
+        inOrder.verify(localUtil, Mockito.times(1)).executeTestCases(Mockito.eq(petsGet), Mockito.eq("m-get"), Mockito.any(), Mockito.any());
+        inOrder.verify(localUtil, Mockito.times(1)).executeTestCases(Mockito.eq(ownersGet), Mockito.eq("b-owner"), Mockito.any(), Mockito.any());
     }
 
     @Test

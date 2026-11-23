@@ -15,6 +15,7 @@ import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -71,10 +72,11 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     public void executeCustomFuzzerTests() {
         customFuzzerUtil.loadGlobalVariables(filesArguments.getCustomFuzzerDetails());
         logger.debug("Executing {} functional tests.", executions.size());
-        executions.sort(null);
 
         for (Map.Entry<String, Map<String, Object>> entry : filesArguments.getCustomFuzzerDetails().entrySet()) {
+            List<String> testIds = entry.getValue() == null ? List.of() : List.copyOf(entry.getValue().keySet());
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.fuzzingData().getContractPath().equalsIgnoreCase(entry.getKey()))
+                    .sorted(Comparator.comparingInt(execution -> testIds.indexOf(execution.testId())))
                     .forEach(customFuzzerExecution -> {
                         testCaseListener.beforeFuzz(this.getClass(), customFuzzerExecution.fuzzingData().getContractPath(), customFuzzerExecution.fuzzingData().getMethod().name());
                         try {
