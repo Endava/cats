@@ -252,6 +252,9 @@
     <nav class="report-tabs" role="tablist">
         <button type="button" role="tab" class="report-tab active" aria-selected="true" data-view="tests-view">All tests ({{reportedResults}})</button>
         <button type="button" role="tab" class="report-tab" aria-selected="false" data-view="problems-view">Problems ({{problemPage.problemCount}})</button>
+        {{#hasSkippedFromReporting}}
+        <span class="report-tabs-note">{{totalTestsExecuted}} total tests executed ({{skippedFromReporting}} not in report)</span>
+        {{/hasSkippedFromReporting}}
     </nav>
     {{/javascript}}
     {{^javascript}}
@@ -259,6 +262,9 @@
         <a href="#tests-view">All tests ({{reportedResults}})</a>
         <a href="#problems-view">Problems ({{problemPage.problemCount}})</a>
         {{#problemPage.hasProblems}}<a href="#problems-by-operation">Problems by operation</a>{{/problemPage.hasProblems}}
+        {{#hasSkippedFromReporting}}
+        <span class="report-tabs-note">{{totalTestsExecuted}} total tests executed ({{skippedFromReporting}} not in report)</span>
+        {{/hasSkippedFromReporting}}
     </nav>
     {{/javascript}}
     <section id="tests-view" class="report-view active">

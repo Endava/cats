@@ -81,6 +81,7 @@ class ExecutionSummaryTest {
 
         Assertions.assertThat(snapshot.requestsAttempted()).isEqualTo(4);
         Assertions.assertThat(snapshot.reportedResults()).isEqualTo(3);
+        Assertions.assertThat(snapshot.totalTestsExecuted()).isEqualTo(4);
         Assertions.assertThat(snapshot.success()).isEqualTo(1);
         Assertions.assertThat(snapshot.warnings()).isEqualTo(1);
         Assertions.assertThat(snapshot.errors()).isEqualTo(1);

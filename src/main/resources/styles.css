@@ -2098,6 +2098,15 @@ body.report-js .report-view.active {
 	border-bottom: 1px solid var(--hairline);
 }
 
+.report-tabs-note {
+	margin-left: auto;
+	align-self: center;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--secondary-ink);
+	padding-right: 4px;
+}
+
 .report-tab {
 	background: none;
 	border: none;

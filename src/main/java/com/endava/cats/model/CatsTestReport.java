@@ -22,6 +22,8 @@ public class CatsTestReport {
     /** Number of results included in the report. Kept as {@code totalTests} in JSON for consumer compatibility. */
     @SerializedName("totalTests")
     private final long reportedResults;
+    /** Total number of tests executed, including those omitted from the report due to reporting options. */
+    private final long totalTestsExecuted;
     /** Kept as {@code totalRequests} in JSON for report-consumer compatibility. */
     @SerializedName("totalRequests")
     private final long requestsAttempted;

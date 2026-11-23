@@ -137,6 +137,8 @@ class TestCaseExporterHtmlOnlyTest {
 
         statistics.increaseSuccess("/customers");
         statistics.increaseSkippedFromReporting("/customers");
+        statistics.recordResponseCode(200);
+        statistics.recordResponseCode(422);
         statistics.increaseRequestsAttempted();
         statistics.increaseRequestsAttempted();
         statistics.increaseAuthErrors();
@@ -161,13 +163,15 @@ class TestCaseExporterHtmlOnlyTest {
         Assertions.assertThat(html).contains(
                 "Run Details", "Limit reached", "Execution stopped after reaching --stopAfterTests (25 tests)",
                 "Quality gate", "PASSED", "Tests Reported", "1",
+                "2 total tests executed (1 not in report)",
                 "Authentication errors", "I/O errors",
                 "Random seed", "12345", "Runtime resource reuse", "Enabled", "Configured stop limits",
                 "Processing Limitations", "GET /customers", "Could not resolve a request schema reference")
                 .doesNotContain("Execution accounting", "Skipped tests", "HTTP requests sent",
-                        "Results included in report", "Omitted by reporting rules");
+                        "Results included in report", "Omitted by reporting rules", ">422<");
         Assertions.assertThat(json).contains(
                 "\"totalRequests\": \"2\"", "\"totalTests\": \"1\"",
+                "\"totalTestsExecuted\": \"2\"",
                 "\"skippedFromReporting\": \"1\"",
                 "\"authErrors\": 1", "\"ioErrors\": 1", "\"runStatus\": \"LIMIT_REACHED\"",
                 "\"qualityGatePassed\": true", "\"randomSeed\": \"12345\"",

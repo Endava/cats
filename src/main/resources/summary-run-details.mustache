@@ -12,6 +12,9 @@
     </div>
     <div class="card-wrapper">
         <h2 class="action-tag no-top">Execution diagnostics</h2>
+        {{#hasSkippedFromReporting}}
+        <div class="report-detail-row"><span>Total tests executed</span><strong>{{totalTestsExecuted}} ({{skippedFromReporting}} not in report)</strong></div>
+        {{/hasSkippedFromReporting}}
         <div class="report-detail-row"><span>Authentication errors</span><strong>{{authErrors}}</strong></div>
         <div class="report-detail-row"><span>I/O errors</span><strong>{{ioErrors}}</strong></div>
         {{#hasThrottledRequests}}

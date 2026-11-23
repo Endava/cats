@@ -34,6 +34,10 @@ public record ExecutionSummary(long requestsAttempted, long reportedResults, lon
                 qualityGatePassed, qualityGateDescription, outcome, 0L, 0L, 0, 0, 0, List.of());
     }
 
+    public long totalTestsExecuted() {
+        return reportedResults + skippedFromReporting;
+    }
+
     public String throttlingSummary() {
         if (throttledRequests <= 0) {
             return "";

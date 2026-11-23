@@ -20,6 +20,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /** Typed data exposed to all summary report templates. */
@@ -33,6 +37,9 @@ public final class SummaryReportContext {
     private final String failuresJunit;
     private final String testsReported;
     private final String reportedResults;
+    private final String totalTestsExecuted;
+    private final String skippedFromReporting;
+    private final boolean hasSkippedFromReporting;
     private final String authErrors;
     private final String ioErrors;
     private final String timestamp;
@@ -106,7 +113,7 @@ public final class SummaryReportContext {
         List<ProcessingErrorEntry> processingErrors = report.getProcessingErrors().stream()
                 .map(SummaryReportContext::processingError)
                 .toList();
-        List<ResponseCodeEntry> responseCodes = responseCodes(executionSummary.responseCodeDistribution());
+        List<ResponseCodeEntry> responseCodes = responseCodes(reportedResponseCodes(report, executionSummary));
         List<FailingPathEntry> failingPaths = executionSummary.topFailingPaths().entrySet().stream()
                 .map(entry -> new FailingPathEntry(entry.getKey(), entry.getValue()))
                 .toList();
@@ -119,6 +126,10 @@ public final class SummaryReportContext {
                 .failuresJunit(formatLargeNumber(report.getFailuresJunit()))
                 .testsReported(formatLargeNumber(report.getReportedResults()))
                 .reportedResults(formatLargeNumber(report.getReportedResults()))
+                .totalTestsExecuted(formatLargeNumber(
+                        report.getTotalTestsExecuted() > 0 ? report.getTotalTestsExecuted() : report.getReportedResults() + report.getSkippedFromReporting()))
+                .skippedFromReporting(formatLargeNumber(report.getSkippedFromReporting()))
+                .hasSkippedFromReporting(report.getSkippedFromReporting() > 0)
                 .authErrors(formatLargeNumber(report.getAuthErrors()))
                 .ioErrors(formatLargeNumber(report.getIoErrors()))
                 .timestamp(report.getTimestamp())
@@ -212,6 +223,19 @@ public final class SummaryReportContext {
             operation = error.httpMethod() + (StringUtils.isBlank(error.path()) ? "" : " " + error.path());
         }
         return new ProcessingErrorEntry(operation, error.message());
+    }
+
+    private static Map<Integer, Integer> reportedResponseCodes(CatsTestReport report, ExecutionSummary executionSummary) {
+        List<CatsTestCaseSummary> cases = Optional.ofNullable(report.getTestCases()).orElse(List.of());
+        Map<Integer, Integer> fromReportedTests = cases.stream()
+                .filter(Objects::nonNull)
+                .map(CatsTestCaseSummary::getHttpResponseCode)
+                .filter(code -> code > 0 && code < 600)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.summingInt(_ -> 1)));
+        if (!fromReportedTests.isEmpty() || report.getSkippedFromReporting() > 0) {
+            return fromReportedTests;
+        }
+        return executionSummary.responseCodeDistribution();
     }
 
     private static List<ResponseCodeEntry> responseCodes(Map<Integer, Integer> distribution) {

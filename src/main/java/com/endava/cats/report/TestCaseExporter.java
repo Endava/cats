@@ -290,8 +290,8 @@ public abstract class TestCaseExporter {
         logger.complete(passed + warnings + errors, executionSummary.success(),
                 executionSummary.warnings(), executionSummary.errors());
         if (executionSummary.skippedFromReporting() > 0) {
-            logger.complete(AnsiUtils.blue("Not reported due to reporting options: {}."),
-                    executionSummary.skippedFromReporting());
+            logger.complete(AnsiUtils.blue("Total tests executed: {}. Not reported due to reporting options: {}."),
+                    executionSummary.totalTestsExecuted(), executionSummary.skippedFromReporting());
         }
         if (StringUtils.isNotBlank(executionSummary.throttlingSummary())) {
             logger.complete(AnsiUtils.yellow("{}."), executionSummary.throttlingSummary());
@@ -429,6 +429,7 @@ public abstract class TestCaseExporter {
         return CatsTestReport.builder().testCases(sortedSummaries).errors(executionSummary.errors())
                 .success(executionSummary.success())
                 .reportedResults(executionSummary.reportedResults())
+                .totalTestsExecuted(executionSummary.totalTestsExecuted())
                 .requestsAttempted(executionSummary.requestsAttempted())
                 .skippedFromReporting(executionSummary.skippedFromReporting())
                 .authErrors(executionSummary.authenticationErrors())
