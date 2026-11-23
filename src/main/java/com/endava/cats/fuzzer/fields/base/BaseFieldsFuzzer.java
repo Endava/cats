@@ -72,25 +72,29 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         logger.debug("All required fields, including subfields: {}", data.getAllRequiredFields());
         logger.debug("All fields {}", allFields);
 
-        List<String> fieldsToBeRemoved = FilesArguments.getFieldsToRemoveFromRefData(filesArguments.getRefData(data.getPath()));
+        List<String> fieldsToBeRemoved = FilesArguments.getFieldsToRemoveFromRefData(
+                FilesArguments.resolveRefData(filesArguments, data.getPath(), data.getMethod()));
         logger.note("The following fields marked as [{}] in refData will not be fuzzed: {}",
                 ServiceCaller.CATS_REMOVE_FIELD, fieldsToBeRemoved);
-
         fieldsToBeRemoved.forEach(allFields::remove);
 
         if (allFields.isEmpty()) {
             logger.skip("Skipped due to: no fields to fuzz!");
-        } else {
-            for (String fuzzedField : allFields) {
-                logger.debug("Fuzzing {}", fuzzedField);
-                for (FuzzingStrategy fuzzingStrategy : this.getFieldFuzzingStrategy(data, fuzzedField)
-                        .stream().filter(fuzzingStrategy -> !fuzzingStrategy.isSkip())
-                        .toList()) {
-                    logger.debug("Running strategy {} for {}", fuzzingStrategy.name(), fuzzedField);
-                    logger.debug("Payload {}", data.getPayload());
-                    testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzingStrategy), data);
-                }
-            }
+            return;
+        }
+        for (String fuzzedField : allFields) {
+            fuzzSingleField(data, fuzzedField);
+        }
+    }
+
+    private void fuzzSingleField(FuzzingData data, String fuzzedField) {
+        logger.debug("Fuzzing {}", fuzzedField);
+        for (FuzzingStrategy fuzzingStrategy : this.getFieldFuzzingStrategy(data, fuzzedField)
+                .stream().filter(strategy -> !strategy.isSkip())
+                .toList()) {
+            logger.debug("Running strategy {} for {}", fuzzingStrategy.name(), fuzzedField);
+            logger.debug("Payload {}", data.getPayload());
+            testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzingStrategy), data);
         }
     }
 
@@ -103,43 +107,39 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      */
     protected void process(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         FuzzingConstraints fuzzingConstraints = this.createFuzzingConstraints(data, fuzzingStrategy, fuzzedField);
-
-        if (this.isFuzzingPossible(data, fuzzedField, fuzzingStrategy)) {
-            testCaseListener.addScenario(logger, "Send [{}] in request fields: field [{}], value [{}], is required [{}]",
-                    this.typeOfDataSentToTheService(), fuzzedField, fuzzingStrategy.truncatedValue(), fuzzingConstraints.getRequiredString());
-            logger.debug("Fuzzing possible...");
-            boolean rootText = data.isRootTextPayload() && "$".equals(fuzzedField);
-            FuzzingResult fuzzingResult = rootText ? fuzzRootTextPayload(data.getPayload(), fuzzingStrategy)
-                    : FuzzingStrategy.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
-            boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.fuzzedValue(), data, fuzzedField);
-
-            List<RequestTarget> mutationTargets = rootText ? List.of(RequestTarget.requestBody())
-                    : RequestTargetResolver.resolvePayloadField(data, fuzzedField);
-            ServiceData.ServiceDataBuilder serviceDataBuilder = ServiceData.from(data)
-                    .payload(fuzzingResult.json())
-                    .mutationTargets(mutationTargets);
-            if (!rootText) {
-                serviceDataBuilder.responseValidationField(fuzzedField);
-            }
-            ServiceData serviceData = serviceDataBuilder.build();
-            ResponseCodeFamily expectedResponseCodeBasedOnConstraints = this.getExpectedResponseCodeBasedOnConstraints(data, fuzzedField, isFuzzedValueMatchingPattern, fuzzingConstraints);
-
-            testCaseListener.addExpectedResult(logger, "Should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
-
-            if (!testCaseListener.shouldContinueExecution(logger, expectedResponseCodeBasedOnConstraints)) {
-                testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
-                return;
-            }
-
-            CatsResponse response = serviceCaller.call(serviceData);
-
-            testCaseListener.reportResult(logger, data, response, expectedResponseCodeBasedOnConstraints, this.shouldMatchResponseSchema(data), this.shouldMatchContentType(data));
-        } else {
+        if (!this.isFuzzingPossible(data, fuzzedField, fuzzingStrategy)) {
             logger.debug("Fuzzing not possible!");
             FuzzingStrategy strategy = this.createSkipStrategy(fuzzingStrategy);
             testCaseListener.skipTest(logger, (String) strategy.process(""));
             logger.info("{} " + strategy.getData().toString(), fuzzedField);
+            return;
         }
+        testCaseListener.addScenario(logger, "Send [{}] in request fields: field [{}], value [{}], is required [{}]",
+                this.typeOfDataSentToTheService(), fuzzedField, fuzzingStrategy.truncatedValue(), fuzzingConstraints.getRequiredString());
+        logger.debug("Fuzzing possible...");
+        boolean rootText = data.isRootTextPayload() && "$".equals(fuzzedField);
+        FuzzingResult fuzzingResult = rootText ? fuzzRootTextPayload(data.getPayload(), fuzzingStrategy)
+                : FuzzingStrategy.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
+        boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.fuzzedValue(), data, fuzzedField);
+
+        List<RequestTarget> mutationTargets = rootText ? List.of(RequestTarget.requestBody())
+                : RequestTargetResolver.resolvePayloadField(data, fuzzedField);
+        ServiceData.ServiceDataBuilder serviceDataBuilder = ServiceData.from(data)
+                .payload(fuzzingResult.json())
+                .mutationTargets(mutationTargets);
+        if (!rootText) {
+            serviceDataBuilder.responseValidationField(fuzzedField);
+        }
+        ServiceData serviceData = serviceDataBuilder.build();
+        ResponseCodeFamily expectedResponseCodeBasedOnConstraints = this.getExpectedResponseCodeBasedOnConstraints(data, fuzzedField, isFuzzedValueMatchingPattern, fuzzingConstraints);
+
+        testCaseListener.addExpectedResult(logger, "Should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
+        if (!testCaseListener.shouldContinueExecution(logger, expectedResponseCodeBasedOnConstraints)) {
+            testCaseListener.skipTest(logger, "Test skipped due to response code filtering");
+            return;
+        }
+        CatsResponse response = serviceCaller.call(serviceData);
+        testCaseListener.reportResult(logger, data, response, expectedResponseCodeBasedOnConstraints, this.shouldMatchResponseSchema(data), this.shouldMatchContentType(data));
     }
 
     private FuzzingResult fuzzRootTextPayload(String payload, FuzzingStrategy fuzzingStrategy) {
@@ -279,7 +279,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      */
     public boolean isFieldSkippableForSpecialCharsFuzzers(FuzzingData data, String fuzzedField) {
         Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-        boolean isRefDataField = filesArguments.getRefData(data.getPath()).get(fuzzedField) != null;
+        boolean isRefDataField = FilesArguments.isRefDataField(filesArguments, data.getPath(), data.getMethod(), fuzzedField);
         return testCaseListener.isFieldNotADiscriminator(fuzzedField) && fuzzedFieldSchema.getEnum() == null && !isRefDataField;
     }
 

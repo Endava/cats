@@ -113,7 +113,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     @Override
     public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
-        boolean isRefDataField = filesArguments.getRefData(data.getPath()).get(fuzzedField) != null;
+        boolean isRefDataField = FilesArguments.isRefDataField(filesArguments, data.getPath(), data.getMethod(), fuzzedField);
         return !isRefDataField && getExactMethod().apply(schema) != null && StringUtils.isBlank(schema.getFormat());
     }
 

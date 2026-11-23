@@ -44,7 +44,8 @@ public class NumericParserBoundaryFieldsFuzzer implements Fuzzer {
     }
 
     private Stream<String> fields(FuzzingData data) {
-        List<String> removed = FilesArguments.getFieldsToRemoveFromRefData(files.getRefData(data.getPath()));
+        List<String> removed = FilesArguments.getFieldsToRemoveFromRefData(
+                FilesArguments.resolveRefData(files, data.getPath(), data.getMethod()));
         if (isNumeric(data.getReqSchema())) {
             return removed.contains("$") ? Stream.empty() : Stream.of("$");
         }

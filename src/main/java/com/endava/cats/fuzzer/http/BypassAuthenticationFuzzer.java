@@ -69,8 +69,8 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     Set<String> getAuthenticationHeaderProvided(FuzzingData data) {
         Set<String> authenticationHeadersInContract = data.getHeaders().stream().map(CatsHeader::getName)
                 .filter(this::isAuthenticationHeader).collect(Collectors.toSet());
-        Set<String> authenticationHeadersInFile = filesArguments.getHeaders(data.getPath()).keySet()
-                .stream().filter(this::isAuthenticationHeader)
+        Set<String> authenticationHeadersInFile = FilesArguments.resolveHeaders(filesArguments, data.getPath(), data.getMethod())
+                .keySet().stream().filter(this::isAuthenticationHeader)
                 .collect(Collectors.toSet());
         Set<String> authenticationHeadersFromWfc = Optional.ofNullable(serviceCaller.getAuthenticationHeaderNames()).orElse(Collections.emptySet());
 

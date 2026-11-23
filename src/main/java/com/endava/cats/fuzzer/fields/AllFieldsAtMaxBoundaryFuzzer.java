@@ -74,12 +74,12 @@ public class AllFieldsAtMaxBoundaryFuzzer implements Fuzzer {
 
     MaxBoundaryPayload buildAllMaxPayload(FuzzingData data) {
         Set<String> allFields = Optional.ofNullable(data.getAllFieldsByHttpMethod()).orElse(Set.of());
-        Map<String, Object> refData = filesArguments != null ? filesArguments.getRefData(data.getPath()) : Map.of();
         String currentPayload = data.getPayload();
         List<String> mutatedFields = new ArrayList<>();
 
         for (String field : allFields.stream().sorted().toList()) {
-            if (!refData.containsKey(field) && JsonUtils.isFieldInJson(currentPayload, field)) {
+            if (!FilesArguments.isRefDataField(filesArguments, data.getPath(), data.getMethod(), field)
+                    && JsonUtils.isFieldInJson(currentPayload, field)) {
                 Schema<?> schema = data.getRequestPropertyTypes().get(field);
                 Optional<Object> maxVal = computeMaxValidValue(schema);
                 if (maxVal.isPresent()) {

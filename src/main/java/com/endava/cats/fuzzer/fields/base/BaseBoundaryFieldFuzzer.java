@@ -10,7 +10,6 @@ import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.JsonUtils;
 import io.swagger.v3.oas.models.media.Schema;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -38,25 +37,25 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
     @Override
     public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
-
-        if (this.fuzzedFieldHasAnAssociatedSchema(schema) && this.isFieldPartOfPayload(fuzzedField, data.getPayload())) {
-            logger.debug("Field {} has an associated schema", fuzzedField);
-            logger.note("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());
-            Object generatedBoundaryValue = this.getBoundaryValue(schema);
-            if (this.isFieldFuzzable(fuzzedField, data) && generatedBoundaryValue != null) {
-                logger.debug("Field {} is fuzzable and has boundary value", fuzzedField);
-                logger.debug("{} type matching. Start fuzzing...", getSchemaTypesTheFuzzerWillApplyTo());
-                return Collections.singletonList(FuzzingStrategy.replace().withData(generatedBoundaryValue));
-            } else if (!this.hasBoundaryDefined(fuzzedField, data)) {
-                logger.debug("Field {} does not have a boundary defined", fuzzedField);
-                logger.skip("Boundaries not defined. Will skip fuzzing...");
-                return Collections.singletonList(FuzzingStrategy.skip().withData("No LEFT or RIGHT boundary info within the contract!"));
-            } else {
-                logger.debug("Data type not matching. Skipping fuzzing for {}", fuzzedField);
-                logger.skip("Not {}. Will skip fuzzing...", getSchemaTypesTheFuzzerWillApplyTo());
-            }
+        if (!this.fuzzedFieldHasAnAssociatedSchema(schema) || !this.isFieldPartOfPayload(fuzzedField, data.getPayload())) {
+            return List.of(FuzzingStrategy.skip().withData("Data type not matching " + getSchemaTypesTheFuzzerWillApplyTo()));
         }
-        return Collections.singletonList(FuzzingStrategy.skip().withData("Data type not matching " + getSchemaTypesTheFuzzerWillApplyTo()));
+        logger.debug("Field {} has an associated schema", fuzzedField);
+        logger.note("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());
+        Object generatedBoundaryValue = this.getBoundaryValue(schema);
+        if (this.isFieldFuzzable(fuzzedField, data) && generatedBoundaryValue != null) {
+            logger.debug("Field {} is fuzzable and has boundary value", fuzzedField);
+            logger.debug("{} type matching. Start fuzzing...", getSchemaTypesTheFuzzerWillApplyTo());
+            return List.of(FuzzingStrategy.replace().withData(generatedBoundaryValue));
+        }
+        if (!this.hasBoundaryDefined(fuzzedField, data)) {
+            logger.debug("Field {} does not have a boundary defined", fuzzedField);
+            logger.skip("Boundaries not defined. Will skip fuzzing...");
+            return List.of(FuzzingStrategy.skip().withData("No LEFT or RIGHT boundary info within the contract!"));
+        }
+        logger.debug("Data type not matching. Skipping fuzzing for {}", fuzzedField);
+        logger.skip("Not {}. Will skip fuzzing...", getSchemaTypesTheFuzzerWillApplyTo());
+        return List.of(FuzzingStrategy.skip().withData("Data type not matching " + getSchemaTypesTheFuzzerWillApplyTo()));
     }
 
     /**
@@ -85,6 +84,11 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
     protected boolean isFieldFuzzable(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
         return this.isRequestSchemaMatchingFuzzerType(schema) && this.hasBoundaryDefined(fuzzedField, data);
+    }
+
+    @Override
+    public boolean isFuzzerWillingToFuzz(FuzzingData data, String fuzzedField) {
+        return !FilesArguments.isRefDataField(filesArguments, data.getPath(), data.getMethod(), fuzzedField);
     }
 
     private boolean fuzzedFieldHasAnAssociatedSchema(Schema schema) {

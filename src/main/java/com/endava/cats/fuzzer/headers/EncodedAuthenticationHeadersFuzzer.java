@@ -49,7 +49,8 @@ public class EncodedAuthenticationHeadersFuzzer implements Fuzzer {
     }
 
     private String configuredAuthorization(FuzzingData data) {
-        return files.getHeaders(data.getPath()).entrySet().stream().filter(entry -> "Authorization".equalsIgnoreCase(entry.getKey()))
+        return FilesArguments.resolveHeaders(files, data.getPath(), data.getMethod()).entrySet().stream()
+                .filter(entry -> "Authorization".equalsIgnoreCase(entry.getKey()))
                 .map(entry -> String.valueOf(entry.getValue())).findFirst().orElse("");
     }
 

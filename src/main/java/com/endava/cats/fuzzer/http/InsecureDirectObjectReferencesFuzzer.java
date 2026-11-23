@@ -99,7 +99,7 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
         LOGGER.info("Found {} ID-like field(s) to test for IDOR: {}", idFields.size(), idFields);
 
         for (String idField : idFields) {
-            boolean isRefDataField = filesArguments != null && filesArguments.getRefData(data.getPath()).get(idField) != null;
+            boolean isRefDataField = FilesArguments.isRefDataField(filesArguments, data.getPath(), data.getMethod(), idField);
             if (!isRefDataField) {
                 fuzzIdField(data, idField);
             } else {

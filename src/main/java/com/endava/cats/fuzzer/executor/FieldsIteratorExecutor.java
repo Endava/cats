@@ -83,7 +83,8 @@ public class FieldsIteratorExecutor {
     public void execute(FieldsIteratorExecutorContext context) {
         Set<String> allFields = new LinkedHashSet<>(context.getFuzzingData().getAllFieldsByHttpMethod());
         context.getLogger().debug("All fields: {}", allFields);
-        List<String> fieldsToBeRemoved = FilesArguments.getFieldsToRemoveFromRefData(filesArguments.getRefData(context.getFuzzingData().getPath()));
+        List<String> fieldsToBeRemoved = FilesArguments.getFieldsToRemoveFromRefData(
+                FilesArguments.resolveRefData(filesArguments, context.getFuzzingData().getPath(), context.getFuzzingData().getMethod()));
         context.getLogger().note("The following fields marked as [{}] in refData will not be fuzzed: {}", CATS_REMOVE_FIELD, fieldsToBeRemoved);
 
         fieldsToBeRemoved.forEach(allFields::remove);

@@ -36,11 +36,6 @@ public class DecimalFieldsRightBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected boolean isFuzzerWillingToFuzz(FuzzingData data, String fuzzedField) {
-        return filesArguments.getRefData(data.getPath()).get(fuzzedField) == null;
-    }
-
-    @Override
     public Number getBoundaryValue(Schema schema) {
         return NumberGenerator.generateRightBoundaryDecimalValue(schema);
     }

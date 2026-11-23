@@ -46,11 +46,6 @@ public class IntegerFieldsRightBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected boolean isFuzzerWillingToFuzz(FuzzingData data, String fuzzedField) {
-        return filesArguments.getRefData(data.getPath()).get(fuzzedField) == null;
-    }
-
-    @Override
     public String description() {
         return "iterate through each Integer field and send outside the range values on the right side";
     }

@@ -41,11 +41,6 @@ public class IntegerFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected boolean isFuzzerWillingToFuzz(FuzzingData data, String fuzzedField) {
-        return filesArguments.getRefData(data.getPath()).get(fuzzedField) == null;
-    }
-
-    @Override
     public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         return true;
     }
