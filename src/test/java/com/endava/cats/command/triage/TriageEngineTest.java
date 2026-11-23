@@ -148,17 +148,17 @@ class TriageEngineTest {
     }
 
     @Test
-    void shouldTriageWarningsByDefaultAndErrorsOnlyOnRequest(@TempDir Path dir) throws IOException {
+    void shouldTriageErrorsOnlyByDefaultAndWarningsOnRequest(@TempDir Path dir) throws IOException {
         write(dir, 1, test("HappyPath", "Should return [2XX]", "POST", "/orders", 500, "{}", "{\\\"message\\\":\\\"NPE\\\"}", null));
         write(dir, 2, test("RemoveFields", "Should return [4XX]", "POST", "/orders", 201, "{}", "{}", null).replace("\"result\": \"error\"", "\"result\": \"warn\""));
 
-        TriageReport all = triage(dir);
-        TriageReport errorsOnly = new TriageEngine(new TriageOptions(true, false, null, Map.of(), _ -> null)).triage(dir, null);
+        TriageReport errorsOnly = triage(dir);
+        TriageReport withWarnings = new TriageEngine(new TriageOptions(true, false, null, Map.of(), _ -> null)).triage(dir, null);
 
-        Assertions.assertThat(all.problems()).extracting(TriageProblem::kind).containsExactly(ProblemKind.SERVER_ERROR, ProblemKind.ACCEPTED_REQUEST);
         Assertions.assertThat(errorsOnly.problems()).extracting(TriageProblem::kind).containsExactly(ProblemKind.SERVER_ERROR);
-        Assertions.assertThat(all.totalOccurrences()).isEqualTo(2);
-        Assertions.assertThat(all.problemKeyVersion()).isEqualTo(1);
+        Assertions.assertThat(withWarnings.problems()).extracting(TriageProblem::kind).containsExactly(ProblemKind.SERVER_ERROR, ProblemKind.ACCEPTED_REQUEST);
+        Assertions.assertThat(withWarnings.totalOccurrences()).isEqualTo(2);
+        Assertions.assertThat(withWarnings.problemKeyVersion()).isEqualTo(1);
     }
 
     @Test

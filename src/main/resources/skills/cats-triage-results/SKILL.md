@@ -44,7 +44,7 @@ cats triage -r cats-report -c <spec> -j \
   --export-contract-patch contract-patch.yml \
   --export-reproducers reproducers.sh
 ```
-*(Warnings are triaged by default, like the problems of the HTML report. Add `--errors-only` to triage error tests only.)*
+*(Only error test cases are triaged by default. Add `--include-warnings` / `-w` to include warning problems too.)*
 
 Console output omits full curl commands by default. Add `--show-reproducers` to include them, or use
 `--export-reproducers reproducers.sh` to write them separately. JSON always includes `curlReproducer`.

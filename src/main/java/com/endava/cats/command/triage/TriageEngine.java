@@ -125,7 +125,7 @@ public final class TriageEngine {
     }
 
     private boolean isTriaged(TriageTestCase testCase) {
-        return testCase.isError() || (!options.errorsOnly() && testCase.isWarning());
+        return testCase.isError() || (options.includeWarnings() && testCase.isWarning());
     }
 
     private static List<ClusterClassifier.Candidate> analyze(List<TriageTestCase> failing, RequestSchemaLookup schemaLookup) {

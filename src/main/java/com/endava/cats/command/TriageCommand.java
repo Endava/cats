@@ -43,10 +43,10 @@ import java.util.function.UnaryOperator;
                 "@|bold 2|@:Usage error: wrong input, or a report folder without problems written by this CATS version",
                 "@|bold 1|@:Execution error, or a server-error (5XX) problem occurrence that is not FIXED (still failing or inconclusive) during --verify"},
         footerHeading = "%n@|bold,underline Examples:|@%n",
-        footer = {"  Triage the problems (errors and warnings) of the default cats-report folder:",
+        footer = {"  Triage the error problems of the default cats-report folder:",
                 "    cats triage",
-                "", "  Triage error problems only, as JSON:",
-                "    cats triage --errors-only -j",
+                "", "  Triage both error and warning problems, as JSON:",
+                "    cats triage --include-warnings -j",
                 "", "  Replay 1 representative test per problem occurrence against a live server to verify fixes:",
                 "    cats triage -r cats-report --verify -s http://localhost:8080",
                 "", "  Mine a ready-to-use --refData file from 2XX exchanges and synthesize --correlations rules:",
@@ -86,9 +86,9 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "Include full curl commands in console output. JSON and --export-reproducers always retain them.")
     boolean showReproducers;
 
-    @CommandLine.Option(names = {"--errors-only"},
-            description = "Triage error test cases only. By default warnings are triaged too, like the problems of the HTML report.")
-    boolean errorsOnly;
+    @CommandLine.Option(names = {"-w", "--include-warnings"},
+            description = "Include warning test cases in triage. By default only errors are triaged.")
+    boolean includeWarnings;
 
     @CommandLine.Option(names = {"--export-correlations"},
             description = "Write synthesized --correlations YAML rules inferred from 4XX validation errors to the given file.")
@@ -139,7 +139,7 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private TriageOptions triageOptions() {
-        return new TriageOptions(errorsOnly, verify, serverUrl, customHeaders, environment);
+        return new TriageOptions(includeWarnings, verify, serverUrl, customHeaders, environment);
     }
 
     private OpenAPI loadOpenApiIfSupplied() {

@@ -169,6 +169,7 @@ class TriageCommandTest {
 
         TriageCommand triageCommand = new TriageCommand();
         triageCommand.reportFolder = tempDir.toString();
+        triageCommand.includeWarnings = true;
         triageCommand.exportCorrelationsFile = exportedCorr.toString();
         triageCommand.exportRefDataFile = exportedRefData.toString();
         triageCommand.exportContractPatchFile = exportedPatch.toString();
