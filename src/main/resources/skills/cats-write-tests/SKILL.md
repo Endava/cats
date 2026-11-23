@@ -65,6 +65,10 @@ variables:
   envPrefix: "staging"
   defaultCurrency: "EUR"
 
+# Optional flow-scoped request headers sent on every step (overridable or omittable per step)
+headers:
+  X-Tenant-Id: "tenant-${envPrefix}"
+
 # Optional flow-scoped cross-field correlation rules applied to steps
 correlate:
   - paths: ["/billing-plans"]
@@ -85,7 +89,9 @@ steps:
     # Without a match, CATS tries top-level scalar `body:` fields, then falls back silently to the first variant.
     variant:
       planType: "METERED"
-    # Override only the fields relevant to this test scenario
+    # Override only the headers/fields relevant to this test scenario
+    headers:
+      Idempotency-Key: "idem-#(uuid)"
     body:
       name: "Plan-${envPrefix}-#(alphanumeric(6))"
       planType: "METERED"
@@ -102,6 +108,8 @@ steps:
       maxResponseTimeMs: 1000
       planType: "METERED"
       currency: "EUR"
+      headers:
+        Content-Type: "application/json.*"
       bodyContains:
         - "Plan-staging-"
       bodyNotContains:
@@ -109,6 +117,7 @@ steps:
       that:
         - "response.name == request.name"
         - "response.unitPrice >= 10"
+        - "response.headers.ETag != null"
 
   - name: "getPlan"
     description: "Fetch the created billing plan and verify cross-step persistence"
@@ -118,6 +127,8 @@ steps:
     poll:
       maxAttempts: 5
       intervalMs: 200
+    headers:
+      If-None-Match: "${steps.createPlan.headers.ETag}"
     query:
       includeDetails: true
     expect:

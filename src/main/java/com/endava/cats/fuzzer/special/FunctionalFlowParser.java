@@ -111,10 +111,11 @@ public final class FunctionalFlowParser {
                 return new FunctionalFlowDocument(Map.of(), List.of(), parseSteps(root));
             }
             Map<String, String> variables = parseStringMap(root.get("variables"));
+            Map<String, Object> headers = parseObjectMap(root.get(root.has("headers") ? "headers" : "header"));
             JsonNode corrNode = root.get(root.has("correlate") ? "correlate" : "correlations");
             List<FieldCorrelationRule> correlate = parseCorrelations(corrNode);
             List<FunctionalFlowStep> steps = parseSteps(root.get("steps"));
-            return new FunctionalFlowDocument(variables, correlate, steps);
+            return new FunctionalFlowDocument(variables, headers, correlate, steps);
         } catch (IOException e) {
             throw new CatsException("Unable to parse functional flow YAML document", e);
         }
@@ -162,7 +163,7 @@ public final class FunctionalFlowParser {
         String name = resolveStepName(explicitName, description, index, methodAndTarget);
         Map<String, Object> path = parsePathMap(node.get("path"));
         Map<String, Object> query = parseObjectMap(node.get("query"));
-        Map<String, Object> headers = parseObjectMap(node.get("headers"));
+        Map<String, Object> headers = parseObjectMap(node.get(node.has("headers") ? "headers" : "header"));
         Object body = node.has("body") ? convertJsonNode(node.get("body")) : null;
         BasePayloadMode base = BasePayloadMode.fromString(firstNonBlankText(node, "base"));
         List<String> omit = parseStringList(node.get("omit"));

@@ -13,8 +13,16 @@ import java.util.Map;
  */
 public record FunctionalFlowDocument(
         Map<String, String> variables,
+        Map<String, Object> headers,
         List<FieldCorrelationRule> correlate,
         List<FunctionalFlowStep> steps) {
+
+    public FunctionalFlowDocument(
+            Map<String, String> variables,
+            List<FieldCorrelationRule> correlate,
+            List<FunctionalFlowStep> steps) {
+        this(variables, Map.of(), correlate, steps);
+    }
 
     public enum BasePayloadMode {
         MERGE,

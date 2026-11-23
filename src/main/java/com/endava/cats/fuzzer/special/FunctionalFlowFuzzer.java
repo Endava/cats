@@ -66,7 +66,7 @@ import java.util.regex.Pattern;
 @SpecialFuzzer
 public class FunctionalFlowFuzzer implements Fuzzer {
     private static final String REF_DATA_CUSTOM_FILE = "refData_custom.yml";
-    private static final Pattern STEP_TOKEN_PATTERN = Pattern.compile("\\$\\{((?:steps|prev)\\.[^}]+)}|\\$((?:steps|prev)\\.[A-Za-z0-9_.#\\[\\]]+)");
+    private static final Pattern STEP_TOKEN_PATTERN = Pattern.compile("\\$\\{((?:steps|prev)\\.[^}]+)}|\\$((?:steps|prev)\\.[A-Za-z0-9_.#\\[\\]-]+)");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FunctionalFlowFuzzer.class);
     private final FilesArguments filesArguments;
     private final ServiceCaller serviceCaller;
@@ -413,14 +413,15 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         sleepQuietly(step.delayMs());
         ExchangeExecutionResult execution = executeServiceCallWithRepeatAndPolling(document, step, target, data, expectedCodeFamily);
 
-        recordStepHistory(step, stepIndex, execution.bodyPayload(), execution.response());
+        recordStepHistory(step, stepIndex, execution.bodyPayload(), execution.requestHeaders(), execution.response());
         if (!execution.response().isBodyTruncated()) {
             captureSavedVariables(step.save(), execution.response(), execution.bodyPayload(), execution.pathParamsPayload());
         }
         evaluateAndReportStepResult(step, data, execution.bodyPayload(), execution.response(), expectedCodeFamily);
     }
 
-    private record ExchangeExecutionResult(String bodyPayload, String pathParamsPayload, CatsResponse response) {
+    private record ExchangeExecutionResult(String bodyPayload, String pathParamsPayload,
+                                           Set<CatsHeader> requestHeaders, CatsResponse response) {
     }
 
     private ExchangeExecutionResult executeServiceCallWithRepeatAndPolling(FunctionalFlowDocument document,
@@ -452,7 +453,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                                                           ResolvedStepTarget target,
                                                           FuzzingData data) {
         PreparedStepPayloads payloads = preparePayloads(document, step, target, data);
-        Set<CatsHeader> headers = prepareHeaders(step, data, payloads.bodyPayload());
+        Set<CatsHeader> headers = prepareHeaders(document, step, data, payloads.bodyPayload());
         List<RequestTarget> mutationTargets = computeMutationTargets(data, payloads.bodyPayload(),
                 payloads.pathParamsPayload(), headers, payloads.changedFields());
         boolean expectsRateLimit = step.expect() != null
@@ -467,7 +468,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                 .mutationTargets(mutationTargets)
                 .expectsRateLimit(expectsRateLimit)
                 .build());
-        return new ExchangeExecutionResult(payloads.bodyPayload(), payloads.pathParamsPayload(), response);
+        return new ExchangeExecutionResult(payloads.bodyPayload(), payloads.pathParamsPayload(), headers, response);
     }
 
     private boolean isPollingExpectationSatisfied(FunctionalFlowStep step, String requestPayload,
@@ -498,17 +499,38 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         }
     }
 
-    private void recordStepHistory(FunctionalFlowStep step, int stepIndex, String requestPayload, CatsResponse response) {
+    private void recordStepHistory(FunctionalFlowStep step, int stepIndex, String requestPayload,
+                                   Set<CatsHeader> requestHeaders, CatsResponse response) {
         String respBody = Optional.ofNullable(response.getBody()).orElse("");
         String statusStr = String.valueOf(response.getResponseCode());
         variables.put("prev.request", requestPayload);
         variables.put("prev.response", respBody);
         variables.put("prev.status", statusStr);
+        recordHeaderHistory("prev", requestHeaders, response);
 
         for (String key : stepKeys(step.name(), stepIndex)) {
             variables.put("steps." + key + ".request", requestPayload);
             variables.put("steps." + key + ".response", respBody);
             variables.put("steps." + key + ".status", statusStr);
+            recordHeaderHistory("steps." + key, requestHeaders, response);
+        }
+    }
+
+    private void recordHeaderHistory(String prefix, Set<CatsHeader> requestHeaders, CatsResponse response) {
+        for (CatsHeader header : Optional.ofNullable(requestHeaders).orElse(Set.of())) {
+            if (header != null && header.getName() != null && header.getValue() != null) {
+                variables.put(prefix + ".request.headers." + header.getName(), header.getValue());
+                variables.put(prefix + ".request.headers." + header.getName().toLowerCase(Locale.ROOT), header.getValue());
+            }
+        }
+        for (KeyValuePair<String, String> header : Optional.ofNullable(response.getHeaders()).orElse(List.of())) {
+            if (header != null && header.getKey() != null && header.getValue() != null) {
+                String lower = header.getKey().toLowerCase(Locale.ROOT);
+                variables.put(prefix + ".headers." + header.getKey(), header.getValue());
+                variables.put(prefix + ".headers." + lower, header.getValue());
+                variables.put(prefix + ".response.headers." + header.getKey(), header.getValue());
+                variables.put(prefix + ".response.headers." + lower, header.getValue());
+            }
         }
     }
 
@@ -900,16 +922,49 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         return JsonUtils.GSON.toJson(root);
     }
 
-    private Set<CatsHeader> prepareHeaders(FunctionalFlowStep step, FuzzingData data, String bodyPayload) {
+    private Set<CatsHeader> prepareHeaders(FunctionalFlowDocument document, FunctionalFlowStep step,
+                                           FuzzingData data, String bodyPayload) {
         Map<String, CatsHeader> byName = new LinkedHashMap<>();
         for (CatsHeader header : Optional.ofNullable(data.getHeaders()).orElse(Set.of())) {
             byName.put(header.getName().toLowerCase(Locale.ROOT), header.copy());
         }
-        step.headers().forEach((name, rawValue) -> {
-            String resolved = resolveStringExpression(String.valueOf(rawValue), bodyPayload);
-            byName.put(name.toLowerCase(Locale.ROOT), CatsHeader.builder().name(name).value(resolved).build());
-        });
+        applyHeaderOverrides(byName, document == null ? Map.of() : document.headers(), data.getContractPath(), bodyPayload);
+        applyHeaderOverrides(byName, step.headers(), data.getContractPath(), bodyPayload);
+        applyHeaderOmissions(byName, step.omit());
         return new LinkedHashSet<>(byName.values());
+    }
+
+    private void applyHeaderOverrides(Map<String, CatsHeader> byName, Map<String, Object> overrides,
+                                      String contractPath, String bodyPayload) {
+        if (overrides == null || overrides.isEmpty()) {
+            return;
+        }
+        overrides.forEach((name, rawValue) -> {
+            String lower = name.toLowerCase(Locale.ROOT);
+            if (rawValue == null) {
+                byName.remove(lower);
+                return;
+            }
+            String rawStr = String.valueOf(rawValue);
+            String resolved = resolveStringExpression(rawStr, bodyPayload);
+            recordVariableConsumptionForRefData(contractPath, name, rawStr, resolved);
+            byName.put(lower, CatsHeader.builder().name(name).value(resolved).build());
+        });
+    }
+
+    private static void applyHeaderOmissions(Map<String, CatsHeader> byName, List<String> omitList) {
+        for (String omitEntry : Optional.ofNullable(omitList).orElse(List.of())) {
+            if (StringUtils.isBlank(omitEntry)) {
+                continue;
+            }
+            String trimmed = omitEntry.trim();
+            if (trimmed.toLowerCase(Locale.ROOT).startsWith("headers.") || trimmed.toLowerCase(Locale.ROOT).startsWith("header.")) {
+                String headerName = trimmed.substring(trimmed.indexOf('.') + 1).trim().toLowerCase(Locale.ROOT);
+                byName.remove(headerName);
+            } else {
+                byName.remove(trimmed.toLowerCase(Locale.ROOT));
+            }
+        }
     }
 
     private List<RequestTarget> computeMutationTargets(FuzzingData data, String mutatedPayload,

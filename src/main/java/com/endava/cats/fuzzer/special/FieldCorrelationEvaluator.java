@@ -527,6 +527,13 @@ public final class FieldCorrelationEvaluator {
         if (variables.containsKey(clean)) {
             return Optional.ofNullable(variables.get(clean));
         }
+        if (clean.contains(".headers.")) {
+            int idx = clean.indexOf(".headers.") + ".headers.".length();
+            String lowerHeaderKey = clean.substring(0, idx) + clean.substring(idx).toLowerCase(Locale.ROOT);
+            if (variables.containsKey(lowerHeaderKey)) {
+                return Optional.ofNullable(variables.get(lowerHeaderKey));
+            }
+        }
         if (clean.startsWith("prev.request.") || clean.startsWith("prev.response.")) {
             boolean isReq = clean.startsWith("prev.request.");
             String prefix = isReq ? "prev.request" : "prev.response";
@@ -560,6 +567,14 @@ public final class FieldCorrelationEvaluator {
         }
         if (("$status".equalsIgnoreCase(trimmed) || "status".equalsIgnoreCase(trimmed)) && response != null) {
             return Optional.of(response.getResponseCode());
+        }
+        if (response != null) {
+            String clean = trimmed.startsWith("$") ? trimmed.substring(1) : trimmed;
+            if (clean.startsWith("headers.") || clean.startsWith("response.headers.")) {
+                String headerName = clean.substring(clean.lastIndexOf('.') + 1);
+                var header = response.getHeader(headerName);
+                return Optional.of(header == null || header.getValue() == null ? JsonUtils.NOT_SET : header.getValue());
+            }
         }
         if (trimmed.toLowerCase(Locale.ROOT).startsWith("size(") && trimmed.endsWith(")")) {
             String innerField = trimmed.substring(5, trimmed.length() - 1).trim();

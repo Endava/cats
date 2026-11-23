@@ -745,6 +745,86 @@ class FunctionalFlowFuzzerTest {
                 Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString());
     }
 
+    @Test
+    void shouldSupportDocumentAndStepHeadersOmissionAndStepHeaderReferences() {
+        TestCaseListener listener = flowListener();
+        Mockito.when(listener.shouldContinueExecution(Mockito.any(), Mockito.any())).thenReturn(true);
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.POST)
+                .path("/billing-plans")
+                .contractPath("/billing-plans")
+                .payload("{\"name\":\"Plan-1\"}")
+                .allRequiredFields(List.of("name"))
+                .reqSchema(new ObjectSchema())
+                .schemaMap(Map.of())
+                .headers(Set.of(
+                        CatsHeader.builder().name("X-Contract-Header").value("contract-val").build(),
+                        CatsHeader.builder().name("X-Omit-Me").value("drop-me").build()))
+                .responseCodes(Set.of("201"))
+                .requestContentTypes(List.of("application/json"))
+                .build();
+        flow.fuzz(data);
+
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder()
+                        .responseCode(201)
+                        .body("{\"id\":\"p_1\"}")
+                        .jsonBody(JsonParser.parseString("{\"id\":\"p_1\"}"))
+                        .headers(List.of(new KeyValuePair<>("ETag", "W/\"v1\""), new KeyValuePair<>("X-Trace", "tr-99")))
+                        .build());
+
+        flow.executeDocument(FunctionalFlowParser.parseContent("""
+                variables:
+                  tenant: "acme"
+                headers:
+                  X-Tenant: "${tenant}"
+                  X-Override: "from-doc"
+                steps:
+                  - name: createPlan
+                    POST: /billing-plans
+                    header:
+                      X-Override: "from-step"
+                      X-Contract-Header: null
+                    omit:
+                      - "headers.X-Omit-Me"
+                    expect:
+                      status: 201
+                      that:
+                        - "response.headers.ETag == 'W/\\\"v1\\\"'"
+                        - "headers.x-trace == 'tr-99'"
+                  - name: updatePlanWithPreviousHeaders
+                    POST: /billing-plans
+                    headers:
+                      If-Match: "${steps.createPlan.headers.etag}"
+                      X-Prev-Req: "$prev.request.headers.X-Override"
+                    expect:
+                      status: 201
+                      that:
+                        - "$steps.createPlan.response.headers.X-Trace == 'tr-99'"
+                """), "headers-flow", flow);
+
+        ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.times(2)).call(captor.capture());
+
+        Map<String, String> step1Headers = captor.getAllValues().get(0).getHeaders().stream()
+                .collect(java.util.stream.Collectors.toMap(CatsHeader::getName, CatsHeader::getValue));
+        Assertions.assertThat(step1Headers)
+                .containsEntry("X-Tenant", "acme")
+                .containsEntry("X-Override", "from-step")
+                .doesNotContainKeys("X-Contract-Header", "X-Omit-Me");
+
+        Map<String, String> step2Headers = captor.getAllValues().get(1).getHeaders().stream()
+                .collect(java.util.stream.Collectors.toMap(CatsHeader::getName, CatsHeader::getValue));
+        Assertions.assertThat(step2Headers)
+                .containsEntry("X-Tenant", "acme")
+                .containsEntry("If-Match", "W/\"v1\"")
+                .containsEntry("X-Prev-Req", "from-step");
+
+        Mockito.verify(listener, Mockito.never()).reportResultError(
+                Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString());
+    }
+
     private TestCaseListener flowListener() {
         TestCaseListener listener = Mockito.mock(TestCaseListener.class);
         Mockito.doAnswer(invocation -> {

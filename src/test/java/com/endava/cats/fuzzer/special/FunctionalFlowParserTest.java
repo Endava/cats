@@ -65,6 +65,8 @@ class FunctionalFlowParserTest {
         String yaml = """
                 variables:
                   tenant: "acme"
+                headers:
+                  X-Global-Tenant: "${tenant}"
                 correlate:
                   - paths: ["/rules*"]
                     when: "metric == 'SUM'"
@@ -103,6 +105,7 @@ class FunctionalFlowParserTest {
 
         FunctionalFlowDocument doc = FunctionalFlowParser.parseContent(yaml);
         Assertions.assertThat(doc.variables()).containsEntry("tenant", "acme");
+        Assertions.assertThat(doc.headers()).containsEntry("X-Global-Tenant", "${tenant}");
         Assertions.assertThat(doc.correlate()).singleElement().satisfies(rule -> {
             Assertions.assertThat(rule.paths()).containsExactly("/rules*");
             Assertions.assertThat(rule.when()).isEqualTo("metric == 'SUM'");
