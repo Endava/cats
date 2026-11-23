@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.headers;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamilyDynamic;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
@@ -90,13 +91,30 @@ class DummyContentTypeHeadersFuzzerTest {
     }
 
     @Test
-    void shouldExpect415ForAllContentTypesOnJsonOperations() {
-        List<SimpleExecutorContext> contexts = executedContexts(payloadData(HttpMethod.POST, "application/json"));
+    void shouldAccept400ForMultipartWithoutBoundaryOnJsonOperations() {
+        assertMultipartWithoutBoundaryAccepts400(HttpMethod.POST);
+    }
 
-        Assertions.assertThat(contexts).hasSize(3).allSatisfy(context -> {
-            Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX_MT);
-            Assertions.assertThat(context.getExpectedSpecificResponseCode()).isEqualTo("415");
-        });
+    @Test
+    void shouldAccept400ForMultipartWithoutBoundaryOnJsonPatchOperations() {
+        assertMultipartWithoutBoundaryAccepts400(HttpMethod.PATCH);
+    }
+
+    private void assertMultipartWithoutBoundaryAccepts400(HttpMethod method) {
+        List<SimpleExecutorContext> contexts = executedContexts(payloadData(method, "application/json"));
+
+        Assertions.assertThat(contexts).hasSize(3);
+        Assertions.assertThat(contexts).filteredOn(context -> contentType(context).equals("multipart/form-data"))
+                .singleElement().satisfies(context -> {
+                    Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(new ResponseCodeFamilyDynamic(List.of("400", "406", "415")));
+                    Assertions.assertThat(context.getExpectedResponseCode().allowedResponseCodes()).contains("400");
+                    Assertions.assertThat(context.getExpectedSpecificResponseCode()).isEqualTo("400, 406 or 415");
+                });
+        Assertions.assertThat(contexts).filteredOn(context -> !contentType(context).equals("multipart/form-data"))
+                .hasSize(2).allSatisfy(context -> {
+                    Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX_MT);
+                    Assertions.assertThat(context.getExpectedSpecificResponseCode()).isEqualTo("415");
+                });
     }
 
     @Test

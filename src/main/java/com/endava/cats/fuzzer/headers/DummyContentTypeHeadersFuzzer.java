@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.headers.base.BaseSecurityChecksHeadersFuzzer;
 import com.endava.cats.generator.Cloner;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyDynamic;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
@@ -25,6 +26,7 @@ import java.util.Set;
 @HeaderFuzzer
 public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
     private static final String MULTIPART_WITHOUT_BOUNDARY = "multipart/form-data";
+    private static final ResponseCodeFamily MULTIPART_WITHOUT_BOUNDARY_ON_NON_MULTIPART = new ResponseCodeFamilyDynamic(List.of("400", "406", "415"));
 
     /**
      * Creates a new instance.
@@ -73,23 +75,24 @@ public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzz
 
     @Override
     public ResponseCodeFamily getResponseCodeFamily(FuzzingData data, String headerValue) {
-        if (isMultipartWithoutBoundary(data, headerValue)) {
-            return ResponseCodeFamilyPredefined.FOURXX;
+        if (isMultipartWithoutBoundaryOnBodyOperation(data, headerValue)) {
+            return data.getPayloadFormat() == PayloadFormat.MULTIPART
+                    ? ResponseCodeFamilyPredefined.FOURXX : MULTIPART_WITHOUT_BOUNDARY_ON_NON_MULTIPART;
         }
         return this.getResponseCodeFamily(data);
     }
 
     @Override
     public String getExpectedResponseCode(FuzzingData data, String headerValue) {
-        if (isMultipartWithoutBoundary(data, headerValue)) {
-            return "4XX";
+        if (isMultipartWithoutBoundaryOnBodyOperation(data, headerValue)) {
+            return data.getPayloadFormat() == PayloadFormat.MULTIPART ? "4XX" : "400, 406 or 415";
         }
         return this.getExpectedResponseCode(data);
     }
 
-    private static boolean isMultipartWithoutBoundary(FuzzingData data, String headerValue) {
+    private static boolean isMultipartWithoutBoundaryOnBodyOperation(FuzzingData data, String headerValue) {
         return data != null && data.getMethod() != null && HttpMethod.requiresBody(data.getMethod())
-                && data.getPayloadFormat() == PayloadFormat.MULTIPART && MULTIPART_WITHOUT_BOUNDARY.equals(headerValue);
+                && MULTIPART_WITHOUT_BOUNDARY.equals(headerValue);
     }
 
     @Override
