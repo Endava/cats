@@ -83,60 +83,34 @@ class ProblemMessageTest {
     }
     @Test
     void shouldUseRecordedExpectationsAndLinkTheExampleTest() {
-        ProblemMessage message = ProblemMessage.of(problem("validation failed"), List.of(test("expected [2XX], actual [422]")));
+        CatsTestCaseSummary test2xx = test("expected [2XX], actual [422]");
+        Mockito.when(test2xx.hasRecordedExpectedResponse()).thenReturn(true);
+        Mockito.when(test2xx.getExpectedResponseCodes()).thenReturn(List.of("2XX"));
+        ProblemMessage message = ProblemMessage.of(problem("validation failed"), List.of(test2xx));
 
         Assertions.assertThat(message.expectation()).isEqualTo("Expected HTTP 2xx; received HTTP 422.");
         Assertions.assertThat(message.sampleTest()).isEqualTo(new ProblemCard.TestLink("Test7", "Test 7"));
-        Assertions.assertThat(ProblemMessage.of(problem("invalid input"), List.of(test("expected [422, 400], actual [422]"))).expectation())
+
+        CatsTestCaseSummary test400 = test("expected [422, 400], actual [422]");
+        Mockito.when(test400.hasRecordedExpectedResponse()).thenReturn(true);
+        Mockito.when(test400.getExpectedResponseCodes()).thenReturn(List.of("422", "400"));
+        Assertions.assertThat(ProblemMessage.of(problem("invalid input"), List.of(test400)).expectation())
                 .isEqualTo("Expected HTTP 400 or 422; received HTTP 422.");
-    }
-
-    @ParameterizedTest
-    @MethodSource("legacyExpectations")
-    void shouldPreserveLegacyExpectationSyntaxAndSelectTheFirstValidMatch(String details, String expected) {
-        String expectation = expected.isEmpty() ? "Received HTTP 422." : "Expected HTTP %s; received HTTP 422.".formatted(expected);
-
-        Assertions.assertThat(ProblemMessage.of(problem("validation failed"), List.of(test(details))).expectation()).isEqualTo(expectation);
-    }
-
-    static Stream<Arguments> legacyExpectations() {
-        return Stream.of(
-                Arguments.of("expected [200, 4xX,200], actual [000]", "200 or 4xx"),
-                Arguments.of("expected [2xx,2Xx,2xX,2XX], actual [999]", "2xx"),
-                Arguments.of("expected [200,    400], actual [422]", "200 or 400"),
-                Arguments.of("expected [200,\t400], actual [422]", ""), Arguments.of("expected [200 ,400], actual [422]", ""),
-                Arguments.of("expected [200 ], actual [422]", ""), Arguments.of("expected [200,], actual [422]", ""),
-                Arguments.of("expected [200,,400], actual [422]", ""), Arguments.of("expected [200|400], actual [422]", ""),
-                Arguments.of("expected [2٠٠], actual [422]", ""), Arguments.of("expected [200], actual [４２２]", ""),
-                Arguments.of("expected [200], actual [4220]", ""), Arguments.of("Expected [200], actual [422]", ""),
-                Arguments.of("expected [200], Actual [422]", ""), Arguments.of("expected [], actual [422]", ""),
-                Arguments.of("expected [bad], actual [422]; expected [405], actual [422]", "405"),
-                Arguments.of("expected [200], actual [422]; expected [405], actual [422]", "200"),
-                Arguments.of("expected [invalid expected [405], actual [422]", "405"),
-                Arguments.of("expected [200], actual [expected [405], actual [422]]", "405"),
-                Arguments.of("expected [bad expected [200], actual [422]], actual [422]", "200"));
-    }
-
-    @Test
-    void shouldReadLargeLegacyDeclarationsAndSkipMalformedOnesWithoutStackOverflow() {
-        String codes = "200, ".repeat(20_000) + "405";
-        String valid = "expected [" + codes + "], actual [422]";
-        String invalid = "expected [" + codes + ",], actual [422]; expected [400], actual [422]";
-
-        Assertions.assertThat(ProblemMessage.of(problem("validation failed"), List.of(test(valid))).expectation())
-                .isEqualTo("Expected HTTP 200 or 405; received HTTP 422.");
-        Assertions.assertThat(ProblemMessage.of(problem("validation failed"), List.of(test(invalid))).expectation())
-                .isEqualTo("Expected HTTP 400; received HTTP 422.");
     }
 
     @Test
     void shouldNotInventExpectationsWhenDetailsAreMissingOrDisagree() {
         Assertions.assertThat(ProblemMessage.of(problem("validation failed"), List.of(test(null))).expectation()).isEqualTo("Received HTTP 422.");
-        Assertions.assertThat(ProblemMessage.of(problem("validation failed"), List.of(
-                        test("expected [2XX], actual [422]"), test("expected [400], actual [422]"))).expectation())
+        CatsTestCaseSummary test2xx = test("expected [2XX], actual [422]");
+        Mockito.when(test2xx.hasRecordedExpectedResponse()).thenReturn(true);
+        Mockito.when(test2xx.getExpectedResponseCodes()).thenReturn(List.of("2XX"));
+        CatsTestCaseSummary test400 = test("expected [400], actual [422]");
+        Mockito.when(test400.hasRecordedExpectedResponse()).thenReturn(true);
+        Mockito.when(test400.getExpectedResponseCodes()).thenReturn(List.of("400"));
+        Assertions.assertThat(ProblemMessage.of(problem("validation failed"), List.of(test2xx, test400)).expectation())
                 .isEqualTo("Received HTTP 422. See individual tests for their expected responses.");
         Assertions.assertThat(ProblemMessage.of(problem("validation failed"), List.of(
-                        test("expected [2XX], actual [422]"), test("No recorded expectation"))).expectation())
+                        test2xx, test("No recorded expectation"))).expectation())
                 .doesNotContain("Expected HTTP");
     }
 

@@ -15,15 +15,15 @@ import org.junit.jupiter.params.provider.CsvSource;
 class WfcFaultContextTest {
 
     @Test
-    void shouldKeepHistoricalWfcFaultIdentitiesForRootStringPayloads() {
+    void shouldMaskEchoedRootStringPayloadsConsistentlyWithStructuredPayloads() {
         String first = contextOf("{\"message\":\"Cannot deserialize from String value ('TOKEN_ALPHA')\"}", "\"TOKEN_ALPHA\"");
         String second = contextOf("{\"message\":\"Cannot deserialize from String value ('TOKEN_BETA')\"}", "\"TOKEN_BETA\"");
 
-        Assertions.assertThat(first).contains("TOKEN_ALPHA").doesNotContain("<INPUT>").isNotEqualTo(second);
+        Assertions.assertThat(first).contains("<INPUT>").doesNotContain("TOKEN_ALPHA").isEqualTo(second);
     }
 
     @Test
-    void shouldNotUseAProblemOnlySnapshotWhenWfcNeedsItsHistoricalVocabulary() {
+    void shouldUseAttachedErrorSignatureForRootStringPayloads() {
         CatsTestCase test = new CatsTestCase();
         String body = "{\"message\":\"Cannot deserialize from String value ('TOKEN_ALPHA')\"}";
         test.setRequest(CatsRequest.builder().httpMethod("POST").payload("\"TOKEN_ALPHA\"").build());
@@ -32,7 +32,7 @@ class WfcFaultContextTest {
         CatsTestCaseSummary summary = CatsTestCaseSummary.fromCatsTestCase(test);
         summary.attachErrorSignature(ErrorSignatureMasker.signatureOf(body, null, summary.getRequestVocabulary()));
 
-        Assertions.assertThat(WfcFaultContext.of(summary)).contains("TOKEN_ALPHA").doesNotContain("<INPUT>");
+        Assertions.assertThat(WfcFaultContext.of(summary)).contains("<INPUT>").doesNotContain("TOKEN_ALPHA");
     }
 
     @Test

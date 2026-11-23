@@ -26,8 +26,8 @@ final class WfcFaultContext {
      * @return the fault context
      */
     static String of(CatsTestCaseSummary summary) {
-        ErrorSignature signature = summary.getWfcErrorSignature().orElseGet(() -> ErrorSignatureMasker.signatureOf(
-                summary.getResponseBody(), summary.getResultDetails(), summary.getWfcRequestVocabulary()));
+        ErrorSignature signature = summary.getErrorSignature().orElseGet(() -> ErrorSignatureMasker.signatureOf(
+                summary.getResponseBody(), summary.getResultDetails(), summary.getRequestVocabulary()));
         return ErrorTemplate.textOf(signature);
     }
 }

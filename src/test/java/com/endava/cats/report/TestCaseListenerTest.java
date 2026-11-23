@@ -135,7 +135,7 @@ class TestCaseListenerTest {
 
     @AfterEach
     void tearDown() {
-        TestCaseListener.TEST.set(0);
+        testCaseListener.testCounter.set(0);
     }
 
     @ParameterizedTest
@@ -562,7 +562,7 @@ class TestCaseListenerTest {
         testCaseListener.testCaseMap.put("old", new CatsTestCase());
         testCaseListener.testCaseSummaryDetails.add(Mockito.mock(CatsTestCaseSummary.class));
         testCaseListener.testCaseExecutionDetails.add(Mockito.mock(CatsTestCaseExecutionSummary.class));
-        TestCaseListener.TEST.set(42);
+        testCaseListener.testCounter.set(42);
         MDC.put(TestCaseListener.ID, "old");
 
         testCaseListener.startSession();
@@ -570,7 +570,7 @@ class TestCaseListenerTest {
         Assertions.assertThat(testCaseListener.testCaseMap).isEmpty();
         Assertions.assertThat(testCaseListener.testCaseSummaryDetails).isEmpty();
         Assertions.assertThat(testCaseListener.testCaseExecutionDetails).isEmpty();
-        Assertions.assertThat(TestCaseListener.TEST).hasValue(0);
+        Assertions.assertThat(testCaseListener.testCounter).hasValue(0);
         Assertions.assertThat(MDC.get(TestCaseListener.ID)).isNull();
         Mockito.verify(executionStatisticsListener).startSession();
     }
@@ -712,8 +712,8 @@ class TestCaseListenerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"400,true", "500,false"})
-    void shouldCaptureRootStringInputsWhileKeepingFullWfcFaultContexts(int status, boolean sharedSignature) {
+    @CsvSource({"400", "500"})
+    void shouldCaptureRootStringInputsInErrorSignatures(int status) {
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
         String body = "{\"padding\":\"%s\",\"message\":\"Cannot deserialize from String value ('TOKEN_ALPHA')\"}".formatted("x".repeat(1100));
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
@@ -726,10 +726,6 @@ class TestCaseListenerTest {
         CatsTestCaseSummary summary = testCaseListener.testCaseSummaryDetails.getLast();
         Assertions.assertThat(summary.getResponseBody()).doesNotContain("TOKEN_ALPHA");
         Assertions.assertThat(summary.getErrorSignature()).get().satisfies(signature -> Assertions.assertThat(signature.tokens()).contains("('<INPUT>')"));
-        Assertions.assertThat(summary.getWfcErrorSignature().equals(summary.getErrorSignature())).isEqualTo(sharedSignature);
-        if (!sharedSignature) {
-            Assertions.assertThat(summary.getWfcErrorSignature()).get().satisfies(signature -> Assertions.assertThat(signature.tokens()).contains("('TOKEN_ALPHA')"));
-        }
     }
 
     @ParameterizedTest

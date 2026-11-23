@@ -44,15 +44,6 @@ class RequestVocabularyTest {
     }
 
     @Test
-    void shouldPreserveTheHistoricalWfcBodyGuardWithoutLosingUrlOrFormValues() {
-        Assertions.assertThat(RequestVocabulary.fromStructuredPayload("\"TOKEN_ALPHA\"", null, null)).isEqualTo(RequestVocabulary.EMPTY);
-        Assertions.assertThat(RequestVocabulary.fromStructuredPayload("\"TOKEN_ALPHA\"", "/items?q=QUERY_TOKEN", null).values())
-                .containsExactly("QUERY_TOKEN");
-        Assertions.assertThat(RequestVocabulary.fromStructuredPayload("value=FORM_TOKEN", null, null).values()).containsExactly("FORM_TOKEN");
-        Assertions.assertThat(RequestVocabulary.fromStructuredPayload("\"TOKEN_WITH_]\"", null, null).values()).containsExactly("TOKEN_WITH_]");
-    }
-
-    @Test
     void shouldCollectNestedFieldNamesAndIdentifyingValuesFromPayloadAndQuery() {
         RequestVocabulary vocabulary = RequestVocabulary.from(
                 "{\"name\":\"John Doe\",\"address\":{\"city\":\"Paris\"},\"tags\":[\"premium\"],\"active\":true,\"age\":7}",

@@ -40,11 +40,6 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     // Gson must exclude this in-memory state from every serializer, including plain Gson.
     @SuppressWarnings("java:S2065")
     private transient ErrorSignature errorSignature;
-    // WFC keeps its historical fault contexts independently of problem normalization fixes.
-    @SuppressWarnings("java:S2065")
-    private transient RequestVocabulary wfcRequestVocabulary;
-    @SuppressWarnings("java:S2065")
-    private transient ErrorSignature wfcErrorSignature;
     // The template text is persisted once per problem, not per test.
     @SuppressWarnings("java:S2065")
     private transient String errorTemplate;
@@ -77,13 +72,19 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.sameErrorAsBaselineTest = testCase.getSameErrorAsBaselineTest();
         summary.sameErrorAsBaselineFuzzer = testCase.getSameErrorAsBaselineFuzzer();
         String response = Optional.ofNullable(testCase.getResponse().getBody()).orElse("[Empty response body]");
-        summary.responseBody = response.substring(0, Math.min(response.length(), 1000));
+        if (summary.getError() || summary.getWarning() || isNoBodyStatus(summary.httpResponseCode) || "head".equals(summary.httpMethod)) {
+            summary.responseBody = response.substring(0, Math.min(response.length(), 1000));
+        }
         summary.mutatedFields = Optional.ofNullable(testCase.getRequestProvenance())
                 .map(RequestProvenance::getMutationTargets).orElse(List.of()).stream()
                 .sorted(RequestTarget.ordering()).map(RequestTarget::label).toList();
         summary.captureRequestVocabulary(testCase);
 
         return summary;
+    }
+
+    private static boolean isNoBodyStatus(int statusCode) {
+        return statusCode == 204 || statusCode == 205 || statusCode == 304;
     }
 
     private void captureRequestVocabulary(CatsTestCase testCase) {
@@ -93,10 +94,6 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         }
         CatsRequest request = testCase.getRequest();
         requestVocabulary = RequestVocabulary.from(request.getPayload(), request.getUrl(), testCase.getContractPath());
-        if (httpResponseCode == 500) {
-            RequestVocabulary historical = RequestVocabulary.fromStructuredPayload(request.getPayload(), request.getUrl(), testCase.getContractPath());
-            wfcRequestVocabulary = historical.equals(requestVocabulary) ? null : historical;
-        }
     }
 
     private void captureExpectedResponse(CatsTestCase testCase) {
@@ -170,30 +167,6 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
      */
     public Optional<ErrorSignature> getErrorSignature() {
         return Optional.ofNullable(errorSignature);
-    }
-
-    /**
-     * Retains the full-response WFC signature when its historical vocabulary differs from the problem vocabulary.
-     *
-     * @param signature the WFC-compatible signature
-     */
-    public void attachWfcErrorSignature(ErrorSignature signature) {
-        this.wfcErrorSignature = signature;
-    }
-
-    /**
-     * @return the historical WFC signature, or the shared signature when normalization is unchanged
-     */
-    public Optional<ErrorSignature> getWfcErrorSignature() {
-        return getWfcRequestVocabulary().equals(getRequestVocabulary())
-                ? getErrorSignature() : Optional.ofNullable(wfcErrorSignature);
-    }
-
-    /**
-     * @return the historical WFC request vocabulary, or the shared vocabulary when no WFC context is needed
-     */
-    public RequestVocabulary getWfcRequestVocabulary() {
-        return Optional.ofNullable(wfcRequestVocabulary).orElseGet(this::getRequestVocabulary);
     }
 
     /**

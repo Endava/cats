@@ -13,7 +13,7 @@ import java.util.List;
  * @param totalWarnings             the number of warning tests
  * @param totalProblems             the number of triaged problems
  * @param totalOccurrences          the number of triaged occurrences
- * @param noiseReductionPercent     how many fewer problems than triaged tests, in percent
+ * @param groupingReductionPercent  how many fewer problems than triaged tests, in percent
  * @param problems                  the triaged problems, in report rank order
  * @param synthesizedCorrelations   the synthesized {@code --correlations} rules
  * @param synthesizedCorrelationsYaml the rules as YAML
@@ -27,7 +27,7 @@ public record TriageReport(String reportFolder,
                            int totalWarnings,
                            int totalProblems,
                            int totalOccurrences,
-                           double noiseReductionPercent,
+                           double groupingReductionPercent,
                            List<TriageProblem> problems,
                            List<SynthesizedCorrelationRule> synthesizedCorrelations,
                            String synthesizedCorrelationsYaml,

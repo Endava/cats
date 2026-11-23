@@ -40,7 +40,7 @@ public final class TriageConsoleRenderer {
             logger.noFormat("  Saved Tests   : %d  (Errors: %d, Warnings: %d)"
                     .formatted(report.totalTestsScanned(), report.totalErrors(), report.totalWarnings()));
             logger.noFormat("  Problems      : %d on %d operation occurrences  (Grouping Reduction: %s%%)"
-                    .formatted(report.totalProblems(), report.totalOccurrences(), report.noiseReductionPercent()));
+                    .formatted(report.totalProblems(), report.totalOccurrences(), report.groupingReductionPercent()));
             logger.noFormat(SEPARATOR);
         }
 

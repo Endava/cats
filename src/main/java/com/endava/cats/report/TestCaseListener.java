@@ -104,7 +104,6 @@ public class TestCaseListener {
     private static final String FUZZER = "fuzzer";
     private static final String ID_ANSI = "id_ansi";
     private static final int NO_COLOR_PROGRESS_INTERVAL = 500;
-    static final AtomicInteger TEST = new AtomicInteger(0);
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501", "413", "431");
     private static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
     private static final List<String> CONTENT_TYPE_DONT_MATCH_SCHEMA = List.of("application/csv", "application/pdf");
@@ -116,6 +115,7 @@ public class TestCaseListener {
             CatsResponse.ExceptionalResponse.CONNECTION_TIMEOUT.responseCode(),
             CatsResponse.ExceptionalResponse.PROTOCOL_EXCEPTION.responseCode(),
             CatsResponse.ExceptionalResponse.CONNECTION_RESET.responseCode());
+    final AtomicInteger testCounter = new AtomicInteger(0);
     final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
@@ -278,7 +278,7 @@ public class TestCaseListener {
      * @return the test case number being executed
      */
     public int getCurrentTestCaseNumber() {
-        return TEST.get();
+        return testCounter.get();
     }
 
     /**
@@ -292,7 +292,7 @@ public class TestCaseListener {
     }
 
     private void startTestCase(FuzzingData data) {
-        String testId = String.valueOf(TEST.incrementAndGet());
+        String testId = String.valueOf(testCounter.incrementAndGet());
         MDC.put(ID, testId);
         MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 7, Ansi.Color.MAGENTA));
 
@@ -559,7 +559,11 @@ public class TestCaseListener {
             logger.info(SEPARATOR);
             CatsExecutionCancelledException.check();
         } finally {
-            testCaseMap.remove(testId);
+            CatsTestCase completed = testCaseMap.remove(testId);
+            if (completed != null) {
+                completed.setRequest(CatsRequest.empty());
+                completed.setResponse(CatsResponse.empty());
+            }
             MDC.remove(ID);
             MDC.put(ID_ANSI, this.getKeyDefault());
         }
@@ -615,9 +619,6 @@ public class TestCaseListener {
         CatsTestCaseSummary summary = CatsTestCaseSummary.fromCatsTestCase(testCase);
         if (summary.getError() || summary.getWarning()) {
             summary.attachErrorSignature(errorSignatureOf(testCase, summary, summary.getRequestVocabulary()));
-            if (!summary.getWfcRequestVocabulary().equals(summary.getRequestVocabulary())) {
-                summary.attachWfcErrorSignature(errorSignatureOf(testCase, summary, summary.getWfcRequestVocabulary()));
-            }
         }
         testCaseSummaryDetails.add(summary);
     }
@@ -748,7 +749,7 @@ public class TestCaseListener {
         baselineFailureRegistry.clear();
         runPerPathListener.clear();
         noColorRenderedPaths.clear();
-        TEST.set(0);
+        testCounter.set(0);
         MDC.remove(ID);
         MDC.put(ID_ANSI, this.getKeyDefault());
         MDC.put(FUZZER, this.getKeyDefault());

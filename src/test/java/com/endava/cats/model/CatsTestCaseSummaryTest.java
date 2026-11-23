@@ -43,18 +43,17 @@ class CatsTestCaseSummaryTest {
     }
 
     @Test
-    void shouldKeepWfcCompatibilityStateOutOfSummaryJson() {
+    void shouldKeepInMemoryVocabularyAndSignatureOutOfSummaryJson() {
         CatsTestCase test = new CatsTestCase();
         test.setTestId("Test 1");
         test.setResult("error");
         test.setRequest(CatsRequest.builder().httpMethod("POST").payload("\"TOKEN_ALPHA\"").build());
         test.setResponse(CatsResponse.builder().responseCode(500).body("{}").build());
         CatsTestCaseSummary summary = CatsTestCaseSummary.fromCatsTestCase(test);
-        summary.attachWfcErrorSignature(new ErrorSignature("Error", List.of("TOKEN_ALPHA"), ""));
+        summary.attachErrorSignature(new ErrorSignature("Error", List.of("TOKEN_ALPHA"), ""));
 
         Assertions.assertThat(summary.getRequestVocabulary().values()).containsExactly("TOKEN_ALPHA");
-        Assertions.assertThat(summary.getWfcRequestVocabulary()).isEqualTo(RequestVocabulary.EMPTY);
-        Assertions.assertThat(new Gson().toJson(summary)).doesNotContain("wfcRequestVocabulary", "wfcErrorSignature", "TOKEN_ALPHA");
+        Assertions.assertThat(new Gson().toJson(summary)).doesNotContain("requestVocabulary", "errorSignature", "TOKEN_ALPHA");
     }
 
     @Test

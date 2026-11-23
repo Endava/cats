@@ -19,9 +19,6 @@ import java.util.stream.Collectors;
  * @param example a bounded, unmasked excerpt of that test's server message, or {@code null} when unavailable
  */
 public record ProblemMessage(String expectation, List<Token> tokens, ProblemCard.TestLink sampleTest, String example) {
-    // Exclude opening brackets too: malformed outer prose must not hide a valid nested declaration.
-    private static final Pattern EXPECTED = Pattern.compile("expected \\[([^\\[\\]]*+)\\], actual \\[\\d{3}\\]");
-    private static final Pattern LEGACY_HTTP_CODE = Pattern.compile("[1-5](?:\\d{2}|[Xx]{2})");
     private static final List<Token> TOKEN_LEGEND = List.of(
             new Token("<*>", "A value generalized across matching messages"),
             new Token("<INPUT>", "A value CATS sent in the request"),
@@ -60,14 +57,14 @@ public record ProblemMessage(String expectation, List<Token> tokens, ProblemCard
     }
 
     private static String expected(CatsTestCaseSummary test) {
-        if (test.hasRecordedExpectedResponse()) {
-            return test.getExpectedResponseCodes().stream().map(code -> code.replace('X', 'x')).distinct().sorted().collect(Collectors.joining(" or "));
+        if (!test.hasRecordedExpectedResponse()) {
+            return "";
         }
-        return EXPECTED.matcher(StringUtils.defaultString(test.getResultDetails())).results()
-                .map(match -> List.of(match.group(1).split(", *", -1)))
-                .filter(codes -> codes.stream().allMatch(code -> LEGACY_HTTP_CODE.matcher(code).matches())).findFirst()
-                .map(codes -> codes.stream().map(code -> code.replace('X', 'x'))
-                        .distinct().sorted().collect(Collectors.joining(" or "))).orElse("");
+        return test.getExpectedResponseCodes().stream()
+                .map(code -> code.replace('X', 'x'))
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining(" or "));
     }
 
     /**
