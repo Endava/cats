@@ -9,6 +9,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.util.HttpHeaders;
 import jakarta.inject.Singleton;
 
@@ -23,6 +24,7 @@ import java.util.Set;
 @Singleton
 @HeaderFuzzer
 public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
+    private static final String MULTIPART_WITHOUT_BOUNDARY = "multipart/form-data";
 
     /**
      * Creates a new instance.
@@ -70,6 +72,27 @@ public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzz
     }
 
     @Override
+    public ResponseCodeFamily getResponseCodeFamily(FuzzingData data, String headerValue) {
+        if (isMultipartWithoutBoundary(data, headerValue)) {
+            return ResponseCodeFamilyPredefined.FOURXX;
+        }
+        return this.getResponseCodeFamily(data);
+    }
+
+    @Override
+    public String getExpectedResponseCode(FuzzingData data, String headerValue) {
+        if (isMultipartWithoutBoundary(data, headerValue)) {
+            return "4XX";
+        }
+        return this.getExpectedResponseCode(data);
+    }
+
+    private static boolean isMultipartWithoutBoundary(FuzzingData data, String headerValue) {
+        return data != null && data.getMethod() != null && HttpMethod.requiresBody(data.getMethod())
+                && data.getPayloadFormat() == PayloadFormat.MULTIPART && MULTIPART_WITHOUT_BOUNDARY.equals(headerValue);
+    }
+
+    @Override
     public List<Set<CatsHeader>> getHeaders(FuzzingData data) {
         if (data.getPayload() == null) {
             return Collections.emptyList();
@@ -78,7 +101,7 @@ public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzz
         dummyHeader.add(CatsHeader.builder().name(HttpHeaders.CONTENT_TYPE).value(CATS_ACCEPT).build());
 
         Set<CatsHeader> malformedMultipartHeader = Cloner.cloneMe(data.getHeaders());
-        malformedMultipartHeader.add(CatsHeader.builder().name(HttpHeaders.CONTENT_TYPE).value("multipart/form-data").build());
+        malformedMultipartHeader.add(CatsHeader.builder().name(HttpHeaders.CONTENT_TYPE).value(MULTIPART_WITHOUT_BOUNDARY).build());
 
         if (data.getMethod() != null && !HttpMethod.requiresBody(data.getMethod())) {
             return List.of(dummyHeader, malformedMultipartHeader);

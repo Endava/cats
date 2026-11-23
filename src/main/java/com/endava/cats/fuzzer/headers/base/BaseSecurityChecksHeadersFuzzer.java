@@ -73,8 +73,8 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
                             .logger(log)
                             .fuzzingData(data)
                             .fuzzer(this)
-                            .expectedResponseCode(this.getResponseCodeFamily(data))
-                            .expectedSpecificResponseCode(this.getExpectedResponseCode(data))
+                            .expectedResponseCode(this.getResponseCodeFamily(data, headerValue))
+                            .expectedSpecificResponseCode(this.getExpectedResponseCode(data, headerValue))
                             .matchResponseResult(false)
                             .matchResponseContentType(this.shouldMatchContentType())
                             .headers(headers)
@@ -101,6 +101,30 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
      */
     public String getExpectedResponseCode(FuzzingData data) {
         return this.getExpectedResponseCode();
+    }
+
+    /**
+     * Returns the expected response code family for the given fuzzing data and the value sent in the targeted header.
+     * By default, the value is ignored.
+     *
+     * @param data        the current FuzzingData
+     * @param headerValue the value sent in the targeted header
+     * @return expected response code family
+     */
+    public ResponseCodeFamily getResponseCodeFamily(FuzzingData data, String headerValue) {
+        return this.getResponseCodeFamily(data);
+    }
+
+    /**
+     * Returns the expected specific response code description for the given fuzzing data and the value sent in the targeted header.
+     * By default, the value is ignored.
+     *
+     * @param data        the current FuzzingData
+     * @param headerValue the value sent in the targeted header
+     * @return expected response code description
+     */
+    public String getExpectedResponseCode(FuzzingData data, String headerValue) {
+        return this.getExpectedResponseCode(data);
     }
 
     /**
