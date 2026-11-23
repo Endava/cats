@@ -313,6 +313,44 @@ cats -c openapi.yml -s http://localhost:8080 --correlations correlations.yml
 
 ---
 
+## Multipart Operations
+
+Steps can target operations whose request body is `multipart/form-data`. Each body property becomes a part, and properties declared as `type: string` and `format: binary` are sent as files. Use `cats_file:<path>` to send the exact bytes of a file (see [Reference Data](../../getting-started/reference-data-file.md#sending-files-in-multipart-requests)).
+
+Top-level `variables:` are resolved once per flow, so a generated value can be shared by several steps. The example below sends the same upload twice with the same `Idempotency-Key` and expects the second call to be recognized as a replay:
+
+```yaml
+variables:
+  idempotencyKey: "T(java.util.UUID).randomUUID().toString()"
+
+steps:
+  - name: "firstUpload"
+    POST: "/documents/doc-1/attachments"
+    headers:
+      Idempotency-Key: "${idempotencyKey}"
+    body:
+      file: "cats_file:samples/contract.pdf"
+      category: "CONTRACT"
+    status: 200
+    expect:
+      outcome: "APPLIED"
+
+  - name: "replayUpload"
+    POST: "/documents/doc-1/attachments"
+    headers:
+      Idempotency-Key: "${idempotencyKey}"
+    body:
+      file: "cats_file:samples/contract.pdf"
+      category: "CONTRACT"
+    status: 200
+    expect:
+      outcome: "REPEATED"
+```
+
+A `T(...)` value written directly in a step header (without a variable) is evaluated for each step, so every step gets a different value. Headers supplied using `--headers` are evaluated for each request.
+
+---
+
 ## Migrating from the Legacy `FunctionalFuzzer` Syntax (Deprecated)
 
 :::warning Deprecation Notice
@@ -378,3 +416,12 @@ steps:
     GET: "/pet/${petId}"
     status: 200
 ```
+
+### Legacy tests on multipart operations
+
+The legacy tests also work on `multipart/form-data` operations:
+- binary properties accept `cats_file:<path>` values, for example `file: "cats_file:samples/contract.pdf"`
+- a property set to `cats_remove_field` is not sent, so its part is omitted
+- `additionalProperties` adds extra parts
+- the tests of a path run in the order in which they appear in the file
+- headers are not read from the test entries; they come from the `--headers` file, where `T(...)` values are evaluated for each request

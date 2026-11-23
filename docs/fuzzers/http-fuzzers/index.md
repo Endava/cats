@@ -20,6 +20,12 @@ See `cats list --fuzzers` for the full list in your installed version.
 - `InsecureDirectObjectReferences` - detect heuristic IDOR signals by replacing ID fields and verifying alternative IDs in successful responses
 - `InsertRandomValuesInBody` - insert invalid data into a valid request body
 - `MalformedJson` - send malformed JSON
+- `MultipartDuplicateParts` - send `multipart/form-data` requests with each part duplicated, one part at a time
+- `MultipartEmptyFile` - send `multipart/form-data` requests with each binary file part empty
+- `MultipartHostileFileNames` - send `multipart/form-data` requests with hostile file names such as path traversal, absolute paths, control characters, very long names and double extensions
+- `MultipartMalformedBoundary` - send `multipart/form-data` requests with a mismatched, unterminated or malformed boundary
+- `MultipartMissingPartHeaders` - send `multipart/form-data` requests where a part has no `Content-Disposition` header or no name
+- `MultipartOversizedFile` - send `multipart/form-data` requests with each binary file part above a configurable size
 - `NonRestHttpMethods` - send WebDAV methods not expected for REST APIs
 - `NullBody` - send a null body
 - `NullUnicodeBody` - send a `\\u0000` body
