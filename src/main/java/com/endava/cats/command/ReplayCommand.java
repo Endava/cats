@@ -5,7 +5,7 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.impl.EnvVariableParser;
 import com.endava.cats.exception.CatsException;
-import com.endava.cats.fuzzer.special.CustomFuzzerUtil;
+import com.endava.cats.fuzzer.special.FunctionalFlowFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsRequest;
@@ -145,7 +145,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "Automatically replay upstream 2XX producer test(s) from the report folder first, extract fresh resource IDs from the live responses, and substitute them into the replayed request")
     boolean stateful;
 
-    @CommandLine.Option(names = {"--export-flow"},
+    @CommandLine.Option(names = {"--export-flow", "--exportFlow"},
             description = "Export the selected test(s) and their upstream producer chain as a runnable --functionalFlow YAML file without executing HTTP calls")
     File exportFlowFile;
 
@@ -400,7 +400,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     link.producerTest().getTestId(), copy.getRequest().getHttpMethod(), copy.getRequest().getUrl());
             CatsResponse liveResp = invokeServiceSafely(copy.getRequest());
             if (ResponseCodeFamily.is2xxCode(liveResp.getResponseCode()) && !liveResp.isBodyTruncated()) {
-                String freshVal = CustomFuzzerUtil.extractResponseValue(liveResp, link.sourceSelector());
+                String freshVal = FunctionalFlowFuzzer.extractResponseValue(liveResp, link.sourceSelector());
                 if (StringUtils.isNotBlank(freshVal) && !JsonUtils.isNotSet(freshVal)) {
                     replaceCorrelatedValueInRequest(targetTest.getRequest(), link.oldValue(), freshVal);
                 }

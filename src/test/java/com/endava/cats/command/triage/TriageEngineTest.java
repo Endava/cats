@@ -67,7 +67,7 @@ class TriageEngineTest {
                 .extracting(TriageOccurrence::remediation)
                 .satisfiesExactly(
                         remediation -> Assertions.assertThat(remediation).contains("--no-strictTypes"),
-                        remediation -> Assertions.assertThat(remediation).contains("--no-allowDifferentCaseEnumValues"),
+                        remediation -> Assertions.assertThat(remediation).contains("--allowDifferentCaseEnumValues"),
                         remediation -> Assertions.assertThat(remediation).contains("--allowInvalidEnumValues"));
     }
 

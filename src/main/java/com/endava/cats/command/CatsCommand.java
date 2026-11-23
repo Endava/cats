@@ -26,7 +26,6 @@ import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFlowFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFlowParser;
-import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.fuzzer.special.RandomFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -144,8 +143,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     @Inject
     FuzzingDataFactory fuzzingDataFactory;
-    @Inject
-    FunctionalFuzzer functionalFuzzer;
 
     @Inject
     FunctionalFlowFuzzer functionalFlowFuzzer;
@@ -268,7 +265,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     public void runWithContext(CommandContext context) {
         // Apply context to arguments
         context.getFuzzerType().ifPresent(filterArguments::customFilter);
-        context.getCustomFuzzerFile().ifPresent(filesArguments::setCustomFuzzerFile);
         context.getFunctionalFlowFile().ifPresent(filesArguments::setFunctionalFlowFile);
         context.getSecurityFuzzerFile().ifPresent(filesArguments::setSecurityFuzzerFile);
         context.getHeadersFile().ifPresent(filesArguments::setHeadersFile);
@@ -285,7 +281,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         context.getHttpMethods().ifPresent(methods -> filterArguments.setHttpMethods(methods));
         context.getSkipFuzzers().ifPresent(filterArguments::setSkipFuzzers);
         context.getSuppliedFuzzers().ifPresent(filterArguments::setSuppliedFuzzers);
-        context.getSkipPaths().ifPresent(skipPaths -> filterArguments.getSkipPaths().addAll(skipPaths));
+        context.getSkipPaths().ifPresent(filterArguments::setSkipPaths);
         context.getTags().ifPresent(filterArguments::setTags);
         context.getSkipTags().ifPresent(filterArguments::setSkipTags);
         context.getOperationIds().ifPresent(filterArguments::setOperationIds);
@@ -529,11 +525,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             functionalFlowFuzzer.executeFlows();
             CatsExecutionCancelledException.check();
         }
-        if (filterArguments.getSuppliedFuzzers().contains(FunctionalFuzzer.class.getSimpleName())) {
-            functionalFuzzer.executeCustomFuzzerTests();
-            CatsExecutionCancelledException.check();
-            functionalFuzzer.replaceRefData();
-        }
     }
 
     OpenAPI createOpenAPI() throws IOException {
@@ -549,19 +540,20 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         // just for getting the terminal width
         CatsRandom.initRandom(processingArguments.getSeed());
         runtimeResourcePool.clear();
+        filterArguments.clearCaches();
         ConsoleUtils.initTerminalWidth(spec);
         reportingArguments.processLogData();
         authArguments.getEnvironmentVariables();
         apiArguments.validateRequired(spec);
         processingArguments.validatePreseedCollectionGets(spec);
         processingArguments.validateInteractionStrength(spec);
-        if (filesArguments.getCustomFuzzerFile() != null
-                && FunctionalFlowParser.isFunctionalFlowFile(filesArguments.getCustomFuzzerFile())) {
-            filesArguments.setFunctionalFlowFile(filesArguments.getCustomFuzzerFile());
-            filesArguments.setCustomFuzzerFile(null);
-            filterArguments.customFilter(FunctionalFlowFuzzer.class.getSimpleName());
-        }
         if (filesArguments.getFunctionalFlowFile() != null) {
+            if (!FunctionalFlowParser.isFunctionalFlowFile(filesArguments.getFunctionalFlowFile())) {
+                throw new CatsException("Invalid FunctionalFlow file format. Make sure you supply a valid 'steps:' flow YAML file!");
+            }
+            if (filterArguments.getSuppliedFuzzers().isEmpty()) {
+                filterArguments.customFilter(FunctionalFlowFuzzer.class.getSimpleName());
+            }
             logger.config(AnsiUtils.bold("FunctionalFlow file: {}"),
                     AnsiUtils.blue(filesArguments.getFunctionalFlowFile().getCanonicalPath()));
         }
@@ -570,9 +562,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                     AnsiUtils.blue(filesArguments.getCorrelationsFile().getCanonicalPath()));
         }
         filesArguments.loadConfig();
-        if (filesArguments.getCustomFuzzerFile() != null) {
-            logger.warning("The legacy path-grouped FunctionalFuzzer YAML format is deprecated and will be removed in a future release. Please migrate to the sequential 'steps:' FunctionalFlow format.");
-        }
         filterArguments.applyProfile(spec);
     }
 
@@ -596,11 +585,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             logger.config("WFC Auth file: {}", AnsiUtils.blue(authArguments.getWfcAuthFile()));
             logger.config("WFC Auth entry: {}", AnsiUtils.blue(wfcAuthProvider.getSelectedAuthenticationName()));
         }
-        String activeProfile = processingArguments.isHealthCheck() ? "health-check" : filterArguments.getProfile();
         logger.config("{} configured fuzzers out of {} total fuzzers (profile: {})",
                 AnsiUtils.blue(filterArguments.getFirstPhaseFuzzersForPath().size() + filterArguments.getSecondPhaseFuzzers().size()),
                 AnsiUtils.blue(filterArguments.getTotalFuzzersOrLinters()),
-                AnsiUtils.blue(activeProfile));
+                AnsiUtils.blue(filterArguments.getProfile()));
         logger.config("{} configured paths out of {} total OpenAPI paths",
                 AnsiUtils.blue(filterArguments.getPathsToRun(openAPI).size()),
                 AnsiUtils.blue(openAPI.getPaths().size()));

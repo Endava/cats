@@ -48,17 +48,17 @@ public class ProcessingArguments {
     @Setter
     private Boolean useExamples;
 
-    @CommandLine.Option(names = {"--useRequestBodyExamples"},
+    @CommandLine.Option(names = {"--useRequestBodyExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "When set to @|bold true|@, it will use media type-level request body examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean useRequestBodyExamples;
+    private boolean useRequestBodyExamples = true;
 
     @CommandLine.Option(names = {"--useResponseBodyExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "When set to @|bold true|@, it will use media type-level response examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean useResponseBodyExamples = true;
 
-    @CommandLine.Option(names = {"--useSchemaExamples"},
+    @CommandLine.Option(names = {"--useSchemaExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "When set to @|bold true|@, it will use examples set at schema level from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean useSchemaExamples;
+    private boolean useSchemaExamples = true;
 
     @CommandLine.Option(names = {"--usePropertyExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "When set to @|bold true|@, it will use primitive property examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
@@ -103,17 +103,13 @@ public class ProcessingArguments {
     private boolean allowInvalidEnumValues;
 
     @Setter
-    @CommandLine.Option(names = {"--allowDifferentCaseEnumValues"}, negatable = true, defaultValue = "true", fallbackValue = "true",
+    @CommandLine.Option(names = {"--allowDifferentCaseEnumValues"}, negatable = true, defaultValue = "false", fallbackValue = "true",
             description = "When set to @|bold true|@, the EnumCaseVariantFieldsFuzzer will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean allowDifferentCaseEnumValues = true;
+    private boolean allowDifferentCaseEnumValues;
 
     @CommandLine.Option(names = {"--checkAllowHeader"},
             description = "When set to @|bold true|@, the XXXHttpMethodsFuzzer will check that the Allow header is provided in response and contains the allowed methods. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean checkAllowHeader;
-
-    @CommandLine.Option(names = {"--healthCheck"},
-            description = "When set to @|bold true|@, runs a minimal health check using the 'health-check' profile to verify API endpoints are reachable before full fuzzing. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean healthCheck;
 
     @Setter
     @CommandLine.Option(names = {"--strictTypes"}, negatable = true, defaultValue = "true", fallbackValue = "true",

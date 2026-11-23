@@ -153,7 +153,11 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
 
-    @CommandLine.Option(names = {"--headers", "-H"},
+    @CommandLine.Option(names = {"--headers"},
+            description = "A YAML file with custom headers that will be passed along with the request and/or fuzzed")
+    File headersFile;
+
+    @CommandLine.Option(names = {"-H", "--header"},
             description = "Specifies the headers that will be passed along with the request and/or fuzzed. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     Map<String, String> headers = Map.of(HttpHeaders.ACCEPT, "application/json", HttpHeaders.CONTENT_TYPE, "application/json");
 
@@ -315,8 +319,15 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
         testCaseListener.beforeFuzz(templateFuzzer.getClass(), path, method);
     }
 
-    private Set<CatsHeader> getHeaders() {
-        return headers.entrySet()
+    private Set<CatsHeader> getHeaders() throws IOException {
+        Map<String, String> mergedHeaders = new java.util.LinkedHashMap<>(headers);
+        if (filesArguments != null && headersFile != null) {
+            filesArguments.setHeadersFile(headersFile);
+            filesArguments.loadHeaders();
+            FilesArguments.resolveHeaders(filesArguments, url, httpMethod)
+                    .forEach((k, v) -> mergedHeaders.put(k, String.valueOf(v)));
+        }
+        return mergedHeaders.entrySet()
                 .stream()
                 .map(entry -> CatsHeader.builder()
                         .name(entry.getKey().trim())

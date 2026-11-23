@@ -54,8 +54,7 @@ public class ReportingArguments {
     private boolean timestampReports;
 
     @CommandLine.Option(names = {"--reportFormat"},
-            description = "A comma-separated list of formats for the CATS report (supports multiple formats in the same run, e.g. @|bold HTML_JS,WFC_REPORT|@). Default: @|bold,underline ${DEFAULT-VALUE}|@. Available formats: @|bold HTML_JS|@, @|bold HTML_ONLY|@, @|bold JUNIT|@, @|bold WFC_REPORT|@. Both HTML formats include the problems view.", split = ",",
-            converter = ReportFormatConverter.class)
+            description = "A comma-separated list of formats for the CATS report (supports multiple formats in the same run, e.g. @|bold HTML_JS,WFC_REPORT|@). Default: @|bold,underline ${DEFAULT-VALUE}|@. Available formats: @|bold HTML_JS|@, @|bold HTML_ONLY|@, @|bold JUNIT|@, @|bold WFC_REPORT|@. Both HTML formats include the problems view.", split = ",")
     private List<ReportFormat> reportFormat = List.of(ReportFormat.HTML_JS);
 
     @CommandLine.Option(names = {"-o", "--output"},
@@ -74,9 +73,9 @@ public class ReportingArguments {
             description = "Maximum number of recent test details retained by the terminal interface. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int tuiMaxResults = 10_000;
 
-    @CommandLine.Option(names = {"--checkUpdate"}, negatable = true, defaultValue = "true", fallbackValue = "true",
+    @CommandLine.Option(names = {"--checkUpdate"}, negatable = true, defaultValue = "false", fallbackValue = "true",
             description = "If true, it checks if there is a CATS update available and prints the release notes along with the download link. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean checkUpdate = true;
+    private boolean checkUpdate;
 
     @CommandLine.Option(names = {"--color"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "If true, it enables coloured console output. Default: @|bold,underline ${DEFAULT-VALUE}|@")
@@ -244,27 +243,6 @@ public class ReportingArguments {
      */
     public boolean isSummaryInConsole() {
         return !tui && verbosity == Verbosity.SUMMARY;
-    }
-
-    /**
-     * Converts {@code --reportFormat} values and explains removed formats instead of only listing the valid ones.
-     */
-    public static final class ReportFormatConverter implements CommandLine.ITypeConverter<ReportFormat> {
-        static final String REMOVED_CLUSTERS_FORMAT = "HTML_JS_CLUSTERS";
-
-        @Override
-        public ReportFormat convert(String value) {
-            String format = value.trim().toUpperCase(Locale.ROOT);
-            if (REMOVED_CLUSTERS_FORMAT.equals(format)) {
-                throw new CommandLine.TypeConversionException(
-                        "HTML_JS_CLUSTERS was removed: the problems view is now part of every HTML report. Use --reportFormat HTML_JS (or HTML_ONLY)");
-            }
-            try {
-                return ReportFormat.valueOf(format);
-            } catch (IllegalArgumentException _) {
-                throw new CommandLine.TypeConversionException("expected one of %s but was '%s'".formatted(List.of(ReportFormat.values()), value));
-            }
-        }
     }
 
     /**

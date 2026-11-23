@@ -430,7 +430,7 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(reportingArguments, "debug", true);
 
         Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsLinter"));
-        Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of("FunctionalFuzzer"));
+        Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of("FunctionalFlowFuzzer"));
         Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
         Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString())).thenReturn(List.of(new PathTagsLinter(testCaseListener)));
         CheckDeletedResourcesNotAvailableFuzzer secondPhaseFuzzer = Mockito.mock(CheckDeletedResourcesNotAvailableFuzzer.class);

@@ -59,13 +59,16 @@ class LintCommandTest {
     void shouldRunOnlySelectedLintersWhenLintersOptionProvided() {
         ReflectionTestUtils.setField(lintCommand, "contract", "src/test/resources/petstore-empty.yml");
         ReflectionTestUtils.setField(lintCommand, "linters", List.of("PathPlurals", "TopLevelElements"));
+        ReflectionTestUtils.setField(lintCommand, "skipPaths", List.of("/non-existent"));
 
         try {
             lintCommand.run();
             Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath())
                     .containsExactlyInAnyOrder("PathPluralsLinter", "TopLevelElementsLinter");
+            Assertions.assertThat(filterArguments.getSkipPaths()).containsExactly("/non-existent");
         } finally {
             ReflectionTestUtils.setField(lintCommand, "linters", null);
+            ReflectionTestUtils.setField(lintCommand, "skipPaths", null);
         }
     }
 

@@ -15,7 +15,7 @@ class RemediationsTest {
     @ParameterizedTest
     @CsvSource({
             "InvalidValuesInEnumsFieldsFuzzer,--allowInvalidEnumValues",
-            "EnumCaseVariantFieldsFuzzer,--no-allowDifferentCaseEnumValues",
+            "EnumCaseVariantFieldsFuzzer,--allowDifferentCaseEnumValues",
             "HomoglyphEnumFieldsFuzzer,look-alike or ordinal",
             "NumericStringsInNumericFieldsFuzzer,--no-strictTypes",
             "OtherFuzzer,Check whether the constraint"

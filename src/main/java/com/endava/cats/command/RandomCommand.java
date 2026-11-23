@@ -81,7 +81,7 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "A custom mime type if the OpenAPI contract/spec uses content type negotiation versioning")
     private String contentType;
     @CommandLine.Option(names = {"--oneOfSelection", "--anyOfSelection"},
-            description = "A @|bold name:value|@ list of discriminator names and values that can be used to filter request payloads when objects use oneOf or anyOf definitions" +
+            description = "A @|bold name=value|@ list of discriminator names and values that can be used to filter request payloads when objects use oneOf or anyOf definitions" +
                     " which result in multiple payloads for a single endpoint and http method")
     Map<String, String> xxxOfSelections;
 

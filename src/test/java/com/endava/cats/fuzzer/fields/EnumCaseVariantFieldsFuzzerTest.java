@@ -119,12 +119,12 @@ class EnumCaseVariantFieldsFuzzerTest {
                     }
                 """);
         enumCaseVariantFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
 
         Mockito.reset(testCaseListener);
-        processingArguments.setAllowDifferentCaseEnumValues(false);
+        processingArguments.setAllowDifferentCaseEnumValues(true);
         enumCaseVariantFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
     }
 
     @Test

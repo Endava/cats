@@ -62,9 +62,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension", null);
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtensionMap", new HashMap<>());
 
-        FilterArguments.ALL_CATS_FUZZERS.clear();
-        FilterArguments.FUZZERS_TO_BE_RUN.clear();
-        FilterArguments.PATHS_TO_INCLUDE.clear();
+        filterArguments.clearCaches();
         filterArguments.getUserArguments().words = null;
     }
 
@@ -166,7 +164,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(277);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(276);
     }
 
     @Test
@@ -193,8 +191,8 @@ class FilterArgumentsTest {
     void shouldSetAllFuzzersToCustomFuzzer() {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).contains("VeryLargeUnicodeStringsInFieldsFuzzer");
-        FilterArguments.FUZZERS_TO_BE_RUN.clear();
-        filterArguments.customFilter("FunctionalFuzzer");
+        filterArguments.clearCaches();
+        filterArguments.customFilter("FunctionalFlowFuzzer");
         Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).doesNotContain("VeryLargeUnicodeStringsInFieldsFuzzer");
     }
 
@@ -209,14 +207,14 @@ class FilterArgumentsTest {
     @Test
     void shouldNotGetFuzzersWhenAllFuzzersPopulated() {
         HappyPathFuzzer happyPathFuzzer = new HappyPathFuzzer(null);
-        FilterArguments.ALL_CATS_FUZZERS.add(happyPathFuzzer);
+        filterArguments.allCatsFuzzers.add(happyPathFuzzer);
 
         Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).containsOnly(happyPathFuzzer);
     }
 
     @Test
     void shouldNotGetFuzzersToBeRunWhenPopulated() {
-        FilterArguments.FUZZERS_TO_BE_RUN.add("HappyPathFuzzer");
+        filterArguments.fuzzersToBeRun.add("HappyPathFuzzer");
         ReflectionTestUtils.setField(filterArguments, "fuzzersToBeRunComputed", true);
 
         Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).containsOnly("HappyPathFuzzer");
@@ -311,14 +309,14 @@ class FilterArgumentsTest {
     @Test
     void shouldReturnEmptySecondPhaseWhenSpecialFuzzer() {
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasSize(12);
-        filterArguments.customFilter("FunctionalFuzzer");
+        filterArguments.customFilter("FunctionalFlowFuzzer");
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isEmpty();
     }
 
     @Test
     void shouldOnlyReturnSpecialFuzzer() {
-        filterArguments.customFilter("FunctionalFuzzer");
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).containsOnly("FunctionalFuzzer");
+        filterArguments.customFilter("FunctionalFlowFuzzer");
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).containsOnly("FunctionalFlowFuzzer");
     }
 
     @Test
@@ -389,7 +387,7 @@ class FilterArgumentsTest {
         List<String> secondTimeFilteredPaths = filterArguments.getPathsToRun(openAPI);
         Assertions.assertThat(secondTimeFilteredPaths).containsOnly("/path1");
 
-        FilterArguments.PATHS_TO_INCLUDE.clear();
+        filterArguments.pathsToInclude.clear();
         List<String> thirdTimeFilteredPaths = filterArguments.getPathsToRun(openAPI);
         Assertions.assertThat(thirdTimeFilteredPaths).containsOnly("/path1", "/path11", "/path2");
     }
@@ -796,7 +794,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldApplyHealthCheckProfile() {
-        ReflectionTestUtils.setField(processingArguments, "healthCheck", true);
+        ReflectionTestUtils.setField(filterArguments, "profile", "health-check");
 
         filterArguments.applyProfile(spec);
 
@@ -807,22 +805,8 @@ class FilterArgumentsTest {
     }
 
     @Test
-    void shouldOverrideProfileWhenHealthCheckIsEnabled() {
-        ReflectionTestUtils.setField(filterArguments, "profile", "security");
-        ReflectionTestUtils.setField(processingArguments, "healthCheck", true);
-
-        filterArguments.applyProfile(spec);
-
-        List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
-        Assertions.assertThat(suppliedFuzzers)
-                .containsExactly("HappyPath")
-                .hasSize(1);
-    }
-
-    @Test
-    void shouldUseNormalProfileWhenHealthCheckIsDisabled() {
+    void shouldUseNormalProfile() {
         ReflectionTestUtils.setField(filterArguments, "profile", "quick");
-        ReflectionTestUtils.setField(processingArguments, "healthCheck", false);
 
         filterArguments.applyProfile(spec);
 
@@ -846,33 +830,6 @@ class FilterArgumentsTest {
     }
 
     @Test
-    void shouldPrioritizeFuzzerOverHealthCheck() {
-        ReflectionTestUtils.setField(processingArguments, "healthCheck", true);
-        ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("SqlInjectionInStringFieldsFuzzer", "RemoveFieldsFuzzer"));
-
-        filterArguments.applyProfile(spec);
-
-        List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
-        Assertions.assertThat(suppliedFuzzers)
-                .containsExactlyInAnyOrder("SqlInjectionInStringFieldsFuzzer", "RemoveFieldsFuzzer")
-                .hasSize(2);
-    }
-
-    @Test
-    void shouldPrioritizeFuzzerOverBothProfileAndHealthCheck() {
-        ReflectionTestUtils.setField(filterArguments, "profile", "quick");
-        ReflectionTestUtils.setField(processingArguments, "healthCheck", true);
-        ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("RemoveFieldsFuzzer"));
-
-        filterArguments.applyProfile(spec);
-
-        List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
-        Assertions.assertThat(suppliedFuzzers)
-                .containsExactly("RemoveFieldsFuzzer")
-                .hasSize(1);
-    }
-
-    @Test
     void shouldApplyProfileWhenNoFuzzerSupplied() {
         ReflectionTestUtils.setField(filterArguments, "profile", "security");
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", null);
@@ -884,18 +841,5 @@ class FilterArgumentsTest {
                 .isNotEmpty()
                 .contains("HappyPath", "OnlyRequiredFields", "SqlInjectionInStringFields", "MassAssignment")
                 .doesNotContain("BooleanStringInBooleanFields");
-    }
-
-    @Test
-    void shouldApplyHealthCheckWhenNoFuzzerSupplied() {
-        ReflectionTestUtils.setField(processingArguments, "healthCheck", true);
-        ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", null);
-
-        filterArguments.applyProfile(spec);
-
-        List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
-        Assertions.assertThat(suppliedFuzzers)
-                .containsExactly("HappyPath")
-                .hasSize(1);
     }
 }

@@ -58,11 +58,11 @@ class RunCommandTest {
 
 
     @Test
-    void shouldRunCustomFuzzer() {
+    void shouldRejectLegacyPathGroupedFunctionalFuzzerFile() {
         ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/functionalFuzzer.yml"));
-        runCommand.run();
-        // Verify it runs without errors - behavior is tested through integration
-        Mockito.verify(filterArguments, Mockito.atLeastOnce()).customFilter(Mockito.anyString());
+        Assertions.assertThatThrownBy(() -> runCommand.run())
+                .isInstanceOf(CommandLine.ParameterException.class)
+                .hasMessageContaining("Legacy path-grouped YAML files are no longer supported");
     }
 
     @Test
@@ -109,7 +109,7 @@ class RunCommandTest {
         ReflectionTestUtils.setField(runCommand, "file", tempFile);
         runCommand.run();
         Mockito.verify(filterArguments, Mockito.times(0)).customFilter("SecurityFuzzer");
-        Mockito.verify(filterArguments, Mockito.times(0)).customFilter("FunctionalFuzzer");
+        Mockito.verify(filterArguments, Mockito.times(0)).customFilter("FunctionalFlowFuzzer");
 
         deleteFile(tempFile);
     }

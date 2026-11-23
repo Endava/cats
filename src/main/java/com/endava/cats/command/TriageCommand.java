@@ -82,27 +82,27 @@ public class TriageCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "Replay 1 representative request per problem occurrence against the server and report FIXED, STILL_FAILING or INCONCLUSIVE.")
     boolean verify;
 
-    @CommandLine.Option(names = {"--show-reproducers"},
+    @CommandLine.Option(names = {"--show-reproducers", "--showReproducers"},
             description = "Include full curl commands in console output. JSON and --export-reproducers always retain them.")
     boolean showReproducers;
 
-    @CommandLine.Option(names = {"-w", "--include-warnings"},
+    @CommandLine.Option(names = {"-w", "--include-warnings", "--includeWarnings"},
             description = "Include warning test cases in triage. By default only errors are triaged.")
     boolean includeWarnings;
 
-    @CommandLine.Option(names = {"--export-correlations"},
+    @CommandLine.Option(names = {"--export-correlations", "--exportCorrelations"},
             description = "Write synthesized --correlations YAML rules inferred from 4XX validation errors to the given file.")
     String exportCorrelationsFile;
 
-    @CommandLine.Option(names = {"--export-refdata"},
+    @CommandLine.Option(names = {"--export-refdata", "--exportRefData"},
             description = "Mine working path parameters and resource IDs from 2XX exchanges in the report and write a ready-to-use --refData YAML file.")
     String exportRefDataFile;
 
-    @CommandLine.Option(names = {"--export-contract-patch"},
+    @CommandLine.Option(names = {"--export-contract-patch", "--exportContractPatch"},
             description = "Write an OpenAPI paths overlay YAML containing undocumented status codes observed during the run.")
     String exportContractPatchFile;
 
-    @CommandLine.Option(names = {"--export-reproducers"},
+    @CommandLine.Option(names = {"--export-reproducers", "--exportReproducers"},
             description = "Write a shell script with one minimal curl reproducer per problem occurrence.")
     String exportReproducersFile;
 

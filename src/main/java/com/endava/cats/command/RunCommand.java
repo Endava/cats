@@ -2,13 +2,14 @@ package com.endava.cats.command;
 
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.model.CommandContext;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.fuzzer.FuzzerTypes;
 import com.endava.cats.fuzzer.special.FunctionalFlowParser;
-import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -21,7 +22,6 @@ import picocli.CommandLine;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,8 +41,8 @@ import java.util.Map;
         footerHeading = "%n@|bold,underline Examples:|@%n",
         footer = {"  Run custom payloads using the SecurityFuzzer:",
                 "    cats run -c openapi.yml -s http://localhost:8080 securityFuzzer.yml",
-                "", "  Run a set of functional tests using the FunctionalFuzzer:",
-                "    cats run -c openapi.yml -s http://localhost:8080 functionalTests.yml"},
+                "", "  Run a sequential functional flow using the FunctionalFlowFuzzer:",
+                "    cats run -c openapi.yml -s http://localhost:8080 functionalFlow.yml"},
         versionProvider = VersionProvider.class)
 @Unremovable
 public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
@@ -68,51 +68,16 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
     ReportingArguments reportingArguments;
 
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Files Options:|@%n", exclusive = false)
+    FilesArguments filesArguments;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Processing Options:|@%n", exclusive = false)
+    ProcessingArguments processingArguments;
+
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
-
-    @CommandLine.Option(names = {"--headers"},
-            description = "Specifies custom headers that will be passed along with the request. This can be used to pass oauth or JWT tokens for authentication")
-    private File headersFile;
-
-    @CommandLine.Option(names = {"--queryParams"},
-            description = "Specifies additional query parameters that will be passed along with the request. This can be used to pass non-documented query params")
-    private File queryFile;
-
-    @CommandLine.Option(names = {"-H"},
-            description = "Specifies headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control the `--headers` arg must be used")
-    Map<String, Object> headersMap;
-
-    @CommandLine.Option(names = {"--createRefData"},
-            description = "This is only applicable when enabling the @|bold FunctionalFuzzer |@. It will instruct the @|bold FunctionalFuzzer|@ to create a @|bold,underline --refData|@ file " +
-                    "with all the paths defined in the @|bold,underline customFuzzerFile|@ and the corresponding @|bold output|@ variables")
-    private boolean createRefData;
-
-    @CommandLine.Option(names = {"--refData"},
-            description = "Specifies the file with fields that must have a fixed value in order for requests to succeed. " +
-                    "If this is supplied when @|bold FunctionalFuzzer|@ is also enabled, the @|bold FunctionalFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
-    private File refDataFile;
-
-    @CommandLine.Option(names = {"--correlations", "--correlate"},
-            description = "Specifies a YAML file with cross-field correlation rules (when/then set or omit) applied to request payloads")
-    private File correlationsFile;
-
-    @CommandLine.Option(names = {"--contentType"},
-            description = "A custom mime type if the OpenAPI contract/spec uses content type negotiation versioning")
-    private String contentType;
-    @CommandLine.Option(names = {"--oneOfSelection", "--anyOfSelection"},
-            description = "A @|bold name:value|@ list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions" +
-                    " which result in multiple payloads for a single endpoint and http method")
-    Map<String, String> xxxOfSelections;
-
-    @CommandLine.Option(names = {"--seed"},
-            description = "The seed to be used for random number generation. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private long seed;
-
-    @CommandLine.Option(names = {"--discriminatorCasing"},
-            description = "The casing convention used for discriminator values when no explicit enum or mapping is defined. Supported values: @|bold PascalCase|@, @|bold camelCase|@, @|bold UPPER_SNAKE_CASE|@, @|bold lower_snake_case|@, @|bold kebab-case|@, @|bold lowercase|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private String discriminatorCasing = "UPPER_SNAKE_CASE";
-
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
@@ -141,39 +106,21 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private @NonNull CommandContext createCommandContext() throws IOException {
+        String content = Files.readString(file.toPath());
+        if (!FunctionalFlowParser.isFunctionalFlowYaml(content)) {
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    "Invalid flow file format in " + file + ". Legacy path-grouped YAML files are no longer supported; use the sequential 'steps:' FunctionalFlow format.");
+        }
         CommandContext context = new CommandContext();
-
-        // Set fuzzer type based on file content
-        boolean functionalFlowFile = FunctionalFlowParser.isFunctionalFlowFile(file);
-        if (functionalFlowFile && !FunctionalFlowParser.isSecurityFlowFile(file)) {
-            context.setFuzzerType(FuzzerTypes.FUNCTIONAL_FLOW);
-            context.setFunctionalFlowFile(file);
-        } else if (!functionalFlowFile && this.isFunctionalFuzzerFile()) {
-            context.setFuzzerType(FuzzerTypes.FUNCTIONAL);
-            context.setCustomFuzzerFile(file);
-        } else {
+        if (FunctionalFlowParser.isSecurityFlowFile(file)) {
             context.setFuzzerType(FuzzerTypes.SECURITY);
             context.setSecurityFuzzerFile(file);
+        } else {
+            context.setFuzzerType(FuzzerTypes.FUNCTIONAL_FLOW);
+            context.setFunctionalFlowFile(file);
         }
-
-        // Set other context properties
-        context.setHeadersFile(headersFile);
-        context.setHeadersMap(headersMap);
-        context.setCreateRefData(createRefData);
-        context.setRefDataFile(refDataFile);
-        context.setCorrelationsFile(correlationsFile);
-        context.setQueryFile(queryFile);
-        context.setContentType(contentType);
-        context.setXxxOfSelections(xxxOfSelections);
-        context.setDiscriminatorCasing(discriminatorCasing);
-        context.setSeed(seed);
+        context.setFilesArguments(filesArguments);
         return context;
-    }
-
-    private boolean isFunctionalFuzzerFile() throws IOException {
-        List<String> lines = Files.readAllLines(file.toPath());
-
-        return lines.stream().noneMatch(line -> line.contains(CatsDSLWords.TARGET_FIELDS) || line.contains(CatsDSLWords.TARGET_FIELDS_TYPES));
     }
 
     @Override

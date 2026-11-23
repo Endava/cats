@@ -69,7 +69,7 @@ final class Remediations {
             return "Validate enum values in %s and reject invalid values with 400/422 (or pass --allowInvalidEnumValues if intentional).".formatted(operation);
         }
         if (testCase.isFuzzer(EnumCaseVariantFieldsFuzzer.class)) {
-            return "Reject case-variant enum values in %s, or drop --no-allowDifferentCaseEnumValues if case-insensitive enums are intended.".formatted(operation);
+            return "Reject case-variant enum values in %s, or pass --allowDifferentCaseEnumValues if case-insensitive enums are intended.".formatted(operation);
         }
         if (STRICT_ENUM_FUZZERS.stream().anyMatch(testCase::isFuzzer)) {
             return "Validate enum values in %s and reject look-alike or ordinal values with 400/422.".formatted(operation);

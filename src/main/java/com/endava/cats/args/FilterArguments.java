@@ -69,9 +69,9 @@ public class FilterArguments {
     }
 
     /* local caches to avoid recompute */
-    static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
-    static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
-    static final List<String> PATHS_TO_INCLUDE = new ArrayList<>();
+    final List<String> fuzzersToBeRun = new ArrayList<>();
+    final List<Fuzzer> allCatsFuzzers = new ArrayList<>();
+    final List<String> pathsToInclude = new ArrayList<>();
     private static final String EXCLUDE_FROM_ALL_FUZZERS_MARK = "!";
     private boolean fuzzersToBeRunComputed = false;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FilterArguments.class);
@@ -111,6 +111,7 @@ public class FilterArguments {
 
     @CommandLine.Option(names = {"--skipPaths", "--skipPath"},
             description = "A comma separated list of paths to ignore. If no path is supplied, no path will be ignored. All available paths can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
+    @Setter
     private List<String> skipPaths;
 
     @CommandLine.Option(names = {"--skipFuzzers", "--skipFuzzer"},
@@ -599,28 +600,25 @@ public class FilterArguments {
      */
     public List<String> getFirstPhaseFuzzersForPath() {
         if (!fuzzersToBeRunComputed) {
-            FUZZERS_TO_BE_RUN.clear();
-            List<String> allowedFuzzers = processSuppliedFuzzers();
-            allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
-            allowedFuzzers = this.removeSpecialFuzzers(allowedFuzzers);
-            allowedFuzzers = this.removeBasedOnTrimStrategy(allowedFuzzers);
-            allowedFuzzers = this.removeBasedOnSanitizationStrategy(allowedFuzzers);
-
-            FUZZERS_TO_BE_RUN.addAll(allowedFuzzers);
+            fuzzersToBeRun.clear();
+            if (userArguments.isUserDictionarySupplied()) {
+                // if a custom dictionary is supplied, we only keep these 2 fuzzers
+                fuzzersToBeRun.addAll(List.of(
+                        UserDictionaryFieldsFuzzer.class.getSimpleName(),
+                        UserDictionaryHeadersFuzzer.class.getSimpleName()));
+            } else {
+                List<String> allowedFuzzers = processSuppliedFuzzers();
+                allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
+                allowedFuzzers = this.removeSpecialFuzzers(allowedFuzzers);
+                allowedFuzzers = this.removeBasedOnTrimStrategy(allowedFuzzers);
+                allowedFuzzers = this.removeBasedOnSanitizationStrategy(allowedFuzzers);
+                List<String> secondPhaseNames = this.getSecondPhaseFuzzers().stream().map(Object::toString).toList();
+                allowedFuzzers = allowedFuzzers.stream().filter(f -> !secondPhaseNames.contains(f)).toList();
+                fuzzersToBeRun.addAll(allowedFuzzers);
+            }
             fuzzersToBeRunComputed = true;
         }
-
-        if (userArguments.isUserDictionarySupplied()) {
-            FUZZERS_TO_BE_RUN.clear();
-            // if a custom dictionary is supplied, we only keep these 2 fuzzers
-            FUZZERS_TO_BE_RUN.addAll(List.of(
-                    UserDictionaryFieldsFuzzer.class.getSimpleName(),
-                    UserDictionaryHeadersFuzzer.class.getSimpleName()));
-        } else {
-            //second phase fuzzers are removed
-            FUZZERS_TO_BE_RUN.removeIf(this.getSecondPhaseFuzzers().stream().map(Object::toString).toList()::contains);
-        }
-        return FUZZERS_TO_BE_RUN;
+        return fuzzersToBeRun;
     }
 
     /**
@@ -669,17 +667,17 @@ public class FilterArguments {
      * @return a list with all the fuzzers
      */
     public List<Fuzzer> getAllRegisteredFuzzers() {
-        if (ALL_CATS_FUZZERS.isEmpty()) {
+        if (allCatsFuzzers.isEmpty()) {
             List<String> interimFuzzersList = fuzzers.stream().map(Object::toString).toList();
             interimFuzzersList = this.removeBasedOnTrimStrategy(interimFuzzersList);
 
             List<String> finalFuzzersList = this.removeBasedOnSanitizationStrategy(interimFuzzersList);
 
-            ALL_CATS_FUZZERS.addAll(fuzzers.stream().filter(fuzzer -> finalFuzzersList.contains(fuzzer.toString()))
+            allCatsFuzzers.addAll(fuzzers.stream().filter(fuzzer -> finalFuzzersList.contains(fuzzer.toString()))
                     .sorted(Comparator.comparing(fuzzer -> fuzzer.getClass().getSimpleName())).toList());
         }
 
-        return ALL_CATS_FUZZERS;
+        return allCatsFuzzers;
     }
 
     List<String> removeBasedOnSanitizationStrategy(List<String> currentFuzzers) {
@@ -784,13 +782,7 @@ public class FilterArguments {
             return;
         }
 
-        // Override profile selection if health-check flag is set
-        String effectiveProfile = processingArguments.isHealthCheck() ? "health-check" : profile;
-        if (processingArguments.isHealthCheck()) {
-            logger.info("Health check mode enabled - using 'health-check' profile");
-        }
-
-        Optional<ProfileLoader.Profile> selectedProfile = profileLoader.getProfile(effectiveProfile);
+        Optional<ProfileLoader.Profile> selectedProfile = profileLoader.getProfile(profile);
 
         if (selectedProfile.isEmpty()) {
             throw new CommandLine.ParameterException(spec.commandLine(),
@@ -800,11 +792,11 @@ public class FilterArguments {
         ProfileLoader.Profile profileConfig = selectedProfile.get();
 
         if (profileConfig.fuzzers().isEmpty()) {
-            logger.info("Using profile '{}' - ALL fuzzers enabled", effectiveProfile);
+            logger.info("Using profile '{}' - ALL fuzzers enabled", profile);
             return;
         }
 
-        logger.info("Using profile '{}': {} fuzzers", effectiveProfile, profileConfig.fuzzers().size());
+        logger.info("Using profile '{}': {} fuzzers", profile, profileConfig.fuzzers().size());
         this.suppliedFuzzers = List.copyOf(profileConfig.fuzzers());
     }
 
@@ -834,9 +826,14 @@ public class FilterArguments {
         this.httpMethods = defaultHttpMethods();
         this.skippedHttpMethods = Collections.emptyList();
         this.dryRun = false;
+        clearCaches();
+    }
+
+    public void clearCaches() {
         this.fuzzersToBeRunComputed = false;
-        FUZZERS_TO_BE_RUN.clear();
-        PATHS_TO_INCLUDE.clear();
+        this.fuzzersToBeRun.clear();
+        this.allCatsFuzzers.clear();
+        this.pathsToInclude.clear();
     }
 
 
@@ -870,11 +867,11 @@ public class FilterArguments {
      * @return a list of paths to be run
      */
     public List<String> getPathsToRun(OpenAPI openAPI) {
-        if (PATHS_TO_INCLUDE.isEmpty()) {
-            PATHS_TO_INCLUDE.addAll(this.matchSuppliedPathsWithContractPaths(openAPI));
+        if (pathsToInclude.isEmpty()) {
+            pathsToInclude.addAll(this.matchSuppliedPathsWithContractPaths(openAPI));
         }
 
-        return PATHS_TO_INCLUDE;
+        return pathsToInclude;
     }
 
     /**
