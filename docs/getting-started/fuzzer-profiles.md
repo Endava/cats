@@ -47,6 +47,15 @@ checks and the PUT and rejected-update consistency checks. See the
 [Header Fuzzers](../fuzzers/header-fuzzers/index.md), and
 [HTTP Fuzzers](../fuzzers/http-fuzzers/index.md) for individual profile membership.
 
+The `Multipart*` fuzzers run only on operations that send `multipart/form-data` and are part of the following profiles:
+
+- `security`: `MultipartDuplicateParts`, `MultipartOversizedFile`, `MultipartHostileFileNames`
+- `quick`: `MultipartMalformedBoundary`, `MultipartMissingPartHeaders`, `MultipartEmptyFile`
+- `compliance`: `MultipartOversizedFile`
+- `ci`: `MultipartMalformedBoundary`, `MultipartMissingPartHeaders`, `MultipartEmptyFile`, `MultipartHostileFileNames`
+- `crash`: `MultipartDuplicateParts`, `MultipartMalformedBoundary`, `MultipartMissingPartHeaders`, `MultipartEmptyFile`
+- `full`: all of them
+
 The active fuzzer profile is also displayed in the generated HTML summary report (`cats-report/index.html`).
 
 Use `cats smoke` or `--profile health-check` to run the minimal `health-check`

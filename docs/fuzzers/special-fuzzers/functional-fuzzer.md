@@ -313,6 +313,44 @@ cats -c openapi.yml -s http://localhost:8080 --correlations correlations.yml
 
 ---
 
+## Multipart Operations
+
+Steps can target operations whose request body is `multipart/form-data`. Each body property becomes a part, and properties declared as `type: string` and `format: binary` are sent as files. Use `cats_file:<path>` to send the exact bytes of a file (see [Reference Data](../../getting-started/reference-data-file.md#sending-files-in-multipart-requests)). To omit a part in a step, list its property name under `omit:`; to send extra parts not declared in the schema, include them under `body:`.
+
+Top-level `variables:` are resolved once per flow, so a generated value can be shared by several steps. The example below sends the same upload twice with the same `Idempotency-Key` and expects the second call to be recognized as a replay:
+
+```yaml
+variables:
+  idempotencyKey: "T(java.util.UUID).randomUUID().toString()"
+
+steps:
+  - name: "firstUpload"
+    POST: "/documents/doc-1/attachments"
+    headers:
+      Idempotency-Key: "${idempotencyKey}"
+    body:
+      file: "cats_file:samples/contract.pdf"
+      category: "CONTRACT"
+    status: 200
+    expect:
+      outcome: "APPLIED"
+
+  - name: "replayUpload"
+    POST: "/documents/doc-1/attachments"
+    headers:
+      Idempotency-Key: "${idempotencyKey}"
+    body:
+      file: "cats_file:samples/contract.pdf"
+      category: "CONTRACT"
+    status: 200
+    expect:
+      outcome: "REPEATED"
+```
+
+A `T(...)` value written directly in a step header (without a variable) is evaluated for each step, so every step gets a different value. Headers supplied using `--headers` are evaluated for each request and replace a step header with the same name, so a header shared between steps, such as `Idempotency-Key` above, must not also be defined in the `--headers` file.
+
+---
+
 ## Migrating from the Legacy `FunctionalFuzzer` Syntax (Removed in 16.0.0)
 
 :::warning Removed in CATS 16.0.0

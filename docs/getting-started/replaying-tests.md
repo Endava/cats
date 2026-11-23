@@ -36,6 +36,12 @@ cats replay Test1 --curl
 cats replay --errors --curl
 ```
 
+For requests with a binary body, such as `multipart/form-data`, the test case JSON stores the exact bytes that were sent, Base64 encoded, in the request `encodedBody` field; the `payload` field holds only a printable summary (file name, size and SHA-256 of each file). Replaying a test sends the stored bytes unchanged, including the original boundary. In this case, `--curl` prints a command that decodes the stored body and sends it using `--data-binary @-`:
+
+```bash
+printf '%s' '<base64 body>' | base64 --decode | curl -i -X POST -H 'Content-Type: multipart/form-data; boundary=...' --data-binary @- 'http://localhost:8080/documents/doc-1/attachments'
+```
+
 ## Stateful replay and exporting functional flows
 
 When a test case depends on resource IDs created earlier in the run (via runtime resource correlation), replaying that single test later may fail with `404` if the resource no longer exists.

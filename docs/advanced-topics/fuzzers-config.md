@@ -11,7 +11,7 @@ The fuzzer compares the received HTTP response code with the expected one and ge
 In certain scenarios, you may want to customize the default values expected by fuzzers. 
 You can achieve this by providing a properties file using the `--fuzzersConfig` argument. 
 In this file, the keys correspond to the fuzzer names and configuration names, while the values represent the desired HTTP code to expect.
-At the moment, the only supported configuration is `expectedResponseCode`.
+Besides `expectedResponseCode`, some fuzzers have their own settings, listed [below](#fuzzer-specific-settings).
 
 The format of the keys in the properties file is as follows:
 
@@ -42,3 +42,19 @@ cats -c petstore.yml -s http://localhost:8080 --fuzzersConfig fuzzConfig.propert
 ```
 
 CATS will interpret `403` as expected response code for the `DummyAcceptHeaders` fuzzer, overriding the default value of `406`.
+
+## Fuzzer-specific settings
+
+Fuzzer-specific settings are supplied in the same properties file, using the key `fuzzerName.setting=value`.
+
+| Key | Description | Default |
+|:--|:--|:--|
+| `MultipartOversizedFile.sizeBytes` | Size, in bytes, of the file part sent by the `MultipartOversizedFile` fuzzer | `10485761` (10 MiB + 1 byte) |
+
+For example:
+
+```properties
+MultipartOversizedFile.sizeBytes=52428801
+```
+
+The value must be a positive integer. If it is missing or invalid, CATS logs a warning and uses the default.

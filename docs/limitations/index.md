@@ -18,7 +18,7 @@ At this moment, CATS only works with OpenAPI specs and has limited functionality
 
 ## Media types and HTTP methods
 The Fuzzers have the following support for media types and HTTP methods:
-- `application/json` and `application/x-www-form-urlencoded` media types only
+- JSON, `application/x-www-form-urlencoded`, XML, `text/plain`, NDJSON and `multipart/form-data` request bodies (see [Content Negotiation](../advanced-topics/content-negociation.md))
 - HTTP methods: `POST`, `PUT`, `PATCH`, `GET` and `DELETE`
 
 ## Additional Parameters

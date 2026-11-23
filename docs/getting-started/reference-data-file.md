@@ -146,6 +146,22 @@ Which will output:
 
 
 
+## Sending files in multipart requests
+For operations with a `multipart/form-data` request body, properties declared as `type: string` and `format: binary` are sent as file parts. Use the `cats_file:<path>` reference to send the content of a real file:
+
+```yaml
+/documents/{documentId}/attachments:
+  file: "cats_file:samples/contract.pdf"
+  checksum: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+```
+
+- the path is relative to the directory CATS is run from (absolute paths also work)
+- the file name sent in the part is the name of the file in the path (`contract.pdf` above), and the part `Content-Type` is detected from the file, falling back to `application/octet-stream`
+- the file content is sent byte for byte; a missing file is an error
+- a value that is not a `cats_file:` reference is sent as a file named `<property>.bin`: the default generated Base64 value is decoded, any other string is sent as its UTF-8 bytes
+
+The same reference also works in `cats run` functional flows. See [Functional Flow Fuzzer](../fuzzers/special-fuzzers/functional-fuzzer.md#multipart-operations).
+
 ## Sending Reference Data for ALL Paths
 You can also have the ability to send the same reference data for ALL paths (just like you do with the headers). You can achieve this by using `all` as a key in the `--refData` file:
 
