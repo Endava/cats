@@ -10,8 +10,8 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.fields.OnlyRequiredFieldsFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFlowFuzzer;
-import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.fuzzer.special.RandomFuzzer;
+import com.endava.cats.fuzzer.special.SecurityFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.tui.event.CatsExecutionEvent;
@@ -779,7 +779,7 @@ final class FuzzerWaveExecutor {
 
         logFuzzerStart(fuzzer, data);
 
-        boolean reportsFuzzerLifecycle = !(fuzzer instanceof FunctionalFuzzer)
+        boolean reportsFuzzerLifecycle = !(fuzzer instanceof SecurityFuzzer)
                 && !(fuzzer instanceof FunctionalFlowFuzzer);
         if (reportsFuzzerLifecycle) {
             command.testCaseListener.beforeFuzz(fuzzer.getClass(), data.getContractPath(), data.getMethod().name());

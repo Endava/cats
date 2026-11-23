@@ -15,7 +15,7 @@ import com.endava.cats.fuzzer.http.CreatedResourceLocationFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.fuzzer.http.MisleadingCreatePutFuzzer;
 import com.endava.cats.fuzzer.http.PutIdempotencyFuzzer;
-import com.endava.cats.fuzzer.special.FunctionalFuzzer;
+import com.endava.cats.fuzzer.special.FunctionalFlowFuzzer;
 import com.endava.cats.fuzzer.special.RandomFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -62,7 +62,7 @@ public final class WfcFaultClassifier {
             MinimumExactNumbersInNumericFieldsFuzzer.class,
             MaximumExactNumbersInNumericFieldsFuzzer.class,
             AllFieldsAtMaxBoundaryFuzzer.class,
-            FunctionalFuzzer.class,
+            FunctionalFlowFuzzer.class,
             RandomFuzzer.class);
 
     private static final Map<String, FaultCategory> EXACT_REASON_MAP = buildExactReasonMap();

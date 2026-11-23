@@ -9,7 +9,6 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
-import com.endava.cats.util.CatsDSLWords;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.IntegerSchema;
@@ -38,16 +37,14 @@ class SecurityFuzzerTest {
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
-    private CustomFuzzerUtil customFuzzerUtil;
-
     private SecurityFuzzer securityFuzzer;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = new FilesArguments();
-        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, testCaseListener);
-        securityFuzzer = new SecurityFuzzer(filesArguments, customFuzzerUtil);
+        FunctionalFlowFuzzer functionalFlowFuzzer = new FunctionalFlowFuzzer(filesArguments, serviceCaller, testCaseListener);
+        securityFuzzer = new SecurityFuzzer(filesArguments, functionalFlowFuzzer, testCaseListener);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
     }
 
@@ -56,6 +53,14 @@ class SecurityFuzzerTest {
         ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File("mumu"));
 
         Assertions.assertThatThrownBy(() -> filesArguments.loadSecurityFuzzerFile()).isInstanceOf(FileNotFoundException.class);
+    }
+
+    @Test
+    void shouldRejectNonFlowSecurityFuzzerFile() {
+        ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File("src/test/resources/functionalFuzzer.yml"));
+
+        Assertions.assertThatThrownBy(() -> filesArguments.loadSecurityFuzzerFile())
+                .hasMessageContaining("File format is wrong for SecurityFuzzer");
     }
 
     @Test
@@ -71,7 +76,6 @@ class SecurityFuzzerTest {
     void shouldOverrideMethods() {
         Assertions.assertThat(securityFuzzer.description()).isNotNull();
         Assertions.assertThat(securityFuzzer).hasToString(securityFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(securityFuzzer.requiredKeywords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.HTTP_METHOD);
     }
 
     @Test

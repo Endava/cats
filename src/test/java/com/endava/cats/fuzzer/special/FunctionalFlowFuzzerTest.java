@@ -95,9 +95,11 @@ class FunctionalFlowFuzzerTest {
         Files.writeString(flowFile.toPath(), yaml);
         File refDataTemplate = tempDir.resolve("refData.yml").toFile();
         Files.writeString(refDataTemplate.toPath(), "/billing-plans/{planId}:\n  planId: ${createdPlanId}\n");
+        File exportRefData = tempDir.resolve("exported-refdata.yml").toFile();
 
         filesArguments.setFunctionalFlowFile(flowFile);
         filesArguments.setRefDataFile(refDataTemplate);
+        filesArguments.setExportRefDataFile(exportRefData);
 
         FuzzingData postPlans = FuzzingData.builder()
                 .method(HttpMethod.POST)
@@ -173,6 +175,8 @@ class FunctionalFlowFuzzerTest {
         File replacedRefData = tempDir.resolve("refData_replaced.yml").toFile();
         Assertions.assertThat(replacedRefData).exists();
         Assertions.assertThat(Files.readString(replacedRefData.toPath())).contains("planId: plan_42");
+        Assertions.assertThat(exportRefData).exists();
+        Assertions.assertThat(Files.readString(exportRefData.toPath())).contains("plan_42");
         Assertions.assertThat(fuzzer).hasToString("FunctionalFlowFuzzer");
         Assertions.assertThat(fuzzer.description()).isNotBlank();
     }

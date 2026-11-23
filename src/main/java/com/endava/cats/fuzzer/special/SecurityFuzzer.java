@@ -2,24 +2,19 @@ package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FunctionalFlowStep;
-import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FuzzMode;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.StepFuzzConfig;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.ConsoleUtils;
-import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
-import net.minidev.json.JSONArray;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Fuzzer that performs security fuzzing based on user-supplied payloads and dictionaries
@@ -27,20 +22,23 @@ import java.util.stream.Collectors;
  */
 @Singleton
 @SpecialFuzzer
-public class SecurityFuzzer implements CustomFuzzerBase {
+public class SecurityFuzzer implements Fuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final FilesArguments filesArguments;
-    private final CustomFuzzerUtil customFuzzerUtil;
+    private final FunctionalFlowFuzzer functionalFlowFuzzer;
+    private final TestCaseListener testCaseListener;
 
     /**
      * Constructs a new SecurityFuzzer instance.
      *
-     * @param cp  The FilesArguments object containing the files to be fuzzed.
-     * @param cfu The CustomFuzzerUtil object used to perform custom fuzzing operations.
+     * @param cp                   The FilesArguments object containing the files to be fuzzed.
+     * @param functionalFlowFuzzer The FunctionalFlowFuzzer used to execute security flow steps.
+     * @param testCaseListener     The TestCaseListener used to record errors.
      */
-    public SecurityFuzzer(FilesArguments cp, CustomFuzzerUtil cfu) {
+    public SecurityFuzzer(FilesArguments cp, FunctionalFlowFuzzer functionalFlowFuzzer, TestCaseListener testCaseListener) {
         this.filesArguments = cp;
-        this.customFuzzerUtil = cfu;
+        this.functionalFlowFuzzer = functionalFlowFuzzer;
+        this.testCaseListener = testCaseListener;
     }
 
     @Override
@@ -51,9 +49,9 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         }
         int stepIdx = 1;
         for (FunctionalFlowStep step : doc.steps()) {
-            String stepKey = "step_" + stepIdx++;
+            int currentIdx = stepIdx++;
             if (matchesStepPath(step, data.getContractPath())) {
-                executeSecurityStep(step, stepKey, data);
+                executeSecurityStep(doc, step, currentIdx, data);
             }
         }
     }
@@ -63,12 +61,12 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         return paths.stream().anyMatch(p -> CatsDSLWords.ALL.equalsIgnoreCase(p) || p.equalsIgnoreCase(contractPath));
     }
 
-    private void executeSecurityStep(FunctionalFlowStep step, String stepKey, FuzzingData data) {
+    private void executeSecurityStep(FunctionalFlowDocument doc, FunctionalFlowStep step, int stepIndex, FuzzingData data) {
         List<String> missing = getMissingStepKeywords(step);
         if (!missing.isEmpty()) {
             String message = "is missing the following mandatory entries: %s".formatted(missing);
             log.error(message);
-            customFuzzerUtil.recordError(message);
+            testCaseListener.recordError(message);
             return;
         }
         if (!step.allMethods() && step.method() != data.getMethod()) {
@@ -80,52 +78,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
             return;
         }
         List<String> targetFields = FunctionalFlowFuzzer.resolveTargetFieldsForOperation(fuzzConfig, data);
-        if (fuzzConfig.mode() == FuzzMode.CROSS && targetFields.size() > 1) {
-            executeCrossFields(data, stepKey, step, payloads, targetFields);
-            return;
-        }
-        Map<String, Object> baseConfig = buildExecutionConfig(step, data);
-        this.fuzzFields(data, stepKey, baseConfig, payloads, targetFields);
-    }
-
-    private void executeCrossFields(FuzzingData data, String stepKey, FunctionalFlowStep step,
-                                    List<String> payloads, List<String> targetFields) {
-        String joined = String.join(", ", targetFields);
-        for (String payloadVal : payloads) {
-            Map<String, Object> config = buildExecutionConfig(step, data);
-            for (String field : targetFields) {
-                config.put(field, payloadVal);
-            }
-            config.put(CatsDSLWords.DESCRIPTION, step.scenarioText() + ", cross-fields [" + joined + "]");
-            customFuzzerUtil.executeTestCases(data, stepKey, config, this);
-        }
-    }
-
-    private static Map<String, Object> buildExecutionConfig(FunctionalFlowStep step, FuzzingData data) {
-        Map<String, Object> config = new LinkedHashMap<>();
-        config.put(CatsDSLWords.HTTP_METHOD, step.allMethods() ? data.getMethod().name() : step.method().name());
-        config.put(CatsDSLWords.EXPECTED_RESPONSE_CODE, step.expect().status().size() == 1
-                ? step.expect().status().getFirst()
-                : step.expect().status());
-        config.put(CatsDSLWords.DESCRIPTION, step.scenarioText());
-        if (step.body() instanceof Map<?, ?> bodyMap) {
-            bodyMap.forEach((k, v) -> config.put(String.valueOf(k), mapBodyEntry(String.valueOf(k), v, data)));
-        }
-        step.omit().forEach(omitField -> config.put(omitField, "cats_remove_field"));
-        if (!step.save().isEmpty()) {
-            config.put(CatsDSLWords.OUTPUT, step.save());
-        }
-        if (!step.expect().fields().isEmpty()) {
-            config.put(CatsDSLWords.VERIFY, step.expect().fields());
-        }
-        return config;
-    }
-
-    private static Object mapBodyEntry(String key, Object value, FuzzingData data) {
-        if (value instanceof List<?> list && !(JsonUtils.getVariableFromJson(data.getPayload(), key) instanceof JSONArray)) {
-            return list.isEmpty() ? "" : list.getFirst();
-        }
-        return value;
+        functionalFlowFuzzer.runPayloadsAgainstTargetFields(doc, step, stepIndex, data, targetFields, payloads, this);
     }
 
     private static List<String> getMissingStepKeywords(FunctionalFlowStep step) {
@@ -146,19 +99,6 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         return missing;
     }
 
-    private void fuzzFields(FuzzingData data, String key, Map<String, Object> baseConfig, List<String> nastyStrings, List<String> targetFields) {
-        log.debug("Target fields {}", targetFields);
-
-        for (String targetField : targetFields) {
-            log.info("Fuzzing field [{}]", targetField);
-            Map<String, Object> configClone = baseConfig.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            configClone.put(targetField, nastyStrings);
-            configClone.put(CatsDSLWords.DESCRIPTION, customFuzzerUtil.getScenarioOrDescription(baseConfig) + ", field [" + targetField + "]");
-            customFuzzerUtil.executeTestCases(data, key, configClone, this);
-        }
-    }
-
     @Override
     public String toString() {
         return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
@@ -167,10 +107,5 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     @Override
     public String description() {
         return "use custom dictionaries of 'nasty' strings to target specific fields or data types";
-    }
-
-    @Override
-    public List<String> requiredKeywords() {
-        return List.of(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.HTTP_METHOD);
     }
 }

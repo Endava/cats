@@ -66,6 +66,7 @@ import java.util.regex.Pattern;
 @SpecialFuzzer
 public class FunctionalFlowFuzzer implements Fuzzer {
     private static final String REF_DATA_CUSTOM_FILE = "refData_custom.yml";
+    private static final String RESPONSE_HEADER_PREFIX = "header#";
     private static final Pattern STEP_TOKEN_PATTERN = Pattern.compile("\\$\\{((?:steps|prev)\\.[^}]+)}|\\$((?:steps|prev)\\.[A-Za-z0-9_.#\\[\\]-]+)");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FunctionalFlowFuzzer.class);
     private final FilesArguments filesArguments;
@@ -307,9 +308,9 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         return lowerTypes.contains(type) || lowerTypes.contains(format);
     }
 
-    private void runPayloadsAgainstTargetFields(FunctionalFlowDocument document, FunctionalFlowStep step,
-                                                int stepIndex, FuzzingData data, List<String> targetFields,
-                                                List<String> payloads, Fuzzer activeFuzzer) {
+    void runPayloadsAgainstTargetFields(FunctionalFlowDocument document, FunctionalFlowStep step,
+                                        int stepIndex, FuzzingData data, List<String> targetFields,
+                                        List<String> payloads, Fuzzer activeFuzzer) {
         if (targetFields.isEmpty()) {
             return;
         }
@@ -704,7 +705,12 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                                                  ResolvedStepTarget target, FuzzingData data) {
         boolean bodyMethod = HttpMethod.requiresBody(data.getMethod());
         String basePayload = resolveBasePayload(step.base(), data, bodyMethod);
+        String pathParamsPayload = StringUtils.defaultIfBlank(data.getPathParamsPayload(), "{}");
         Set<String> changedFields = new LinkedHashSet<>();
+
+        RefDataPayloads refDataApplied = applyConfiguredRefData(data, basePayload, pathParamsPayload, bodyMethod);
+        basePayload = refDataApplied.bodyPayload();
+        pathParamsPayload = refDataApplied.pathParamsPayload();
 
         String bodyPayload = applyBodyOverrides(basePayload, step.body(), data.getContractPath(), changedFields);
         for (String omitField : step.omit()) {
@@ -713,7 +719,6 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             changedFields.add(normalized);
         }
 
-        String pathParamsPayload = StringUtils.defaultIfBlank(data.getPathParamsPayload(), "{}");
         Map<String, Object> combinedUrlParams = new LinkedHashMap<>(target.extractedPathParams());
         combinedUrlParams.putAll(target.extractedQueryParams());
         for (Map.Entry<String, Object> paramEntry : combinedUrlParams.entrySet()) {
@@ -726,12 +731,59 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             }
         }
 
-        List<FieldCorrelationRule> allRules = new ArrayList<>(document.correlate());
-        allRules.addAll(step.correlate());
+        List<FieldCorrelationRule> allRules = loadExternalAndFlowCorrelationRules(document, step);
         bodyPayload = FieldCorrelationEvaluator.applyRequestCorrelations(
-                data.getContractPath(), bodyPayload, allRules, variables, changedFields);
+                data.getContractPath(), data.getMethod(), bodyPayload, allRules, variables, changedFields);
 
         return new PreparedStepPayloads(bodyPayload, pathParamsPayload, changedFields);
+    }
+
+    private record RefDataPayloads(String bodyPayload, String pathParamsPayload) {
+    }
+
+    private RefDataPayloads applyConfiguredRefData(FuzzingData data, String basePayload,
+                                                   String pathParamsPayload, boolean bodyMethod) {
+        Map<String, Object> refData = FilesArguments.resolveRefData(filesArguments, data.getContractPath(), data.getMethod());
+        if (refData.isEmpty()) {
+            return new RefDataPayloads(basePayload, pathParamsPayload);
+        }
+        String currentBody = basePayload;
+        String currentPath = pathParamsPayload;
+        for (Map.Entry<String, Object> entry : refData.entrySet()) {
+            String key = entry.getKey();
+            if (key == null || key.matches(CatsDSLWords.ADDITIONAL_PROPERTIES)) {
+                continue;
+            }
+            if (ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(entry.getValue()))) {
+                currentBody = JsonUtils.isFieldInJson(currentBody, key) ? JsonUtils.deleteNode(currentBody, key) : currentBody;
+                continue;
+            }
+            Object resolved = resolveValueAndRecordRefData(data.getContractPath(), key, entry.getValue(), currentBody);
+            if (resolved instanceof String str && str.startsWith("${") && str.endsWith("}")) {
+                continue;
+            }
+            if (bodyMethod && JsonUtils.isFieldInJson(currentPath, key)) {
+                currentPath = FieldCorrelationEvaluator.setOrInsertField(currentPath, key, resolved, false);
+            } else if (JsonUtils.isFieldInJson(currentBody, key)) {
+                currentBody = setOrMergeField(currentBody, key, resolved);
+            }
+        }
+        return new RefDataPayloads(currentBody, currentPath);
+    }
+
+    private List<FieldCorrelationRule> loadExternalAndFlowCorrelationRules(FunctionalFlowDocument document,
+                                                                           FunctionalFlowStep step) {
+        List<FieldCorrelationRule> allRules = new ArrayList<>();
+        if (filesArguments != null && filesArguments.getCorrelationsFile() != null) {
+            try {
+                allRules.addAll(FunctionalFlowParser.parseCorrelationFile(filesArguments.getCorrelationsFile()));
+            } catch (IOException e) {
+                logger.debug("Unable to parse correlations file in FunctionalFlowFuzzer", e);
+            }
+        }
+        allRules.addAll(document.correlate());
+        allRules.addAll(step.correlate());
+        return allRules;
     }
 
     private static String resolveBasePayload(BasePayloadMode mode, FuzzingData data, boolean bodyMethod) {
@@ -825,7 +877,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         }
         String resolved = resolveStringExpression(strVal, currentPayload);
         recordVariableConsumptionForRefData(contractPath, fieldPath, strVal, resolved);
-        return coerceScalarIfOriginalWasTyped(strVal, resolved);
+        return DynamicValueResolver.coerceScalarIfOriginalWasTyped(strVal, resolved);
     }
 
     private void recordVariableConsumptionForRefData(String contractPath, String fieldPath, String rawExpr, String resolved) {
@@ -873,23 +925,6 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         }
         matcher.appendTail(sb);
         return sb.toString();
-    }
-
-    private static Object coerceScalarIfOriginalWasTyped(String rawExpr, String resolved) {
-        if (!rawExpr.startsWith("#(") && !rawExpr.startsWith("T(")) {
-            return resolved;
-        }
-        if ("true".equalsIgnoreCase(resolved) || "false".equalsIgnoreCase(resolved)) {
-            return Boolean.valueOf(resolved);
-        }
-        if (resolved.matches("-?\\d+")) {
-            try {
-                return Long.parseLong(resolved);
-            } catch (NumberFormatException _) {
-                return resolved;
-            }
-        }
-        return resolved;
     }
 
     private static String setOrMergeField(String jsonPayload, String fieldPath, Object value) {
@@ -1015,7 +1050,23 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             KeyValuePair<String, String> header = response.getHeader(headerName);
             return header == null ? JsonUtils.NOT_SET : header.getValue();
         }
-        return CustomFuzzerUtil.extractResponseValue(response, selector);
+        return extractResponseValue(response, selector);
+    }
+
+    public static String extractResponseValue(CatsResponse response, String selector) {
+        if (selector.startsWith(RESPONSE_HEADER_PREFIX) || selector.toLowerCase(Locale.ROOT).startsWith("header.")) {
+            String headerName = selector.substring(selector.contains(".")
+                    ? selector.indexOf('.') + 1
+                    : RESPONSE_HEADER_PREFIX.length());
+            KeyValuePair<String, String> header = response.getHeader(headerName);
+            return header == null ? JsonUtils.NOT_SET : header.getValue();
+        }
+        if (("$".equals(selector) || "$body".equalsIgnoreCase(selector) || "$response.body".equalsIgnoreCase(selector))
+                && StringUtils.isNotBlank(response.getBody())) {
+            return response.getBody().trim().replace("\"", "");
+        }
+        String cleanSelector = selector.startsWith("$response.") ? selector.substring("$response.".length()) : selector;
+        return String.valueOf(FieldCorrelationEvaluator.lookupJsonPath(response.getBody(), cleanSelector));
     }
 
     private void evaluateAndReportStepResult(FunctionalFlowStep step, FuzzingData data, String requestPayload,
@@ -1048,7 +1099,11 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             reportCustomAssertionsOutcome(data, response, expectedCodeFamily, expect.matchesSchema());
             return;
         }
-        testCaseListener.reportResult(logger, data, response, expectedCodeFamily, expect.matchesSchema(), true);
+        if (expect.matchesSchema()) {
+            testCaseListener.reportResult(logger, data, response, expectedCodeFamily);
+        } else {
+            testCaseListener.reportResult(logger, data, response, expectedCodeFamily, false, true);
+        }
     }
 
     private static boolean hasCustomAssertions(FunctionalFlowExpectation expect) {
@@ -1060,8 +1115,8 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     private void reportCustomAssertionsOutcome(FuzzingData data, CatsResponse response,
                                                ResponseCodeFamily expectedCodeFamily, boolean matchesSchema) {
         if (expectedCodeFamily.matchesAllowedResponseCodes(response.responseCodeAsString())) {
-            if (matchesSchema && data.getResponses() != null && !data.getResponses().isEmpty()) {
-                testCaseListener.reportResult(logger, data, response, expectedCodeFamily, true, true);
+            if (matchesSchema && response.getJsonBody() != null && data.getResponses() != null && !data.getResponses().isEmpty()) {
+                testCaseListener.reportResult(logger, data, response, expectedCodeFamily);
             } else {
                 testCaseListener.reportResultInfo(logger, data, "Response matches all 'verify' parameters");
             }
@@ -1154,11 +1209,29 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     }
 
     public void writeRefDataOutputIfRequested() throws IOException {
-        if (filesArguments.getRefDataFile() != null) {
-            CustomFuzzerUtil.writeReplacedRefDataFile(filesArguments.getRefDataFile(), variables);
-        } else if (filesArguments.isCreateRefData()) {
+        if (filesArguments.getExportRefDataFile() != null) {
+            CatsUtil.writeToYaml(filesArguments.getExportRefDataFile().getAbsolutePath(), recordedRefDataByPath);
+        }
+        if (filesArguments.getRefDataFile() != null && Files.readString(filesArguments.getRefDataFile().toPath()).contains("${")) {
+            writeReplacedRefDataFile(filesArguments.getRefDataFile(), variables);
+        }
+        if (filesArguments.isCreateRefData()) {
             CatsUtil.writeToYaml(REF_DATA_CUSTOM_FILE, recordedRefDataByPath);
         }
+    }
+
+    private static void writeReplacedRefDataFile(File refDataFile, Map<String, String> variables) throws IOException {
+        List<String> refDataLines = Files.readAllLines(refDataFile.toPath());
+        List<String> updatedLines = refDataLines.stream().map(line -> {
+            String result = line;
+            for (Map.Entry<String, String> variable : variables.entrySet()) {
+                result = result.replace("${" + variable.getKey() + "}", variable.getValue());
+            }
+            return result;
+        }).toList();
+        String currentFile = refDataFile.getAbsolutePath();
+        Files.write(Paths.get(currentFile.substring(0, currentFile.lastIndexOf('.')) + "_replaced.yml"),
+                updatedLines, StandardCharsets.UTF_8);
     }
 
     @Override
