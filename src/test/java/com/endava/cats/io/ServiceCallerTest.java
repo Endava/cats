@@ -737,7 +737,7 @@ class ServiceCallerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "null", " ", "0", "0.0", "{\"cats\": \"cats\"}", "-1234.5"})
+    @ValueSource(strings = {"", "null", "\u0000", "0", "0.0", "{\"cats\": \"cats\"}", "-1234.5"})
     void shouldSendWholeBodyPayloadsAsRawMultipartBytes(String payload) {
         wireMockServer.stubFor(WireMock.post("/multipart-whole-body").willReturn(WireMock.ok("{}")));
         serviceCaller.initRateLimiter();
