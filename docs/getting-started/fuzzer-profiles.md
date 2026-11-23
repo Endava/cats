@@ -49,11 +49,12 @@ checks and the PUT and rejected-update consistency checks. See the
 
 The active fuzzer profile is also displayed in the generated HTML summary report (`cats-report/index.html`).
 
-Use `--healthCheck` to run the minimal `health-check` profile before the full
-fuzzing run:
+Use `cats smoke` or `--profile health-check` to run the minimal `health-check`
+profile before the full fuzzing run:
 
 ```bash
-cats -c openapi.yml -s http://localhost:8080 --healthCheck
+cats smoke -c openapi.yml -s http://localhost:8080
+cats -c openapi.yml -s http://localhost:8080 --profile health-check
 ```
 
 You can provide additional profiles in a YAML file with `--profileFile`. The
@@ -70,5 +71,3 @@ profiles:
 ```
 
 If `--fuzzers` is supplied explicitly, it takes precedence over `--profile`.
-The `--healthCheck` option selects `health-check` regardless of the profile
-option.

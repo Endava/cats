@@ -6,8 +6,9 @@ description: Breaking changes and migration steps for CATS 16.0.0
 # Upgrading to CATS 16.0.0
 
 CATS 16.0.0 changes how HTML reports group findings, how triage and CI compare
-them, and which findings blackbox mode retains. Update report jobs and regenerate
-your baselines when you upgrade from CATS 15.x.
+them, which findings blackbox mode retains, and removes deprecated 15.x legacy
+formats and flags while modernizing CLI defaults. Update report jobs and
+regenerate your baselines when you upgrade from CATS 15.x.
 
 ## HTML reports and summary files
 
@@ -30,13 +31,15 @@ See [Interpreting Results](./getting-started/interpreting-results.md).
 
 ## Triage
 
-- Remove `--include-warnings`. Triage includes warnings by default. Add
-  `--errors-only` to keep the previous error-only view.
+- Triage now focuses on **error** problems by default. Pass `-w` or
+  `--include-warnings` (`--includeWarnings`) to include warning problems too.
 - Migrate consumers of `cats triage -j` from `clusters` to
-  `problems[].occurrences[]`. Live verification now replays one representative
+  `problems[].occurrences[]`, and from `noiseReductionPercent` to
+  `groupingReductionPercent`. Live verification now replays one representative
   request per occurrence. Keep the referenced `Test*.json` files with the summary.
-- Add `--show-reproducers` if your workflow expects full curl commands in console
-  output. JSON output and `--export-reproducers` continue to include them.
+- Add `--show-reproducers` (`--showReproducers`) if your workflow expects full
+  curl commands in console output. JSON output and `--export-reproducers`
+  continue to include them.
 - Triage returns exit code `2` for an incompatible summary or missing
   referenced test evidence.
 
@@ -55,6 +58,66 @@ See [Interpreting Results](./getting-started/interpreting-results.md).
 
 See [Quality Gates and Stop Conditions](./getting-started/quality-gates.md#baseline-regression-gating---baseline-and-cats-compare)
 for comparison states and exit codes.
+
+## Functional flows and removal of legacy `FunctionalFuzzer`
+
+- The deprecated path-grouped `FunctionalFuzzer` YAML format (`cats-global-vars`,
+  top-level `/path:` keys, `httpMethod`, `expectedResponseCode`, `output`,
+  `verify`, `checkBoolean`) has been removed. Migrate functional and custom
+  security test files to the sequential `steps:` `FunctionalFlowFuzzer` format
+  (`cats run <flow.yml>` or `--functionalFlow <flow.yml>`).
+- `cats run` now applies `--refData` (`-R`) and `--correlations` as request
+  inputs before step-level `body:`, `omit:`, `path:`, `query:`, and `correlate:`
+  overrides, and supports `--export-refdata <file>` to export variables captured
+  by `save:`.
+
+See [Functional Flow Fuzzer](./fuzzers/special-fuzzers/functional-fuzzer.md#migrating-from-the-legacy-functionalfuzzer-syntax-removed-in-1600).
+
+## CLI options and default value changes
+
+- **Removed `--filterResponse*` flags**: Replace `--filterResponseCodes` (`--fc`),
+  `--filterResponseSize` (`--fs`), `--filterResponseWords` (`--fw`),
+  `--filterResponseLines` (`--fl`), and `--filterResponseRegex` (`--fr`) with the
+  corresponding `--ignoreResponse*` (`-i`, `--is`, `--iw`, `--il`, `--ir`) option
+  combined with `-k` (`--skipReportingForIgnoredCodes`).
+- **Removed `--healthCheck`**: Use `cats smoke` for a pre-flight endpoint probe
+  or `--profile health-check` to run only `HappyPathFuzzer`.
+- **`--allowDifferentCaseEnumValues` now defaults to `false`**:
+  `EnumCaseVariantFieldsFuzzer` expects `4XX` by default (matching OpenAPI case
+  sensitivity and `--strictTypes`). Pass `--allowDifferentCaseEnumValues` if
+  your API intentionally accepts case-insensitive enum values.
+- **`--useRequestBodyExamples` and `--useSchemaExamples` now default to `true`**:
+  All four OpenAPI example sources (request body, response body, schema, and
+  property examples) are enabled by default and can be disabled together with
+  `--no-useExamples` or individually with `--no-useRequestBodyExamples`,
+  `--no-useResponseBodyExamples`, `--no-useSchemaExamples`, and
+  `--no-usePropertyExamples`.
+- **`--checkUpdate` now defaults to `false`**: Pass `--checkUpdate` explicitly to
+  enable startup version checks.
+- **`cats generate` `--selfReferenceDepth` (`-L`) now defaults to `2`**: Matches
+  the fuzzing default so `cats generate` and `cats` produce identical payloads
+  for the same `--seed`.
+- **`cats template` `--headers` vs. `-H`**: `-H` (`--header`) passes inline
+  `name=value` headers, while `--headers=FILE` loads a YAML headers file
+  consistently with all other commands.
+
+## Configuration, correlations, and dynamic values
+
+- **Unified `.` and `#` field paths and HTTP method scoping**: `refData.yml`,
+  `headers.yml`, and `correlations.yml` all support exact paths, wildcard
+  prefixes (`/orders*`), and HTTP method scoping (`"POST /orders"`,
+  `"PUT /orders*"`). Both dot-notation (`shippingAddress.country`) and
+  `#`-notation (`shippingAddress#country`) in `refData.yml` are normalized and
+  respected by boundary fuzzers and `RuntimeResourcePool`.
+- **Correlation evaluation order and `!=` on absent fields**: Required-field
+  analysis for `correlations.yml` now runs after static `--refData` overrides are
+  applied, and `!=` evaluates to `false` when the left-hand field is absent from
+  the payload (use `is null` to test absence).
+- **Embedded `$$ENV_VAR` and typed `#(...)` expressions**: `$$ENV_VAR` now
+  resolves both as a standalone value (`"$$API_AUTH"`) and embedded inside
+  strings (`"Bearer $$API_TOKEN"`). Standalone `#(...)` and `T(...)` expressions
+  automatically preserve boolean and numeric JSON types across `refData.yml`,
+  `correlations.yml`, and `flows.yml`.
 
 ## Blackbox mode
 
@@ -86,4 +149,5 @@ when the pinned WFC catalog has no corresponding category.
 For OpenAPI runs, WFC endpoint IDs and coverage now use declared operations.
 Eligible faults from a synthetic HTTP method can be attributed to a declared
 operation on the same path. The underlying test is still available in the
-report evidence.
+report evidence. HTTP 500 fault contexts also mask echoed root-primitive JSON
+string inputs as `<INPUT>` consistently with structured JSON payloads.

@@ -41,10 +41,10 @@ or `--name value`.
 - `--queryParams=FILE` loads per-path query parameters from YAML. `-Q name=value` adds a query parameter globally.
 - `--refData=FILE` loads fixed values required for valid business requests. `-R name=value` adds reference data globally.
 - `--correlations=FILE` or `--correlate=FILE` loads cross-field correlation rules (`when`/`then` `set` or `omit`) applied to request payloads across live HTTP commands.
-- `--urlParams=name:value,...` replaces path parameters globally. `-P name=value` is the equivalent global parameter form.
-- `--functionalFuzzerFile=FILE` supplies the functional test or sequential functional flow file used by `cats run`.
-- `--securityFuzzerFile=FILE` supplies the configuration used by the `SecurityFuzzer`.
-- `--createRefData` asks the `FunctionalFuzzer` to create a reference-data file from the paths and output variables in the functional file.
+- `--urlParams=name:value,...` (or `name=value,...`) replaces path parameters globally. `-P name=value` is the equivalent global parameter form.
+- `--functionalFlow=FILE` (alias `--functionalFuzzerFile=FILE`) supplies the sequential `steps:` functional flow file used by `FunctionalFlowFuzzer` (`cats run`).
+- `--securityFuzzerFile=FILE` supplies the `steps:` + `fuzz:` flow configuration used by `SecurityFuzzer`.
+- `--export-refdata=FILE` (alias `--exportRefData=FILE`) writes a `--refData` YAML file populated with variables captured by `FunctionalFlowFuzzer`. `--createRefData` writes `refData_custom.yml`.
 - `--wfcAuth=FILE` loads a Web Fuzzing Commons authentication YAML/JSON file. CATS resolves the selected entry and applies its headers, cookies, or query parameters.
 - `--wfcAuthName=NAME` selects an entry from `--wfcAuth`; if omitted, CATS starts with the first entry and switches to subsequent entries on HTTP `401` or `403`.
 
@@ -60,7 +60,6 @@ for Web Fuzzing Commons configuration.
 - `--mode=ALL|NEGATIVE|POSITIVE` selects all scenarios, only negative scenarios, or only positive/happy-path scenarios. Default: `ALL`.
 - `--profile=security|quick|compliance|ci|coverage|crash|type-coercion|health-check|full` selects a built-in fuzzer profile. Default: `full`.
 - `--profileFile=FILE` loads custom fuzzer profiles from YAML.
-- `--healthCheck` runs the minimal `health-check` profile before full fuzzing. Default: `false`.
 - `--checkFields` runs only Field Fuzzers.
 - `--checkHeaders` runs only Header Fuzzers.
 - `--checkHttp` runs only HTTP Fuzzers.
@@ -95,15 +94,15 @@ for Web Fuzzing Commons configuration.
 - `--discriminatorCasing=STYLE` chooses the casing for discriminator values when the contract has no explicit enum or mapping. Supported styles include `PascalCase`, `camelCase`, `UPPER_SNAKE_CASE`, `lower_snake_case`, `kebab-case`, and `lowercase`.
 - `--oneOfSelection=name=value,...` or `--anyOfSelection=name=value,...` selects discriminator values when multiple request payloads are possible.
 - `--[no-]useDefaults` controls whether schema defaults are used. Default: `true`.
-- `--[no-]useExamples` enables the contract's request, schema, property, and response examples together.
-- `--usePropertyExamples`, `--useRequestBodyExamples`, `--useResponseBodyExamples`, and `--useSchemaExamples` control individual example sources; the property and response options are negatable with `--no-...`.
+- `--[no-]useExamples` enables or disables the contract's request, schema, property, and response examples together.
+- `--[no-]usePropertyExamples`, `--[no-]useRequestBodyExamples`, `--[no-]useResponseBodyExamples`, and `--[no-]useSchemaExamples` control individual example sources. Default: `true` for all four.
 - `--[no-]cachePayloads` reuses generated payload examples for the same schema. Default: `true`.
 - `--[no-]reuseSuccessfulResources` controls whether successful request baselines and correlated resource values from `2XX` responses are reused in later requests. Default: `true` starting with CATS 14.1.0. See [Runtime resource reuse](../advanced-topics/runtime-resource-reuse).
 - `--preseedCollectionGets` runs selected unparameterized collection `GET` operations without required parameters before normal path fuzzing to capture existing resource identifiers. Default: `false`.
 - `--maxPreseedCollectionGets=NUMBER` limits the number of collection `GET` requests sent by `--preseedCollectionGets` (`0` sends none). Default: `20`.
 - `--strictTypes` expects `4XX` for type-coercion scenarios; `--no-strictTypes` permits both `4XX` and `2XX` responses. Default: enabled.
 - `--allowInvalidEnumValues` expects `2XX` when invalid enum values are sent. Default: `false`.
-- `--[no-]allowDifferentCaseEnumValues` controls whether `EnumCaseVariantFieldsFuzzer` expects `2XX` (`true`) or `4XX` (`false`) when sending case-variant enum values. Default: `true`.
+- `--[no-]allowDifferentCaseEnumValues` controls whether `EnumCaseVariantFieldsFuzzer` expects `2XX` (`true`) or `4XX` (`false`) when sending case-variant enum values. Default: `false`.
 - `--edgeSpacesStrategy=VALIDATE_AND_TRIM|TRIM_AND_VALIDATE` controls expectations for leading or trailing spaces.
 - `--sanitizationStrategy=SANITIZE_AND_VALIDATE|VALIDATE_AND_SANITIZE` controls expectations for Unicode control characters and other symbols.
 - `--http2PriorKnowledge` forces HTTP/2 without falling back to HTTP/1.x.
@@ -123,9 +122,8 @@ for Web Fuzzing Commons configuration.
 - `--ignoreResponseRegex=REGEX` treats matching response bodies as success.
 - `--ignoreResponseContentTypeCheck`, `--ignoreResponseBodyCheck`, `--ignoreErrorLeaksCheck`, and `--ignoreResponseCodeUndocumentedCheck` disable the corresponding checks.
 - `--checkFieldInResponse` requires `4XX` error responses to also contain the name of the fuzzed field when response schema validation is active. Default: `false`.
-- `--filterResponseCodes=CODE,...`, `--filterResponseSize=SIZE,...`, `--filterResponseWords=COUNT,...`, `--filterResponseLines=COUNT,...`, and `--filterResponseRegex=REGEX` omit matching results from the report.
-- `--skipReportingForIgnoredCodes` omits results matching ignored response conditions. `--skipReportingForSuccess` and `--skipReportingForWarning` omit successful or warning results. Their short aliases are `--sri`, `--srs`, and `--srw`.
-- Short aliases are available for common response options: `-i`/`--ic` for ignored codes, `-k`/`--sri` for skipped ignored results, `-b` for blackbox, `--fc`, `--fl`, `--fr`, `--fs`, and `--fw` for filters, and `--ib`, `--ie`, `--il`, `--ir`, `--is`, `--it`, `--iu`, and `--iw` for ignore checks. Match options also have `--mc`, `--mi`, `--ml`, `--mr`, `--ms`, and `--mw` aliases.
+- `--skipReportingForIgnoredCodes` (`-k`, `--skipReportingForIgnored`, `--sri`) omits results matching ignored response conditions. `--skipReportingForSuccess` (`--srs`) and `--skipReportingForWarning` (`--srw`) omit successful or warning results.
+- Short aliases are available for common response options: `-i`/`--ic` for ignored codes, `-k`/`--sri` for skipped ignored results, `-b` for blackbox, and `--ib`, `--ie`, `--il`, `--ir`, `--is`, `--it`, `--iu`, and `--iw` for ignore checks. Match options also have `--mc`, `--mi`, `--ml`, `--mr`, `--ms`, and `--mw` aliases.
 - `--maxResponseTimeInMs=MILLISECONDS` reports successful responses exceeding the limit as errors.
 - `-o, --output=DIR` selects the report directory. Default: `cats-report`.
 - `--reportFormat=HTML_JS|HTML_ONLY|JUNIT|WFC_REPORT,...` selects one or more comma-separated report formats to generate in the same run (for example `--reportFormat HTML_JS,WFC_REPORT`). Default: `HTML_JS`.
@@ -136,7 +134,7 @@ for Web Fuzzing Commons configuration.
 - `--tui` runs OpenAPI fuzzing in the interactive terminal interface.
 - `--tuiMaxResults=NUMBER` controls how many recent test details the TUI retains. Default: `10000`.
 - `--verbosity=SUMMARY|DETAILED` controls console logging detail. Default: `SUMMARY`.
-- `--[no-]checkUpdate` controls update checks. Default: `true`.
+- `--[no-]checkUpdate` controls update checks. Default: `false`.
 - `--[no-]color` enables or disables coloured output. Default: `true`.
 - `-j, --json` selects JSON output for commands that support it.
 - `-D, --debug` enables all CATS log levels.
@@ -199,12 +197,12 @@ cats random --help
 - `cats analyze` (alias `blueprint`) requires `-c, --contract=FILE` and supports `--mermaid` and `-j, --json`.
 - `cats init` supports `-c, --contract=FILE` (to scaffold `headers.yml`, `refData.yml`, and `functionalTests.yml`), `--skills [devin,codex,claude,opencode,cursor,all]` (to install the bundled CATS AI coding agent skills), `--global` (install skills into home config directories), `-o, --output=DIR`, `--force`, and `-j, --json`.
 - `cats smoke` (alias `probe`) supports the standard contract, server, authentication, files, filter, and reporting options plus `--includeDelete` and `-j, --json`.
-- `cats triage` (aliases `diagnose`, `doctor`) supports `-r, --report=DIR` (default: `cats-report`), `-c, --contract=FILE`, `-s, --server=URL`, `-H, --header=NAME=VALUE`, `--verify` (replays one representative request per problem occurrence and reports `FIXED`, `STILL_FAILING`, or `INCONCLUSIVE`), `--errors-only`, `--show-reproducers`, `--export-refdata=FILE`, `--export-correlations=FILE`, `--export-contract-patch=FILE`, `--export-reproducers=FILE`, and `-j, --json`.
+- `cats triage` (aliases `diagnose`, `doctor`) supports `-r, --report=DIR` (default: `cats-report`), `-c, --contract=FILE`, `-s, --server=URL`, `-H, --header=NAME=VALUE`, `--verify` (replays one representative request per problem occurrence and reports `FIXED`, `STILL_FAILING`, or `INCONCLUSIVE`), `-w, --include-warnings` (`--includeWarnings`), `--show-reproducers` (`--showReproducers`), `--export-refdata=FILE` (`--exportRefData=FILE`), `--export-correlations=FILE` (`--exportCorrelations=FILE`), `--export-contract-patch=FILE` (`--exportContractPatch=FILE`), `--export-reproducers=FILE` (`--exportReproducers=FILE`), and `-j, --json`.
 - `cats compare` (alias `diff`) requires `-b, --baseline=FILE_OR_DIR` and `-t, --target=FILE_OR_DIR`, and supports `--failOnNewWarnings` and `-j, --json`. New error occurrences always fail comparison.
 - `cats list` supports `--fuzzers`, `--linters`, `--profiles`, `--formats`, `--mutators`, `--customMutatorTypes`, `--fieldsFuzzerStrategies`, and `--paths` (with `--executionOrder` or `--dependencyOrder` to show producer-to-consumer execution order). Use `--json` for machine-readable output.
-- `cats replay TEST` supports `--errors`, `--warnings`, `--reportFolder=DIR`, `--output=DIR`, `--server=URL`, `--callTimeout=SECONDS`, `--maxResponseBytes=BYTES`, `--curl` (prints equivalent `curl` commands without sending HTTP calls), `--stateful` (replays upstream `2XX` producer tests first and substitutes fresh resource IDs), `--export-flow=FILE` (exports the selected tests and upstream producer chain as a runnable `steps:` flow YAML file), and `--verbose`.
-- `cats run FILE` supports `--correlations=FILE` (`--correlate=FILE`), `--headers=FILE`, `-H`, `--queryParams=FILE`, `--refData=FILE`, `--createRefData`, `--contentType=TYPE`, `--oneOfSelection`, `--anyOfSelection`, `--discriminatorCasing`, and `--seed`.
-- `cats template URL` supports `--data=JSON_OR_FILE`, `--targetFields=FIELD,...`, `--httpMethod=METHOD`, `--headers`, and `--random`.
+- `cats replay TEST` supports `--errors`, `--warnings`, `--reportFolder=DIR`, `--output=DIR`, `--server=URL`, `--callTimeout=SECONDS`, `--maxResponseBytes=BYTES`, `--curl` (prints equivalent `curl` commands without sending HTTP calls), `--stateful` (replays upstream `2XX` producer tests first and substitutes fresh resource IDs), `--export-flow=FILE` (`--exportFlow=FILE`, exports the selected tests and upstream producer chain as a runnable `steps:` flow YAML file), and `--verbose`.
+- `cats run FILE` supports the standard API, authentication, files (`--correlations=FILE`, `--headers=FILE`, `-H`, `--queryParams=FILE`, `-Q`, `--refData=FILE`, `-R`, `--urlParams`, `-P`, `--export-refdata=FILE`, `--createRefData`), processing (`--contentType=TYPE`, `--oneOfSelection`, `--anyOfSelection`, `--discriminatorCasing`, `--seed`), ignore, and reporting options.
+- `cats template URL` supports `--data=JSON_OR_FILE`, `--targetFields=FIELD,...`, `--httpMethod=METHOD`, `-H, --header=NAME=VALUE`, `--headers=FILE`, `--correlations=FILE`, and `--random`.
 - `cats lint` supports `--linters=NAME,...` (`--linter`), `--skipLinters=NAME,...` (`--skipLinter`, including path-scoped expressions like `/path=Linter1;Linter2` or `/api/me/*=PathPluralsLinter`), `-p, --paths=PATH,...` (supports wildcards), `--skipPaths=PATH,...`, `-t, --tags=TAG,...`, `--skipTags=TAG,...`, `--operationIds=ID,...`, `--skipOperationIds=ID,...`, `-X, --httpMethods=METHOD,...`, `--skipHttpMethods=METHOD,...`, `--skipDeprecatedOperations`, `--skipLintersForExtension=x-ext=val:Linter1,Linter2`, `--strict` (escalates linter warnings to errors), `--enumsNaming`, `--headersNaming`, `--jsonObjectsNaming`, `--jsonPropertiesNaming`, `--operationPrefixMapFile`, `--pathNaming`, `--pathVariablesNaming`, `--queryParamsNaming`, and quality-gate options (`--failOn`, `--qualityGate`, `--baseline`).
 - `cats stats` supports `--detailed` and `--skip=SECTION,...`.
 - `cats validate` supports `--detailed`.

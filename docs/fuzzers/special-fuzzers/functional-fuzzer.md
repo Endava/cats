@@ -27,9 +27,9 @@ cats run -c openapi.yml -s http://localhost:8080 functionalFlow.yml
 Because CATS automatically generates schema-valid request payloads and OpenAPI-documented headers from your contract, each step only needs to specify the fields relevant to your business scenario.
 
 :::info `cats run` Scope & Flags
-- `cats run` ignores external `--correlations` files for flow steps—declare flow-level or step-level cross-field rules inside the flow's own `correlate:` block. Step `body:`, `omit:`, `path:`, and `query:` values always take precedence over `correlate:` rules.
-- `cats run` does not apply `--refData` as request input; instead, when `--refData=template.yml` is passed, it treats the file as a `${var}` template and writes `template_replaced.yml` with values captured by `save:`.
-- Supported auth/config flags on `cats run`: `-H`, `--headers`, `--queryParams`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`.
+- `cats run` applies external `--correlations` and `--refData` (`-R`) files as request inputs before step-level `correlate:`, `body:`, `omit:`, `path:`, and `query:` overrides. Step values always take precedence over `--refData` and correlation rules.
+- To export a `--refData` file populated with variables captured by `save:`, pass `--export-refdata=FILE` (or pass a `--refData=template.yml` containing `${var}` placeholders to write `template_replaced.yml`).
+- Supported auth/config flags on `cats run`: `-H`, `--headers`, `--queryParams`, `-Q`, `--refData`, `-R`, `--correlations`, `--export-refdata`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`.
 :::
 
 ---
@@ -290,12 +290,12 @@ correlations:
       items[*].shippingRequired: false
 ```
 
-- **`paths`** (or `path`): Exact paths or wildcard prefixes ending with `*` (such as `"/orders*"` or `"*"`). Rules also apply automatically to every element of a **root JSON array** request body.
-- **`when`** (or `if`): Boolean condition evaluated against the outgoing JSON request payload (supports quoted string literals `'RECURRING'`, numbers, booleans, field-to-field comparisons like `format.start < format.length`, and per-element array wildcards `[*]`). Always quote string literals (`'RECURRING'`) so tokens containing `.` or `#` or matching a field name are not misinterpreted.
-- **`set`** (or `then.set`): Field paths and values (supporting `${variables}`, `#(...)` shorthands, and `T(...)` expressions) to set or insert when the condition holds. Note that `#(...)` and `${...}` in `correlations.yml` produce JSON strings; use YAML literals (`unitPrice: 15`, `active: true`) for numeric or boolean fields.
+- **`paths`** (or `path`): Exact paths, wildcard prefixes ending with `*` (such as `"/orders*"` or `"*"`), or HTTP method-scoped paths (`"POST /orders"`, `"PUT /orders*"`). Rules also apply automatically to every element of a **root JSON array** request body.
+- **`when`** (or `if`): Boolean condition evaluated against the outgoing JSON request payload (supports quoted string literals `'RECURRING'`, numbers, booleans, field-to-field comparisons like `format.start < format.length`, and per-element array wildcards `[*]`). Always quote string literals (`'RECURRING'`) so tokens containing `.` or `#` or matching a field name are not misinterpreted. Note that `!=` evaluates to `false` when the field is absent (use `is null` to test absence).
+- **`set`** (or `then.set`): Field paths and values (supporting `${variables}`, `#(...)` shorthands, and `T(...)` expressions) to set or insert when the condition holds. Standalone `#(...)` and `T(...)` calls preserve numeric and boolean JSON types automatically.
 - **`omit`** (or `then.omit`): Field paths to remove from the payload when the condition holds.
 
-Pass `--correlations` to apply these rules to the root `cats` command and `cats template` (for `cats run` flows, place the rules in the flow's `correlate:` block):
+Pass `--correlations` to apply these rules to the root `cats` command, `cats run`, and `cats template`:
 
 ```shell
 cats -c openapi.yml -s http://localhost:8080 --correlations correlations.yml
@@ -303,23 +303,23 @@ cats -c openapi.yml -s http://localhost:8080 --correlations correlations.yml
 
 ### How `when:` Rules Interact with Built-In Fuzzers
 - **Two-stage evaluation (`when:`)**:
-  1. **Required-field analysis** runs once per operation on the **raw generated payload** (inspectable via `cats generate -c openapi.yml -p /billing-plans -X POST -L 2 --seed 42 --pretty`). If `when:` evaluates to `true` on that baseline payload, every `set:` target field is marked **conditionally required** (`OnlyRequiredFields` keeps it, and `RemoveFields`, `NullValuesInFields`, and `EmptyStringsInFields` expect `4XX` when removing or nulling it).
+  1. **Required-field analysis** runs once per operation on the generated payload **after static `--refData` overrides are applied** (inspectable via `cats generate -c openapi.yml -p /billing-plans -X POST --seed 42 --pretty`). If `when:` evaluates to `true` on that baseline payload, every `set:` target field is marked **conditionally required** (`OnlyRequiredFields` keeps it, and `RemoveFields`, `NullValuesInFields`, and `EmptyStringsInFields` expect `4XX` when removing or nulling it).
   2. **Runtime application** runs on every outgoing request payload (after `--refData` and runtime resource reuse) to apply `set:` and `omit:`.
 - **Forcing a branch & self-presence guards**:
-  - To force a specific discriminator/enum branch and mark its dependent fields as required regardless of which enum value the generator picked first, guard on the trigger's presence (`when: "planType is not null"`) and set both the trigger and its dependent field in `set:`.
+  - To force a specific discriminator/enum branch and mark its dependent fields as required, either pin the trigger in `--refData` or guard on the trigger's presence (`when: "planType is not null"`) and set both the trigger and its dependent field in `set:`.
   - A self-presence guard (`when: "name is not null"` with `set: { name: "Plan-#(alphanumeric(6))" }`) never marks `name` itself as required, making it safe for unique value generators.
 - **Mutation protection**: During fuzzing, CATS automatically protects the field being actively mutated by a fuzzer (`mutationTargets`) so correlation rules never overwrite the fuzzer's negative test value. To stop boundary fuzzers (`MinLengthExactValues`, `MaxLengthExactValues`, `AllFieldsAtMaxBoundary`) from mutating a closed-domain or checksum field, pin that field in `--refData` instead.
 - **Auto-synthesis**: You can synthesize `correlations.yml` automatically from `400`/`409`/`422` findings using `cats triage -r cats-report -c openapi.yml --export-correlations correlations.yml`.
 
 ---
 
-## Migrating from the Legacy `FunctionalFuzzer` Syntax (Deprecated)
+## Migrating from the Legacy `FunctionalFuzzer` Syntax (Removed in 16.0.0)
 
-:::warning Deprecation Notice
-The legacy path-grouped `FunctionalFuzzer` YAML syntax (`cats-global-vars`, top-level `/path:` keys, `httpMethod`, `expectedResponseCode`, `output`, `verify`, `checkBoolean`) is **deprecated** and **will be removed in CATS `16.x.x`**. Please migrate existing functional test files to the sequential `steps:` format.
+:::warning Removed in CATS 16.0.0
+The legacy path-grouped `FunctionalFuzzer` YAML syntax (`cats-global-vars`, top-level `/path:` keys, `httpMethod`, `expectedResponseCode`, `output`, `verify`, `checkBoolean`) was removed in CATS `16.0.0`. Migrate existing functional test files to the sequential `steps:` format below.
 :::
 
-### Old path-grouped format (deprecated — to be removed in `16.x.x`)
+### Old path-grouped format (removed in `16.0.0`)
 
 ```yaml
 cats-global-vars:

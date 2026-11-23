@@ -44,7 +44,7 @@ After `cats run` finishes, CATS writes `refData_replaced.yml` with the resolved 
   id: 123
 ```
 
-You can also pass `--createRefData` without an input `refData.yml` template (`cats run functionalFlow.yml -c contract.yml -s http://localhost:8080 --createRefData`), and CATS will record every path and field where a saved variable was consumed into `refData_custom.yml`.
+You can also export all paths and fields where saved variables were consumed directly to a file using `--export-refdata` (`cats run functionalFlow.yml -c contract.yml -s http://localhost:8080 --export-refdata refData.yml`), or pass `--createRefData` to write `refData_custom.yml`.
 
 ## Option 2: Mine `--refData` from an existing report with `cats triage`
 

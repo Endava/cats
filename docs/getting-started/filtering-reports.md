@@ -36,11 +36,7 @@ You can make CATS ignore the response `Content-Type` checks using the `--ignoreR
 You can ignore specific response codes using the `--ignoreResponseCodes` argument. This will make CATS report these cases as `success` instead of `warn`.
 
 ## Ignore Response Lines, Words, Size, Regex
-You can ignore specific response lines, words, size or regex using the `--ignoreResponseLines`, `--ignoreResponseWords`, `--ignoreResponseSize`, `--ignoreResponseRegex` arguments. This will make CATS report these cases as `success` instead of `warn`.
-
-:::info All above `--ignoreXXX` arguments have a corresponding --filterXXX argument
-All `--ignoreXXX` arguments above have a corresponding `--filterXXX` argument which is equivalent to the `--ignoreXXX` argument AND will also consider `--skipReportingForIgnore` as being true.
-:::
+You can ignore specific response lines, words, size or regex using the `--ignoreResponseLines`, `--ignoreResponseWords`, `--ignoreResponseSize`, `--ignoreResponseRegex` arguments. This will make CATS report these cases as `success` instead of `warn`. Combine them with `-k` (`--skipReportingForIgnoredCodes`) to omit matching responses from the report entirely.
 
 ## Ignore Error Leaks Details Checks
 

@@ -8,7 +8,7 @@ description: Using examples from OpenAPI spec vs Generated examples
 CATS doesn't need examples to generate tests, but they can be useful for understanding the API better. In case your OpenAPI spec has examples, CATS will use them to generate tests.
 You can control how examples are being used with the following arguments:
 
-- `--useRequestBodyExamples` - uses the examples from the request body that are set at the media type level like the below example. Default value is `false`.
+- `--[no-]useRequestBodyExamples` - uses the examples from the request body that are set at the media type level like the below example. Default value is `true`.
 
 ```yaml
 paths:
@@ -52,7 +52,7 @@ responses:
               name: Ron Stewart
 ```
 
--- `--useSchemaExamples` - uses the examples from the schema that are set at the schema level like the below example. Default value is `false`.
+- `--[no-]useSchemaExamples` - uses the examples from the schema that are set at the schema level like the below example. Default value is `true`.
 
 ```yaml
 components:
@@ -69,7 +69,7 @@ components:
         name: Jessica Smith
 ```
 
--- `--usePropertyExamples` - uses the examples from the schema that are set at the property level like the below example. Default value is `true`.
+- `--[no-]usePropertyExamples` - uses the examples from the schema that are set at the property level like the below example. Default value is `true`.
 
 ```yaml
 components:
@@ -85,7 +85,7 @@ components:
           example: Jessica Smith
 ```
 
--- `--useExamples` - equivalent to setting all above arguments to `true`. Default value is `false`. When provided it will use all examples from the OpenAPI spec.
+- `--[no-]useExamples` - overrides all four example arguments above (`true` enables all; `--no-useExamples` disables all).
 
 # CATS Generated values
 If examples are not provided CATS will generate values based on the schema definition. For example, if the schema defines a property as `type: integer` and `format: int32` CATS will generate a random integer value between -2147483648 and 2147483647.

@@ -123,10 +123,11 @@ cats -c openapi.yaml -s http://localhost:8080 --profile quick
 ```
 
 To verify reachability with the minimal `HappyPath` profile before starting a
-full run, use `--healthCheck`:
+full run, use `cats smoke` or `--profile health-check`:
 
 ```shell
-cats -c openapi.yaml -s http://localhost:8080 --healthCheck
+cats smoke -c openapi.yaml -s http://localhost:8080
+cats -c openapi.yaml -s http://localhost:8080 --profile health-check
 ```
 
 The `--mode NEGATIVE` and `--mode POSITIVE` options provide another way to
