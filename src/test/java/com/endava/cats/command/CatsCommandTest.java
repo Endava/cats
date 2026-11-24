@@ -28,6 +28,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.ExecutionSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.model.RunOutcome;
 import com.endava.cats.pool.RuntimeResourcePool;
@@ -68,6 +69,7 @@ import picocli.CommandLine;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -1145,6 +1147,69 @@ class CatsCommandTest {
         } finally {
             ReflectionTestUtils.setField(catsMain, "runtimeResourcePool", originalPool);
         }
+    }
+
+    @Test
+    void shouldRunMultipartFuzzersOnlyOnMultipartOperations() {
+        List<String> order = new ArrayList<>();
+        List<Fuzzer> fuzzers = registeredFuzzers.stream()
+                .filter(fuzzer -> fuzzer.getClass().getSimpleName().startsWith("Multipart"))
+                .map(fuzzer -> recordingSpy(fuzzer, order))
+                .collect(Collectors.toList());
+        List<String> multipartNames = fuzzers.stream().map(Object::toString).toList();
+        fuzzers.add(namedFuzzer(Fuzzer.class, "Control", order));
+        Map<String, HttpMethod> methods = new LinkedHashMap<>();
+        Map<String, String> contentTypes = new LinkedHashMap<>();
+        methods.put("/json", HttpMethod.POST);
+        contentTypes.put("/json", "application/json");
+        methods.put("/form", HttpMethod.POST);
+        contentTypes.put("/form", "application/x-www-form-urlencoded");
+        methods.put("/xml", HttpMethod.POST);
+        contentTypes.put("/xml", "application/xml");
+        methods.put("/text", HttpMethod.POST);
+        contentTypes.put("/text", "text/plain");
+        methods.put("/ndjson", HttpMethod.POST);
+        contentTypes.put("/ndjson", "application/x-ndjson");
+        methods.put("/bodyless", HttpMethod.GET);
+        contentTypes.put("/bodyless", null);
+        methods.put("/upload", HttpMethod.POST);
+        contentTypes.put("/upload", "multipart/form-data");
+        Paths paths = new Paths();
+        OpenAPI api = new OpenAPI().paths(paths);
+        for (Map.Entry<String, HttpMethod> entry : methods.entrySet()) {
+            String path = entry.getKey();
+            PathItem item = entry.getValue() == HttpMethod.GET ? new PathItem().get(new Operation()) : new PathItem().post(new Operation());
+            paths.addPathItem(path, item);
+            FuzzingData data = fuzzingData(entry.getValue(), path);
+            Mockito.when(data.getPayloadFormat()).thenReturn(PayloadFormat.from(contentTypes.get(path)));
+            Mockito.doReturn(List.of(data)).when(fuzzingDataFactory).fromPathItem(path, item, api);
+        }
+        Mockito.when(filterArguments.getPathsToRun(api)).thenReturn(new ArrayList<>(methods.keySet()));
+        Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
+        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString()))
+                .thenReturn(fuzzers);
+
+        catsMain.startFuzzing(api);
+
+        Assertions.assertThat(multipartNames).hasSize(6);
+        for (String name : multipartNames) {
+            Assertions.assertThat(order).filteredOn(entry -> entry.startsWith(name + ":")).containsExactly(name + ":POST /upload");
+        }
+        Assertions.assertThat(order).filteredOn(entry -> entry.startsWith("Control:")).containsExactlyInAnyOrder(
+                "Control:POST /json", "Control:POST /form", "Control:POST /xml", "Control:POST /text",
+                "Control:POST /ndjson", "Control:GET /bodyless", "Control:POST /upload");
+    }
+
+    private Fuzzer recordingSpy(Fuzzer bean, List<String> executionOrder) {
+        String name = bean.toString();
+        Fuzzer fuzzer = Mockito.spy(bean);
+        Mockito.doReturn(name).when(fuzzer).toString();
+        Mockito.doAnswer(invocation -> {
+            FuzzingData data = invocation.getArgument(0);
+            executionOrder.add(name + ":" + data.getMethod() + " " + data.getPath());
+            return null;
+        }).when(fuzzer).fuzz(Mockito.any());
+        return fuzzer;
     }
 
     private OpenAPI itemsApiWithFuzzers(List<Fuzzer> fuzzers, PathItem collection, List<FuzzingData> collectionData) {

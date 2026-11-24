@@ -1,6 +1,7 @@
 package com.endava.cats.io;
 
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.io.util.MultipartMutation;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.PayloadFormat;
@@ -88,6 +89,8 @@ public class ServiceData {
     /** Variables supplied by a custom fuzzer for resolving dynamic request values. */
     @Builder.Default
     private final Map<String, String> dynamicVariables = Map.of();
+    /** Changes the encoded multipart body right before it is sent. */
+    private final MultipartMutation multipartMutation;
     /** Set when the test explicitly expects an HTTP 429 response and must not retry on rate limiting. */
     @Builder.Default
     private final boolean expectsRateLimit = false;

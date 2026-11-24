@@ -20,6 +20,15 @@ import java.util.Set;
 class CatsGlobalContextTest {
 
     @Test
+    void shouldReturnFuzzersConfigurationProperty() {
+        CatsGlobalContext context = new CatsGlobalContext();
+        context.getFuzzersConfiguration().setProperty("MultipartOversizedFile.sizeBytes", "2048");
+
+        Assertions.assertThat(context.getFuzzersConfigurationProperty("MultipartOversizedFile.sizeBytes")).isEqualTo("2048");
+        Assertions.assertThat(context.getFuzzersConfigurationProperty("Missing")).isNull();
+    }
+
+    @Test
     void shouldAddExample() {
         CatsGlobalContext context = new CatsGlobalContext();
         context.addGeneratedExample("/test", List.of("example"));

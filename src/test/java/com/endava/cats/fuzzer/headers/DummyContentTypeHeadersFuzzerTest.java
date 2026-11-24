@@ -1,7 +1,9 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamilyDynamic;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
@@ -9,6 +11,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -66,6 +69,83 @@ class DummyContentTypeHeadersFuzzerTest {
         dummyContentTypeHeadersFuzzer.fuzz(Mockito.mock(FuzzingData.class));
 
         Mockito.verifyNoInteractions(simpleExecutor);
+    }
+
+    @Test
+    void shouldExpectAny4XXForMultipartWithoutBoundaryOnMultipartOperations() {
+        FuzzingData data = payloadData(HttpMethod.POST, "multipart/form-data");
+
+        List<SimpleExecutorContext> contexts = executedContexts(data);
+
+        Assertions.assertThat(contexts).hasSize(3);
+        Assertions.assertThat(contexts).filteredOn(context -> contentType(context).equals("multipart/form-data"))
+                .singleElement().satisfies(context -> {
+                    Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+                    Assertions.assertThat(context.getExpectedSpecificResponseCode()).isEqualTo("4XX");
+                });
+        Assertions.assertThat(contexts).filteredOn(context -> !contentType(context).equals("multipart/form-data"))
+                .hasSize(2).allSatisfy(context -> {
+                    Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX_MT);
+                    Assertions.assertThat(context.getExpectedSpecificResponseCode()).isEqualTo("415");
+                });
+    }
+
+    @Test
+    void shouldAccept400ForMultipartWithoutBoundaryOnJsonOperations() {
+        assertMultipartWithoutBoundaryAccepts400(HttpMethod.POST);
+    }
+
+    @Test
+    void shouldAccept400ForMultipartWithoutBoundaryOnJsonPatchOperations() {
+        assertMultipartWithoutBoundaryAccepts400(HttpMethod.PATCH);
+    }
+
+    private void assertMultipartWithoutBoundaryAccepts400(HttpMethod method) {
+        List<SimpleExecutorContext> contexts = executedContexts(payloadData(method, "application/json"));
+
+        Assertions.assertThat(contexts).hasSize(3);
+        Assertions.assertThat(contexts).filteredOn(context -> contentType(context).equals("multipart/form-data"))
+                .singleElement().satisfies(context -> {
+                    Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(new ResponseCodeFamilyDynamic(List.of("400", "406", "415")));
+                    Assertions.assertThat(context.getExpectedResponseCode().allowedResponseCodes()).contains("400");
+                    Assertions.assertThat(context.getExpectedSpecificResponseCode()).isEqualTo("400, 406 or 415");
+                });
+        Assertions.assertThat(contexts).filteredOn(context -> !contentType(context).equals("multipart/form-data"))
+                .hasSize(2).allSatisfy(context -> {
+                    Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX_MT);
+                    Assertions.assertThat(context.getExpectedSpecificResponseCode()).isEqualTo("415");
+                });
+    }
+
+    @Test
+    void shouldExpect2XXOr4XXForAllContentTypesOnBodylessOperations() {
+        List<SimpleExecutorContext> contexts = executedContexts(payloadData(HttpMethod.GET, "multipart/form-data"));
+
+        Assertions.assertThat(contexts).hasSize(2).allSatisfy(context -> {
+            Assertions.assertThat(context.getExpectedResponseCode()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX_TWOXX);
+            Assertions.assertThat(context.getExpectedSpecificResponseCode()).isEqualTo("2XX or 4XX");
+        });
+    }
+
+    private List<SimpleExecutorContext> executedContexts(FuzzingData data) {
+        dummyContentTypeHeadersFuzzer.fuzz(data);
+
+        ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(simpleExecutor, Mockito.atLeastOnce()).execute(captor.capture());
+        return captor.getAllValues();
+    }
+
+    private static String contentType(SimpleExecutorContext context) {
+        return context.getHeaders().stream().filter(header -> header.getName().equalsIgnoreCase("Content-Type"))
+                .findFirst().orElseThrow().getValue();
+    }
+
+    private static FuzzingData payloadData(HttpMethod method, String requestContentType) {
+        FuzzingData data = FuzzingData.builder().method(method).headers(new HashSet<>(HEADERS))
+                .requestContentTypes(List.of(requestContentType))
+                .responseContentTypes(Collections.singletonMap("200", Collections.singletonList("application/json"))).build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
+        return data;
     }
 
     @Test

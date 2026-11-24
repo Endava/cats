@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.special.FunctionalFlowDocument;
 import com.endava.cats.fuzzer.special.FunctionalFlowParser;
 import com.endava.cats.generator.simple.EncodedAuthenticationGenerator;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.io.util.MultipartEncoder;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
@@ -33,6 +34,7 @@ import picocli.CommandLine;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -569,4 +571,50 @@ class ReplayCommandTest {
 
     }
 
+
+    @Test
+    void shouldReplayBinaryBodyByteExact() throws Exception {
+        MultipartEncoder.Result encoded = binaryMultipartBody();
+        Path file = writeBinaryTestCase(encoded);
+        replayCommand.tests = new String[]{file.toString()};
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of());
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenReturn(CatsResponse.empty());
+
+        replayCommand.run();
+
+        ArgumentCaptor<CatsRequest> request = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(serviceCaller).callService(request.capture(), Mockito.anySet());
+        Assertions.assertThat(Base64.getDecoder().decode(request.getValue().getEncodedBody())).isEqualTo(encoded.body());
+        Assertions.assertThat(request.getValue().getHeaders())
+                .contains(new KeyValuePair<>("Content-Type", encoded.contentType()));
+    }
+
+    @Test
+    void shouldPrintBinaryCurlOnReplay() throws Exception {
+        MultipartEncoder.Result encoded = binaryMultipartBody();
+        CatsTestCase testCase = JsonUtils.GSON.fromJson(Files.readString(writeBinaryTestCase(encoded)), CatsTestCase.class);
+
+        String curlCommand = replayCommand.buildCurlCommand(testCase.getRequest());
+
+        Assertions.assertThat(curlCommand)
+                .startsWith("printf '%s' '" + Base64.getEncoder().encodeToString(encoded.body()) + "' | base64 --decode | curl -i -X POST ")
+                .endsWith(" --data-binary @- 'http://localhost/upload'");
+    }
+
+    private static MultipartEncoder.Result binaryMultipartBody() {
+        return MultipartEncoder.encode("{\"file\":\"cats_file:src/test/resources/multipart/all-bytes.bin\"}", true,
+                Map.of(), _ -> false);
+    }
+
+    private Path writeBinaryTestCase(MultipartEncoder.Result encoded) throws IOException {
+        CatsTestCase testCase = new CatsTestCase();
+        testCase.setResult("success");
+        testCase.setRequest(CatsRequest.builder().httpMethod("POST").url("http://localhost/upload")
+                .headers(List.of(new KeyValuePair<>("Content-Type", encoded.contentType())))
+                .payload(encoded.summary())
+                .encodedBody(Base64.getEncoder().encodeToString(encoded.body())).build());
+        Path file = tempDir.resolve("binary-body.json");
+        Files.writeString(file, JsonUtils.GSON.toJson(testCase));
+        return file;
+    }
 }

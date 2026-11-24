@@ -79,6 +79,16 @@ public class CatsGlobalContext {
     }
 
     /**
+     * Gets a property from the fuzzers configuration.
+     *
+     * @param key the name of the property
+     * @return the value of the property if found or null otherwise
+     */
+    public String getFuzzersConfigurationProperty(String key) {
+        return this.fuzzersConfiguration.getProperty(key);
+    }
+
+    /**
      * Initializes the global context with the OpenAPI document, content types, fuzzers configuration and Cats configuration.
      *
      * @param openAPI              the OpenAPI document

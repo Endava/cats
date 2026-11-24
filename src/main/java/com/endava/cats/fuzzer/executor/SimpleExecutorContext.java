@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.executor;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.io.util.MultipartMutation;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -83,6 +84,11 @@ public class SimpleExecutorContext {
      * to process the response and decide the expected behaviours, you can supply your own processor.
      */
     BiConsumer<CatsResponse, FuzzingData> responseProcessor;
+
+    /**
+     * Changes the encoded multipart body right before it is sent. Ignored for other payload formats.
+     */
+    MultipartMutation multipartMutation;
 
     /** Request parts deliberately changed by this fuzzer. */
     @Singular

@@ -5,6 +5,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
+import com.endava.cats.io.util.MultipartMutation;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.ExpectedResponse;
@@ -65,6 +66,44 @@ class SimpleExecutorTest {
         Assertions.assertThat(serviceData.getValue().getOriginalPayload()).contains("original");
         Assertions.assertThat(serviceData.getValue().getAllMutationTargets()).containsExactly(
                 RequestTarget.body("customerId"), RequestTarget.header("X-Test"));
+    }
+
+    @Test
+    void shouldPassMultipartMutationToServiceData() {
+        TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
+        ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
+        PrettyLogger logger = Mockito.mock(PrettyLogger.class);
+        Fuzzer fuzzer = Mockito.mock(Fuzzer.class);
+        FuzzingData fuzzingData = Mockito.mock(FuzzingData.class);
+        Mockito.when(fuzzingData.getPath()).thenReturn("/uploads");
+        Mockito.when(fuzzingData.getContractPath()).thenReturn("/uploads");
+        Mockito.when(fuzzingData.getPayload()).thenReturn("{\"file\":\"a\"}");
+        Mockito.when(fuzzingData.getHeaders()).thenReturn(Set.of());
+        Mockito.when(fuzzingData.getQueryParams()).thenReturn(Set.of());
+        Mockito.when(fuzzingData.getQueryParameterSerializations()).thenReturn(Map.of());
+        Mockito.when(fuzzingData.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(fuzzingData.getFirstRequestContentType()).thenReturn("multipart/form-data");
+        Mockito.when(testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX))
+                .thenReturn(true);
+        Mockito.doAnswer(invocation -> {
+            invocation.getArgument(2, Runnable.class).run();
+            return null;
+        }).when(testCaseListener).createAndExecuteTest(Mockito.eq(logger), Mockito.eq(fuzzer),
+                Mockito.any(Runnable.class), Mockito.eq(fuzzingData));
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.empty());
+        MultipartMutation mutation = encoded -> encoded;
+
+        new SimpleExecutor(testCaseListener, serviceCaller).execute(SimpleExecutorContext.builder()
+                .logger(logger)
+                .fuzzer(fuzzer)
+                .fuzzingData(fuzzingData)
+                .multipartMutation(mutation)
+                .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                .build());
+
+        ArgumentCaptor<ServiceData> serviceData = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller).call(serviceData.capture());
+        Assertions.assertThat(serviceData.getValue().getMultipartMutation()).isSameAs(mutation);
     }
 
     @Test

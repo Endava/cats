@@ -94,7 +94,7 @@ class FilterArgumentsTest {
                         "FreeFormArrayItemsFieldsFuzzer", "Base64DecoderBoundaryFieldsFuzzer", "EncodedAuthenticationHeadersFuzzer",
                         "JsonNestingDepthFuzzer", "NumericParserBoundaryFieldsFuzzer",
                         "RegexEngineAndPatternDifferentialFieldsFuzzer", "UnicodeNormalizationDifferentialFieldsFuzzer",
-                        "ContentTypeParameterDifferentialHeadersFuzzer", "CombinatorialBoundaryAndHeaderHavocFuzzer").hasSize(260);
+                        "ContentTypeParameterDifferentialHeadersFuzzer", "CombinatorialBoundaryAndHeaderHavocFuzzer").hasSize(266);
     }
 
     @Test
@@ -164,7 +164,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(276);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(282);
     }
 
     @Test
@@ -445,7 +445,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnFuzzersAsClasses() {
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(175);
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(181);
     }
 
     @Test
@@ -475,13 +475,13 @@ class FilterArgumentsTest {
 
     @Test
     void shouldCountTotalFuzzers() {
-        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(187);
+        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(193);
 
         ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
         ReflectionTestUtils.setField(checkArguments, "includeEmojis", true);
         ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
         try {
-            Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(214);
+            Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(220);
         } finally {
             ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", false);
             ReflectionTestUtils.setField(checkArguments, "includeEmojis", false);
@@ -495,7 +495,7 @@ class FilterArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"ALL,245", "FUZZERS,187", "LINTERS,58"})
+    @CsvSource({"ALL,251", "FUZZERS,193", "LINTERS,58"})
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);
@@ -700,6 +700,57 @@ class FilterArgumentsTest {
         Assertions.assertThat(suppliedFuzzers)
                 .containsExactlyInAnyOrder("SqlInjectionInStringFieldsFuzzer", "HappyPathFuzzer")
                 .hasSize(2);
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "security|MultipartDuplicateParts;MultipartOversizedFile;MultipartHostileFileNames",
+            "quick|MultipartMalformedBoundary;MultipartMissingPartHeaders;MultipartEmptyFile",
+            "compliance|MultipartOversizedFile",
+            "ci|MultipartMalformedBoundary;MultipartMissingPartHeaders;MultipartEmptyFile;MultipartHostileFileNames",
+            "crash|MultipartDuplicateParts;MultipartMalformedBoundary;MultipartMissingPartHeaders;MultipartEmptyFile",
+            "coverage|''",
+            "health-check|''",
+            "type-coercion|''",
+            "full|MultipartDuplicateParts;MultipartMalformedBoundary;MultipartMissingPartHeaders;MultipartEmptyFile;MultipartOversizedFile;MultipartHostileFileNames"
+    })
+    void shouldSelectMultipartFuzzersThroughProfile(String profile, String expected) {
+        try {
+            ReflectionTestUtils.setField(filterArguments, "profile", profile);
+            ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", null);
+
+            filterArguments.applyProfile(spec);
+
+            Assertions.assertThat(multipartFuzzerNames()).containsExactlyInAnyOrderElementsOf(
+                    expected.isEmpty() ? List.of() : List.of(expected.split(";")));
+        } finally {
+            ReflectionTestUtils.setField(filterArguments, "profile", "full");
+        }
+    }
+
+    @Test
+    void shouldSelectMultipartFuzzersSuppliedExplicitly() {
+        List<String> multipartFuzzers = List.of("MultipartDuplicateParts", "MultipartMalformedBoundary", "MultipartMissingPartHeaders",
+                "MultipartEmptyFile", "MultipartOversizedFile", "MultipartHostileFileNames");
+        try {
+            ReflectionTestUtils.setField(filterArguments, "profile", "quick");
+            ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", multipartFuzzers);
+
+            filterArguments.applyProfile(spec);
+
+            Assertions.assertThat(multipartFuzzerNames()).containsExactlyInAnyOrderElementsOf(multipartFuzzers);
+            Assertions.assertThat(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Set.of(HttpMethod.POST), "/upload"))
+                    .map(fuzzer -> fuzzer.toString().replaceFirst("Fuzzer$", "")).containsExactlyInAnyOrderElementsOf(multipartFuzzers);
+        } finally {
+            ReflectionTestUtils.setField(filterArguments, "profile", "full");
+        }
+    }
+
+    private List<String> multipartFuzzerNames() {
+        return filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Set.of(HttpMethod.POST), "/upload").stream()
+                .map(fuzzer -> fuzzer.toString().replaceFirst("Fuzzer$", ""))
+                .filter(name -> name.startsWith("Multipart"))
+                .toList();
     }
 
     @Test

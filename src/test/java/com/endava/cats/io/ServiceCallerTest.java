@@ -16,6 +16,8 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
+import com.endava.cats.io.util.MultipartEncoder;
+import com.endava.cats.io.util.MultipartMutation;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -25,6 +27,7 @@ import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.model.RequestTarget;
 import com.endava.cats.pool.RuntimeResourcePool;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.RateLimiter;
@@ -33,6 +36,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
@@ -62,11 +66,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyStore;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -144,6 +151,8 @@ class ServiceCallerTest {
         Assertions.assertThat(serviceCaller.buildHeaders(data)).filteredOn(header -> "X-Session-Token".equalsIgnoreCase(header.getKey()))
                 .extracting(KeyValuePair::getValue).containsExactly("mutated");
     }
+
+    private static final Path MULTIPART_FIXTURE = Path.of("src/test/resources/multipart/all-bytes.bin");
 
     public static WireMockServer wireMockServer;
     @Inject
@@ -552,6 +561,209 @@ class ServiceCallerTest {
         Assertions.assertThatThrownBy(() -> serviceCaller.call(serviceData))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unsupported request Content-Type", "application/octet-stream");
+    }
+
+    @Test
+    void shouldSendMultipartBodyByteExact() throws IOException {
+        byte[] fixture = Files.readAllBytes(MULTIPART_FIXTURE);
+        wireMockServer.stubFor(WireMock.post("/multipart-exact").willReturn(WireMock.ok("{}")));
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath("/multipart-exact")
+                .headers(Set.of()).httpMethod(HttpMethod.POST).contentType("multipart/form-data")
+                .payload("{\"file\":\"cats_file:src/test/resources/multipart/all-bytes.bin\",\"evidenceType\":\"OTHER\"}")
+                .build());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
+        LoggedRequest received = lastRequestTo("/multipart-exact");
+        Assertions.assertThat(received.getHeader("Content-Type")).startsWith("multipart/form-data; boundary=");
+        Assertions.assertThat(indexOf(received.getBody(), fixture)).isNotNegative();
+    }
+
+    @Test
+    void shouldRecordEncodedMultipartBodyAndSummaryInTheRequest() throws IOException {
+        wireMockServer.stubFor(WireMock.post("/multipart-recorded").willReturn(WireMock.ok("{}")));
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/multipart-recorded")
+                .headers(Set.of()).httpMethod(HttpMethod.POST).contentType("multipart/form-data")
+                .payload("{\"file\":\"cats_file:src/test/resources/multipart/all-bytes.bin\",\"evidenceType\":\"OTHER\"}")
+                .build());
+
+        ArgumentCaptor<CatsRequest> request = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(testCaseListener).addRequest(request.capture());
+        Assertions.assertThat(Base64.getDecoder().decode(request.getValue().getEncodedBody()))
+                .isEqualTo(lastRequestTo("/multipart-recorded").getBody());
+        Assertions.assertThat(request.getValue().getPayload()).contains("size=256");
+    }
+
+    @Test
+    void shouldReplaceGeneratedMultipartFileValueWithReferenceData() throws IOException {
+        byte[] fixture = Files.readAllBytes(MULTIPART_FIXTURE);
+        wireMockServer.stubFor(WireMock.post("/multipart-refdata").willReturn(WireMock.ok("{}")));
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of("/multipart-refdata",
+                Map.of("file", "cats_file:src/test/resources/multipart/all-bytes.bin")));
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/multipart-refdata").contractPath("/multipart-refdata")
+                .headers(Set.of()).httpMethod(HttpMethod.POST).contentType("multipart/form-data")
+                .payload("{\"file\":\"Zm9v\",\"evidenceType\":\"OTHER\"}").build());
+
+        Assertions.assertThat(indexOf(lastRequestTo("/multipart-refdata").getBody(), fixture)).isNotNegative();
+    }
+
+    @Test
+    void shouldNotRecordEncodedBodyForJsonRequests() {
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/pets").headers(Set.of()).httpMethod(HttpMethod.POST)
+                .contentType("application/json").payload("{\"id\":1}").build());
+
+        ArgumentCaptor<CatsRequest> request = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(testCaseListener).addRequest(request.capture());
+        Assertions.assertThat(request.getValue().getEncodedBody()).isNull();
+        Assertions.assertThat(new String(lastRequestTo("/pets").getBody(), StandardCharsets.UTF_8))
+                .isEqualTo(request.getValue().getPayload());
+    }
+
+    @Test
+    void shouldSendRecordedEncodedBodyByteExactWhenReplaying() throws IOException {
+        MultipartEncoder.Result encoded = MultipartEncoder.encode(
+                "{\"file\":\"cats_file:src/test/resources/multipart/all-bytes.bin\"}", true, Map.of(), _ -> false);
+        wireMockServer.stubFor(WireMock.post("/multipart-replay").willReturn(WireMock.ok("{}")));
+        CatsRequest recorded = CatsRequest.builder().httpMethod("POST")
+                .url("http://localhost:" + wireMockServer.port() + "/multipart-replay")
+                .headers(List.of(new KeyValuePair<>("Content-Type", encoded.contentType())))
+                .payload(encoded.summary()).encodedBody(Base64.getEncoder().encodeToString(encoded.body())).build();
+        CatsRequest replayed = JsonUtils.GSON.fromJson(JsonUtils.GSON.toJson(recorded), CatsRequest.class);
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        CatsResponse response = serviceCaller.callService(replayed, Set.of());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
+        LoggedRequest received = lastRequestTo("/multipart-replay");
+        Assertions.assertThat(received.getBody()).isEqualTo(encoded.body());
+        Assertions.assertThat(received.getHeader("Content-Type")).isEqualTo(encoded.contentType());
+    }
+
+    @Test
+    void shouldRetryUnauthenticatedWithSameBinaryBody() throws IOException {
+        ReflectionTestUtils.setField(authArguments, "basicAuth", null);
+        ReflectionTestUtils.setField(authArguments, "wfcAuthFile", new File("src/test/resources/wfc-static-auth.yml"));
+        wireMockServer.stubFor(WireMock.post(WireMock.urlEqualTo("/bootstrap-multipart"))
+                .withHeader("X-Session-Token", WireMock.equalTo("static-secret"))
+                .willReturn(WireMock.unauthorized()));
+        wireMockServer.stubFor(WireMock.post(WireMock.urlEqualTo("/bootstrap-multipart"))
+                .withHeader("X-Session-Token", WireMock.absent())
+                .willReturn(WireMock.okJson("{\"seeded\":true}")));
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder()
+                .relativePath("/bootstrap-multipart")
+                .contractPath("/bootstrap-multipart")
+                .payload("{\"file\":\"cats_file:src/test/resources/multipart/all-bytes.bin\"}")
+                .httpMethod(HttpMethod.POST)
+                .headers(Set.of())
+                .contentType("multipart/form-data")
+                .build());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
+        List<LoggedRequest> requests = wireMockServer.findAll(
+                WireMock.postRequestedFor(WireMock.urlEqualTo("/bootstrap-multipart")));
+        Assertions.assertThat(requests).hasSize(2);
+        Assertions.assertThat(requests.get(0).containsHeader("X-Session-Token")).isTrue();
+        Assertions.assertThat(requests.get(1).containsHeader("X-Session-Token")).isFalse();
+        Assertions.assertThat(indexOf(requests.get(1).getBody(), Files.readAllBytes(MULTIPART_FIXTURE))).isNotNegative();
+        Assertions.assertThat(requests.get(1).getBody()).isEqualTo(requests.get(0).getBody());
+    }
+
+    @Test
+    void shouldApplyMultipartMutationAfterReferenceData() throws IOException {
+        byte[] fixture = Files.readAllBytes(MULTIPART_FIXTURE);
+        wireMockServer.stubFor(WireMock.post("/multipart-mutated").willReturn(WireMock.ok("{}")));
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of("/multipart-mutated",
+                Map.of("file", "cats_file:src/test/resources/multipart/all-bytes.bin")));
+        MultipartMutation duplicateParts = encoded -> {
+            List<MultipartEncoder.Part> doubled = new ArrayList<>(encoded.parts());
+            doubled.addAll(encoded.parts());
+            return new MultipartEncoder.Result(MultipartEncoder.render(encoded.boundary(), doubled),
+                    encoded.contentType(), encoded.summary(), encoded.boundary(), doubled);
+        };
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/multipart-mutated").contractPath("/multipart-mutated")
+                .headers(Set.of()).httpMethod(HttpMethod.POST).contentType("multipart/form-data")
+                .payload("{\"file\":\"Zm9v\",\"evidenceType\":\"OTHER\"}")
+                .multipartMutation(duplicateParts).build());
+
+        LoggedRequest received = lastRequestTo("/multipart-mutated");
+        String boundary = received.getHeader("Content-Type").substring(received.getHeader("Content-Type").indexOf("boundary=") + 9);
+        Assertions.assertThat(countOccurrences(received.getBody(), fixture)).isEqualTo(2);
+        Assertions.assertThat(new String(received.getBody(), StandardCharsets.ISO_8859_1)).startsWith("--" + boundary + "\r\n");
+    }
+
+    @Test
+    void shouldNotApplyMultipartMutationInRawMode() {
+        wireMockServer.stubFor(WireMock.post("/multipart-raw").willReturn(WireMock.ok("{}")));
+        MultipartMutation failing = _ -> {
+            throw new IllegalStateException("must not be called");
+        };
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/multipart-raw").headers(Set.of())
+                .httpMethod(HttpMethod.POST).contentType("multipart/form-data").validJson(false)
+                .payload("not-json").multipartMutation(failing).build());
+
+        Assertions.assertThat(new String(lastRequestTo("/multipart-raw").getBody(), StandardCharsets.UTF_8)).isEqualTo("not-json");
+    }
+
+    private static int countOccurrences(byte[] source, byte[] target) {
+        int count = 0;
+        for (int i = 0; i <= source.length - target.length; i++) {
+            if (Arrays.equals(source, i, i + target.length, target, 0, target.length)) {
+                count++;
+                i += target.length - 1;
+            }
+        }
+        return count;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "null", "\u0000", "0", "0.0", "{\"cats\": \"cats\"}", "-1234.5"})
+    void shouldSendWholeBodyPayloadsAsRawMultipartBytes(String payload) {
+        wireMockServer.stubFor(WireMock.post("/multipart-whole-body").willReturn(WireMock.ok("{}")));
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        serviceCaller.call(ServiceData.builder().relativePath("/multipart-whole-body").headers(Set.of())
+                .httpMethod(HttpMethod.POST).contentType("multipart/form-data").validJson(false).replaceRefData(false)
+                .payload(payload).mutationTarget(RequestTarget.requestBody()).build());
+
+        LoggedRequest received = lastRequestTo("/multipart-whole-body");
+        Assertions.assertThat(received.getHeader("Content-Type")).startsWith("multipart/form-data; boundary=cats");
+        Assertions.assertThat(received.getBody()).isEqualTo(payload.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static LoggedRequest lastRequestTo(String path) {
+        List<LoggedRequest> requests = wireMockServer.findAll(WireMock.postRequestedFor(WireMock.urlEqualTo(path)));
+        return requests.getLast();
+    }
+
+    private static int indexOf(byte[] source, byte[] target) {
+        for (int i = 0; i <= source.length - target.length; i++) {
+            if (Arrays.equals(source, i, i + target.length, target, 0, target.length)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     @Test

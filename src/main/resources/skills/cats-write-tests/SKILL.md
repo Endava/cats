@@ -337,6 +337,7 @@ Both `refData.yml` and `headers.yml` support:
 **refData notes:**
 - Pinning a path parameter disables runtime resource reuse for it on the matched scope, so non-`DELETE` tests hit that pinned ID.
 - `cats run` (functional flows) applies `--refData` as base defaults before step overrides.
+- For `multipart/form-data` operations, use `cats_file:<path>` (in `refData.yml` or flow `body:`) to send the exact bytes of a file for `type: string, format: binary` parts (e.g., `file: "cats_file:samples/contract.pdf"`).
 
 ```yaml
 all:

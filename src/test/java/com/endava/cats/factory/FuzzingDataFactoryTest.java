@@ -13,6 +13,7 @@ import com.endava.cats.model.NoMediaType;
 import com.endava.cats.model.PayloadFormat;
 import com.endava.cats.model.QueryParameterSerialization;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
@@ -487,7 +488,9 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
-    void shouldFallbackMultipartFormDataToFormUrlEncodedWhenDefaultContentTypesConfigured() throws Exception {
+    void shouldSelectMultipartFormDataWhenExplicitlyRequested() throws Exception {
+        Mockito.when(processingArguments.getContentType()).thenReturn(List.of("multipart/form-data"));
+
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml", true, openAPI -> {
             RequestBody requestBody = openAPI.getPaths().get("/pets").getPost().getRequestBody();
             MediaType json = requestBody.getContent().get("application/json");
@@ -495,7 +498,48 @@ class FuzzingDataFactoryTest {
         });
 
         FuzzingData post = data.stream().filter(entry -> entry.getMethod() == HttpMethod.POST).findFirst().orElseThrow();
-        Assertions.assertThat(post.getFirstRequestContentType()).isEqualTo("application/x-www-form-urlencoded");
+        Assertions.assertThat(post.getFirstRequestContentType()).isEqualTo("multipart/form-data");
+    }
+
+    @Test
+    void shouldSelectMultipartFormDataWhenDefaultContentTypesConfigured() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml", true, openAPI -> {
+            RequestBody requestBody = openAPI.getPaths().get("/pets").getPost().getRequestBody();
+            MediaType json = requestBody.getContent().get("application/json");
+            requestBody.setContent(new Content().addMediaType("multipart/form-data", json));
+        });
+
+        FuzzingData post = data.stream().filter(entry -> entry.getMethod() == HttpMethod.POST).findFirst().orElseThrow();
+        Assertions.assertThat(post.getFirstRequestContentType()).isEqualTo("multipart/form-data");
+        Assertions.assertThat(post.getPayloadFormat()).isEqualTo(PayloadFormat.MULTIPART);
+    }
+
+    @Test
+    void shouldPreferJsonWhenOperationDeclaresJsonAndMultipart() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml", true, openAPI -> {
+            RequestBody requestBody = openAPI.getPaths().get("/pets").getPost().getRequestBody();
+            MediaType json = requestBody.getContent().get("application/json");
+            requestBody.setContent(new Content()
+                    .addMediaType("multipart/form-data", json)
+                    .addMediaType("application/json", json));
+        });
+
+        FuzzingData post = data.stream().filter(entry -> entry.getMethod() == HttpMethod.POST).findFirst().orElseThrow();
+        Assertions.assertThat(post.getFirstRequestContentType()).isEqualTo("application/json");
+        Assertions.assertThat(post.getPayloadFormat()).isEqualTo(PayloadFormat.JSON);
+    }
+
+    @Test
+    void shouldGenerateBinaryPropertyForMultipartOperation() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/cases/{caseId}/evidence/uploads", "src/test/resources/multipart-upload.yml");
+
+        List<FuzzingData> posts = data.stream().filter(entry -> entry.getMethod() == HttpMethod.POST).toList();
+        Assertions.assertThat(posts).hasSize(1);
+        FuzzingData post = posts.getFirst();
+        Assertions.assertThat(post.getPayloadFormat()).isEqualTo(PayloadFormat.MULTIPART);
+        Assertions.assertThat(JsonUtils.GSON.fromJson(post.getPayload(), Map.class).keySet())
+                .contains("file", "evidenceType", "checksum");
+        Assertions.assertThat(CatsModelUtils.isBinarySchema(post.getRequestPropertyTypes().get("file"))).isTrue();
     }
 
     private List<FuzzingData> setupFuzzingData(String path, String contract) throws IOException {
