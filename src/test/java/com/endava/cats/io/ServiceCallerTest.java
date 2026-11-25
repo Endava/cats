@@ -2111,6 +2111,27 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldIgnoreUnresolvedOrSentinelValuesWhenRegisteringSensitiveFields() {
+        reportingArguments.resetSensitiveData();
+
+        serviceCaller.registerSensitiveFieldIfPresent("secret", "$$MISSING", "not_found_$$MISSING");
+        serviceCaller.registerSensitiveFieldIfPresent("removed", "$$REM", ServiceCaller.CATS_REMOVE_FIELD);
+        serviceCaller.registerSensitiveFieldIfPresent("blank", "$$EMPTY", "   ");
+        serviceCaller.registerSensitiveFieldIfPresent("valid", "Bearer $$TOKEN", "Bearer real-tok");
+
+        Assertions.assertThat(reportingArguments.getRuntimeSensitiveFields())
+                .hasSize(1)
+                .first()
+                .satisfies(field -> {
+                    Assertions.assertThat(field.fieldPath()).isEqualTo("valid");
+                    Assertions.assertThat(field.variableName()).isEqualTo("TOKEN");
+                    Assertions.assertThat(field.secretValue()).isEqualTo("Bearer real-tok");
+                    Assertions.assertThat(field.rawTemplate()).isEqualTo("Bearer $$TOKEN");
+                });
+        reportingArguments.resetSensitiveData();
+    }
+
+    @Test
     void shouldNotWaitWhenRetryAfterExceedsCap() {
         ReflectionTestUtils.setField(apiArguments, "maxRetryAfterInSec", 30);
         wireMockServer.stubFor(WireMock.get(WireMock.urlEqualTo("/rate-limited-over-cap"))

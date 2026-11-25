@@ -12,7 +12,9 @@ import picocli.CommandLine;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -89,17 +91,47 @@ public class ReportingArguments {
             description = "Sets the verbosity of the console logging. If set to @|bold summary|@ CATS will only output a simple progress per path. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Verbosity verbosity = Verbosity.SUMMARY;
 
+    @CommandLine.Option(names = {"--mask"},
+            description = "A list of headers, query parameters, or request/response body fields to mask when logging into console or in report files. " +
+                    "Supports leaf names (@|bold password|@) and nested dot/@|bold #|@ paths (@|bold credentials.clientSecret|@). " +
+                    "Request values are replaced with @|underline $$name|@ so test cases can be replayed with environment variables; response values are replaced with @|underline [REDACTED]|@", split = ",")
+    private Set<String> mask;
+
     @CommandLine.Option(names = {"--maskHeaders"},
-            description = "A list of headers to mask when logging into console or in report files. Headers will be replaced with @|underline $$headerName|@ so that test cases can be replayed with environment variables", split = ",")
+            description = "A list of HTTP headers to mask when logging into console or in report files. Headers will be replaced with @|underline $$headerName|@ so that test cases can be replayed with environment variables", split = ",")
     private Set<String> maskHeaders;
 
+    @CommandLine.Option(names = {"--maskFields"},
+            description = "A list of request/response body fields to mask when logging into console or in report files (does not mask HTTP headers). " +
+                    "Supports leaf names (@|bold password|@) and nested dot/@|bold #|@ paths (@|bold credentials.clientSecret|@). " +
+                    "Request values are replaced with @|underline $$name|@ so test cases can be replayed with environment variables; response values are replaced with @|underline [REDACTED]|@", split = ",")
+    private Set<String> maskFields;
+
     @CommandLine.Option(names = {"--showSecrets"},
-            description = "Disable automatic masking of sensitive headers and query parameters")
+            description = "Disable automatic masking of sensitive headers, query parameters, and reference data fields")
     private boolean showSecrets;
 
     private final Set<String> runtimeSensitiveHeaders = new HashSet<>();
     private final Set<String> runtimeSensitiveQueryParams = new HashSet<>();
+    private final Map<SensitiveFieldKey, RuntimeSensitiveField> runtimeSensitiveFields = new LinkedHashMap<>();
     private final Set<String> replayEnvironmentVariables = new HashSet<>();
+
+    private record SensitiveFieldKey(String fieldPath, String rawTemplate) {
+    }
+
+    /**
+     * Tracks a request/response body field populated from an environment variable placeholder ({@code $$VAR}).
+     *
+     * @param fieldPath    the normalized field path
+     * @param variableName the primary environment variable name
+     * @param secretValue  the resolved secret value
+     * @param rawTemplate  the original template containing one or more {@code $$VAR} placeholders
+     */
+    public record RuntimeSensitiveField(String fieldPath, String variableName, String secretValue, String rawTemplate) {
+        public RuntimeSensitiveField(String fieldPath, String variableName, String secretValue) {
+            this(fieldPath, variableName, secretValue, SensitiveDataPolicy.placeholder(variableName));
+        }
+    }
 
     @CommandLine.Option(names = {"--printProgress"},
             description = "If set to true, it will print any URLs matching the given match arguments.  Default: @|bold,underline ${DEFAULT-VALUE}|@")
@@ -195,22 +227,49 @@ public class ReportingArguments {
      * @return the masked headers list
      */
     public Set<String> getMaskedHeaders() {
-        Set<String> result = new HashSet<>(Optional.ofNullable(maskHeaders).orElse(Collections.emptySet()));
+        Set<String> result = new HashSet<>(getExplicitHeaderMasks());
         if (!showSecrets) {
             result.addAll(runtimeSensitiveHeaders);
         }
         return Set.copyOf(result);
     }
 
+    public Set<String> getExplicitHeaderMasks() {
+        Set<String> result = new HashSet<>();
+        addTrimmed(result, mask);
+        addTrimmed(result, maskHeaders);
+        return Set.copyOf(result);
+    }
+
+    public Set<String> getExplicitQueryMasks() {
+        Set<String> result = new HashSet<>();
+        addTrimmed(result, mask);
+        return Set.copyOf(result);
+    }
+
+    public Set<String> getExplicitFieldMasks() {
+        Set<String> result = new HashSet<>();
+        addTrimmed(result, mask);
+        addTrimmed(result, maskFields);
+        return Set.copyOf(result);
+    }
+
+    private static void addTrimmed(Set<String> target, Set<String> source) {
+        Optional.ofNullable(source).orElse(Collections.emptySet()).stream()
+                .filter(entry -> entry != null && !entry.isBlank())
+                .map(String::trim)
+                .forEach(target::add);
+    }
+
     public boolean shouldMaskHeader(String header) {
         boolean runtimeSensitive = !showSecrets && runtimeSensitiveHeaders.stream()
                 .anyMatch(runtimeHeader -> runtimeHeader.equalsIgnoreCase(header));
-        return runtimeSensitive || SensitiveDataPolicy.isSensitiveHeader(header,
-                Optional.ofNullable(maskHeaders).orElse(Collections.emptySet()), showSecrets);
+        return runtimeSensitive || SensitiveDataPolicy.isSensitiveHeader(header, getExplicitHeaderMasks(), showSecrets);
     }
 
     public boolean shouldMaskQueryParam(String queryParam) {
-        return !showSecrets && SensitiveDataPolicy.isSensitiveQueryParam(queryParam, runtimeSensitiveQueryParams, false);
+        boolean explicitlyMasked = SensitiveDataPolicy.isExplicitlyConfigured(queryParam, getExplicitQueryMasks());
+        return explicitlyMasked || (!showSecrets && SensitiveDataPolicy.isSensitiveQueryParam(queryParam, runtimeSensitiveQueryParams, false));
     }
 
     public void registerSensitiveHeaders(Set<String> headers) {
@@ -219,6 +278,29 @@ public class ReportingArguments {
 
     public void registerSensitiveQueryParams(Set<String> queryParams) {
         runtimeSensitiveQueryParams.addAll(Optional.ofNullable(queryParams).orElseGet(Set::of));
+    }
+
+    public void registerSensitiveField(String fieldPath, String variableName, String secretValue) {
+        registerSensitiveField(fieldPath, variableName, secretValue, SensitiveDataPolicy.placeholder(variableName));
+    }
+
+    public void registerSensitiveField(String fieldPath, String variableName, String secretValue, String rawTemplate) {
+        if (fieldPath == null || fieldPath.isBlank() || variableName == null || variableName.isBlank()
+                || secretValue == null || secretValue.isBlank()) {
+            return;
+        }
+        String normalized = SensitiveDataPolicy.normalizeFieldPath(fieldPath);
+        if (normalized.isEmpty()) {
+            return;
+        }
+        String template = (rawTemplate == null || rawTemplate.isBlank())
+                ? SensitiveDataPolicy.placeholder(variableName) : rawTemplate;
+        runtimeSensitiveFields.put(new SensitiveFieldKey(normalized, template),
+                new RuntimeSensitiveField(normalized, variableName, secretValue, template));
+    }
+
+    public List<RuntimeSensitiveField> getRuntimeSensitiveFields() {
+        return List.copyOf(runtimeSensitiveFields.values());
     }
 
     public void registerReplayEnvironmentVariable(String variable) {
@@ -232,6 +314,7 @@ public class ReportingArguments {
     public void resetSensitiveData() {
         runtimeSensitiveHeaders.clear();
         runtimeSensitiveQueryParams.clear();
+        runtimeSensitiveFields.clear();
         replayEnvironmentVariables.clear();
     }
 

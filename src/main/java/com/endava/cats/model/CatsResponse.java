@@ -22,7 +22,7 @@ import java.util.Optional;
 /**
  * Model class used to hold http response details.
  */
-@Builder
+@Builder(toBuilder = true)
 @Getter
 public class CatsResponse {
     private static final String UNKNOWN_MEDIA_TYPE = "unknown/unknown";
@@ -58,25 +58,23 @@ public class CatsResponse {
      * @return a new {@link CatsResponse} flagged as rate-limited
      */
     public CatsResponse withRateLimited(int retries) {
-        return CatsResponse.builder()
-                .responseCode(this.responseCode)
-                .httpMethod(this.httpMethod)
-                .responseTimeInMs(this.responseTimeInMs)
-                .numberOfWordsInResponse(this.numberOfWordsInResponse)
-                .numberOfLinesInResponse(this.numberOfLinesInResponse)
-                .contentLengthInBytes(this.contentLengthInBytes)
-                .capturedBodyBytes(this.capturedBodyBytes)
-                .declaredContentLength(this.declaredContentLength)
-                .responseBodyLimit(this.responseBodyLimit)
-                .bodyTruncated(this.bodyTruncated)
-                .jsonBody(this.jsonBody)
-                .headers(this.headers)
-                .responseContentType(this.responseContentType)
-                .path(this.path)
-                .body(this.body)
-                .responseValidationField(this.responseValidationField)
+        return this.toBuilder()
                 .rateLimited(true)
                 .rateLimitRetries(retries)
+                .build();
+    }
+
+    /**
+     * Returns a copy of this response with its body and parsed JSON body replaced by sanitized values.
+     *
+     * @param sanitizedBody     the redacted response body string
+     * @param sanitizedJsonBody the redacted parsed JSON element
+     * @return a new {@link CatsResponse} carrying the sanitized body
+     */
+    public CatsResponse withSanitizedBody(String sanitizedBody, JsonElement sanitizedJsonBody) {
+        return this.toBuilder()
+                .body(sanitizedBody)
+                .jsonBody(sanitizedJsonBody)
                 .build();
     }
 

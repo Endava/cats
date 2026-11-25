@@ -37,7 +37,7 @@ public final class HeaderPresentation {
     }
 
     private boolean shouldMask(KeyValuePair<String, ?> header, boolean publicProbe) {
-        return SensitiveDataPolicy.isSensitiveHeader(header.getKey(), arguments.getMaskHeaders(), true)
+        return SensitiveDataPolicy.isSensitiveHeader(header.getKey(), arguments.getExplicitHeaderMasks(), true)
                 || (arguments.shouldMaskHeader(header.getKey()) && !publicProbe);
     }
 
@@ -51,11 +51,26 @@ public final class HeaderPresentation {
                 .map(header -> new KeyValuePair<>(header.getKey(), responseValue(header))).toList();
     }
 
+    public String requestPayload(CatsTestCase testCase) {
+        return SensitiveDataPolicy.maskRequestPayload(testCase, arguments);
+    }
+
+    public String responseBody(CatsResponse response) {
+        return SensitiveDataPolicy.maskResponsePayload(response, arguments);
+    }
+
     /** Uses the same shell quoting as replay and triage, with the report's effective URL. */
     public String curl(CatsTestCase testCase) {
         CatsRequest source = request(testCase);
-        return source.toBuilder().headers(requestHeaders(testCase))
-                .url(Optional.ofNullable(testCase.getFullRequestPath()).orElse(source.getUrl())).build().toCurlCommand();
+        String maskedPayload = requestPayload(testCase);
+        boolean payloadMasked = !java.util.Objects.equals(source.getPayload(), maskedPayload);
+        return source.toBuilder()
+                .headers(requestHeaders(testCase))
+                .payload(maskedPayload)
+                .encodedBody(payloadMasked ? null : source.getEncodedBody())
+                .url(Optional.ofNullable(testCase.getFullRequestPath()).orElse(source.getUrl()))
+                .build()
+                .toCurlCommand();
     }
 
     private static CatsRequest request(CatsTestCase testCase) {

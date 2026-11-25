@@ -158,7 +158,7 @@ After fixing a server bug or updating headers, verify all problem occurrences ag
 export Authorization='Bearer eyJ...'
 cats triage -r cats-report --verify -s <server_url> -j
 ```
-- Reports mask sensitive headers and query params as **`$$<HeaderNameWithOnlyAlphanumerics>`** (e.g. `Authorization` → `$$Authorization`, `X-API-Key` → `$$XAPIKey`), whatever env var you originally used. Export a variable with exactly that name, or override the header with `-H 'Authorization=Bearer eyJ...'`.
+- Reports mask sensitive headers as **`$$<HeaderNameWithOnlyAlphanumerics>`** (e.g. `Authorization` → `$$Authorization`, `X-API-Key` → `$$XAPIKey`), sensitive query parameters as **`$$<UPPERCASE_NAME>`**, and masked/`$$ENV_VAR` request body fields as **`$$<fieldName>`** or **`$$<ENV_VAR>`** (with response values replaced by `[REDACTED]`). Export variables with those names, or override headers with `-H 'Authorization=Bearer eyJ...'` (and body fields in `cats replay` with `-R field=value`).
 - Replays **1 representative request per occurrence** as-is (no upstream producers are re-run, so IDs may be stale).
 - A successful server-error replay includes a `verificationNote` that one replay cannot rule out intermittent failures. Repeat the request under the original conditions when checking stress/gateway failures. Verification does not automatically repeat requests or change the fuzzing verdicts.
 - Marks each occurrence with `verificationStatus` and records `verifiedStatusCode` / `verificationNote`:
@@ -172,7 +172,7 @@ cats triage -r cats-report --verify -s <server_url> -j
 ## 3. Replay Individual Test Cases (`cats replay`)
 
 To inspect, replay, or export a single test case (including its upstream stateful producer chain):
-Replay resolves masked `$$<HeaderName>` placeholders from the environment / `--envFile` and fails fast if one is missing; `-H` overrides the recorded header.
+Replay resolves masked `$$<Variable>` placeholders in headers, URLs, and request bodies from the environment / `--envFile` and fails fast if one is missing; `-H` overrides recorded headers and `-R` / `--refDataParam` overrides recorded request body fields.
 ```bash
 # Replay Test 42 and Test 108 with full request/response logging
 cats replay Test42 Test108 -r cats-report -s <server_url> -H 'Authorization=Bearer eyJ...' -v

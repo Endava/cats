@@ -22,12 +22,14 @@ class LiveClusterVerifierTest {
     private HttpServer server;
     private final AtomicInteger status = new AtomicInteger(200);
     private final AtomicReference<String> receivedAuthorization = new AtomicReference<>();
+    private final AtomicReference<String> receivedBody = new AtomicReference<>();
 
     @BeforeEach
     void startServer() throws IOException {
         server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         server.createContext("/", exchange -> {
             receivedAuthorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            receivedBody.set(new String(exchange.getRequestBody().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
             exchange.sendResponseHeaders(status.get(), -1);
             exchange.close();
         });
@@ -93,6 +95,42 @@ class LiveClusterVerifierTest {
         Assertions.assertThat(missing.note()).contains("Authorization");
         Assertions.assertThat(overridden.status()).isEqualTo(LiveClusterVerifier.FIXED);
         Assertions.assertThat(receivedAuthorization.get()).isEqualTo("Bearer cli");
+    }
+
+    @Test
+    void shouldResolveMaskedBodyValuesAndReportMissingBodyVariablesAsInconclusive() {
+        TriageTestCase maskedBody = TriageFixtures.testCase(8, """
+                {"testId": "Test 8", "result": "error", "expectedResult": "Should return [2XX]", "contractPath": "/login",
+                 "request": {"httpMethod": "POST", "url": "http://localhost:8080/login", "sendBody": true,
+                   "payload": "{\\"password\\":\\"$$LOGIN_PWD\\"}", "headers": []},
+                 "response": {"responseCode": 500}}
+                """);
+
+        LiveClusterVerifier.Verification missing = verifier(Map.of(), _ -> null)
+                .verify(classification("SERVER_CRASH_5XX", true), maskedBody);
+        LiveClusterVerifier.Verification resolved = verifier(Map.of(), name -> "LOGIN_PWD".equals(name) ? "s3cr3t" : null)
+                .verify(classification("SERVER_CRASH_5XX", true), maskedBody);
+
+        Assertions.assertThat(missing.status()).isEqualTo(LiveClusterVerifier.INCONCLUSIVE);
+        Assertions.assertThat(missing.note()).contains("LOGIN_PWD");
+        Assertions.assertThat(resolved.status()).isEqualTo(LiveClusterVerifier.FIXED);
+        Assertions.assertThat(receivedBody.get()).isEqualTo("{\"password\":\"s3cr3t\"}");
+    }
+
+    @Test
+    void shouldJsonEscapeResolvedBodySecretsAndIgnoreNumericDoubleDollarLiterals() {
+        TriageTestCase escapedBody = TriageFixtures.testCase(9, """
+                {"testId": "Test 9", "result": "error", "expectedResult": "Should return [2XX]", "contractPath": "/login",
+                 "request": {"httpMethod": "POST", "url": "http://localhost:8080/login", "sendBody": true,
+                   "payload": "{\\"password\\":\\"$$LOGIN_PWD\\",\\"price\\":\\"$$100\\"}", "headers": []},
+                 "response": {"responseCode": 500}}
+                """);
+
+        LiveClusterVerifier.Verification resolved = verifier(Map.of(), name -> "LOGIN_PWD".equals(name) ? "p@ss\"w\\rd" : null)
+                .verify(classification("SERVER_CRASH_5XX", true), escapedBody);
+
+        Assertions.assertThat(resolved.status()).isEqualTo(LiveClusterVerifier.FIXED);
+        Assertions.assertThat(receivedBody.get()).isEqualTo("{\"password\":\"p@ss\\\"w\\\\rd\",\"price\":\"$$100\"}");
     }
 
     @Test

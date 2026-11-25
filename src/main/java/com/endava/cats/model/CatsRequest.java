@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 @Setter
 @Builder(toBuilder = true)
 public class CatsRequest {
-    private static final Pattern MASKED_PLACEHOLDER = Pattern.compile("\\$\\$(\\w+)");
+    private static final Pattern MASKED_PLACEHOLDER = Pattern.compile("\\$\\$([A-Za-z_]\\w*)");
 
     List<KeyValuePair<String, Object>> headers;
     String payload;

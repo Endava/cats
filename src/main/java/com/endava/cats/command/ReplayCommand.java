@@ -5,6 +5,7 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.impl.EnvVariableParser;
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.fuzzer.special.FieldCorrelationEvaluator;
 import com.endava.cats.fuzzer.special.FunctionalFlowFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -17,6 +18,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
+import com.endava.cats.util.SensitiveDataPolicy;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -73,7 +75,7 @@ import java.util.stream.Stream;
         versionProvider = VersionProvider.class)
 @Unremovable
 public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
-    private static final Pattern ENV_PLACEHOLDER = Pattern.compile("\\$\\$\\w+");
+    private static final Pattern ENV_PLACEHOLDER = SensitiveDataPolicy.ENV_VAR_PATTERN;
     private static final Pattern TEST_FILE_PATTERN = Pattern.compile("^Test(\\d+)\\.json$");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
@@ -106,6 +108,10 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @CommandLine.Option(names = {"-H", "--header"},
             description = "Specifies the headers to be passed with all the re-played tests. It will override values from the replay files for the same header name")
     Map<String, Object> headersMap = new HashMap<>();
+
+    @CommandLine.Option(names = {"-R", "--refDataParam"},
+            description = "Specifies request body fields (@|bold name=value|@) to override when replaying tests")
+    Map<String, Object> refDataMap = new HashMap<>();
 
     @CommandLine.Option(names = {"-s", "--server"},
             description = "Base URL of the service. It can be used to overwrite the base URL from the initial test in order to replay it against other service instances")
@@ -250,12 +256,15 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     private void executeTestCase(String testCaseFileName, ReplayStats stats) throws IOException {
         CatsTestCase testCase = this.loadTestCaseFile(testCaseFileName);
-        this.loadHeadersIfSupplied(testCase);
-        testCase.getRequest().setUrl(resolveReplayUrl(testCase.getRequest().getUrl()));
         if (curl) {
+            this.applyCurlOverrides(testCase);
             PrettyLoggerFactory.getConsoleLogger().noFormat(buildCurlCommand(testCase.getRequest()));
             return;
         }
+        this.loadHeadersIfSupplied(testCase);
+        this.loadRefDataOverridesIfSupplied(testCase);
+        testCase.getRequest().setUrl(resolveReplayUrl(testCase.getRequest().getUrl()));
+        this.resolveRequestPayload(testCase.getRequest());
         if (stateful) {
             Path reportDir = resolveReportDirForTest(testCaseFileName);
             List<ProducerLink> producers = findUpstreamProducerLinks(testCase, reportDir);
@@ -398,7 +407,9 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
             CatsTestCase copy = copyTestCaseRequest(link.producerTest());
             copy.updateServer(server);
             loadHeadersIfSupplied(copy);
+            loadRefDataOverridesIfSupplied(copy);
             copy.getRequest().setUrl(resolveReplayUrl(copy.getRequest().getUrl()));
+            resolveRequestPayload(copy.getRequest());
             logger.info("Replaying upstream producer [{}] {} {}",
                     link.producerTest().getTestId(), copy.getRequest().getHttpMethod(), copy.getRequest().getUrl());
             CatsResponse liveResp = invokeServiceSafely(copy.getRequest());
@@ -585,19 +596,80 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         testCaseListener.writeIndividualTestCase(catsTestCase);
     }
 
+    private void applyCurlOverrides(CatsTestCase testCase) {
+        mergeHeadersIfSupplied(testCase, false);
+        applyRefDataOverrides(testCase, false);
+    }
+
     private void loadHeadersIfSupplied(CatsTestCase testCase) {
+        mergeHeadersIfSupplied(testCase, true);
+    }
+
+    private void mergeHeadersIfSupplied(CatsTestCase testCase, boolean resolveEnvValues) {
         List<KeyValuePair<String, Object>> headersFromFile = new ArrayList<>(Optional.ofNullable(testCase.getRequest().getHeaders()).orElse(Collections.emptyList()));
         headersFromFile.removeIf(header -> headersMap.containsKey(header.getKey()));
         headersFromFile.addAll(headersMap.entrySet().stream().map(entry -> new KeyValuePair<>(entry.getKey(), entry.getValue())).toList());
-        headersFromFile.forEach(header -> header.setValue(resolveReplayValue(header.getValue().toString(), "header " + header.getKey())));
+        if (resolveEnvValues) {
+            headersFromFile.forEach(header -> header.setValue(resolveReplayValue(header.getValue().toString(), "header " + header.getKey())));
+        }
         testCase.getRequest().setHeaders(headersFromFile);
     }
 
+    private void loadRefDataOverridesIfSupplied(CatsTestCase testCase) {
+        applyRefDataOverrides(testCase, true);
+    }
+
+    private void applyRefDataOverrides(CatsTestCase testCase, boolean resolveEnvValues) {
+        if (refDataMap == null || refDataMap.isEmpty() || testCase.getRequest() == null) {
+            return;
+        }
+        String payload = testCase.getRequest().getPayload();
+        if (StringUtils.isBlank(payload)) {
+            return;
+        }
+        String updated = payload;
+        for (Map.Entry<String, Object> entry : refDataMap.entrySet()) {
+            String rawValue = String.valueOf(entry.getValue());
+            String resolved = resolveEnvValues ? resolveReplayValue(rawValue, "field " + entry.getKey()) : rawValue;
+            updated = applySingleRefDataOverride(updated, entry.getKey(), resolved);
+        }
+        if (!Objects.equals(payload, updated)) {
+            testCase.getRequest().setPayload(updated);
+            testCase.getRequest().setEncodedBody(null);
+        }
+    }
+
+    private static String applySingleRefDataOverride(String payload, String fieldKey, String resolved) {
+        String normalizedKey = FieldCorrelationEvaluator.normalizeFieldPath(fieldKey);
+        if (JsonUtils.isValidJson(payload) && JsonUtils.isFieldInJson(payload, normalizedKey)) {
+            return CatsUtil.justReplaceField(payload, normalizedKey, resolved).json();
+        }
+        return SensitiveDataPolicy.overrideMaskedPayloadField(payload, fieldKey, resolved);
+    }
+
+    private void resolveRequestPayload(CatsRequest request) {
+        String original = request.getPayload();
+        String resolved = resolveReplayPayload(original);
+        if (!Objects.equals(original, resolved)) {
+            request.setPayload(resolved);
+            request.setEncodedBody(null);
+        }
+    }
+
     private String resolveReplayUrl(String url) {
-        Matcher matcher = ENV_PLACEHOLDER.matcher(url);
+        return resolveReplayPlaceholders(url, "request URL");
+    }
+
+    private String resolveReplayPayload(String payload) {
+        return SensitiveDataPolicy.resolvePayloadPlaceholders(payload,
+                varName -> resolveReplayValue(SensitiveDataPolicy.placeholder(varName), "request body"));
+    }
+
+    private String resolveReplayPlaceholders(String text, String source) {
+        Matcher matcher = ENV_PLACEHOLDER.matcher(text);
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
-            matcher.appendReplacement(result, Matcher.quoteReplacement(resolveReplayValue(matcher.group(), "request URL")));
+            matcher.appendReplacement(result, Matcher.quoteReplacement(resolveReplayValue(matcher.group(), source)));
         }
         matcher.appendTail(result);
         return result.toString();
@@ -608,7 +680,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         if (EnvVariableParser.isMissing(resolved)) {
             String variable = EnvVariableParser.variableName(value.substring(value.indexOf("$$")));
             throw new CatsException("Missing environment variable '" + variable + "' required by replay " + source
-                    + ". Set it in the process environment, provide --envFile, or override the header with -H");
+                    + ". Set it in the process environment, provide --envFile, or override it with -H / -R");
         }
         return resolved;
     }

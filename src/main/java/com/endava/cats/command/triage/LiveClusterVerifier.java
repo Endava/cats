@@ -4,6 +4,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.util.KeyValuePair;
+import com.endava.cats.util.SensitiveDataPolicy;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -38,7 +39,7 @@ final class LiveClusterVerifier {
     static final String FIXED = "FIXED";
     static final String STILL_FAILING = "STILL_FAILING";
     static final String INCONCLUSIVE = "INCONCLUSIVE";
-    private static final Pattern ENV_PLACEHOLDER = Pattern.compile("\\$\\$(\\w+)");
+    private static final Pattern ENV_PLACEHOLDER = SensitiveDataPolicy.ENV_VAR_PATTERN;
     private static final String DEFAULT_CONTENT_TYPE = "application/json";
 
     /**
@@ -79,13 +80,14 @@ final class LiveClusterVerifier {
         }
         CatsRequest request = representative.testCase().getRequest();
         ResolvedText url = resolveEnv(StringUtils.defaultIfBlank(request.getUrl(), representative.testCase().getFullRequestPath()));
+        ResolvedText payload = resolvePayloadEnv(request.getPayload());
         Map<String, ResolvedText> headers = resolvedHeaders(request);
-        Set<String> missing = missingVariables(url, headers);
+        Set<String> missing = missingVariables(url, payload, headers);
         if (!missing.isEmpty()) {
-            return Verification.inconclusive(null, "Missing environment variable(s) %s required by masked report values; export them or pass -H."
+            return Verification.inconclusive(null, "Missing environment variable(s) %s required by masked report values; export them (or pass -H for headers)."
                     .formatted(String.join(", ", missing)));
         }
-        int code = execute(request, resolveTargetUrl(url.value()), headers);
+        int code = execute(request, resolveTargetUrl(url.value()), payload.value(), headers);
         return judge(classification, representative, code);
     }
 
@@ -148,10 +150,23 @@ final class LiveClusterVerifier {
         return headerOverrides.keySet().stream().anyMatch(name -> name.equalsIgnoreCase(header.getKey()));
     }
 
-    private static Set<String> missingVariables(ResolvedText url, Map<String, ResolvedText> headers) {
+    private static Set<String> missingVariables(ResolvedText url, ResolvedText payload, Map<String, ResolvedText> headers) {
         Set<String> missing = new LinkedHashSet<>(url.missingVariables());
+        missing.addAll(payload.missingVariables());
         headers.values().forEach(header -> missing.addAll(header.missingVariables()));
         return missing;
+    }
+
+    private ResolvedText resolvePayloadEnv(String payload) {
+        Set<String> missing = new LinkedHashSet<>();
+        String resolved = SensitiveDataPolicy.resolvePayloadPlaceholders(payload, varName -> {
+            String value = environment.apply(varName);
+            if (value == null) {
+                missing.add(varName);
+            }
+            return value;
+        });
+        return new ResolvedText(StringUtils.defaultString(resolved), Set.copyOf(missing));
     }
 
     /**
@@ -172,13 +187,13 @@ final class LiveClusterVerifier {
         return new ResolvedText(result.toString(), Set.copyOf(missing));
     }
 
-    private int execute(CatsRequest request, String url, Map<String, ResolvedText> headers) {
+    private int execute(CatsRequest request, String url, String payload, Map<String, ResolvedText> headers) {
         try {
             Headers.Builder headersBuilder = new Headers.Builder();
             headers.forEach((name, value) -> headersBuilder.set(name, value.value()));
             String method = StringUtils.defaultIfBlank(request.getHttpMethod(), "GET").toUpperCase(Locale.ROOT);
             Request httpRequest = new Request.Builder().url(url).headers(headersBuilder.build())
-                    .method(method, body(request, method, contentType(headers))).build();
+                    .method(method, body(request, payload, method, contentType(headers))).build();
             try (Response response = client.newCall(httpRequest).execute()) {
                 return response.code();
             }
@@ -195,13 +210,13 @@ final class LiveClusterVerifier {
                 .orElse(DEFAULT_CONTENT_TYPE);
     }
 
-    private static RequestBody body(CatsRequest request, String method, String contentType) {
+    private static RequestBody body(CatsRequest request, String payload, String method, String contentType) {
         boolean bodyAllowed = !"GET".equals(method) && !"HEAD".equals(method);
         if (!HttpMethod.requiresBody(method) && !(request.isSendBody() && bodyAllowed)) {
             return null;
         }
         MediaType mediaType = Optional.ofNullable(MediaType.parse(contentType)).orElse(MediaType.get(DEFAULT_CONTENT_TYPE));
-        return RequestBody.create(StringUtils.defaultString(request.getPayload()).getBytes(StandardCharsets.UTF_8), mediaType);
+        return RequestBody.create(StringUtils.defaultString(payload).getBytes(StandardCharsets.UTF_8), mediaType);
     }
 
     /**

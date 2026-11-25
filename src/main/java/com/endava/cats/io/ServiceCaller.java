@@ -11,6 +11,7 @@ import com.endava.cats.auth.session.SessionHealthMonitor;
 import com.endava.cats.auth.wfc.WfcAuthProvider;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.api.Parser;
+import com.endava.cats.dsl.impl.EnvVariableParser;
 import com.endava.cats.exception.CatsExecutionCancelledException;
 import com.endava.cats.fuzzer.special.FieldCorrelationEvaluator;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FieldCorrelationRule;
@@ -273,7 +274,7 @@ public class ServiceCaller {
         this.recordEffectiveRuntimeCorrelations(resolvedRequest.correlations(), payloadBeforeCorrelations, processedPayload);
         EncodedRequestBody encodedBody = this.encodeRequestBody(processedPayload, data);
         processedPayload = encodedBody.payload();
-        logger.debug("Payload replaced with ref data: {}", processedPayload);
+        logger.debug("Payload replaced with ref data: {}", SensitiveDataPolicy.maskPayloadForDisplay(processedPayload, reportingArguments));
 
         List<KeyValuePair<String, Object>> headers = this.buildHeaders(data, encodedBody.contentType());
         RuntimeResourcePool.ResolvedHeaders resolvedHeaders = this.enrichHeadersWithRuntimeResources(data, headers,
@@ -300,8 +301,8 @@ public class ServiceCaller {
             this.recordRequest(catsRequest);
 
             logger.note("Final list of request headers: {}", SensitiveDataPolicy.maskHeadersForDisplay(headers, reportingArguments));
-            logger.note("Final payload: {}", processedPayload);
-            logger.note("Final url: {}", SensitiveDataPolicy.maskUrl(url, reportingArguments));
+            logger.note("Final payload: {}", SensitiveDataPolicy.maskPayloadForDisplay(processedPayload, reportingArguments));
+            logger.note("Final url: {}", SensitiveDataPolicy.maskUrlForDisplay(url, reportingArguments));
 
             startTime = System.currentTimeMillis();
             CatsResponse response = this.callService(catsRequest, data.getResponseValidationFields());
@@ -534,7 +535,7 @@ public class ServiceCaller {
 
     private String constructUrl(ServiceData data, String processedPayload, String pathParamsPayload) {
         String decodedUrl = CatsUtil.unescapeCurlyBrackets(apiArguments.getServer() + data.getRelativePath());
-        logger.debug("Decoded URL: {}", SensitiveDataPolicy.maskUrl(decodedUrl, reportingArguments));
+        logger.debug("Decoded URL: {}", SensitiveDataPolicy.maskUrlForDisplay(decodedUrl, reportingArguments));
         if (!data.isReplaceUrlParams()) {
             String actualUrl = this.replacePathParams(decodedUrl, processedPayload, data);
             return this.addWfcAuthQueryParams(this.replaceRemovedParams(actualUrl), data);
@@ -554,7 +555,7 @@ public class ServiceCaller {
         }
         url = this.addAdditionalQueryParams(url, data);
         url = this.addWfcAuthQueryParams(url, data);
-        logger.debug("Replaced URL: {}", SensitiveDataPolicy.maskUrl(url, reportingArguments));
+        logger.debug("Replaced URL: {}", SensitiveDataPolicy.maskUrlForDisplay(url, reportingArguments));
         return url;
     }
 
@@ -853,7 +854,7 @@ public class ServiceCaller {
         int numberOfWords = new StringTokenizer(rawResponse).countTokens();
         int numberOfLines = rawResponse.split("[\r|\n]").length;
 
-        logger.debug("Raw response body: {}", rawResponse);
+        logger.debug("Raw response body: {}", SensitiveDataPolicy.maskResponseBodyForDisplay(rawResponse, reportingArguments));
         logger.debug("Raw response headers: {}", SensitiveDataPolicy.maskHeadersForDisplay(responseHeaders, reportingArguments));
 
         return CatsResponse.builder()
@@ -1214,7 +1215,8 @@ public class ServiceCaller {
             return initialPayload;
         } else {
             Map<String, Object> refDataForCurrentPath = resolveRefDataForOperation(data);
-            logger.debug("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
+            logger.debug("Payload reference data replacement: path {} has the following reference data: {}",
+                    data.getRelativePath(), SensitiveDataPolicy.maskFieldsForDisplay(refDataForCurrentPath, reportingArguments));
 
             Map<String, Object> refDataWithoutAdditionalProperties =
                     refDataForCurrentPath.entrySet().stream()
@@ -1233,31 +1235,46 @@ public class ServiceCaller {
 
             payload = CatsUtil.setAdditionalPropertiesToPayload(refDataForCurrentPath, payload);
 
-            logger.debug("Final payload after reference data replacement: {}", payload);
+            logger.debug("Final payload after reference data replacement: {}", SensitiveDataPolicy.maskPayloadForDisplay(payload, reportingArguments));
 
             return payload;
         }
     }
 
+    public void registerSensitiveFieldIfPresent(String fieldPath, String rawExpression, String resolvedValue) {
+        if (reportingArguments == null || StringUtils.isBlank(resolvedValue)
+                || EnvVariableParser.isMissing(resolvedValue)
+                || CATS_REMOVE_FIELD.equalsIgnoreCase(resolvedValue)
+                || SUBSTITUTE_FOR_NULL.equals(resolvedValue)) {
+            return;
+        }
+        SensitiveDataPolicy.extractEnvVariableName(rawExpression)
+                .ifPresent(envVar -> reportingArguments.registerSensitiveField(fieldPath, envVar, resolvedValue, rawExpression));
+    }
+
     private String replaceRefDataEntry(ServiceData data, Map.Entry<String, Object> entry, String payload) {
         Object refDataValue = entry.getValue();
-        if (refDataValue instanceof String str) {
-            Map<String, String> context = new HashMap<>(authArguments.getDynamicVariablesContext());
-            context.put(Parser.REQUEST, payload);
-            refDataValue = DynamicValueResolver.resolveAsTypedValue(str, context);
-        }
-        if (SUBSTITUTE_FOR_NULL.equals(String.valueOf(refDataValue))) {
-            refDataValue = null;
-        }
         String rawKey = entry.getKey();
         String targetKey = (!JsonUtils.isFieldInJson(payload, rawKey) && rawKey != null && rawKey.contains("."))
                 ? FieldCorrelationEvaluator.normalizeFieldPath(rawKey)
                 : rawKey;
+        if (refDataValue instanceof String str) {
+            Map<String, String> context = new HashMap<>(authArguments.getDynamicVariablesContext());
+            context.put(Parser.REQUEST, payload);
+            refDataValue = DynamicValueResolver.resolveAsTypedValue(str, context);
+            if (refDataValue != null) {
+                registerSensitiveFieldIfPresent(targetKey, str, String.valueOf(refDataValue));
+            }
+        }
+        if (SUBSTITUTE_FOR_NULL.equals(String.valueOf(refDataValue))) {
+            refDataValue = null;
+        }
         try {
             if (CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(refDataValue))) {
                 payload = JsonUtils.deleteNode(payload, targetKey);
             } else {
-                logger.debug("Replacing field {} with value {}", targetKey, refDataValue);
+                logger.debug("Replacing field {} with value {}", targetKey,
+                        SensitiveDataPolicy.maskFieldValueForDisplay(targetKey, refDataValue, reportingArguments));
                 FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
                 boolean mergeFuzzing = data.isFuzzedField(targetKey, RequestTarget.Location.BODY) ||
                         data.isFuzzedField(targetKey, RequestTarget.Location.PATH) ||

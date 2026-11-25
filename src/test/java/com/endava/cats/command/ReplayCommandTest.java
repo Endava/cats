@@ -109,6 +109,110 @@ class ReplayCommandTest {
     }
 
     @Test
+    void shouldResolveMaskedBodyPlaceholdersAndApplyRefDataOverridesDuringReplay() throws Exception {
+        CatsTestCase testCase = new CatsTestCase();
+        testCase.setResult("error");
+        testCase.setRequest(CatsRequest.builder()
+                .httpMethod("POST")
+                .url("http://localhost/login")
+                .payload("{\"username\":\"admin\",\"password\":\"$$USER_PWD\",\"pin\":\"$$PIN_CODE\"}")
+                .build());
+        Path file = tempDir.resolve("masked-body.json");
+        Files.writeString(file, JsonUtils.GSON.toJson(testCase));
+
+        replayCommand.tests = new String[]{file.toString()};
+        replayCommand.refDataMap = new HashMap<>(Map.of("pin", "9999"));
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of("USER_PWD", "resolved-secret"));
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenReturn(CatsResponse.empty());
+
+        replayCommand.run();
+
+        ArgumentCaptor<CatsRequest> request = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(serviceCaller).callService(request.capture(), Mockito.anySet());
+        Assertions.assertThat(request.getValue().getPayload())
+                .contains("\"password\":\"resolved-secret\"")
+                .contains("\"pin\":\"9999\"")
+                .doesNotContain("$$USER_PWD", "$$PIN_CODE");
+    }
+
+    @Test
+    void shouldJsonEscapeSecretsAndAvoidPrefixCollisionAndSupportFormBodiesDuringReplay() throws Exception {
+        CatsTestCase jsonCase = new CatsTestCase();
+        jsonCase.setResult("error");
+        jsonCase.setRequest(CatsRequest.builder()
+                .httpMethod("POST")
+                .url("http://localhost/login")
+                .payload("{\"auth\":{\"password\":\"$$password\",\"passwordConfirm\":\"$$passwordConfirm\"},\"price\":\"$$100\"}")
+                .encodedBody("stale-base64")
+                .build());
+        Path jsonFile = tempDir.resolve("nested-masked-body.json");
+        Files.writeString(jsonFile, JsonUtils.GSON.toJson(jsonCase));
+
+        replayCommand.tests = new String[]{jsonFile.toString()};
+        replayCommand.refDataMap = new HashMap<>(Map.of("password", "p@ss\"1\\2"));
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext())
+                .thenReturn(Map.of("passwordConfirm", "conf\"line\n2"));
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenReturn(CatsResponse.empty());
+
+        replayCommand.run();
+
+        ArgumentCaptor<CatsRequest> jsonRequest = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(serviceCaller).callService(jsonRequest.capture(), Mockito.anySet());
+        String sentJson = jsonRequest.getValue().getPayload();
+        Assertions.assertThat(JsonUtils.isValidJson(sentJson)).isTrue();
+        Assertions.assertThat(JsonUtils.getVariableFromJson(sentJson, "auth#password")).isEqualTo("p@ss\"1\\2");
+        Assertions.assertThat(JsonUtils.getVariableFromJson(sentJson, "auth#passwordConfirm")).isEqualTo("conf\"line\n2");
+        Assertions.assertThat(JsonUtils.getVariableFromJson(sentJson, "price")).isEqualTo("$$100");
+        Assertions.assertThat(jsonRequest.getValue().getEncodedBody()).isNull();
+
+        CatsTestCase formCase = new CatsTestCase();
+        formCase.setResult("error");
+        formCase.setRequest(CatsRequest.builder()
+                .httpMethod("POST")
+                .url("http://localhost/oauth/token")
+                .payload("grant_type=client_credentials&client_secret=$$client_secret&scope=$$SCOPE_VAL")
+                .build());
+        Path formFile = tempDir.resolve("form-masked-body.json");
+        Files.writeString(formFile, JsonUtils.GSON.toJson(formCase));
+
+        Mockito.reset(serviceCaller);
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenReturn(CatsResponse.empty());
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of("SCOPE_VAL", "read write"));
+        replayCommand.tests = new String[]{formFile.toString()};
+        replayCommand.refDataMap = new HashMap<>(Map.of("client_secret", "a&b=c"));
+
+        replayCommand.run();
+
+        ArgumentCaptor<CatsRequest> formRequest = ArgumentCaptor.forClass(CatsRequest.class);
+        Mockito.verify(serviceCaller).callService(formRequest.capture(), Mockito.anySet());
+        Assertions.assertThat(formRequest.getValue().getPayload())
+                .isEqualTo("grant_type=client_credentials&client_secret=a%26b%3Dc&scope=read+write");
+    }
+
+    @Test
+    void shouldNotFailCurlModeWhenMaskedVariablesAreUnset() throws Exception {
+        CatsTestCase maskedCase = new CatsTestCase();
+        maskedCase.setResult("error");
+        maskedCase.setRequest(CatsRequest.builder()
+                .httpMethod("POST")
+                .url("http://localhost/login?api_key=$$API_KEY")
+                .headers(List.of(new KeyValuePair<>("Authorization", "$$Authorization")))
+                .payload("{\"password\":\"$$USER_PWD\"}")
+                .build());
+        Path file = tempDir.resolve("curl-masked.json");
+        Files.writeString(file, JsonUtils.GSON.toJson(maskedCase));
+
+        replayCommand.tests = new String[]{file.toString()};
+        ReflectionTestUtils.setField(replayCommand, "curl", true);
+        Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of());
+
+        replayCommand.run();
+
+        Assertions.assertThat(replayCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.OK);
+        Mockito.verifyNoInteractions(serviceCaller);
+    }
+
+    @Test
     void shouldFailReplayWhenEnvironmentVariableIsMissing() throws IOException {
         Mockito.when(replayCommand.authArguments.getDynamicVariablesContext()).thenReturn(Map.of());
 

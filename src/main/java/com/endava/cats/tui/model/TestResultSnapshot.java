@@ -64,7 +64,8 @@ public record TestResultSnapshot(String id, String traceId, String scenario, Str
                                   List<HeaderSnapshot> headers) {
         private static RequestSnapshot from(CatsTestCase testCase, HeaderPresentation headers) {
             CatsRequest source = Optional.ofNullable(testCase.getRequest()).orElseGet(CatsRequest::empty);
-            return new RequestSnapshot(source.getHttpMethod(), source.getUrl(), source.getTimestamp(), source.getPayload(),
+            return new RequestSnapshot(source.getHttpMethod(), source.getUrl(), source.getTimestamp(),
+                    headers.requestPayload(testCase),
                     snapshotHeaders(headers.requestHeaders(testCase)));
         }
     }
@@ -80,7 +81,8 @@ public record TestResultSnapshot(String id, String traceId, String scenario, Str
             CatsResponse source = Optional.ofNullable(response).orElseGet(CatsResponse::empty);
             return new ResponseSnapshot(source.getResponseCode(), source.getHttpMethod(), source.getResponseTimeInMs(),
                     source.getContentLengthInBytes(), source.getDeclaredContentLength(), source.isBodyTruncated(),
-                    source.getNumberOfWordsInResponse(), source.getNumberOfLinesInResponse(), source.getResponseContentType(), source.getBody(),
+                    source.getNumberOfWordsInResponse(), source.getNumberOfLinesInResponse(), source.getResponseContentType(),
+                    headers.responseBody(source),
                     snapshotHeaders(headers.responseHeaders(source)));
         }
     }

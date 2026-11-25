@@ -881,6 +881,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             }
         }
         String resolved = resolveStringExpression(strVal, currentPayload);
+        serviceCaller.registerSensitiveFieldIfPresent(fieldPath, strVal, resolved);
         recordVariableConsumptionForRefData(contractPath, fieldPath, strVal, resolved);
         return DynamicValueResolver.coerceScalarIfOriginalWasTyped(strVal, resolved);
     }
