@@ -98,7 +98,7 @@ class MultipartFunctionalFlowTest {
     }
 
     @BeforeEach
-    void setup() throws Exception {
+    void setup() {
         CatsRandom.initRandom(0);
         wireMockServer.resetAll();
         filesArguments = new FilesArguments();

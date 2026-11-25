@@ -1083,14 +1083,15 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
-        Map<String, Object> userSuppliedHeaders = resolveHeadersForOperation(data);
+        Map<String, Object> userSuppliedHeaders = Objects.requireNonNullElse(resolveHeadersForOperation(data), Map.of());
         logger.debug("Path {} (including ALL headers) has the following headers: {}", data.getContractPath(),
                 SensitiveDataPolicy.maskHeadersForDisplay(userSuppliedHeaders, reportingArguments));
 
         Map<String, String> headerParserContext = getHeaderParserContext(data);
         Map<String, String> suppliedHeaders = userSuppliedHeaders.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> DynamicValueResolver.resolve(String.valueOf(entry.getValue()), headerParserContext)));
+                        entry -> Objects.requireNonNullElse(
+                                DynamicValueResolver.resolve(String.valueOf(entry.getValue()), headerParserContext), "")));
 
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
             if (data.isAddUserHeaders()) {
@@ -1272,6 +1273,25 @@ public class ServiceCaller {
     private record EncodedRequestBody(String payload, String contentType, byte[] body) {
         EncodedRequestBody(String payload, String contentType) {
             this(payload, contentType, null);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof EncodedRequestBody(String otherPayload, String otherContentType, byte[] otherBody)
+                    && Objects.equals(payload, otherPayload)
+                    && Objects.equals(contentType, otherContentType)
+                    && Arrays.equals(body, otherBody);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * Objects.hash(payload, contentType) + Arrays.hashCode(body);
+        }
+
+        @Override
+        public String toString() {
+            return "EncodedRequestBody[payload=" + payload + ", contentType=" + contentType
+                    + ", body=" + Arrays.toString(body) + "]";
         }
     }
 }

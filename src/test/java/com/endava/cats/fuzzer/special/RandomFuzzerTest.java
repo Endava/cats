@@ -292,7 +292,7 @@ class RandomFuzzerTest {
         Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
         Mockito.when(data.getPath()).thenReturn("/items");
         Mockito.when(data.getHeaders()).thenReturn(Set.of(CatsHeader.from("X-Orig", "1", false, null)));
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("a", "b"));
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(new java.util.LinkedHashSet<>(List.of("b", "a")));
 
         pairedFuzzer.fuzz(data);
 

@@ -537,8 +537,10 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(posts).hasSize(1);
         FuzzingData post = posts.getFirst();
         Assertions.assertThat(post.getPayloadFormat()).isEqualTo(PayloadFormat.MULTIPART);
-        Assertions.assertThat(JsonUtils.GSON.fromJson(post.getPayload(), Map.class).keySet())
-                .contains("file", "evidenceType", "checksum");
+        Assertions.assertThat(JsonUtils.GSON.fromJson(post.getPayload(), Map.class))
+                .containsKey("file")
+                .containsKey("evidenceType")
+                .containsKey("checksum");
         Assertions.assertThat(CatsModelUtils.isBinarySchema(post.getRequestPropertyTypes().get("file"))).isTrue();
     }
 

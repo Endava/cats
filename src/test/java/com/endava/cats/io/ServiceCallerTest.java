@@ -582,7 +582,7 @@ class ServiceCallerTest {
     }
 
     @Test
-    void shouldRecordEncodedMultipartBodyAndSummaryInTheRequest() throws IOException {
+    void shouldRecordEncodedMultipartBodyAndSummaryInTheRequest() {
         wireMockServer.stubFor(WireMock.post("/multipart-recorded").willReturn(WireMock.ok("{}")));
         serviceCaller.initRateLimiter();
         serviceCaller.initHttpClient();

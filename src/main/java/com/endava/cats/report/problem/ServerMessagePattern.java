@@ -16,8 +16,8 @@ public final class ServerMessagePattern {
         if (baseline == null || target == null || baseline.isBlank() || target.isBlank()) {
             return false;
         }
-        String[] left = baseline.strip().split("\\s+");
-        String[] right = target.strip().split("\\s+");
+        String[] left = baseline.strip().split("\\s+", -1);
+        String[] right = target.strip().split("\\s+", -1);
         return left.length == right.length && IntStream.range(0, left.length)
                 .allMatch(index -> left[index].equals(right[index]) || "<*>".equals(left[index]) || "<*>".equals(right[index]));
     }

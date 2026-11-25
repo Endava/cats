@@ -168,7 +168,11 @@ public class SimpleExecutorContext {
         return expectedSpecificResponseCode;
     }
 
-    /** @return the actual code family, or a dedicated exact-code declaration used by a custom response processor */
+    /**
+     * Returns the expected response representation for reporting.
+     *
+     * @return the actual code family, or a dedicated exact-code declaration used by a custom response processor
+     */
     public ExpectedResponse getExpectedResponseForReporting() {
         return expectedResponseCode == null ? ExpectedResponse.fromCodeDeclaration(expectedSpecificResponseCode)
                 : new ExpectedResponse(expectedResponseCode.allowedResponseCodes());

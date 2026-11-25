@@ -16,12 +16,14 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -54,7 +56,7 @@ public final class MultipartEncoder {
                                 Predicate<String> isFuzzedField) {
         String boundary = BOUNDARY_PREFIX + UUID.randomUUID().toString().replace("-", "");
         Map<String, Object> fields = parseObject(payload, validJson);
-        if (fields == null || fields.isEmpty()) {
+        if (fields.isEmpty()) {
             return new Result(payload == null ? new byte[0] : payload.getBytes(StandardCharsets.UTF_8),
                     contentType(boundary), StringUtils.defaultString(payload), boundary, List.of());
         }
@@ -139,7 +141,7 @@ public final class MultipartEncoder {
 
     private static Map<String, Object> parseObject(String payload, boolean validJson) {
         if (!validJson || StringUtils.isBlank(payload)) {
-            return null;
+            return Map.of();
         }
         try {
             Object parsed = JsonUtils.getSimpleObjectMapper().readValue(payload, Object.class);
@@ -150,9 +152,9 @@ public final class MultipartEncoder {
                 return fields;
             }
         } catch (IOException _) {
-            return null;
+            return Map.of();
         }
-        return null;
+        return Map.of();
     }
 
     private static void removeNulls(Map<String, Object> map) {
@@ -243,6 +245,26 @@ public final class MultipartEncoder {
         public boolean isFile() {
             return fileName != null;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Part(String otherName, String otherFileName, String otherContentType, byte[] otherBytes)
+                    && Objects.equals(name, otherName)
+                    && Objects.equals(fileName, otherFileName)
+                    && Objects.equals(contentType, otherContentType)
+                    && Arrays.equals(bytes, otherBytes);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * Objects.hash(name, fileName, contentType) + Arrays.hashCode(bytes);
+        }
+
+        @Override
+        public String toString() {
+            return "Part[name=" + name + ", fileName=" + fileName + ", contentType=" + contentType
+                    + ", bytes=" + Arrays.toString(bytes) + "]";
+        }
     }
 
     /**
@@ -255,5 +277,25 @@ public final class MultipartEncoder {
      * @param parts       the parts the body was rendered from; empty when the payload was sent as is
      */
     public record Result(byte[] body, String contentType, String summary, String boundary, List<Part> parts) {
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Result(byte[] otherBody, String otherContentType, String otherSummary, String otherBoundary, List<Part> otherParts)
+                    && Arrays.equals(body, otherBody)
+                    && Objects.equals(contentType, otherContentType)
+                    && Objects.equals(summary, otherSummary)
+                    && Objects.equals(boundary, otherBoundary)
+                    && Objects.equals(parts, otherParts);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * Objects.hash(contentType, summary, boundary, parts) + Arrays.hashCode(body);
+        }
+
+        @Override
+        public String toString() {
+            return "Result[body=" + Arrays.toString(body) + ", contentType=" + contentType
+                    + ", summary=" + summary + ", boundary=" + boundary + ", parts=" + parts + "]";
+        }
     }
 }

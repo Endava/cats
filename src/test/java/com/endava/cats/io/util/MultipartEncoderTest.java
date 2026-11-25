@@ -195,9 +195,11 @@ class MultipartEncoderTest {
 
         byte[] rendered = MultipartEncoder.render("B", parts);
 
-        byte[] head = ("--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n--B\r\n"
-                + "Content-Disposition: form-data; name=\"f\"; filename=\"x.bin\"\r\n"
-                + "Content-Type: application/octet-stream\r\n\r\n").getBytes(StandardCharsets.UTF_8);
+        byte[] head = """
+                --B\r\n\
+                Content-Disposition: form-data; name="a"\r\n\r\n1\r\n--B\r\n\
+                Content-Disposition: form-data; name="f"; filename="x.bin"\r\n\
+                Content-Type: application/octet-stream\r\n\r\n""".getBytes(StandardCharsets.UTF_8);
         byte[] tail = "\r\n--B--\r\n".getBytes(StandardCharsets.UTF_8);
         byte[] expected = new byte[head.length + 2 + tail.length];
         System.arraycopy(head, 0, expected, 0, head.length);
@@ -231,9 +233,34 @@ class MultipartEncoderTest {
 
         byte[] rendered = MultipartEncoder.render("B", parts, Map.of(0, "", 1, "X-Custom: \"raw\"\r\n"));
 
-        Assertions.assertThat(new String(rendered, StandardCharsets.UTF_8)).isEqualTo(
-                "--B\r\n\r\n1\r\n--B\r\nX-Custom: \"raw\"\r\n\r\n2\r\n--B\r\n"
-                        + "Content-Disposition: form-data; name=\"c\"\r\n\r\n3\r\n--B--\r\n");
+        Assertions.assertThat(new String(rendered, StandardCharsets.UTF_8)).isEqualTo("""
+                --B\r\n\r\n1\r\n--B\r\nX-Custom: "raw"\r\n\r\n2\r\n--B\r\n\
+                Content-Disposition: form-data; name="c"\r\n\r\n3\r\n--B--\r\n""");
+    }
+
+    @Test
+    void shouldComparePartAndResultByByteArrayContents() {
+        MultipartEncoder.Part part1 = new MultipartEncoder.Part("file", "a.bin", "application/octet-stream", new byte[]{1, 2});
+        MultipartEncoder.Part part2 = new MultipartEncoder.Part("file", "a.bin", "application/octet-stream", new byte[]{1, 2});
+        MultipartEncoder.Part different = new MultipartEncoder.Part("file", "a.bin", "application/octet-stream", new byte[]{1, 3});
+
+        Assertions.assertThat(part1)
+                .isEqualTo(part2)
+                .hasSameHashCodeAs(part2)
+                .isNotEqualTo(different)
+                .isNotEqualTo("other");
+        Assertions.assertThat(part1.toString()).contains("file", "a.bin", "[1, 2]");
+
+        MultipartEncoder.Result res1 = new MultipartEncoder.Result(new byte[]{9}, "multipart/form-data; boundary=b", "{}", "b", List.of(part1));
+        MultipartEncoder.Result res2 = new MultipartEncoder.Result(new byte[]{9}, "multipart/form-data; boundary=b", "{}", "b", List.of(part2));
+        MultipartEncoder.Result resDiff = new MultipartEncoder.Result(new byte[]{8}, "multipart/form-data; boundary=b", "{}", "b", List.of(part1));
+
+        Assertions.assertThat(res1)
+                .isEqualTo(res2)
+                .hasSameHashCodeAs(res2)
+                .isNotEqualTo(resDiff)
+                .isNotEqualTo("other");
+        Assertions.assertThat(res1.toString()).contains("[9]", "boundary=b");
     }
 
     @Test

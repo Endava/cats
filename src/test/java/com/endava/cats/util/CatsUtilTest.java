@@ -94,6 +94,18 @@ class CatsUtilTest {
         Assertions.assertThat(result).contains("replaced").doesNotContain("test1", "test2", "test3");
     }
 
+    @Test
+    void shouldReplaceFieldWithListContainingMapWithSlashCharacters() {
+        String json = """
+                {"a":1,"b":"two"}
+                """;
+        List<Object> wrapped = List.of(Map.of("value", "two", "$ref", "#/"));
+
+        String result = CatsUtil.justReplaceField(json, "b", wrapped).json();
+
+        Assertions.assertThat(result).contains("\"$ref\":\"#/\"").contains("\"value\":\"two\"");
+    }
+
     @ParameterizedTest
     @CsvSource({"$[*],true", "$,true", "$.field,false", "$.field[*],false", "$.field[0],false", "$.field[1].subField[*],false"})
     void shouldTestIsRootArray(String input, boolean expected) {

@@ -20,7 +20,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -580,24 +579,32 @@ public final class FieldCorrelationEvaluator {
 
     private static Optional<Object> resolveResponseMetadata(String trimmed, String requestJson,
                                                             String responseJson, CatsResponse response) {
-        if (("responseTimeMs".equalsIgnoreCase(trimmed) || "$responseTimeMs".equalsIgnoreCase(trimmed) || "time".equalsIgnoreCase(trimmed))
-                && response != null) {
-            return Optional.of(response.getResponseTimeInMs());
-        }
-        if (("$status".equalsIgnoreCase(trimmed) || "status".equalsIgnoreCase(trimmed)) && response != null) {
-            return Optional.of(response.getResponseCode());
-        }
-        if (response != null) {
-            String clean = trimmed.startsWith("$") ? trimmed.substring(1) : trimmed;
-            if (clean.startsWith("headers.") || clean.startsWith("response.headers.")) {
-                String headerName = clean.substring(clean.lastIndexOf('.') + 1);
-                var header = response.getHeader(headerName);
-                return Optional.of(header == null || header.getValue() == null ? JsonUtils.NOT_SET : header.getValue());
-            }
+        Optional<Object> directProperty = resolveDirectResponseProperty(trimmed, response);
+        if (directProperty.isPresent()) {
+            return directProperty;
         }
         if (trimmed.toLowerCase(Locale.ROOT).startsWith("size(") && trimmed.endsWith(")")) {
             String innerField = trimmed.substring(5, trimmed.length() - 1).trim();
             return Optional.of(evaluateCollectionSize(innerField, responseJson != null ? responseJson : requestJson));
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<Object> resolveDirectResponseProperty(String trimmed, CatsResponse response) {
+        if (response == null) {
+            return Optional.empty();
+        }
+        String clean = trimmed.startsWith("$") ? trimmed.substring(1) : trimmed;
+        if ("responseTimeMs".equalsIgnoreCase(clean) || "time".equalsIgnoreCase(trimmed)) {
+            return Optional.of(response.getResponseTimeInMs());
+        }
+        if ("status".equalsIgnoreCase(clean)) {
+            return Optional.of(response.getResponseCode());
+        }
+        if (clean.startsWith("headers.") || clean.startsWith("response.headers.")) {
+            String headerName = clean.substring(clean.lastIndexOf('.') + 1);
+            var header = response.getHeader(headerName);
+            return Optional.of(header == null || header.getValue() == null ? JsonUtils.NOT_SET : header.getValue());
         }
         return Optional.empty();
     }

@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 public final class DynamicValueResolver {
     private static final ShorthandFunctionParser SHORTHAND_PARSER = new ShorthandFunctionParser();
     private static final EnvVariableParser ENV_PARSER = new EnvVariableParser();
-    private static final Pattern EMBEDDED_ENV_PLACEHOLDER = Pattern.compile("\\$\\$[A-Za-z_][A-Za-z0-9_]*");
+    private static final Pattern EMBEDDED_ENV_PLACEHOLDER = Pattern.compile("\\$\\$[A-Za-z_]\\w*");
 
     private DynamicValueResolver() {
         // Utility class.

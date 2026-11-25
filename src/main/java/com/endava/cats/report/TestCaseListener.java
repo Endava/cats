@@ -131,8 +131,7 @@ public class TestCaseListener {
     private final ResponseSchemaValidator responseSchemaValidator;
     @Inject
     NamingArguments namingArguments;
-    @Inject
-    BaselineFailureRegistry baselineFailureRegistry = new BaselineFailureRegistry();
+    final BaselineFailureRegistry baselineFailureRegistry = new BaselineFailureRegistry();
     private boolean reportingInitialized;
     private Consumer<String> beforeDeleteTestCallback;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
@@ -1038,7 +1037,7 @@ public class TestCaseListener {
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
 
-        if (ignoreArguments.isNotIgnoredResponse(catsResponse) && !isSuppressedByBlackbox(testCase)
+        if ((ignoreArguments.isNotIgnoredResponse(catsResponse) && !isSuppressedByBlackbox(testCase))
                 || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())
                 || isException(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");

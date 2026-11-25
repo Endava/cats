@@ -26,7 +26,11 @@ public record ExpectedResponse(List<String> codes) {
                 ? new ExpectedResponse(Arrays.asList(codes.split("\\s*[,|]\\s*"))) : new ExpectedResponse(List.of());
     }
 
-    /** @return the HTTP outcome category; the exact codes remain authoritative for mixed or unusual expectations */
+    /**
+     * Returns the HTTP outcome category.
+     *
+     * @return the HTTP outcome category; the exact codes remain authoritative for mixed or unusual expectations
+     */
     public Outcome outcome() {
         if (codes.isEmpty() || codes.stream().anyMatch(code -> !HTTP_CODE.matcher(code).matches())) {
             return Outcome.UNKNOWN;

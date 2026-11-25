@@ -318,6 +318,9 @@ final class ResourceRequestEnricher {
     }
 
     boolean hasExplicitValue(ServiceData data, TargetField target) {
+        if (filesArguments == null) {
+            return false;
+        }
         boolean hasRefData = FilesArguments.resolveRefData(filesArguments, data.getRelativePath(), data.getHttpMethod())
                 .keySet().stream()
                 .map(key -> key.replace('.', '#'))

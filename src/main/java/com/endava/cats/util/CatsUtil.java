@@ -133,10 +133,14 @@ public abstract class CatsUtil {
     }
 
     public static void replaceOldValueWithNewOne(String jsonPropertyForReplacement, DocumentContext jsonDocument, Object valueToSet) {
-        if (JsonUtils.isValidJson(elementToString(valueToSet))) {
-            if (areBothPropertyToReplaceAndValueToReplaceArrays(jsonPropertyForReplacement, valueToSet)) {
-                jsonPropertyForReplacement = removeArrayTermination(jsonPropertyForReplacement);
-            }
+        if (areBothPropertyToReplaceAndValueToReplaceArrays(jsonPropertyForReplacement, valueToSet)) {
+            jsonPropertyForReplacement = removeArrayTermination(jsonPropertyForReplacement);
+        }
+        if (valueToSet instanceof List<?> || valueToSet instanceof Map<?, ?>) {
+            jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
+            return;
+        }
+        if (JsonUtils.isValidJson(String.valueOf(valueToSet))) {
             try {
                 jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), JsonUtils.JSON_PERMISSIVE_PARSER.parse(String.valueOf(valueToSet)));
             } catch (ParseException e) {
@@ -195,22 +199,6 @@ public abstract class CatsUtil {
             String[] entry = values.split("=", -1);
             jsonDoc.put(JsonPath.compile(prefix), entry[0].trim(), CatsDSLParser.parseAndGetResult(entry[1].trim(), Map.of(Parser.REQUEST, jsonDoc.jsonString())));
         }
-    }
-
-    private static String elementToString(Object obj) {
-        if (obj instanceof List<?> stringList) {
-            return "[" + stringList.stream()
-                    .map(element -> {
-                        if (element instanceof Number) {
-                            return String.valueOf(element);
-                        } else {
-                            return "\"" + element + "\"";
-                        }
-                    })
-                    .collect(Collectors.joining(", ")) + "]";
-        }
-
-        return String.valueOf(obj);
     }
 
     /**

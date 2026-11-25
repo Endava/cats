@@ -40,7 +40,11 @@ public record ProblemCard(int rank, String id, String anchor, String kind, Strin
         return message == null ? title : message.expectation();
     }
 
-    /** @return a distinctive observed message for navigation, falling back to the finding when unavailable */
+    /**
+     * Returns the navigation title for this problem card.
+     *
+     * @return a distinctive observed message for navigation, falling back to the finding when unavailable
+     */
     public String navigationTitle() {
         return message == null || message.example() == null ? heading() : message.example();
     }
