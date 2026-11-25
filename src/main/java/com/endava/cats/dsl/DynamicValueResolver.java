@@ -83,14 +83,18 @@ public final class DynamicValueResolver {
             }
         }
         if (resolved.matches("-?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?") && (resolved.contains(".") || resolved.contains("e") || resolved.contains("E"))) {
-            try {
-                double parsed = Double.parseDouble(resolved);
-                return Double.isFinite(parsed) ? parsed : resolved;
-            } catch (NumberFormatException _) {
-                return resolved;
-            }
+            return coerceFiniteDouble(resolved);
         }
         return resolved;
+    }
+
+    private static Object coerceFiniteDouble(String resolved) {
+        try {
+            double parsed = Double.parseDouble(resolved);
+            return Double.isFinite(parsed) ? parsed : resolved;
+        } catch (NumberFormatException _) {
+            return resolved;
+        }
     }
 
     private static String expandEmbeddedEnvVariables(String input, Map<String, String> context) {

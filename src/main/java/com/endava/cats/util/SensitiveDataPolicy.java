@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -397,9 +398,9 @@ public final class SensitiveDataPolicy {
             return Optional.empty();
         }
         boolean mutated = requestSide && isMutatedField(fieldPath, mutatedFields);
-        Optional<RuntimeSensitiveField> runtimeMatch = !reportingArguments.isShowSecrets()
-                ? findMatchingRuntimeField(leafKey, fieldPath, currentValue, reportingArguments.getRuntimeSensitiveFields())
-                : Optional.empty();
+        Optional<RuntimeSensitiveField> runtimeMatch = reportingArguments.isShowSecrets()
+                ? Optional.empty()
+                : findMatchingRuntimeField(leafKey, fieldPath, currentValue, reportingArguments.getRuntimeSensitiveFields());
         if (runtimeMatch.isPresent()) {
             return Optional.of(applyRuntimeReplacement(runtimeMatch.get(), currentValue, reportingArguments, requestSide, registerReplayVars));
         }
@@ -567,41 +568,45 @@ public final class SensitiveDataPolicy {
     }
 
     private static boolean resolveJsonElementPlaceholders(JsonElement element, UnaryOperator<String> envLookup) {
-        if (element instanceof JsonObject obj) {
-            boolean modified = false;
-            for (String key : new ArrayList<>(obj.keySet())) {
-                JsonElement child = obj.get(key);
-                if (child instanceof JsonPrimitive primitive && primitive.isString()) {
-                    String original = primitive.getAsString();
-                    String resolved = replaceEnvTokens(original, envLookup, false);
-                    if (!Objects.equals(original, resolved)) {
-                        obj.add(key, new JsonPrimitive(resolved));
-                        modified = true;
+        boolean modified = false;
+        switch (element) {
+            case JsonObject obj -> {
+                for (String key : new ArrayList<>(obj.keySet())) {
+                    JsonElement child = obj.get(key);
+                    switch (child) {
+                        case JsonPrimitive primitive when primitive.isString() ->
+                                modified |= resolveJsonStringPlaceholder(primitive, envLookup, replacement -> obj.add(key, replacement));
+                        case null, default -> modified |= resolveJsonElementPlaceholders(child, envLookup);
                     }
-                } else {
-                    modified |= resolveJsonElementPlaceholders(child, envLookup);
                 }
             }
-            return modified;
-        }
-        if (element instanceof JsonArray arr) {
-            boolean modified = false;
-            for (int i = 0; i < arr.size(); i++) {
-                JsonElement item = arr.get(i);
-                if (item instanceof JsonPrimitive primitive && primitive.isString()) {
-                    String original = primitive.getAsString();
-                    String resolved = replaceEnvTokens(original, envLookup, false);
-                    if (!Objects.equals(original, resolved)) {
-                        arr.set(i, new JsonPrimitive(resolved));
-                        modified = true;
+            case JsonArray arr -> {
+                for (int i = 0; i < arr.size(); i++) {
+                    JsonElement item = arr.get(i);
+                    int index = i;
+                    switch (item) {
+                        case JsonPrimitive primitive when primitive.isString() ->
+                                modified |= resolveJsonStringPlaceholder(primitive, envLookup, replacement -> arr.set(index, replacement));
+                        case null, default -> modified |= resolveJsonElementPlaceholders(item, envLookup);
                     }
-                } else {
-                    modified |= resolveJsonElementPlaceholders(item, envLookup);
                 }
             }
-            return modified;
+            case null, default -> {
+                // Only strings in JSON objects and arrays can be replaced.
+            }
         }
-        return false;
+        return modified;
+    }
+
+    private static boolean resolveJsonStringPlaceholder(JsonPrimitive primitive, UnaryOperator<String> envLookup,
+                                                        Consumer<JsonPrimitive> replace) {
+        String original = primitive.getAsString();
+        String resolved = replaceEnvTokens(original, envLookup, false);
+        if (Objects.equals(original, resolved)) {
+            return false;
+        }
+        replace.accept(new JsonPrimitive(resolved));
+        return true;
     }
 
     private static String resolveFormPlaceholders(String payload, UnaryOperator<String> envLookup) {
@@ -670,40 +675,47 @@ public final class SensitiveDataPolicy {
 
     private static boolean overrideJsonElement(JsonElement element, String currentPath, String fieldKey,
                                                Pattern tokenPattern, String resolvedValue) {
-        if (element instanceof JsonObject obj) {
-            boolean modified = false;
-            for (String key : new ArrayList<>(obj.keySet())) {
-                String childPath = currentPath.isEmpty() ? key : currentPath + "#" + key;
-                JsonElement child = obj.get(key);
-                if (child instanceof JsonPrimitive primitive && primitive.isString()) {
-                    Optional<String> updated = overridePrimitiveString(childPath, primitive.getAsString(), fieldKey, tokenPattern, resolvedValue);
-                    if (updated.isPresent()) {
-                        obj.add(key, new JsonPrimitive(updated.get()));
-                        modified = true;
+        boolean modified = false;
+        switch (element) {
+            case JsonObject obj -> {
+                for (String key : new ArrayList<>(obj.keySet())) {
+                    String childPath = currentPath.isEmpty() ? key : currentPath + "#" + key;
+                    JsonElement child = obj.get(key);
+                    switch (child) {
+                        case JsonPrimitive primitive when primitive.isString() ->
+                                modified |= overrideJsonString(primitive, childPath, fieldKey, tokenPattern, resolvedValue,
+                                        replacement -> obj.add(key, replacement));
+                        case null, default -> modified |= overrideJsonElement(child, childPath, fieldKey, tokenPattern, resolvedValue);
                     }
-                } else {
-                    modified |= overrideJsonElement(child, childPath, fieldKey, tokenPattern, resolvedValue);
                 }
             }
-            return modified;
-        }
-        if (element instanceof JsonArray arr) {
-            boolean modified = false;
-            for (int i = 0; i < arr.size(); i++) {
-                JsonElement item = arr.get(i);
-                if (item instanceof JsonPrimitive primitive && primitive.isString()) {
-                    Optional<String> updated = overridePrimitiveString(currentPath, primitive.getAsString(), fieldKey, tokenPattern, resolvedValue);
-                    if (updated.isPresent()) {
-                        arr.set(i, new JsonPrimitive(updated.get()));
-                        modified = true;
+            case JsonArray arr -> {
+                for (int i = 0; i < arr.size(); i++) {
+                    JsonElement item = arr.get(i);
+                    int index = i;
+                    switch (item) {
+                        case JsonPrimitive primitive when primitive.isString() ->
+                                modified |= overrideJsonString(primitive, currentPath, fieldKey, tokenPattern, resolvedValue,
+                                        replacement -> arr.set(index, replacement));
+                        case null, default -> modified |= overrideJsonElement(item, currentPath, fieldKey, tokenPattern, resolvedValue);
                     }
-                } else {
-                    modified |= overrideJsonElement(item, currentPath, fieldKey, tokenPattern, resolvedValue);
                 }
             }
-            return modified;
+            case null, default -> {
+                // Only strings in JSON objects and arrays can be replaced.
+            }
         }
-        return false;
+        return modified;
+    }
+
+    private static boolean overrideJsonString(JsonPrimitive primitive, String path, String fieldKey, Pattern tokenPattern,
+                                              String resolvedValue, Consumer<JsonPrimitive> replace) {
+        Optional<String> updated = overridePrimitiveString(path, primitive.getAsString(), fieldKey, tokenPattern, resolvedValue);
+        if (updated.isEmpty()) {
+            return false;
+        }
+        replace.accept(new JsonPrimitive(updated.get()));
+        return true;
     }
 
     private static Optional<String> overridePrimitiveString(String fieldPath, String currentValue, String fieldKey,
@@ -724,23 +736,21 @@ public final class SensitiveDataPolicy {
         List<String> updated = new ArrayList<>(pairs.length);
         boolean modified = false;
         for (String pair : pairs) {
+            String updatedPair = pair;
             int eq = pair.indexOf('=');
             if (eq > 0) {
                 String rawKey = pair.substring(0, eq);
                 String rawVal = pair.substring(eq + 1);
                 String normalizedKey = normalizeFieldPath(decodeFormComponent(rawKey));
                 if (matchesFieldMask(normalizedKey, fieldKey)) {
-                    updated.add(rawKey + "=" + encodedValue);
+                    updatedPair = rawKey + "=" + encodedValue;
                     modified = true;
-                    continue;
-                }
-                if (tokenPattern != null && tokenPattern.matcher(rawVal).find()) {
-                    updated.add(rawKey + "=" + tokenPattern.matcher(rawVal).replaceAll(Matcher.quoteReplacement(encodedValue)));
+                } else if (tokenPattern != null && tokenPattern.matcher(rawVal).find()) {
+                    updatedPair = rawKey + "=" + tokenPattern.matcher(rawVal).replaceAll(Matcher.quoteReplacement(encodedValue));
                     modified = true;
-                    continue;
                 }
             }
-            updated.add(pair);
+            updated.add(updatedPair);
         }
         return modified ? String.join("&", updated) : payload;
     }

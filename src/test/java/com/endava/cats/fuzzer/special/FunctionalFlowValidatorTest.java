@@ -11,6 +11,7 @@ import java.util.Map;
 
 @QuarkusTest
 class FunctionalFlowValidatorTest {
+    private static final Map<String, String> NO_ENVIRONMENT_VARIABLES = Map.of();
 
     @Test
     void shouldAcceptValidFlowWithGlobalsEnvForEachSavesStepRefsAndSecurityPayloads() {
@@ -66,7 +67,8 @@ class FunctionalFlowValidatorTest {
                       card: "${missingCard}"
                 """);
 
-        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(doc, doc.steps(), Map.of()))
+        List<FunctionalFlowStep> steps = doc.steps();
+        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(doc, steps, NO_ENVIRONMENT_VARIABLES))
                 .isInstanceOf(CatsException.class)
                 .hasMessageContaining("Variable 'brokenGlobal' references undefined variable '${missingGlobal}'")
                 .hasMessageContaining("Step 'auth01' references undefined variable '${missingPathVar}'")
@@ -93,7 +95,7 @@ class FunctionalFlowValidatorTest {
                 .filter(s -> s.matchesTags(List.of("adapter"), List.of()))
                 .toList();
 
-        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(doc, adapterOnly, Map.of()))
+        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(doc, adapterOnly, NO_ENVIRONMENT_VARIABLES))
                 .isInstanceOf(CatsException.class)
                 .hasMessageContaining("Step 'cap01Capture' requires variable '${authReference}'")
                 .hasMessageContaining("saved by step 'auth01Authorize'")
@@ -122,7 +124,7 @@ class FunctionalFlowValidatorTest {
                 .filter(s -> s.matchesTags(List.of("adapter"), List.of()))
                 .toList();
 
-        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(doc, adapterOnly, Map.of()))
+        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(doc, adapterOnly, NO_ENVIRONMENT_VARIABLES))
                 .isInstanceOf(CatsException.class)
                 .hasMessageContaining("references 'steps.auth01Authorize' from step 'auth01Authorize' which was excluded")
                 .hasMessageContaining("references '$prev', but preceding step 'auth01Authorize' was excluded");
@@ -143,7 +145,8 @@ class FunctionalFlowValidatorTest {
                       laterId: id
                 """);
 
-        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(doc, doc.steps(), Map.of()))
+        List<FunctionalFlowStep> steps = doc.steps();
+        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(doc, steps, NO_ENVIRONMENT_VARIABLES))
                 .isInstanceOf(CatsException.class)
                 .hasMessageContaining("uses variable '${laterId}' before it is saved by later step 'secondStep'")
                 .hasMessageContaining("references '$prev' but no preceding step will execute");
@@ -176,7 +179,8 @@ class FunctionalFlowValidatorTest {
                   - name: s1
                     POST: /items
                 """);
-        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(cyclicVarsDoc, cyclicVarsDoc.steps(), Map.of()))
+        List<FunctionalFlowStep> cyclicSteps = cyclicVarsDoc.steps();
+        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(cyclicVarsDoc, cyclicSteps, NO_ENVIRONMENT_VARIABLES))
                 .isInstanceOf(CatsException.class)
                 .hasMessageContaining("Cyclic variable reference detected");
 
@@ -196,7 +200,8 @@ class FunctionalFlowValidatorTest {
                       currency: "${currency}"
                       note: "${note}"
                 """);
-        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(partialForEachAndCorrDoc, partialForEachAndCorrDoc.steps(), Map.of()))
+        List<FunctionalFlowStep> partialForEachSteps = partialForEachAndCorrDoc.steps();
+        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(partialForEachAndCorrDoc, partialForEachSteps, NO_ENVIRONMENT_VARIABLES))
                 .isInstanceOf(CatsException.class)
                 .hasMessageContaining("undefined variable '${missingCorrVar}'")
                 .hasMessageContaining("undefined variable '${note}'");
@@ -221,7 +226,8 @@ class FunctionalFlowValidatorTest {
                     body:
                       active: false
                 """);
-        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(templateCorrAndSameRowDoc, templateCorrAndSameRowDoc.steps(), Map.of()))
+        List<FunctionalFlowStep> templateCorrelationSteps = templateCorrAndSameRowDoc.steps();
+        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(templateCorrAndSameRowDoc, templateCorrelationSteps, NO_ENVIRONMENT_VARIABLES))
                 .isInstanceOf(CatsException.class)
                 .hasMessageContaining("undefined variable '${missingTemplateCorrVar}'")
                 .hasMessageNotContaining("prefix")
@@ -260,7 +266,8 @@ class FunctionalFlowValidatorTest {
                     headers: "${notAMap}"
                     omit: ["${missingOmitVar}"]
                 """);
-        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(invalidDoc, invalidDoc.steps(), Map.of()))
+        List<FunctionalFlowStep> steps = invalidDoc.steps();
+        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(invalidDoc, steps, NO_ENVIRONMENT_VARIABLES))
                 .isInstanceOf(CatsException.class)
                 .hasMessageContaining("Document 'headers' must be a map or a standalone '${variable}' reference")
                 .hasMessageContaining("Step 'badHeadersAndOmit' 'headers' variable '${notAMap}' must be a map/object")
@@ -296,7 +303,8 @@ class FunctionalFlowValidatorTest {
                     POST: /payments
                     headers: "${badHeaders?}"
                 """);
-        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(badOptionalHeadersTypeDoc, badOptionalHeadersTypeDoc.steps(), Map.of()))
+        List<FunctionalFlowStep> steps = badOptionalHeadersTypeDoc.steps();
+        Assertions.assertThatThrownBy(() -> FunctionalFlowValidator.validate(badOptionalHeadersTypeDoc, steps, NO_ENVIRONMENT_VARIABLES))
                 .isInstanceOf(CatsException.class)
                 .hasMessageContaining("Step 'badOptionalHeaders' 'headers' variable '${badHeaders}' must be a map/object");
     }

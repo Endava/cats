@@ -1205,7 +1205,7 @@ class FunctionalFlowFuzzerTest {
                 .noneSatisfy(h -> Assertions.assertThat(h.getName()).isEqualToIgnoringCase("X-Unset"));
         Assertions.assertThat(stripeCall.getProtectedHeaders()).contains("x-route", "x-unset");
 
-        // Adyen: route is set -> optional ${route?} resolves identically to ${route}
+        // With an Adyen route set, both placeholder forms resolve to the same value.
         Mockito.reset(serviceCaller);
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
                 CatsResponse.builder().responseCode(201).body("{\"ok\":true}")

@@ -390,21 +390,29 @@ public final class FieldCorrelationEvaluator {
         String responseJson = response == null ? null : response.getBody();
         for (String orClause : splitLogicalTopLevel(expr, '|')) {
             for (String atom : splitLogicalTopLevel(orClause, '&')) {
-                String trimmed = atom.trim();
-                int opIdx = findOperatorOutsideQuotes(trimmed, "!=");
-                if (opIdx > 0) {
-                    String leftRaw = trimmed.substring(0, opIdx).trim();
-                    String rightRaw = trimmed.substring(opIdx + 2).trim();
-                    if (!"null".equalsIgnoreCase(rightRaw)) {
-                        Object leftVal = resolveOperand(leftRaw, requestJson, responseJson, response, variables);
-                        if (leftVal == null || JsonUtils.isNotSet(String.valueOf(leftVal))) {
-                            return Optional.of(leftRaw);
-                        }
-                    }
+                Optional<String> operand = findAbsentNotEqualOperandInAtom(atom.trim(), requestJson, responseJson, response, variables);
+                if (operand.isPresent()) {
+                    return operand;
                 }
             }
         }
         return Optional.empty();
+    }
+
+    private static Optional<String> findAbsentNotEqualOperandInAtom(String atom, String requestJson,
+                                                                    String responseJson, CatsResponse response,
+                                                                    Map<String, String> variables) {
+        int opIdx = findOperatorOutsideQuotes(atom, "!=");
+        if (opIdx <= 0) {
+            return Optional.empty();
+        }
+        String leftRaw = atom.substring(0, opIdx).trim();
+        String rightRaw = atom.substring(opIdx + 2).trim();
+        if ("null".equalsIgnoreCase(rightRaw)) {
+            return Optional.empty();
+        }
+        Object leftVal = resolveOperand(leftRaw, requestJson, responseJson, response, variables);
+        return leftVal == null || JsonUtils.isNotSet(String.valueOf(leftVal)) ? Optional.of(leftRaw) : Optional.empty();
     }
 
     public static boolean evaluateBooleanExpression(String expression,

@@ -15,6 +15,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -26,9 +27,9 @@ import java.util.regex.Pattern;
  * and broken {@code $prev} references.
  */
 public final class FunctionalFlowValidator {
-    static final Pattern VAR_IDENTIFIER_PATTERN = Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}");
-    static final Pattern OPTIONAL_VAR_IDENTIFIER_PATTERN = Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)\\?}");
-    private static final Pattern ANY_VAR_IDENTIFIER_PATTERN = Pattern.compile("\\$\\{([A-Za-z_][A-Za-z0-9_]*)\\??}");
+    static final Pattern VAR_IDENTIFIER_PATTERN = Pattern.compile("\\$\\{([A-Za-z_]\\w*)}");
+    static final Pattern OPTIONAL_VAR_IDENTIFIER_PATTERN = Pattern.compile("\\$\\{([A-Za-z_]\\w*)\\?}");
+    private static final Pattern ANY_VAR_IDENTIFIER_PATTERN = Pattern.compile("\\$\\{([A-Za-z_]\\w*)\\??}");
     private static final Pattern STEP_TOKEN_PATTERN = Pattern.compile(
             "\\$\\{((?:steps|prev)\\.[^}]+)}|\\$((?:steps|prev)\\.[A-Za-z0-9_.#\\[\\]-]+)");
 
@@ -102,146 +103,6 @@ public final class FunctionalFlowValidator {
         return refs;
     }
 
-    private static List<String> collectRequestExpressions(FunctionalFlowDocument document, FunctionalFlowStep step) {
-        List<String> expressions = new ArrayList<>();
-        addIfText(step.rawTarget(), expressions);
-        Optional.ofNullable(step.targetPaths()).orElse(List.of()).forEach(path -> addIfText(path, expressions));
-        collectNestedStrings(step.path(), expressions);
-        collectNestedStrings(step.query(), expressions);
-        collectEffectiveHeaders(document.headers(), step, expressions, document.variables());
-        collectNestedStrings(step.body(), expressions);
-        Optional.ofNullable(step.omit()).orElse(List.of()).forEach(entry -> addIfText(entry, expressions));
-        collectCorrelationStrings(matchingDocumentCorrelations(document.correlate(), step), expressions);
-        collectCorrelationStrings(step.correlate(), expressions);
-        return expressions;
-    }
-
-    private static List<FieldCorrelationRule> matchingDocumentCorrelations(List<FieldCorrelationRule> rules,
-                                                                           FunctionalFlowStep step) {
-        if (rules == null || rules.isEmpty()) {
-            return List.of();
-        }
-        String rawPath = stripQuery(step.rawTarget());
-        return rules.stream()
-                .filter(rule -> matchesCorrelationRuleForStep(rawPath, step.method(), rule.paths()))
-                .toList();
-    }
-
-    private static boolean matchesCorrelationRuleForStep(String rawPath, HttpMethod method,
-                                                         List<String> patterns) {
-        if (FieldCorrelationEvaluator.matchesPathPattern(rawPath, method, patterns)) {
-            return true;
-        }
-        if (rawPath == null || patterns == null) {
-            return false;
-        }
-        return patterns.stream().anyMatch(pattern -> matchesTemplatePath(rawPath, method, pattern));
-    }
-
-    private static boolean matchesTemplatePath(String rawPath, HttpMethod method, String rawPattern) {
-        if (StringUtils.isBlank(rawPattern)) {
-            return false;
-        }
-        String trimmed = rawPattern.trim();
-        String pathPattern = trimmed;
-        int spaceIdx = trimmed.indexOf(' ');
-        if (spaceIdx > 0) {
-            String verb = trimmed.substring(0, spaceIdx).trim();
-            if (method != null && !verb.equalsIgnoreCase(method.name())) {
-                return false;
-            }
-            pathPattern = trimmed.substring(spaceIdx + 1).trim();
-        }
-        String[] rawSegs = StringUtils.strip(rawPath, "/").split("/", -1);
-        String[] patSegs = StringUtils.strip(pathPattern, "/").split("/", -1);
-        if (rawSegs.length != patSegs.length) {
-            return false;
-        }
-        for (int i = 0; i < rawSegs.length; i++) {
-            boolean isPlaceholder = (patSegs[i].startsWith("{") && patSegs[i].endsWith("}"))
-                    || (rawSegs[i].startsWith("${") && rawSegs[i].endsWith("}"));
-            if (!isPlaceholder && !rawSegs[i].equalsIgnoreCase(patSegs[i])) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static String stripQuery(String rawTarget) {
-        if (rawTarget == null) {
-            return null;
-        }
-        int qIdx = rawTarget.indexOf('?');
-        return qIdx >= 0 ? rawTarget.substring(0, qIdx) : rawTarget;
-    }
-
-    private static List<String> collectExpectationExpressions(FunctionalFlowExpectation expect) {
-        if (expect == null) {
-            return List.of();
-        }
-        List<String> expressions = new ArrayList<>();
-        collectNestedStrings(expect.fields(), expressions);
-        collectNestedStrings(expect.headers(), expressions);
-        Optional.ofNullable(expect.that()).orElse(List.of()).forEach(expr -> addIfText(expr, expressions));
-        return expressions;
-    }
-
-    private static void collectEffectiveHeaders(Map<String, Object> globalHeaders, FunctionalFlowStep step,
-                                                List<String> target, Map<String, Object> globalVars) {
-        Set<String> overriddenOrOmitted = collectOverriddenHeaderNames(step, globalVars);
-        if (globalHeaders != null) {
-            globalHeaders.forEach((name, val) -> {
-                if (!overriddenOrOmitted.contains(name.toLowerCase(Locale.ROOT))) {
-                    collectNestedStrings(val, target);
-                }
-            });
-        }
-        collectNestedStrings(step.headers(), target);
-    }
-
-    private static Set<String> collectOverriddenHeaderNames(FunctionalFlowStep step, Map<String, Object> globalVars) {
-        Set<String> names = new LinkedHashSet<>();
-        if (step.headers() != null) {
-            step.headers().keySet().forEach(k -> names.add(k.toLowerCase(Locale.ROOT)));
-        }
-        extractStandaloneIdentifier(step.headersRef())
-                .map(varName -> resolveStaticVariable(varName, globalVars))
-                .filter(Map.class::isInstance)
-                .map(Map.class::cast)
-                .ifPresent(map -> map.keySet().forEach(k -> names.add(String.valueOf(k).toLowerCase(Locale.ROOT))));
-        for (String omitEntry : Optional.ofNullable(step.omit()).orElse(List.of())) {
-            addOmittedHeaderNames(omitEntry, globalVars, names);
-        }
-        return names;
-    }
-
-    private static void addOmittedHeaderNames(String omitEntry, Map<String, Object> globalVars, Set<String> names) {
-        if (StringUtils.isBlank(omitEntry)) {
-            return;
-        }
-        Optional<String> varName = extractStandaloneIdentifier(omitEntry);
-        if (varName.isPresent() && globalVars != null && globalVars.containsKey(varName.get())) {
-            Object staticVal = resolveStaticVariable(varName.get(), globalVars);
-            if (staticVal instanceof List<?> list) {
-                list.stream().filter(item -> item != null).forEach(item -> addSingleOmitHeaderName(String.valueOf(item), names));
-            } else if (staticVal instanceof String str) {
-                addSingleOmitHeaderName(str, names);
-            }
-            return;
-        }
-        addSingleOmitHeaderName(omitEntry, names);
-    }
-
-    private static void addSingleOmitHeaderName(String omitEntry, Set<String> names) {
-        if (StringUtils.isBlank(omitEntry)) {
-            return;
-        }
-        String lower = omitEntry.trim().toLowerCase(Locale.ROOT);
-        names.add((lower.startsWith("headers.") || lower.startsWith("header."))
-                ? lower.substring(lower.indexOf('.') + 1).trim()
-                : lower);
-    }
-
     static Optional<String> extractStandaloneIdentifier(String rawExpr) {
         if (rawExpr == null) {
             return Optional.empty();
@@ -260,47 +121,6 @@ public final class FunctionalFlowValidator {
         return matcher.matches() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
-    private static Object resolveStaticVariable(String varName, Map<String, Object> globalVars) {
-        Set<String> seen = new LinkedHashSet<>();
-        String current = varName;
-        while (globalVars != null && globalVars.containsKey(current) && seen.add(current)) {
-            Object val = globalVars.get(current);
-            if (val instanceof String str) {
-                Optional<String> next = extractStandaloneIdentifier(str)
-                        .or(() -> extractStandaloneOptionalIdentifier(str));
-                if (next.isPresent() && globalVars.containsKey(next.get())) {
-                    current = next.get();
-                    continue;
-                }
-            }
-            return val;
-        }
-        return null;
-    }
-
-    private static void collectCorrelationStrings(List<FieldCorrelationRule> rules, List<String> target) {
-        if (rules == null) {
-            return;
-        }
-        for (FieldCorrelationRule rule : rules) {
-            addIfText(rule.when(), target);
-            collectNestedStrings(rule.set(), target);
-        }
-    }
-
-    private static Set<String> withGuaranteedForEachKeys(Set<String> baseVars, List<Map<String, Object>> forEachRows) {
-        if (forEachRows == null || forEachRows.isEmpty()) {
-            return baseVars;
-        }
-        Set<String> commonRowKeys = new LinkedHashSet<>(forEachRows.getFirst().keySet());
-        for (int i = 1; i < forEachRows.size(); i++) {
-            commonRowKeys.retainAll(forEachRows.get(i).keySet());
-        }
-        Set<String> combined = new LinkedHashSet<>(baseVars);
-        combined.addAll(commonRowKeys);
-        return combined;
-    }
-
     private static void collectNestedStrings(Object value, List<String> target) {
         switch (value) {
             case String str -> target.add(str);
@@ -309,12 +129,6 @@ public final class FunctionalFlowValidator {
             case null, default -> {
                 // non-string scalar or null
             }
-        }
-    }
-
-    private static void addIfText(String value, List<String> target) {
-        if (StringUtils.isNotBlank(value)) {
-            target.add(value);
         }
     }
 
@@ -417,6 +231,193 @@ public final class FunctionalFlowValidator {
             Set<String> expectVars = withGuaranteedForEachKeys(availableVars, step.forEach());
             for (String expr : collectExpectationExpressions(step.expect())) {
                 validateExpression(step, expr, executedStepIndex, expectVars, false);
+            }
+        }
+
+        private static List<String> collectRequestExpressions(FunctionalFlowDocument document, FunctionalFlowStep step) {
+            List<String> expressions = new ArrayList<>();
+            addIfText(step.rawTarget(), expressions);
+            Optional.ofNullable(step.targetPaths()).orElse(List.of()).forEach(path -> addIfText(path, expressions));
+            collectNestedStrings(step.path(), expressions);
+            collectNestedStrings(step.query(), expressions);
+            collectEffectiveHeaders(document.headers(), step, expressions, document.variables());
+            collectNestedStrings(step.body(), expressions);
+            Optional.ofNullable(step.omit()).orElse(List.of()).forEach(entry -> addIfText(entry, expressions));
+            collectCorrelationStrings(matchingDocumentCorrelations(document.correlate(), step), expressions);
+            collectCorrelationStrings(step.correlate(), expressions);
+            return expressions;
+        }
+
+        private static List<String> collectExpectationExpressions(FunctionalFlowExpectation expect) {
+            if (expect == null) {
+                return List.of();
+            }
+            List<String> expressions = new ArrayList<>();
+            collectNestedStrings(expect.fields(), expressions);
+            collectNestedStrings(expect.headers(), expressions);
+            Optional.ofNullable(expect.that()).orElse(List.of()).forEach(expr -> addIfText(expr, expressions));
+            return expressions;
+        }
+
+        private static Set<String> withGuaranteedForEachKeys(Set<String> baseVars, List<Map<String, Object>> forEachRows) {
+            if (forEachRows == null || forEachRows.isEmpty()) {
+                return baseVars;
+            }
+            Set<String> commonRowKeys = new LinkedHashSet<>(forEachRows.getFirst().keySet());
+            for (int i = 1; i < forEachRows.size(); i++) {
+                commonRowKeys.retainAll(forEachRows.get(i).keySet());
+            }
+            Set<String> combined = new LinkedHashSet<>(baseVars);
+            combined.addAll(commonRowKeys);
+            return combined;
+        }
+
+        private static List<FieldCorrelationRule> matchingDocumentCorrelations(List<FieldCorrelationRule> rules,
+                                                                               FunctionalFlowStep step) {
+            if (rules == null || rules.isEmpty()) {
+                return List.of();
+            }
+            String rawPath = stripQuery(step.rawTarget());
+            return rules.stream()
+                    .filter(rule -> matchesCorrelationRuleForStep(rawPath, step.method(), rule.paths()))
+                    .toList();
+        }
+
+        private static boolean matchesCorrelationRuleForStep(String rawPath, HttpMethod method,
+                                                             List<String> patterns) {
+            if (FieldCorrelationEvaluator.matchesPathPattern(rawPath, method, patterns)) {
+                return true;
+            }
+            if (rawPath == null || patterns == null) {
+                return false;
+            }
+            return patterns.stream().anyMatch(pattern -> matchesTemplatePath(rawPath, method, pattern));
+        }
+
+        private static boolean matchesTemplatePath(String rawPath, HttpMethod method, String rawPattern) {
+            if (StringUtils.isBlank(rawPattern)) {
+                return false;
+            }
+            String trimmed = rawPattern.trim();
+            String pathPattern = trimmed;
+            int spaceIdx = trimmed.indexOf(' ');
+            if (spaceIdx > 0) {
+                String verb = trimmed.substring(0, spaceIdx).trim();
+                if (method != null && !verb.equalsIgnoreCase(method.name())) {
+                    return false;
+                }
+                pathPattern = trimmed.substring(spaceIdx + 1).trim();
+            }
+            String[] rawSegs = StringUtils.strip(rawPath, "/").split("/", -1);
+            String[] patSegs = StringUtils.strip(pathPattern, "/").split("/", -1);
+            if (rawSegs.length != patSegs.length) {
+                return false;
+            }
+            for (int i = 0; i < rawSegs.length; i++) {
+                boolean isPlaceholder = (patSegs[i].startsWith("{") && patSegs[i].endsWith("}"))
+                        || (rawSegs[i].startsWith("${") && rawSegs[i].endsWith("}"));
+                if (!isPlaceholder && !rawSegs[i].equalsIgnoreCase(patSegs[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static String stripQuery(String rawTarget) {
+            if (rawTarget == null) {
+                return null;
+            }
+            int qIdx = rawTarget.indexOf('?');
+            return qIdx >= 0 ? rawTarget.substring(0, qIdx) : rawTarget;
+        }
+
+        private static void collectEffectiveHeaders(Map<String, Object> globalHeaders, FunctionalFlowStep step,
+                                                    List<String> target, Map<String, Object> globalVars) {
+            Set<String> overriddenOrOmitted = collectOverriddenHeaderNames(step, globalVars);
+            if (globalHeaders != null) {
+                globalHeaders.forEach((name, val) -> {
+                    if (!overriddenOrOmitted.contains(name.toLowerCase(Locale.ROOT))) {
+                        collectNestedStrings(val, target);
+                    }
+                });
+            }
+            collectNestedStrings(step.headers(), target);
+        }
+
+        private static Set<String> collectOverriddenHeaderNames(FunctionalFlowStep step, Map<String, Object> globalVars) {
+            Set<String> names = new LinkedHashSet<>();
+            if (step.headers() != null) {
+                step.headers().keySet().forEach(k -> names.add(k.toLowerCase(Locale.ROOT)));
+            }
+            extractStandaloneIdentifier(step.headersRef())
+                    .map(varName -> resolveStaticVariable(varName, globalVars))
+                    .filter(Map.class::isInstance)
+                    .map(Map.class::cast)
+                    .ifPresent(map -> map.keySet().forEach(k -> names.add(String.valueOf(k).toLowerCase(Locale.ROOT))));
+            for (String omitEntry : Optional.ofNullable(step.omit()).orElse(List.of())) {
+                addOmittedHeaderNames(omitEntry, globalVars, names);
+            }
+            return names;
+        }
+
+        private static void addOmittedHeaderNames(String omitEntry, Map<String, Object> globalVars, Set<String> names) {
+            if (StringUtils.isBlank(omitEntry)) {
+                return;
+            }
+            Optional<String> varName = extractStandaloneIdentifier(omitEntry);
+            if (varName.isPresent() && globalVars != null && globalVars.containsKey(varName.get())) {
+                Object staticVal = resolveStaticVariable(varName.get(), globalVars);
+                if (staticVal instanceof List<?> list) {
+                    list.stream().filter(Objects::nonNull).forEach(item -> addSingleOmitHeaderName(String.valueOf(item), names));
+                } else if (staticVal instanceof String str) {
+                    addSingleOmitHeaderName(str, names);
+                }
+                return;
+            }
+            addSingleOmitHeaderName(omitEntry, names);
+        }
+
+        private static void addSingleOmitHeaderName(String omitEntry, Set<String> names) {
+            if (StringUtils.isBlank(omitEntry)) {
+                return;
+            }
+            String lower = omitEntry.trim().toLowerCase(Locale.ROOT);
+            names.add((lower.startsWith("headers.") || lower.startsWith("header."))
+                    ? lower.substring(lower.indexOf('.') + 1).trim()
+                    : lower);
+        }
+
+        private static Object resolveStaticVariable(String varName, Map<String, Object> globalVars) {
+            Set<String> seen = new LinkedHashSet<>();
+            String current = varName;
+            while (globalVars != null && globalVars.containsKey(current) && seen.add(current)) {
+                Object val = globalVars.get(current);
+                if (val instanceof String str) {
+                    Optional<String> next = extractStandaloneIdentifier(str)
+                            .or(() -> extractStandaloneOptionalIdentifier(str));
+                    if (next.isPresent() && globalVars.containsKey(next.get())) {
+                        current = next.get();
+                        continue;
+                    }
+                }
+                return val;
+            }
+            return null;
+        }
+
+        private static void collectCorrelationStrings(List<FieldCorrelationRule> rules, List<String> target) {
+            if (rules == null) {
+                return;
+            }
+            for (FieldCorrelationRule rule : rules) {
+                addIfText(rule.when(), target);
+                collectNestedStrings(rule.set(), target);
+            }
+        }
+
+        private static void addIfText(String value, List<String> target) {
+            if (StringUtils.isNotBlank(value)) {
+                target.add(value);
             }
         }
 
