@@ -18,6 +18,7 @@ public final class DynamicValueResolver {
     private static final ShorthandFunctionParser SHORTHAND_PARSER = new ShorthandFunctionParser();
     private static final EnvVariableParser ENV_PARSER = new EnvVariableParser();
     private static final Pattern EMBEDDED_ENV_PLACEHOLDER = Pattern.compile("\\$\\$[A-Za-z_]\\w*");
+    private static final Pattern EXPLICIT_STRING_CAST = Pattern.compile("(?i)^#\\(\\s*(?:str|string|tostring)\\s*\\(.*");
 
     private DynamicValueResolver() {
         // Utility class.
@@ -68,7 +69,7 @@ public final class DynamicValueResolver {
             return resolved;
         }
         String trimmed = rawExpr.trim();
-        if (!trimmed.startsWith("#(") && !trimmed.startsWith("T(")) {
+        if ((!trimmed.startsWith("#(") && !trimmed.startsWith("T(")) || EXPLICIT_STRING_CAST.matcher(trimmed).matches()) {
             return resolved;
         }
         if ("true".equalsIgnoreCase(resolved) || "false".equalsIgnoreCase(resolved)) {
@@ -81,9 +82,10 @@ public final class DynamicValueResolver {
                 return resolved;
             }
         }
-        if (resolved.matches("-?\\d+\\.\\d+")) {
+        if (resolved.matches("-?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?") && (resolved.contains(".") || resolved.contains("e") || resolved.contains("E"))) {
             try {
-                return Double.parseDouble(resolved);
+                double parsed = Double.parseDouble(resolved);
+                return Double.isFinite(parsed) ? parsed : resolved;
             } catch (NumberFormatException _) {
                 return resolved;
             }

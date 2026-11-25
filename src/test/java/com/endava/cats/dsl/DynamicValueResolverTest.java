@@ -67,4 +67,16 @@ class DynamicValueResolverTest {
                 .isEqualTo(1.5d);
         Assertions.assertThat(DynamicValueResolver.coerceScalarIfOriginalWasTyped(null, null)).isNull();
     }
+
+    @Test
+    void shouldSupportExplicitTypeConversionShorthandsForEnvAndVariables() {
+        Map<String, String> ctx = Map.of("EXPIRY", "08", "RATE", "12", "FLAG", "TRUE", "CODE", "42");
+        Assertions.assertThat(DynamicValueResolver.resolveAsTypedValue("#(int($$EXPIRY))", ctx)).isEqualTo(8L);
+        Assertions.assertThat(DynamicValueResolver.resolveAsTypedValue("#(float($$RATE))", ctx)).isEqualTo(12.0d);
+        Assertions.assertThat(DynamicValueResolver.resolveAsTypedValue("#(float(10000000))", ctx)).isEqualTo(10000000.0d);
+        Assertions.assertThat(DynamicValueResolver.resolveAsTypedValue("#(float(0.00001))", ctx)).isEqualTo(0.00001d);
+        Assertions.assertThat(DynamicValueResolver.resolveAsTypedValue("#(bool($$FLAG))", ctx)).isEqualTo(true);
+        Assertions.assertThat(DynamicValueResolver.resolveAsTypedValue("#(str(${CODE}))", ctx)).isEqualTo("42");
+        Assertions.assertThat(DynamicValueResolver.resolveAsTypedValue("#(string(123))", ctx)).isEqualTo("123");
+    }
 }

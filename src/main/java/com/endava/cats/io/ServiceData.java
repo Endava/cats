@@ -62,6 +62,12 @@ public class ServiceData {
     @Builder.Default
     private final boolean addUserHeaders = true;
     /**
+     * Header names (case-insensitive) explicitly set or omitted by a flow/step that must not
+     * be overwritten or re-added by lower-precedence {@code --headers} / {@code -H} defaults.
+     */
+    @Builder.Default
+    private final Set<String> protectedHeaders = Set.of();
+    /**
      * Any header that will get removed before sending the request to the service.
      */
     @Builder.Default

@@ -160,6 +160,24 @@ class ShorthandFunctionParserTest {
             assertThat(parser.parse("#(hex(4,8))", Map.of())).hasSizeBetween(4, 7).matches("[0-9a-f]+");
             assertThat(parser.parse("#(upper(hex(16)))", Map.of())).hasSize(16).matches("[0-9A-F]{16}");
         }
+
+        @Test
+        @DisplayName("Should support explicit type conversion helpers int, float, bool, and str")
+        void shouldSupportTypeConversionHelpers() {
+            assertThat(parser.parse("#(int(' 42 '))", Map.of())).isEqualTo("42");
+            assertThat(parser.parse("#(toInt(-7))", Map.of())).isEqualTo("-7");
+            assertThat(parser.parse("#(long(12345678901))", Map.of())).isEqualTo("12345678901");
+            assertThat(parser.parse("#(float(12))", Map.of())).isEqualTo("12.0");
+            assertThat(parser.parse("#(toFloat(19.95))", Map.of())).isEqualTo("19.95");
+            assertThat(parser.parse("#(bool(TRUE))", Map.of())).isEqualTo("true");
+            assertThat(parser.parse("#(toBool(' false '))", Map.of())).isEqualTo("false");
+            assertThat(parser.parse("#(str(123))", Map.of())).isEqualTo("123");
+            assertThat(parser.parse("#(string(true))", Map.of())).isEqualTo("true");
+            assertThat(parser.parse("#(int(notANumber))", Map.of())).isEqualTo("#(int(notANumber))");
+            assertThat(parser.parse("#(float(NaN))", Map.of())).isEqualTo("#(float(NaN))");
+            assertThat(parser.parse("#(bool(maybe))", Map.of())).isEqualTo("#(bool(maybe))");
+            assertThat(parser.parse("#(int())", Map.of())).isEqualTo("#(int())");
+        }
     }
 
     @Nested

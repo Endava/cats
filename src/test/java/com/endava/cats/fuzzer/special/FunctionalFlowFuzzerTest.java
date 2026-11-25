@@ -822,6 +822,413 @@ class FunctionalFlowFuzzerTest {
                 Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString());
     }
 
+    @Test
+    void shouldExecuteImportedFlowWithTypedVariablesStepTagsAndEnvTypeCasts(@TempDir Path tempDir) throws Exception {
+        Path commonDir = Files.createDirectories(tempDir.resolve("common"));
+        Path adapterDir = Files.createDirectories(tempDir.resolve("adyen-mock"));
+        Files.writeString(commonDir.resolve("flows.yml"), """
+                variables:
+                  route: "DefaultRoute"
+                  expiryMonthExpired: 1
+                  refundRequiresAmount: true
+                  cardApproved: "4111111111111111"
+                  maxRetries: "#(int($$MAX_RETRIES))"
+                  apiKey: "$$MOCK_API_KEY"
+                steps:
+                  - name: auth01Authorize
+                    tags: [psp]
+                    POST: /billing-plans
+                    headers:
+                      X-Api-Key: "${apiKey}"
+                    body:
+                      route: "${route}"
+                      expiryMonth: "${expiryMonthExpired}"
+                      refundRequiresAmount: "${refundRequiresAmount}"
+                      cardNumber: "${cardApproved}"
+                      maxRetries: "${maxRetries}"
+                      cardAsString: "#(str(${expiryMonthExpired}))"
+                    save:
+                      expiryMonthExpired: newCode
+                    expect:
+                      status: 201
+                  - name: ops01AdapterCheck
+                    tags: [adapter]
+                    POST: /billing-plans
+                    body:
+                      route: "${route}"
+                      expiryMonth: "${expiryMonthExpired}"
+                    expect:
+                      status: 201
+                """);
+
+        File adapterFlow = adapterDir.resolve("flows.yml").toFile();
+        Files.writeString(adapterFlow.toPath(), """
+                imports: ["../common/flows.yml"]
+                variables:
+                  route: "XeleratorMockECOM"
+                  expiryMonthExpired: 12
+                  refundRequiresAmount: false
+                """);
+
+        TestCaseListener listener = flowListener();
+        Mockito.when(listener.shouldContinueExecution(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.when(serviceCaller.getEnvironmentVariables())
+                .thenReturn(Map.of("MAX_RETRIES", "3", "MOCK_API_KEY", "secret-key-val"));
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(201).body("{\"newCode\":\"OVERRIDDEN_STR\"}")
+                        .jsonBody(JsonParser.parseString("{\"newCode\":\"OVERRIDDEN_STR\"}")).build());
+
+        File exportRefData = tempDir.resolve("refdata-out.yml").toFile();
+        filesArguments.setFunctionalFlowFile(adapterFlow);
+        filesArguments.setExportRefDataFile(exportRefData);
+        filesArguments.setStepTags(List.of("psp"));
+
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        flow.fuzz(flowData());
+        flow.executeFlows();
+
+        ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.times(1)).call(captor.capture());
+        String sentPayload = captor.getValue().getPayload();
+        Assertions.assertThat(sentPayload)
+                .contains("\"route\":\"XeleratorMockECOM\"")
+                .contains("\"expiryMonth\":12")
+                .contains("\"refundRequiresAmount\":false")
+                .contains("\"cardNumber\":\"4111111111111111\"")
+                .contains("\"maxRetries\":3")
+                .contains("\"cardAsString\":\"12\"");
+        Mockito.verify(serviceCaller).registerSensitiveFieldIfPresent("apiKey", "$$MOCK_API_KEY", "secret-key-val");
+        Assertions.assertThat(Files.readString(exportRefData.toPath())).contains("expiryMonth: 12");
+    }
+
+    @Test
+    void shouldFailFastBeforeHttpCallsWhenStepDependsOnTagExcludedStep() {
+        TestCaseListener listener = flowListener();
+        filesArguments.setStepTags(List.of("adapter"));
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        flow.fuzz(flowData());
+
+        FunctionalFlowDocument doc = FunctionalFlowParser.parseContent("""
+                steps:
+                  - name: auth01Authorize
+                    tags: [psp]
+                    POST: /billing-plans
+                    save:
+                      authRef: id
+                  - name: cap01Capture
+                    tags: [adapter]
+                    POST: /billing-plans
+                    body:
+                      reference: "${authRef}"
+                """);
+
+        Assertions.assertThatThrownBy(() -> flow.executeDocument(doc, "psp-flow.yml", flow))
+                .isInstanceOf(com.endava.cats.exception.CatsException.class)
+                .hasMessageContaining("authRef")
+                .hasMessageContaining("auth01Authorize");
+        Mockito.verify(serviceCaller, Mockito.never()).call(Mockito.any());
+    }
+
+    @Test
+    void shouldSkipExecutionCleanlyWhenNoStepsMatchTagFilter() {
+        TestCaseListener listener = flowListener();
+        filesArguments.setStepTags(List.of("nonexistent"));
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        flow.fuzz(flowData());
+
+        FunctionalFlowDocument doc = FunctionalFlowParser.parseContent("""
+                steps:
+                  - name: auth01
+                    tags: [psp]
+                    POST: /billing-plans
+                """);
+
+        flow.executeDocument(doc, "tag-miss.yml", flow);
+        Mockito.verify(serviceCaller, Mockito.never()).call(Mockito.any());
+    }
+
+    @Test
+    void shouldResolveChildSuppliedVariablesAliasesAndNestedMapsInImportedFlows(@TempDir Path tempDir) throws Exception {
+        Files.writeString(tempDir.resolve("common.yml"), """
+                variables:
+                  derivedTag: "route-${route}"
+                  expiryAlias: "${expiryMonth}"
+                  nullVal: null
+                  nullAlias: "${nullVal}"
+                  nestedConfig:
+                    route: "${route}"
+                    month: "${expiryMonth}"
+                steps:
+                  - name: sendNested
+                    POST: /billing-plans
+                    body:
+                      derivedTag: "${derivedTag}"
+                      expiryAlias: "${expiryAlias}"
+                      nullAlias: "${nullAlias}"
+                      nestedConfig: "${nestedConfig}"
+                    expect:
+                      status: 201
+                """);
+        File childFlow = tempDir.resolve("child.yml").toFile();
+        Files.writeString(childFlow.toPath(), """
+                imports: ["common.yml"]
+                variables:
+                  route: "MockAdyen"
+                  expiryMonth: 12
+                """);
+
+        TestCaseListener listener = flowListener();
+        Mockito.when(listener.shouldContinueExecution(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(201).body("{\"ok\":true}")
+                        .jsonBody(JsonParser.parseString("{\"ok\":true}")).build());
+
+        filesArguments.setFunctionalFlowFile(childFlow);
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        flow.fuzz(flowData());
+        flow.executeFlows();
+
+        ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.times(1)).call(captor.capture());
+        Assertions.assertThat(captor.getValue().getPayload())
+                .contains("\"derivedTag\":\"route-MockAdyen\"")
+                .contains("\"expiryAlias\":12")
+                .contains("\"nullAlias\":null")
+                .contains("\"nestedConfig\":{\"route\":\"MockAdyen\",\"month\":12}");
+    }
+
+    @Test
+    void shouldSupportWholeBodyAndHeadersFromVariablesDynamicOmitRemoveSentinelAndFlowLevelStepTags(@TempDir Path tempDir) throws Exception {
+        Files.writeString(tempDir.resolve("common.yml"), """
+                variables:
+                  webhookBody:
+                    id: "evt_1"
+                    type: "charge.captured"
+                    nested:
+                      dropMe: "cats_remove_field"
+                      keepMe: true
+                  webhookListBody:
+                    - { id: "a" }
+                    - { id: "b" }
+                  webhookHeaders:
+                    X-Signature: "sig-123"
+                    X-Drop-Header: null
+                  omitList: ["dropByOmit", "headers.X-Omit-Hdr"]
+                  singleOmit: "extraOmit"
+                  routeVal: "cats_remove_field"
+                headers:
+                  X-Flow-Default: "from-flow"
+                  X-Omit-Hdr: "should-be-omitted"
+                steps:
+                  - name: webhookObjectStep
+                    tags: [psp]
+                    POST: /billing-plans
+                    base: empty
+                    headers: "${webhookHeaders}"
+                    body: "${webhookBody}"
+                    expect:
+                      status: 201
+                  - name: webhookListAndOmitStep
+                    tags: [psp]
+                    POST: /billing-plans
+                    headers:
+                      X-Flow-Default: "step-wins"
+                    body:
+                      name: "keep"
+                      route: "${routeVal}"
+                      nullField: null
+                      dropByOmit: "bye"
+                      extraOmit: "bye2"
+                    omit:
+                      - "${omitList}"
+                      - "${singleOmit}"
+                    expect:
+                      status: 201
+                  - name: webhookArrayStep
+                    tags: [psp]
+                    POST: /billing-plans
+                    body: "${webhookListBody}"
+                    expect:
+                      status: 201
+                  - name: untaggedLocalStep
+                    POST: /billing-plans
+                    expect:
+                      status: 201
+                  - name: adapterOnlyStep
+                    tags: [adapter]
+                    POST: /billing-plans
+                    expect:
+                      status: 201
+                """);
+        File childFlow = tempDir.resolve("child.yml").toFile();
+        Files.writeString(childFlow.toPath(), """
+                imports: ["common.yml"]
+                stepTags: [psp]
+                """);
+
+        TestCaseListener listener = flowListener();
+        Mockito.when(listener.shouldContinueExecution(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(201).body("{\"ok\":true}")
+                        .jsonBody(JsonParser.parseString("{\"ok\":true}")).build());
+
+        filesArguments.setFunctionalFlowFile(childFlow);
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
+                .payload("{\"name\":\"Default\",\"route\":\"default-route\",\"dropByOmit\":\"init\",\"extraOmit\":\"init2\"}")
+                .reqSchema(new ObjectSchema()).schemaMap(Map.of())
+                .headers(Set.of(CatsHeader.builder().name("X-Drop-Header").value("old").build()))
+                .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
+        flow.fuzz(data);
+        flow.executeFlows();
+
+        ArgumentCaptor<ServiceData> captor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.times(3)).call(captor.capture());
+
+        ServiceData call1 = captor.getAllValues().get(0);
+        Assertions.assertThat(call1.getPayload())
+                .contains("\"id\":\"evt_1\"")
+                .contains("\"type\":\"charge.captured\"")
+                .contains("\"keepMe\":true")
+                .doesNotContain("dropMe")
+                .doesNotContain("id=evt_1");
+        Assertions.assertThat(call1.getHeaders())
+                .anySatisfy(h -> Assertions.assertThat(h.getName()).isEqualTo("X-Signature")
+                        .satisfies(_ -> Assertions.assertThat(h.getValue()).isEqualTo("sig-123")))
+                .noneSatisfy(h -> Assertions.assertThat(h.getName()).isEqualToIgnoringCase("X-Drop-Header"));
+        Assertions.assertThat(call1.getProtectedHeaders()).contains("x-signature", "x-drop-header", "x-flow-default");
+
+        ServiceData call2 = captor.getAllValues().get(1);
+        Assertions.assertThat(call2.getPayload())
+                .contains("\"name\":\"keep\"")
+                .contains("\"nullField\":null")
+                .doesNotContain("route")
+                .doesNotContain("dropByOmit")
+                .doesNotContain("extraOmit");
+        Assertions.assertThat(call2.getHeaders())
+                .anySatisfy(h -> Assertions.assertThat(h.getName()).isEqualTo("X-Flow-Default")
+                        .satisfies(_ -> Assertions.assertThat(h.getValue()).isEqualTo("step-wins")))
+                .noneSatisfy(h -> Assertions.assertThat(h.getName()).isEqualToIgnoringCase("X-Omit-Hdr"));
+        Assertions.assertThat(call2.getProtectedHeaders()).contains("x-flow-default", "x-omit-hdr");
+
+        ServiceData call3 = captor.getAllValues().get(2);
+        Assertions.assertThat(call3.getPayload()).isEqualTo("[{\"id\":\"a\"},{\"id\":\"b\"}]");
+
+        // CLI --stepTags overrides YAML stepTags: [psp]
+        Mockito.reset(serviceCaller);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(201).body("{\"ok\":true}")
+                        .jsonBody(JsonParser.parseString("{\"ok\":true}")).build());
+        filesArguments.setStepTags(List.of("adapter"));
+        flow.fuzz(data);
+        flow.executeFlows();
+        Mockito.verify(serviceCaller, Mockito.times(1)).call(Mockito.any());
+    }
+
+    @Test
+    void shouldOmitFieldsHeadersQueryAndListItemsForNullOrUnsetOptionalPlaceholders(@TempDir Path tempDir) throws Exception {
+        Files.writeString(tempDir.resolve("common.yml"), """
+                variables:
+                  nestedPayload:
+                    route: "${route?}"
+                    amount: 100
+                steps:
+                  - name: payStep
+                    POST: /billing-plans
+                    headers:
+                      X-Route: "${route?}"
+                      X-Unset: "${neverDefined?}"
+                    query:
+                      routeParam: "${route?}"
+                      keepParam: "yes"
+                    body:
+                      processingRouteIdentifier: "${route?}"
+                      explicitNull: "${route}"
+                      nested:
+                        route: "${route?}"
+                        keep: true
+                      tags: ["always", "${route?}", "${neverDefined?}"]
+                      label: "pay-${route?}"
+                      nestedVar: "${nestedPayload}"
+                    expect:
+                      status: 201
+                """);
+        File stripeFlow = tempDir.resolve("stripe.yml").toFile();
+        Files.writeString(stripeFlow.toPath(), """
+                imports: ["common.yml"]
+                variables:
+                  route: null
+                """);
+        File adyenFlow = tempDir.resolve("adyen.yml").toFile();
+        Files.writeString(adyenFlow.toPath(), """
+                imports: ["common.yml"]
+                variables:
+                  route: "XeleratorMockECOM"
+                """);
+
+        TestCaseListener listener = flowListener();
+        Mockito.when(listener.shouldContinueExecution(Mockito.any(), Mockito.any())).thenReturn(true);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(201).body("{\"ok\":true}")
+                        .jsonBody(JsonParser.parseString("{\"ok\":true}")).build());
+
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.POST).path("/billing-plans").contractPath("/billing-plans")
+                .payload("{\"processingRouteIdentifier\":\"default\",\"nested\":{\"route\":\"default\",\"keep\":false}}")
+                .pathParamsPayload("{\"routeParam\":\"default\"}")
+                .reqSchema(new ObjectSchema()).schemaMap(Map.of())
+                .headers(Set.of(CatsHeader.builder().name("X-Route").value("default").build()))
+                .responseCodes(Set.of("201")).requestContentTypes(List.of("application/json")).build();
+
+        // Stripe: route is null -> optional ${route?} omitted everywhere, while non-optional ${route} sends JSON null
+        filesArguments.setFunctionalFlowFile(stripeFlow);
+        FunctionalFlowFuzzer flow = new FunctionalFlowFuzzer(filesArguments, serviceCaller, listener);
+        flow.fuzz(data);
+        flow.executeFlows();
+
+        ArgumentCaptor<ServiceData> stripeCaptor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.times(1)).call(stripeCaptor.capture());
+        ServiceData stripeCall = stripeCaptor.getValue();
+        Assertions.assertThat(stripeCall.getPayload())
+                .doesNotContain("processingRouteIdentifier")
+                .contains("\"explicitNull\":null")
+                .contains("\"nested\":{\"keep\":true}")
+                .contains("\"tags\":[\"always\"]")
+                .contains("\"label\":\"pay-\"")
+                .contains("\"nestedVar\":{\"amount\":100}");
+        Assertions.assertThat(stripeCall.getPathParamsPayload())
+                .doesNotContain("routeParam")
+                .contains("\"keepParam\":\"yes\"");
+        Assertions.assertThat(stripeCall.getHeaders())
+                .noneSatisfy(h -> Assertions.assertThat(h.getName()).isEqualToIgnoringCase("X-Route"))
+                .noneSatisfy(h -> Assertions.assertThat(h.getName()).isEqualToIgnoringCase("X-Unset"));
+        Assertions.assertThat(stripeCall.getProtectedHeaders()).contains("x-route", "x-unset");
+
+        // Adyen: route is set -> optional ${route?} resolves identically to ${route}
+        Mockito.reset(serviceCaller);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder().responseCode(201).body("{\"ok\":true}")
+                        .jsonBody(JsonParser.parseString("{\"ok\":true}")).build());
+        filesArguments.setFunctionalFlowFile(adyenFlow);
+        flow.fuzz(data);
+        flow.executeFlows();
+
+        ArgumentCaptor<ServiceData> adyenCaptor = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.times(1)).call(adyenCaptor.capture());
+        ServiceData adyenCall = adyenCaptor.getValue();
+        Assertions.assertThat(adyenCall.getPayload())
+                .contains("\"processingRouteIdentifier\":\"XeleratorMockECOM\"")
+                .contains("\"explicitNull\":\"XeleratorMockECOM\"")
+                .contains("\"tags\":[\"always\",\"XeleratorMockECOM\"]")
+                .contains("\"label\":\"pay-XeleratorMockECOM\"")
+                .contains("\"nestedVar\":{\"route\":\"XeleratorMockECOM\",\"amount\":100}");
+        Assertions.assertThat(adyenCall.getPathParamsPayload()).contains("\"routeParam\":\"XeleratorMockECOM\"");
+        Assertions.assertThat(adyenCall.getHeaders())
+                .anySatisfy(h -> Assertions.assertThat(h.getName()).isEqualTo("X-Route")
+                        .satisfies(_ -> Assertions.assertThat(h.getValue()).isEqualTo("XeleratorMockECOM")));
+    }
+
     private TestCaseListener flowListener() {
         TestCaseListener listener = Mockito.mock(TestCaseListener.class);
         Mockito.doAnswer(invocation -> {

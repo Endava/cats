@@ -5,6 +5,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.DynamicValueResolver;
 import com.endava.cats.dsl.api.Parser;
+import com.endava.cats.exception.CatsException;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.fields.RequiredOnlyPayloadGenerator;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.BasePayloadMode;
@@ -66,6 +67,7 @@ import java.util.regex.Pattern;
 @SpecialFuzzer
 public class FunctionalFlowFuzzer implements Fuzzer {
     private static final String RESPONSE_HEADER_PREFIX = "header#";
+    private static final Object OMIT_OPTIONAL_FIELD = new Object();
     private static final Pattern STEP_TOKEN_PATTERN = Pattern.compile("\\$\\{((?:steps|prev)\\.[^}]+)}|\\$((?:steps|prev)\\.[A-Za-z0-9_.#\\[\\]-]+)");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FunctionalFlowFuzzer.class);
     private final FilesArguments filesArguments;
@@ -77,6 +79,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     private final Map<String, Object> typedVariables = new LinkedHashMap<>();
     private final Set<String> savedOutputVariableNames = new LinkedHashSet<>();
     private final Map<String, Map<String, Object>> recordedRefDataByPath = new LinkedHashMap<>();
+    private FunctionalFlowDocument initializedExternalDocument;
 
     public FunctionalFlowFuzzer(FilesArguments filesArguments, ServiceCaller serviceCaller, TestCaseListener testCaseListener) {
         this.filesArguments = filesArguments;
@@ -91,6 +94,18 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         }
     }
 
+    public void validateFlowFile(File flowFile) throws IOException {
+        if (flowFile == null || !flowFile.exists()) {
+            return;
+        }
+        FunctionalFlowDocument document = FunctionalFlowParser.parse(flowFile);
+        List<FunctionalFlowStep> selectedSteps = filterStepsByTags(document);
+        if (!selectedSteps.isEmpty() || document.steps().isEmpty()) {
+            Map<String, String> envVars = serviceCaller == null ? Map.of() : serviceCaller.getEnvironmentVariables();
+            FunctionalFlowValidator.validate(document, selectedSteps, envVars);
+        }
+    }
+
     public void executeFlows() throws IOException {
         File flowFile = filesArguments.getFunctionalFlowFile();
         if (flowFile == null || !flowFile.exists()) {
@@ -102,30 +117,186 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     }
 
     public void executeDocument(FunctionalFlowDocument document, String sourceName, Fuzzer activeFuzzer) {
+        initializedExternalDocument = null;
         variables.clear();
         typedVariables.clear();
         savedOutputVariableNames.clear();
         recordedRefDataByPath.clear();
+        List<String> includeTags = resolveEffectiveStepTags(document);
+        List<String> skipTags = resolveEffectiveSkipStepTags(document);
+        List<FunctionalFlowStep> selectedSteps = filterStepsByTags(document.steps(), includeTags, skipTags);
+        warnExcludedUntaggedSteps(document.steps(), includeTags);
+        if (selectedSteps.isEmpty() && !document.steps().isEmpty()) {
+            logger.warning("No flow steps matched step tag filters (stepTags={}, skipStepTags={}) in {}",
+                    includeTags, skipTags, sourceName);
+            return;
+        }
+        FunctionalFlowValidator.validate(document, selectedSteps, serviceCaller.getEnvironmentVariables());
         initGlobalVariables(document.variables());
-        logger.info("Executing {} flow step(s) from {}", document.steps().size(), sourceName);
+        logger.info("Executing {} flow step(s) from {}", selectedSteps.size(), sourceName);
         int stepIndex = 1;
-        for (FunctionalFlowStep step : document.steps()) {
+        for (FunctionalFlowStep step : selectedSteps) {
             executeStepAcrossMatchingOperations(document, step, stepIndex++, activeFuzzer);
         }
     }
 
-    private void initGlobalVariables(Map<String, String> rawVars) {
+    List<String> resolveEffectiveStepTags(FunctionalFlowDocument document) {
+        List<String> cliTags = filesArguments == null ? List.of() : filesArguments.getStepTags();
+        if (!cliTags.isEmpty()) {
+            return cliTags;
+        }
+        return document == null ? List.of() : document.stepTags();
+    }
+
+    List<String> resolveEffectiveSkipStepTags(FunctionalFlowDocument document) {
+        List<String> cliSkipTags = filesArguments == null ? List.of() : filesArguments.getSkipStepTags();
+        if (!cliSkipTags.isEmpty()) {
+            return cliSkipTags;
+        }
+        return document == null ? List.of() : document.skipStepTags();
+    }
+
+    private List<FunctionalFlowStep> filterStepsByTags(FunctionalFlowDocument document) {
+        return filterStepsByTags(document.steps(), resolveEffectiveStepTags(document), resolveEffectiveSkipStepTags(document));
+    }
+
+    private static List<FunctionalFlowStep> filterStepsByTags(List<FunctionalFlowStep> steps,
+                                                              List<String> includeTags, List<String> skipTags) {
+        if (includeTags.isEmpty() && skipTags.isEmpty()) {
+            return steps;
+        }
+        return steps.stream()
+                .filter(step -> step.matchesTags(includeTags, skipTags))
+                .toList();
+    }
+
+    private void warnExcludedUntaggedSteps(List<FunctionalFlowStep> allSteps, List<String> includeTags) {
+        if (includeTags.isEmpty()) {
+            return;
+        }
+        List<String> excludedUntagged = allSteps.stream()
+                .filter(step -> step.tags().isEmpty())
+                .map(FunctionalFlowStep::name)
+                .toList();
+        if (!excludedUntagged.isEmpty()) {
+            logger.warning("Excluded {} untagged step(s) because stepTags={} is active: {}",
+                    excludedUntagged.size(), includeTags, excludedUntagged);
+        }
+    }
+
+    void initVariablesForExternalExecution(FunctionalFlowDocument document) {
+        if (document == null || document.equals(initializedExternalDocument)) {
+            return;
+        }
+        variables.clear();
+        typedVariables.clear();
+        savedOutputVariableNames.clear();
+        initGlobalVariables(document.variables());
+        initializedExternalDocument = document;
+    }
+
+    private void initGlobalVariables(Map<String, Object> rawVars) {
         if (serviceCaller.getEnvironmentVariables() != null) {
             variables.putAll(serviceCaller.getEnvironmentVariables());
         }
         if (rawVars == null) {
             return;
         }
-        rawVars.forEach((key, value) -> {
-            String resolved = DynamicValueResolver.resolve(value, variables);
-            variables.put(key, resolved);
+        for (String key : FunctionalFlowValidator.orderGlobalVariableKeys(rawVars)) {
+            storeVariableEntry(key, rawVars.get(key), true);
+        }
+    }
+
+    private void storeVariableEntry(String key, Object rawValue, boolean markSavedOutput) {
+        Object resolved = resolveVariableValue(key, rawValue);
+        if (resolved == null || resolved == OMIT_OPTIONAL_FIELD) {
+            variables.put(key, "");
+            typedVariables.put(key, null);
+        } else if (resolved instanceof String strResolved) {
+            variables.put(key, strResolved);
+            typedVariables.remove(key);
+        } else {
+            variables.put(key, String.valueOf(resolved));
+            typedVariables.put(key, resolved);
+        }
+        if (markSavedOutput) {
             savedOutputVariableNames.add(key);
+        }
+    }
+
+    private Object resolveVariableValue(String key, Object rawValue) {
+        return switch (rawValue) {
+            case null -> null;
+            case String strVal -> resolveStringVariableValue(key, strVal);
+            case Map<?, ?> mapVal -> resolveMapVariableValue(key, mapVal);
+            case List<?> listVal -> listVal.stream()
+                    .map(item -> resolveVariableValue(key, item))
+                    .filter(item -> item != OMIT_OPTIONAL_FIELD)
+                    .toList();
+            default -> rawValue;
+        };
+    }
+
+    private Object resolveStringVariableValue(String key, String strVal) {
+        Optional<String> optionalVar = extractStandaloneOptionalVariableName(strVal);
+        if (optionalVar.isPresent()) {
+            return resolveOptionalVariableValue(optionalVar.get());
+        }
+        Optional<String> standaloneVar = extractStandaloneVariableName(strVal);
+        if (standaloneVar.isPresent() && typedVariables.containsKey(standaloneVar.get())) {
+            return typedVariables.get(standaloneVar.get());
+        }
+        String expanded = replaceEmbeddedOptionalTokens(strVal);
+        Object resolved = DynamicValueResolver.resolveAsTypedValue(expanded, variables);
+        String resolvedStr = resolved == null ? "" : String.valueOf(resolved);
+        serviceCaller.registerSensitiveFieldIfPresent(key, strVal, resolvedStr);
+        return resolved;
+    }
+
+    private Object resolveOptionalVariableValue(String varName) {
+        if (typedVariables.containsKey(varName)) {
+            Object val = typedVariables.get(varName);
+            return val == null ? OMIT_OPTIONAL_FIELD : val;
+        }
+        if (variables.containsKey(varName)) {
+            String val = variables.get(varName);
+            return val == null ? OMIT_OPTIONAL_FIELD : val;
+        }
+        return OMIT_OPTIONAL_FIELD;
+    }
+
+    private Map<String, Object> resolveMapVariableValue(String key, Map<?, ?> mapVal) {
+        Map<String, Object> resolved = new LinkedHashMap<>();
+        mapVal.forEach((k, v) -> {
+            Object val = resolveVariableValue(key + "." + k, v);
+            if (val != OMIT_OPTIONAL_FIELD) {
+                resolved.put(String.valueOf(k), val);
+            }
         });
+        return resolved;
+    }
+
+    private static Optional<String> extractStandaloneVariableName(String rawExpr) {
+        return FunctionalFlowValidator.extractStandaloneIdentifier(rawExpr);
+    }
+
+    private static Optional<String> extractStandaloneOptionalVariableName(String rawExpr) {
+        return FunctionalFlowValidator.extractStandaloneOptionalIdentifier(rawExpr);
+    }
+
+    private String replaceEmbeddedOptionalTokens(String expr) {
+        if (expr == null || !expr.contains("${") || !expr.contains("?}")) {
+            return expr;
+        }
+        Matcher matcher = FunctionalFlowValidator.OPTIONAL_VAR_IDENTIFIER_PATTERN.matcher(expr);
+        StringBuilder sb = new StringBuilder();
+        while (matcher.find()) {
+            Object val = resolveOptionalVariableValue(matcher.group(1));
+            String replacement = val == OMIT_OPTIONAL_FIELD ? "" : String.valueOf(val);
+            matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
     private void executeStepAcrossMatchingOperations(FunctionalFlowDocument document, FunctionalFlowStep step,
@@ -154,19 +325,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     }
 
     private void applyForEachRowVariables(Map<String, Object> row) {
-        row.forEach((k, v) -> {
-            if (v == null) {
-                variables.put(k, "");
-                typedVariables.put(k, null);
-            } else if (v instanceof String str) {
-                String resolved = DynamicValueResolver.resolve(str, variables);
-                variables.put(k, resolved);
-                typedVariables.put(k, resolved);
-            } else {
-                variables.put(k, String.valueOf(v));
-                typedVariables.put(k, v);
-            }
-        });
+        row.forEach((k, v) -> storeVariableEntry(k, v, false));
     }
 
     private void restoreRowVariables(Map<String, String> previousVars, Map<String, Object> previousTyped, Set<String> rowKeys) {
@@ -388,7 +547,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                 step.rawTarget(), step.targetPaths(), step.path(), step.query(),
                 newHeaders, newBody, step.base(), step.omit(), step.variant(),
                 step.variantMatch(), step.correlate(), step.save(), step.expect(), step.fuzz(),
-                step.delayMs(), step.repeat(), step.poll(), step.forEach());
+                step.delayMs(), step.repeat(), step.poll(), step.forEach(), step.tags(), step.headersRef());
     }
 
     private List<FuzzingData> resolveMatchingOperationsForFuzzStep(FunctionalFlowStep step) {
@@ -453,7 +612,8 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                                                           ResolvedStepTarget target,
                                                           FuzzingData data) {
         PreparedStepPayloads payloads = preparePayloads(document, step, target, data);
-        Set<CatsHeader> headers = prepareHeaders(document, step, data, payloads.bodyPayload());
+        Set<String> protectedHeaders = new LinkedHashSet<>();
+        Set<CatsHeader> headers = prepareHeaders(document, step, data, payloads.bodyPayload(), protectedHeaders);
         List<RequestTarget> mutationTargets = computeMutationTargets(data, payloads.bodyPayload(),
                 payloads.pathParamsPayload(), headers, payloads.changedFields());
         boolean expectsRateLimit = step.expect() != null
@@ -461,6 +621,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                 && step.expect().status().contains(String.valueOf(ResponseCodeFamily.STATUS_TOO_MANY_REQUESTS));
         CatsResponse response = serviceCaller.call(ServiceData.from(data)
                 .replaceRefData(false)
+                .protectedHeaders(Set.copyOf(protectedHeaders))
                 .headers(headers)
                 .payload(payloads.bodyPayload())
                 .pathParamsPayload(payloads.pathParamsPayload())
@@ -534,7 +695,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         }
     }
 
-    private static Set<String> stepKeys(String stepName, int stepIndex) {
+    static Set<String> stepKeys(String stepName, int stepIndex) {
         Set<String> keys = new LinkedHashSet<>();
         keys.add("step" + stepIndex);
         if (StringUtils.isNotBlank(stepName)) {
@@ -712,7 +873,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         pathParamsPayload = refDataApplied.pathParamsPayload();
 
         String bodyPayload = applyBodyOverrides(basePayload, step.body(), data.getContractPath(), changedFields);
-        for (String omitField : step.omit()) {
+        for (String omitField : resolveOmitEntries(step.omit(), bodyPayload)) {
             String normalized = FieldCorrelationEvaluator.normalizeFieldPath(omitField);
             bodyPayload = JsonUtils.deleteNode(bodyPayload, normalized);
             changedFields.add(normalized);
@@ -723,6 +884,14 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         for (Map.Entry<String, Object> paramEntry : combinedUrlParams.entrySet()) {
             Object resolved = resolveValueAndRecordRefData(data.getContractPath(), paramEntry.getKey(), paramEntry.getValue(), bodyPayload);
             changedFields.add(paramEntry.getKey());
+            if (isRemoveFieldSentinel(resolved)) {
+                if (bodyMethod) {
+                    pathParamsPayload = JsonUtils.deleteNode(pathParamsPayload, paramEntry.getKey());
+                } else {
+                    bodyPayload = JsonUtils.deleteNode(bodyPayload, paramEntry.getKey());
+                }
+                continue;
+            }
             if (bodyMethod) {
                 pathParamsPayload = FieldCorrelationEvaluator.setOrInsertField(pathParamsPayload, paramEntry.getKey(), resolved, true);
             } else {
@@ -809,12 +978,10 @@ public class FunctionalFlowFuzzer implements Fuzzer {
                 return basePayload;
             }
             case String rawText -> {
-                String resolved = resolveStringExpression(rawText, basePayload);
-                changedFields.add("$");
-                return JsonUtils.isValidJson(resolved) ? resolved : JsonUtils.serialize(resolved);
+                return applyStringOrVariableBody(basePayload, rawText, contractPath, changedFields);
             }
             case List<?> listSpec -> {
-                Object resolvedList = resolveValueRecursive(contractPath, "$", listSpec, basePayload, changedFields);
+                Object resolvedList = resolveValueRecursive(contractPath, "$", listSpec, basePayload, changedFields, new ArrayList<>());
                 changedFields.add("$");
                 return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(resolvedList);
             }
@@ -828,6 +995,36 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         return basePayload;
     }
 
+    private String applyStringOrVariableBody(String basePayload, String rawText, String contractPath, Set<String> changedFields) {
+        Optional<String> optionalVar = extractStandaloneOptionalVariableName(rawText);
+        if (optionalVar.isPresent()) {
+            Object optionalVal = resolveOptionalVariableValue(optionalVar.get());
+            if (optionalVal == OMIT_OPTIONAL_FIELD) {
+                return basePayload;
+            }
+            return applyResolvedWholeBody(basePayload, optionalVal, contractPath, changedFields);
+        }
+        Optional<String> standaloneVar = extractStandaloneVariableName(rawText);
+        if (standaloneVar.isPresent() && typedVariables.containsKey(standaloneVar.get())) {
+            return applyResolvedWholeBody(basePayload, typedVariables.get(standaloneVar.get()), contractPath, changedFields);
+        }
+        String resolved = resolveStringExpression(rawText, basePayload);
+        changedFields.add("$");
+        return JsonUtils.isValidJson(resolved) ? resolved : JsonUtils.serialize(resolved);
+    }
+
+    private String applyResolvedWholeBody(String basePayload, Object resolvedVal, String contractPath, Set<String> changedFields) {
+        if (resolvedVal instanceof Map<?, ?> mapVal) {
+            return applyMapBodyOverrides(basePayload, mapVal, contractPath, changedFields);
+        }
+        if (resolvedVal instanceof String strVal) {
+            changedFields.add("$");
+            return JsonUtils.isValidJson(strVal) ? strVal : JsonUtils.serialize(strVal);
+        }
+        changedFields.add("$");
+        return JsonUtils.GSON_NO_PRETTY_PRINTING.toJson(resolvedVal);
+    }
+
     private String applyMapBodyOverrides(String basePayload, Map<?, ?> mapSpec, String contractPath, Set<String> changedFields) {
         String current = StringUtils.defaultIfBlank(basePayload, "{}");
         for (Map.Entry<?, ?> entry : mapSpec.entrySet()) {
@@ -839,20 +1036,40 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             if (!(entry.getValue() instanceof Map<?, ?>)) {
                 changedFields.add(normalizedKey);
             }
-            Object resolvedVal = resolveValueRecursive(contractPath, normalizedKey, entry.getValue(), current, changedFields);
+            List<String> removedNestedPaths = new ArrayList<>();
+            Object resolvedVal = resolveValueRecursive(contractPath, normalizedKey, entry.getValue(), current, changedFields, removedNestedPaths);
+            if (isRemoveFieldSentinel(resolvedVal)) {
+                current = JsonUtils.deleteNode(current, normalizedKey);
+                changedFields.add(normalizedKey);
+                continue;
+            }
             current = setOrMergeField(current, normalizedKey, resolvedVal);
+            for (String removedPath : removedNestedPaths) {
+                current = JsonUtils.deleteNode(current, removedPath);
+                changedFields.add(removedPath);
+            }
         }
         return current;
     }
 
+    private static boolean isRemoveFieldSentinel(Object value) {
+        return value == OMIT_OPTIONAL_FIELD
+                || (value instanceof String str && ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(str));
+    }
+
     private Object resolveValueRecursive(String contractPath, String fieldPath, Object value,
-                                         String currentPayload, Set<String> changedFields) {
+                                         String currentPayload, Set<String> changedFields, List<String> removedPaths) {
         if (value instanceof Map<?, ?> nestedMap) {
             Map<String, Object> resolvedMap = new LinkedHashMap<>();
             nestedMap.forEach((k, v) -> {
                 String childKey = String.valueOf(k);
                 String childPath = "$".equals(fieldPath) ? childKey : fieldPath + "#" + childKey;
-                resolvedMap.put(childKey, resolveValueRecursive(contractPath, childPath, v, currentPayload, changedFields));
+                Object resolvedChild = resolveValueRecursive(contractPath, childPath, v, currentPayload, changedFields, removedPaths);
+                if (isRemoveFieldSentinel(resolvedChild)) {
+                    removedPaths.add(childPath);
+                } else {
+                    resolvedMap.put(childKey, resolvedChild);
+                }
             });
             return resolvedMap;
         }
@@ -862,23 +1079,76 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         if (value instanceof List<?> nestedList) {
             List<Object> resolvedList = new ArrayList<>();
             for (Object item : nestedList) {
-                resolvedList.add(resolveValueRecursive(contractPath, fieldPath, item, currentPayload, changedFields));
+                Object resolvedItem = resolveValueRecursive(contractPath, fieldPath, item, currentPayload, changedFields, removedPaths);
+                if (!isRemoveFieldSentinel(resolvedItem)) {
+                    resolvedList.add(resolvedItem);
+                }
             }
             return resolvedList;
         }
         return resolveValueAndRecordRefData(contractPath, fieldPath, value, currentPayload);
     }
 
+    private List<String> resolveOmitEntries(List<String> rawOmit, String currentPayload) {
+        if (rawOmit == null || rawOmit.isEmpty()) {
+            return List.of();
+        }
+        List<String> resolvedEntries = new ArrayList<>();
+        for (String entry : rawOmit) {
+            appendResolvedOmitEntry(entry, currentPayload, resolvedEntries);
+        }
+        return resolvedEntries;
+    }
+
+    private void appendResolvedOmitEntry(String entry, String currentPayload, List<String> target) {
+        if (StringUtils.isBlank(entry)) {
+            return;
+        }
+        Optional<String> optionalVar = extractStandaloneOptionalVariableName(entry);
+        if (optionalVar.isPresent()) {
+            Object val = resolveOptionalVariableValue(optionalVar.get());
+            if (val != OMIT_OPTIONAL_FIELD) {
+                appendTypedOmitValue(val, target);
+            }
+            return;
+        }
+        Optional<String> standaloneVar = extractStandaloneVariableName(entry);
+        if (standaloneVar.isPresent() && typedVariables.containsKey(standaloneVar.get())) {
+            appendTypedOmitValue(typedVariables.get(standaloneVar.get()), target);
+            return;
+        }
+        String resolved = resolveStringExpression(entry, currentPayload);
+        if (StringUtils.isNotBlank(resolved)) {
+            target.add(resolved);
+        }
+    }
+
+    private static void appendTypedOmitValue(Object typedVal, List<String> target) {
+        if (typedVal instanceof List<?> listVal) {
+            listVal.stream().filter(Objects::nonNull).map(String::valueOf)
+                    .filter(StringUtils::isNotBlank).forEach(target::add);
+        } else if (typedVal != null && StringUtils.isNotBlank(String.valueOf(typedVal))) {
+            target.add(String.valueOf(typedVal));
+        }
+    }
+
     private Object resolveValueAndRecordRefData(String contractPath, String fieldPath, Object rawValue, String currentPayload) {
         if (!(rawValue instanceof String strVal)) {
             return rawValue;
         }
-        String trimmed = strVal.trim();
-        if (trimmed.startsWith("${") && trimmed.endsWith("}") && trimmed.indexOf("${", 2) < 0) {
-            String varName = trimmed.substring(2, trimmed.length() - 1).trim();
-            if (typedVariables.containsKey(varName)) {
-                return typedVariables.get(varName);
+        Optional<String> optionalVar = extractStandaloneOptionalVariableName(strVal);
+        if (optionalVar.isPresent()) {
+            Object optionalVal = resolveOptionalVariableValue(optionalVar.get());
+            if (optionalVal != OMIT_OPTIONAL_FIELD) {
+                recordVariableConsumptionForRefData(contractPath, fieldPath, "${" + optionalVar.get() + "}", optionalVal);
             }
+            return optionalVal;
+        }
+        Optional<String> standaloneVar = extractStandaloneVariableName(strVal);
+        if (standaloneVar.isPresent() && typedVariables.containsKey(standaloneVar.get())) {
+            Object typedVal = typedVariables.get(standaloneVar.get());
+            recordVariableConsumptionForRefData(contractPath, fieldPath, strVal, typedVal);
+            return typedVal;
         }
         String resolved = resolveStringExpression(strVal, currentPayload);
         serviceCaller.registerSensitiveFieldIfPresent(fieldPath, strVal, resolved);
@@ -886,7 +1156,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         return DynamicValueResolver.coerceScalarIfOriginalWasTyped(strVal, resolved);
     }
 
-    private void recordVariableConsumptionForRefData(String contractPath, String fieldPath, String rawExpr, String resolved) {
+    private void recordVariableConsumptionForRefData(String contractPath, String fieldPath, String rawExpr, Object resolved) {
         if (!rawExpr.contains("${")) {
             return;
         }
@@ -907,7 +1177,8 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         if (rawExpr == null) {
             return null;
         }
-        String withStepRefs = replaceStepTokens(rawExpr);
+        String withOptional = replaceEmbeddedOptionalTokens(rawExpr);
+        String withStepRefs = replaceStepTokens(withOptional);
         Map<String, String> context = new LinkedHashMap<>(variables);
         context.put(Parser.REQUEST, StringUtils.defaultIfBlank(currentPayload, "{}"));
         if (responseBody != null) {
@@ -964,47 +1235,98 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     }
 
     private Set<CatsHeader> prepareHeaders(FunctionalFlowDocument document, FunctionalFlowStep step,
-                                           FuzzingData data, String bodyPayload) {
+                                           FuzzingData data, String bodyPayload, Set<String> protectedHeaders) {
         Map<String, CatsHeader> byName = new LinkedHashMap<>();
         for (CatsHeader header : Optional.ofNullable(data.getHeaders()).orElse(Set.of())) {
             byName.put(header.getName().toLowerCase(Locale.ROOT), header.copy());
         }
-        applyHeaderOverrides(byName, document == null ? Map.of() : document.headers(), data.getContractPath(), bodyPayload);
-        applyHeaderOverrides(byName, step.headers(), data.getContractPath(), bodyPayload);
-        applyHeaderOmissions(byName, step.omit());
+        if (document != null) {
+            applyHeadersRef(byName, document.headersRef(), "Document", data.getContractPath(), bodyPayload, protectedHeaders);
+            applyHeaderOverrides(byName, document.headers(), data.getContractPath(), bodyPayload, protectedHeaders);
+        }
+        applyHeadersRef(byName, step.headersRef(), "Step '" + step.name() + "'", data.getContractPath(), bodyPayload, protectedHeaders);
+        applyHeaderOverrides(byName, step.headers(), data.getContractPath(), bodyPayload, protectedHeaders);
+        applyHeaderOmissions(byName, resolveOmitEntries(step.omit(), bodyPayload), protectedHeaders);
         return new LinkedHashSet<>(byName.values());
     }
 
+    private void applyHeadersRef(Map<String, CatsHeader> byName, String headersRef, String owner,
+                                 String contractPath, String bodyPayload, Set<String> protectedHeaders) {
+        if (StringUtils.isBlank(headersRef)) {
+            return;
+        }
+        Optional<String> optionalVar = extractStandaloneOptionalVariableName(headersRef);
+        Optional<String> requiredVar = optionalVar.isPresent() ? Optional.empty() : extractStandaloneVariableName(headersRef);
+        if (optionalVar.isEmpty() && requiredVar.isEmpty()) {
+            throw new CatsException("%s 'headers' must be a map or a standalone '${variable}' reference, got '%s'"
+                    .formatted(owner, headersRef));
+        }
+        String name = optionalVar.orElseGet(requiredVar::orElseThrow);
+        Object resolved = optionalVar.isPresent()
+                ? resolveOptionalVariableValue(name)
+                : (typedVariables.containsKey(name) ? typedVariables.get(name) : OMIT_OPTIONAL_FIELD);
+        if (resolved == OMIT_OPTIONAL_FIELD) {
+            if (optionalVar.isEmpty()) {
+                throw new CatsException("%s 'headers' variable '${%s}' did not resolve to a map/object"
+                        .formatted(owner, name));
+            }
+            return;
+        }
+        if (resolved == null) {
+            return;
+        }
+        if (!(resolved instanceof Map<?, ?> mapVal)) {
+            throw new CatsException("%s 'headers' variable '${%s}' must be a map/object, got %s"
+                    .formatted(owner, name, resolved.getClass().getSimpleName()));
+        }
+        Map<String, Object> headerMap = new LinkedHashMap<>();
+        mapVal.forEach((k, v) -> headerMap.put(String.valueOf(k), v));
+        applyHeaderOverrides(byName, headerMap, contractPath, bodyPayload, protectedHeaders);
+    }
+
     private void applyHeaderOverrides(Map<String, CatsHeader> byName, Map<String, Object> overrides,
-                                      String contractPath, String bodyPayload) {
+                                      String contractPath, String bodyPayload, Set<String> protectedHeaders) {
         if (overrides == null || overrides.isEmpty()) {
             return;
         }
         overrides.forEach((name, rawValue) -> {
             String lower = name.toLowerCase(Locale.ROOT);
+            protectedHeaders.add(lower);
             if (rawValue == null) {
                 byName.remove(lower);
                 return;
             }
             String rawStr = String.valueOf(rawValue);
+            Optional<String> optionalVar = extractStandaloneOptionalVariableName(rawStr);
+            if (optionalVar.isPresent()) {
+                Object optionalVal = resolveOptionalVariableValue(optionalVar.get());
+                if (optionalVal == OMIT_OPTIONAL_FIELD) {
+                    byName.remove(lower);
+                    return;
+                }
+                String resolvedVal = String.valueOf(optionalVal);
+                recordVariableConsumptionForRefData(contractPath, name, "${" + optionalVar.get() + "}", resolvedVal);
+                byName.put(lower, CatsHeader.builder().name(name).value(resolvedVal).build());
+                return;
+            }
             String resolved = resolveStringExpression(rawStr, bodyPayload);
+            serviceCaller.registerSensitiveFieldIfPresent(name, rawStr, resolved);
             recordVariableConsumptionForRefData(contractPath, name, rawStr, resolved);
             byName.put(lower, CatsHeader.builder().name(name).value(resolved).build());
         });
     }
 
-    private static void applyHeaderOmissions(Map<String, CatsHeader> byName, List<String> omitList) {
+    private static void applyHeaderOmissions(Map<String, CatsHeader> byName, List<String> omitList, Set<String> protectedHeaders) {
         for (String omitEntry : Optional.ofNullable(omitList).orElse(List.of())) {
             if (StringUtils.isBlank(omitEntry)) {
                 continue;
             }
             String trimmed = omitEntry.trim();
-            if (trimmed.toLowerCase(Locale.ROOT).startsWith("headers.") || trimmed.toLowerCase(Locale.ROOT).startsWith("header.")) {
-                String headerName = trimmed.substring(trimmed.indexOf('.') + 1).trim().toLowerCase(Locale.ROOT);
-                byName.remove(headerName);
-            } else {
-                byName.remove(trimmed.toLowerCase(Locale.ROOT));
-            }
+            String headerName = (trimmed.toLowerCase(Locale.ROOT).startsWith("headers.") || trimmed.toLowerCase(Locale.ROOT).startsWith("header."))
+                    ? trimmed.substring(trimmed.indexOf('.') + 1).trim().toLowerCase(Locale.ROOT)
+                    : trimmed.toLowerCase(Locale.ROOT);
+            byName.remove(headerName);
+            protectedHeaders.add(headerName);
         }
     }
 
@@ -1028,6 +1350,7 @@ public class FunctionalFlowFuzzer implements Fuzzer {
             String extracted = extractValueBySelector(selector.trim(), response, requestPayload, pathParamsPayload);
             if (!JsonUtils.isNotSet(extracted)) {
                 variables.put(varName, extracted);
+                typedVariables.remove(varName);
                 savedOutputVariableNames.add(varName);
                 logger.debug("Saved variable [{}] = [{}]", varName, extracted);
             }

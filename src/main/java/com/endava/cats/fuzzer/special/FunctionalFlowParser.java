@@ -9,6 +9,7 @@ import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FuzzMode;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.PollConfig;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.StepFuzzConfig;
 import com.endava.cats.http.HttpMethod;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -17,13 +18,16 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Detects and parses sequential functional and security flow YAML documents (`steps:` or top-level step list).
@@ -71,7 +75,7 @@ public final class FunctionalFlowParser {
             if (root == null) {
                 return false;
             }
-            if (root.isObject() && root.has("steps") && root.get("steps").isArray()) {
+            if (root.isObject() && hasStepsOrImports(root)) {
                 return true;
             }
             if (root.isArray() && !root.isEmpty() && root.get(0).isObject()) {
@@ -81,6 +85,15 @@ public final class FunctionalFlowParser {
         } catch (IOException _) {
             return false;
         }
+    }
+
+    private static boolean hasStepsOrImports(JsonNode root) {
+        JsonNode stepsNode = root.get("steps");
+        if (stepsNode != null && stepsNode.isArray()) {
+            return true;
+        }
+        JsonNode importsNode = root.get("imports");
+        return importsNode != null && (importsNode.isArray() || importsNode.isTextual());
     }
 
     private static boolean hasHttpMethodEntry(JsonNode stepNode) {
@@ -98,27 +111,221 @@ public final class FunctionalFlowParser {
     }
 
     public static FunctionalFlowDocument parse(File file) throws IOException {
-        return parseContent(Files.readString(file.toPath()));
+        Path canonicalPath = toNormalizedPath(file.toPath());
+        return parsePath(canonicalPath, new ImportParseContext(new LinkedHashSet<>(), new LinkedHashSet<>()));
     }
 
     public static FunctionalFlowDocument parseContent(String yamlContent) {
         try {
             JsonNode root = YAML_MAPPER.readTree(yamlContent);
-            if (root == null) {
-                return new FunctionalFlowDocument(Map.of(), List.of(), List.of());
-            }
-            if (root.isArray()) {
-                return new FunctionalFlowDocument(Map.of(), List.of(), parseSteps(root));
-            }
-            Map<String, String> variables = parseStringMap(root.get("variables"));
-            Map<String, Object> headers = parseObjectMap(root.get(root.has("headers") ? "headers" : "header"));
-            JsonNode corrNode = root.get(root.has("correlate") ? "correlate" : "correlations");
-            List<FieldCorrelationRule> correlate = parseCorrelations(corrNode);
-            List<FunctionalFlowStep> steps = parseSteps(root.get("steps"));
-            return new FunctionalFlowDocument(variables, headers, correlate, steps);
+            return parseRootNode(root, null, new ImportParseContext(new LinkedHashSet<>(), new LinkedHashSet<>()));
         } catch (IOException e) {
             throw new CatsException("Unable to parse functional flow YAML document", e);
         }
+    }
+
+    private record ImportParseContext(Set<Path> activeChain, Set<Path> loadedFiles) {
+    }
+
+    private record HeadersSpec(Map<String, Object> map, String ref) {
+    }
+
+    private static final class MergedFlowSections {
+        private final Map<String, Object> variables = new LinkedHashMap<>();
+        private final Map<String, Object> headers = new LinkedHashMap<>();
+        private String headersRef;
+        private final List<FieldCorrelationRule> correlate = new ArrayList<>();
+        private final List<FunctionalFlowStep> steps = new ArrayList<>();
+        private List<String> stepTags = List.of();
+        private List<String> skipStepTags = List.of();
+
+        void append(FunctionalFlowDocument doc) {
+            variables.putAll(doc.variables());
+            if (doc.headersRef() != null) {
+                headersRef = doc.headersRef();
+            }
+            mergeHeaders(headers, doc.headers());
+            correlate.addAll(doc.correlate());
+            steps.addAll(doc.steps());
+            if (!doc.stepTags().isEmpty()) {
+                stepTags = doc.stepTags();
+            }
+            if (!doc.skipStepTags().isEmpty()) {
+                skipStepTags = doc.skipStepTags();
+            }
+        }
+
+        FunctionalFlowDocument toDocument() {
+            return new FunctionalFlowDocument(
+                    Collections.unmodifiableMap(variables),
+                    Collections.unmodifiableMap(headers),
+                    headersRef,
+                    Collections.unmodifiableList(correlate),
+                    Collections.unmodifiableList(steps),
+                    stepTags,
+                    skipStepTags);
+        }
+    }
+
+    private static FunctionalFlowDocument parsePath(Path currentPath, ImportParseContext context) throws IOException {
+        if (!context.activeChain().add(currentPath)) {
+            throw new CatsException("Cyclic functional flow import detected: %s"
+                    .formatted(formatImportCycle(context.activeChain(), currentPath)));
+        }
+        try {
+            JsonNode root = readYamlTree(currentPath);
+            FunctionalFlowDocument document = parseRootNode(root, currentPath, context);
+            context.loadedFiles().add(currentPath);
+            return document;
+        } finally {
+            context.activeChain().remove(currentPath);
+        }
+    }
+
+    private static JsonNode readYamlTree(Path currentPath) throws IOException {
+        try {
+            return YAML_MAPPER.readTree(Files.readString(currentPath));
+        } catch (JsonProcessingException e) {
+            throw new CatsException("Unable to parse functional flow YAML file %s: %s"
+                    .formatted(currentPath, e.getOriginalMessage()), e);
+        }
+    }
+
+    private static FunctionalFlowDocument parseRootNode(JsonNode root, Path currentPath,
+                                                        ImportParseContext context) throws IOException {
+        if (root == null) {
+            return new FunctionalFlowDocument(Map.of(), List.of(), List.of());
+        }
+        if (root.isArray()) {
+            return new FunctionalFlowDocument(Map.of(), List.of(), parseSteps(root));
+        }
+        MergedFlowSections merged = new MergedFlowSections();
+        mergeImports(root.get("imports"), currentPath, context, merged);
+
+        merged.variables.putAll(parseObjectMap(root.get("variables")));
+        applyLocalHeaders(root, merged);
+        JsonNode corrNode = root.get(root.has("correlate") ? "correlate" : "correlations");
+        merged.correlate.addAll(parseCorrelations(corrNode));
+        merged.steps.addAll(parseSteps(root.get("steps")));
+        applyLocalStepTags(root, merged);
+
+        return merged.toDocument();
+    }
+
+    private static void applyLocalHeaders(JsonNode root, MergedFlowSections merged) {
+        if (!root.has("headers") && !root.has("header")) {
+            return;
+        }
+        JsonNode headersNode = root.get(root.has("headers") ? "headers" : "header");
+        if (headersNode == null || headersNode.isNull()) {
+            merged.headers.clear();
+            merged.headersRef = null;
+            return;
+        }
+        HeadersSpec spec = parseHeadersSpec(headersNode);
+        if (spec.ref() != null) {
+            merged.headers.clear();
+            merged.headersRef = spec.ref();
+        } else {
+            mergeHeaders(merged.headers, spec.map());
+        }
+    }
+
+    private static void applyLocalStepTags(JsonNode root, MergedFlowSections merged) {
+        if (root.has("stepTags") || root.has("stepTag")) {
+            merged.stepTags = parseStringList(root.get(root.has("stepTags") ? "stepTags" : "stepTag"));
+        }
+        if (root.has("skipStepTags") || root.has("skipStepTag")) {
+            merged.skipStepTags = parseStringList(root.get(root.has("skipStepTags") ? "skipStepTags" : "skipStepTag"));
+        }
+    }
+
+    private static HeadersSpec parseHeadersSpec(JsonNode headersNode) {
+        if (headersNode == null || headersNode.isNull()) {
+            return new HeadersSpec(Map.of(), null);
+        }
+        if (headersNode.isObject()) {
+            return new HeadersSpec(parseObjectMap(headersNode), null);
+        }
+        if (headersNode.isTextual()) {
+            return new HeadersSpec(Map.of(), headersNode.asText().trim());
+        }
+        throw new CatsException("Invalid 'headers' value in functional flow: expected a map or a ${variable} reference");
+    }
+
+    private static void mergeImports(JsonNode importsNode, Path currentPath,
+                                     ImportParseContext context, MergedFlowSections merged) throws IOException {
+        List<String> importPaths = parseImportPaths(importsNode);
+        if (importPaths.isEmpty()) {
+            return;
+        }
+        if (currentPath == null) {
+            throw new CatsException("Flow 'imports' requires loading from a file so relative paths can be resolved");
+        }
+        Path baseDir = currentPath.getParent();
+        for (String importRef : importPaths) {
+            Path resolved = resolveImportPath(baseDir, importRef, currentPath);
+            if (!context.loadedFiles().contains(resolved)) {
+                merged.append(parsePath(resolved, context));
+            }
+        }
+    }
+
+    private static List<String> parseImportPaths(JsonNode importsNode) {
+        if (importsNode == null || importsNode.isNull()) {
+            return List.of();
+        }
+        if (importsNode.isTextual()) {
+            return List.of(importsNode.asText().trim());
+        }
+        if (!importsNode.isArray()) {
+            return List.of();
+        }
+        List<String> paths = new ArrayList<>();
+        for (JsonNode item : importsNode) {
+            if (item != null && !item.isNull()) {
+                paths.add(item.asText().trim());
+            }
+        }
+        return Collections.unmodifiableList(paths);
+    }
+
+    private static Path resolveImportPath(Path baseDir, String importRef, Path currentPath) {
+        if (StringUtils.isBlank(importRef)) {
+            throw new CatsException("Blank import path in functional flow file: %s".formatted(currentPath));
+        }
+        Path candidate = baseDir == null ? Path.of(importRef) : baseDir.resolve(importRef);
+        Path normalized = toNormalizedPath(candidate);
+        if (!Files.isRegularFile(normalized)) {
+            throw new CatsException("Imported functional flow file not found: %s (imported from %s)"
+                    .formatted(normalized, currentPath));
+        }
+        return normalized;
+    }
+
+    private static Path toNormalizedPath(Path path) {
+        Path absolute = path.toAbsolutePath().normalize();
+        try {
+            return absolute.toRealPath();
+        } catch (IOException _) {
+            return absolute;
+        }
+    }
+
+    private static String formatImportCycle(Set<Path> activeChain, Path repeatedPath) {
+        List<String> cycle = activeChain.stream()
+                .dropWhile(path -> !path.equals(repeatedPath))
+                .map(Path::toString)
+                .collect(Collectors.toCollection(ArrayList::new));
+        cycle.add(repeatedPath.toString());
+        return String.join(" -> ", cycle);
+    }
+
+    private static void mergeHeaders(Map<String, Object> target, Map<String, Object> incoming) {
+        incoming.forEach((key, value) -> {
+            target.keySet().removeIf(existing -> existing.equalsIgnoreCase(key));
+            target.put(key, value);
+        });
     }
 
     public static List<FieldCorrelationRule> parseCorrelationFile(File file) throws IOException {
@@ -163,7 +370,7 @@ public final class FunctionalFlowParser {
         String name = resolveStepName(explicitName, description, index, methodAndTarget);
         Map<String, Object> path = parsePathMap(node.get("path"));
         Map<String, Object> query = parseObjectMap(node.get("query"));
-        Map<String, Object> headers = parseObjectMap(node.get(node.has("headers") ? "headers" : "header"));
+        HeadersSpec headersSpec = parseHeadersSpec(node.get(node.has("headers") ? "headers" : "header"));
         Object body = node.has("body") ? convertJsonNode(node.get("body")) : null;
         BasePayloadMode base = BasePayloadMode.fromString(firstNonBlankText(node, "base"));
         List<String> omit = parseStringList(node.get("omit"));
@@ -177,12 +384,13 @@ public final class FunctionalFlowParser {
         int repeat = Math.max(1, (int) parseLongOption(node, 1L, "repeat", "times"));
         PollConfig poll = parsePollConfig(node.get(node.has("poll") ? "poll" : "retry"));
         List<Map<String, Object>> forEach = parseForEachRows(node.get("forEach"));
+        List<String> tags = parseStringList(node.get(node.has("tags") ? "tags" : "tag"));
         return new FunctionalFlowStep(
                 name, description, methodAndTarget.method(), methodAndTarget.allMethods(),
                 methodAndTarget.rawTarget(), methodAndTarget.targetPaths(),
-                path, query, headers, body, base, omit,
+                path, query, headersSpec.map(), body, base, omit,
                 variantSpec.name(), variantSpec.match(), correlate, save, expect, fuzz,
-                delayMs, repeat, poll, forEach);
+                delayMs, repeat, poll, forEach, tags, headersSpec.ref());
     }
 
     private static long parseLongOption(JsonNode node, long defaultValue, String... keys) {

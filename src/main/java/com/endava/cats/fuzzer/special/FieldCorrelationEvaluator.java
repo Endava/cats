@@ -370,7 +370,38 @@ public final class FieldCorrelationEvaluator {
         for (String expr : thatExpressions) {
             if (StringUtils.isNotBlank(expr)
                     && !evaluateBooleanExpression(expr, requestJson, response.getBody(), response, variables)) {
-                return Optional.of("Correlation condition failed: [" + expr + "]");
+                return Optional.of(formatFailedThatExpression(expr, requestJson, response, variables));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static String formatFailedThatExpression(String expr, String requestJson,
+                                                     CatsResponse response, Map<String, String> variables) {
+        Optional<String> absentNotEqualOperand = findAbsentNotEqualOperand(expr, requestJson, response, variables);
+        return absentNotEqualOperand
+                .map(operand -> "Correlation condition failed: [%s] (field '%s' was absent/null; '!=' evaluates to false on absent fields — use '%s is null || %s' if absence is allowed)"
+                        .formatted(expr, operand, operand, expr))
+                .orElse("Correlation condition failed: [" + expr + "]");
+    }
+
+    private static Optional<String> findAbsentNotEqualOperand(String expr, String requestJson,
+                                                              CatsResponse response, Map<String, String> variables) {
+        String responseJson = response == null ? null : response.getBody();
+        for (String orClause : splitLogicalTopLevel(expr, '|')) {
+            for (String atom : splitLogicalTopLevel(orClause, '&')) {
+                String trimmed = atom.trim();
+                int opIdx = findOperatorOutsideQuotes(trimmed, "!=");
+                if (opIdx > 0) {
+                    String leftRaw = trimmed.substring(0, opIdx).trim();
+                    String rightRaw = trimmed.substring(opIdx + 2).trim();
+                    if (!"null".equalsIgnoreCase(rightRaw)) {
+                        Object leftVal = resolveOperand(leftRaw, requestJson, responseJson, response, variables);
+                        if (leftVal == null || JsonUtils.isNotSet(String.valueOf(leftVal))) {
+                            return Optional.of(leftRaw);
+                        }
+                    }
+                }
             }
         }
         return Optional.empty();
@@ -687,7 +718,7 @@ public final class FieldCorrelationEvaluator {
         return trimmed.replace('.', '#');
     }
 
-    private static boolean matchesPathPattern(String contractPath, HttpMethod method, List<String> patterns) {
+    static boolean matchesPathPattern(String contractPath, HttpMethod method, List<String> patterns) {
         if (patterns == null || patterns.isEmpty() || contractPath == null) {
             return true;
         }

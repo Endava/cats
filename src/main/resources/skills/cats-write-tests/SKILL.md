@@ -60,10 +60,26 @@ A functional flow YAML file executes an ordered sequence of HTTP steps (`steps:`
 ### Complete `flows.yml` Syntax & Reference
 
 ```yaml
-# Optional initial variables available as ${varName} across all steps
+# Optional relative imports of shared flow files (resolved relative to this file; cycles rejected).
+# Imported variables/headers/correlate/steps load first; local variables/headers override same keys,
+# and local correlate/steps are appended after imported ones.
+imports:
+  - "../common/shared-flows.yml"
+
+# Optional flow-level tag selection (CLI --stepTags / --skipStepTags override these when supplied)
+stepTags: [smoke, billing]
+
+# Optional initial variables available as ${varName} across all steps.
+# Native YAML types (numbers, booleans, arrays, objects) are preserved when used standalone ("${varName}"),
+# including whole body ("body: \"${payloadObj}\"") and whole headers ("headers: \"${headerMap}\"").
+# Use "${varName?}" to omit a body field, nested field, list element, query param, or header when the variable
+# is null or unset (while "${varName}" with null still sends JSON null).
 variables:
   envPrefix: "staging"
   defaultCurrency: "EUR"
+  defaultUnitPrice: 15
+  dryRunEnabled: false
+  maxRetries: "#(int($$MAX_RETRIES))"
 
 # Optional flow-scoped request headers sent on every step (overridable or omittable per step)
 headers:
@@ -83,6 +99,8 @@ correlate:
 steps:
   - name: "createPlan"
     description: "Create a metered billing plan and verify its response contract"
+    # Optional tags for subset execution via --stepTags / --skipStepTags
+    tags: [smoke, billing]
     POST: "/billing-plans"
     # Optional oneOf/anyOf variant selection: a schema-name suffix (`variant: MeteredPlan`) or a
     # field match (all listed fields equal, case-sensitive; dot-paths like `payload.type` allowed).
@@ -180,10 +198,14 @@ steps:
 ### Running a Functional Flow
 ```bash
 cats run -c <spec> -s <server_url> flows.yml
+cats run -c <spec> -s <server_url> flows.yml --stepTags=smoke
+cats run -c <spec> -s <server_url> flows.yml --skipStepTags=destructive,slow
 ```
-- `cats run` applies `--correlations` and `--refData` as inputs before step-level `correlate:`, `body:`, `omit:`, `path:`, and `query:` overrides. Step values always win over `--refData` and correlation rules.
+- `cats run` applies `--headers`/`-H`, `--correlations`, and `--refData` as lower-precedence defaults before flow-level and step-level `headers:`, `correlate:`, `body:`, `omit:`, `path:`, and `query:` overrides. Step values always win.
+- `--stepTags` / `--skipStepTags` (or flow-level `stepTags:` / `skipStepTags:`, overridden by CLI flags) filter which flow `steps:` execute (case-insensitive; skip wins over include) without colliding with OpenAPI operation `--tags`. CATS logs a warning when untagged steps are excluded by `stepTags`.
+- Before sending any HTTP request, CATS validates the resolved flow and fails fast on missing imports, import cycles, undefined `${var}` references (including in `omit:` and `headers: "${var}"`), non-map `headers: "${var}"` references, or steps depending on variables / `$steps.<name>` / `$prev` produced by tag-excluded steps.
 - To export a `--refData` file populated with variables captured by `save:`, pass `--export-refdata <file.yml>`.
-- Supported auth/config/gate flags: `-H`, `--headers`, `--queryParams`, `-Q`, `--refData`, `-R`, `--correlations`, `--export-refdata`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`, `--failOn`, `--qualityGate`, `--baseline`, `--failOnNewWarnings`.
+- Supported auth/config/gate flags: `-H`, `--headers`, `--queryParams`, `-Q`, `--refData`, `-R`, `--correlations`, `--export-refdata`, `--stepTags`, `--skipStepTags`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`, `--failOn`, `--qualityGate`, `--baseline`, `--failOnNewWarnings`.
 
 ---
 
@@ -311,6 +333,7 @@ Types: standalone `#(...)` and `T(...)` expressions are automatically converted 
 - **`#(email)`** — random valid `@cats.io` email address
 - **`#(alphanumeric(N))`** / **`#(alpha(N))`** / **`#(numeric(N))`** / **`#(hex(N))`** — random string of length `N` (or `#(alpha(min,max))` range; also work without args for default 12-char length)
 - **`#(upper(expr))`** / **`#(lower(expr))`** / **`#(capitalize(expr))`** / **`#(trim(expr))`** / **`#(reverse(expr))`** / **`#(length(expr))`** — composable string helpers (e.g. `#(upper(alphabetic))`, `#(upper(alpha(6)))`, `#(lower(alphanumeric(8)))`)
+- **`#(int(expr))`** / **`#(float(expr))`** / **`#(bool(expr))`** / **`#(str(expr))`** — explicit type conversion helpers (aliases: `toInt`/`long`, `toFloat`/`double`/`number`, `toBool`/`boolean`, `string`/`toString`), ideal for coercing `$$ENV_VAR` strings into JSON numbers/booleans (e.g. `#(int($$EXPIRY_MONTH))`, `#(bool($$DRY_RUN))`) or forcing a numeric variable back to a JSON string (`#(str(${code}))`)
 - **`#(randomInt(min,max))`** / **`#(bool)`** — random integer in `[min, max)` or random boolean (`true` / `false`)
 - **`#(pick(VAL_1,VAL_2,VAL_3))`** / **`#(oneOf(VAL_1,VAL_2))`** — picks one value from the list (supports nested functions like `#(pick(upper(alpha(4)),numeric(4)))`)
 - **`#(today)`** / **`#(todayPlus(days))`** / **`#(todayMinus(days))`** — ISO-8601 `YYYY-MM-DD` date

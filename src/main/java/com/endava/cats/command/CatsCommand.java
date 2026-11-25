@@ -555,6 +555,15 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             }
             logger.config(AnsiUtils.bold("FunctionalFlow file: {}"),
                     AnsiUtils.blue(filesArguments.getFunctionalFlowFile().getCanonicalPath()));
+            if (!filesArguments.getStepTags().isEmpty()) {
+                logger.config(AnsiUtils.bold("Flow step tags: {}"), AnsiUtils.blue(filesArguments.getStepTags()));
+            }
+            if (!filesArguments.getSkipStepTags().isEmpty()) {
+                logger.config(AnsiUtils.bold("Skipped flow step tags: {}"), AnsiUtils.blue(filesArguments.getSkipStepTags()));
+            }
+            if (functionalFlowFuzzer != null) {
+                functionalFlowFuzzer.validateFlowFile(filesArguments.getFunctionalFlowFile());
+            }
         }
         if (filesArguments.getCorrelationsFile() != null) {
             logger.config(AnsiUtils.bold("Correlations file: {}"),

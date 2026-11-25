@@ -1023,6 +1023,27 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldNotOverwriteProtectedFlowHeadersWithSuppliedHeadersFile() {
+        ServiceData data = ServiceData.builder()
+                .relativePath("/pets")
+                .contractPath("/pets")
+                .httpMethod(HttpMethod.POST)
+                .headers(Set.of(CatsHeader.builder().name("header").value("step-override").build()))
+                .protectedHeaders(Set.of("header", "skipped-from-step"))
+                .contentType("application/json")
+                .build();
+
+        List<com.endava.cats.util.KeyValuePair<String, Object>> builtHeaders = serviceCaller.buildHeaders(data);
+
+        Assertions.assertThat(builtHeaders)
+                .anySatisfy(h -> {
+                    Assertions.assertThat(h.getKey()).isEqualToIgnoringCase("header");
+                    Assertions.assertThat(h.getValue()).isEqualTo("step-override");
+                })
+                .anySatisfy(h -> Assertions.assertThat(h.getKey()).isEqualToIgnoringCase("catsFuzzedHeader"));
+    }
+
+    @Test
     void shouldDisableResponseBodyLimitWhenConfiguredWithZero() {
         ReflectionTestUtils.setField(apiArguments, "maxResponseBytes", 0L);
         serviceCaller.initRateLimiter();

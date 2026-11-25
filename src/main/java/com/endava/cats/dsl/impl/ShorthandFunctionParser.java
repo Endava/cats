@@ -3,6 +3,7 @@ package com.endava.cats.dsl.impl;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.util.CatsRandom;
 
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -84,6 +85,22 @@ public class ShorthandFunctionParser implements Parser {
             Map.entry("sha256", s -> digestHex("SHA-256", s)),
             Map.entry("md5", s -> digestHex("MD5", s)),
             Map.entry("urlencode", s -> URLEncoder.encode(s, StandardCharsets.UTF_8))
+    );
+
+    private static final Map<String, UnaryOperator<String>> TYPE_CONVERSION_FUNCTIONS = Map.ofEntries(
+            Map.entry("int", ShorthandFunctionParser::parseInteger),
+            Map.entry("toint", ShorthandFunctionParser::parseInteger),
+            Map.entry("long", ShorthandFunctionParser::parseInteger),
+            Map.entry("float", ShorthandFunctionParser::parseFloatingPoint),
+            Map.entry("tofloat", ShorthandFunctionParser::parseFloatingPoint),
+            Map.entry("double", ShorthandFunctionParser::parseFloatingPoint),
+            Map.entry("number", ShorthandFunctionParser::parseFloatingPoint),
+            Map.entry("bool", ShorthandFunctionParser::parseBooleanValue),
+            Map.entry("tobool", ShorthandFunctionParser::parseBooleanValue),
+            Map.entry("boolean", ShorthandFunctionParser::parseBooleanValue),
+            Map.entry("str", s -> s),
+            Map.entry("string", s -> s),
+            Map.entry("tostring", s -> s)
     );
 
     private static final Map<String, Supplier<String>> NO_ARG_FUNCTIONS = Map.ofEntries(
@@ -243,7 +260,43 @@ public class ShorthandFunctionParser implements Parser {
         if (stringFunc != null) {
             return argsStr.isEmpty() ? originalExpression : stringFunc.apply(resolveArgument(argsStr, context));
         }
+        UnaryOperator<String> typeFunc = TYPE_CONVERSION_FUNCTIONS.get(funcName);
+        if (typeFunc != null) {
+            return evaluateTypeConversion(typeFunc, argsStr, originalExpression, context);
+        }
         return evaluateNumericFunction(funcName, argsStr, originalExpression);
+    }
+
+    private String evaluateTypeConversion(UnaryOperator<String> typeFunc, String argsStr,
+                                          String originalExpression, Map<String, String> context) {
+        if (argsStr.isEmpty()) {
+            return originalExpression;
+        }
+        String converted = typeFunc.apply(resolveArgument(argsStr, context));
+        return converted != null ? converted : originalExpression;
+    }
+
+    private static String parseInteger(String value) {
+        try {
+            return Long.toString(Long.parseLong(value.trim()));
+        } catch (NumberFormatException _) {
+            return null;
+        }
+    }
+
+    private static String parseFloatingPoint(String value) {
+        try {
+            BigDecimal decimal = new BigDecimal(value.trim());
+            BigDecimal normalized = decimal.scale() <= 0 ? decimal.setScale(1) : decimal;
+            return normalized.toPlainString();
+        } catch (NumberFormatException _) {
+            return null;
+        }
+    }
+
+    private static String parseBooleanValue(String value) {
+        String trimmed = value.trim().toLowerCase(Locale.ROOT);
+        return ("true".equals(trimmed) || "false".equals(trimmed)) ? trimmed : null;
     }
 
     private String evaluatePickFunction(String argsStr, String originalExpression, Map<String, String> context) {

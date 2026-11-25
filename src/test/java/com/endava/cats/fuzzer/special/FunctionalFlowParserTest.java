@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.special;
 
+import com.endava.cats.exception.CatsException;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.BasePayloadMode;
 import com.endava.cats.fuzzer.special.FunctionalFlowDocument.FunctionalFlowStep;
 import com.endava.cats.http.HttpMethod;
@@ -9,8 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
@@ -315,5 +318,234 @@ class FunctionalFlowParserTest {
         Assertions.assertThat(advStep.poll().intervalMs()).isEqualTo(5L);
         Assertions.assertThat(advStep.forEach()).hasSize(2);
         Assertions.assertThat(advStep.correlate()).hasSize(1);
+    }
+
+    @Test
+    void shouldPreserveTypedGlobalVariablesAndStepTags() {
+        String yaml = """
+                variables:
+                  expiryMonth: 12
+                  rate: 19.95
+                  enabled: false
+                  cardNumber: "4111111111111111"
+                  currencies: ["EUR", "USD"]
+                  meta:
+                    region: "EU"
+                  nullable: null
+                steps:
+                  - name: auth01Authorize
+                    tags: [psp, smoke]
+                    POST: /authorize
+                  - name: ops01MissingKey
+                    tag: adapter
+                    POST: /authorize
+                """;
+
+        FunctionalFlowDocument doc = FunctionalFlowParser.parseContent(yaml);
+        Assertions.assertThat(doc.variables())
+                .containsEntry("expiryMonth", 12L)
+                .containsEntry("rate", new BigDecimal("19.95"))
+                .containsEntry("enabled", false)
+                .containsEntry("cardNumber", "4111111111111111")
+                .containsEntry("currencies", List.of("EUR", "USD"))
+                .containsEntry("meta", Map.of("region", "EU"))
+                .containsEntry("nullable", null);
+
+        FunctionalFlowStep pspStep = doc.steps().getFirst();
+        FunctionalFlowStep adapterStep = doc.steps().get(1);
+        Assertions.assertThat(pspStep.tags()).containsExactly("psp", "smoke");
+        Assertions.assertThat(adapterStep.tags()).containsExactly("adapter");
+        Assertions.assertThat(pspStep.matchesTags(List.of("PSP"), List.of())).isTrue();
+        Assertions.assertThat(pspStep.matchesTags(List.of("psp"), List.of("smoke"))).isFalse();
+        Assertions.assertThat(adapterStep.matchesTags(List.of("psp"), List.of())).isFalse();
+        Assertions.assertThat(adapterStep.matchesTags(List.of(), List.of("psp"))).isTrue();
+    }
+
+    @Test
+    void shouldResolveRelativeImportsAndMergeVariablesHeadersCorrelateAndSteps(@TempDir Path tempDir) throws Exception {
+        Path commonDir = Files.createDirectories(tempDir.resolve("common/psp"));
+        Path serviceDir = Files.createDirectories(tempDir.resolve("services/adyen-mock"));
+
+        Files.writeString(commonDir.resolve("flows.yml"), """
+                variables:
+                  route: "default-route"
+                  expiryMonth: 12
+                  sharedOnly: true
+                headers:
+                  X-Route: "${route}"
+                  X-Drop: "from-common"
+                correlate:
+                  - paths: ["/payments"]
+                    when: "type == 'CARD'"
+                    set:
+                      channel: "ECOM"
+                steps:
+                  - name: auth01Authorize
+                    tags: [psp]
+                    POST: /payments
+                    status: 201
+                """);
+
+        File childFile = serviceDir.resolve("flows.yml").toFile();
+        Files.writeString(childFile.toPath(), """
+                imports:
+                  - "../../common/psp/flows.yml"
+                variables:
+                  route: "XeleratorMockECOM"
+                  expiryMonth: 1
+                headers:
+                  x-route: "override-${route}"
+                  X-Drop: null
+                correlate:
+                  - paths: ["/refunds"]
+                    when: "reason == 'DUP'"
+                    set:
+                      autoApprove: true
+                steps:
+                  - name: localExtraCheck
+                    tags: [adapter]
+                    GET: /health
+                    status: 200
+                """);
+
+        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(childFile)).isTrue();
+        FunctionalFlowDocument doc = FunctionalFlowParser.parse(childFile);
+        Assertions.assertThat(doc.variables())
+                .containsEntry("route", "XeleratorMockECOM")
+                .containsEntry("expiryMonth", 1L)
+                .containsEntry("sharedOnly", true);
+        Assertions.assertThat(doc.headers())
+                .containsEntry("x-route", "override-${route}")
+                .containsEntry("X-Drop", null)
+                .doesNotContainKey("X-Route");
+        Assertions.assertThat(doc.correlate()).hasSize(2);
+        Assertions.assertThat(doc.steps())
+                .extracting(FunctionalFlowStep::name)
+                .containsExactly("auth01Authorize", "localExtraCheck");
+    }
+
+    @Test
+    void shouldDetectImportsOnlyFileAndDeduplicateDiamondImports(@TempDir Path tempDir) throws Exception {
+        Files.writeString(tempDir.resolve("base.yml"), """
+                variables:
+                  v: 1
+                steps:
+                  - name: baseStep
+                    POST: /base
+                    status: 200
+                """);
+        Files.writeString(tempDir.resolve("left.yml"), """
+                imports: ["base.yml"]
+                variables:
+                  v: 2
+                steps:
+                  - name: leftStep
+                    POST: /left
+                    status: 200
+                """);
+        Files.writeString(tempDir.resolve("right.yml"), """
+                imports: ["base.yml"]
+                variables:
+                  r: "ok"
+                steps:
+                  - name: rightStep
+                    POST: /right
+                    status: 200
+                """);
+        File rootFile = tempDir.resolve("root.yml").toFile();
+        Files.writeString(rootFile.toPath(), """
+                imports: ["left.yml", "right.yml"]
+                variables:
+                  env: "qa"
+                """);
+
+        Assertions.assertThat(FunctionalFlowParser.isFunctionalFlowFile(rootFile)).isTrue();
+        FunctionalFlowDocument doc = FunctionalFlowParser.parse(rootFile);
+        Assertions.assertThat(doc.steps())
+                .extracting(FunctionalFlowStep::name)
+                .containsExactly("baseStep", "leftStep", "rightStep");
+        Assertions.assertThat(doc.variables())
+                .containsEntry("v", 2L)
+                .containsEntry("r", "ok")
+                .containsEntry("env", "qa");
+    }
+
+    @Test
+    void shouldRejectImportCyclesMissingImportsAndStringContentImports(@TempDir Path tempDir) throws Exception {
+        File fileA = tempDir.resolve("a.yml").toFile();
+        File fileB = tempDir.resolve("b.yml").toFile();
+        Files.writeString(fileA.toPath(), "imports: [\"b.yml\"]\n");
+        Files.writeString(fileB.toPath(), "imports: [\"a.yml\"]\n");
+
+        Assertions.assertThatThrownBy(() -> FunctionalFlowParser.parse(fileA))
+                .isInstanceOf(CatsException.class)
+                .hasMessageContaining("Cyclic functional flow import detected");
+
+        File missingRef = tempDir.resolve("missing-ref.yml").toFile();
+        Files.writeString(missingRef.toPath(), "imports: [\"does-not-exist.yml\"]\n");
+        Assertions.assertThatThrownBy(() -> FunctionalFlowParser.parse(missingRef))
+                .isInstanceOf(CatsException.class)
+                .hasMessageContaining("Imported functional flow file not found");
+
+        Assertions.assertThatThrownBy(() -> FunctionalFlowParser.parseContent("imports: [\"other.yml\"]\n"))
+                .isInstanceOf(CatsException.class)
+                .hasMessageContaining("requires loading from a file");
+
+        Path bracketDir = Files.createDirectories(tempDir.resolve("dir[1]"));
+        Files.writeString(bracketDir.resolve("shared.yml"), "steps:\n  - POST: /ok\n");
+        File singleStringImport = tempDir.resolve("single-import.yml").toFile();
+        Files.writeString(singleStringImport.toPath(), "imports: \"dir[1]/shared.yml\"\n");
+        Assertions.assertThat(FunctionalFlowParser.parse(singleStringImport).steps()).hasSize(1);
+
+        Files.writeString(tempDir.resolve("broken.yml"), "steps:\n  - [unclosed\n");
+        File importsBroken = tempDir.resolve("imports-broken.yml").toFile();
+        Files.writeString(importsBroken.toPath(), "imports: [\"broken.yml\"]\n");
+        Assertions.assertThatThrownBy(() -> FunctionalFlowParser.parse(importsBroken))
+                .isInstanceOf(CatsException.class)
+                .hasMessageContaining("broken.yml");
+    }
+
+    @Test
+    void shouldParseFlowLevelStepTagsHeadersRefAndOverrideRules(@TempDir Path tempDir) throws Exception {
+        Files.writeString(tempDir.resolve("common.yml"), """
+                stepTags: [psp]
+                skipStepTags: [slow]
+                headers:
+                  X-From-Common: "yes"
+                steps:
+                  - name: sendWebhook
+                    tags: [psp]
+                    POST: /webhooks
+                    headers: "${webhookHeaders}"
+                    body: "${webhookBody}"
+                    omit: "${omitList}"
+                """);
+        File childFile = tempDir.resolve("child.yml").toFile();
+        Files.writeString(childFile.toPath(), """
+                imports: ["common.yml"]
+                stepTags: [adapter]
+                skipStepTags: []
+                headers: "${docHeaders}"
+                variables:
+                  docHeaders:
+                    X-Doc: "1"
+                  webhookHeaders:
+                    X-Sig: "abc"
+                  webhookBody:
+                    id: "evt_1"
+                  omitList: ["route"]
+                """);
+
+        FunctionalFlowDocument doc = FunctionalFlowParser.parse(childFile);
+        Assertions.assertThat(doc.stepTags()).containsExactly("adapter");
+        Assertions.assertThat(doc.skipStepTags()).isEmpty();
+        Assertions.assertThat(doc.headers()).isEmpty();
+        Assertions.assertThat(doc.headersRef()).isEqualTo("${docHeaders}");
+        Assertions.assertThat(doc.steps().getFirst().headersRef()).isEqualTo("${webhookHeaders}");
+        Assertions.assertThat(doc.steps().getFirst().omit()).containsExactly("${omitList}");
+
+        Assertions.assertThatThrownBy(() -> FunctionalFlowParser.parseContent("steps:\n  - POST: /x\n    headers: [1, 2]\n"))
+                .isInstanceOf(CatsException.class)
+                .hasMessageContaining("Invalid 'headers' value");
     }
 }

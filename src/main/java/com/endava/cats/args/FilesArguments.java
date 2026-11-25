@@ -143,11 +143,31 @@ public class FilesArguments {
     @Setter
     private File exportRefDataFile;
 
+    @CommandLine.Option(names = {"--stepTags", "--stepTag"},
+            description = "A comma separated list of flow step tags to include when running functional or security flows. If not supplied, all steps are considered",
+            split = ",")
+    @Setter
+    private List<String> stepTags;
+
+    @CommandLine.Option(names = {"--skipStepTags", "--skipStepTag"},
+            description = "A comma separated list of flow step tags to skip when running functional or security flows",
+            split = ",")
+    @Setter
+    private List<String> skipStepTags;
+
     @CommandLine.Option(names = {"--mutators", "-m"},
             description = "A folder containing custom mutators. This argument is taken in consideration only when using the `cats random` sub-command")
     @Getter
     @Setter
     private File mutatorsFolder;
+
+    public List<String> getStepTags() {
+        return Optional.ofNullable(stepTags).orElse(List.of());
+    }
+
+    public List<String> getSkipStepTags() {
+        return Optional.ofNullable(skipStepTags).orElse(List.of());
+    }
 
     /**
      * Copies configured file and parameter options from another {@link FilesArguments} instance.
@@ -174,6 +194,8 @@ public class FilesArguments {
         this.securityFuzzerFile = other.securityFuzzerFile;
         this.securityFlowDocument = other.securityFlowDocument;
         this.exportRefDataFile = other.exportRefDataFile;
+        this.stepTags = other.stepTags;
+        this.skipStepTags = other.skipStepTags;
         this.mutatorsFolder = other.mutatorsFolder;
     }
 

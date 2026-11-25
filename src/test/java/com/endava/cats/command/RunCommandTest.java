@@ -78,6 +78,39 @@ class RunCommandTest {
         }
     }
 
+    @Test
+    void shouldAutoRecognizeImportsOnlyFlowFile() throws IOException {
+        java.nio.file.Path tempDir = Files.createTempDirectory("cats-import-run");
+        File shared = tempDir.resolve("shared.yml").toFile();
+        File child = tempDir.resolve("child.yml").toFile();
+        Files.writeString(shared.toPath(), "steps:\n  - POST: /pets\n    status: 200\n", UTF_8);
+        Files.writeString(child.toPath(), "imports: [\"shared.yml\"]\nvariables:\n  env: \"qa\"\n", UTF_8);
+        try {
+            ReflectionTestUtils.setField(runCommand, "file", child);
+            runCommand.run();
+            Mockito.verify(filterArguments, Mockito.atLeastOnce()).customFilter("FunctionalFlowFuzzer");
+        } finally {
+            deleteFile(child);
+            deleteFile(shared);
+            deleteFile(tempDir.toFile());
+        }
+    }
+
+    @Test
+    void shouldFailFastWhenFlowHasUndefinedVariableOrMissingImport() throws IOException {
+        java.nio.file.Path tempDir = Files.createTempDirectory("cats-invalid-flow");
+        File invalidFlow = tempDir.resolve("invalid.yml").toFile();
+        Files.writeString(invalidFlow.toPath(), "steps:\n  - POST: /pets\n    body:\n      name: \"${undefinedVar}\"\n", UTF_8);
+        try {
+            ReflectionTestUtils.setField(runCommand, "file", invalidFlow);
+            runCommand.run();
+            Assertions.assertThat(runCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
+        } finally {
+            deleteFile(invalidFlow);
+            deleteFile(tempDir.toFile());
+        }
+    }
+
     @ParameterizedTest
     @CsvSource({"securityFuzzer.yml,1", "securityFuzzer-fieldTypes.yml,1"})
     void shouldRunSecurityFuzzer(String securityFuzzerFile, int times) {

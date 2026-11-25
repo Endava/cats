@@ -387,4 +387,26 @@ class FieldCorrelationEvaluatorTest {
         Assertions.assertThat(afterZalgo)
                 .contains("\"suppliedToken\":\"TKN1234567890123\"");
     }
+
+    @Test
+    void shouldProvideClearHintWhenNotEqualsFailsOnAbsentField() {
+        CatsResponse response = CatsResponse.builder()
+                .responseCode(200)
+                .body("{\"status\":\"APPROVED\"}")
+                .build();
+
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateThatExpectations(
+                        List.of("declineType != 'HARD'"), "{}", response, Map.of()))
+                .isPresent()
+                .get().asString()
+                .contains("declineType")
+                .contains("absent/null")
+                .contains("declineType is null || declineType != 'HARD'");
+
+        Assertions.assertThat(FieldCorrelationEvaluator.evaluateThatExpectations(
+                        List.of("declineType != null"), "{}", response, Map.of()))
+                .isPresent()
+                .get().asString()
+                .doesNotContain("use 'declineType is null ||");
+    }
 }

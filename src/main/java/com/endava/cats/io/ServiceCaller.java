@@ -1095,12 +1095,20 @@ public class ServiceCaller {
                                 DynamicValueResolver.resolve(String.valueOf(entry.getValue()), headerParserContext), "")));
 
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
+            if (isProtectedHeader(data, suppliedHeader.getKey())) {
+                continue;
+            }
             if (data.isAddUserHeaders()) {
                 this.replaceHeaderIfNotFuzzed(headers, data, suppliedHeader);
             } else if (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isAuthenticationHeader(suppliedHeader.getKey())) {
                 replaceHeaderWithUserSuppliedHeader(headers, suppliedHeader.getKey(), suppliedHeader.getValue());
             }
         }
+    }
+
+    private static boolean isProtectedHeader(ServiceData data, String headerName) {
+        return data.getProtectedHeaders() != null
+                && data.getProtectedHeaders().stream().anyMatch(h -> h.equalsIgnoreCase(headerName));
     }
 
     private Map<String, String> getHeaderParserContext(ServiceData data) {

@@ -47,10 +47,14 @@ public class SecurityFuzzer implements Fuzzer {
         if (doc == null || data == null || data.getContractPath() == null) {
             return;
         }
+        functionalFlowFuzzer.initVariablesForExternalExecution(doc);
+        List<String> includeTags = functionalFlowFuzzer.resolveEffectiveStepTags(doc);
+        List<String> skipTags = functionalFlowFuzzer.resolveEffectiveSkipStepTags(doc);
         int stepIdx = 1;
         for (FunctionalFlowStep step : doc.steps()) {
             int currentIdx = stepIdx++;
-            if (matchesStepPath(step, data.getContractPath())) {
+            if (step.matchesTags(includeTags, skipTags)
+                    && matchesStepPath(step, data.getContractPath())) {
                 executeSecurityStep(doc, step, currentIdx, data);
             }
         }

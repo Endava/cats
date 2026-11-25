@@ -152,6 +152,42 @@ class SecurityFuzzerTest {
                 Mockito.any(), Mockito.eq(data), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
     }
 
+    @Test
+    void shouldFilterSecurityFlowStepsByStepTags() {
+        String taggedSecYaml = """
+                variables:
+                  tenantHeader: "tenant-42"
+                steps:
+                  - name: sqli_step
+                    tags: [sqli]
+                    POST: /pets/{id}/move
+                    headers:
+                      X-Tenant: "${tenantHeader}"
+                    fuzz:
+                      fields: [firstName]
+                      payloads: ["' OR '1'='1"]
+                    expect:
+                      status: 200
+                  - name: xss_step
+                    tags: [xss]
+                    POST: /pets/{id}/move
+                    fuzz:
+                      fields: [firstName]
+                      payloads: ["<script>alert(1)</script>"]
+                    expect:
+                      status: 200
+                """;
+        ReflectionTestUtils.setField(filesArguments, "securityFlowDocument", FunctionalFlowParser.parseContent(taggedSecYaml));
+        filesArguments.setStepTags(List.of("sqli"));
+        FuzzingData data = setContext("src/test/resources/securityFuzzer-all.yml", "{'firstName': 'Cats', 'id': '25'}");
+        securityFuzzer.fuzz(data);
+        org.mockito.ArgumentCaptor<com.endava.cats.io.ServiceData> captor = org.mockito.ArgumentCaptor.forClass(com.endava.cats.io.ServiceData.class);
+        Mockito.verify(serviceCaller, Mockito.times(1)).call(captor.capture());
+        Assertions.assertThat(captor.getValue().getHeaders())
+                .anySatisfy(h -> Assertions.assertThat(h.getName()).isEqualTo("X-Tenant")
+                        .satisfies(_ -> Assertions.assertThat(h.getValue()).isEqualTo("tenant-42")));
+    }
+
     private FuzzingData setContext(String fuzzerFile, String responsePayload) {
         ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File(fuzzerFile));
         Map<String, List<String>> responses = new HashMap<>();
