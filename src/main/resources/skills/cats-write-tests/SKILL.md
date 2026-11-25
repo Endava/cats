@@ -183,7 +183,7 @@ cats run -c <spec> -s <server_url> flows.yml
 ```
 - `cats run` applies `--correlations` and `--refData` as inputs before step-level `correlate:`, `body:`, `omit:`, `path:`, and `query:` overrides. Step values always win over `--refData` and correlation rules.
 - To export a `--refData` file populated with variables captured by `save:`, pass `--export-refdata <file.yml>`.
-- Supported auth/config flags: `-H`, `--headers`, `--queryParams`, `-Q`, `--refData`, `-R`, `--correlations`, `--export-refdata`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`.
+- Supported auth/config/gate flags: `-H`, `--headers`, `--queryParams`, `-Q`, `--refData`, `-R`, `--correlations`, `--export-refdata`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`, `--failOn`, `--qualityGate`, `--baseline`, `--failOnNewWarnings`.
 
 ---
 
@@ -348,16 +348,16 @@ all:
 "/customers*":
   region: "EU"
 
-# Pins: path-only key + `#` notation so boundary fuzzers and resource reuse skip them
+# Path-scoped key (both `.` and `#` notations are normalized and respected by boundary fuzzers and resource reuse)
 "/customers/{customerId}/orders":
   customerId: "cust_1001"
-  shippingAddress#country: "DE"
+  shippingAddress.country: "DE"
   quantity: 2
 
-# Method-scoped key: value replacement only
+# Method-scoped key (applies only to POST on that path)
 "POST /customers/{customerId}/orders":
   requestId: "#(uuid)"
   omit:
     - "legacyField"
-    - "shippingAddress#zip"
+    - "shippingAddress.zip"
 ```

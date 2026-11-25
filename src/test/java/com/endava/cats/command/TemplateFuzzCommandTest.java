@@ -237,7 +237,7 @@ class TemplateFuzzCommandTest {
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(false);
         Mockito.when(ignoreArguments.isAnyIgnoreArgumentSupplied()).thenReturn(false);
 
-        Assertions.assertThatThrownBy(() -> templateFuzzCommand.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("At least one --matchXXX, --ignoreXXX or --filterXXX argument is required");
+        Assertions.assertThatThrownBy(() -> templateFuzzCommand.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("At least one --matchXXX or --ignoreXXX argument is required");
     }
 
     @ParameterizedTest

@@ -184,6 +184,8 @@ class ListCommandTest {
         CommandLine commandLine = new CommandLine(spyListCommand);
         commandLine.execute("-s");
         Mockito.verify(spyListCommand, Mockito.times(1)).listFuzzerStrategies();
+        commandLine.execute("-s", "-j");
+        Mockito.verify(spyListCommand, Mockito.times(2)).listFuzzerStrategies();
     }
 
     @Test

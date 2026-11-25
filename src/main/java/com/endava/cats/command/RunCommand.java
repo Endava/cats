@@ -5,6 +5,7 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.model.CommandContext;
 import com.endava.cats.command.model.ConfigOptions;
@@ -22,7 +23,6 @@ import picocli.CommandLine;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Map;
 
 /**
  * This will run custom tests written using the CATS YAML format.
@@ -83,11 +83,18 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
     IgnoreArguments ignoreArguments;
 
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Quality Gate Options:|@%n", exclusive = false)
+    QualityGateArguments qualityGateArguments;
+
     @CommandLine.ParentCommand
     private CatsCommand catsCommand;
 
+    private boolean executionFailed;
+
     @Override
     public void run() {
+        executionFailed = false;
         apiArguments.validateRequired(spec);
 
         if (CatsUtil.isFileEmpty(file)) {
@@ -100,6 +107,7 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
             // Execute with context
             catsCommand.runWithContext(context);
         } catch (IOException e) {
+            executionFailed = true;
             logger.debug("Exception while processing file!", e);
             logger.error("Something went wrong while processing input file: {}. The file might not exist or is not reachable. Error message: {}", file, e.getMessage());
         }
@@ -125,6 +133,6 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     @Override
     public int getExitCode() {
-        return catsCommand.getExitCode();
+        return executionFailed ? CommandLine.ExitCode.SOFTWARE : catsCommand.getExitCode();
     }
 }

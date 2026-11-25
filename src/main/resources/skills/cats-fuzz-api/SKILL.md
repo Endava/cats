@@ -82,11 +82,11 @@ successful setup steps in `cats replay --stateful`. `--srw` (`--skipReportingFor
 ### Built-In Fuzzer Profiles (`--profile`)
 | Profile | When to Use | Command |
 | :--- | :--- | :--- |
-| **`quick`** | Fast smoke + core boundary/required-field checks (24 fuzzers) | `cats -c <spec> -s <url> --profile quick` |
-| **`ci`** | Balanced functional, boundary, type-coercion & security suite (87 fuzzers) | `cats -c <spec> -s <url> --profile ci` |
-| **`security`** | OWASP API Top 10 and decoder robustness (SQLi, NoSQLi, XSS, Command/LDAP/XXE/SSTI injection, SSRF, IDOR, Mass Assignment, Auth Bypass, Security Headers) (66 fuzzers) | `cats -c <spec> -s <url> --profile security` |
+| **`quick`** | Fast smoke + core boundary/required-field checks (27 fuzzers) | `cats -c <spec> -s <url> --profile quick` |
+| **`ci`** | Balanced functional, boundary, type-coercion & security suite (91 fuzzers) | `cats -c <spec> -s <url> --profile ci` |
+| **`security`** | OWASP API Top 10 and decoder robustness (SQLi, NoSQLi, XSS, Command/LDAP/XXE/SSTI injection, SSRF, IDOR, Mass Assignment, Auth Bypass, Security Headers) (69 fuzzers) | `cats -c <spec> -s <url> --profile security` |
 | **`coverage`** | Fast positive + field-removal fuzzers to maximize `2XX` operation & code coverage (10 fuzzers) | `cats -c <spec> -s <url> --profile coverage` |
-| **`crash`** | High-yield boundary, type-coercion, control-char & injection fuzzers targeting `5XX` server faults (72 fuzzers) | `cats -c <spec> -s <url> --profile crash` |
+| **`crash`** | High-yield boundary, type-coercion, control-char & injection fuzzers targeting `5XX` server faults (76 fuzzers) | `cats -c <spec> -s <url> --profile crash` |
 
 Other profiles: `compliance`, `type-coercion`, `health-check`, `full` (default). Inspect any profile with `cats explain -t PROFILE <name>`.
 

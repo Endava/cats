@@ -25,8 +25,10 @@ import java.util.regex.Pattern;
 @Singleton
 @Getter
 public class QualityGateArguments {
-    private static final Set<String> VALID_FAIL_ON_CONDITIONS = Set.of("error", "warn");
-    private static final Pattern QUALITY_GATE_PATTERN = Pattern.compile("(?i)^(errors|warns|warnings)\\s*([<>])\\s*(\\d+)$");
+    private static final Set<String> ERROR_METRICS = Set.of("error", CatsResultFactory.ERRORS);
+    private static final Set<String> WARN_METRICS = Set.of("warn", CatsResultFactory.WARNS, "warning", CatsResultFactory.WARNINGS);
+    private static final Set<String> VALID_FAIL_ON_CONDITIONS = Set.of("error", "errors", "warn", "warns", "warning", "warnings");
+    private static final Pattern QUALITY_GATE_PATTERN = Pattern.compile("(?i)^(error|errors|warn|warns|warning|warnings)\\s*([<>])\\s*(\\d+)$");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(QualityGateArguments.class);
 
     @CommandLine.Option(names = {"--failOn"}, converter = FailOnConverter.class,
@@ -108,6 +110,23 @@ public class QualityGateArguments {
     }
 
     /**
+     * Returns whether new warning occurrences should fail baseline comparisons, either because
+     * {@code --failOnNewWarnings} was set or because {@code --failOn} includes {@code warn}.
+     *
+     * @return {@code true} if new warnings should fail baseline comparison
+     */
+    public boolean isFailOnNewWarnings() {
+        return failOnNewWarnings || isFailOnWarningsConfigured();
+    }
+
+    private boolean isFailOnWarningsConfigured() {
+        return failOn != null && Arrays.stream(failOn.split(",", -1))
+                .map(String::trim)
+                .map(s -> s.toLowerCase(Locale.ROOT))
+                .anyMatch(WARN_METRICS::contains);
+    }
+
+    /**
      * Evaluates whether CATS should exit with an error code based on the configured quality gates.
      *
      * @param errors   the number of errors reported
@@ -115,8 +134,11 @@ public class QualityGateArguments {
      * @return true if quality gate is violated (should exit with error), false otherwise
      */
     public boolean shouldFailBuild(long errors, long warnings) {
-        // Check qualityGate thresholds first (more specific)
-        if (qualityGate != null && !qualityGate.trim().isEmpty()) {
+        boolean hasQualityGate = qualityGate != null && !qualityGate.trim().isEmpty();
+        if (hasQualityGate && baselineRegressionDetected != null) {
+            return evaluateQualityGate(errors, warnings) || baselineRegressionDetected;
+        }
+        if (hasQualityGate) {
             return evaluateQualityGate(errors, warnings);
         }
 
@@ -146,8 +168,8 @@ public class QualityGateArguments {
                 .map(s -> s.toLowerCase(Locale.ROOT))
                 .toList();
 
-        boolean failOnError = conditions.contains("error");
-        boolean failOnWarn = conditions.contains("warn");
+        boolean failOnError = conditions.stream().anyMatch(ERROR_METRICS::contains);
+        boolean failOnWarn = conditions.stream().anyMatch(WARN_METRICS::contains);
 
         if (failOnError && errors > 0) {
             logger.debug("Failing build due to {} errors (--failOn error)", errors);
@@ -171,9 +193,8 @@ public class QualityGateArguments {
      */
     private boolean evaluateQualityGate(long errors, long warnings) {
         Map<String, Long> metrics = new HashMap<>();
-        metrics.put(CatsResultFactory.ERRORS, errors);
-        metrics.put(CatsResultFactory.WARNS, warnings);
-        metrics.put(CatsResultFactory.WARNINGS, warnings); // Support both "warns" and "warnings"
+        ERROR_METRICS.forEach(key -> metrics.put(key, errors));
+        WARN_METRICS.forEach(key -> metrics.put(key, warnings));
 
         List<String> gates = Arrays.stream(qualityGate.split(","))
                 .map(String::trim)
@@ -226,11 +247,16 @@ public class QualityGateArguments {
      * @return description of quality gates, or null if none configured
      */
     public String getQualityGateDescription() {
-        if (qualityGate != null && !qualityGate.trim().isEmpty()) {
+        boolean hasQualityGate = qualityGate != null && !qualityGate.trim().isEmpty();
+        if (hasQualityGate && baseline != null) {
+            return "Quality gate: " + qualityGate + "; Baseline comparison: " + baseline.getPath()
+                    + (isFailOnNewWarnings() ? " (fail on new errors or warnings)" : " (fail on new errors)");
+        }
+        if (hasQualityGate) {
             return "Quality gate: " + qualityGate;
         }
         if (baseline != null) {
-            return "Baseline comparison: " + baseline.getPath() + (failOnNewWarnings ? " (fail on new errors or warnings)" : " (fail on new errors)");
+            return "Baseline comparison: " + baseline.getPath() + (isFailOnNewWarnings() ? " (fail on new errors or warnings)" : " (fail on new errors)");
         }
         if (failOn != null && !failOn.trim().isEmpty()) {
             return "Fail on: " + failOn;

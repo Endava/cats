@@ -315,7 +315,11 @@ public class ListCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     void listFuzzerStrategies() {
-        logger.noFormat("Registered fieldsFuzzerStrategies: {}", Arrays.asList(FuzzingData.SetFuzzingStrategy.values()));
+        if (json) {
+            PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(FuzzingData.SetFuzzingStrategy.values()));
+        } else {
+            logger.noFormat("Registered fieldsFuzzerStrategies: {}", Arrays.asList(FuzzingData.SetFuzzingStrategy.values()));
+        }
     }
 
     void listFuzzers() {

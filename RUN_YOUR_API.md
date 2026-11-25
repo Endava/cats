@@ -49,7 +49,7 @@ cats -c openapi.yml -s https://staging.example.com \
 - SSTI and XXE use the same `CONFIRMED` security rule. WFC exports use CATS-specific categories where the standard has none: SSTI `913`, XXE `914`, and path traversal `915`. These replace generic/mismatched export labels; ordinary verdicts and problem identities are unchanged.
 
 ### Option B: Fast Validation & Security Smoke Test (`--profile quick`)
-Runs 24 core fuzzers (missing required fields, nulls, boundary numbers, invalid enums, SQLi, auth bypass, malformed JSON) in seconds:
+Runs 27 core fuzzers (missing required fields, nulls, boundary numbers, invalid enums, SQLi, auth bypass, malformed JSON) in seconds:
 
 ```shell
 cats -c openapi.yml -s https://staging.example.com \
@@ -107,7 +107,7 @@ cats -c openapi.yml -s https://staging.example.com \
   --urlParams "tenantId:acme-corp,region:eu-west-1"
 ```
 
-For domain-specific cross-field constraints (`when:` / `then:` / `where:`) or multi-step workflows (`steps:`), pass `--correlations correlations.yml` or `--functionalTests flows.yml`.
+For domain-specific cross-field constraints (`when:` / `then:` / `set:` / `omit:`) or multi-step workflows (`steps:`), pass `--correlations correlations.yml` or `--functionalFlow flows.yml` (or run `cats run -c openapi.yml -s https://staging.example.com flows.yml`).
 
 To see the exact dependency order CATS will use for your contract:
 ```shell
@@ -168,11 +168,11 @@ cats -c openapi.yml -s https://staging.example.com \
 | Profile | When to Use | Fuzzers Run |
 |---|---|---|
 | `health-check` | First 10-second check that `--server` and auth headers work | `HappyPath` (`1` fuzzer) |
-| `quick` | Fast local smoke test during development | `24` core fuzzers |
-| `ci` | Pull-request CI/CD gate (balanced speed vs. coverage) | `51` fuzzers |
-| `crash` | Maximum `5XX` fault detection on boundary, injection & control chars | `45` high-yield crash fuzzers |
-| `security` | OWASP injection, auth bypass, IDOR, mass assignment & state checks | `41` security fuzzers |
-| `compliance` | OWASP API Security Top 10 (2023) audit | `43` compliance fuzzers |
-| `type-coercion` | Test framework/JSON deserialization coercion (`"123"` as `123`, etc.) | `16` coercion fuzzers |
+| `quick` | Fast local smoke test during development | `27` core fuzzers |
+| `ci` | Pull-request CI/CD gate (balanced speed vs. coverage) | `91` fuzzers |
+| `crash` | Maximum `5XX` fault detection on boundary, injection & control chars | `76` high-yield crash fuzzers |
+| `security` | OWASP injection, auth bypass, IDOR, mass assignment & state checks | `69` security fuzzers |
+| `compliance` | OWASP API Security Top 10 (2023) audit | `50` compliance fuzzers |
+| `type-coercion` | Test framework/JSON deserialization coercion (`"123"` as `123`, etc.) | `15` coercion fuzzers |
 | `coverage` | Fast positive + combinatorial field-removal pass to maximize code coverage | `10` coverage fuzzers |
 | `full` *(default)* | Comprehensive nightly or pre-release run | All `160+` fuzzers |

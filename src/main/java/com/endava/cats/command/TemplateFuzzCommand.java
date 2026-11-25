@@ -342,7 +342,7 @@ public class TemplateFuzzCommand implements Runnable, CommandLine.IExitCodeGener
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --data=<data>");
         }
         if (!matchArguments.isAnyMatchArgumentSupplied() && !ignoreArguments.isAnyIgnoreArgumentSupplied()) {
-            throw new CommandLine.ParameterException(spec.commandLine(), "At least one --matchXXX, --ignoreXXX or --filterXXX argument is required");
+            throw new CommandLine.ParameterException(spec.commandLine(), "At least one --matchXXX or --ignoreXXX argument is required");
         }
         if (random && !stopArguments.isAnyStopConditionProvided()) {
             throw new CommandLine.ParameterException(spec.commandLine(), "When running in continuous fuzzing mode, at least one --stopXXX argument must be provided");

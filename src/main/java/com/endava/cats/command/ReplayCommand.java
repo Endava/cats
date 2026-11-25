@@ -103,7 +103,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "More verbose output")
     private boolean verbose;
 
-    @CommandLine.Option(names = {"-H"},
+    @CommandLine.Option(names = {"-H", "--header"},
             description = "Specifies the headers to be passed with all the re-played tests. It will override values from the replay files for the same header name")
     Map<String, Object> headersMap = new HashMap<>();
 
@@ -181,6 +181,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private List<String> loadTestIdsAndInitialStats(ReplayStats stats) {
         Path summaryPath = Paths.get(reportFolder, "cats-summary-report.json");
         if (!Files.exists(summaryPath)) {
+            exitCode = CommandLine.ExitCode.SOFTWARE;
             logger.error("Summary report not found at: {}", summaryPath);
             return Collections.emptyList();
         }
@@ -189,6 +190,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
             String content = Files.readString(summaryPath);
             SummaryReport report = JsonUtils.GSON.fromJson(content, SummaryReport.class);
             if (report == null || report.testCases == null) {
+                exitCode = CommandLine.ExitCode.SOFTWARE;
                 logger.error("Invalid summary report format");
                 return Collections.emptyList();
             }
@@ -207,6 +209,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
             }
             return Collections.unmodifiableList(selectedTests);
         } catch (IOException | RuntimeException e) {
+            exitCode = CommandLine.ExitCode.SOFTWARE;
             logger.error("Failed to read or parse summary report: {}", e.getMessage());
             logger.debug("Stacktrace:", e);
             return Collections.emptyList();
@@ -650,10 +653,14 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
         authArguments.getEnvironmentVariables();
         logger.config("Environment file: {}", authArguments.getEnvironmentFileStatus());
 
+        if ((tests == null || tests.length == 0) && !errors && !warnings) {
+            logger.warning("No tests to replay. Provide test names as arguments or use --errors/--warnings");
+            exitCode = CommandLine.ExitCode.USAGE;
+            return;
+        }
         ReplayStats stats = errors || warnings ? new ReplayStats() : null;
         List<String> testCases = parseTestCases(stats);
         if (testCases.isEmpty()) {
-            logger.warning("No tests to replay. Provide test names as arguments or use --errors/--warnings");
             return;
         }
         if (exportFlowFile != null) {
@@ -702,6 +709,7 @@ public class ReplayCommand implements Runnable, CommandLine.IExitCodeGenerator {
             }
             return true;
         } catch (IOException e) {
+            exitCode = CommandLine.ExitCode.SOFTWARE;
             logger.debug("Exception while replaying test!", e);
             logger.error("Something went wrong while replaying {}. If the test name ends with .json it is searched as a full path. " +
                     "If it doesn't have an extension it will be searched in the {} folder. Error message: {}", testCaseFileName, reportFolder, e.toString());

@@ -40,8 +40,8 @@ import java.util.Set;
         footerHeading = "%n@|bold,underline Examples:|@%n",
         footer = {"  Generate payloads for a POST on /test from a given OpenAPI contract:",
                 "    cats generate -c openapi.yml -X POST -p /test",
-                "", "  Generate payloads for a POST on /test from a given OpenAPI contract and replace firstName with a predefined value:",
-                "    cats generate -c openapi.yml -X POST -p /test -R firstName=John"},
+                "", "  Generate pretty-printed payloads using a deterministic seed:",
+                "    cats generate -c openapi.yml -X POST -p /test --seed 42 --pretty"},
         versionProvider = VersionProvider.class)
 @Unremovable
 public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator {
@@ -78,10 +78,10 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
             description = "Max depth for request objects having cyclic dependencies. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int selfReferenceDepth = 2;
 
-    @CommandLine.Option(names = {"--useExamples"}, negatable = true,
+    @CommandLine.Option(names = {"--useExamples"}, negatable = true, fallbackValue = "true",
             description = "When set to @|bold true|@, it will use request body examples, schema examples and primitive properties examples from the OpenAPI contract when available. " +
                     "This is equivalent of using @|bold,underline --useRequestBodyExamples|@ @|bold,underline --useSchemaExamples|@ @|bold,underline --usePropertyExamples|@ @|bold,underline --useResponseBodyExamples|@." +
-                    "Default: @|bold,underline ${DEFAULT-VALUE}|@")
+                    "Default: @|bold,underline true|@")
     private Boolean useExamples;
 
     @CommandLine.Option(names = {"--seed"},

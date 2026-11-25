@@ -128,6 +128,7 @@ class ReplayCommandTest {
         replayCommand.tests = new String[]{};
 
         replayCommand.run();
+        Assertions.assertThat(replayCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.USAGE);
         Mockito.verifyNoInteractions(serviceCaller);
     }
 
@@ -211,6 +212,7 @@ class ReplayCommandTest {
         replayCommand.tests = new String[]{"Test1212121212121"};
         replayCommand.run();
 
+        Assertions.assertThat(replayCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
         Mockito.verifyNoInteractions(serviceCaller);
     }
 

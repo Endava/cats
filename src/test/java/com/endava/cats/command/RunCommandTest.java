@@ -108,6 +108,7 @@ class RunCommandTest {
         File tempFile = createUnreadableFile();
         ReflectionTestUtils.setField(runCommand, "file", tempFile);
         runCommand.run();
+        Assertions.assertThat(runCommand.getExitCode()).isEqualTo(CommandLine.ExitCode.SOFTWARE);
         Mockito.verify(filterArguments, Mockito.times(0)).customFilter("SecurityFuzzer");
         Mockito.verify(filterArguments, Mockito.times(0)).customFilter("FunctionalFlowFuzzer");
 

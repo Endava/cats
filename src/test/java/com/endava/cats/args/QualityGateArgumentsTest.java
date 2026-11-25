@@ -171,6 +171,24 @@ class QualityGateArgumentsTest {
     }
 
     @Test
+    void shouldCombineQualityGateAndBaselineRegression() {
+        ReflectionTestUtils.setField(qualityGateArguments, "qualityGate", "errors<10");
+        qualityGateArguments.setBaseline(new java.io.File("baseline-report"));
+        qualityGateArguments.setBaselineRegressionDetected(true);
+
+        Assertions.assertThat(qualityGateArguments.shouldFailBuild(2, 0)).isTrue();
+        Assertions.assertThat(qualityGateArguments.getQualityGateDescription())
+                .isEqualTo("Quality gate: errors<10; Baseline comparison: baseline-report (fail on new errors)");
+
+        qualityGateArguments.setBaselineRegressionDetected(false);
+        Assertions.assertThat(qualityGateArguments.shouldFailBuild(2, 0)).isFalse();
+        Assertions.assertThat(qualityGateArguments.shouldFailBuild(10, 0)).isTrue();
+
+        ReflectionTestUtils.setField(qualityGateArguments, "failOn", "error,warn");
+        Assertions.assertThat(qualityGateArguments.isFailOnNewWarnings()).isTrue();
+    }
+
+    @Test
     void shouldGetQualityGateDescription() {
         Assertions.assertThat(qualityGateArguments.getQualityGateDescription())
                 .isEqualTo("Default: fail on any error");

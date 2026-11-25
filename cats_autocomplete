@@ -241,10 +241,10 @@ function _picocli_cats() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands="generate-completion help list replay run template fuzz lint info stats validate random generate explain smoke probe compare diff init analyze blueprint triage diagnose doctor"
-  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-A' '--checkHeaders' '-F' '--checkFields' '-T' '--checkHttp' '-C' '--checkContract' '--includeContract' '--includeLinters' '-W' '--includeWhitespaces' '-E' '--includeEmojis' '-U' '--includeControlChars' '--createRefData' '-d' '--dryRun' '--skipDeprecatedOperations' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--useExamples' '--useRequestBodyExamples' '--useResponseBodyExamples' '--useSchemaExamples' '--usePropertyExamples' '--cachePayloads' '--rfc7396' '--allowInvalidEnumValues' '--checkAllowHeader' '--healthCheck' '--strictTypes' '--useDefaults' '--resolveXxxOfCombinationForResponses' '--reuseSuccessfulResources' '--preseedCollectionGets' '--http2PriorKnowledge' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--nameReplace' '--simpleReplace' '--matchInput' '--mi' '--includeAllInjectionPayloads' '--failOnNewWarnings' '--fillTimeBudget' '--withRandom' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--fieldsFuzzingStrategy' '--maxFieldsToRemove' '--edgeSpacesStrategy' '--sanitizationStrategy' '--largeStringsSize' '--randomHeadersNumber' '--selfReferenceDepth' '-L' '--contentType' '--oneOfSelection' '--anyOfSelection' '--limitXxxOfCombinations' '--limitFuzzedFields' '--maxPreseedCollectionGets' '--seed' '--discriminatorCasing' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--words' '-w' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '--failOn' '--qualityGate' '--baseline' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm'"
-  local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
-  local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-A' '--checkHeaders' '-F' '--checkFields' '-T' '--checkHttp' '-C' '--checkContract' '--includeContract' '--includeLinters' '-W' '--includeWhitespaces' '-E' '--includeEmojis' '-U' '--includeControlChars' '-d' '--dryRun' '--skipDeprecatedOperations' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--checkFieldInResponse' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--useExamples' '--useRequestBodyExamples' '--useResponseBodyExamples' '--useSchemaExamples' '--usePropertyExamples' '--cachePayloads' '--rfc7396' '--allowInvalidEnumValues' '--allowDifferentCaseEnumValues' '--checkAllowHeader' '--strictTypes' '--useDefaults' '--resolveXxxOfCombinationForResponses' '--reuseSuccessfulResources' '--preseedCollectionGets' '--http2PriorKnowledge' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--nameReplace' '--simpleReplace' '--matchInput' '--mi' '--includeAllInjectionPayloads' '--failOnNewWarnings' '--fillTimeBudget' '--withRandom' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--maxRateLimitRetries' '--maxRetryAfterInSec' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--urlParam' '--headers' '-H' '--header' '--queryParams' '--pathsRunOrder' '-Q' '--queryParam' '--refData' '-R' '--refDataParam' '--functionalFlow' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--export-refdata' '--exportRefData' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--fieldsFuzzingStrategy' '--maxFieldsToRemove' '--interactionStrength' '--edgeSpacesStrategy' '--sanitizationStrategy' '--largeStringsSize' '--randomHeadersNumber' '--selfReferenceDepth' '-L' '--contentType' '--oneOfSelection' '--anyOfSelection' '--limitXxxOfCombinations' '--limitFuzzedFields' '--maxPreseedCollectionGets' '--seed' '--discriminatorCasing' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--words' '-w' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '--failOn' '--qualityGate' '--baseline' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm'"
+  local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
+  local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
   local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
   local skipFieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --skipFieldTypes values
   local fieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --fieldFormats values
@@ -253,7 +253,7 @@ function _picocli_cats() {
   local fieldsFuzzingStrategy_option_args=("POWERSET" "SIZE" "ONEBYONE" "PAIRWISE") # --fieldsFuzzingStrategy values
   local edgeSpacesStrategy_option_args=("VALIDATE_AND_TRIM" "TRIM_AND_VALIDATE") # --edgeSpacesStrategy values
   local sanitizationStrategy_option_args=("VALIDATE_AND_SANITIZE" "SANITIZE_AND_VALIDATE") # --sanitizationStrategy values
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
 
   type compopt &>/dev/null && compopt +o default
@@ -266,6 +266,12 @@ function _picocli_cats() {
       return $?
       ;;
     '--maxRequestsPerMinute')
+      return
+      ;;
+    '--maxRateLimitRetries')
+      return
+      ;;
+    '--maxRetryAfterInSec')
       return
       ;;
     '--connectionTimeout')
@@ -346,7 +352,7 @@ function _picocli_cats() {
     '--urlParams')
       return
       ;;
-    '-P')
+    '-P'|'--urlParam')
       return
       ;;
     '--headers')
@@ -355,7 +361,7 @@ function _picocli_cats() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-H')
+    '-H'|'--header')
       return
       ;;
     '--queryParams')
@@ -370,7 +376,7 @@ function _picocli_cats() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-Q')
+    '-Q'|'--queryParam')
       return
       ;;
     '--refData')
@@ -379,10 +385,10 @@ function _picocli_cats() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-R')
+    '-R'|'--refDataParam')
       return
       ;;
-    '--functionalFuzzerFile')
+    '--functionalFlow'|'--functionalFuzzerFile')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -395,6 +401,12 @@ function _picocli_cats() {
       return $?
       ;;
     '--securityFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--export-refdata'|'--exportRefData')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -498,27 +510,15 @@ function _picocli_cats() {
     '--ignoreResponseRegex'|'--ir')
       return
       ;;
-    '--filterResponseCodes'|'--fc')
-      return
-      ;;
-    '--filterResponseSize'|'--fs')
-      return
-      ;;
-    '--filterResponseWords'|'--fw')
-      return
-      ;;
-    '--filterResponseLines'|'--fl')
-      return
-      ;;
-    '--filterResponseRegex'|'--fr')
-      return
-      ;;
     '--fieldsFuzzingStrategy')
       local IFS=$'\n'
       COMPREPLY=( $( compReplyArray "${fieldsFuzzingStrategy_option_args[@]}" ) )
       return $?
       ;;
     '--maxFieldsToRemove')
+      return
+      ;;
+    '--interactionStrength')
       return
       ;;
     '--edgeSpacesStrategy')
@@ -721,8 +721,8 @@ function _picocli_cats_replay() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '-v' '--verbose' '--errors' '--warnings' '--curl' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-H' '-s' '--server' '--callTimeout' '--maxResponseBytes' '-o' '--output' '--reportFolder' '-r'"
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '-v' '--verbose' '--errors' '--warnings' '--curl' '--stateful' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-H' '--header' '-s' '--server' '--callTimeout' '--maxResponseBytes' '-o' '--output' '--reportFolder' '-r' '--export-flow' '--exportFlow'"
 
   type compopt &>/dev/null && compopt +o default
 
@@ -766,7 +766,7 @@ function _picocli_cats_replay() {
     '--wfcAuthName')
       return
       ;;
-    '-H')
+    '-H'|'--header')
       return
       ;;
     '-s'|'--server')
@@ -783,6 +783,12 @@ function _picocli_cats_replay() {
       ;;
     '--reportFolder'|'-r')
       return
+      ;;
+    '--export-flow'|'--exportFlow')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
       ;;
   esac
 
@@ -802,10 +808,13 @@ function _picocli_cats_run() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--createRefData' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--headers' '--queryParams' '-H' '--refData' '--correlations' '--correlate' '--contentType' '--oneOfSelection' '--anyOfSelection' '--seed' '--discriminatorCasing' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr'"
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--useExamples' '--useRequestBodyExamples' '--useResponseBodyExamples' '--useSchemaExamples' '--usePropertyExamples' '--cachePayloads' '--rfc7396' '--allowInvalidEnumValues' '--allowDifferentCaseEnumValues' '--checkAllowHeader' '--strictTypes' '--useDefaults' '--resolveXxxOfCombinationForResponses' '--reuseSuccessfulResources' '--preseedCollectionGets' '--http2PriorKnowledge' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--checkFieldInResponse' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--failOnNewWarnings' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--maxRateLimitRetries' '--maxRetryAfterInSec' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--urlParam' '--headers' '-H' '--header' '--queryParams' '--pathsRunOrder' '-Q' '--queryParam' '--refData' '-R' '--refDataParam' '--functionalFlow' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--export-refdata' '--exportRefData' '--mutators' '-m' '--fieldsFuzzingStrategy' '--maxFieldsToRemove' '--interactionStrength' '--edgeSpacesStrategy' '--sanitizationStrategy' '--largeStringsSize' '--randomHeadersNumber' '--selfReferenceDepth' '-L' '--contentType' '--oneOfSelection' '--anyOfSelection' '--limitXxxOfCombinations' '--limitFuzzedFields' '--maxPreseedCollectionGets' '--seed' '--discriminatorCasing' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--failOn' '--qualityGate' '--baseline'"
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
+  local fieldsFuzzingStrategy_option_args=("POWERSET" "SIZE" "ONEBYONE" "PAIRWISE") # --fieldsFuzzingStrategy values
+  local edgeSpacesStrategy_option_args=("VALIDATE_AND_TRIM" "TRIM_AND_VALIDATE") # --edgeSpacesStrategy values
+  local sanitizationStrategy_option_args=("VALIDATE_AND_SANITIZE" "SANITIZE_AND_VALIDATE") # --sanitizationStrategy values
 
   type compopt &>/dev/null && compopt +o default
 
@@ -817,6 +826,12 @@ function _picocli_cats_run() {
       return $?
       ;;
     '--maxRequestsPerMinute')
+      return
+      ;;
+    '--maxRateLimitRetries')
+      return
+      ;;
+    '--maxRetryAfterInSec')
       return
       ;;
     '--connectionTimeout')
@@ -913,11 +928,32 @@ function _picocli_cats_run() {
     '--maskHeaders')
       return
       ;;
+    '--errorLeaksKeywords'|'-K')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--fuzzersConfig')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--urlParams')
+      return
+      ;;
+    '-P'|'--urlParam')
+      return
+      ;;
     '--headers')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
+      ;;
+    '-H'|'--header')
+      return
       ;;
     '--queryParams')
       local IFS=$'\n'
@@ -925,10 +961,25 @@ function _picocli_cats_run() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-H')
+    '--pathsRunOrder')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-Q'|'--queryParam')
       return
       ;;
     '--refData')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-R'|'--refDataParam')
+      return
+      ;;
+    '--functionalFlow'|'--functionalFuzzerFile')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -940,10 +991,67 @@ function _picocli_cats_run() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
+    '--securityFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--export-refdata'|'--exportRefData')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--mutators'|'-m')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--fieldsFuzzingStrategy')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${fieldsFuzzingStrategy_option_args[@]}" ) )
+      return $?
+      ;;
+    '--maxFieldsToRemove')
+      return
+      ;;
+    '--interactionStrength')
+      return
+      ;;
+    '--edgeSpacesStrategy')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${edgeSpacesStrategy_option_args[@]}" ) )
+      return $?
+      ;;
+    '--sanitizationStrategy')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${sanitizationStrategy_option_args[@]}" ) )
+      return $?
+      ;;
+    '--largeStringsSize')
+      return
+      ;;
+    '--randomHeadersNumber')
+      return
+      ;;
+    '--selfReferenceDepth'|'-L')
+      return
+      ;;
     '--contentType')
       return
       ;;
     '--oneOfSelection'|'--anyOfSelection')
+      return
+      ;;
+    '--limitXxxOfCombinations')
+      return
+      ;;
+    '--limitFuzzedFields')
+      return
+      ;;
+    '--maxPreseedCollectionGets')
       return
       ;;
     '--seed')
@@ -967,20 +1075,17 @@ function _picocli_cats_run() {
     '--ignoreResponseRegex'|'--ir')
       return
       ;;
-    '--filterResponseCodes'|'--fc')
+    '--failOn')
       return
       ;;
-    '--filterResponseSize'|'--fs')
+    '--qualityGate')
       return
       ;;
-    '--filterResponseWords'|'--fw')
-      return
-      ;;
-    '--filterResponseLines'|'--fl')
-      return
-      ;;
-    '--filterResponseRegex'|'--fr')
-      return
+    '--baseline')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
       ;;
   esac
 
@@ -1007,11 +1112,11 @@ function _picocli_cats_template() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--fillTimeBudget' '--withRandom' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--words' '-w' '--correlations' '--correlate' '--headers' '-H' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--checkFieldInResponse' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--fillTimeBudget' '--withRandom' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--maxRateLimitRetries' '--maxRetryAfterInSec' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--words' '-w' '--correlations' '--correlate' '--headers' '-H' '--header' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
-  local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
+  local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
 
   type compopt &>/dev/null && compopt +o default
 
@@ -1023,6 +1128,12 @@ function _picocli_cats_template() {
       return $?
       ;;
     '--maxRequestsPerMinute')
+      return
+      ;;
+    '--maxRateLimitRetries')
+      return
+      ;;
+    '--maxRetryAfterInSec')
       return
       ;;
     '--connectionTimeout')
@@ -1149,21 +1260,6 @@ function _picocli_cats_template() {
     '--ignoreResponseRegex'|'--ir')
       return
       ;;
-    '--filterResponseCodes'|'--fc')
-      return
-      ;;
-    '--filterResponseSize'|'--fs')
-      return
-      ;;
-    '--filterResponseWords'|'--fw')
-      return
-      ;;
-    '--filterResponseLines'|'--fl')
-      return
-      ;;
-    '--filterResponseRegex'|'--fr')
-      return
-      ;;
     '--stopAfterTimeInSec'|'--st')
       return
       ;;
@@ -1185,7 +1281,13 @@ function _picocli_cats_template() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '--headers'|'-H')
+    '--headers')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-H'|'--header')
       return
       ;;
     '--data'|'-d')
@@ -1220,11 +1322,11 @@ function _picocli_cats_fuzz() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--fillTimeBudget' '--withRandom' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--words' '-w' '--correlations' '--correlate' '--headers' '-H' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--checkFieldInResponse' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--fillTimeBudget' '--withRandom' '--nameReplace' '--simpleReplace' '--random' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--maxRateLimitRetries' '--maxRetryAfterInSec' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--words' '-w' '--correlations' '--correlate' '--headers' '-H' '--header' '--data' '-d' '--httpMethod' '-X' '--targetFields' '-t' '--seed'"
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
-  local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
+  local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
 
   type compopt &>/dev/null && compopt +o default
 
@@ -1236,6 +1338,12 @@ function _picocli_cats_fuzz() {
       return $?
       ;;
     '--maxRequestsPerMinute')
+      return
+      ;;
+    '--maxRateLimitRetries')
+      return
+      ;;
+    '--maxRetryAfterInSec')
       return
       ;;
     '--connectionTimeout')
@@ -1362,21 +1470,6 @@ function _picocli_cats_fuzz() {
     '--ignoreResponseRegex'|'--ir')
       return
       ;;
-    '--filterResponseCodes'|'--fc')
-      return
-      ;;
-    '--filterResponseSize'|'--fs')
-      return
-      ;;
-    '--filterResponseWords'|'--fw')
-      return
-      ;;
-    '--filterResponseLines'|'--fl')
-      return
-      ;;
-    '--filterResponseRegex'|'--fr')
-      return
-      ;;
     '--stopAfterTimeInSec'|'--st')
       return
       ;;
@@ -1398,7 +1491,13 @@ function _picocli_cats_fuzz() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '--headers'|'-H')
+    '--headers')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '-H'|'--header')
       return
       ;;
     '--data'|'-d')
@@ -1433,9 +1532,9 @@ function _picocli_cats_lint() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--strict' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--pathNaming' '--pathVariablesNaming' '--queryParamsNaming' '--jsonObjectsNaming' '--jsonPropertiesNaming' '--headersNaming' '--enumsNaming' '--operationPrefixMapFile' '-c' '--contract' '--skipLinters' '--skipLinter' '--skipPaths' '--skipPath'"
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
+  local flag_opts="'-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--strict' '--failOnNewWarnings' '--skipDeprecatedOperations' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--pathNaming' '--pathVariablesNaming' '--queryParamsNaming' '--jsonObjectsNaming' '--jsonPropertiesNaming' '--headersNaming' '--enumsNaming' '--operationPrefixMapFile' '--failOn' '--qualityGate' '--baseline' '-c' '--contract' '--linters' '--linter' '--skipLinters' '--skipLinter' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--skipLintersForExtension' '--skipLinterForExtension'"
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local pathNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL" "UPPER_UNDERSCORE" "LOWER_UNDERSCORE") # --pathNaming values
   local pathVariablesNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL" "UPPER_UNDERSCORE" "LOWER_UNDERSCORE") # --pathVariablesNaming values
@@ -1444,6 +1543,8 @@ function _picocli_cats_lint() {
   local jsonPropertiesNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL" "UPPER_UNDERSCORE" "LOWER_UNDERSCORE") # --jsonPropertiesNaming values
   local headersNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL" "UPPER_UNDERSCORE" "LOWER_UNDERSCORE") # --headersNaming values
   local enumsNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL" "UPPER_UNDERSCORE" "LOWER_UNDERSCORE") # --enumsNaming values
+  local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
+  local skipHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
 
   type compopt &>/dev/null && compopt +o default
 
@@ -1526,13 +1627,56 @@ function _picocli_cats_lint() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
+    '--failOn')
+      return
+      ;;
+    '--qualityGate')
+      return
+      ;;
+    '--baseline')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
     '-c'|'--contract')
+      return
+      ;;
+    '--linters'|'--linter')
       return
       ;;
     '--skipLinters'|'--skipLinter')
       return
       ;;
+    '-p'|'--paths'|'--path')
+      return
+      ;;
     '--skipPaths'|'--skipPath')
+      return
+      ;;
+    '-t'|'--tags'|'--tag')
+      return
+      ;;
+    '--skipTags'|'--skipTag')
+      return
+      ;;
+    '--operationIds'|'--operationId')
+      return
+      ;;
+    '--skipOperationIds'|'--skipOperationId')
+      return
+      ;;
+    '--httpMethods'|'--httpMethod'|'-X')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${httpMethods_option_args[@]}" ) )
+      return $?
+      ;;
+    '--skipHttpMethods'|'--skipHttpMethod')
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${skipHttpMethods_option_args[@]}" ) )
+      return $?
+      ;;
+    '--skipLintersForExtension'|'--skipLinterForExtension')
       return
       ;;
   esac
@@ -1631,11 +1775,11 @@ function _picocli_cats_random() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--createRefData' '--fillTimeBudget' '--withRandom' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--filterResponseCodes' '--fc' '--filterResponseSize' '--fs' '--filterResponseWords' '--fw' '--filterResponseLines' '--fl' '--filterResponseRegex' '--fr' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--mutators' '-m' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--httpMethod' '-X' '--contentType' '--oneOfSelection' '--anyOfSelection' '--path' '-p' '--seed'"
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--matchInput' '--mi' '--ignoreResponseCodeUndocumentedCheck' '--iu' '--ignoreResponseBodyCheck' '--ib' '--checkFieldInResponse' '--ignoreErrorLeaksCheck' '--ie' '--ignoreResponseContentTypeCheck' '--it' '-k' '--skipReportingForIgnoredCodes' '--skipReportingForIgnored' '--sri' '--srs' '--skipReportingForSuccess' '--srw' '--skipReportingForWarning' '-b' '--blackbox' '--fillTimeBudget' '--withRandom' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--maxRateLimitRetries' '--maxRetryAfterInSec' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders' '--matchResponseCodes' '--mc' '--matchResponseSize' '--ms' '--matchResponseWords' '--mw' '--matchResponseLines' '--ml' '--matchResponseRegex' '--mr' '-i' '--ignoreResponseCodes' '--ic' '--ignoreResponseSize' '--is' '--ignoreResponseWords' '--iw' '--ignoreResponseLines' '--il' '--ignoreResponseRegex' '--ir' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--urlParam' '--headers' '-H' '--header' '--queryParams' '--pathsRunOrder' '-Q' '--queryParam' '--refData' '-R' '--refDataParam' '--functionalFlow' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--export-refdata' '--exportRefData' '--mutators' '-m' '--stopAfterTimeInSec' '--st' '--stopAfterErrors' '--se' '--stopAfterTests' '--stopAfterMutations' '--sm' '--httpMethod' '-X' '--contentType' '--oneOfSelection' '--anyOfSelection' '--path' '-p' '--seed'"
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
-  local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
+  local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
 
   type compopt &>/dev/null && compopt +o default
 
@@ -1647,6 +1791,12 @@ function _picocli_cats_random() {
       return $?
       ;;
     '--maxRequestsPerMinute')
+      return
+      ;;
+    '--maxRateLimitRetries')
+      return
+      ;;
+    '--maxRetryAfterInSec')
       return
       ;;
     '--connectionTimeout')
@@ -1773,21 +1923,6 @@ function _picocli_cats_random() {
     '--ignoreResponseRegex'|'--ir')
       return
       ;;
-    '--filterResponseCodes'|'--fc')
-      return
-      ;;
-    '--filterResponseSize'|'--fs')
-      return
-      ;;
-    '--filterResponseWords'|'--fw')
-      return
-      ;;
-    '--filterResponseLines'|'--fl')
-      return
-      ;;
-    '--filterResponseRegex'|'--fr')
-      return
-      ;;
     '--errorLeaksKeywords'|'-K')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
@@ -1803,7 +1938,7 @@ function _picocli_cats_random() {
     '--urlParams')
       return
       ;;
-    '-P')
+    '-P'|'--urlParam')
       return
       ;;
     '--headers')
@@ -1812,7 +1947,7 @@ function _picocli_cats_random() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-H')
+    '-H'|'--header')
       return
       ;;
     '--queryParams')
@@ -1827,7 +1962,7 @@ function _picocli_cats_random() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-Q')
+    '-Q'|'--queryParam')
       return
       ;;
     '--refData')
@@ -1836,10 +1971,10 @@ function _picocli_cats_random() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-R')
+    '-R'|'--refDataParam')
       return
       ;;
-    '--functionalFuzzerFile')
+    '--functionalFlow'|'--functionalFuzzerFile')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -1852,6 +1987,12 @@ function _picocli_cats_random() {
       return $?
       ;;
     '--securityFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--export-refdata'|'--exportRefData')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -1909,7 +2050,7 @@ function _picocli_cats_generate() {
   local commands=""
   local flag_opts="'-D' '--debug' '--pretty' '--useExamples' '-h' '--help' '-V' '--version'"
   local arg_opts="'-c' '--contract' '--httpMethod' '-X' '--path' '-p' '--limit' '-l' '--contentType' '--selfReferenceDepth' '-L' '--seed'"
-  local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
+  local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
 
   type compopt &>/dev/null && compopt +o default
 
@@ -1985,16 +2126,16 @@ function _picocli_cats_smoke() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '--createRefData' '-d' '--dryRun' '--skipDeprecatedOperations' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--includeDelete' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders'"
-  local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
-  local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-d' '--dryRun' '--skipDeprecatedOperations' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--includeDelete' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--maxRateLimitRetries' '--maxRetryAfterInSec' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--urlParam' '--headers' '-H' '--header' '--queryParams' '--pathsRunOrder' '-Q' '--queryParam' '--refData' '-R' '--refDataParam' '--functionalFlow' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--export-refdata' '--exportRefData' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders'"
+  local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
+  local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
   local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
   local skipFieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --skipFieldTypes values
   local fieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --fieldFormats values
   local skipFieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --skipFieldFormats values
   local mode_option_args=("ALL" "NEGATIVE" "POSITIVE") # --mode values
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
 
   type compopt &>/dev/null && compopt +o default
@@ -2007,6 +2148,12 @@ function _picocli_cats_smoke() {
       return $?
       ;;
     '--maxRequestsPerMinute')
+      return
+      ;;
+    '--maxRateLimitRetries')
+      return
+      ;;
+    '--maxRetryAfterInSec')
       return
       ;;
     '--connectionTimeout')
@@ -2087,7 +2234,7 @@ function _picocli_cats_smoke() {
     '--urlParams')
       return
       ;;
-    '-P')
+    '-P'|'--urlParam')
       return
       ;;
     '--headers')
@@ -2096,7 +2243,7 @@ function _picocli_cats_smoke() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-H')
+    '-H'|'--header')
       return
       ;;
     '--queryParams')
@@ -2111,7 +2258,7 @@ function _picocli_cats_smoke() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-Q')
+    '-Q'|'--queryParam')
       return
       ;;
     '--refData')
@@ -2120,10 +2267,10 @@ function _picocli_cats_smoke() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-R')
+    '-R'|'--refDataParam')
       return
       ;;
-    '--functionalFuzzerFile')
+    '--functionalFlow'|'--functionalFuzzerFile')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -2136,6 +2283,12 @@ function _picocli_cats_smoke() {
       return $?
       ;;
     '--securityFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--export-refdata'|'--exportRefData')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -2273,16 +2426,16 @@ function _picocli_cats_probe() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '--createRefData' '-d' '--dryRun' '--skipDeprecatedOperations' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--includeDelete' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--headers' '-H' '--queryParams' '--pathsRunOrder' '-Q' '--refData' '-R' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders'"
-  local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
-  local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
+  local flag_opts="'--insecure' '--noEnvFile' '--no-env-file' '-d' '--dryRun' '--skipDeprecatedOperations' '-D' '--debug' '--printExecutionStatistics' '--printDetailedExecutionStatistics' '--timestampReports' '-j' '--json' '--tui' '--checkUpdate' '--color' '--showSecrets' '--printProgress' '--includeDelete' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '--maxRequestsPerMinute' '--maxRateLimitRetries' '--maxRetryAfterInSec' '--connectionTimeout' '--writeTimeout' '--readTimeout' '--callTimeout' '--maxResponseBytes' '--userAgent' '-c' '--contract' '-s' '--server' '--sslKeystore' '--sslKeystorePwd' '--sslKeyPwd' '--envFile' '--basicAuth' '--basicauth' '--proxyHost' '--proxyPort' '--authRefreshScript' '--ars' '--authRefreshInterval' '--ari' '--wfcAuth' '--wfcAuthName' '--errorLeaksKeywords' '-K' '--fuzzersConfig' '--urlParams' '-P' '--urlParam' '--headers' '-H' '--header' '--queryParams' '--pathsRunOrder' '-Q' '--queryParam' '--refData' '-R' '--refDataParam' '--functionalFlow' '--functionalFuzzerFile' '--correlations' '--correlate' '--securityFuzzerFile' '--export-refdata' '--exportRefData' '--mutators' '-m' '-f' '--fuzzers' '--fuzzer' '-p' '--paths' '--path' '--skipPaths' '--skipPath' '--skipFuzzers' '--skipFuzzer' '--httpMethods' '--httpMethod' '-X' '--skipHttpMethods' '--skipHttpMethod' '--fieldTypes' '--fieldType' '--skipFieldTypes' '--skipFieldType' '--fieldFormats' '--fieldFormat' '--skipFieldFormats' '--skipFieldFormat' '--skipFields' '--skipField' '--skipHeaders' '--skipHeader' '-t' '--tags' '--tag' '--skipTags' '--skipTag' '--operationIds' '--operationId' '--skipOperationIds' '--skipOperationId' '--skipFuzzersForExtension' '--skipFuzzerForExtension' '--profile' '--profileFile' '--mode' '-l' '--log' '-g' '--skipLog' '-O' '--onlyLog' '--reportFormat' '-o' '--output' '--tuiMaxResults' '--maxResponseTimeInMs' '--verbosity' '--maskHeaders'"
+  local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
+  local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "OPTIONS" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
   local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
   local skipFieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --skipFieldTypes values
   local fieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --fieldFormats values
   local skipFieldFormats_option_args=("FLOAT" "DOUBLE" "INT32" "INT64" "DATE" "DATE_TIME" "PASSWORD" "BYTE" "BINARY" "EMAIL" "UUID" "URI" "URL" "HOSTNAME" "IPV4" "IPV6") # --skipFieldFormats values
   local mode_option_args=("ALL" "NEGATIVE" "POSITIVE") # --mode values
-  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "HTML_JS_CLUSTERS" "JUNIT" "WFC_REPORT") # --reportFormat values
+  local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT" "WFC_REPORT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
 
   type compopt &>/dev/null && compopt +o default
@@ -2295,6 +2448,12 @@ function _picocli_cats_probe() {
       return $?
       ;;
     '--maxRequestsPerMinute')
+      return
+      ;;
+    '--maxRateLimitRetries')
+      return
+      ;;
+    '--maxRetryAfterInSec')
       return
       ;;
     '--connectionTimeout')
@@ -2375,7 +2534,7 @@ function _picocli_cats_probe() {
     '--urlParams')
       return
       ;;
-    '-P')
+    '-P'|'--urlParam')
       return
       ;;
     '--headers')
@@ -2384,7 +2543,7 @@ function _picocli_cats_probe() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-H')
+    '-H'|'--header')
       return
       ;;
     '--queryParams')
@@ -2399,7 +2558,7 @@ function _picocli_cats_probe() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-Q')
+    '-Q'|'--queryParam')
       return
       ;;
     '--refData')
@@ -2408,10 +2567,10 @@ function _picocli_cats_probe() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
-    '-R')
+    '-R'|'--refDataParam')
       return
       ;;
-    '--functionalFuzzerFile')
+    '--functionalFlow'|'--functionalFuzzerFile')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -2424,6 +2583,12 @@ function _picocli_cats_probe() {
       return $?
       ;;
     '--securityFuzzerFile')
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    '--export-refdata'|'--exportRefData')
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -2561,7 +2726,7 @@ function _picocli_cats_compare() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--failOnNewErrors' '--failOnNewWarnings' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local flag_opts="'--failOnNewWarnings' '-j' '--json' '-h' '--help' '-V' '--version'"
   local arg_opts="'--configFile' '-b' '--baseline' '-t' '--target'"
 
   type compopt &>/dev/null && compopt +o default
@@ -2603,7 +2768,7 @@ function _picocli_cats_diff() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--failOnNewErrors' '--failOnNewWarnings' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local flag_opts="'--failOnNewWarnings' '-j' '--json' '-h' '--help' '-V' '--version'"
   local arg_opts="'--configFile' '-b' '--baseline' '-t' '--target'"
 
   type compopt &>/dev/null && compopt +o default
@@ -2645,8 +2810,8 @@ function _picocli_cats_init() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--force' '-j' '--json' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '-c' '--contract' '-o' '--output'"
+  local flag_opts="'--global' '--force' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-c' '--contract' '--skills' '-o' '--output'"
 
   type compopt &>/dev/null && compopt +o default
 
@@ -2658,6 +2823,9 @@ function _picocli_cats_init() {
       return $?
       ;;
     '-c'|'--contract')
+      return
+      ;;
+    '--skills')
       return
       ;;
     '-o'|'--output')
@@ -2750,8 +2918,8 @@ function _picocli_cats_triage() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--include-warnings' '-j' '--json' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '-r' '--report' '--export-correlations' '--export-reproducers'"
+  local flag_opts="'--verify' '--show-reproducers' '--showReproducers' '-w' '--include-warnings' '--includeWarnings' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-r' '--report' '-c' '--contract' '-s' '--server' '-H' '--header' '--export-correlations' '--exportCorrelations' '--export-refdata' '--exportRefData' '--export-contract-patch' '--exportContractPatch' '--export-reproducers' '--exportReproducers'"
 
   type compopt &>/dev/null && compopt +o default
 
@@ -2765,10 +2933,25 @@ function _picocli_cats_triage() {
     '-r'|'--report')
       return
       ;;
-    '--export-correlations')
+    '-c'|'--contract')
       return
       ;;
-    '--export-reproducers')
+    '-s'|'--server')
+      return
+      ;;
+    '-H'|'--header')
+      return
+      ;;
+    '--export-correlations'|'--exportCorrelations')
+      return
+      ;;
+    '--export-refdata'|'--exportRefData')
+      return
+      ;;
+    '--export-contract-patch'|'--exportContractPatch')
+      return
+      ;;
+    '--export-reproducers'|'--exportReproducers')
       return
       ;;
   esac
@@ -2789,8 +2972,8 @@ function _picocli_cats_diagnose() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--include-warnings' '-j' '--json' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '-r' '--report' '--export-correlations' '--export-reproducers'"
+  local flag_opts="'--verify' '--show-reproducers' '--showReproducers' '-w' '--include-warnings' '--includeWarnings' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-r' '--report' '-c' '--contract' '-s' '--server' '-H' '--header' '--export-correlations' '--exportCorrelations' '--export-refdata' '--exportRefData' '--export-contract-patch' '--exportContractPatch' '--export-reproducers' '--exportReproducers'"
 
   type compopt &>/dev/null && compopt +o default
 
@@ -2804,10 +2987,25 @@ function _picocli_cats_diagnose() {
     '-r'|'--report')
       return
       ;;
-    '--export-correlations')
+    '-c'|'--contract')
       return
       ;;
-    '--export-reproducers')
+    '-s'|'--server')
+      return
+      ;;
+    '-H'|'--header')
+      return
+      ;;
+    '--export-correlations'|'--exportCorrelations')
+      return
+      ;;
+    '--export-refdata'|'--exportRefData')
+      return
+      ;;
+    '--export-contract-patch'|'--exportContractPatch')
+      return
+      ;;
+    '--export-reproducers'|'--exportReproducers')
       return
       ;;
   esac
@@ -2828,8 +3026,8 @@ function _picocli_cats_doctor() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="'--include-warnings' '-j' '--json' '-h' '--help' '-V' '--version'"
-  local arg_opts="'--configFile' '-r' '--report' '--export-correlations' '--export-reproducers'"
+  local flag_opts="'--verify' '--show-reproducers' '--showReproducers' '-w' '--include-warnings' '--includeWarnings' '-j' '--json' '-h' '--help' '-V' '--version'"
+  local arg_opts="'--configFile' '-r' '--report' '-c' '--contract' '-s' '--server' '-H' '--header' '--export-correlations' '--exportCorrelations' '--export-refdata' '--exportRefData' '--export-contract-patch' '--exportContractPatch' '--export-reproducers' '--exportReproducers'"
 
   type compopt &>/dev/null && compopt +o default
 
@@ -2843,10 +3041,25 @@ function _picocli_cats_doctor() {
     '-r'|'--report')
       return
       ;;
-    '--export-correlations')
+    '-c'|'--contract')
       return
       ;;
-    '--export-reproducers')
+    '-s'|'--server')
+      return
+      ;;
+    '-H'|'--header')
+      return
+      ;;
+    '--export-correlations'|'--exportCorrelations')
+      return
+      ;;
+    '--export-refdata'|'--exportRefData')
+      return
+      ;;
+    '--export-contract-patch'|'--exportContractPatch')
+      return
+      ;;
+    '--export-reproducers'|'--exportReproducers')
       return
       ;;
   esac
