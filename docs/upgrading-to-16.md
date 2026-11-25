@@ -59,19 +59,23 @@ See [Interpreting Results](./getting-started/interpreting-results.md).
 See [Quality Gates and Stop Conditions](./getting-started/quality-gates.md#baseline-regression-gating---baseline-and-cats-compare)
 for comparison states and exit codes.
 
-## Functional flows and removal of legacy `FunctionalFuzzer`
+## Functional flows and removal of legacy `FunctionalFuzzer` / `SecurityFuzzer` YAML
 
-- The deprecated path-grouped `FunctionalFuzzer` YAML format (`cats-global-vars`,
-  top-level `/path:` keys, `httpMethod`, `expectedResponseCode`, `output`,
-  `verify`, `checkBoolean`) has been removed. Migrate functional and custom
-  security test files to the sequential `steps:` `FunctionalFlowFuzzer` format
-  (`cats run <flow.yml>` or `--functionalFlow <flow.yml>`).
+- The deprecated path-grouped `FunctionalFuzzer` and `SecurityFuzzer` YAML
+  formats (`cats-global-vars`, top-level `/path:` or `all:` keys, `httpMethod`,
+  `expectedResponseCode`, `output`, `verify`, `checkBoolean`, `targetFields`,
+  `targetFieldTypes`, `stringsFile`) have been removed. Migrate functional and
+  custom security test files to the sequential `steps:` `FunctionalFlowFuzzer`
+  format (`cats run <flow.yml>`, `--functionalFlow <flow.yml>`, or
+  `--securityFuzzerFile <flow.yml>`).
 - `cats run` now applies `--refData` (`-R`) and `--correlations` as request
   inputs before step-level `body:`, `omit:`, `path:`, `query:`, and `correlate:`
-  overrides, and supports `--export-refdata <file>` to export variables captured
-  by `save:`.
+  overrides, and replaces `--createRefData` (`refData_custom.yml`) and
+  `*_replaced.yml` templates with `--export-refdata <file>` (`--exportRefData <file>`)
+  to export variables captured by `save:`.
 
-See [Functional Flow Fuzzer](./fuzzers/special-fuzzers/functional-fuzzer.md#migrating-from-the-legacy-functionalfuzzer-syntax-removed-in-1600).
+See [Functional Flow Fuzzer](./fuzzers/special-fuzzers/functional-fuzzer.md#migrating-from-the-legacy-functionalfuzzer-syntax-removed-in-1600)
+and [Security Fuzzer](./fuzzers/special-fuzzers/security-fuzzer.md#migrating-from-the-legacy-securityfuzzer-syntax-removed-in-1600).
 
 ## CLI options and default value changes
 
@@ -97,9 +101,19 @@ See [Functional Flow Fuzzer](./fuzzers/special-fuzzers/functional-fuzzer.md#migr
 - **`cats generate` `--selfReferenceDepth` (`-L`) now defaults to `2`**: Matches
   the fuzzing default so `cats generate` and `cats` produce identical payloads
   for the same `--seed`.
-- **`cats template` `--headers` vs. `-H`**: `-H` (`--header`) passes inline
-  `name=value` headers, while `--headers=FILE` loads a YAML headers file
-  consistently with all other commands.
+- **`--headers` vs. `-H` (`--header`)**: `-H` (`--header`) passes inline
+  `name=value` headers across all commands (including `cats template` and
+  `cats replay`), while `--headers=FILE` loads a YAML headers file. Inline
+  parameter flags also provide long aliases (`-Q` / `--queryParam`,
+  `-R` / `--refDataParam`, `-P` / `--urlParam`).
+- **`--skipFields` skips across all fuzzers by default**: `--skipFields` now
+  excludes the specified fields (and their nested subfields) across all fuzzers
+  without requiring a leading `!` prefix, and supports both dot
+  (`shippingAddress.country`) and `#` (`shippingAddress#country`) notation.
+- **Unanchored `--matchResponseRegex` (`--mr`) and `--ignoreResponseRegex` (`--ir`)**:
+  Response regex matching now searches anywhere in the response body (`.find()`)
+  instead of requiring a full-body match (`.matches()`). Use `^...$` when you
+  want to anchor to the entire response body.
 
 ## Configuration, correlations, and dynamic values
 

@@ -7,12 +7,12 @@ description: How CATS can help to automatically create reference data
 
 You can use a [`FunctionalFlowFuzzer`](../fuzzers/special-fuzzers/functional-fuzzer) (`steps:`) workflow—or `cats triage --export-refdata`—to generate `--refData` files dynamically instead of hardcoding resource identifiers.
 
-## Option 1: Populate a `--refData` template from a functional flow
+## Option 1: Export `--refData` from a functional flow (`--export-refdata`)
 
-Create a `refData.yml` template containing `${variable}` placeholders that match variables captured in a `steps:` flow's `save:` block, and pass `--refData=refData.yml` when running `cats run`:
+Capture identifiers in a `steps:` flow's `save:` block, reference them in downstream steps, and pass `--export-refdata` when running `cats run`:
 
 ```bash
-cats run functionalFlow.yml -c contract.yml -s http://localhost:8080 --refData=refData.yml
+cats run functionalFlow.yml -c contract.yml -s http://localhost:8080 --export-refdata refData.yml
 ```
 
 The `functionalFlow.yml` file:
@@ -25,26 +25,24 @@ steps:
     body:
       name: "My Pet"
     save:
-      - petId: "pet.id"
+      petId: "pet.id"
     expect:
       status: [200, 201]
+
+  - name: "getPetType"
+    GET: "/pet-type"
+    query:
+      id: "${petId}"
+    expect:
+      status: 200
 ```
 
-The `refData.yml` template:
-
-```yaml
-/pet-type:
-  id: ${petId}
-```
-
-After `cats run` finishes, CATS writes `refData_replaced.yml` with the resolved runtime value:
+After `cats run` finishes, CATS writes `refData.yml` with the resolved runtime values for every path and field where a saved variable was consumed:
 
 ```yaml
 /pet-type:
   id: 123
 ```
-
-You can also export all paths and fields where saved variables were consumed directly to a file using `--export-refdata` (`cats run functionalFlow.yml -c contract.yml -s http://localhost:8080 --export-refdata refData.yml`), or pass `--createRefData` to write `refData_custom.yml`.
 
 ## Option 2: Mine `--refData` from an existing report with `cats triage`
 

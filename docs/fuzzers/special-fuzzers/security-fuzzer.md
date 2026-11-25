@@ -85,13 +85,13 @@ steps:
 
 ---
 
-## Migrating from the Legacy `SecurityFuzzer` Syntax (Deprecated)
+## Migrating from the Legacy `SecurityFuzzer` Syntax (Removed in 16.0.0)
 
-:::warning Deprecation Notice
-The legacy path-grouped `SecurityFuzzer` YAML syntax (top-level `/path:` or `all:` keys with `targetFields`, `targetFieldTypes`, `stringsFile`, `expectedResponseCode`, and `httpMethod`) is **deprecated** and **will be removed in CATS `16.x.x`**. Please migrate existing security fuzzer files to the `steps:` + `fuzz:` format.
+:::warning Removed in CATS 16.0.0
+The legacy path-grouped `SecurityFuzzer` YAML syntax (top-level `/path:` or `all:` keys with `targetFields`, `targetFieldTypes`, `stringsFile`, `expectedResponseCode`, and `httpMethod`) was removed in CATS `16.0.0`. Migrate existing security fuzzer files to the `steps:` + `fuzz:` format below.
 :::
 
-### Old path-grouped format (deprecated — to be removed in `16.x.x`)
+### Old path-grouped format (removed in `16.0.0`)
 
 ```yaml
 /pet:

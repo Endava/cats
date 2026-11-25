@@ -37,14 +37,14 @@ or `--name value`.
 - `--envFile=FILE` loads fallback environment variables from a dotenv file instead of the auto-detected `./.env`.
 - `--noEnvFile` or `--no-env-file` disables automatic loading of `./.env`.
 - `--proxyHost=HOST` and `--proxyPort=PORT` configure the proxy server.
-- `--headers=FILE` loads per-path headers from YAML. `-H name=value` adds a header globally.
-- `--queryParams=FILE` loads per-path query parameters from YAML. `-Q name=value` adds a query parameter globally.
-- `--refData=FILE` loads fixed values required for valid business requests. `-R name=value` adds reference data globally.
+- `--headers=FILE` loads per-path headers from YAML. `-H, --header name=value` adds a header globally.
+- `--queryParams=FILE` loads per-path query parameters from YAML. `-Q, --queryParam name=value` adds a query parameter globally.
+- `--refData=FILE` loads fixed values required for valid business requests. `-R, --refDataParam name=value` adds reference data globally.
 - `--correlations=FILE` or `--correlate=FILE` loads cross-field correlation rules (`when`/`then` `set` or `omit`) applied to request payloads across live HTTP commands.
-- `--urlParams=name:value,...` (or `name=value,...`) replaces path parameters globally. `-P name=value` is the equivalent global parameter form.
+- `--urlParams=name:value,...` (or `name=value,...`) replaces path parameters globally. `-P, --urlParam name=value` is the equivalent global parameter form.
 - `--functionalFlow=FILE` (alias `--functionalFuzzerFile=FILE`) supplies the sequential `steps:` functional flow file used by `FunctionalFlowFuzzer` (`cats run`).
 - `--securityFuzzerFile=FILE` supplies the `steps:` + `fuzz:` flow configuration used by `SecurityFuzzer`.
-- `--export-refdata=FILE` (alias `--exportRefData=FILE`) writes a `--refData` YAML file populated with variables captured by `FunctionalFlowFuzzer`. `--createRefData` writes `refData_custom.yml`.
+- `--export-refdata=FILE` (alias `--exportRefData=FILE`) writes a `--refData` YAML file populated with variables captured by `FunctionalFlowFuzzer`.
 - `--wfcAuth=FILE` loads a Web Fuzzing Commons authentication YAML/JSON file. CATS resolves the selected entry and applies its headers, cookies, or query parameters.
 - `--wfcAuthName=NAME` selects an entry from `--wfcAuth`; if omitted, CATS starts with the first entry and switches to subsequent entries on HTTP `401` or `403`.
 
@@ -75,7 +75,7 @@ for Web Fuzzing Commons configuration.
 - `-X, --httpMethods=METHOD,...` limits execution to selected HTTP methods (`POST, PUT, GET, DELETE, PATCH, HEAD` by default; `TRACE` is also supported when explicitly included). `--httpMethod` is an alias.
 - `--skipHttpMethods=METHOD,...` excludes HTTP methods.
 - `--skipDeprecatedOperations` excludes deprecated API operations. Default: `false`.
-- `--skipFields=FIELD,...` excludes fields from replacement fuzzers. Prefix a field with `!` to skip that field and all descendants.
+- `--skipFields=FIELD,...` excludes the specified fields and their nested subfields from all fuzzers. Both dot (`address.city`) and `#` (`address#city`) paths are supported.
 - `--skipHeaders=HEADER,...` excludes headers from all fuzzers.
 - `--fieldTypes=TYPE,...` and `--fieldFormats=FORMAT,...` include only matching OpenAPI field types or formats.
 - `--skipFieldTypes=TYPE,...` and `--skipFieldFormats=FORMAT,...` exclude matching OpenAPI field types or formats.
@@ -201,7 +201,7 @@ cats random --help
 - `cats compare` (alias `diff`) requires `-b, --baseline=FILE_OR_DIR` and `-t, --target=FILE_OR_DIR`, and supports `--failOnNewWarnings` and `-j, --json`. New error occurrences always fail comparison.
 - `cats list` supports `--fuzzers`, `--linters`, `--profiles`, `--formats`, `--mutators`, `--customMutatorTypes`, `--fieldsFuzzerStrategies`, and `--paths` (with `--executionOrder` or `--dependencyOrder` to show producer-to-consumer execution order). Use `--json` for machine-readable output.
 - `cats replay TEST` supports `--errors`, `--warnings`, `--reportFolder=DIR`, `--output=DIR`, `--server=URL`, `--callTimeout=SECONDS`, `--maxResponseBytes=BYTES`, `--curl` (prints equivalent `curl` commands without sending HTTP calls), `--stateful` (replays upstream `2XX` producer tests first and substitutes fresh resource IDs), `--export-flow=FILE` (`--exportFlow=FILE`, exports the selected tests and upstream producer chain as a runnable `steps:` flow YAML file), and `--verbose`.
-- `cats run FILE` supports the standard API, authentication, files (`--correlations=FILE`, `--headers=FILE`, `-H`, `--queryParams=FILE`, `-Q`, `--refData=FILE`, `-R`, `--urlParams`, `-P`, `--export-refdata=FILE`, `--createRefData`), processing (`--contentType=TYPE`, `--oneOfSelection`, `--anyOfSelection`, `--discriminatorCasing`, `--seed`), ignore, and reporting options.
+- `cats run FILE` supports the standard API, authentication, files (`--correlations=FILE`, `--headers=FILE`, `-H, --header`, `--queryParams=FILE`, `-Q, --queryParam`, `--refData=FILE`, `-R, --refDataParam`, `--urlParams`, `-P, --urlParam`, `--export-refdata=FILE`), processing (`--contentType=TYPE`, `--oneOfSelection`, `--anyOfSelection`, `--discriminatorCasing`, `--seed`), ignore, reporting, and quality-gate (`--failOn`, `--qualityGate`, `--baseline`, `--failOnNewWarnings`) options.
 - `cats template URL` supports `--data=JSON_OR_FILE`, `--targetFields=FIELD,...`, `--httpMethod=METHOD`, `-H, --header=NAME=VALUE`, `--headers=FILE`, `--correlations=FILE`, and `--random`.
 - `cats lint` supports `--linters=NAME,...` (`--linter`), `--skipLinters=NAME,...` (`--skipLinter`, including path-scoped expressions like `/path=Linter1;Linter2` or `/api/me/*=PathPluralsLinter`), `-p, --paths=PATH,...` (supports wildcards), `--skipPaths=PATH,...`, `-t, --tags=TAG,...`, `--skipTags=TAG,...`, `--operationIds=ID,...`, `--skipOperationIds=ID,...`, `-X, --httpMethods=METHOD,...`, `--skipHttpMethods=METHOD,...`, `--skipDeprecatedOperations`, `--skipLintersForExtension=x-ext=val:Linter1,Linter2`, `--strict` (escalates linter warnings to errors), `--enumsNaming`, `--headersNaming`, `--jsonObjectsNaming`, `--jsonPropertiesNaming`, `--operationPrefixMapFile`, `--pathNaming`, `--pathVariablesNaming`, `--queryParamsNaming`, and quality-gate options (`--failOn`, `--qualityGate`, `--baseline`).
 - `cats stats` supports `--detailed` and `--skip=SECTION,...`.

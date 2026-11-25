@@ -28,7 +28,7 @@ Because CATS automatically generates schema-valid request payloads and OpenAPI-d
 
 :::info `cats run` Scope & Flags
 - `cats run` applies external `--correlations` and `--refData` (`-R`) files as request inputs before step-level `correlate:`, `body:`, `omit:`, `path:`, and `query:` overrides. Step values always take precedence over `--refData` and correlation rules.
-- To export a `--refData` file populated with variables captured by `save:`, pass `--export-refdata=FILE` (or pass a `--refData=template.yml` containing `${var}` placeholders to write `template_replaced.yml`).
+- To export a `--refData` file populated with variables captured by `save:`, pass `--export-refdata=FILE` (alias `--exportRefData=FILE`).
 - Supported auth/config flags on `cats run`: `-H`, `--headers`, `--queryParams`, `-Q`, `--refData`, `-R`, `--correlations`, `--export-refdata`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`.
 :::
 
