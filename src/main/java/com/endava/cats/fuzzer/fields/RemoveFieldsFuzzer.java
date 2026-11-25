@@ -71,8 +71,9 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     }
 
     private Set<String> removeIfSkipped(Set<String> subset) {
+        List<String> skippedFields = filterArguments.getSkipFields();
         return subset.stream()
-                .filter(field -> !filterArguments.getSkipFields().contains(field))
+                .filter(field -> skippedFields.stream().noneMatch(skipped -> field.equals(skipped) || field.startsWith(skipped + "#")))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

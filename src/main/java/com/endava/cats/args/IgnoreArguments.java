@@ -61,6 +61,8 @@ public class IgnoreArguments {
     @CommandLine.Option(names = {"--ignoreResponseRegex", "--ir"},
             description = "A regex that will match against the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@")
     private String ignoreResponseRegex;
+    private String compiledIgnoreRegexSource;
+    private Pattern compiledIgnoreRegex;
 
     @CommandLine.Option(names = {"-k", "--skipReportingForIgnoredCodes", "--skipReportingForIgnored", "--sri"},
             description = "Skip reporting entirely for the ignored response codes, sizes, words and lines provided in the @|bold,underline --ignoreResponseXXX|@ arguments. Default: @|bold false|@ ")
@@ -139,7 +141,15 @@ public class IgnoreArguments {
         if (ignoreResponseRegex == null || body == null) {
             return true;
         }
-        return !Pattern.compile(ignoreResponseRegex, Pattern.DOTALL).matcher(body).matches();
+        return !compiledIgnorePattern().matcher(body).find();
+    }
+
+    private Pattern compiledIgnorePattern() {
+        if (!ignoreResponseRegex.equals(compiledIgnoreRegexSource) || compiledIgnoreRegex == null) {
+            compiledIgnoreRegexSource = ignoreResponseRegex;
+            compiledIgnoreRegex = Pattern.compile(ignoreResponseRegex, Pattern.DOTALL);
+        }
+        return compiledIgnoreRegex;
     }
 
     /**

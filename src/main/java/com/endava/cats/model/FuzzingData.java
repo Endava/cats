@@ -311,10 +311,15 @@ public class FuzzingData {
             }
             allFieldsAsCatsFields.removeIf(catsField -> skipFieldTypes.stream().anyMatch(type -> CatsModelUtils.isType(catsField.getSchema(), type)));
             allFieldsAsCatsFields.removeIf(catsField -> skipFieldFormats.contains(Optional.ofNullable(catsField.getSchema().getFormat()).orElse(EMPTY)));
-            allFieldsAsCatsFields.removeIf(catsField -> skippedFieldsForAllFuzzers.stream().anyMatch(skippedField -> catsField.getName().startsWith(skippedField)));
+            allFieldsAsCatsFields.removeIf(catsField -> skippedFieldsForAllFuzzers.stream()
+                    .anyMatch(skippedField -> isMatchingOrChildField(catsField.getName(), skippedField)));
         }
 
         return allFieldsAsCatsFields;
+    }
+
+    private static boolean isMatchingOrChildField(String fieldName, String skippedField) {
+        return fieldName.equals(skippedField) || fieldName.startsWith(skippedField + "#");
     }
 
     /**

@@ -190,7 +190,7 @@ class FuzzingDataTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"address#street,3", "cats,4"})
+    @CsvSource({"address#street,3", "address,1", "first,4", "cats,4"})
     void shouldExcludeBasedOnFieldName(String name, int expected) {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());

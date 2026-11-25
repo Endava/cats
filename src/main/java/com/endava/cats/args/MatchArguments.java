@@ -37,6 +37,8 @@ public class MatchArguments {
     @CommandLine.Option(names = {"--matchResponseRegex", "--mr"},
             description = "A regex that will match against the response that will be matched as @|bold,underline error|@. Non-matching responses will be ignored from the final report")
     private String matchResponseRegex;
+    private String compiledMatchRegexSource;
+    private Pattern compiledMatchRegex;
 
     @CommandLine.Option(names = {"--matchInput", "--mi"},
             description = "A flag to check if the response is reflecting the fuzzed value that will match as @|bold,underline error|@. Non-matching responses will be ignored from the final report. Default: @|bold,underline ${DEFAULT-VALUE}|@")
@@ -104,8 +106,15 @@ public class MatchArguments {
         if (matchResponseRegex == null || body == null) {
             return false;
         }
-        Pattern pattern = Pattern.compile(matchResponseRegex, Pattern.DOTALL);
-        return pattern.matcher(body).matches();
+        return compiledMatchPattern().matcher(body).find();
+    }
+
+    private Pattern compiledMatchPattern() {
+        if (!matchResponseRegex.equals(compiledMatchRegexSource) || compiledMatchRegex == null) {
+            compiledMatchRegexSource = matchResponseRegex;
+            compiledMatchRegex = Pattern.compile(matchResponseRegex, Pattern.DOTALL);
+        }
+        return compiledMatchRegex;
     }
 
     /**

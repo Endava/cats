@@ -111,7 +111,7 @@ class MatchArgumentsTest {
         CatsResponse catsResponse = CatsResponse.builder().responseCode(200).body("{\"err\":\"error 333\"}")
                 .numberOfLinesInResponse(200).numberOfWordsInResponse(200).contentLengthInBytes(200).build();
 
-        ReflectionTestUtils.setField(matchArguments, "matchResponseRegex", ".*error.*");
+        ReflectionTestUtils.setField(matchArguments, "matchResponseRegex", "error 333");
         Assertions.assertThat(matchArguments.isMatchedResponseRegex("error 333")).isTrue();
         Assertions.assertThat(matchArguments.isMatchResponse(catsResponse)).isTrue();
     }

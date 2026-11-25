@@ -176,7 +176,8 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     }
 
     private boolean isSkippedField(String fuzzedField) {
-        return skipForFields().contains(fuzzedField);
+        return skipForFields().stream()
+                .anyMatch(skipped -> fuzzedField.equals(skipped) || fuzzedField.startsWith(skipped + "#"));
     }
 
     /**

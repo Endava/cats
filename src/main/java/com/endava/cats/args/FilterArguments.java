@@ -17,6 +17,7 @@ import com.endava.cats.args.util.ProfileLoader;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.fields.UserDictionaryFieldsFuzzer;
 import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
+import com.endava.cats.fuzzer.special.FieldCorrelationEvaluator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.AnnotationUtils;
 import com.endava.cats.util.CatsUtil;
@@ -153,8 +154,8 @@ public class FilterArguments {
     private List<FormatType> skipFieldFormats;
 
     @CommandLine.Option(names = {"--skipFields", "--skipField"},
-            description = "A comma separated list of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc. " +
-                    "If the field name starts with @|bold !|@ the field will be skipped by @|bold all|@ fuzzers. ", split = ",")
+            description = "A comma separated list of fields (and their nested subfields) that will be skipped by all Fuzzers. " +
+                    "Supports both dot (@|bold address.city|@) and @|bold #|@ (@|bold address#city|@) paths", split = ",")
     private List<String> skipFields;
 
     @CommandLine.Option(names = {"--skipHeaders", "--skipHeader"},
@@ -244,25 +245,32 @@ public class FilterArguments {
     }
 
     /**
-     * Gets the list of fields to skip during processing. If the list is not set, an empty list is returned.
+     * Gets the list of fields to skip during processing, with any optional leading {@code !} stripped
+     * and dot-notation normalized to {@code #}. If the list is not set, an empty list is returned.
      *
      * @return the list of fields to skip, or an empty list if not set
      */
     public List<String> getSkipFields() {
-        return Optional.ofNullable(this.skipFields).orElse(Collections.emptyList());
+        return Optional.ofNullable(this.skipFields).orElse(Collections.emptyList()).stream()
+                .map(FilterArguments::normalizeSkippedField)
+                .filter(Predicate.not(String::isBlank))
+                .distinct()
+                .toList();
     }
 
     /**
-     * Return the fields that must be skipped by all fuzzers. Fields that must be skipped
-     * by all fuzzers are marked with {@code !};
+     * Returns the fields that must be skipped by all fuzzers.
      *
      * @return a list of fields that can be skipped by all fuzzers
      */
     public List<String> getSkipFieldsToBeSkippedForAllFuzzers() {
-        return this.getSkipFields().stream()
-                .filter(field -> field.startsWith(EXCLUDE_FROM_ALL_FUZZERS_MARK))
-                .map(field -> field.substring(1))
-                .toList();
+        return this.getSkipFields();
+    }
+
+    private static String normalizeSkippedField(String field) {
+        String trimmed = field == null ? "" : field.trim();
+        String stripped = trimmed.startsWith(EXCLUDE_FROM_ALL_FUZZERS_MARK) ? trimmed.substring(1) : trimmed;
+        return FieldCorrelationEvaluator.normalizeFieldPath(stripped);
     }
 
     /**

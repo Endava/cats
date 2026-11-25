@@ -41,10 +41,10 @@ public class ProcessingArguments {
             description = "This can be either @|bold,underline SANITIZE_AND_VALIDATE|@ or @|bold,underline VALIDATE_AND_SANITIZE|@. It can be used to specify what CATS should expect when sending Unicode Control Chars and Other Symbols within the fields. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private SanitizationStrategy sanitizationStrategy = SanitizationStrategy.SANITIZE_AND_VALIDATE;
 
-    @CommandLine.Option(names = {"--useExamples"}, negatable = true,
+    @CommandLine.Option(names = {"--useExamples"}, negatable = true, fallbackValue = "true",
             description = "When set to @|bold true|@, it will use request body examples, schema examples and primitive properties examples from the OpenAPI contract when available. " +
                     "This is equivalent of using @|bold,underline --useRequestBodyExamples|@ @|bold,underline --useSchemaExamples|@ @|bold,underline --usePropertyExamples|@ @|bold,underline --useResponseBodyExamples|@." +
-                    "Default: @|bold,underline ${DEFAULT-VALUE}|@")
+                    "Default: @|bold,underline true|@")
     @Setter
     private Boolean useExamples;
 
