@@ -27,16 +27,17 @@ cats run -c openapi.yml -s http://localhost:8080 functionalFlow.yml
 Because CATS automatically generates schema-valid request payloads and OpenAPI-documented headers from your contract, each step only needs to specify the fields relevant to your business scenario.
 
 :::info `cats run` Scope & Flags
-- `cats run` applies external `--correlations` and `--refData` (`-R`) files as request inputs before step-level `correlate:`, `body:`, `omit:`, `path:`, and `query:` overrides. Step values always take precedence over `--refData` and correlation rules.
+- `cats run` applies external `--headers` (`-H`), `--correlations`, and `--refData` (`-R`) files as lower-precedence defaults before flow-level and step-level `headers:`, `correlate:`, `body:`, `omit:`, `path:`, and `query:` overrides. More specific values always win (`OpenAPI defaults < --headers/-H < flow headers: < step headers: < step omit:`).
+- Use `--stepTags` / `--skipStepTags` (or flow-level `stepTags:` / `skipStepTags:`) to run a tagged subset of steps without colliding with OpenAPI operation `--tags`.
 - To export a `--refData` file populated with variables captured by `save:`, pass `--export-refdata=FILE` (alias `--exportRefData=FILE`).
-- Supported auth/config flags on `cats run`: `-H`, `--headers`, `--queryParams`, `-Q`, `--refData`, `-R`, `--correlations`, `--export-refdata`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`.
+- Supported auth/config flags on `cats run`: `-H`, `--headers`, `--queryParams`, `-Q`, `--refData`, `-R`, `--correlations`, `--export-refdata`, `--stepTags`, `--skipStepTags`, `--wfcAuth`, `--basicAuth`, `--oneOfSelection`, `--seed`, `-o`, `--failOn`, `--qualityGate`, `--baseline`, `--failOnNewWarnings`.
 :::
 
 ---
 
 ## Sequential `steps:` Syntax
 
-A functional flow file can define optional top-level `variables:`, optional flow-scoped `correlate:` rules, and an ordered list of HTTP `steps:`:
+A functional flow file can define optional `imports:`, flow-level `stepTags:` / `skipStepTags:`, typed `variables:`, flow-scoped `headers:`, flow-scoped `correlate:` rules, and an ordered list of HTTP `steps:`:
 
 ```yaml
 variables:
@@ -111,9 +112,10 @@ steps:
   - `MERGE` (default): Starts from a full schema-valid happy-path payload and merges `body:` overrides. On `GET` and `DELETE`, optional query parameters not explicitly listed in `query:` (or inline in the URL) are omitted.
   - `ONLY_REQUIRED`: Starts from a payload containing only fields marked `required` in the OpenAPI schema.
   - `EMPTY`: Starts from an empty `{}` payload.
-- **`body`**: Map, list, or scalar overriding the request body. Nested maps merge into existing JSON objects, and dot-notation (`home.country`) or `#`-notation (`home#country`) can target nested fields directly. All YAML types (`integer`, `number`, `boolean`, lists, nested maps) and explicit `null` values are preserved.
-- **`path`**, **`query`**, **`headers`**: Maps of path parameters, query parameters, and HTTP headers for the step. OpenAPI-documented headers are generated automatically and only need to be listed in `headers:` when overriding a specific value.
-- **`omit`**: List of field paths to remove from the generated request payload.
+- **`tags`** (or `tag`): Optional list of step tags (e.g. `tags: [smoke, psp]`) for subset execution via flow-level `stepTags:` / `skipStepTags:` or CLI `--stepTags` / `--skipStepTags`.
+- **`body`**: Map, list, scalar, or standalone `"${varName}"` / `"${varName?}"` variable reference overriding the request body. Nested maps merge into existing JSON objects, and dot-notation (`home.country`) or `#`-notation (`home#country`) can target nested fields directly. All YAML types (`integer`, `number`, `boolean`, lists, nested maps) and explicit `null` values are preserved. Set a field to `"cats_remove_field"` or use an optional placeholder `"${varName?}"` (when `varName` is `null` or unset) to omit the field from the payload.
+- **`path`**, **`query`**, **`headers`**: Maps of path parameters, query parameters, and HTTP headers for the step (`headers:` also accepts a standalone `"${varName}"` / `"${varName?}"` reference to a map variable). OpenAPI-documented headers are generated automatically and only need to be listed in `headers:` when overriding a specific value. Set a header value to `null` (or `"${var?}"` when unset/`null`) to remove it.
+- **`omit`**: List of field paths (and `headers.<name>` entries) to remove from the generated request payload or headers. Supports variable expansion (`omit: "${fieldsToOmit}"` for a list variable, or `omit: ["${field}"]`).
 - **`variant`**: Selects a specific `oneOf`/`anyOf` schema branch either by schema name suffix (`variant: "DogRequest"`) or by matching discriminator/property values (`variant: { pet.type: "Dog" }`). Explicit variant criteria take precedence over body fields when choosing the branch.
 - **`correlate`**: Optional step-scoped cross-field correlation rule (single object `{ when: "...", set: {...}, omit: [...] }` or list of rules) applied before sending the step's request.
 - **`delayMs`**: Optional initial delay in milliseconds before sending the step's request.
@@ -143,6 +145,64 @@ steps:
     expect:
       status: [400, 409, 422, 429]
 ```
+
+---
+
+## Reusing Flows (`imports:`), Step Tags, Typed Variables, and Validation
+
+### Composing shared flow files with `imports:`
+
+A flow file can import one or more other flow files using `imports:` (paths are resolved relative to the importing file):
+
+```yaml
+# services/adyen-mock/flows.yml
+imports:
+  - "../../common/psp-adapter/flows.yml"
+
+stepTags: [adapter]
+
+variables:
+  route: "XeleratorMockECOM"
+  expiryMonthExpired: 12
+  refundRequiresAmount: false
+  webhookHeaders:
+    X-Signature: "mock-sig"
+```
+
+- **Merging order**: Imported files load first in listed order, followed by the importing file. Local `variables:` and `headers:` override imported keys; local `correlate:` rules and `steps:` are appended after imported ones; local `stepTags:` / `skipStepTags:` replace imported ones when specified.
+- **Imports-only files**: A child file can omit `steps:` completely and only declare `imports:`, `stepTags:`, and `variables:` overrides.
+- **Diamond imports and cycles**: Diamond imports (two files importing the same shared file) are deduplicated so shared steps execute only once. Missing import files and import cycles fail fast at load time.
+
+### Step `tags:`, flow-level `stepTags:`, and `--stepTags` / `--skipStepTags`
+
+Tag individual steps with `tags: [psp, smoke]` (or `tag: adapter`) and select which steps run either inside the flow file (`stepTags:` / `skipStepTags:`) or on the command line (`--stepTags` / `--skipStepTags`):
+
+```shell
+cats run -c openapi.yml -s http://localhost:8080 flows.yml --stepTags=smoke
+cats run -c openapi.yml -s http://localhost:8080 flows.yml --skipStepTags=destructive,slow
+```
+
+- **Precedence**: CLI `--stepTags` / `--skipStepTags` override flow-level `stepTags:` / `skipStepTags:` when supplied. Within a run, skip tags take precedence over include tags (case-insensitive matching).
+- **Separate from OpenAPI `--tags`**: `--stepTags` filters flow `steps:` and does not filter OpenAPI operations.
+- **Untagged steps**: When `stepTags` is active, untagged steps are excluded and CATS logs a warning listing their names.
+
+### Typed `variables:` and Optional Placeholders (`${var?}`)
+
+Values in top-level `variables:` preserve their native YAML types (`integer`, `number`, `boolean`, `null`, lists, and nested maps) when referenced standalone as `"${varName}"`, including whole-object `body: "${webhookBody}"` and whole-map `headers: "${webhookHeaders}"`. Global variables are resolved in dependency order, so a derived variable in an imported file can reference a variable defined in the importing child file.
+
+- **Sending `null` vs. omitting a field**:
+  - `"${var}"` with `var: null` sends JSON `null` (preserving `null` vs. absent semantics for negative tests and `PATCH` updates).
+  - `"${var?}"` **omits** the body field, nested field, list element, query parameter, or header whenever `var` is `null` or unset (and resolves to `""` when embedded inside a larger string like `"prefix-${suffix?}"`).
+  - You can also drop a field explicitly with `"cats_remove_field"` or variable-expanded `omit: "${fieldsToOmit}"`.
+- **Coercing `$$ENV_VAR` values**: Because environment variables are strings, use explicit shorthand casts such as `#(int($$EXPIRY_MONTH))`, `#(float($$RATE))`, `#(bool($$DRY_RUN))`, or `#(str(${code}))` (see [Dynamic Values](../../advanced-topics/dynamic-values.md)).
+
+### Load-Time Fail-Fast Validation
+
+Before sending any HTTP request, CATS validates the resolved and tag-filtered flow and fails immediately on:
+- Missing imported files, malformed imported YAML, or import cycles.
+- Cyclic or undefined `${varName}` references in global `variables:`, steps, `omit:`, or `headers: "${var}"`.
+- Non-map values supplied to `headers: "${var}"`.
+- A selected step referencing `${varName}`, `$steps.<name>.*`, or `$prev.*` produced only by a step that was excluded by `stepTags` / `skipStepTags`, or used before a later step saves it.
 
 ---
 
@@ -347,7 +407,7 @@ steps:
       outcome: "REPEATED"
 ```
 
-A `T(...)` value written directly in a step header (without a variable) is evaluated for each step, so every step gets a different value. Headers supplied using `--headers` are evaluated for each request and replace a step header with the same name, so a header shared between steps, such as `Idempotency-Key` above, must not also be defined in the `--headers` file.
+A `#(...)` or `T(...)` value written directly in a flow-level or step-level header (without a variable) is evaluated for each step, so every step gets a fresh value. Flow-level and step-level `headers:` (and step `omit:` / `null` header removals) always take precedence over external `--headers` (`headers.yml`) and `-H` defaults, so headers explicitly configured in the flow are never overwritten by `--headers`.
 
 ---
 

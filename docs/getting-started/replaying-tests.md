@@ -20,16 +20,19 @@ Important notes:
 - if you provide a `.json` extension to a test name, that file will be searched as a path i.e. it will search for `Test15.json` in the current folder and `Test19.json` in the `dir` folder
 - if you don't provide a json extension to a test name, CATS searches for that test in the `cats-report` folder i.e. `cats-report/Test1.json` and `cats-report/Test233.json`
 
-You can also use environment variables for headers and URLs when replaying tests using `$$variable`. CATS resolves `$$variable` placeholders from the process environment first, then from `./.env` (or the file supplied via `--envFile`, unless disabled with `--noEnvFile`).
+You can also use environment variables for headers, URLs, and request bodies (JSON and `application/x-www-form-urlencoded`) when replaying tests using `$$variable`. CATS resolves `$$variable` placeholders from the process environment first, then from `./.env` (or the file supplied via `--envFile`, unless disabled with `--noEnvFile`), applying proper JSON escaping or URL encoding automatically.
 
 :::tip
-When replaying tests you can also supply headers using the `-H` argument. This will override any header matching the given header name.
-`cats replay Test1 -H Authentication=token`
+When replaying tests you can override recorded headers with `-H` (`--header`) and recorded request body fields with `-R` (`--refDataParam`):
+
+```bash
+cats replay Test1 -H "Authorization=Bearer token" -R "password=mySecret" -R "auth.clientSecret=$$CLIENT_SECRET"
+```
 :::
 
 ## Printing equivalent `curl` commands
 
-Pass `--curl` to print the equivalent `curl` command(s) for the selected test case(s) without executing any HTTP calls:
+Pass `--curl` to print the equivalent `curl` command(s) for the selected test case(s) without executing any HTTP calls. Masked `$$VAR` placeholders in headers, URLs, and bodies are emitted as shell `"${VAR}"` expansions without requiring the variables to be exported first (explicit `-H` and `-R` overrides are still applied):
 
 ```bash
 cats replay Test1 --curl

@@ -68,11 +68,22 @@ for comparison states and exit codes.
   custom security test files to the sequential `steps:` `FunctionalFlowFuzzer`
   format (`cats run <flow.yml>`, `--functionalFlow <flow.yml>`, or
   `--securityFuzzerFile <flow.yml>`).
-- `cats run` now applies `--refData` (`-R`) and `--correlations` as request
-  inputs before step-level `body:`, `omit:`, `path:`, `query:`, and `correlate:`
-  overrides, and replaces `--createRefData` (`refData_custom.yml`) and
-  `*_replaced.yml` templates with `--export-refdata <file>` (`--exportRefData <file>`)
-  to export variables captured by `save:`.
+- `cats run` now applies `--headers` (`-H`), `--refData` (`-R`), and `--correlations`
+  as lower-precedence request defaults before flow-level and step-level `headers:`,
+  `body:`, `omit:`, `path:`, `query:`, and `correlate:` overrides (step and flow
+  headers now take precedence over `--headers` / `headers.yml`), and replaces
+  `--createRefData` (`refData_custom.yml`) and `*_replaced.yml` templates with
+  `--export-refdata <file>` (`--exportRefData <file>`) to export variables captured
+  by `save:`.
+- **Flow composition, step tags, typed variables, and load-time validation**:
+  Functional and security flows now support relative `imports:`, step `tags:` with
+  flow-level `stepTags:` / `skipStepTags:` and CLI `--stepTags` / `--skipStepTags`,
+  typed top-level `variables:` (including whole `body: "${var}"` and
+  `headers: "${var}"`), variable-expanded `omit:`, optional `${var?}` placeholders
+  (omitting fields/headers/query params when `null` or unset while `${var}` preserves
+  JSON `null`), explicit `#(int(...))` / `#(float(...))` / `#(bool(...))` / `#(str(...))`
+  type-cast shorthands, and load-time fail-fast validation before sending any HTTP
+  requests.
 
 See [Functional Flow Fuzzer](./fuzzers/special-fuzzers/functional-fuzzer.md#migrating-from-the-legacy-functionalfuzzer-syntax-removed-in-1600)
 and [Security Fuzzer](./fuzzers/special-fuzzers/security-fuzzer.md#migrating-from-the-legacy-securityfuzzer-syntax-removed-in-1600).
@@ -114,6 +125,17 @@ and [Security Fuzzer](./fuzzers/special-fuzzers/security-fuzzer.md#migrating-fro
   Response regex matching now searches anywhere in the response body (`.find()`)
   instead of requiring a full-body match (`.matches()`). Use `^...$` when you
   want to anchor to the entire response body.
+- **Unified `--mask`, scoped `--maskHeaders` / `--maskFields`, and body secret masking**:
+  `--mask` masks matching headers, query parameters, and request/response body
+  fields (`$$fieldName` in requests for replay, `[REDACTED]` in responses),
+  while `--maskHeaders` (headers only) and `--maskFields` (body fields only)
+  prevent header/field name clashes (such as `host`, `date`, or `content-type`).
+  `refData` and flow fields populated from `$$ENV_VAR` are masked automatically
+  (with value-checked response redaction to avoid over-masking unrelated
+  endpoints) while keeping fuzzer mutations on body fields and query parameters
+  visible. `cats replay` and `cats triage --verify` resolve masked body
+  placeholders with proper JSON/form escaping, and `cats replay` accepts `-R`
+  (`--refDataParam`) to override masked body fields.
 
 ## Configuration, correlations, and dynamic values
 

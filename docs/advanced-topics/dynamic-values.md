@@ -62,6 +62,17 @@ String and encoding helpers accept a literal, a context variable name, an embedd
 - `#(md5(expr))` — lowercase hexadecimal MD5 digest
 - `#(urlEncode(expr))` — UTF-8 URL encoding
 
+### Type Conversion Helpers
+Explicit type conversion helpers are useful when coercing string `$$ENV_VAR` values into JSON numbers/booleans or forcing a numeric variable back to a JSON string:
+- `#(int(expr))` (aliases `#(toInt(expr))`, `#(long(expr))`) — parses a trimmed integer into a JSON integer (e.g. `#(int($$EXPIRY_MONTH))`)
+- `#(float(expr))` (aliases `#(toFloat(expr))`, `#(double(expr))`, `#(number(expr))`) — parses a trimmed decimal/floating-point value into a JSON number (e.g. `#(float($$RATE))`)
+- `#(bool(expr))` (aliases `#(toBool(expr))`, `#(boolean(expr))`) — parses `true` / `false` (case-insensitive) into a JSON boolean (e.g. `#(bool($$DRY_RUN))`; note `#(bool)` without arguments still generates a random boolean)
+- `#(str(expr))` (aliases `#(string(expr))`, `#(toString(expr))`) — keeps the resolved value as a JSON string without automatic numeric/boolean coercion (e.g. `#(str(${numericCode}))`)
+
+### Flow Variables (`${var}` & Optional `${var?}`)
+- `${varName}` — substitutes a variable defined in `variables:`, `forEach:`, or captured by an earlier step's `save:`. Native YAML types (`number`, `boolean`, `null`, lists, maps) are preserved when referenced standalone.
+- `${varName?}` — optional variant in functional flows: omits the body field, nested field, list element, query parameter, or header when `varName` is `null` or unset (and resolves to `""` when embedded in a larger string).
+
 ### Environment Variables (`$$ENV_VAR`)
 - `$$ENV_VAR` — reads `ENV_VAR` from the process environment (or `--envFile` / `./.env`) and automatically masks its value in console output and HTML/JSON reports. `$$ENV_VAR` resolves both as a standalone value (`"$$API_AUTH"`) and embedded inside larger strings (`"Bearer $$API_TOKEN"`). Always single-quote `$$ENV_VAR` in shell commands (`-H 'Authorization=Bearer $$API_TOKEN'`) so bash does not expand `$$` to its process ID.
 

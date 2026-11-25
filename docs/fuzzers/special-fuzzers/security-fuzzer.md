@@ -81,6 +81,7 @@ steps:
 ### Targeting All Paths, All HTTP Methods, and Multi-Step Second-Order Checks
 
 - **All paths / all methods**: Use `ALL: "/pet"` to target all HTTP methods on `/pet`, `POST: "all"` to target `POST` across all paths, or `ALL: "all"` to target every method on every path. You can also pass a list of paths under `paths: ["/pet", "/users"]` with `method: POST` (or `method: ALL`).
+- **Composition, variables, and step tags**: `SecurityFuzzer` supports `imports:`, typed `variables:`, flow-level `stepTags:` / `skipStepTags:`, and CLI `--stepTags` / `--skipStepTags` identically to [`FunctionalFlowFuzzer`](./functional-fuzzer).
 - **Multi-step second-order checks**: Because `SecurityFuzzer` shares the `steps:` engine with `FunctionalFlowFuzzer`, you can combine a `POST` step containing `fuzz:` and `save:` with a follow-up `GET` step in the same file to detect stored XSS or second-order SQL injection.
 
 ---

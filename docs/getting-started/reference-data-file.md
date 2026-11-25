@@ -65,7 +65,7 @@ This means that even if fields will get replaced with their reference data value
 
 The file uses [Json path](https://github.com/json-path/JsonPath) syntax for properties names; you can supply fully qualified properties using `#` as separator (instead of `.`).
 
-You can use environment (system) variables in a ref data file using: `$$VARIABLE_NAME`.
+You can use environment (system) variables in a ref data file using: `$$VARIABLE_NAME`. Fields populated from `$$VARIABLE_NAME` are automatically masked in console logs and report files (keeping `$$VARIABLE_NAME` in requests for replay and replacing echoed secret values in responses with `[REDACTED]`, unless `--showSecrets` is passed).
 
 :::caution
 Notice double `$$` when supplying environment variables.

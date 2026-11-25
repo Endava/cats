@@ -6,9 +6,9 @@ description: Types of authentication supported by CATS
 # API Authentication
 
 :::info
-By default, CATS automatically masks sensitive request headers (such as `Authorization`, `Cookie`, `X-API-Key`, tokens, secrets, and passwords) and sensitive query parameters (including OpenAPI `in: query` API keys and WFC Auth query parameters) in console logs and report files.
-Masked request headers and query parameters are replaced with `$$VariableName` placeholders so that test cases remain replayable with environment variables or a `.env` file, while sensitive response headers are replaced with `[REDACTED]`.
-Use `--maskHeaders` to mask additional custom headers, or `--showSecrets` to disable automatic masking.
+By default, CATS automatically masks sensitive request headers (such as `Authorization`, `Cookie`, `X-API-Key`, tokens, secrets, and passwords), sensitive query parameters (including OpenAPI `in: query` API keys and WFC Auth query parameters), and `$$ENV_VAR` reference data fields in console logs and report files.
+Masked request values are replaced with `$$VariableName` placeholders so that test cases remain replayable with environment variables or a `.env` file, while masked response values are replaced with `[REDACTED]`.
+Use `--mask` (headers, query parameters, and body fields), `--maskHeaders` (headers only), or `--maskFields` (body fields only) to mask additional names, or `--showSecrets` to disable automatic masking.
 :::
 
 ## Environment variables and `.env` files
