@@ -23,7 +23,6 @@ public class CommandContext {
     private Map<String, Object> headersMap;
     private String contentType;
     private Long seed;
-    private Boolean createRefData;
     private File refDataFile;
     private File queryFile;
     private Map<String, String> xxxOfSelections;
@@ -77,10 +76,6 @@ public class CommandContext {
 
     public Optional<Long> getSeed() {
         return Optional.ofNullable(seed);
-    }
-
-    public Optional<Boolean> getCreateRefData() {
-        return Optional.ofNullable(createRefData);
     }
 
     public Optional<File> getRefDataFile() {

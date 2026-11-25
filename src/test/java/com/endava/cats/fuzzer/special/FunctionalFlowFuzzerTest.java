@@ -93,12 +93,9 @@ class FunctionalFlowFuzzerTest {
                 """;
         File flowFile = tempDir.resolve("flow.yml").toFile();
         Files.writeString(flowFile.toPath(), yaml);
-        File refDataTemplate = tempDir.resolve("refData.yml").toFile();
-        Files.writeString(refDataTemplate.toPath(), "/billing-plans/{planId}:\n  planId: ${createdPlanId}\n");
         File exportRefData = tempDir.resolve("exported-refdata.yml").toFile();
 
         filesArguments.setFunctionalFlowFile(flowFile);
-        filesArguments.setRefDataFile(refDataTemplate);
         filesArguments.setExportRefDataFile(exportRefData);
 
         FuzzingData postPlans = FuzzingData.builder()
@@ -172,9 +169,6 @@ class FunctionalFlowFuzzerTest {
                 .contains("\"dryRun\":\"false\"");
         Assertions.assertThat(patchCall.getPayload()).contains("\"active\":false");
 
-        File replacedRefData = tempDir.resolve("refData_replaced.yml").toFile();
-        Assertions.assertThat(replacedRefData).exists();
-        Assertions.assertThat(Files.readString(replacedRefData.toPath())).contains("planId: plan_42");
         Assertions.assertThat(exportRefData).exists();
         Assertions.assertThat(Files.readString(exportRefData.toPath())).contains("plan_42");
         Assertions.assertThat(fuzzer).hasToString("FunctionalFlowFuzzer");
@@ -313,7 +307,7 @@ class FunctionalFlowFuzzerTest {
         File flowFile = tempDir.resolve("rich-flow.yml").toFile();
         Files.writeString(flowFile.toPath(), flowYaml);
         filesArguments.setFunctionalFlowFile(flowFile);
-        filesArguments.setCreateRefData(true);
+        filesArguments.setExportRefDataFile(tempDir.resolve("rich-exported.yml").toFile());
         File outRefFile = tempDir.resolve("out-ref.yml").toFile();
         Files.writeString(outRefFile.toPath(), "all:\n  x: 1\n");
         filesArguments.setRefDataFile(outRefFile);
@@ -535,9 +529,10 @@ class FunctionalFlowFuzzerTest {
                       status: 201
                 """;
         File flowFile = tempDir.resolve("extra-flow.yml").toFile();
+        File exportRefData = tempDir.resolve("extra-refdata.yml").toFile();
         Files.writeString(flowFile.toPath(), flowYaml);
         filesArguments.setFunctionalFlowFile(flowFile);
-        filesArguments.setCreateRefData(true);
+        filesArguments.setExportRefDataFile(exportRefData);
         filesArguments.setRefDataFile(null);
 
         FuzzingData staticVariant = FuzzingData.builder()
@@ -572,9 +567,7 @@ class FunctionalFlowFuzzerTest {
         fuzzer.executeFlows();
 
         Assertions.assertThat(fuzzer.getVariables()).containsEntry("fromPathId", "p_77");
-        File customRef = new File("refData_custom.yml");
-        Assertions.assertThat(customRef).exists();
-        Files.deleteIfExists(customRef.toPath());
+        Assertions.assertThat(exportRefData).exists();
     }
 
     @Test

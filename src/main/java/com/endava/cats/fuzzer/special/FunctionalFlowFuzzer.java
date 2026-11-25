@@ -65,7 +65,6 @@ import java.util.regex.Pattern;
 @Singleton
 @SpecialFuzzer
 public class FunctionalFlowFuzzer implements Fuzzer {
-    private static final String REF_DATA_CUSTOM_FILE = "refData_custom.yml";
     private static final String RESPONSE_HEADER_PREFIX = "header#";
     private static final Pattern STEP_TOKEN_PATTERN = Pattern.compile("\\$\\{((?:steps|prev)\\.[^}]+)}|\\$((?:steps|prev)\\.[A-Za-z0-9_.#\\[\\]-]+)");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FunctionalFlowFuzzer.class);
@@ -744,31 +743,37 @@ public class FunctionalFlowFuzzer implements Fuzzer {
     private RefDataPayloads applyConfiguredRefData(FuzzingData data, String basePayload,
                                                    String pathParamsPayload, boolean bodyMethod) {
         Map<String, Object> refData = FilesArguments.resolveRefData(filesArguments, data.getContractPath(), data.getMethod());
-        if (refData.isEmpty()) {
-            return new RefDataPayloads(basePayload, pathParamsPayload);
-        }
-        String currentBody = basePayload;
-        String currentPath = pathParamsPayload;
+        RefDataPayloads current = new RefDataPayloads(basePayload, pathParamsPayload);
         for (Map.Entry<String, Object> entry : refData.entrySet()) {
-            String key = entry.getKey();
-            if (key == null || key.matches(CatsDSLWords.ADDITIONAL_PROPERTIES)) {
-                continue;
-            }
-            if (ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(entry.getValue()))) {
-                currentBody = JsonUtils.isFieldInJson(currentBody, key) ? JsonUtils.deleteNode(currentBody, key) : currentBody;
-                continue;
-            }
-            Object resolved = resolveValueAndRecordRefData(data.getContractPath(), key, entry.getValue(), currentBody);
-            if (resolved instanceof String str && str.startsWith("${") && str.endsWith("}")) {
-                continue;
-            }
-            if (bodyMethod && JsonUtils.isFieldInJson(currentPath, key)) {
-                currentPath = FieldCorrelationEvaluator.setOrInsertField(currentPath, key, resolved, false);
-            } else if (JsonUtils.isFieldInJson(currentBody, key)) {
-                currentBody = setOrMergeField(currentBody, key, resolved);
-            }
+            current = applySingleRefDataEntry(data.getContractPath(), current, entry, bodyMethod);
         }
-        return new RefDataPayloads(currentBody, currentPath);
+        return current;
+    }
+
+    private RefDataPayloads applySingleRefDataEntry(String contractPath, RefDataPayloads current,
+                                                    Map.Entry<String, Object> entry, boolean bodyMethod) {
+        String key = entry.getKey();
+        if (key == null || key.matches(CatsDSLWords.ADDITIONAL_PROPERTIES)) {
+            return current;
+        }
+        if (ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(entry.getValue()))) {
+            String updatedBody = JsonUtils.isFieldInJson(current.bodyPayload(), key)
+                    ? JsonUtils.deleteNode(current.bodyPayload(), key)
+                    : current.bodyPayload();
+            return new RefDataPayloads(updatedBody, current.pathParamsPayload());
+        }
+        Object resolved = resolveValueAndRecordRefData(contractPath, key, entry.getValue(), current.bodyPayload());
+        if (resolved instanceof String str && str.startsWith("${") && str.endsWith("}")) {
+            return current;
+        }
+        if (bodyMethod && JsonUtils.isFieldInJson(current.pathParamsPayload(), key)) {
+            String updatedPath = FieldCorrelationEvaluator.setOrInsertField(current.pathParamsPayload(), key, resolved, false);
+            return new RefDataPayloads(current.bodyPayload(), updatedPath);
+        }
+        if (JsonUtils.isFieldInJson(current.bodyPayload(), key)) {
+            return new RefDataPayloads(setOrMergeField(current.bodyPayload(), key, resolved), current.pathParamsPayload());
+        }
+        return current;
     }
 
     private List<FieldCorrelationRule> loadExternalAndFlowCorrelationRules(FunctionalFlowDocument document,
@@ -1212,26 +1217,6 @@ public class FunctionalFlowFuzzer implements Fuzzer {
         if (filesArguments.getExportRefDataFile() != null) {
             CatsUtil.writeToYaml(filesArguments.getExportRefDataFile().getAbsolutePath(), recordedRefDataByPath);
         }
-        if (filesArguments.getRefDataFile() != null && Files.readString(filesArguments.getRefDataFile().toPath()).contains("${")) {
-            writeReplacedRefDataFile(filesArguments.getRefDataFile(), variables);
-        }
-        if (filesArguments.isCreateRefData()) {
-            CatsUtil.writeToYaml(REF_DATA_CUSTOM_FILE, recordedRefDataByPath);
-        }
-    }
-
-    private static void writeReplacedRefDataFile(File refDataFile, Map<String, String> variables) throws IOException {
-        List<String> refDataLines = Files.readAllLines(refDataFile.toPath());
-        List<String> updatedLines = refDataLines.stream().map(line -> {
-            String result = line;
-            for (Map.Entry<String, String> variable : variables.entrySet()) {
-                result = result.replace("${" + variable.getKey() + "}", variable.getValue());
-            }
-            return result;
-        }).toList();
-        String currentFile = refDataFile.getAbsolutePath();
-        Files.write(Paths.get(currentFile.substring(0, currentFile.lastIndexOf('.')) + "_replaced.yml"),
-                updatedLines, StandardCharsets.UTF_8);
     }
 
     @Override

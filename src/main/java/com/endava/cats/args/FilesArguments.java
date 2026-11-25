@@ -73,12 +73,12 @@ public class FilesArguments {
     private File fuzzersConfig;
 
     @CommandLine.Option(names = {"--urlParams"},
-            description = "A comma separated list of @|bold name:value|@ pairs of parameters to be replaced inside the URLs", split = ",")
+            description = "A comma separated list of @|bold name:value|@ or @|bold name=value|@ pairs of parameters to be replaced inside the URLs", split = ",")
     @Setter
     private List<String> params;
 
-    @CommandLine.Option(names = {"-P"},
-            description = "Specifies the url/path params to be replaced in request paths")
+    @CommandLine.Option(names = {"-P", "--urlParam"},
+            description = "Specifies the url/path params (@|bold name=value|@) to be replaced in request paths")
     @Setter
     Map<String, Object> urlParamsArguments;
 
@@ -87,8 +87,8 @@ public class FilesArguments {
     @Setter
     private File headersFile;
 
-    @CommandLine.Option(names = {"-H"},
-            description = "Specifies the headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control, the `--headers` arg must be used")
+    @CommandLine.Option(names = {"-H", "--header"},
+            description = "Specifies the headers (@|bold name=value|@) that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control, the `--headers` arg must be used")
     @Setter
     Map<String, Object> headersMap;
 
@@ -102,8 +102,8 @@ public class FilesArguments {
     @Setter
     private File pathsOrderFile;
 
-    @CommandLine.Option(names = {"-Q"},
-            description = "Specifies additional query parameters that will be passed along with the request. This can be used to pass non-documented query params. When supplied it will be applied to ALL paths. " +
+    @CommandLine.Option(names = {"-Q", "--queryParam"},
+            description = "Specifies additional query parameters (@|bold name=value|@) that will be passed along with the request. This can be used to pass non-documented query params. When supplied it will be applied to ALL paths. " +
                     "For per-path control, the `--queryParams` argument must be used")
     @Setter
     Map<String, Object> queryParamsArguments;
@@ -114,8 +114,8 @@ public class FilesArguments {
     @Getter
     private File refDataFile;
 
-    @CommandLine.Option(names = {"-R"},
-            description = "Specifies fields that must have a fixed value in order for requests to succeed. When supplied it will be applied to ALL paths. " +
+    @CommandLine.Option(names = {"-R", "--refDataParam"},
+            description = "Specifies fields (@|bold name=value|@) that must have a fixed value in order for requests to succeed. When supplied it will be applied to ALL paths. " +
                     "For per-path control, the `--refData` argument must be used")
     @Setter
     Map<String, Object> refDataArguments;
@@ -136,13 +136,6 @@ public class FilesArguments {
             description = "The file used by the @|bold SecurityFuzzer|@ to inject special strings in order to exploit possible vulnerabilities")
     @Setter
     private File securityFuzzerFile;
-
-    @CommandLine.Option(names = {"--createRefData"},
-            description = "This is only applicable when enabling the @|bold FunctionalFlowFuzzer|@. It will instruct the @|bold FunctionalFlowFuzzer|@ to create a @|bold,underline --refData|@ file " +
-                    "with all the paths defined in the flow file and the corresponding saved variables")
-    @Getter
-    @Setter
-    private boolean createRefData;
 
     @CommandLine.Option(names = {"--export-refdata", "--exportRefData"},
             description = "Write a --refData YAML file populated with variables captured by FunctionalFlowFuzzer")
@@ -180,7 +173,6 @@ public class FilesArguments {
         this.correlationsFile = other.correlationsFile;
         this.securityFuzzerFile = other.securityFuzzerFile;
         this.securityFlowDocument = other.securityFlowDocument;
-        this.createRefData = other.createRefData;
         this.exportRefDataFile = other.exportRefDataFile;
         this.mutatorsFolder = other.mutatorsFolder;
     }
@@ -575,17 +567,25 @@ public class FilesArguments {
                                            boolean normalizeFieldPaths) {
         collection.forEach((k, v) -> {
             if (k != null && v != null && keyMatcher.test(k.trim())) {
-                v.forEach((entryKey, entryVal) -> {
-                    if ("omit".equalsIgnoreCase(entryKey)) {
-                        extractOmittedFields(entryVal).forEach(f ->
-                                target.putIfAbsent(normalizeFieldPaths ? normalizeRefDataKey(f) : f, ServiceCaller.CATS_REMOVE_FIELD));
-                    } else {
-                        String effectiveKey = normalizeFieldPaths ? normalizeRefDataKey(entryKey) : entryKey;
-                        target.putIfAbsent(effectiveKey, entryVal);
-                    }
-                });
+                v.forEach((entryKey, entryVal) -> putSingleMatchingEntry(entryKey, entryVal, target, normalizeFieldPaths));
             }
         });
+    }
+
+    private static void putSingleMatchingEntry(String entryKey,
+                                               Object entryVal,
+                                               Map<String, Object> target,
+                                               boolean normalizeFieldPaths) {
+        if ("omit".equalsIgnoreCase(entryKey)) {
+            extractOmittedFields(entryVal).forEach(f ->
+                    target.putIfAbsent(effectiveEntryKey(f, normalizeFieldPaths), ServiceCaller.CATS_REMOVE_FIELD));
+            return;
+        }
+        target.putIfAbsent(effectiveEntryKey(entryKey, normalizeFieldPaths), entryVal);
+    }
+
+    private static String effectiveEntryKey(String key, boolean normalizeFieldPaths) {
+        return normalizeFieldPaths ? normalizeRefDataKey(key) : key;
     }
 
     private static boolean isExactMethodPathMatch(String key, String path, HttpMethod method) {

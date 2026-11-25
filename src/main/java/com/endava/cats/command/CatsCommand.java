@@ -269,7 +269,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         context.getSecurityFuzzerFile().ifPresent(filesArguments::setSecurityFuzzerFile);
         context.getHeadersFile().ifPresent(filesArguments::setHeadersFile);
         context.getHeadersMap().ifPresent(filesArguments::setHeadersMap);
-        context.getCreateRefData().ifPresent(filesArguments::setCreateRefData);
         context.getRefDataFile().ifPresent(filesArguments::setRefDataFile);
         context.getCorrelationsFile().ifPresent(filesArguments::setCorrelationsFile);
         context.getQueryFile().ifPresent(filesArguments::setQueryFile);

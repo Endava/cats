@@ -287,7 +287,7 @@ class FilesArgumentsTest {
     @Test
     void shouldCopyFromOtherInstanceAndFilterRemovedFields() {
         FilesArguments source = new FilesArguments();
-        source.setCreateRefData(true);
+        source.setExportRefDataFile(new File("exported-refdata.yml"));
         source.setParams(List.of("id:1"));
         source.setHeadersMap(Map.of("X-Test", "1"));
         source.setQueryParamsArguments(Map.of("q", "v"));
@@ -298,7 +298,7 @@ class FilesArgumentsTest {
         target.copyFrom(target);
         target.copyFrom(source);
 
-        Assertions.assertThat(target.isCreateRefData()).isTrue();
+        Assertions.assertThat(target.getExportRefDataFile()).isEqualTo(new File("exported-refdata.yml"));
         Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(null)).isEmpty();
         Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(Map.of())).isEmpty();
         Assertions.assertThat(FilesArguments.getFieldsToRemoveFromRefData(
