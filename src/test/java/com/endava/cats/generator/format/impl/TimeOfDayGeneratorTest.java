@@ -29,9 +29,18 @@ class TimeOfDayGeneratorTest {
         Assertions.assertThat(timeOfDayGenerator.appliesTo("", property)).isEqualTo(expected);
     }
 
-    @Test
-    void shouldNotApplyToTimeFormat() {
+    @ParameterizedTest
+    @CsvSource({
+            "time,arrivalTime",
+            "date-time,arrivalTime",
+            "time-local,arrivalTime",
+            "date-time-local,arrivalTime",
+            "unixtime,unixTime",
+            ",localTime",
+            ",localDateTime"
+    })
+    void shouldNotApplyToTimeFormat(String format, String property) {
         TimeOfDayGenerator timeOfDayGenerator = new TimeOfDayGenerator();
-        Assertions.assertThat(timeOfDayGenerator.appliesTo("time", "arrivalTime")).isFalse();
+        Assertions.assertThat(timeOfDayGenerator.appliesTo(format == null ? "" : format, property)).isFalse();
     }
 }

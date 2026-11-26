@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import com.endava.cats.util.CatsRandom;
@@ -10,10 +11,10 @@ import java.util.List;
 
 /**
  * A generator class implementing interfaces for generating valid Internationalized Resource Identifiers (IRI) data formats.
- * It implements the ValidDataFormatGenerator and OpenAPIFormat interfaces.
+ * It implements the ValidDataFormatGenerator, InvalidDataFormatGenerator, and OpenAPIFormat interfaces.
  */
 @Singleton
-public class IRIReferenceGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+public class IRIReferenceGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
         String generated = CatsRandom.alphabetic(5);
@@ -28,5 +29,15 @@ public class IRIReferenceGenerator implements ValidDataFormatGenerator, OpenAPIF
     @Override
     public List<String> matchingFormats() {
         return List.of("iri-reference");
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "/füzzing path with spaces/";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "http://[invalid::iri";
     }
 }

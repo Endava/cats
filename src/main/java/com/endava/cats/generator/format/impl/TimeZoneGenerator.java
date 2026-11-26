@@ -1,6 +1,7 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.DataFormat;
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
@@ -16,7 +17,7 @@ import java.util.Set;
  * A generator class implementing various interfaces for generating valid data formats for time zones.
  */
 @Singleton
-public class TimeZoneGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+public class TimeZoneGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     private static final Set<String> ALL_ZONES = ZoneId.getAvailableZoneIds();
 
     @Override
@@ -35,5 +36,15 @@ public class TimeZoneGenerator implements ValidDataFormatGenerator, OpenAPIForma
         String generated = CatsUtil.selectRandom(ALL_ZONES);
 
         return DataFormat.matchesPatternOrNull(schema, generated);
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "Europe/Nowhere";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "Invalid/Zone/123";
     }
 }

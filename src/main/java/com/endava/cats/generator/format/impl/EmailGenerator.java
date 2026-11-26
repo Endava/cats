@@ -30,6 +30,9 @@ public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataForm
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
+        if ("idn-email".equalsIgnoreCase(format)) {
+            return false;
+        }
         return propertyName.toLowerCase(Locale.ROOT).endsWith(EMAIL) ||
                 PropertySanitizer.sanitize(propertyName).endsWith("emailaddress") ||
                 EMAIL.equalsIgnoreCase(format);

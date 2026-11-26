@@ -1,6 +1,7 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.DataFormat;
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
@@ -14,7 +15,7 @@ import java.util.List;
  * Generates real Swift/Bic codes.
  */
 @Singleton
-public class BicGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+public class BicGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
@@ -40,5 +41,15 @@ public class BicGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
         String generated = CatsUtil.catsFaker().finance().bic();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "DEUT99FF";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "NOTABIC!";
     }
 }

@@ -2,6 +2,7 @@ package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
+import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
@@ -22,7 +23,13 @@ public class IPV6Generator implements ValidDataFormatGenerator, InvalidDataForma
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return propertyName.toLowerCase(Locale.ROOT).endsWith("ipv6") || "ipv6".equalsIgnoreCase(format);
+        if ("ipv6".equalsIgnoreCase(format)) {
+            return true;
+        }
+        if ("ipv6cidr".equalsIgnoreCase(PropertySanitizer.sanitize(format))) {
+            return false;
+        }
+        return propertyName.toLowerCase(Locale.ROOT).endsWith("ipv6");
     }
 
     @Override

@@ -45,6 +45,24 @@ class PhoneNumberGeneratorTest {
     }
 
     @Test
+    void shouldGenerateE164Format() {
+        StringSchema schema = new StringSchema();
+        schema.setFormat("e164");
+        Object result = phoneNumberGenerator.generate(schema);
+        Assertions.assertThat(result).isNotNull();
+        Assertions.assertThat(result.toString()).matches("^\\+[1-9]\\d{10}$");
+    }
+
+    @Test
+    void shouldGenerateE164WhenPatternRequiresIt() {
+        StringSchema schema = new StringSchema();
+        schema.setPattern("^\\+[1-9]\\d{1,14}$");
+        Object result = phoneNumberGenerator.generate(schema);
+        Assertions.assertThat(result).isNotNull();
+        Assertions.assertThat(result.toString()).matches("^\\+[1-9]\\d{1,14}$");
+    }
+
+    @Test
     void shouldReturnNullWhenNoPatternMatches() {
         StringSchema schema = new StringSchema();
         schema.setPattern("^IMPOSSIBLE_PATTERN$");
@@ -53,7 +71,7 @@ class PhoneNumberGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"phone,true", "other,false"})
+    @CsvSource({"phone,true", "e164,true", "e.164,true", "phone-number,true", "other,false"})
     void shouldApplyToFormat(String format, boolean expected) {
         Assertions.assertThat(phoneNumberGenerator.appliesTo(format, "")).isEqualTo(expected);
     }

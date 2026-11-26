@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import com.endava.cats.util.CatsRandom;
@@ -10,10 +11,10 @@ import java.util.List;
 
 /**
  * A generator class implementing interfaces for generating valid URI (Uniform Resource Identifier) template data formats.
- * It implements the ValidDataFormatGenerator and OpenAPIFormat interfaces.
+ * It implements the ValidDataFormatGenerator, InvalidDataFormatGenerator, and OpenAPIFormat interfaces.
  */
 @Singleton
-public class URITemplateGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+public class URITemplateGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
         return "/fuzzing%s/{path}".formatted(CatsRandom.alphabetic(4));
@@ -27,5 +28,15 @@ public class URITemplateGenerator implements ValidDataFormatGenerator, OpenAPIFo
     @Override
     public List<String> matchingFormats() {
         return List.of("uri-template");
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "http://example.com/{id";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "http://example.com/{{}}";
     }
 }

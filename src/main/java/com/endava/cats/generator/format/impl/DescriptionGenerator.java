@@ -9,17 +9,23 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Generates quotes to fill in description fields.
  */
 @Singleton
 public class DescriptionGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+    private static final Set<String> EXCLUDED_FORMATS = Set.of("html", "commonmark", "markdown");
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
+        String sanitizedFormat = PropertySanitizer.sanitize(format);
+        if (EXCLUDED_FORMATS.contains(sanitizedFormat)) {
+            return false;
+        }
         String sanitized = PropertySanitizer.sanitize(propertyName);
-        return "description".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
+        return "description".equalsIgnoreCase(sanitizedFormat) ||
                 sanitized.endsWith("description") || sanitized.endsWith("body");
     }
 

@@ -2,6 +2,7 @@ package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.DataFormat;
 import com.endava.cats.generator.format.api.FormatGeneratorUtil;
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
@@ -13,25 +14,34 @@ import java.util.List;
 
 /**
  * Generates real world phone numbers for multiple countries.
- * Supports: US, UK, Germany, France, Italy, Spain, Romania, Netherlands formats.
+ * Supports: US, UK, Germany, France, Italy, Spain, Romania, Netherlands, and E.164 formats.
  */
 @Singleton
-public class PhoneNumberGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+public class PhoneNumberGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return "phone".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
+        String sanitizedFormat = PropertySanitizer.sanitize(format).replace(".", "");
+        return "phone".equalsIgnoreCase(sanitizedFormat) ||
+                "phonenumber".equalsIgnoreCase(sanitizedFormat) ||
+                "e164".equalsIgnoreCase(sanitizedFormat) ||
                 PropertySanitizer.sanitize(propertyName).matches(".*phone(\\d)?$") ||
                 PropertySanitizer.sanitize(propertyName).matches(".*phonenumber(\\d)?$");
     }
 
     @Override
     public List<String> matchingFormats() {
-        return List.of("phone", "phoneNumber", "phone-number", "phone_number");
+        return List.of("phone", "phoneNumber", "phone-number", "phone_number", "e164");
     }
 
     @Override
     public Object generate(Schema<?> schema) {
+        String e164 = "+1" + FormatGeneratorUtil.randomInRange(200, 1000) + FormatGeneratorUtil.randomDigits(7);
+        if (schema != null && schema.getFormat() != null
+                && "e164".equalsIgnoreCase(PropertySanitizer.sanitize(schema.getFormat()).replace(".", ""))) {
+            return DataFormat.matchesPatternOrNull(schema, e164);
+        }
+
         List<String> candidates = new ArrayList<>();
 
         // US: +1 (555) 123-4567 or (555) 123-4567
@@ -82,6 +92,18 @@ public class PhoneNumberGenerator implements ValidDataFormatGenerator, OpenAPIFo
         candidates.add("+31 20 " + FormatGeneratorUtil.randomDigits(3) + " " + FormatGeneratorUtil.randomDigits(4));
         candidates.add("020 " + FormatGeneratorUtil.randomDigits(3) + " " + FormatGeneratorUtil.randomDigits(4));
 
+        candidates.add(e164);
+
         return DataFormat.matchesPatternOrNullFromList(schema, candidates);
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "+1-555-12";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "not-a-phone-number";
     }
 }

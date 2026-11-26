@@ -8,12 +8,18 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Generates random time of day in HH:mm format.
  */
 @Singleton
 public class TimeOfDayGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+    private static final Set<String> EXCLUDED_FORMATS = Set.of(
+            "time", "datetime", "timelocal", "localtime", "datetimelocal", "localdatetime", "unixtime", "httpdate");
+    private static final List<String> EXCLUDED_PROPERTY_SUFFIXES = List.of(
+            "localtime", "timelocal", "localdatetime", "datetimelocal", "unixtime");
+
     @Override
     public Object generate(Schema<?> schema) {
         int hour = CatsRandom.instance().nextInt(24);
@@ -24,8 +30,11 @@ public class TimeOfDayGenerator implements ValidDataFormatGenerator, OpenAPIForm
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return PropertySanitizer.sanitize(propertyName).endsWith("time") &&
-                !"time".equalsIgnoreCase(format) && !"date-time".equalsIgnoreCase(format);
+        String sanitizedFormat = PropertySanitizer.sanitize(format);
+        String sanitizedProperty = PropertySanitizer.sanitize(propertyName);
+        return sanitizedProperty.endsWith("time")
+                && !EXCLUDED_FORMATS.contains(sanitizedFormat)
+                && EXCLUDED_PROPERTY_SUFFIXES.stream().noneMatch(sanitizedProperty::endsWith);
     }
 
     @Override

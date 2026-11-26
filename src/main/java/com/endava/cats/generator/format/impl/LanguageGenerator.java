@@ -1,6 +1,7 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.DataFormat;
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
@@ -10,10 +11,14 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Singleton
-public class LanguageGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
-    private static final List<String> ALL_LANGUAGES = List.of(Locale.getISOCountries());
+public class LanguageGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
+    private static final Set<String> OBSOLETE_CODES = Set.of("in", "iw", "ji", "mo");
+    private static final List<String> ALL_LANGUAGES = List.of(Locale.getISOLanguages()).stream()
+            .filter(code -> !OBSOLETE_CODES.contains(code))
+            .toList();
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
@@ -31,5 +36,15 @@ public class LanguageGenerator implements ValidDataFormatGenerator, OpenAPIForma
         String generated = CatsUtil.selectRandom(ALL_LANGUAGES);
 
         return DataFormat.matchesPatternOrNull(schema, generated);
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "en-999";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "not-a-language-tag-123";
     }
 }

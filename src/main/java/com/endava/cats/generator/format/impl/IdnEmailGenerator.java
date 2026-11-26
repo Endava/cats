@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import com.endava.cats.util.CatsUtil;
@@ -11,10 +12,10 @@ import java.util.Locale;
 
 /**
  * A generator class implementing interfaces for generating valid IDN (Internationalized Domain Name) email data formats.
- * It implements the ValidDataFormatGenerator and OpenAPIFormat interfaces.
+ * It implements the ValidDataFormatGenerator, InvalidDataFormatGenerator, and OpenAPIFormat interfaces.
  */
 @Singleton
-public class IdnEmailGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+public class IdnEmailGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
         return CatsUtil.catsFaker().ancient().primordial().toLowerCase(Locale.ROOT) + ".cööl.cats@cats.io";
@@ -28,5 +29,15 @@ public class IdnEmailGenerator implements ValidDataFormatGenerator, OpenAPIForma
     @Override
     public List<String> matchingFormats() {
         return List.of("idn-email");
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "user@bücher..de";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "not-an-idn-email";
     }
 }

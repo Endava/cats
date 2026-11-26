@@ -10,6 +10,7 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -19,6 +20,8 @@ import java.util.stream.IntStream;
  */
 @Singleton
 public class IPV4Generator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
+    private static final Set<String> EXCLUDED_FORMATS = Set.of("cidr", "ipv4cidr", "ipv6cidr", "ipv6", "iprange");
+
     @Override
     public Object generate(Schema<?> schema) {
         return IntStream.range(0, 4)
@@ -28,14 +31,19 @@ public class IPV4Generator implements ValidDataFormatGenerator, InvalidDataForma
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
+        if ("ip".equalsIgnoreCase(format) || "ipv4".equalsIgnoreCase(format)) {
+            return true;
+        }
+        if (EXCLUDED_FORMATS.contains(PropertySanitizer.sanitize(format))) {
+            return false;
+        }
         String[] propertyParts = propertyName.split("#", -1);
         String partToTest = propertyParts[propertyParts.length - 1];
+        String lowerPart = partToTest.toLowerCase(Locale.ROOT);
 
-        return (partToTest.toLowerCase(Locale.ROOT).endsWith("ip") && !partToTest.toLowerCase(Locale.ROOT).startsWith("zip")
-                && !partToTest.toLowerCase(Locale.ROOT).endsWith("citizenship")) ||
-                PropertySanitizer.sanitize(partToTest).endsWith("ipaddress") ||
-                "ip".equalsIgnoreCase(format) ||
-                "ipv4".equalsIgnoreCase(format);
+        return (lowerPart.endsWith("ip") && !lowerPart.startsWith("zip")
+                && !lowerPart.endsWith("citizenship")) ||
+                PropertySanitizer.sanitize(partToTest).endsWith("ipaddress");
     }
 
     @Override

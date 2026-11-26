@@ -28,7 +28,7 @@ class IPAddressRangeGeneratorTest {
     class FormatMatchingTests {
 
         @ParameterizedTest
-        @ValueSource(strings = {"cidr", "CIDR", "ipRange"})
+        @ValueSource(strings = {"cidr", "CIDR", "ipRange", "ipv4-cidr"})
         void shouldApplyToFormat(String format) {
             Assertions.assertThat(generator.appliesTo(format, "")).isTrue();
         }
@@ -44,9 +44,16 @@ class IPAddressRangeGeneratorTest {
             Assertions.assertThat(generator.appliesTo("", propertyName)).isTrue();
         }
 
-        @Test
-        void shouldNotApplyToUnrelatedFormat() {
-            Assertions.assertThat(generator.appliesTo("email", "username")).isFalse();
+        @ParameterizedTest
+        @CsvSource({
+                "email,username",
+                "ipv6-cidr,ipv6Cidr",
+                "ipv6-cidr,networkCidr",
+                ",ipv6Cidr",
+                ",ipv6Subnet"
+        })
+        void shouldNotApplyToUnrelatedFormat(String format, String property) {
+            Assertions.assertThat(generator.appliesTo(format == null ? "" : format, property == null ? "" : property)).isFalse();
         }
     }
 

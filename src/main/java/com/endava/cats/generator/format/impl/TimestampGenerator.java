@@ -12,6 +12,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * A generator class implementing various interfaces for generating valid and invalid date-time data formats.
@@ -19,6 +20,9 @@ import java.util.Locale;
  */
 @Singleton
 public class TimestampGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
+    private static final Set<String> OTHER_TEMPORAL_FORMATS = Set.of(
+            "date", "time", "datetime", "datetimelocal", "localdatetime", "timelocal", "localtime", "httpdate", "unixtime");
+
     @Override
     public Object generate(Schema<?> schema) {
         return ZonedDateTime.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
@@ -26,9 +30,15 @@ public class TimestampGenerator implements ValidDataFormatGenerator, InvalidData
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
+        String sanitizedFormat = PropertySanitizer.sanitize(format);
+        if ("timestamp".equalsIgnoreCase(sanitizedFormat)) {
+            return true;
+        }
+        if (OTHER_TEMPORAL_FORMATS.contains(sanitizedFormat)) {
+            return false;
+        }
         return PropertySanitizer.sanitize(propertyName).endsWith("timestamp") ||
-                isTimestampAtProperty(propertyName) ||
-                "timestamp".equalsIgnoreCase(format);
+                isTimestampAtProperty(propertyName);
     }
 
     private static boolean isTimestampAtProperty(String propertyName) {

@@ -1,6 +1,7 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.DataFormat;
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
@@ -14,7 +15,7 @@ import java.util.List;
  * Generates real IBANs
  */
 @Singleton
-public class IbanGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+public class IbanGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
@@ -32,5 +33,15 @@ public class IbanGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
         String generated = CatsUtil.catsFaker().finance().iban();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "GB00WEST12345698765432";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "INVALID_IBAN_123";
     }
 }

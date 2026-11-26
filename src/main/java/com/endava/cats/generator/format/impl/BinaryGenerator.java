@@ -41,6 +41,6 @@ public class BinaryGenerator implements ValidDataFormatGenerator, InvalidDataFor
 
     @Override
     public List<String> matchingFormats() {
-        return List.of("bye", "binary");
+        return List.of("byte", "binary");
     }
 }

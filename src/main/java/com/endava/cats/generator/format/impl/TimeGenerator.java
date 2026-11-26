@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
@@ -12,10 +13,10 @@ import java.util.List;
 
 /**
  * A generator class implementing interfaces for generating valid time data formats.
- * It implements the ValidDataFormatGenerator and OpenAPIFormat interfaces.
+ * It implements the ValidDataFormatGenerator, InvalidDataFormatGenerator, and OpenAPIFormat interfaces.
  */
 @Singleton
-public class TimeGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+public class TimeGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
         return OffsetTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_OFFSET_TIME);
@@ -29,5 +30,15 @@ public class TimeGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public List<String> matchingFormats() {
         return List.of("time");
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "25:61:00Z";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "99:99:99";
     }
 }

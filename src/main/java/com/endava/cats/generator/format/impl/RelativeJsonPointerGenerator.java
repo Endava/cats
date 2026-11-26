@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
@@ -9,10 +10,10 @@ import java.util.List;
 
 /**
  * A generator class implementing interfaces for generating valid relative JSON Pointer data formats.
- * It implements the ValidDataFormatGenerator and OpenAPIFormat interfaces.
+ * It implements the ValidDataFormatGenerator, InvalidDataFormatGenerator, and OpenAPIFormat interfaces.
  */
 @Singleton
-public class RelativeJsonPointerGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+public class RelativeJsonPointerGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
         return "1/id";
@@ -26,5 +27,15 @@ public class RelativeJsonPointerGenerator implements ValidDataFormatGenerator, O
     @Override
     public List<String> matchingFormats() {
         return List.of("relative-json-pointer");
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "-1/id";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "/not-relative";
     }
 }

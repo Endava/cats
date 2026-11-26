@@ -13,7 +13,12 @@ class Gtin8GeneratorTest {
     @Test
     void shouldGenerate() {
         Gtin8Generator gtin8Generator = new Gtin8Generator();
-        Assertions.assertThat(gtin8Generator.generate(new Schema<>()).toString()).matches("[0-9]+").hasSize(8);
+        String generated = gtin8Generator.generate(new Schema<>()).toString();
+        Assertions.assertThat(generated).matches("[0-9]+").hasSize(8);
+        Assertions.assertThat(generated.charAt(7) - '0')
+                .isEqualTo(Gtin8Generator.computeCheckDigit(generated.substring(0, 7)));
+        Assertions.assertThat(gtin8Generator.getAlmostValidValue()).isEqualTo("96385075");
+        Assertions.assertThat(gtin8Generator.getTotallyWrongValue()).isEqualTo("INVALID-GTIN8");
     }
 
     @ParameterizedTest

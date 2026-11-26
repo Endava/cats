@@ -12,7 +12,12 @@ class LanguageGeneratorTest {
     @Test
     void shouldGenerate() {
         LanguageGenerator languageGenerator = new LanguageGenerator();
-        Assertions.assertThat(languageGenerator.generate(new Schema<>()).toString()).hasSizeGreaterThan(1);
+        for (int i = 0; i < 20; i++) {
+            String generated = languageGenerator.generate(new Schema<>()).toString();
+            Assertions.assertThat(generated).matches("^[a-z]{2,3}$").isNotIn("in", "iw", "ji", "mo");
+        }
+        Assertions.assertThat(languageGenerator.getAlmostValidValue()).isEqualTo("en-999");
+        Assertions.assertThat(languageGenerator.getTotallyWrongValue()).isEqualTo("not-a-language-tag-123");
     }
 
     @ParameterizedTest

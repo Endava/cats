@@ -15,7 +15,12 @@ class ISBN13GeneratorTest {
     void shouldGenerate() {
         ISBN13Generator isbn13Generator = new ISBN13Generator();
         CatsRandom.initRandom(0);
-        Assertions.assertThat(isbn13Generator.generate(new Schema<>()).toString()).matches("[0-9]{13}");
+        String generated = isbn13Generator.generate(new Schema<>()).toString();
+        Assertions.assertThat(generated).matches("^978[0-9]{10}$");
+        Assertions.assertThat(generated.charAt(12) - '0')
+                .isEqualTo(ISBN13Generator.computeCheckDigit(generated.substring(0, 12)));
+        Assertions.assertThat(isbn13Generator.getAlmostValidValue()).isEqualTo("9780306406158");
+        Assertions.assertThat(isbn13Generator.getTotallyWrongValue()).isEqualTo("INVALID-ISBN13");
     }
 
     @ParameterizedTest

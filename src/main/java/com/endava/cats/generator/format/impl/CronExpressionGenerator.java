@@ -1,6 +1,7 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.DataFormat;
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
@@ -14,7 +15,7 @@ import java.util.List;
  * Generates valid cron expressions.
  */
 @Singleton
-public class CronExpressionGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+public class CronExpressionGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
 
     private static final List<String> COMMON_CRON_EXPRESSIONS = List.of(
             "0 0 * * *",        // Daily at midnight
@@ -48,5 +49,15 @@ public class CronExpressionGenerator implements ValidDataFormatGenerator, OpenAP
         String generated = CatsUtil.selectRandom(COMMON_CRON_EXPRESSIONS);
 
         return DataFormat.matchesPatternOrNull(schema, generated);
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "61 25 * * 9";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "not a cron";
     }
 }

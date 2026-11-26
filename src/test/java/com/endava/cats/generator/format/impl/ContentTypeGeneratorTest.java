@@ -17,10 +17,12 @@ class ContentTypeGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"contentType,true", "other,false"})
+    @CsvSource({"contentType,true", "media-range,true", "other,false"})
     void shouldApplyToFormat(String format, boolean expected) {
         ContentTypeGenerator contentTypeGenerator = new ContentTypeGenerator();
         Assertions.assertThat(contentTypeGenerator.appliesTo(format, "")).isEqualTo(expected);
+        Assertions.assertThat(contentTypeGenerator.getAlmostValidValue()).isEqualTo("application/");
+        Assertions.assertThat(contentTypeGenerator.getTotallyWrongValue()).isEqualTo("invalid-media-type");
     }
 
     @ParameterizedTest

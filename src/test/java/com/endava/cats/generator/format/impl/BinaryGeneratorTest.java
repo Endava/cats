@@ -30,6 +30,7 @@ class BinaryGeneratorTest {
     void shouldTestForApply(String format, boolean expected) {
         BinaryGenerator binaryGenerator = new BinaryGenerator();
         Assertions.assertThat(binaryGenerator.appliesTo(format, "")).isEqualTo(expected);
+        Assertions.assertThat(binaryGenerator.matchingFormats()).containsExactly("byte", "binary");
     }
 
 }
