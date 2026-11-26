@@ -60,7 +60,8 @@ public class StringGenerator {
     private static final String ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final String[] DOMAINS = {"example", "cats", "google", "yahoo"};
     private static final String[] TLDS = {".com", ".net", ".org", ".io"};
-    private static final String[] URI_SCHEMES = {"http", "https", "ftp", "file"};
+    private static final List<String> URI_SCHEMES = List.of("https", "http", "ftp", "file");
+    private static final String DEFAULT_URL_SCHEME = "https";
     private static final int TIMEOUT_MS = 200;
     private static final long REGEX_MATCH_STACK_SIZE = 16L * 1024 * 1024;
 
@@ -409,7 +410,7 @@ public class StringGenerator {
      * @param pattern the regular expression
      * @return whether the value matches the pattern
      */
-    static boolean matchesPattern(String value, String pattern) {
+    public static boolean matchesPattern(String value, String pattern) {
         try {
             return value.matches(pattern);
         } catch (StackOverflowError _) {
@@ -673,7 +674,11 @@ public class StringGenerator {
     }
 
     public static String generateFixedLengthUri(int length) {
-        String scheme = URI_SCHEMES[CatsRandom.instance().nextInt(URI_SCHEMES.length)];
+        return generateFixedLengthUri(length, null, false);
+    }
+
+    public static String generateFixedLengthUri(int length, String pattern, boolean urlOnly) {
+        String scheme = resolveScheme(pattern, urlOnly);
 
         String domain = DOMAINS[CatsRandom.instance().nextInt(DOMAINS.length)];
         String tld = TLDS[CatsRandom.instance().nextInt(TLDS.length)];
@@ -692,6 +697,34 @@ public class StringGenerator {
         }
 
         return fixedPart + path;
+    }
+
+    private static String resolveScheme(String pattern, boolean urlOnly) {
+        if (urlOnly) {
+            if (StringUtils.isNotBlank(pattern)
+                    && !safeMatches("https://www.test.com", pattern)
+                    && safeMatches("http://www.test.com", pattern)) {
+                return "http";
+            }
+            return DEFAULT_URL_SCHEME;
+        }
+        List<String> matchingSchemes = StringUtils.isBlank(pattern)
+                ? URI_SCHEMES
+                : URI_SCHEMES.stream()
+                        .filter(scheme -> safeMatches(scheme + "://www.test.com", pattern))
+                        .toList();
+        if (matchingSchemes.isEmpty()) {
+            return DEFAULT_URL_SCHEME;
+        }
+        return matchingSchemes.get(CatsRandom.instance().nextInt(matchingSchemes.size()));
+    }
+
+    private static boolean safeMatches(String value, String pattern) {
+        try {
+            return value.matches(pattern);
+        } catch (PatternSyntaxException _) {
+            return false;
+        }
     }
 
     /**
@@ -715,7 +748,13 @@ public class StringGenerator {
         LOGGER.debug("Checking if the field {} with pattern {} is a complex regex", lowerCaseFieldName, pattern);
 
         if (isUri(pattern, lowerCaseFieldName)) {
-            return generateFixedLengthUri(length);
+            boolean urlOnly = "url".equalsIgnoreCase(schema.getFormat())
+                    || lowerCaseFieldName.endsWith("url")
+                    || lowerCaseFieldName.endsWith("link");
+            String candidate = generateFixedLengthUri(length, pattern, urlOnly);
+            return candidate != null && candidate.length() == length && matchesPattern(candidate, pattern)
+                    ? candidate
+                    : null;
         }
         if (isEmail(pattern, lowerCaseFieldName)) {
             return generateFixedLengthEmail(length);

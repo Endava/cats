@@ -381,7 +381,14 @@ class StringGeneratorTest {
     void shouldCoverFixedLengthUriEmailComplexRegexAndLargerStackMatch() {
         Assertions.assertThat(StringGenerator.generateFixedLengthEmail(25)).contains("@").hasSize(25);
         Assertions.assertThat(StringGenerator.generateFixedLengthUri(8)).hasSize(8);
-        Assertions.assertThat(StringGenerator.generateFixedLengthUri(30)).hasSize(30);
+        Assertions.assertThat(StringGenerator.generateFixedLengthUri(30)).hasSize(30).matches("^(https?|ftp|file)://.+");
+        Assertions.assertThat(StringGenerator.generateFixedLengthUri(30, "^http://.+", true)).hasSize(30).startsWith("http://");
+        Assertions.assertThat(StringGenerator.generateFixedLengthUri(30, "^https://.+", true)).hasSize(30).startsWith("https://");
+        Assertions.assertThat(StringGenerator.generateFixedLengthUri(30, "^[a-z]+://.+", true)).hasSize(30).startsWith("https://");
+        Assertions.assertThat(StringGenerator.generateFixedLengthUri(30, "^https?://.+", false)).hasSize(30).matches("^https?://.+");
+        Assertions.assertThat(StringGenerator.generateFixedLengthUri(30, "^[a-z]+://.+", false)).hasSize(30).matches("^(https?|ftp|file)://.+");
+        Assertions.assertThat(StringGenerator.generateFixedLengthUri(30, "[unclosed", true)).hasSize(30).startsWith("https://");
+        Assertions.assertThat(StringGenerator.generateFixedLengthUri(30, "[unclosed", false)).hasSize(30).startsWith("https://");
         Assertions.assertThat(StringGenerator.removeLookaheadAssertions("(?=abc)(?!def)(?<=ghi)(?<!jkl)mno")).isNotBlank();
 
         StringSchema uriSchema = new StringSchema();
@@ -389,7 +396,19 @@ class StringGeneratorTest {
         uriSchema.setMinLength(30);
         uriSchema.setMaxLength(10);
         uriSchema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "callbackUri");
-        Assertions.assertThat(StringGenerator.generateValueBasedOnMinMax(uriSchema)).hasSize(30);
+        Assertions.assertThat(StringGenerator.generateValueBasedOnMinMax(uriSchema)).hasSize(30).matches("^https?://.*$");
+
+        StringSchema urlSchema = new StringSchema();
+        urlSchema.setPattern("^[a-z]+://.+$");
+        urlSchema.setMaxLength(40);
+        urlSchema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "challengeUrl");
+        Assertions.assertThat(StringGenerator.generateExactLength(urlSchema, "^[a-z]+://.+$", 40)).hasSize(40).startsWith("https://");
+
+        StringSchema fixedHostUrlSchema = new StringSchema();
+        fixedHostUrlSchema.setPattern("^https://www\\.test\\.com$");
+        fixedHostUrlSchema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "fixedUrl");
+        String fixedHostGenerated = StringGenerator.generateExactLength(fixedHostUrlSchema, "^https://www\\.test\\.com$", 20);
+        Assertions.assertThat(fixedHostGenerated).matches("^https://www\\.test\\.com$");
 
         StringSchema emailSchema = new StringSchema();
         emailSchema.setPattern("^[a-z]+@[a-z]+\\.[a-z]+$");

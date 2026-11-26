@@ -124,10 +124,14 @@ public class AllFieldsAtMaxBoundaryFuzzer implements Fuzzer {
             return Optional.empty();
         }
         int length = Math.min(schema.getMaxLength(), MAX_SAFE_STRING_BOUNDARY);
+        if (schema.getMinLength() != null && length < schema.getMinLength()) {
+            return Optional.empty();
+        }
         if (StringUtils.isNotBlank(schema.getPattern())) {
             try {
                 String generated = StringGenerator.generateExactLength(schema, schema.getPattern(), length);
-                if (generated != null && generated.length() == length) {
+                if (generated != null && generated.length() == length
+                        && StringGenerator.matchesPattern(generated, schema.getPattern())) {
                     return Optional.of(generated);
                 }
             } catch (Exception _) {

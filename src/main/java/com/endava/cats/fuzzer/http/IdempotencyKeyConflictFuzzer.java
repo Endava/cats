@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyDynamic;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
@@ -34,6 +35,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Singleton
 @HttpFuzzer
 public class IdempotencyKeyConflictFuzzer implements Fuzzer {
+    static final ResponseCodeFamily CONFLICT_RESPONSE_CODES =
+            new ResponseCodeFamilyDynamic(List.of("400", "409", "422"));
+
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(IdempotencyKeyConflictFuzzer.class);
     private final SimpleExecutor simpleExecutor;
     private final TestCaseListener testCaseListener;
@@ -111,7 +115,7 @@ public class IdempotencyKeyConflictFuzzer implements Fuzzer {
                         .headers(headersWithSharedKey)
                         .payload(mutatedPayload.get())
                         .mutationTarget(RequestTarget.header(headerName))
-                        .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                        .expectedResponseCode(CONFLICT_RESPONSE_CODES)
                         .scenario("Replay the same %s=%s with a modified request body to verify idempotency conflict detection"
                                 .formatted(headerName, sharedKey))
                         .build()

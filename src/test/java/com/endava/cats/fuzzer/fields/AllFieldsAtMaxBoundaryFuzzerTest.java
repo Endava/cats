@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsModelUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.BooleanSchema;
 import io.swagger.v3.oas.models.media.IntegerSchema;
@@ -111,12 +112,22 @@ class AllFieldsAtMaxBoundaryFuzzerTest {
         Assertions.assertThat(AllFieldsAtMaxBoundaryFuzzer.computeMaxValidValue(new NumberSchema().maximum(BigDecimal.TEN))).contains(BigDecimal.TEN);
         Assertions.assertThat(AllFieldsAtMaxBoundaryFuzzer.computeMaxValidValue(new StringSchema().maxLength(20000)))
                 .contains("a".repeat(10000));
+        Assertions.assertThat(AllFieldsAtMaxBoundaryFuzzer.computeMaxValidValue(new StringSchema().minLength(20000).maxLength(30000)))
+                .isEmpty();
     }
 
     @Test
     void shouldGeneratePatternConstrainedBoundary() {
         Assertions.assertThat(AllFieldsAtMaxBoundaryFuzzer.computeMaxValidValue(new StringSchema().maxLength(5).pattern("[A-Z]{5}")))
                 .hasValueSatisfying(value -> Assertions.assertThat(value.toString()).matches("[A-Z]{5}"));
+
+        Schema<?> challengeUrlSchema = new StringSchema().maxLength(2048).pattern("^https://.+");
+        challengeUrlSchema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "challengeUrl");
+        Assertions.assertThat(AllFieldsAtMaxBoundaryFuzzer.computeMaxValidValue(challengeUrlSchema))
+                .hasValueSatisfying(value -> Assertions.assertThat(value.toString())
+                        .hasSize(2048)
+                        .startsWith("https://")
+                        .matches("^https://.+"));
     }
 
     @Test
@@ -133,11 +144,12 @@ class AllFieldsAtMaxBoundaryFuzzerTest {
 
     @ParameterizedTest
     @NullSource
-    @ValueSource(strings = {"tooLong"})
+    @ValueSource(strings = {"tooLong", "12345"})
     void shouldSkipUnproduciblePatternBoundary(String generated) {
         Schema<?> schema = new StringSchema().maxLength(5).pattern("[A-Z]{5}");
         try (var generator = Mockito.mockStatic(StringGenerator.class)) {
             generator.when(() -> StringGenerator.generateExactLength(schema, "[A-Z]{5}", 5)).thenReturn(generated);
+            generator.when(() -> StringGenerator.matchesPattern("12345", "[A-Z]{5}")).thenReturn(false);
             Assertions.assertThat(AllFieldsAtMaxBoundaryFuzzer.computeMaxValidValue(schema)).isEmpty();
         }
     }

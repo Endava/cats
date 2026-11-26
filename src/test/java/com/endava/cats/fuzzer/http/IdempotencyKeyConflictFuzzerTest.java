@@ -81,7 +81,14 @@ class IdempotencyKeyConflictFuzzerTest {
                 Mockito.eq("Idempotency-Key"), Mockito.eq("201"));
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(
                 Mockito.any(), Mockito.eq(data), Mockito.eq(secondResponse),
-                Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.anyBoolean());
+                Mockito.eq(IdempotencyKeyConflictFuzzer.CONFLICT_RESPONSE_CODES), Mockito.anyBoolean(), Mockito.anyBoolean());
+        Assertions.assertThat(IdempotencyKeyConflictFuzzer.CONFLICT_RESPONSE_CODES.asString()).isEqualTo("400|409|422");
+        Assertions.assertThat(IdempotencyKeyConflictFuzzer.CONFLICT_RESPONSE_CODES.allowedResponseCodes())
+                .containsExactly("400", "409", "422");
+        Assertions.assertThat(IdempotencyKeyConflictFuzzer.CONFLICT_RESPONSE_CODES.matchesAllowedResponseCodes("409")).isTrue();
+        Assertions.assertThat(IdempotencyKeyConflictFuzzer.CONFLICT_RESPONSE_CODES.matchesAllowedResponseCodes("422")).isTrue();
+        Assertions.assertThat(IdempotencyKeyConflictFuzzer.CONFLICT_RESPONSE_CODES.matchesAllowedResponseCodes("400")).isTrue();
+        Assertions.assertThat(IdempotencyKeyConflictFuzzer.CONFLICT_RESPONSE_CODES.matchesAllowedResponseCodes("201")).isFalse();
     }
 
     @Test
