@@ -78,7 +78,7 @@ public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFu
             return ResponseCodeFamilyPredefined.FOURXX_TWOXX;
         }
         Schema<?> fieldSchema = data.getRequestPropertyTypes() != null ? data.getRequestPropertyTypes().get(fuzzedField) : null;
-        if (CatsModelUtils.isBooleanSchema(fieldSchema) && isLenientTypes()) {
+        if (isLenientEmptyStringCoercible(fieldSchema, fuzzingConstraints)) {
             return ResponseCodeFamilyPredefined.FOURXX_TWOXX;
         }
         if (isNonEmptyEnumWithoutEmptyString(fieldSchema)) {
@@ -87,6 +87,26 @@ public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFu
                     : ResponseCodeFamilyPredefined.FOURXX;
         }
         return super.getExpectedResponseCodeBasedOnConstraints(data, fuzzedField, isFuzzedValueMatchingPattern, fuzzingConstraints);
+    }
+
+    private boolean isLenientEmptyStringCoercible(Schema<?> fieldSchema, FuzzingConstraints fuzzingConstraints) {
+        if (!isLenientTypes() || fieldSchema == null) {
+            return false;
+        }
+        if (CatsModelUtils.isBooleanSchema(fieldSchema)) {
+            return true;
+        }
+        return !fuzzingConstraints.isHasRequiredFieldsFuzzed() && isEmptyStringToNullSchema(fieldSchema);
+    }
+
+    private static boolean isEmptyStringToNullSchema(Schema<?> fieldSchema) {
+        return CatsModelUtils.isUUIDSchema(fieldSchema)
+                || CatsModelUtils.isDateSchema(fieldSchema)
+                || CatsModelUtils.isDateTimeSchema(fieldSchema)
+                || CatsModelUtils.isUriSchema(fieldSchema)
+                || CatsModelUtils.isUrlSchema(fieldSchema)
+                || CatsModelUtils.isIntegerSchema(fieldSchema)
+                || CatsModelUtils.isNumberSchema(fieldSchema);
     }
 
     private boolean isLenientTypes() {

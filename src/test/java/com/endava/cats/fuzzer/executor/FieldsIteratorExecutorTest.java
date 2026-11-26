@@ -70,6 +70,21 @@ class FieldsIteratorExecutorTest {
         Mockito.verify(testCaseListener, Mockito.times(4)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
     }
 
+    @Test
+    void shouldUsePerFieldExpectedResponseCodeResolverWhenSupplied() {
+        fieldsIteratorExecutor.execute(setupContextBuilder()
+                .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                .expectedResponseCodeResolver(field -> "field".equals(field)
+                        ? ResponseCodeFamilyPredefined.FOURXX_TWOXX
+                        : ResponseCodeFamilyPredefined.FOURXX)
+                .build());
+
+        Mockito.verify(testCaseListener, Mockito.times(2))
+                .reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(2))
+                .reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
     @ParameterizedTest
     @CsvSource({"true,true", "true,false", "false,false", "false,true"})
     void shouldReportError(boolean isMatch, boolean isSupplied) {

@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.executor;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
@@ -105,11 +106,12 @@ public class FieldsIteratorExecutor {
         FuzzingStrategy strategy = context.getFuzzingStrategy().withData(currentValue);
         context.getLogger().debug("Applying [{}] for field [{}]", strategy, fuzzedField);
 
+        ResponseCodeFamily expectedResponseCode = resolveExpectedResponseCode(context, fuzzedField);
         testCaseListener.addScenario(context.getLogger(), context.getScenario() + " Current field [{}] [{}]", fuzzedField, strategy);
         testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
-                context.getExpectedResponseCode() != null ? context.getExpectedResponseCode().asString() : "a response that doesn't match" + matchArguments.getMatchString());
+                expectedResponseCode != null ? expectedResponseCode.asString() : "a response that doesn't match" + matchArguments.getMatchString());
 
-        if (!testCaseListener.shouldContinueExecution(context.getLogger(), context.getExpectedResponseCode())) {
+        if (!testCaseListener.shouldContinueExecution(context.getLogger(), expectedResponseCode)) {
             testCaseListener.skipTest(context.getLogger(), "Test skipped due to response code filtering");
             return;
         }
@@ -125,8 +127,8 @@ public class FieldsIteratorExecutor {
                         .replaceRefData(context.isReplaceRefData())
                         .build());
 
-        if (context.getExpectedResponseCode() != null) {
-            testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode());
+        if (expectedResponseCode != null) {
+            testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, expectedResponseCode);
         } else if (!testCaseListener.reportRateLimitedResponse(context.getLogger(), context.getFuzzingData(), response)
                 && !testCaseListener.reportTruncatedResponse(context.getLogger(), context.getFuzzingData(), response)) {
             if (!matchArguments.isAnyMatchArgumentSupplied() || matchArguments.isMatchResponse(response) || matchArguments.isInputReflected(response, currentValue)) {
@@ -135,6 +137,13 @@ public class FieldsIteratorExecutor {
                 testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");
             }
         }
+    }
+
+    private ResponseCodeFamily resolveExpectedResponseCode(FieldsIteratorExecutorContext context, String fuzzedField) {
+        if (context.getExpectedResponseCodeResolver() != null) {
+            return context.getExpectedResponseCodeResolver().apply(fuzzedField);
+        }
+        return context.getExpectedResponseCode();
     }
 
     private FuzzingResult getFuzzingResult(FieldsIteratorExecutorContext context, String fuzzedField, FuzzingStrategy strategy) {

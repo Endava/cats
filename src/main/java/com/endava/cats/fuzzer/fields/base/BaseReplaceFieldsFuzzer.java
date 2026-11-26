@@ -16,6 +16,7 @@ import lombok.Builder;
 
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -45,6 +46,7 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
                         .scenario("Replace %s fields with %s values. ".formatted(context.replaceWhat, context.replaceWith))
                         .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
                         .expectedResponseCode(context.expectedResponseCode)
+                        .expectedResponseCodeResolver(context.expectedResponseCodeResolver)
                         .skipMessage(context.skipMessage)
                         .fieldFilter(context.fieldFilter)
                         .fuzzValueProducer(context.fuzzValueProducer)
@@ -83,6 +85,7 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
         private final BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer;
         @Builder.Default
         private final ResponseCodeFamily expectedResponseCode = ResponseCodeFamilyPredefined.FOURXX;
+        private final Function<String, ResponseCodeFamily> expectedResponseCodeResolver;
         @Builder.Default
         private final boolean replaceRefData = true;
     }

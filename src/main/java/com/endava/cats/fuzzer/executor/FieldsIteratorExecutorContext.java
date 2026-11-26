@@ -11,6 +11,7 @@ import lombok.Value;
 
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -32,6 +33,11 @@ public class FieldsIteratorExecutorContext {
      * If not supplied, FieldsIteratorExecutor will test for Marching Arguments. If any match is found it will be reported as error, otherwise the test will be marked as skipped.
      */
     ResponseCodeFamily expectedResponseCode;
+
+    /**
+     * Optional per-field resolver for the expected response code; when supplied, overrides {@link #expectedResponseCode}.
+     */
+    Function<String, ResponseCodeFamily> expectedResponseCodeResolver;
 
     Fuzzer fuzzer;
     /**

@@ -15,6 +15,7 @@ import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.BooleanSchema;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -213,6 +214,58 @@ class EmptyStringsInFieldsFuzzerTest {
                 .requestContentTypes(List.of("application/json"))
                 .queryParams(Set.of())
                 .responseCodes(Set.of("201", "422"))
+                .build();
+
+        emptyStringsInFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener).reportResult(
+                Mockito.any(), Mockito.eq(data), Mockito.any(),
+                Mockito.eq(expectedCode), Mockito.anyBoolean(), Mockito.anyBoolean());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "string,uuid,false,true,FOURXX",
+            "string,uuid,false,false,FOURXX_TWOXX",
+            "string,uuid,true,false,FOURXX",
+            "string,date,false,true,FOURXX",
+            "string,date,false,false,FOURXX_TWOXX",
+            "string,date-time,false,false,FOURXX_TWOXX",
+            "string,uri,false,false,FOURXX_TWOXX",
+            "string,url,false,false,FOURXX_TWOXX",
+            "integer,,false,false,FOURXX_TWOXX",
+            "integer,,true,false,FOURXX",
+            "number,,false,false,FOURXX_TWOXX",
+            "string,,false,false,FOURXX"
+    })
+    void shouldConsiderStrictTypesForEmptyStringCoercibleFields(
+            String type, String format, boolean required, boolean strictTypes, ResponseCodeFamilyPredefined expectedCode) {
+        Mockito.when(processingArguments.isStrictTypes()).thenReturn(strictTypes);
+        Mockito.when(filesArguments.getRefData("/authorizations")).thenReturn(Map.of());
+        Mockito.when(filterArguments.getSkipFields()).thenReturn(List.of());
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(201).body("{}").build());
+
+        Schema<?> fieldSchema = new Schema<>().type(type);
+        if (format != null && !format.isEmpty()) {
+            fieldSchema.setFormat(format);
+        }
+        if ("string".equals(type)) {
+            fieldSchema.setMinLength(36);
+            fieldSchema.setMaxLength(36);
+        }
+
+        FuzzingData data = FuzzingData.builder()
+                .method(HttpMethod.POST)
+                .path("/authorizations")
+                .headers(Set.of())
+                .payload("{\"field\":\"d4f3d59b-91c6-43dc-8f85-6fd0f3d45b67\"}")
+                .allFields(Set.of("field"))
+                .allRequiredFields(required ? List.of("field") : List.of())
+                .reqSchema(new StringSchema())
+                .requestPropertyTypes(Map.of("field", fieldSchema))
+                .requestContentTypes(List.of("application/json"))
+                .queryParams(Set.of())
+                .responseCodes(Set.of("201", "400"))
                 .build();
 
         emptyStringsInFieldsFuzzer.fuzz(data);
