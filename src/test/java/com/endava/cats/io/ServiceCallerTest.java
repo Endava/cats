@@ -1475,6 +1475,126 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldPreserveStructuralFuzzingOnRefDataFieldWhileApplyingOtherRefData() {
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of(
+                "/authorizations", Map.of(
+                        "externalPspCredentials.apiKey", "sk_sbox_secret",
+                        "amount.currencyCode", "USD"
+                )
+        ));
+        ServiceData data = ServiceData.builder()
+                .relativePath("/authorizations")
+                .contractPath("/authorizations")
+                .httpMethod(HttpMethod.POST)
+                .payload("{\"externalPspCredentials\":{\"apiKey\":{\"catsKey1\":\"catsValue1\"}},\"amount\":{\"currencyCode\":\"ZZZ\"}}")
+                .mutationTarget(RequestTarget.body("externalPspCredentials#apiKey"))
+                .contentType("application/json")
+                .replaceRefData(true)
+                .build();
+
+        String replaced = serviceCaller.replacePayloadWithRefData(data);
+        Assertions.assertThat(replaced)
+                .contains("\"apiKey\":{\"catsKey1\":\"catsValue1\"}")
+                .contains("\"currencyCode\":\"USD\"");
+    }
+
+    @Test
+    void shouldNotOverwriteFuzzedChildFieldWhenRefDataTargetsAncestor() {
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of(
+                "/authorizations", Map.of(
+                        "amount", Map.of("currencyCode", "USD", "value", 100),
+                        "externalPspCredentials.apiKey", "sk_sbox_secret"
+                )
+        ));
+        ServiceData data = ServiceData.builder()
+                .relativePath("/authorizations")
+                .contractPath("/authorizations")
+                .httpMethod(HttpMethod.POST)
+                .payload("{\"externalPspCredentials\":{\"apiKey\":\"RANDOM\"},\"amount\":{\"currencyCode\":\"ZZZ\",\"value\":100}}")
+                .mutationTarget(RequestTarget.body("amount#currencyCode"))
+                .contentType("application/json")
+                .replaceRefData(true)
+                .build();
+
+        String replaced = serviceCaller.replacePayloadWithRefData(data);
+        Assertions.assertThat(replaced)
+                .contains("\"currencyCode\":\"ZZZ\"")
+                .contains("\"apiKey\":\"sk_sbox_secret\"");
+    }
+
+    @Test
+    void shouldNotRemoveAncestorObjectWhenChildFieldIsFuzzed() {
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of(
+                "/authorizations", Map.of(
+                        "amount", ServiceCaller.CATS_REMOVE_FIELD,
+                        "externalPspCredentials.apiKey", "sk_sbox_secret"
+                )
+        ));
+        ServiceData data = ServiceData.builder()
+                .relativePath("/authorizations")
+                .contractPath("/authorizations")
+                .httpMethod(HttpMethod.POST)
+                .payload("{\"externalPspCredentials\":{\"apiKey\":\"RANDOM\"},\"amount\":{\"currencyCode\":\"ZZZ\"}}")
+                .mutationTarget(RequestTarget.body("amount#currencyCode"))
+                .contentType("application/json")
+                .replaceRefData(true)
+                .build();
+
+        String replaced = serviceCaller.replacePayloadWithRefData(data);
+        Assertions.assertThat(replaced)
+                .contains("\"currencyCode\":\"ZZZ\"")
+                .contains("\"apiKey\":\"sk_sbox_secret\"");
+    }
+
+    @Test
+    void shouldPreserveFuzzedScalarOnRefDataFieldForBaseReplaceFuzzerScenario() {
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of(
+                "/authorizations", Map.of(
+                        "amount.currencyCode", "USD",
+                        "externalPspCredentials.apiKey", "sk_sbox_secret"
+                )
+        ));
+        ServiceData data = ServiceData.builder()
+                .relativePath("/authorizations")
+                .contractPath("/authorizations")
+                .httpMethod(HttpMethod.POST)
+                .payload("{\"externalPspCredentials\":{\"apiKey\":\"RANDOM\"},\"amount\":{\"currencyCode\":\"ZZZ\"}}")
+                .mutationTarget(RequestTarget.body("amount#currencyCode"))
+                .contentType("application/json")
+                .replaceRefData(true)
+                .build();
+
+        String replaced = serviceCaller.replacePayloadWithRefData(data);
+        Assertions.assertThat(replaced)
+                .contains("\"currencyCode\":\"ZZZ\"")
+                .contains("\"apiKey\":\"sk_sbox_secret\"");
+    }
+
+    @Test
+    void shouldPreserveFuzzedFieldWithLiteralDotInJsonKeyName() {
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of(
+                "/authorizations", Map.of(
+                        "items.name", "refName",
+                        "apiKey", "sk_sbox_secret"
+                )
+        ));
+        ServiceData data = ServiceData.builder()
+                .relativePath("/authorizations")
+                .contractPath("/authorizations")
+                .httpMethod(HttpMethod.POST)
+                .payload("{\"items.name\":{\"catsKey1\":\"catsValue1\"},\"apiKey\":\"RANDOM\"}")
+                .mutationTarget(RequestTarget.body("items.name"))
+                .contentType("application/json")
+                .replaceRefData(true)
+                .build();
+
+        String replaced = serviceCaller.replacePayloadWithRefData(data);
+        Assertions.assertThat(replaced)
+                .contains("\"items.name\":{\"catsKey1\":\"catsValue1\"}")
+                .contains("\"apiKey\":\"sk_sbox_secret\"");
+    }
+
+    @Test
     void shouldUrlEncodePathParamsForPostMethod() {
         String json = """
                 {

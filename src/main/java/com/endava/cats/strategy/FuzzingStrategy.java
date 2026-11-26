@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -402,6 +403,9 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
             }
             DocumentContext jsonDocument = JsonPath.parse(payload);
             Object oldValue = jsonDocument.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
+            if (mergeFuzzing && shouldPreserveFuzzedStructuralValue(oldValue, fuzzingStrategyToApply.getData())) {
+                return new FuzzingResult(payload, oldValue);
+            }
             if (oldValue instanceof JSONArray && !jsonPropToGetValue.contains("[*]")) {
                 oldValue = jsonDocument.read(JsonUtils.sanitizeToJsonPath("$." + jsonPropToGetValue + "[0]"));
                 jsonPropertyForReplacement = "$." + jsonPropertyForReplacement + "[*]";
@@ -418,5 +422,19 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
             return new FuzzingResult(jsonDocument.jsonString(), valueToSet);
         }
         return FuzzingResult.empty();
+    }
+
+    private static boolean shouldPreserveFuzzedStructuralValue(Object oldValue, Object replacementData) {
+        if (oldValue instanceof Map<?, ?>) {
+            return true;
+        }
+        if (oldValue instanceof List<?> list) {
+            return list.isEmpty()
+                    || replacementData instanceof List<?>
+                    || replacementData instanceof Map<?, ?>
+                    || list.stream().anyMatch(item -> item == null || item instanceof Map<?, ?> || item instanceof List<?>)
+                    || list.stream().distinct().count() > 1;
+        }
+        return false;
     }
 }

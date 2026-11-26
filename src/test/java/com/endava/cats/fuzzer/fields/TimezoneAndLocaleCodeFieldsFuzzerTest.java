@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -81,7 +82,7 @@ class TimezoneAndLocaleCodeFieldsFuzzerTest {
 
         fuzzer.fuzz(data);
 
-        Mockito.verify(serviceCaller, Mockito.times(2)).call(Mockito.any());
+        Mockito.verify(serviceCaller, Mockito.times(2)).call(Mockito.argThat(ServiceData::isReplaceRefData));
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(
                 Mockito.any(), Mockito.eq(data), Mockito.eq(response), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
     }

@@ -6,9 +6,13 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.JsonUtils;
+import com.google.gson.JsonElement;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+
+import java.util.Optional;
 
 /**
  * Executors are meant to be the units that will execute the fuzzer's payloads and facilitate the interaction with all the reporting.
@@ -101,6 +105,30 @@ public class SimpleExecutor {
      */
     public CatsResponse replayOriginal(FuzzingData data) {
         return testCaseListener.callPreservingCurrentExchange(() -> serviceCaller.call(ServiceData.from(data).build()));
+    }
+
+    /**
+     * Resolves explicit reference data into the baseline payload for fuzzers that subsequently construct
+     * non-standard or raw JSON payloads and must bypass post-mutation reference data replacement.
+     *
+     * @param data the fuzzing data containing the generated payload
+     * @return the payload with reference data applied, or the original payload if it is not valid JSON
+     */
+    public String resolvePayloadWithRefData(FuzzingData data, PrettyLogger logger, ResponseCodeFamily expectedResponseCode) {
+        if (data == null || !isStructuredJson(data.getPayload())
+                || !testCaseListener.shouldContinueExecution(logger, expectedResponseCode)) {
+            return data == null ? null : data.getPayload();
+        }
+        return Optional.ofNullable(serviceCaller.replacePayloadWithRefData(ServiceData.from(data).build()))
+                .orElse(data.getPayload());
+    }
+
+    private static boolean isStructuredJson(String payload) {
+        if (!JsonUtils.isValidJson(payload)) {
+            return false;
+        }
+        JsonElement parsed = JsonUtils.parseAsJsonElement(payload);
+        return parsed != null && (parsed.isJsonObject() || parsed.isJsonArray());
     }
 
     private static ServiceData toServiceData(SimpleExecutorContext context) {

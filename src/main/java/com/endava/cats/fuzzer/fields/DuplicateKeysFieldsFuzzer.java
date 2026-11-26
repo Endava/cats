@@ -56,10 +56,19 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
     }
 
     private void executeFieldMutations(FuzzingData data) {
-        data.getAllFieldsByHttpMethod().stream()
+        List<String> eligibleFields = data.getAllFieldsByHttpMethod().stream()
                 .filter(field -> !shouldSkipField(field, data.getPayload()))
                 .limit(MAX_MUTATIONS_PER_REQUEST)
-                .forEach(field -> executeFieldDuplication(data, field));
+                .toList();
+        if (eligibleFields.isEmpty()) {
+            return;
+        }
+        String baselinePayload = Optional.ofNullable(
+                        simpleExecutor.resolvePayloadWithRefData(data, logger, ResponseCodeFamilyPredefined.FOURXX))
+                .orElse(data.getPayload());
+        eligibleFields.stream()
+                .filter(field -> JsonUtils.isFieldInJson(baselinePayload, field))
+                .forEach(field -> executeFieldDuplication(data, baselinePayload, field));
     }
 
     private boolean shouldSkipField(String field, String payload) {
@@ -81,8 +90,8 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
         return field.split("#").length;
     }
 
-    private void executeFieldDuplication(FuzzingData data, String field) {
-        Optional<String> duplicatedPayload = createDuplicatedPayload(data.getPayload(), field);
+    private void executeFieldDuplication(FuzzingData data, String baselinePayload, String field) {
+        Optional<String> duplicatedPayload = createDuplicatedPayload(baselinePayload, field);
 
         if (duplicatedPayload.isEmpty()) {
             logger.debug("Failed to create duplicate key for field {}", field);
@@ -91,7 +100,7 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
 
         runDuplicationTestCase(data, field, duplicatedPayload.get(),
                 "Duplicate key [" + field + "] in parent object with second value [" + DUPLICATE_VALUE + "]");
-        createEscapedCollisionPayload(data.getPayload(), field)
+        createEscapedCollisionPayload(baselinePayload, field)
                 .ifPresent(collision -> runDuplicationTestCase(data, field, collision,
                         "Duplicate key [" + field + "] using Unicode escape and surrogate-truncation key collisions"));
     }

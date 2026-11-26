@@ -85,6 +85,7 @@ class OneOfMultipleBranchesMergedFieldsFuzzerTest {
 
         ArgumentCaptor<SimpleExecutorContext> captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
         Mockito.verify(simpleExecutor, Mockito.times(1)).execute(captor.capture());
+        Assertions.assertThat(captor.getValue().isReplaceRefData()).isTrue();
         Assertions.assertThat(captor.getValue().getPayload())
                 .contains("\"cardNumber\":\"4111\"")
                 .contains("\"iban\":\"RO49AAAA\"")

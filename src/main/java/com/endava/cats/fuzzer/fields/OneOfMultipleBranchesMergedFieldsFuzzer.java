@@ -62,7 +62,6 @@ public class OneOfMultipleBranchesMergedFieldsFuzzer implements Fuzzer {
                         .payload(mergedPayload)
                         .mutationTarget(target.root() ? RequestTarget.requestBody() : RequestTarget.body(target.path()))
                         .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
-                        .replaceRefData(false)
                         .scenario("Merge properties from two distinct oneOf branches in [%s] to violate exclusive oneOf constraint"
                                 .formatted(target.displayName()))
                         .build());

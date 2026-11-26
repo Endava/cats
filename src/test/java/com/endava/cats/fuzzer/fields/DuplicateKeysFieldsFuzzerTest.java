@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -163,6 +165,38 @@ class DuplicateKeysFieldsFuzzerTest {
         duplicateKeysFieldsFuzzer.fuzz(data);
 
         Mockito.verify(simpleExecutor, Mockito.times(200)).execute(Mockito.any());
+    }
+
+    @Test
+    void shouldPreApplyRefDataBeforeDuplicatingKeys() {
+        setupData();
+        Mockito.when(data.getPayload()).thenReturn("{\"description\":\"orig\",\"apiKey\":\"RANDOM\"}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("description"));
+        Mockito.when(simpleExecutor.resolvePayloadWithRefData(Mockito.eq(data), Mockito.any(), Mockito.any()))
+                .thenReturn("{\"description\":\"orig\",\"apiKey\":\"sk_sbox_secret\"}");
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        var captor = ArgumentCaptor.forClass(SimpleExecutorContext.class);
+        Mockito.verify(simpleExecutor, Mockito.times(2)).execute(captor.capture());
+        Assertions.assertThat(captor.getAllValues()).allSatisfy(ctx -> {
+            Assertions.assertThat(ctx.getPayload()).contains("\"apiKey\":\"sk_sbox_secret\"");
+            Assertions.assertThat(ctx.isReplaceRefData()).isFalse();
+            Assertions.assertThat(ctx.isValidJson()).isFalse();
+        });
+    }
+
+    @Test
+    void shouldSkipFieldRemovedByRefDataBeforeDuplicatingKeys() {
+        setupData();
+        Mockito.when(data.getPayload()).thenReturn("{\"description\":\"orig\",\"apiKey\":\"RANDOM\"}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("description"));
+        Mockito.when(simpleExecutor.resolvePayloadWithRefData(Mockito.eq(data), Mockito.any(), Mockito.any()))
+                .thenReturn("{\"apiKey\":\"sk_sbox_secret\"}");
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(simpleExecutor, Mockito.never()).execute(Mockito.any());
     }
 
 

@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -156,5 +157,41 @@ class SimpleExecutorTest {
         Assertions.assertThat(serviceData.getValue().getPayload()).isEqualTo("{\"name\":\"original\"}");
         Assertions.assertThat(serviceData.getValue().getMutationTargets()).isEmpty();
         Mockito.verify(testCaseListener).callPreservingCurrentExchange(Mockito.any());
+    }
+
+    @Test
+    void shouldResolvePayloadWithRefDataOnlyForStructuredJsonWhenExecutionContinues() {
+        TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
+        ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
+        PrettyLogger logger = Mockito.mock(PrettyLogger.class);
+        SimpleExecutor executor = new SimpleExecutor(testCaseListener, serviceCaller);
+
+        Assertions.assertThat(executor.resolvePayloadWithRefData(null, logger, ResponseCodeFamilyPredefined.FOURXX)).isNull();
+
+        FuzzingData invalidJson = FuzzingData.builder().payload("not-json").build();
+        Assertions.assertThat(executor.resolvePayloadWithRefData(invalidJson, logger, ResponseCodeFamilyPredefined.FOURXX))
+                .isEqualTo("not-json");
+
+        FuzzingData rootPrimitive = FuzzingData.builder().payload("42").build();
+        Assertions.assertThat(executor.resolvePayloadWithRefData(rootPrimitive, logger, ResponseCodeFamilyPredefined.FOURXX))
+                .isEqualTo("42");
+
+        FuzzingData validObject = FuzzingData.builder()
+                .path("/orders").method(HttpMethod.POST).payload("{\"apiKey\":\"RANDOM\"}")
+                .headers(Set.of()).queryParams(Set.of()).queryParameterSerializations(Map.of())
+                .requestContentTypes(List.of("application/json")).build();
+        Mockito.when(testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX)).thenReturn(false);
+        Assertions.assertThat(executor.resolvePayloadWithRefData(validObject, logger, ResponseCodeFamilyPredefined.FOURXX))
+                .isEqualTo("{\"apiKey\":\"RANDOM\"}");
+        Mockito.verifyNoInteractions(serviceCaller);
+
+        Mockito.when(testCaseListener.shouldContinueExecution(logger, ResponseCodeFamilyPredefined.FOURXX)).thenReturn(true);
+        Mockito.when(serviceCaller.replacePayloadWithRefData(Mockito.any())).thenReturn("{\"apiKey\":\"sk_ref\"}");
+        Assertions.assertThat(executor.resolvePayloadWithRefData(validObject, logger, ResponseCodeFamilyPredefined.FOURXX))
+                .isEqualTo("{\"apiKey\":\"sk_ref\"}");
+
+        Mockito.when(serviceCaller.replacePayloadWithRefData(Mockito.any())).thenReturn(null);
+        Assertions.assertThat(executor.resolvePayloadWithRefData(validObject, logger, ResponseCodeFamilyPredefined.FOURXX))
+                .isEqualTo("{\"apiKey\":\"RANDOM\"}");
     }
 }

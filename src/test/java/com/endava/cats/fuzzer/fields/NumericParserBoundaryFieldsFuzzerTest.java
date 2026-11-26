@@ -87,6 +87,39 @@ class NumericParserBoundaryFieldsFuzzerTest {
         Mockito.verifyNoInteractions(caller);
     }
 
+    @Test
+    void shouldPreApplyRefDataBeforeSubstitutingRawNumericLexemes() {
+        var data = data("{\"amount\":1,\"apiKey\":\"RANDOM\"}", new Schema<>().type("object"),
+                Map.of("amount", new Schema<>().type("number")));
+        Mockito.when(caller.replacePayloadWithRefData(Mockito.any()))
+                .thenReturn("{\"amount\":1,\"apiKey\":\"sk_sbox_secret\"}");
+
+        fuzzer.fuzz(data);
+
+        var requests = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(caller, Mockito.times(38)).call(requests.capture());
+        assertThat(requests.getAllValues()).allSatisfy(request -> {
+            assertThat(request.getPayload()).contains("\"apiKey\":\"sk_sbox_secret\"");
+            assertThat(request.isReplaceRefData()).isFalse();
+            assertThat(request.isValidJson()).isFalse();
+        });
+    }
+
+    @Test
+    void shouldSkipFieldsRemovedByParentRefDataWithoutThrowing() {
+        var data = data("{\"parent\":{\"amount\":1},\"other\":2}", new Schema<>().type("object"),
+                Map.of("parent#amount", new Schema<>().type("number"), "other", new Schema<>().type("number")));
+        Mockito.when(caller.replacePayloadWithRefData(Mockito.any()))
+                .thenReturn("{\"other\":2}");
+
+        fuzzer.fuzz(data);
+
+        var requests = ArgumentCaptor.forClass(ServiceData.class);
+        Mockito.verify(caller, Mockito.times(38)).call(requests.capture());
+        assertThat(requests.getAllValues()).allSatisfy(request ->
+                assertThat(request.getMutationTargets()).containsExactly(RequestTarget.body("other")));
+    }
+
     private static FuzzingData data(String payload, Schema<?> root, Map<String, Schema> properties) {
         return FuzzingData.builder().path("/numbers").method(HttpMethod.POST).reqSchema(root).payload(payload).headers(Set.of())
                 .requestContentTypes(List.of("application/json")).allFieldsByHttpMethod(properties.keySet()).requestPropertyTypes(properties).build();

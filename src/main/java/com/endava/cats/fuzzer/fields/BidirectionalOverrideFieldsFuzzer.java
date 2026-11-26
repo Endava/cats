@@ -70,7 +70,6 @@ public class BidirectionalOverrideFieldsFuzzer extends BaseReplaceFieldsFuzzer {
                 })
                 .fuzzValueProducer(fuzzValueProducer)
                 .expectedResponseCode(processingArguments.isSanitizeFirst() ? ResponseCodeFamilyPredefined.FOURXX_TWOXX : ResponseCodeFamilyPredefined.FOURXX)
-                .replaceRefData(true)
                 .build();
     }
 

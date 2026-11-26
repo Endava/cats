@@ -50,6 +50,7 @@ class DuplicateItemsInUniqueArraysFieldsFuzzerTest {
 
         ArgumentCaptor<ServiceData> request = ArgumentCaptor.forClass(ServiceData.class);
         Mockito.verify(serviceCaller).call(request.capture());
+        Assertions.assertThat(request.getValue().isReplaceRefData()).isTrue();
         String payload = request.getValue().getPayload();
         var items = JsonUtils.parseAsJsonElement(payload).getAsJsonObject().getAsJsonArray("items");
         Assertions.assertThat(items).hasSize(3);

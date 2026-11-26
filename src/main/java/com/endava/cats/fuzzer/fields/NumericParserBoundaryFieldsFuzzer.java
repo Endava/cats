@@ -19,6 +19,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /** Sends exact JSON number lexemes and their quoted counterparts, accepting controlled acceptance or rejection. */
@@ -39,7 +40,16 @@ public class NumericParserBoundaryFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         if (isApplicableTo(data) && (isNumeric(data.getReqSchema()) || JsonUtils.isValidJson(data.getPayload()))) {
-            fields(data).forEach(field -> executeField(data, field));
+            List<String> targetFields = fields(data).toList();
+            if (targetFields.isEmpty()) {
+                return;
+            }
+            String baselinePayload = Optional.ofNullable(
+                            executor.resolvePayloadWithRefData(data, logger, RobustnessResponseReporter.expectedResponses()))
+                    .orElse(data.getPayload());
+            targetFields.stream()
+                    .filter(field -> "$".equals(field) || JsonUtils.isFieldInJson(baselinePayload, field))
+                    .forEach(field -> executeField(data, baselinePayload, field));
         }
     }
 
@@ -59,8 +69,8 @@ public class NumericParserBoundaryFieldsFuzzer implements Fuzzer {
                 && (CatsModelUtils.isNumberSchema(schema) || CatsModelUtils.isIntegerSchema(schema));
     }
 
-    private void executeField(FuzzingData data, String field) {
-        RawJsonFieldTemplate template = RawJsonFieldTemplate.of(data.getPayload(), field);
+    private void executeField(FuzzingData data, String baselinePayload, String field) {
+        RawJsonFieldTemplate template = RawJsonFieldTemplate.of(baselinePayload, field);
         NumericParserInputs.values().forEach(value -> executor.execute(SimpleExecutorContext.builder()
                 .fuzzingData(data).fuzzer(this).logger(logger).scenario("Send exact numeric parser input [%s] in [%s].".formatted(value, field))
                 .payload(template.replaceWith(value)).validJson(false).replaceRefData(false)

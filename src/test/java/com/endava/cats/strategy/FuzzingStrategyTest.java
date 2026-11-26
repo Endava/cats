@@ -321,4 +321,42 @@ class FuzzingStrategyTest {
         Assertions.assertThat(FuzzingStrategy.stripSpecialAndInvisibleChars(input))
                 .isEqualTo("a^b`cd");
     }
+
+    @Test
+    void shouldPreserveFuzzedStructuralValuesWhenMergeFuzzingWithRefData() {
+        String fuzzedObjectPayload = "{\"apiKey\":{\"catsKey1\":\"catsValue1\",\"catsKey2\":20}}";
+        FuzzingResult objectResult = FuzzingStrategy.replaceField(
+                fuzzedObjectPayload, "apiKey", FuzzingStrategy.replace().withData("sk_ref"), true);
+        Assertions.assertThat(objectResult.json()).isEqualTo(fuzzedObjectPayload);
+
+        String fuzzedArrayOfObjectsPayload = "{\"apiKey\":[{\"catsKey1\":\"catsValue1\"}]}";
+        FuzzingResult arrayOfObjectsResult = FuzzingStrategy.replaceField(
+                fuzzedArrayOfObjectsPayload, "apiKey", FuzzingStrategy.replace().withData("sk_ref"), true);
+        Assertions.assertThat(arrayOfObjectsResult.json()).isEqualTo(fuzzedArrayOfObjectsPayload);
+
+        String nullElementArrayPayload = "{\"items\":[null]}";
+        FuzzingResult nullElementResult = FuzzingStrategy.replaceField(
+                nullElementArrayPayload, "items", FuzzingStrategy.replace().withData("refItem"), true);
+        Assertions.assertThat(nullElementResult.json()).isEqualTo(nullElementArrayPayload);
+
+        String emptyArrayPayload = "{\"items\":[]}";
+        FuzzingResult emptyArrayResult = FuzzingStrategy.replaceField(
+                emptyArrayPayload, "items", FuzzingStrategy.replace().withData(List.of("a", "b")), true);
+        Assertions.assertThat(emptyArrayResult.json()).isEqualTo(emptyArrayPayload);
+
+        String duplicateArrayPayload = "{\"items\":[\"x\",\"x\"]}";
+        FuzzingResult listRefResult = FuzzingStrategy.replaceField(
+                duplicateArrayPayload, "items", FuzzingStrategy.replace().withData(List.of("a", "b")), true);
+        Assertions.assertThat(listRefResult.json()).isEqualTo(duplicateArrayPayload);
+
+        String distinctDuplicateArrayPayload = "{\"items\":[\"one\",\"two\",\"one\"]}";
+        FuzzingResult distinctArrayResult = FuzzingStrategy.replaceField(
+                distinctDuplicateArrayPayload, "items", FuzzingStrategy.replace().withData("refTag"), true);
+        Assertions.assertThat(distinctArrayResult.json()).isEqualTo(distinctDuplicateArrayPayload);
+
+        String prefixedScalarArrayPayload = "{\"items\":[\"  one\",\"  one\"]}";
+        FuzzingResult mergedScalarArrayResult = FuzzingStrategy.replaceField(
+                prefixedScalarArrayPayload, "items", FuzzingStrategy.replace().withData("refTag"), true);
+        Assertions.assertThat(mergedScalarArrayResult.json()).isEqualTo("{\"items\":[\"  refTag\",\"  refTag\"]}");
+    }
 }

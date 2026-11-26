@@ -1213,7 +1213,7 @@ public class ServiceCaller {
      * @param data the current ServiceData context
      * @return the initial payload with reference data replaced and matching POST correlations for DELETE requests
      */
-    String replacePayloadWithRefData(ServiceData data) {
+    public String replacePayloadWithRefData(ServiceData data) {
         return replacePayloadWithRefData(data, data.getPayload());
     }
 
@@ -1278,21 +1278,47 @@ public class ServiceCaller {
             refDataValue = null;
         }
         try {
+            String fuzzedFieldKey = FieldCorrelationEvaluator.normalizeFieldPath(targetKey);
+            if (isAncestorOfFuzzedField(data, fuzzedFieldKey)) {
+                logger.debug("Skipping refData key {} because a child field is deliberately mutated", targetKey);
+                return payload;
+            }
             if (CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(refDataValue))) {
                 payload = JsonUtils.deleteNode(payload, targetKey);
             } else {
                 logger.debug("Replacing field {} with value {}", targetKey,
                         SensitiveDataPolicy.maskFieldValueForDisplay(targetKey, refDataValue, reportingArguments));
                 FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
-                boolean mergeFuzzing = data.isFuzzedField(targetKey, RequestTarget.Location.BODY) ||
-                        data.isFuzzedField(targetKey, RequestTarget.Location.PATH) ||
-                        data.isFuzzedField(targetKey, RequestTarget.Location.QUERY);
+                boolean mergeFuzzing = isFuzzedTarget(data, targetKey, fuzzedFieldKey);
                 payload = FuzzingStrategy.replaceField(payload, targetKey, fuzzingStrategy, mergeFuzzing).json();
             }
         } catch (PathNotFoundException _) {
             logger.debug("Ref data key {} was not found within the payload!", targetKey);
         }
         return payload;
+    }
+
+    private static boolean isFuzzedTarget(ServiceData data, String rawKey, String normalizedKey) {
+        return isFuzzedAtAnyPayloadLocation(data, normalizedKey)
+                || (!normalizedKey.equals(rawKey) && isFuzzedAtAnyPayloadLocation(data, rawKey));
+    }
+
+    private static boolean isFuzzedAtAnyPayloadLocation(ServiceData data, String fieldKey) {
+        return data.isFuzzedField(fieldKey, RequestTarget.Location.BODY)
+                || data.isFuzzedField(fieldKey, RequestTarget.Location.PATH)
+                || data.isFuzzedField(fieldKey, RequestTarget.Location.QUERY);
+    }
+
+    private static boolean isAncestorOfFuzzedField(ServiceData data, String normalizedKey) {
+        if (StringUtils.isBlank(normalizedKey)) {
+            return false;
+        }
+        String prefix = normalizedKey + "#";
+        return data.getAllMutationTargets().stream()
+                .filter(target -> target.location() == RequestTarget.Location.BODY
+                        || target.location() == RequestTarget.Location.QUERY)
+                .map(target -> FieldCorrelationEvaluator.normalizeFieldPath(target.name()))
+                .anyMatch(targetPath -> targetPath.regionMatches(true, 0, prefix, 0, prefix.length()));
     }
 
     private record EncodedRequestBody(String payload, String contentType, byte[] body) {

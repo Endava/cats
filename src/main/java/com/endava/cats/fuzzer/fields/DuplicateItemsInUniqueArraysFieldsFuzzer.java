@@ -60,7 +60,6 @@ public class DuplicateItemsInUniqueArraysFieldsFuzzer implements Fuzzer {
                         .payload(fuzzedPayload)
                         .mutationTarget(target.root() ? RequestTarget.requestBody() : RequestTarget.body(target.path()))
                         .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
-                        .replaceRefData(false)
                         .scenario("Duplicate an item in array [%s] declared with uniqueItems"
                                 .formatted(target.displayName()))
                         .build())));

@@ -83,7 +83,8 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
         private final BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer;
         @Builder.Default
         private final ResponseCodeFamily expectedResponseCode = ResponseCodeFamilyPredefined.FOURXX;
-        private final boolean replaceRefData;
+        @Builder.Default
+        private final boolean replaceRefData = true;
     }
 
     /**
