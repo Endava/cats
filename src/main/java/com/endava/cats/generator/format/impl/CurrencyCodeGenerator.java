@@ -11,7 +11,8 @@ import jakarta.inject.Singleton;
 import java.util.Currency;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * A generator class implementing various interfaces for generating valid and invalid currency code data formats.
@@ -19,11 +20,32 @@ import java.util.Set;
  */
 @Singleton
 public class CurrencyCodeGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
+    private static final List<String> ACTIVE_CURRENCIES = loadActiveCurrencies();
 
     @Override
     public Object generate(Schema<?> schema) {
-        Set<Currency> currencySet = Currency.getAvailableCurrencies();
-        return currencySet.stream().skip(CatsRandom.instance().nextInt(currencySet.size())).findFirst().orElse(Currency.getInstance(Locale.UK)).getCurrencyCode();
+        return ACTIVE_CURRENCIES.isEmpty()
+                ? Currency.getInstance(Locale.UK).getCurrencyCode()
+                : ACTIVE_CURRENCIES.get(CatsRandom.instance().nextInt(ACTIVE_CURRENCIES.size()));
+    }
+
+    private static List<String> loadActiveCurrencies() {
+        return Stream.of(Locale.getISOCountries())
+                .map(CurrencyCodeGenerator::currencyForCountry)
+                .filter(Objects::nonNull)
+                .filter(currency -> currency.getDefaultFractionDigits() >= 0)
+                .map(Currency::getCurrencyCode)
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    private static Currency currencyForCountry(String country) {
+        try {
+            return Currency.getInstance(Locale.of("", country));
+        } catch (IllegalArgumentException _) {
+            return null;
+        }
     }
 
     @Override

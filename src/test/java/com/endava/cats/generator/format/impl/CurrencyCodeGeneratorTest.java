@@ -27,7 +27,11 @@ class CurrencyCodeGeneratorTest {
 
     @Test
     void shouldGenerate() {
-        Assertions.assertThat(currencyCodeGenerator.generate(new Schema<>()).toString()).hasSize(3);
+        for (int i = 0; i < 50; i++) {
+            String generated = currencyCodeGenerator.generate(new Schema<>()).toString();
+            Assertions.assertThat(generated).hasSize(3)
+                    .isNotIn("ROL", "XXX", "XTS", "XAU", "XAG", "TRL");
+        }
     }
 
     @Test
