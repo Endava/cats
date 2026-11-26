@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -172,7 +173,8 @@ class DuplicateKeysFieldsFuzzerTest {
         setupData();
         Mockito.when(data.getPayload()).thenReturn("{\"description\":\"orig\",\"apiKey\":\"RANDOM\"}");
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("description"));
-        Mockito.when(simpleExecutor.resolvePayloadWithRefData(Mockito.eq(data), Mockito.any(), Mockito.any()))
+        Mockito.when(simpleExecutor.resolvePayloadWithRefData(
+                        Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_TWOXX)))
                 .thenReturn("{\"description\":\"orig\",\"apiKey\":\"sk_sbox_secret\"}");
 
         duplicateKeysFieldsFuzzer.fuzz(data);
@@ -181,9 +183,13 @@ class DuplicateKeysFieldsFuzzerTest {
         Mockito.verify(simpleExecutor, Mockito.times(2)).execute(captor.capture());
         Assertions.assertThat(captor.getAllValues()).allSatisfy(ctx -> {
             Assertions.assertThat(ctx.getPayload()).contains("\"apiKey\":\"sk_sbox_secret\"");
+            Assertions.assertThat(ctx.getExpectedResponseCode()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX_TWOXX);
             Assertions.assertThat(ctx.isReplaceRefData()).isFalse();
             Assertions.assertThat(ctx.isValidJson()).isFalse();
         });
+        Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX_TWOXX.matchesAllowedResponseCodes("201")).isTrue();
+        Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX_TWOXX.matchesAllowedResponseCodes("400")).isTrue();
+        Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX_TWOXX.matchesAllowedResponseCodes("500")).isFalse();
     }
 
     @Test

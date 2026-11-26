@@ -64,7 +64,7 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
             return;
         }
         String baselinePayload = Optional.ofNullable(
-                        simpleExecutor.resolvePayloadWithRefData(data, logger, ResponseCodeFamilyPredefined.FOURXX))
+                        simpleExecutor.resolvePayloadWithRefData(data, logger, ResponseCodeFamilyPredefined.FOURXX_TWOXX))
                 .orElse(data.getPayload());
         eligibleFields.stream()
                 .filter(field -> JsonUtils.isFieldInJson(baselinePayload, field))
@@ -132,7 +132,7 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
                 .fuzzingData(data)
                 .payload(duplicatedPayload)
                 .mutationTarget(RequestTarget.body(field))
-                .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX_TWOXX)
                 .scenario(scenario)
                 .replaceRefData(false)
                 .validJson(false)
