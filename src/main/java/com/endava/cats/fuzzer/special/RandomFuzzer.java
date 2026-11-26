@@ -217,7 +217,9 @@ public class RandomFuzzer implements Fuzzer {
 
     private static String applyChainedSameFieldMutation(String currentPayload, String targetField,
                                                         FuzzingData data, List<Mutator> mutatorsToRun) {
-        if (!JsonUtils.isValidJson(currentPayload) || !CatsRandom.instance().nextBoolean()) {
+        if (!JsonUtils.isValidJson(currentPayload)
+                || !JsonUtils.isFieldInJson(currentPayload, targetField)
+                || !CatsRandom.instance().nextBoolean()) {
             return currentPayload;
         }
         List<Mutator> composable = mutatorsToRun.stream()

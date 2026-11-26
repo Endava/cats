@@ -94,6 +94,29 @@ class CombinatorialBoundaryAndHeaderHavocFuzzerTest {
     }
 
     @Test
+    void shouldNotFailWhenNestedObjectParentAndChildAreBothPresent() {
+        Map<String, Schema> schemas = Map.of(
+                "externalPspCredentials", new Schema<>().type("object"),
+                "externalPspCredentials#endpointPrefix", new Schema<>().type("string"));
+        FuzzingData nestedData = FuzzingData.builder()
+                .path("/captures")
+                .method(HttpMethod.POST)
+                .payload("{\"externalPspCredentials\":{\"endpointPrefix\":\"vkuhvk4v\"}}")
+                .requestContentTypes(List.of("application/json"))
+                .headers(Set.of(CatsHeader.from("X-Keep", "1", false, null)))
+                .allFieldsByHttpMethod(schemas.keySet())
+                .requestPropertyTypes(schemas)
+                .build();
+
+        List<String> present = CombinatorialBoundaryAndHeaderHavocFuzzer.resolvePresentFields(nestedData);
+        for (int seed = 0; seed < 50; seed++) {
+            CatsRandom.initRandom(seed);
+            Assertions.assertThatNoException().isThrownBy(() ->
+                    CombinatorialBoundaryAndHeaderHavocFuzzer.buildProbes(nestedData, present));
+        }
+    }
+
+    @Test
     void shouldSkipNonJsonBodylessOrFieldlessOperations() {
         FuzzingData base = sampleData();
         fuzzer.fuzz(null);

@@ -43,6 +43,7 @@ public class RandomCrossFieldSwapAndSkewMutator implements BodyMutator {
         if (fuzzingData != null && fuzzingData.getAllFieldsByHttpMethod() != null) {
             List<String> fromData = fuzzingData.getAllFieldsByHttpMethod().stream()
                     .filter(Predicate.not(selectedField::equals))
+                    .filter(field -> !isAncestorOrDescendant(selectedField, field))
                     .filter(field -> JsonUtils.isFieldInJson(inputJson, field))
                     .sorted()
                     .toList();
@@ -51,6 +52,11 @@ public class RandomCrossFieldSwapAndSkewMutator implements BodyMutator {
             }
         }
         return extractTopLevelSiblings(inputJson, selectedField);
+    }
+
+    private static boolean isAncestorOrDescendant(String first, String second) {
+        return first.startsWith(second + "#") || second.startsWith(first + "#")
+                || first.startsWith(second + "[") || second.startsWith(first + "[");
     }
 
     private static List<String> extractTopLevelSiblings(String inputJson, String selectedField) {
@@ -62,6 +68,7 @@ public class RandomCrossFieldSwapAndSkewMutator implements BodyMutator {
             return root.getAsJsonObject().entrySet().stream()
                     .map(Map.Entry::getKey)
                     .filter(Predicate.not(selectedField::equals))
+                    .filter(field -> !isAncestorOrDescendant(selectedField, field))
                     .toList();
         } catch (RuntimeException _) {
             return List.of();
@@ -80,6 +87,9 @@ public class RandomCrossFieldSwapAndSkewMutator implements BodyMutator {
 
     private static String replacePair(String inputJson, String fieldA, Object valA, String fieldB, Object valB) {
         String stepOne = CatsUtil.justReplaceField(inputJson, fieldA, valA).json();
+        if (!JsonUtils.isFieldInJson(stepOne, fieldB)) {
+            return stepOne;
+        }
         return CatsUtil.justReplaceField(stepOne, fieldB, valB).json();
     }
 

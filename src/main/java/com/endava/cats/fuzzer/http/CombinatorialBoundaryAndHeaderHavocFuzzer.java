@@ -138,6 +138,9 @@ public class CombinatorialBoundaryAndHeaderHavocFuzzer implements Fuzzer {
         String payload = data.getPayload();
         for (int i = 0; i < count; i++) {
             String field = fields.get((i + CatsRandom.instance().nextInt(fields.size())) % fields.size());
+            if (!JsonUtils.isFieldInJson(payload, field) || overlapsAny(chosen, field)) {
+                continue;
+            }
             chosen.add(field);
             payload = CatsUtil.justReplaceField(payload, field, randomHavocValue(propertySchema(data, field))).json();
         }
@@ -148,6 +151,15 @@ public class CombinatorialBoundaryAndHeaderHavocFuzzer implements Fuzzer {
                 payload,
                 replaceHeader(data.getHeaders(), "If-None-Match", "W/\"cats-" + CatsRandom.alphanumeric(4) + "\""),
                 List.copyOf(targets));
+    }
+
+    private static boolean overlapsAny(Set<String> chosen, String candidate) {
+        return chosen.stream().anyMatch(existing -> isAncestorOrDescendant(existing, candidate));
+    }
+
+    private static boolean isAncestorOrDescendant(String first, String second) {
+        return first.startsWith(second + "#") || second.startsWith(first + "#")
+                || first.startsWith(second + "[") || second.startsWith(first + "[");
     }
 
     private static Object randomHavocValue(Schema<?> schema) {

@@ -36,6 +36,27 @@ class RandomCrossFieldSwapAndSkewMutatorTest {
     }
 
     @Test
+    void shouldExcludeAncestorAndDescendantFieldsToAvoidPathNotFoundException() {
+        String nestedJson = "{\"externalPspCredentials\":{\"endpointPrefix\":\"vkuhvk4v\"}}";
+        FuzzingData data = FuzzingData.builder()
+                .allFieldsByHttpMethod(Set.of("externalPspCredentials", "externalPspCredentials#endpointPrefix"))
+                .build();
+
+        Assertions.assertThat(RandomCrossFieldSwapAndSkewMutator.resolveSiblingFields(
+                nestedJson, "externalPspCredentials", data)).isEmpty();
+        Assertions.assertThat(RandomCrossFieldSwapAndSkewMutator.resolveSiblingFields(
+                nestedJson, "externalPspCredentials#endpointPrefix", data)).isEmpty();
+
+        for (int seed = 0; seed < 30; seed++) {
+            CatsRandom.initRandom(seed);
+            Assertions.assertThatNoException().isThrownBy(() ->
+                    mutator.mutate(nestedJson, "externalPspCredentials", data));
+            Assertions.assertThatNoException().isThrownBy(() ->
+                    mutator.mutate(nestedJson, "externalPspCredentials#endpointPrefix", data));
+        }
+    }
+
+    @Test
     void shouldHandleSingleFieldAndInvalidPayloadsGracefully() {
         String singleFieldJson = "{\"onlyOne\":\"value\"}";
         Assertions.assertThat(mutator.mutate(singleFieldJson, "onlyOne"))
