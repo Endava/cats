@@ -411,16 +411,31 @@ public class StringGenerator {
      * @return whether the value matches the pattern
      */
     public static boolean matchesPattern(String value, String pattern) {
+        return matchWithStackRetry(() -> value.matches(pattern));
+    }
+
+    /**
+     * Checks whether any substring matches a JSON Schema pattern.
+     *
+     * @param value the value to search
+     * @param pattern the compiled pattern
+     * @return whether the pattern occurs in the value
+     */
+    public static boolean containsPattern(String value, Pattern pattern) {
+        return matchWithStackRetry(() -> pattern.matcher(value).find());
+    }
+
+    private static boolean matchWithStackRetry(Supplier<Boolean> match) {
         try {
-            return value.matches(pattern);
+            return match.get();
         } catch (StackOverflowError _) {
             LOGGER.debug("Regex matching exhausted the current thread stack; retrying on a larger stack");
-            return matchesPatternWithLargerStack(value, pattern);
+            return matchWithLargerStack(match);
         }
     }
 
-    private static boolean matchesPatternWithLargerStack(String value, String pattern) {
-        FutureTask<Boolean> match = new FutureTask<>(() -> value.matches(pattern));
+    private static boolean matchWithLargerStack(Supplier<Boolean> operation) {
+        FutureTask<Boolean> match = new FutureTask<>(operation::get);
         Thread matcherThread = new Thread(null, match, "cats-regex-matcher", REGEX_MATCH_STACK_SIZE);
         matcherThread.setDaemon(true);
         matcherThread.start();

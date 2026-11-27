@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 @QuarkusTest
 class StringGeneratorTest {
@@ -424,8 +425,8 @@ class StringGeneratorTest {
         pwdSchema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "userPassword");
         Assertions.assertThat(StringGenerator.generateValueBasedOnMinMax(pwdSchema)).startsWith("catsISC00l#");
 
-        Boolean workerMatch = ReflectionTestUtils.invokeMethod(
-                StringGenerator.class, "matchesPatternWithLargerStack", "abc", "^[a-z]+$");
+        Supplier<Boolean> match = () -> "abc".matches("^[a-z]+$");
+        Boolean workerMatch = ReflectionTestUtils.invokeMethod(StringGenerator.class, "matchWithLargerStack", match);
         Assertions.assertThat(workerMatch).isTrue();
     }
 }

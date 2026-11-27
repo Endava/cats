@@ -26,8 +26,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,6 +63,7 @@ public class OpenAPIModelGeneratorV2 {
     public static final int REQUEST_TOTAL_DEPTH = 200;
     public static final int RESPONSE_TOTAL_DEPTH = 50;
     private static final int MAX_DISTINCT_ARRAY_ITEM_ATTEMPTS = 20;
+    private static final int MAX_STRING_ALL_OF_ATTEMPTS_PER_PATTERN = 10;
     private static final int ISO_UTC_TIMESTAMP_LENGTH = 20;
     private static final String DEFAULT_TEMPORAL_START_VALUE = "2026-01-01T00:00:00Z";
     private static final String DEFAULT_TEMPORAL_END_VALUE = "2026-01-02T00:00:00Z";
@@ -601,6 +604,9 @@ public class OpenAPIModelGeneratorV2 {
 
     private List<GeneratedExample> resolveAllOfSchemaProperties(Schema schema, String propertyName) {
         logger.trace("resolveAllOfSchemaProperties for schema {}", propertyName);
+        if (isStringPatternAllOf(schema)) {
+            return defaultExampleFor(propertyName, schema);
+        }
         List<GeneratedExample> examples = new ArrayList<>();
         keepOriginalSchema(propertyName, schema);
 
@@ -915,7 +921,7 @@ public class OpenAPIModelGeneratorV2 {
             addRefExample(propertyName, property, examples);
         } else if (CatsModelUtils.isObjectSchemaUsingOAT(property)) {
             examples.addAll(generateExamplesForSchema(propertyName, property));
-        } else if (CatsModelUtils.isAllOf(property) || CatsModelUtils.isAllOfWithProperties(property)) {
+        } else if ((CatsModelUtils.isAllOf(property) || CatsModelUtils.isAllOfWithProperties(property)) && !isStringPatternAllOf(property)) {
             examples.addAll(resolveAllOfSchemaProperties(property, propertyName));
         } else if (CatsModelUtils.isOneOf(property) || CatsModelUtils.isAnyOf(property)) {
             examples.addAll(resolveAnyOfOneOfSchemaProperties(propertyName, property));
@@ -1434,6 +1440,11 @@ public class OpenAPIModelGeneratorV2 {
             return example;
         }
 
+        if (isStringPatternAllOf(propertySchema)) {
+            keepOriginalSchema(propertyName, propertySchema);
+            return generateStringAllOf(propertyName, propertySchema);
+        }
+
         Object enumOrDefault = this.getEnumOrDefault(propertySchema);
         if (enumOrDefault != null) {
             return enumOrDefault;
@@ -1445,6 +1456,117 @@ public class OpenAPIModelGeneratorV2 {
         }
 
         return generateExampleBySchemaType(propertyName, propertySchema);
+    }
+
+    private static boolean isStringPatternAllOf(Schema<?> schema) {
+        return CatsModelUtils.isStringSchema(schema) && !CatsUtil.isEmpty(schema.getAllOf())
+                && isInlineStringConstraint(schema)
+                && schema.getAllOf().stream().allMatch(branch -> CatsUtil.isEmpty(branch.getAllOf()) && isInlineStringConstraint(branch))
+                && (schema.getPattern() != null || schema.getAllOf().stream().anyMatch(branch -> branch.getPattern() != null));
+    }
+
+    private static boolean isInlineStringConstraint(Schema<?> schema) {
+        return (CatsModelUtils.getPrimaryType(schema) == null || CatsModelUtils.isStringSchema(schema))
+                && schema.get$ref() == null && schema.get$dynamicRef() == null
+                && CatsUtil.isEmpty(schema.getProperties()) && schema.getDiscriminator() == null
+                && !CatsModelUtils.hasOneOf(schema) && !CatsModelUtils.hasAnyOf(schema)
+                && schema.getNot() == null && schema.getIf() == null;
+    }
+
+    private String generateStringAllOf(String propertyName, Schema<?> schema) {
+        List<Schema<?>> constraints = new ArrayList<>();
+        constraints.add(schema);
+        schema.getAllOf().forEach(constraints::add);
+        List<String> expressions = constraints.stream().map(Schema::getPattern).filter(Objects::nonNull).distinct().toList();
+        return generateAndRecordIfExceptionThrown(propertyName, expressions.toString(),
+                () -> generateMatchingString(propertyName, constraints, expressions));
+    }
+
+    private String generateMatchingString(String propertyName, List<Schema<?>> constraints, List<String> expressions) {
+        int min = constraints.stream().map(Schema::getMinLength).filter(Objects::nonNull).mapToInt(Integer::intValue).max().orElse(0);
+        int max = constraints.stream().map(Schema::getMaxLength).filter(Objects::nonNull).mapToInt(Integer::intValue).min().orElse(Integer.MAX_VALUE);
+        List<Pattern> patterns = expressions.stream().map(Pattern::compile).toList();
+        Predicate<String> matches = value -> {
+            int length = value.codePointCount(0, value.length());
+            return length >= min && length <= max
+                    && constraints.stream().allMatch(part -> matchesStringConstraint(part, value))
+                    && patterns.stream().allMatch(pattern -> StringGenerator.containsPattern(value, pattern));
+        };
+
+        for (Schema<?> constraint : constraints) {
+            if (constraint.getConst() != null || constraint.getEnum() != null) {
+                List<?> candidates = constraint.getConst() != null ? List.of(constraint.getConst()) : constraint.getEnum();
+                return candidates.stream().filter(String.class::isInstance).map(String.class::cast)
+                        .filter(matches).findFirst().orElseThrow();
+            }
+        }
+
+        if (useDefaults) {
+            for (Schema<?> constraint : constraints) {
+                if (constraint.getDefault() instanceof String value && matches.test(value)) {
+                    return value;
+                }
+            }
+        }
+
+        String format = constraints.stream().map(Schema::getFormat).filter(Objects::nonNull).findFirst().orElse(null);
+        int generationMax = max > StringGenerator.DEFAULT_MAX_LENGTH
+                ? Math.min(max, Math.max(min, StringGenerator.DEFAULT_MAX_WHEN_NOT_PRESENT)) : max;
+        Schema<String> generationSchema = new Schema<String>().type("string").format(format).minLength(min).maxLength(generationMax);
+        Object formattedValue = generateStringValue(propertyName, generationSchema);
+        if (formattedValue instanceof String value && matches.test(value)) {
+            return value;
+        }
+
+        if (min <= max && generationMax > 0) {
+            String value = sampleStringPatterns(patterns, min, generationMax, matches);
+            if (value != null) {
+                return value;
+            }
+        }
+        if (matches.test("")) {
+            return "";
+        }
+        throw new IllegalArgumentException("No string found matching allOf constraints");
+    }
+
+    private static String sampleStringPatterns(List<Pattern> patterns, int min, int max, Predicate<String> matches) {
+        List<String> fragments = new ArrayList<>();
+        for (Pattern pattern : patterns) {
+            String fragment = null;
+            for (int attempt = 0; attempt < MAX_STRING_ALL_OF_ATTEMPTS_PER_PATTERN; attempt++) {
+                String value;
+                try {
+                    value = StringGenerator.generate(pattern.pattern(), attempt == 0 ? 0 : min, max);
+                } catch (IllegalArgumentException _) {
+                    break;
+                }
+                if (matches.test(value)) {
+                    return value;
+                }
+                if ((fragment == null || value.length() < fragment.length()) && StringGenerator.containsPattern(value, pattern)) {
+                    fragment = value;
+                }
+            }
+            if (fragment != null) {
+                fragments.add(fragment);
+            }
+        }
+
+        // Separate substring patterns may need different parts of the same string.
+        String joined = String.join("", fragments);
+        if (matches.test(joined)) {
+            return joined;
+        }
+        String reversed = String.join("", fragments.reversed());
+        return matches.test(reversed) ? reversed : null;
+    }
+
+    private static boolean matchesStringConstraint(Schema<?> schema, String value) {
+        return !Boolean.FALSE.equals(schema.getBooleanSchemaValue())
+                && (schema.getConst() == null || value.equals(schema.getConst()))
+                && (schema.getEnum() == null || schema.getEnum().contains(value))
+                && CatsModelUtils.isValueMatchingFormat(schema, value);
     }
 
     private Object resolvePropertyToExample(String propertyName, Schema propertySchema) {

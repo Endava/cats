@@ -5,6 +5,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -73,6 +74,28 @@ class GenerateCommandTest {
         Set<String> keys1 = jsonObject1.keySet();
         Set<String> keys2 = jsonObject2.keySet();
         Assertions.assertThat(keys1).isEqualTo(keys2);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"GET, qb", "POST, b"})
+    void shouldGenerateStringsMatchingAllOfPatterns(String method, String field) {
+        GenerateCommand command = Mockito.spy(generateCommand);
+        int exitCode = new CommandLine(command).execute("-c", "src/test/resources/allof-string-patterns.yml",
+                "-p", "/items", "-X", method, "--seed", "42");
+        Assertions.assertThat(exitCode).isZero();
+
+        ArgumentCaptor<List<String>> payloads = ArgumentCaptor.forClass(List.class);
+        Mockito.verify(command).printResult(payloads.capture());
+        Assertions.assertThat(payloads.getValue()).singleElement().satisfies(payload -> {
+            JsonObject json = JsonParser.parseString(payload).getAsJsonObject();
+            Assertions.assertThat(json.has(field)).isTrue();
+            Assertions.assertThat(json.get(field).getAsString()).matches("^[a-z]*$").matches("^[^0-9]*$");
+            if (method.equals("POST")) {
+                Assertions.assertThat(json.get(field).getAsString().length()).isLessThanOrEqualTo(20);
+                Assertions.assertThat(json.get("typed").getAsString()).isEqualTo("cats");
+                Assertions.assertThat(json.get("fragments").getAsString()).isEqualTo("cats");
+            }
+        });
     }
 
     @ParameterizedTest

@@ -1,0 +1,62 @@
+openapi: 3.1.0
+info:
+  title: String pattern intersections
+  version: 1.0.0
+paths:
+  /items:
+    get:
+      operationId: listItems
+      parameters:
+        - name: qa
+          in: query
+          schema:
+            type: string
+            pattern: '^[a-z]*$'
+        - name: qb
+          in: query
+          schema:
+            type: string
+            allOf:
+              - pattern: '^[a-z]*$'
+              - pattern: '^[^0-9]*$'
+      responses:
+        '200':
+          description: ok
+    post:
+      operationId: createItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [a, b, typed, fragments]
+              properties:
+                a:
+                  type: string
+                  pattern: '^[a-z]*$'
+                b:
+                  type: string
+                  maxLength: 20
+                  allOf:
+                    - pattern: '^[a-z]*$'
+                    - pattern: '^[^0-9]*$'
+                typed:
+                  type: string
+                  pattern: at
+                  maxLength: 4
+                  allOf:
+                    - type: string
+                      minLength: 4
+                      pattern: '^(cat|cats|catch)$'
+                    - type: string
+                      pattern: '^[a-z]*$'
+                fragments:
+                  type: string
+                  maxLength: 4
+                  allOf:
+                    - pattern: 's$'
+                    - pattern: '^cat'
+      responses:
+        '200':
+          description: ok
