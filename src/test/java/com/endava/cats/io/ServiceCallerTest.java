@@ -616,6 +616,35 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldPreserveFuzzedMultipartFileValueInsteadOfMergingIntoCatsFileRefData() {
+        String fuzzedFileValue = "＇﹤＜＞＂¥abcd";
+        wireMockServer.stubFor(WireMock.post("/multipart-fuzzed-file").willReturn(WireMock.ok("{}")));
+        ReflectionTestUtils.setField(filesArguments, "refData", Map.of("/multipart-fuzzed-file",
+                Map.of("file", "cats_file:src/test/resources/multipart/all-bytes.bin",
+                        "evidenceType", "INVOICE")));
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        CatsResponse response = serviceCaller.call(ServiceData.builder()
+                .relativePath("/multipart-fuzzed-file")
+                .contractPath("/multipart-fuzzed-file")
+                .headers(Set.of())
+                .httpMethod(HttpMethod.POST)
+                .contentType("multipart/form-data")
+                .requestPropertyTypes(Map.of("file", new Schema<>().type("string").format("binary")))
+                .mutationTargets(List.of(RequestTarget.body("file")))
+                .payload("{\"file\":\"" + fuzzedFileValue + "\",\"evidenceType\":\"OTHER\"}")
+                .build());
+
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(200);
+        byte[] body = lastRequestTo("/multipart-fuzzed-file").getBody();
+        Assertions.assertThat(indexOf(body, fuzzedFileValue.getBytes(StandardCharsets.UTF_8))).isNotNegative();
+        Assertions.assertThat(new String(body, StandardCharsets.UTF_8))
+                .contains("INVOICE")
+                .doesNotContain("cats_file:");
+    }
+
+    @Test
     void shouldNotRecordEncodedBodyForJsonRequests() {
         serviceCaller.initRateLimiter();
         serviceCaller.initHttpClient();

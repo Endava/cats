@@ -37,6 +37,10 @@ public abstract class CatsDSLWords {
      * The Cats Fuzzy Header is used for specifying custom behavior related to fuzzing in Cats tests.
      */
     public static final String CATS_FUZZY_HEADER = "Cats-Fuzzy-Header";
+    /**
+     * Prefix used in reference data or payloads to point to a local file for multipart uploads.
+     */
+    public static final String CATS_FILE_PREFIX = "cats_file:";
 
     private CatsDSLWords() {
         //ntd
@@ -50,5 +54,15 @@ public abstract class CatsDSLWords {
      */
     public static boolean isExtraField(String key) {
         return NEW_FIELD.equalsIgnoreCase(key);
+    }
+
+    /**
+     * Checks if the given value is a CATS {@code cats_file:} local file reference.
+     *
+     * @param value the candidate value
+     * @return true if {@code value} is a string starting with {@link #CATS_FILE_PREFIX}
+     */
+    public static boolean isFileReference(Object value) {
+        return value instanceof String text && text.startsWith(CATS_FILE_PREFIX);
     }
 }

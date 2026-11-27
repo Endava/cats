@@ -74,6 +74,26 @@ class FuzzingStrategyTest {
         Assertions.assertThat(FuzzingStrategy.mergeFuzzing(xss, "US")).isEqualTo(xss);
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "'＇﹤＜＞＂¥abcd'",
+            "'   leading'",
+            "'trailing   '",
+            "'ab\u0000cd'"
+    })
+    void shouldNotMergeFuzzingIntoCatsFileReferences(String fuzzedValue) {
+        String fileRef = "cats_file:chargeback-core/files/sample-evidence.pdf";
+        Assertions.assertThat(FuzzingStrategy.mergeFuzzing(fuzzedValue, fileRef)).isEqualTo(fuzzedValue);
+
+        String payload = "{\"file\":\"" + fuzzedValue + "\",\"note\":\"ok\"}";
+        FuzzingResult merged = FuzzingStrategy.replaceField(payload, "file", FuzzingStrategy.replace().withData(fileRef), true);
+        Assertions.assertThat(merged.json()).isEqualTo(payload);
+        Assertions.assertThat(merged.fuzzedValue()).isEqualTo(fuzzedValue);
+
+        FuzzingResult unmerged = FuzzingStrategy.replaceField(payload, "file", FuzzingStrategy.replace().withData(fileRef), false);
+        Assertions.assertThat(unmerged.json()).contains(fileRef);
+    }
+
     @Test
     void givenAFuzzingStrategy_whenSettingAnInnerValueAboveTruncationThreshold_thenTheValueIsProperlyTruncated() {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("t", 50));

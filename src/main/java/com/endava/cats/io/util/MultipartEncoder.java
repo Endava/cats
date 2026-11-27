@@ -1,5 +1,6 @@
 package com.endava.cats.io.util;
 
+import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
@@ -34,7 +35,7 @@ import java.util.function.Predicate;
  * whose schema is a binary string are sent as file parts; everything else is sent as a text part.
  */
 public final class MultipartEncoder {
-    private static final String FILE_PREFIX = "cats_file:";
+    private static final String FILE_PREFIX = CatsDSLWords.CATS_FILE_PREFIX;
     private static final String BOUNDARY_PREFIX = "cats";
     private static final String OCTET_STREAM = "application/octet-stream";
 

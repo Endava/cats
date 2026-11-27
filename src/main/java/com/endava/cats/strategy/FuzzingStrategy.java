@@ -2,6 +2,7 @@ package com.endava.cats.strategy;
 
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.FuzzingResult;
@@ -105,6 +106,9 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
      * @return the result of merging the fuzzed value with the supplied value using the appropriate FuzzingStrategy
      */
     public static Object mergeFuzzing(Object fuzzedValue, Object suppliedValue) {
+        if (CatsDSLWords.isFileReference(suppliedValue)) {
+            return fuzzedValue;
+        }
         FuzzingStrategy currentStrategy = fromValue(fuzzedValue);
 
         return currentStrategy.process(suppliedValue);
@@ -403,7 +407,8 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
             }
             DocumentContext jsonDocument = JsonPath.parse(payload);
             Object oldValue = jsonDocument.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
-            if (mergeFuzzing && shouldPreserveFuzzedStructuralValue(oldValue, fuzzingStrategyToApply.getData())) {
+            if (mergeFuzzing && (CatsDSLWords.isFileReference(fuzzingStrategyToApply.getData())
+                    || shouldPreserveFuzzedStructuralValue(oldValue, fuzzingStrategyToApply.getData()))) {
                 return new FuzzingResult(payload, oldValue);
             }
             if (oldValue instanceof JSONArray && !jsonPropToGetValue.contains("[*]")) {
