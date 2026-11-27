@@ -30,7 +30,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * Iterates through path variables and sens random resource identifiers.
+ * Iterates through path variables and sends random resource identifiers.
  */
 @HttpFuzzer
 @Singleton
